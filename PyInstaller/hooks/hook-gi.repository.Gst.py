@@ -12,10 +12,9 @@
 # GStreamer contains a lot of plugins. We need to collect them and bundle them with the exe file. We also need to
 # resolve binary dependencies of these GStreamer plugins.
 
-import glob
-import os
+import pathlib
 
-from PyInstaller.utils.hooks import get_hook_config
+from PyInstaller.utils.hooks import get_hook_config, include_or_exclude_file
 import PyInstaller.log as logging
 from PyInstaller import isolated
 from PyInstaller.utils.hooks.gi import GiModuleInfo, collect_glib_share_files, collect_glib_translations
@@ -34,6 +33,10 @@ def _get_gst_plugin_path():
     plug = reg.find_plugin('coreelements')
     path = plug.get_filename()
     return os.path.dirname(path)
+
+
+def _format_plugin_pattern(plugin_name):
+    return f"**/*gst{plugin_name}.*"
 
 
 def hook(hook_api):
@@ -66,11 +69,24 @@ def hook(hook_api):
         plugin_path = None
 
     if plugin_path:
-        # Use a pattern of libgst* as all GStreamer plugins that conform to GStreamer standards start with libgst, and
-        # we may have mixed plugin extensions, e.g., .so and .dylib.
-        for lib_pattern in ['libgst*.dll', 'libgst*.dylib', 'libgst*.so']:
-            pattern = os.path.join(plugin_path, lib_pattern)
-            binaries += [(f, os.path.join('gst_plugins')) for f in glob.glob(pattern)]
+        plugin_path = pathlib.Path(plugin_path)
+
+        # Obtain optional include/exclude list from hook config
+        include_list = get_hook_config(hook_api, "gstreamer", "include_plugins")
+        exclude_list = get_hook_config(hook_api, "gstreamer", "exclude_plugins")
+
+        # Format plugin basenames into filename patterns for matching
+        if include_list is not None:
+            include_list = [_format_plugin_pattern(name) for name in include_list]
+        if exclude_list is not None:
+            exclude_list = [_format_plugin_pattern(name) for name in exclude_list]
+
+        # The names of GStreamer plugins typically start with libgst (or just gst, depending on the toolchain). We also
+        # need to account for different extensions that might be used on a particular OS (for example, on macOS, the
+        # extension may be either .so or .dylib).
+        for lib_pattern in ['*gst*.dll', '*gst*.dylib', '*gst*.so']:
+            binaries += [(str(filename), 'gst_plugins') for filename in plugin_path.glob(lib_pattern)
+                         if include_or_exclude_file(filename, include_list, exclude_list)]
 
     hook_api.add_datas(datas)
     hook_api.add_binaries(binaries)

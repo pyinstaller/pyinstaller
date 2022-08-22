@@ -1,0 +1,3 @@
+Implement new ``gstreamer`` hook configuration group with
+``include_plugins`` and ``exclude_plugins`` options that enable control
+over GStreamer plugins collected by the ``gi.repository.Gst`` hook.
