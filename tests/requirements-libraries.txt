@@ -31,8 +31,8 @@ gevent==21.12.0
 ipython==8.4.0; python_version >= '3.8'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
-keyring==23.7.0; sys_platform != 'darwin' or python_version >= '3.8.7'
-matplotlib==3.5.2; python_version >= '3.8'
+keyring==23.8.2; sys_platform != 'darwin' or python_version >= '3.8.7'
+matplotlib==3.5.3; python_version >= '3.8'
 pandas==1.4.3; python_version >= '3.8'
 pygments==2.12.0
 PyGObject==3.42.2; sys_platform == 'linux'
@@ -50,14 +50,14 @@ pyqt6-qt6==6.3.1  # Qt6 binaries (keep in sync with pyqt6 version!)
 pyqt6-webengine==6.3.1  # PyQt6 QtWebEngine bindings
 pyqt6-webengine-qt6==6.3.1  # Qt6 QtWebEngine binaries
 python-dateutil==2.8.2
-pytz==2022.1
+pytz==2022.2.1
 requests==2.28.1
-scipy==1.8.1; python_version >= '3.8'
+scipy==1.9.0; python_version >= '3.8'
 # simplejson is used for text_c_extension
 simplejson==3.17.6
-sphinx==5.0.2
+sphinx==5.1.1
 # Required for test_namespace_package
-sqlalchemy==1.4.39
+sqlalchemy==1.4.40
 zope.interface==5.4.0
 Pillow==9.2.0
 
@@ -66,7 +66,7 @@ Pillow==9.2.0
 # -------------------------------------------------------
 
 # numpy dropped support for python 3.7 as of 1.22
-numpy==1.23.1; python_version >= '3.8'
+numpy==1.23.2; python_version >= '3.8'
 numpy==1.21.5; python_version == '3.7'  # pyup: ignore
 
 
