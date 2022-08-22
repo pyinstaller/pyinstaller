@@ -13,6 +13,7 @@ import copy
 import os
 import sys
 import textwrap
+import fnmatch
 from pathlib import Path
 from collections import deque
 from typing import Callable, Tuple
@@ -1309,6 +1310,41 @@ def get_hook_config(hook_api, module_name, key):
     if module_name in config and key in config[module_name]:
         value = config[module_name][key]
     return value
+
+
+def include_or_exclude_file(filename, include_list=None, exclude_list=None):
+    """
+    Generic inclusion/exclusion decision function based on filename and list of include and exclude patterns.
+
+    Args:
+        filename:
+            Filename considered for inclusion.
+        include_list:
+            List of inclusion file patterns.
+        exclude_list:
+            List of exclusion file patterns.
+
+    Returns:
+        A boolean indicating whether the file should be included or not.
+
+    If ``include_list`` is provided, True is returned only if the filename matches one of include patterns (and does not
+    match any patterns in ``exclude_list``, if provided). If ``include_list`` is not provided, True is returned if
+    filename does not match any patterns in ``exclude list``, if provided. If neither list is provided, True is
+    returned for any filename.
+    """
+    if include_list is not None:
+        for pattern in include_list:
+            if fnmatch.fnmatch(filename, pattern):
+                break
+        else:
+            return False  # Not explicitly included; exclude
+
+    if exclude_list is not None:
+        for pattern in exclude_list:
+            if fnmatch.fnmatch(filename, pattern):
+                return False  # Explicitly excluded
+
+    return True
 
 
 if compat.is_pure_conda:

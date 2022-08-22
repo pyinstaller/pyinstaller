@@ -1,0 +1,3 @@
+Implement a generic file filtering decision function for use in hooks,
+based on the source filename and optional inclusion and exclusion pattern
+list (:func:`PyInstaller.utils.hooks.include_or_exclude_file`).

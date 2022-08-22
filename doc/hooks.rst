@@ -434,6 +434,7 @@ hooks.
 .. autofunction:: copy_metadata
 .. autofunction:: collect_entry_point
 .. autofunction:: get_homebrew_path
+.. autofunction:: include_or_exclude_file
 
 
 Support for Conda
