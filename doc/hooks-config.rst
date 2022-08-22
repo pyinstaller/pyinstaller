@@ -102,6 +102,179 @@ version 3.0 of Gtk and version 4 of GtkSource:
 
 .. _matplotlib hook options:
 
+
+GStreamer (gi.repository.Gst) hook
+----------------------------------
+
+The collection of GStreamer is subject to both the general ``gi`` hook
+configuration (for example, collection of translations file as controlled
+by the ``languages`` option) and by special hook configuration named
+``gstreamer`` [#gstreamer_id]_ that controls collection of GStreamer plugins.
+
+The GStreamer framework comes with a multitude of plugins that are
+typically installed as separate packages (``gstreamer-plugins-base``,
+``gstreamer-plugins-good``, ``gstreamer-plugins-bad``, and
+``gstreamer-plugins-ugly``; the naming varies between packaging systems).
+By default, PyInstaller collects *all* available plugins as well as their
+binary dependencies; therefore, having all GStreamer plugins installed
+in the build environment will likely result in collection of many
+unnecessary plugins and increased frozen application size due to
+potential complex dependency chains of individual plugins and the
+underlying shared libraries.
+
+**Hook identifier:** ``gstreamer`` [#gstreamer_id]_
+
+**Options**
+
+ * ``include_plugins`` [*list of strings*]: list of plugin names to
+   include in the frozen application. Specifying the include list
+   implicitly excludes all plugins that do not appear in the list.
+
+ * ``exclude_plugins`` [*list of strings*]: list of plugin names to
+   exclude from the frozen application. If include list is also available,
+   the exclude list is applied after it; if not, the exclude list is
+   applied to all available plugins.
+
+Both include and exclude list expect base plugin names (e.g., ``audioparsers``,
+``matroska`` , ``x264``, ``flac``). Internally, each name is converted into
+a pattern (e.g., ``'**/*flac.*'``), and matched using ``fnmatch`` against
+actual plugin file names. Therefore, it is also possible to include the
+wildcard (``*``) in the plugin name [#gstreamer_plugin_prefix]_.
+
+**Basic example: excluding an unwanted plugin**
+
+Exclude the ``opencv`` GStreamer plugin to prevent pulling OpenCV shared
+libraries into the frozen application.
+
+.. code-block:: python
+
+    a = Analysis(
+        ["my-gstreamer-app.py"],
+        ...,
+        hooksconfig={
+            "gstreamer": {
+                "exclude_plugins": [
+                    "opencv",
+                ],
+            },
+        },
+        ...,
+    )
+
+**Advanced example: including only specific plugins**
+
+When optimizing the frozen application size, it is often more efficient
+to explicitly include only the subset of the plugins that are actually
+required for the application to function.
+
+Consider the following simple player application:
+
+.. code-block:: python
+
+    # audio_player.py
+    import sys
+    import os
+
+    import gi
+    gi.require_version('Gst', '1.0')
+    from gi.repository import GLib, Gst
+
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <filename>")
+        sys.exit(-1)
+
+    filename = os.path.abspath(sys.argv[1])
+    if not os.path.isfile(filename):
+        print(f"Input file {filename} does not exist!")
+        sys.exit(-1)
+
+    Gst.init(sys.argv)
+    mainloop = GLib.MainLoop()
+
+    playbin = Gst.ElementFactory.make("playbin", "player")
+    playbin.set_property('uri', Gst.filename_to_uri(filename))
+    playbin.set_property('volume', 0.2)
+    playbin.set_state(Gst.State.PLAYING)
+
+    mainloop.run()
+
+Suppose that, although the application is using the generic ``playbin``
+and ``player`` elements, we intend for the frozen application to play
+only audio files. In that case, we can limit the collected plugins
+as follows:
+
+
+.. code-block:: python
+
+    # The not-completely-optimized list of gstreamer plugins for playing a FLAC
+    # (and possibly some other) audio files on linux and Windows.
+    gst_include_plugins = [
+        # gstreamer
+        "coreelements",
+        # gstreamer-plugins-base
+        "alsa",  # Linux audio output
+        "audioconvert",
+        "audiomixer",
+        "audiorate",
+        "audioresample",
+        "ogg",
+        "playback",
+        "rawparse",
+        "typefindfunctions",
+        "volume",
+        "vorbis",
+        # gstreamer-plugins-good
+        "audioparsers",
+        "auparse",
+        "autodetect",
+        "directsound", # Windows audio output
+        "flac",
+        "id3demux",
+        "lame",
+        "mpg123",
+        "osxaudio",  # macOS audio output
+        "pulseaudio",  # Linux audio output
+        "replaygain",
+        "speex",
+        "taglib",
+        "twolame",
+        "wavparse",
+        # gstreamer-plugins-bad
+        "wasapi",  # Windows audio output
+    ]
+
+    a = Analysis(
+        ["audio_player.py"],
+        ...,
+        hooksconfig={
+            "gstreamer": {
+                "include_plugins": gst_include_plugins,
+            },
+        },
+        ...,
+    )
+
+Determining which plugins need to be collected may require good knowledge
+of GStreamer pipelines and their plugin system, and may result in several
+test iterations to see if the required multimedia functionality works as
+expected. Unfortunately, there is no free lunch when it comes to optimizing
+the size of application that uses a plugin system like that. Keep in mind
+that in addition to obviously-named plugins (such as ``flac`` for
+FLAC-related functionality), you will likely need to collect at least some
+plugins that come from ``gstreamer`` itself (e.g., the ``coreelements``
+one) and at least some that are part of ``gstreamer-plugins-base``.
+
+
+.. [#gstreamer_id] While the hook is called ``gi.repository.Gst``, the
+   identifier for Gstreamer-related options was chosen to be simply
+   ``gstreamer``.
+
+.. [#gstreamer_plugin_prefix] And it is also possible to get away with
+   accidentally specifying the plugin prefix, which is typically `libgst`,
+   but can also be `gst`, depending on the toolchain that was used to
+   build GStreamer.
+
+
 Matplotlib hooks
 ----------------
 
