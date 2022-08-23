@@ -10,7 +10,7 @@
 #-----------------------------------------------------------------------------
 
 from PyInstaller.utils.hooks.qt import \
-    add_qt6_dependencies, get_qt_webengine_binaries_and_data_files, pyqt6_library_info
+    add_qt6_dependencies, pyqt6_library_info
 
 # Ensure PyQt6 is importable before adding info depending on it.
 if pyqt6_library_info.version is not None:
@@ -22,6 +22,6 @@ if pyqt6_library_info.version is not None:
     hiddenimports, binaries, datas = add_qt6_dependencies(__file__)
 
     # Include helper process executable, translations, and resources.
-    webengine_binaries, webengine_datas = get_qt_webengine_binaries_and_data_files(pyqt6_library_info)
+    webengine_binaries, webengine_datas = pyqt6_library_info.collect_qtwebengine_files()
     binaries += webengine_binaries
     datas += webengine_datas
