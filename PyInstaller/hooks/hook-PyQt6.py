@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks.qt import get_qt_binaries, pyqt6_library_info
+from PyInstaller.utils.hooks.qt import pyqt6_library_info
 
 # Only proceed if PyQt6 can be imported.
 if pyqt6_library_info.version is not None:
@@ -20,4 +20,4 @@ if pyqt6_library_info.version is not None:
     ]
 
     # Collect required Qt binaries.
-    binaries = get_qt_binaries(pyqt6_library_info)
+    binaries = pyqt6_library_info.collect_extra_binaries()
