@@ -45,11 +45,9 @@ Main Advantages
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
 - Correctly bundles the major Python packages such as numpy, PyQt5,
-  PySide2, Django, wxPython, matplotlib and others out-of-the-box.
+  PySide2, NumPy, wxPython, matplotlib and others out-of-the-box.
 - Compatible with many 3rd-party packages out-of-the-box. (All the required
   tricks to make external packages work are already integrated.)
-- Libraries like PyQt5, PySide2, wxPython, matplotlib or Django are fully
-  supported, without having to handle plugins or external data files manually.
 - Works with code signing on macOS.
 - Bundles MS Visual C++ DLLs on Windows.
 
@@ -65,34 +63,55 @@ PyInstaller is available on PyPI. You can install it through `pip`::
 Requirements and Tested Platforms
 ---------------------------------
 
-- Python: 
+- Python:
 
- - 3.7-3.10
- - tinyaes_ 1.0+ (only if using bytecode encryption).
-   Instead of installing tinyaes, ``pip install pyinstaller[encryption]`` instead.
+   - 3.7-3.10. Note that Python 3.10.0 contains a bug making it unsupportable by
+     PyInstaller. PyInstaller will also not work with beta releases of Python
+     3.11.
+
+   - tinyaes_ 1.0+ (only if using bytecode encryption).
+     Instead of installing tinyaes, ``pip install pyinstaller[encryption]`` instead.
 
 - Windows (32bit/64bit):
 
- - PyInstaller should work on Windows 7 or newer, but we only officially support Windows 8+.
+   - PyInstaller should work on Windows 7 or newer, but we only officially support Windows 8+.
 
- - Support for Python installed from the Windows store without using virtual
-   environments requires PyInstaller 4.4 or later.
-    
-- GNU/Linux (32bit/64bit)
+   - Support for Python installed from the Windows store without using virtual
+     environments requires PyInstaller 4.4 or later.
 
- - ldd: Console application to print the shared libraries required
-   by each program or shared library. This typically can be found in
-   the distribution-package `glibc` or `libc-bin`.
- - objdump: Console application to display information from 
-   object files. This typically can be found in the
-   distribution-package `binutils`.
- - objcopy: Console application to copy and translate object files.
-   This typically can be found in the distribution-package `binutils`,
-   too.
+   - Note that Windows on ``arm64`` is not yet supported. If you have such a
+     device and want to help us add ``arm64`` support then please let us know on
+     our issue tracker.
 
-- macOS (64bit):
+- Linux:
 
- - macOS 10.15 (Catalina) or newer.
+   - GNU libc based distributions on architectures ``x86_64``, ``aarch64``,
+     ``i686``, ``ppc64le``, ``s390x``.
+
+   - musl libc based distributions on architectures ``x86_64``, ``aarch64``.
+
+   - ldd: Console application to print the shared libraries required
+     by each program or shared library. This typically can be found in
+     the distribution-package `glibc` or `libc-bin`.
+
+   - objdump: Console application to display information from
+     object files. This typically can be found in the
+     distribution-package `binutils`.
+
+   - objcopy: Console application to copy and translate object files.
+     This typically can be found in the distribution-package `binutils`,
+     too.
+
+  - Raspberry Pi users on ``armv5``-``armv7`` should `add piwheels as an extra
+    index url <https://www.piwheels.org/>`_ then ``pip install pyinstaller`` as
+    usual.
+
+  - macOS (``x86_64`` or ``arm64``):
+
+   - macOS 10.15 (Catalina) or newer.
+
+   - Supports building ``universal2`` applications provided that your installation
+     of Python and all your dependencies are also compiled ``universal2``.
 
 
 Usage
@@ -126,28 +145,22 @@ enhancements on these are welcome.
    linked Python libraries.
  - ldd
 
-- PowerPC GNU/Linux (Debian)
-
+- Linux on any other libc implementation/architecture combination not listed
+  above.
 
 Before using any contributed platform, you need to build the PyInstaller
-bootloader, as we do not ship binary packages. Download PyInstaller
-source, and build the bootloader::
-     
-        cd bootloader
-        python ./waf all
-
-Then install PyInstaller::
-
-        python setup.py install
-        
-or simply use it directly from the source (pyinstaller.py).
+bootloader. This will happen automatically when you ``pip install
+pyinstaller`` provided that you have an appropriate C compiler (typically
+either ``gcc`` or ``clang``) and zlib's development headers already installed.
 
 
 Support
 -------
 
-See http://www.pyinstaller.org/support.html for how to find help as well as
-for commercial support.
+- Official debugging guide: https://pyinstaller.org/en/stable/when-things-go-wrong.html
+- Assorted user contributed help topics: https://github.com/pyinstaller/pyinstaller/wiki
+- Web based Q&A forums: https://github.com/pyinstaller/pyinstaller/discussions
+- Email based Q&A forums: https://groups.google.com/g/pyinstaller
 
 
 Changes in this Release
@@ -158,5 +171,5 @@ in the `Changelog`_ section of the manual.
 
 
 .. _tinyaes: https://github.com/naufraghi/tinyaes-py
-.. _`manual`: https://pyinstaller.readthedocs.io/en/v5.0.1/
-.. _`Changelog`: https://pyinstaller.readthedocs.io/en/v5.0.1/CHANGES.html
+.. _`manual`: https://pyinstaller.readthedocs.io/en/v5.3/
+.. _`Changelog`: https://pyinstaller.readthedocs.io/en/v5.3/CHANGES.html
