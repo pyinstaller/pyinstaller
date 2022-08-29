@@ -14,10 +14,11 @@ import os
 
 import pytest
 
+from PyInstaller import isolated
 from PyInstaller.compat import is_win, is_darwin
-from PyInstaller.utils.hooks import is_module_satisfies
+from PyInstaller.utils.hooks import is_module_satisfies, can_import_module
 from PyInstaller.utils.hooks.qt import get_qt_library_info
-from PyInstaller.utils.tests import requires, xfail, skipif
+from PyInstaller.utils.tests import importorskip, requires, xfail, skipif
 
 PYQT5_NEED_OPENGL = pytest.mark.skipif(
     is_module_satisfies('PyQt5 <= 5.10.1'),
@@ -498,3 +499,72 @@ def test_Qt_PySide6_key_enums(pyi_builder):
         key = QtCore.Qt.AltModifier | QtCore.Qt.Key_D
         """
     )
+
+
+# Basic import tests for all Qt-bindings-provided modules. Each module should be importable on its own, which requires a
+# corresponding hook that performs recursive analysis of the module in order to collect all of its dependencies.
+#
+# Due to the sheer amount of tests, they are ran only in onedir mode.
+
+
+# Helper that lists all Qt* modules from a Qt-based package. Ran isolated to prevent import affecting the main process.
+@isolated.decorate
+def _list_all_qt_submodules(package_name):
+    import importlib
+    import pkgutil
+
+    try:
+        package = importlib.import_module(package_name)
+    except Exception:
+        return []
+
+    return sorted([
+        module_info.name for module_info in pkgutil.iter_modules(package.__path__) if module_info.name.startswith("Qt")
+    ])
+
+
+def _test_qt_bindings_import(bindings, module, pyi_builder_onedir):
+    # Check if particular module is importable. This guards against errors if a module is unavailable in particular
+    # version of the bindings, or if it is provided by an extra package that is not installed.
+    modname = bindings + "." + module
+    if not can_import_module(modname):
+        pytest.skip(f"Module '{modname}' cannot be imported.")
+    # Basic import test
+    # The import of the tested module is preceeded by import of the QtCore. This seems to prevent segfaults on macOS
+    # with certain modules in the frozen test (QtSensors in PySide2 and PyQt5, QtWebEngine* in PySide6, etc.). The
+    # segfaults occur when trying to resolve bundle identifier, which may be related to PyInstaller failing to
+    # preserve the .framework bundle structure for Qt shared libraries (and importing QtCore somehow works around
+    # that). Since QtCore is practically a dependency of all other Qt modules, its import does not affect the results
+    # of the test much.
+    pyi_builder_onedir.test_source(f"""
+        import {bindings}.QtCore
+        import {modname}
+        """)
+
+
+@importorskip('PySide2')
+@pytest.mark.parametrize('module', _list_all_qt_submodules('PySide2'))
+@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+def test_qt_module_import_PySide2(module, pyi_builder):
+    _test_qt_bindings_import("PySide2", module, pyi_builder)
+
+
+@importorskip('PySide6')
+@pytest.mark.parametrize('module', _list_all_qt_submodules('PySide6'))
+@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+def test_qt_module_import_PySide6(module, pyi_builder):
+    _test_qt_bindings_import("PySide6", module, pyi_builder)
+
+
+@importorskip('PyQt5')
+@pytest.mark.parametrize('module', _list_all_qt_submodules('PyQt5'))
+@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+def test_qt_module_import_PyQt5(module, pyi_builder):
+    _test_qt_bindings_import("PyQt5", module, pyi_builder)
+
+
+@importorskip('PyQt6')
+@pytest.mark.parametrize('module', _list_all_qt_submodules('PyQt6'))
+@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+def test_qt_module_import_PyQt6(module, pyi_builder):
+    _test_qt_bindings_import("PyQt6", module, pyi_builder)
