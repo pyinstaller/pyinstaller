@@ -15,3 +15,5 @@ hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
 qml_binaries, qml_datas = pyside2_library_info.collect_qtqml_files()
 binaries += qml_binaries
 datas += qml_datas
+
+hiddenimports += ["PySide2.QtGui"]
