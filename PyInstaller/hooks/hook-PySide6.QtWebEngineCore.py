@@ -25,3 +25,5 @@ if pyside6_library_info.version is not None:
     webengine_binaries, webengine_datas = pyside6_library_info.collect_qtwebengine_files()
     binaries += webengine_binaries
     datas += webengine_datas
+
+    hiddenimports += ['PySide6.QtPrintSupport']
