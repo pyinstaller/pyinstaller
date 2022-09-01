@@ -185,10 +185,15 @@ def test_pipe_leakage():
     child = isolated.Python()
     assert open_fds() == old
 
-    # Entering its context creates the child process and 4 handles for sending/receiving to/from it. Then on Windows,
-    # opening the parent's ends of the two pipes creates another two handles and starting the subprocess adds another
-    # two (although I don't know what for).
-    EXPECTED_INCREASE_IN_FDS = (4 if os.name != "nt" else 8)
+    # On POSIX systems, entering the context creates the child process and 4 handles for sending/receiving to/from it.
+    # After creating the child process, we close the descriptors that were passed to the child, so the expected total
+    # increase in the parent/main process is two file descriptors.
+    # On Windows, we monitor file handles; four are opened when both pipes are created. Additional two handles are
+    # opened when the sub-process is spawned. Then we close the two pipe end-points that were inherited by the child,
+    # which closes two handles. Finally, we open file descriptors on the remaining two pipe end-point handles, and
+    # perform os.fdopen() on those FDs to obtained buffered python "file" object. This adds two additional file
+    # handles, bringing us to the total of six.
+    EXPECTED_INCREASE_IN_FDS = (2 if os.name != "nt" else 6)
 
     with child:
         assert open_fds() == old + EXPECTED_INCREASE_IN_FDS

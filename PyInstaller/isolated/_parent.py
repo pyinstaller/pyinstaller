@@ -14,65 +14,150 @@ from pathlib import Path
 from marshal import loads, dumps
 from base64 import b64encode, b64decode
 import functools
+import subprocess
 
 from PyInstaller.compat import __wrap_python
 
+# WinAPI bindings for Windows-specific codepath
 if os.name == "nt":
-    from msvcrt import get_osfhandle, open_osfhandle
+    import msvcrt
+    import ctypes
+    import ctypes.wintypes
 
-    def open(osf_handle, mode):
-        # Convert system file handles to file descriptors before opening them.
-        return os.fdopen(open_osfhandle(osf_handle, 0), mode)
+    # CreatePipe
+    class SECURITY_ATTRIBUTES(ctypes.Structure):
+        _fields_ = [
+            ("nLength", ctypes.wintypes.DWORD),
+            ("lpSecurityDescriptor", ctypes.wintypes.LPVOID),
+            ("bInheritHandle", ctypes.wintypes.BOOL),
+        ]
 
-    def close(osf_handle):
-        # Likewise when closing.
-        return os.close(open_osfhandle(osf_handle, 0))
+    HANDLE_FLAG_INHERIT = 0x0001
 
-else:
-    close = os.close
+    LPSECURITY_ATTRIBUTES = ctypes.POINTER(SECURITY_ATTRIBUTES)
+
+    CreatePipe = ctypes.windll.kernel32.CreatePipe
+    CreatePipe.argtypes = [
+        ctypes.POINTER(ctypes.wintypes.HANDLE),
+        ctypes.POINTER(ctypes.wintypes.HANDLE),
+        LPSECURITY_ATTRIBUTES,
+        ctypes.wintypes.DWORD,
+    ]
+    CreatePipe.restype = ctypes.wintypes.BOOL
+
+    # CloseHandle
+    CloseHandle = ctypes.windll.kernel32.CloseHandle
+    CloseHandle.argtypes = [ctypes.wintypes.HANDLE]
+    CloseHandle.restype = ctypes.wintypes.BOOL
 
 CHILD_PY = Path(__file__).with_name("_child.py")
 
 
-def pipe():
+def create_pipe(read_handle_inheritable, write_handle_inheritable):
     """
     Create a one-way pipe for sending data to child processes.
 
+    Args:
+        read_handle_inheritable:
+            A boolean flag indicating whether the handle corresponding to the read end-point of the pipe should be
+            marked as inheritable by subprocesses.
+        write_handle_inheritable:
+            A boolean flag indicating whether the handle corresponding to the write end-point of the pipe should be
+            marked as inheritable by subprocesses.
+
     Returns:
-        A read/write pair of file descriptors (which are just integers) on posix or system file handle on Windows.
+        A read/write pair of file descriptors (which are just integers) on posix or system file handles on Windows.
 
     The pipe may be used either by this process or subprocesses of this process but not globally.
-
     """
-    read, write = os.pipe()
-    # The default behaviour of pipes is that they are process specific. i.e. they can only be used for this process to
-    # talk to itself. Setting these means that child processes may also use these pipes.
-    os.set_inheritable(read, True)
-    os.set_inheritable(write, True)
+    return _create_pipe_impl(read_handle_inheritable, write_handle_inheritable)
 
-    # On Windows, file descriptors are not shareable. They need to be converted to system file handles here then
-    # converted back with open_osfhandle() by the child.
-    if os.name == "nt":
-        read, write = get_osfhandle(read), get_osfhandle(write)
 
-    return read, write
+def close_pipe_endpoint(pipe_handle):
+    """
+    Close the file descriptor (posix) or handle (Windows) belonging to a pipe.
+    """
+    return _close_pipe_endpoint_impl(pipe_handle)
+
+
+if os.name == "nt":
+
+    def _create_pipe_impl(read_handle_inheritable, write_handle_inheritable):
+        # Use WinAPI CreatePipe function to create the pipe. Python's os.pipe() does the same, but wraps the resulting
+        # handles into inheritable file descriptors (https://github.com/python/cpython/issues/77046). Instead, we want
+        # just handles, and will set the inheritable flag on corresponding handle ourselves.
+        read_handle = ctypes.wintypes.HANDLE()
+        write_handle = ctypes.wintypes.HANDLE()
+
+        # SECURITY_ATTRIBUTES with inherit handle set to True
+        security_attributes = SECURITY_ATTRIBUTES()
+        security_attributes.nLength = ctypes.sizeof(security_attributes)
+        security_attributes.bInheritHandle = True
+        security_attributes.lpSecurityDescriptor = None
+
+        # CreatePipe()
+        succeeded = CreatePipe(
+            ctypes.byref(read_handle),  # hReadPipe
+            ctypes.byref(write_handle),  # hWritePipe
+            ctypes.byref(security_attributes),  # lpPipeAttributes
+            0,  # nSize
+        )
+        if not succeeded:
+            raise ctypes.WinError()
+
+        # Set inheritable flags. Instead of binding and using SetHandleInformation WinAPI function, we can use
+        # os.set_handle_inheritable().
+        os.set_handle_inheritable(read_handle.value, read_handle_inheritable)
+        os.set_handle_inheritable(write_handle.value, write_handle_inheritable)
+
+        return read_handle.value, write_handle.value
+
+    def _close_pipe_endpoint_impl(pipe_handle):
+        succeeded = CloseHandle(pipe_handle)
+        if not succeeded:
+            raise ctypes.WinError()
+else:
+
+    def _create_pipe_impl(read_fd_inheritable, write_fd_inheritable):
+        # Create pipe, using os.pipe()
+        read_fd, write_fd = os.pipe()
+
+        # The default behaviour of pipes is that they are process specific. I.e., they can only be used by this
+        # process to talk to itself. Setting inheritable flags means that child processes may also use these pipes.
+        os.set_inheritable(read_fd, read_fd_inheritable)
+        os.set_inheritable(write_fd, write_fd_inheritable)
+
+        return read_fd, write_fd
+
+    def _close_pipe_endpoint_impl(pipe_fd):
+        os.close(pipe_fd)
 
 
 def child(read_from_parent: int, write_to_parent: int):
     """
     Spawn a Python subprocess sending it the two file descriptors it needs to talk back to this parent process.
     """
-    from subprocess import Popen
+    if os.name != 'nt':
+        # Explicitly disabling close_fds is a requirement for making file descriptors inheritable by child processes.
+        extra_kwargs = {
+            "env": _subprocess_env(),
+            "close_fds": False,
+        }
+    else:
+        # On Windows, we can use subprocess.STARTUPINFO to explicitly pass the list of file handles to be inherited,
+        # so we can avoid disabling close_fds
+        extra_kwargs = {
+            "env": _subprocess_env(),
+            "close_fds": True,
+            "startupinfo": subprocess.STARTUPINFO(lpAttributeList={"handle_list": [read_from_parent, write_to_parent]})
+        }
 
     # Run the _child.py script directly passing it the two file descriptors it needs to talk back to the parent.
-    cmd, options = __wrap_python(
-        [str(CHILD_PY), str(read_from_parent), str(write_to_parent)],
-        # Explicitly disabling close_fds is a requirement for making file descriptors inheritable by child processes.
-        dict(close_fds=False, env=_subprocess_env()),
-    )
+    cmd, options = __wrap_python([str(CHILD_PY), str(read_from_parent), str(write_to_parent)], extra_kwargs)
+
     # I'm intentionally leaving stdout and stderr alone so that print() can still be used for emergency debugging and
     # unhandled errors in the child are still visible.
-    return Popen(cmd, **options)
+    return subprocess.Popen(cmd, **options)
 
 
 def _subprocess_env():
@@ -110,17 +195,34 @@ class Python:
         self._child = None
 
     def __enter__(self):
-        # We need two pipes. One for the child to send data to the parent.
-        self._read_from_child, self._write_to_parent = pipe()
-        # And one for the parent to send data to the child.
-        self._read_from_parent, self._write_to_child = pipe()
+        # We need two pipes. One for the child to send data to the parent. The (write) end-point passed to the
+        # child needs to be marked as inheritable.
+        read_from_child, write_to_parent = create_pipe(False, True)
+        # And one for the parent to send data to the child. The (read) end-point passed to the child needs to be
+        # marked as inheritable.
+        read_from_parent, write_to_child = create_pipe(True, False)
 
         # Spawn a Python subprocess sending it the two file descriptors it needs to talk back to this parent process.
-        self._child = child(self._read_from_parent, self._write_to_parent)
+        self._child = child(read_from_parent, write_to_parent)
 
-        # Open file handles to talk to the child.
-        self._write_handle = open(self._write_to_child, "wb")
-        self._read_handle = open(self._read_from_child, "rb")
+        # Close the end-points that were inherited by the child.
+        close_pipe_endpoint(read_from_parent)
+        close_pipe_endpoint(write_to_parent)
+        del read_from_parent
+        del write_to_parent
+
+        # Open file handles to talk to the child. This should fully transfer ownership of the underlying file
+        # descriptor to the opened handle; so when we close the latter, the former should be closed as well.
+        if os.name == 'nt':
+            # On Windows, we must first open file descriptor on top of the handle using _open_osfhandle (which
+            # python wraps in msvcrt.open_osfhandle). According to MSDN, this transfers the ownership of the
+            # underlying file handle to the file descriptors; i.e., they are both closed when the file descriptor
+            # is closed).
+            self._write_handle = os.fdopen(msvcrt.open_osfhandle(write_to_child, 0), "wb")
+            self._read_handle = os.fdopen(msvcrt.open_osfhandle(read_from_child, 0), "rb")
+        else:
+            self._write_handle = os.fdopen(write_to_child, "wb")
+            self._read_handle = os.fdopen(read_from_child, "rb")
 
         return self
 
@@ -130,14 +232,11 @@ class Python:
         self._write_handle.flush()
         self._child.wait()
 
-        # Then close all the pipes and handles. These steps were determined empirically to appease the corresponding
-        # test: tests/unit/test_isolation.py::test_pipe_leakage
-        # I don't really understand why they must be this way.
-        close(self._read_from_parent)
-        close(self._write_to_parent)
+        # Close the handles. This should also close the underlying file descriptors.
         self._write_handle.close()
         self._read_handle.close()
         del self._read_handle, self._write_handle
+
         self._child = None
 
     def call(self, function, *args, **kwargs):
