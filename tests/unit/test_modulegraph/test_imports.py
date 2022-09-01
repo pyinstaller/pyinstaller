@@ -531,5 +531,16 @@ class TestInvalidAsyncFunction (unittest.TestCase):
                 self.fail("%r is not an instance of %r"%(value, types))
 
 
+def test_extended_args_import():
+    source = "".join(f"dummy_var{i} = {i}\n" for i in range(300)) + "import os\n"
+    code = compile(source, "", "exec")
+    node = modulegraph.Node("dummy_module")
+    node._deferred_imports = []
+    node.code = code
+    graph = modulegraph.ModuleGraph()
+    graph._scan_bytecode(node, code, True)
+    assert node._deferred_imports[0][1][0] == "os"
+
+
 if __name__ == "__main__":
     unittest.main()
