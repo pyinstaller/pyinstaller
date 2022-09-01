@@ -136,7 +136,9 @@ def iterate_instructions(code_object):
     Yields `dis.Instruction`. After each code-block (`co_code`), `None` is
     yielded to mark the end of the block and to interrupt the steam.
     """
-    yield from get_instructions(code_object)
+    # The arg extension the EXTENDED_ARG opcode represents is automatically handled by get_instructions() but the
+    # instruction is left in. Get rid of it to make subsequent parsing easier/safer.
+    yield from (i for i in get_instructions(code_object) if i.opname != "EXTENDED_ARG")
 
     yield None
 
