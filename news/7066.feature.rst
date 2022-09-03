@@ -1,0 +1,7 @@
+Rework the module exclusion mechanism. The excluded module entries,
+specified via ``excludedimports`` list in the hooks, are now used to
+suppress module imports from corresponding nodes *during modulegraph
+construction*, rather than to remove the nodes from the graph as a
+post-processing step. This should make the module exclusion more robust,
+but the main benefit is that we avoid running (potentially many and
+potentially costly) hooks for modules that would end up excluded anyway.

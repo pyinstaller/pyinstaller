@@ -521,12 +521,6 @@ The ``hook_api`` object also offers the following methods:
    giving the fully-qualified name(s) of modules to be imported.
    This has the same effect as adding the names to the ``hiddenimports`` global.
 
-``del_imports( *names )``:
-   The ``names`` argument may be a single string or a list of strings,
-   giving the fully-qualified name(s) of modules that are not
-   to be included if they are imported only by the hooked module.
-   This has the same effect as adding names to the ``excludedimports`` global.
-
 ``add_datas( tuple_list )``:
    The ``tuple_list`` argument has the format used with the ``datas`` global
    variable. This call has the effect of adding items to that list.
