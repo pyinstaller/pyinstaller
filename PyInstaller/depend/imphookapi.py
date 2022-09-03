@@ -427,7 +427,6 @@ class PostGraphAPI:
         current module depends.
 
         This is equivalent to appending such names to the hook-specific `excludedimports` attribute.
-
         """
         self._deleted_imports.extend(module_names)
 

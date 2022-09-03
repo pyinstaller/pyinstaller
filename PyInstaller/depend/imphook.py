@@ -292,6 +292,8 @@ class ModuleHook:
             HOOKS_MODULE_NAMES.add(self.hook_module_name)
 
         # Attributes subsequently defined by the _load_hook_module() method.
+        self._loaded = False
+        self._has_hook_function = False
         self._hook_module = None
 
     def __getattr__(self, attr_name):
@@ -313,10 +315,10 @@ class ModuleHook:
         """
 
         # If this is a magic attribute, initialize this attribute by lazy loading this hook script and then return
-        # this attribute. To avoid recursion, the superclass method rather than getattr() is called.
-        if attr_name in _MAGIC_MODULE_HOOK_ATTRS:
+        # this attribute.
+        if attr_name in _MAGIC_MODULE_HOOK_ATTRS and not self._loaded:
             self._load_hook_module()
-            return super().__getattr__(attr_name)
+            return getattr(self, attr_name)
         # Else, this is an undefined attribute. Raise an exception.
         else:
             raise AttributeError(attr_name)
@@ -345,7 +347,7 @@ class ModuleHook:
 
     #-- Loading --
 
-    def _load_hook_module(self):
+    def _load_hook_module(self, keep_module_ref=False):
         """
         Lazily load this hook script into an in-memory private module.
 
@@ -363,8 +365,9 @@ class ModuleHook:
         """
 
         # If this hook script module has already been loaded, or we are _shallow, noop.
-        if self._hook_module is not None or self._shallow:
+        if (self._loaded and (self._hook_module is not None or not keep_module_ref)) or self._shallow:
             if self._shallow:
+                self._loaded = True
                 self._hook_module = True  # Not None
                 # Inform the user
                 logger.debug(
@@ -385,6 +388,12 @@ class ModuleHook:
         except ImportError:
             logger.debug("Hook failed with:", exc_info=True)
             raise ImportErrorWhenRunningHook(self.hook_module_name, self.hook_filename)
+
+        # Mark as loaded
+        self._loaded = True
+
+        # Check if module has hook() function.
+        self._has_hook_function = hasattr(self._hook_module, 'hook')
 
         # Copy hook script attributes into magic attributes exposed as instance variables of the current "ModuleHook"
         # instance.
@@ -411,6 +420,11 @@ class ModuleHook:
             }
         )
 
+        # Release the module if we do not need the reference. This is the case when hook is loaded during the analysis
+        # rather as part of the post-graph operations.
+        if not keep_module_ref:
+            self._hook_module = None
+
     #-- Hooks --
 
     def post_graph(self, analysis):
@@ -426,15 +440,18 @@ class ModuleHook:
         """
 
         # Lazily load this hook script into an in-memory module.
-        self._load_hook_module()
+        # The script might have been loaded before during modulegraph analysis; in that case, it needs to be reloaded
+        # only if it provides a hook() function.
+        if not self._loaded or self._has_hook_function:
+            # Keep module reference when loading the hook, so we can call its hook function!
+            self._load_hook_module(keep_module_ref=True)
 
-        # Call this hook script's hook() function, which modifies attributes accessed by subsequent methods and hence
-        # must be called first.
-        self._process_hook_func(analysis)
+            # Call this hook script's hook() function, which modifies attributes accessed by subsequent methods and
+            # hence must be called first.
+            self._process_hook_func(analysis)
 
         # Order is insignificant here.
         self._process_hidden_imports()
-        self._process_excluded_imports()
 
     def _process_hook_func(self, analysis):
         """
@@ -464,8 +481,11 @@ class ModuleHook:
         self.hiddenimports.extend(hook_api._added_imports)
         self.module_collection_mode.update(hook_api._module_collection_mode)
 
-        # FIXME: Deleted imports should be appended to self.excludedimports rather than handled here. However, see the
-        #        _process_excluded_imports() FIXME below for a sensible alternative.
+        # FIXME: `hook_api._deleted_imports` should be appended to `self.excludedimports` and used to suppress module
+        # import during the modulegraph construction rather than handled here. However, for that to work, the `hook()`
+        # function needs to be ran during modulegraph construction instead of in post-processing (and this in turn
+        # requires additional code refactoring in order to be able to pass `analysis` to `PostGraphAPI` object at
+        # that point). So once the modulegraph rewrite is complete, remove the code block below.
         for deleted_module_name in hook_api._deleted_imports:
             # Remove the graph link between the hooked module and item. This removes the 'item' node from the graph if
             # no other links go to it (no other modules import it)
@@ -493,73 +513,6 @@ class ModuleHook:
             except ImportError:
                 if self.warn_on_missing_hiddenimports:
                     logger.warning('Hidden import "%s" not found!', import_module_name)
-
-    # FIXME: This is pretty... intense. Attempting to cleanly "undo" prior module graph operations is a recipe for
-    #        subtle edge cases and difficult-to-debug issues. It would be both safer and simpler to prevent these
-    #        imports from being added to the graph in the first place. To do so:
-    #
-    # * Remove the _process_excluded_imports() method below.
-    # * Remove the PostGraphAPI.del_imports() method, which cannot reasonably be supported by the following solution,
-    #   appears to be currently broken, and (in any case) is not called anywhere in the PyInstaller codebase.
-    # * Override the ModuleGraph._safe_import_hook() superclass method with a new PyiModuleGraph._safe_import_hook()
-    #   subclass method resembling:
-    #
-    #      def _safe_import_hook(
-    #          self, target_module_name, source_module, fromlist,
-    #          level=DEFAULT_IMPORT_LEVEL, attr=None):
-    #
-    #          if source_module.identifier in self._module_hook_cache:
-    #              for module_hook in self._module_hook_cache[
-    #                  source_module.identifier]:
-    #                  if target_module_name in module_hook.excludedimports:
-    #                      return []
-    #
-    #          return super()._safe_import_hook(
-    #              target_module_name, source_module, fromlist,
-    #              level=level, attr=attr)
-    def _process_excluded_imports(self):
-        """
-        'excludedimports' is a list of Python module names that PyInstaller should not detect as dependency of this
-        module name.
-
-        So remove all import-edges from the current module (and it's submodules) to the given `excludedimports` (end
-        their submodules).
-        """
-        def find_all_package_nodes(name):
-            mods = [name]
-            name += '.'
-            for subnode in self.module_graph.nodes():
-                if subnode.identifier.startswith(name):
-                    mods.append(subnode.identifier)
-            return mods
-
-        # If this hook excludes no imports, noop.
-        if not self.excludedimports:
-            return
-
-        # Collect all submodules of this module.
-        hooked_mods = find_all_package_nodes(self.module_name)
-
-        # Collect all dependencies and their submodules
-        # TODO: Optimize this by using a pattern and walking the graph only once.
-        for item in set(self.excludedimports):
-            excluded_node = self.module_graph.find_node(item, create_nspkg=False)
-            if excluded_node is None:
-                logger.info("Import to be excluded not found: %r", item)
-                continue
-            imports_to_remove = set(find_all_package_nodes(item))
-
-            # Remove references between module nodes, as though they would not be imported from 'name'. Note: Doing this
-            # in a nested loop is less efficient than collecting all import to remove first, but log messages are easier
-            # to understand since related to the "Excluding ..." message above.
-            for src in hooked_mods:
-                # modules, this `src` does import
-                references = set(node.identifier for node in self.module_graph.outgoing(src))
-
-                # Remove all of these imports which are also in "imports_to_remove".
-                for dest in imports_to_remove & references:
-                    self.module_graph.removeReference(src, dest)
-                    logger.debug("Excluding import of %s from module %s", dest, src)
 
 
 class AdditionalFilesCache:

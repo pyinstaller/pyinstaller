@@ -2847,7 +2847,15 @@ class ModuleGraph(ObjectGraph):
             # Graph node of the target module specified by the "from" portion
             # of this "from"-style star import (e.g., an import resembling
             # "from {target_module_name} import *") or ignored otherwise.
-            target_module = self._safe_import_hook(*import_info, **kwargs)[0]
+            target_modules = self._safe_import_hook(*import_info, **kwargs)
+            if not target_modules:
+                # If _safe_import_hook suppressed the module, quietly drop it.
+                # Do not create an ExcludedModule instance, because that might
+                # completely suppress the module whereas it might need to be
+                # included due to reference from another module (that does
+                # not exclude it via hook).
+                continue
+            target_module = target_modules[0]
 
             # If this is a "from"-style star import, process this import.
             if have_star:
