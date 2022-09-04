@@ -17,15 +17,14 @@ which retains the same Python package `PIL`.
 
 import pytest
 
-from PyInstaller.utils.tests import importorskip, skip
+from PyInstaller.utils.tests import importorskip
 from PyInstaller.utils.hooks import can_import_module
 
 
-# "excludedimports" support is currently non-deterministic and hence cannot be marked as @xfail. If this test was
-# marked as @xfail but succeeded, py.test would record this test as an XPASS failure (i.e., an unexpected success).
+# The tkinter module may be available for import, but not actually importable due to missing shared libraries.
+# Therefore, we need to use `can_import_module`-based skip decorator instead of `@importorskip`.
 @importorskip('PIL')
-@importorskip('tkinter')
-@skip(reason='"excludedimports" support is non-deterministically broken.')
+@pytest.mark.skipif(not can_import_module("tkinter"), reason="tkinter cannot be imported.")
 def test_pil_no_tkinter(pyi_builder):
     """
     Ensure that the Tkinter package excluded by `PIL` package hooks is unimportable by frozen applications explicitly
