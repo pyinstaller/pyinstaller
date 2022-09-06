@@ -38,30 +38,16 @@ from __future__ import annotations
 import fnmatch
 import json
 import sys
-from pathlib import Path, PurePath
-from typing import Dict, Iterable, List, Tuple, Union
-from os import PathLike
+from pathlib import Path
+from typing import Iterable, List
 
 from PyInstaller import compat
 from PyInstaller.log import logger
 
-if sys.version_info >= (3, 9):
-    _StrOrBytesPath = Union[str, bytes, PathLike[str], PathLike[bytes]]
-else:
-    _StrOrBytesPath = Union[str, bytes, PathLike]
-
-if sys.version_info >= (3, 8):
+if compat.is_py38:
     from importlib.metadata import PackagePath as _PackagePath
-    from typing import TypedDict
-
-    class _RawDict(TypedDict):
-        name: str
-        version: str
-        files: List[Union[_StrOrBytesPath, PurePath]]
-        depends: List[str]
 else:
     from importlib_metadata import PackagePath as _PackagePath
-    _RawDict = Dict[str, Union[str, List[str], List[Union[_StrOrBytesPath, PurePath]]]]
 
 # Conda virtual environments each get their own copy of `conda-meta` so the use of `sys.prefix` instead of
 # `sys.base_prefix`, `sys.real_prefix` or anything from our `compat` module is intentional.
@@ -69,7 +55,7 @@ CONDA_ROOT = Path(sys.prefix)
 CONDA_META_DIR = CONDA_ROOT / "conda-meta"
 
 # Find all paths in `sys.path` that are inside Conda root.
-PYTHONPATH_PREFIXES: List[Path] = []
+PYTHONPATH_PREFIXES = []
 for _path in sys.path:
     _path = Path(_path)
     try:
@@ -107,11 +93,11 @@ class Distribution:
             )
 
         # Everything we need (including this distribution's name) is kept in the metadata json.
-        self.raw: _RawDict = json.loads(self._json_path.read_text())
+        self.raw: dict = json.loads(self._json_path.read_text())
 
         # Unpack the more useful contents of the json.
-        self.name = self.raw["name"]
-        self.version = self.raw["version"]
+        self.name: str = self.raw["name"]
+        self.version: str = self.raw["version"]
         self.files = [PackagePath(i) for i in self.raw["files"]]
         self.dependencies = self._init_dependencies()
         self.packages = self._init_package_names()
@@ -128,7 +114,7 @@ class Distribution:
 
         The names in ``self.raw["depends"]`` come with extra version constraint information which must be stripped.
         """
-        dependencies: List[str] = []
+        dependencies = []
         # For each dependency:
         for dependency in self.raw["depends"]:
             # ``dependency`` is a string of the form: "[name] [version constraints]"
@@ -145,7 +131,7 @@ class Distribution:
 
         These are names you would ``import`` rather than names you would install.
         """
-        packages: List[str] = []
+        packages = []
         for file in self.files:
             package = _get_package_name(file)
             if package is not None:
@@ -220,7 +206,7 @@ def walk_dependency_tree(initial: str, excludes: Iterable[str] | None = None):
 
     # Rather than use true recursion, mimic it with a to-do queue.
     from collections import deque
-    done: Dict[str, Distribution] = {}
+    done = {}
     names_to_do = deque([initial])
 
     while names_to_do:
@@ -259,7 +245,7 @@ def _iter_distributions(name, dependencies, excludes):
         return [Distribution.from_name(name)]
 
 
-def requires(name: str, strip_versions: bool = False):
+def requires(name: str, strip_versions: bool = False) -> List[str]:
     """
     List requirements of a distribution.
 
@@ -276,7 +262,7 @@ def requires(name: str, strip_versions: bool = False):
     return distribution(name).raw["depends"]
 
 
-def files(name: str, dependencies: bool = False, excludes: Iterable[str] | None = None):
+def files(name: str, dependencies: bool = False, excludes: list | None = None) -> List[PackagePath]:
     """
     List all files belonging to a distribution.
 
@@ -322,7 +308,7 @@ def collect_dynamic_libs(name: str, dest: str = ".", dependencies: bool = True, 
     This collects libraries only from Conda's shared ``lib`` (Unix) or ``Library/bin`` (Windows) folders. To collect
     from inside a distribution's installation use the regular :func:`PyInstaller.utils.hooks.collect_dynamic_libs`.
     """
-    _files: List[Tuple[str, str]] = []
+    _files = []
     for file in files(name, dependencies, excludes):
         # A file is classified as a DLL if it lives inside the dedicated ``lib_dir`` DLL folder.
         if file.parent == lib_dir:
@@ -382,7 +368,7 @@ def _get_package_name(file: PackagePath):
 
 
 def _init_distributions():
-    distributions: Dict[str, Distribution] = {}
+    distributions = {}
     for path in CONDA_META_DIR.glob("*.json"):
         dist = Distribution(path)
         distributions[dist.name] = dist
@@ -393,7 +379,7 @@ distributions = _init_distributions()
 
 
 def _init_packages():
-    distributions_by_package: Dict[str, Distribution] = {}
+    distributions_by_package = {}
     for distribution in distributions.values():
         for package in distribution.packages:
             distributions_by_package[package] = distribution

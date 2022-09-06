@@ -23,26 +23,9 @@ import site
 import subprocess
 import sys
 import shutil
-from typing import Iterable, List, Tuple, Union
 
 from PyInstaller._shared_with_waf import _pyi_machine
 from PyInstaller.exceptions import ExecCommandFailed
-
-if sys.version_info >= (3, 9):
-    _StrOrBytesPath = Union[str, bytes, os.PathLike[str], os.PathLike[bytes]]
-else:
-    _StrOrBytesPath = Union[str, bytes, os.PathLike]
-_OpenFile = Union[_StrOrBytesPath, int]
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-    _Architecture = Literal['64bit', 'n32bit', '32bit']
-    _System = Literal['Cygwin', 'Linux', 'Darwin', 'Java', 'Windows']
-    _Machine = Literal['sw_64', 'loongarch64', 'arm', 'intel', 'ppc', 'mips', 'riscv', 's390x', 'unknown']
-else:
-    _Architecture = str
-    _System = str
-    _Machine = str
 
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
 is_64bits: bool = sys.maxsize > 2**32
@@ -220,20 +203,20 @@ if is_win:
 # macOS's platform.architecture() can be buggy, so we do this manually here. Based off the python documentation:
 # https://docs.python.org/3/library/platform.html#platform.architecture
 if is_darwin:
-    architecture: _Architecture = '64bit' if sys.maxsize > 2**32 else '32bit'
+    architecture = '64bit' if sys.maxsize > 2**32 else '32bit'
 else:
-    architecture: _Architecture = platform.architecture()[0]
+    architecture = platform.architecture()[0]
 
 # Cygwin needs special handling, because platform.system() contains identifiers such as MSYS_NT-10.0-19042 and
 # CYGWIN_NT-10.0-19042 that do not fit PyInstaller's OS naming scheme. Explicitly set `system` to 'Cygwin'.
-system: _System = 'Cygwin' if is_cygwin else platform.system()
+system = 'Cygwin' if is_cygwin else platform.system()
 
 # Machine suffix for bootloader.
-machine: _Machine | None = _pyi_machine(platform.machine(), platform.system())
+machine = _pyi_machine(platform.machine(), platform.system())
 
 
 # Wine detection and support
-def is_wine_dll(filename: _OpenFile):
+def is_wine_dll(filename: str | bytes | os.PathLike | int):
     """
     Check if the given PE file is a Wine DLL (PE-converted built-in, or fake/placeholder one).
 
@@ -303,7 +286,7 @@ def exec_command(
     *cmdargs: str,
     encoding: str | None = None,
     raise_enoent: bool | None = None,
-    **kwargs: int | bool | Iterable[int] | None
+    **kwargs: int | bool | Iterable | None
 ):
     """
     Run the command specified by the passed positional arguments, optionally configured by the passed keyword arguments.
@@ -383,7 +366,7 @@ def exec_command(
     return out
 
 
-def exec_command_rc(*cmdargs: str, **kwargs: float | bool | Iterable[int] | None):
+def exec_command_rc(*cmdargs: str, **kwargs: float | bool | list | None):
     """
     Return the exit code of the command specified by the passed positional arguments, optionally configured by the
     passed keyword arguments.
@@ -412,7 +395,7 @@ def exec_command_rc(*cmdargs: str, **kwargs: float | bool | Iterable[int] | None
 
 
 def exec_command_stdout(
-    *command_args: str, encoding: str | None = None, **kwargs: float | str | bytes | bool | Iterable[int] | None
+    *command_args: str, encoding: str | None = None, **kwargs: float | str | bytes | bool | list | None
 ):
     """
     Capture and return the standard output of the command specified by the passed positional arguments, optionally
@@ -459,9 +442,7 @@ def exec_command_stdout(
     return stdout if encoding is None else stdout.decode(encoding)
 
 
-def exec_command_all(*cmdargs: str,
-                     encoding: str | None = None,
-                     **kwargs: int | bool | Iterable[int] | None) -> Tuple[int, str, str]:
+def exec_command_all(*cmdargs: str, encoding: str | None = None, **kwargs: int | bool | list | None):
     """
     Run the command specified by the passed positional arguments, optionally configured by the passed keyword arguments.
 
@@ -583,7 +564,7 @@ def exec_python_rc(*args: str, **kwargs: str | None):
 # Path handling.
 
 
-def expand_path(path: _StrOrBytesPath):
+def expand_path(path: str | bytes | os.PathLike):
     """
     Replace initial tilde '~' in path with user's home directory, and also expand environment variables
     (i.e., ${VARNAME} on Unix, %VARNAME% on Windows).
@@ -592,7 +573,7 @@ def expand_path(path: _StrOrBytesPath):
 
 
 # Site-packages functions - use native function if available.
-def getsitepackages(prefixes: Iterable[str] | None = None):
+def getsitepackages(prefixes: list | None = None):
     """
     Returns a list containing all global site-packages directories.
 
@@ -600,7 +581,7 @@ def getsitepackages(prefixes: Iterable[str] | None = None):
     subdirectory depending on the system environment, and returns a list of full paths.
     """
     # This implementation was copied from the ``site`` module, python 3.7.3.
-    sitepackages: List[str] = []
+    sitepackages = []
     seen = set()
 
     if prefixes is None:

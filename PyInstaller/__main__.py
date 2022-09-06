@@ -17,15 +17,11 @@ import argparse
 import os
 import platform
 from collections import defaultdict
-from typing import Dict, Iterable, List, Tuple, Union
 
 from PyInstaller import __version__
 from PyInstaller import log as logging
 # Note: do not import anything else until compat.check_requirements function is run!
 from PyInstaller import compat
-
-_PyIConfig = Union[Dict[str, Union[bool, str, List[str], None]], Iterable[Tuple[str, Union[bool, str, List[str],
-                                                                                           None]]]]
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +147,7 @@ def generate_parser() -> _PyiArgumentParser:
     return parser
 
 
-def run(pyi_args: Iterable[str] | None = None, pyi_config: _PyIConfig | None = None):
+def run(pyi_args: list | None = None, pyi_config: dict | list | None = None):
     """
     pyi_args     allows running PyInstaller programmatically without a subprocess
     pyi_config   allows checking configuration once when running multiple tests

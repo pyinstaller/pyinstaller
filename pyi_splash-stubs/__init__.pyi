@@ -11,12 +11,7 @@
 
 # https://pyinstaller.org/en/stable/advanced-topics.html#module-pyi_splash
 # https://github.com/pyinstaller/pyinstaller/blob/develop/PyInstaller/fake-modules/pyi_splash.py
-try:
-    from typing_extensions import Literal
-except ImportError:
-    from typing import Literal
-
-__all__ = ["CLOSE_CONNECTION", "FLUSH_CHARACTER", "is_alive", "close", "update_text"]
+__all__ = ["is_alive", "close", "update_text"]
 
 
 def is_alive() -> bool:
@@ -29,7 +24,3 @@ def update_text(msg: str) -> None:
 
 def close() -> None:
     ...
-
-
-CLOSE_CONNECTION: Literal[b"\u0004"]
-FLUSH_CHARACTER: Literal[b"\r"]

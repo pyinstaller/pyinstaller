@@ -55,12 +55,11 @@ DEFAULT_DISTPATH = os.path.join(os.getcwd(), 'dist')
 # Where to put all the temporary files; .log, .pyz, etc.
 DEFAULT_WORKPATH = os.path.join(os.getcwd(), 'build')
 
-_PLATFORM = compat.system + '-' + compat.architecture
-PLATFORM = _PLATFORM
+PLATFORM = compat.system + '-' + compat.architecture
 # Include machine name in path to bootloader for some machines (e.g., 'arm'). Explicitly avoid doing this on macOS,
 # where we keep universal2 bootloaders in Darwin-64bit folder regardless of whether we are on x86_64 or arm64.
 if compat.machine and not compat.is_darwin:
-    PLATFORM = _PLATFORM + '-' + compat.machine
+    PLATFORM += '-' + compat.machine
 # Similarly, disambiguate musl Linux from glibc Linux.
 if compat.is_musl:
-    PLATFORM = _PLATFORM + '-musl'
+    PLATFORM += '-musl'

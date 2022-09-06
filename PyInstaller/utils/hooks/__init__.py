@@ -18,7 +18,7 @@ import textwrap
 import fnmatch
 from pathlib import Path
 from collections import deque
-from typing import Callable, Dict, Iterable, List, Tuple, Union
+from typing import Callable
 
 import pkg_resources
 
@@ -29,19 +29,6 @@ from PyInstaller.exceptions import ExecCommandFailed
 from PyInstaller.utils.hooks.win32 import \
     get_pywin32_module_file_attribute  # noqa: F401
 from PyInstaller import isolated
-
-if sys.version_info >= (3, 9):
-    _StrOrBytesPath = Union[str, bytes, os.PathLike[str], os.PathLike[bytes]]
-else:
-    _StrOrBytesPath = Union[str, bytes, os.PathLike]
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-    _OnError = Literal["ignore", "warn once", "warn", "raise"]
-else:
-    _OnError = str
-
-_Environ = Union[Dict[str, str], Iterable[Tuple[str, str]]]
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +42,7 @@ PY_IGNORE_EXTENSIONS = set(compat.ALL_SUFFIXES)
 #
 # For example the 'wx' module needs variable 'wxpubsub'. This tells PyInstaller which protocol of the wx module
 # should be bundled.
-hook_variables: Dict[str, str] = {}
+hook_variables = {}
 
 
 def __exec_python_cmd(cmd, env=None, capture_stdout=True):
@@ -140,7 +127,7 @@ def __exec_script(script_filename, *args, env=None, capture_stdout=True):
     return __exec_python_cmd(cmd, env=env, capture_stdout=capture_stdout)
 
 
-def exec_script(script_filename: _StrOrBytesPath, *args: str, env: _Environ | None = None):
+def exec_script(script_filename: str | bytes | os.PathLike, *args: str, env: dict | list | None = None):
     """
     Executes a Python script in an externally spawned interpreter, and returns anything that was emitted to the standard
     output as a single string.
@@ -151,7 +138,7 @@ def exec_script(script_filename: _StrOrBytesPath, *args: str, env: _Environ | No
     return __exec_script(script_filename, *args, env=env, capture_stdout=True)
 
 
-def exec_script_rc(script_filename: _StrOrBytesPath, *args: str, env: _Environ | None = None):
+def exec_script_rc(script_filename: str | bytes | os.PathLike, *args: str, env: dict | list | None = None):
     """
     Executes a Python script in an externally spawned interpreter, and returns the exit code.
 
@@ -186,7 +173,7 @@ def eval_statement(statement: str):
     return eval(txt)
 
 
-def eval_script(script_filename: _StrOrBytesPath, *args: str, env: _Environ | None = None):
+def eval_script(script_filename: str | bytes | os.PathLike, *args: str, env: dict | list | None = None):
     txt = exec_script(script_filename, *args, env=env).strip()
     if not txt:
         # Return an empty string, which is "not true" but is iterable.
@@ -412,7 +399,7 @@ def get_module_file_attribute(package: str):
 
 
 def is_module_satisfies(
-    requirements: Iterable[str] | pkg_resources.Requirement,
+    requirements: list | pkg_resources.Requirement,
     version: str | pkg_resources.Distribution | None = None,
     version_attr: str = "__version__",
 ):
@@ -617,7 +604,7 @@ def get_package_paths(package: str):
 def collect_submodules(
     package: str,
     filter: Callable[[str], bool] = lambda name: True,
-    on_error: _OnError = "warn once",
+    on_error: str = "warn once",
 ):
     """
     List all submodules of a given package.
@@ -672,7 +659,7 @@ def collect_submodules(
         return []
 
     # Determine the filesystem path(s) to the specified package.
-    package_submodules: List[str] = []
+    package_submodules = []
 
     todo = deque()
     todo.append(package)
@@ -699,8 +686,8 @@ def collect_submodules(
 
 # This function is called in an isolated sub-process via `isolated.Python.call`.
 def _collect_submodules(name, on_error):
-    import pkgutil
     import sys
+    import pkgutil
     from traceback import format_exception_only
 
     from PyInstaller.utils.hooks import logger
@@ -791,7 +778,7 @@ def collect_dynamic_libs(package: str, destdir: object | None = None):
         return []
 
     pkg_dirs = get_all_package_paths(package)
-    dylibs: List[Tuple[str, str]] = []
+    dylibs = []
     for pkg_dir in pkg_dirs:
         pkg_base = package_base_path(pkg_dir, package)
         # Recursively glob for all file patterns in the package directory
@@ -814,9 +801,9 @@ def collect_dynamic_libs(package: str, destdir: object | None = None):
 def collect_data_files(
     package: str,
     include_py_files: bool = False,
-    subdir: _StrOrBytesPath | None = None,
-    excludes: Iterable[str] | None = None,
-    includes: Iterable[str] | None = None,
+    subdir: str | bytes | os.PathLike | None = None,
+    excludes: list | None = None,
+    includes: list | None = None,
 ):
     r"""
     This function produces a list of ``(source, dest)`` non-Python (i.e., data) files that reside in ``package``.
@@ -899,7 +886,7 @@ def collect_data_files(
                     sources.add(g) if is_include else sources.discard(g)
 
     # Obtain all paths for the specified package, and process each path independently.
-    datas: List[Tuple[str, str]] = []
+    datas = []
 
     pkg_dirs = get_all_package_paths(package)
     for pkg_dir in pkg_dirs:
@@ -920,7 +907,9 @@ def collect_data_files(
     return datas
 
 
-def collect_system_data_files(path: str, destdir: _StrOrBytesPath | None = None, include_py_files: bool = False):
+def collect_system_data_files(
+    path: str, destdir: str | bytes | os.PathLike | None = None, include_py_files: bool = False
+):
     """
     This function produces a list of (source, dest) non-Python (i.e., data) files that reside somewhere on the system.
     Its output can be directly assigned to ``datas`` in a hook script.
@@ -932,7 +921,7 @@ def collect_system_data_files(path: str, destdir: _StrOrBytesPath | None = None,
         raise TypeError('path must be a str')
 
     # Walk through all file in the given package, looking for data files.
-    datas: List[Tuple[str, str]] = []
+    datas = []
     for dirpath, dirnames, files in os.walk(path):
         for f in files:
             extension = os.path.splitext(f)[1]
@@ -994,7 +983,7 @@ def copy_metadata(package_name: str, recursive: bool = False):
 
     todo = deque([package_name])
     done = set()
-    out: List[Tuple[str, str]] = []
+    out = []
 
     while todo:
         package_name = todo.pop()
@@ -1177,7 +1166,7 @@ def _memoize(f):
 @_memoize
 def _map_distribution_to_packages():
     logger.info('Determining a mapping of distributions to packages...')
-    dist_to_packages: Dict[str, List[str]] = {}
+    dist_to_packages = {}
     for p in sys.path:
         # The path entry ``''`` refers to the current directory.
         if not p:
@@ -1203,7 +1192,7 @@ def _map_distribution_to_packages():
 # Given a ``package_name`` as a string, this function returns a list of packages needed to satisfy the requirements.
 # This output can be assigned directly to ``hiddenimports``.
 def requirements_for_package(package_name: str):
-    hiddenimports: List[str] = []
+    hiddenimports = []
 
     dist_to_packages = _map_distribution_to_packages()
     for requirement in pkg_resources.get_distribution(package_name).requires():
@@ -1222,10 +1211,10 @@ def requirements_for_package(package_name: str):
 def collect_all(
     package_name: str,
     include_py_files: bool = True,
-    filter_submodules: Callable[[str], bool] | None = None,
-    exclude_datas: Iterable[str] | None = None,
-    include_datas: Iterable[str] | None = None,
-    on_error: _OnError = "warn once",
+    filter_submodules: Callable | None = None,
+    exclude_datas: list | None = None,
+    include_datas: list | None = None,
+    on_error: str = "warn once",
 ):
     """
     Collect everything for a given package name.
@@ -1255,7 +1244,7 @@ def collect_all(
 
         datas, binaries, hiddenimports = collect_all('my_module_name')
     """
-    datas: List[Tuple[str, str]] = []
+    datas = []
     try:
         datas += copy_metadata(package_name)
     except Exception as e:
@@ -1299,8 +1288,8 @@ def collect_entry_point(name: str):
     .. versionadded:: 4.3
     """
     import pkg_resources
-    datas: List[Tuple[str, str]] = []
-    imports: List[str] = []
+    datas = []
+    imports = []
     for dist in pkg_resources.iter_entry_points(name):
         project_name = '' if dist.dist is None else dist.dist.project_name
         datas += copy_metadata(project_name)
@@ -1345,8 +1334,8 @@ def get_hook_config(hook_api: PostGraphAPI, module_name: str, key: str):
 
 def include_or_exclude_file(
     filename: str,
-    include_list: Iterable[str] | None = None,
-    exclude_list: Iterable[str] | None = None,
+    include_list: list | None = None,
+    exclude_list: list | None = None,
 ):
     """
     Generic inclusion/exclusion decision function based on filename and list of include and exclude patterns.
