@@ -73,8 +73,8 @@ _macos_ver = tuple(int(x) for x in platform.mac_ver()[0].split('.')) if is_darwi
 # disabling the compatibility mode and using python that does not properly support Big Sur still leaves find_library()
 # broken (which is a scenario that we ignore at the moment).
 # The same logic applies to macOS 12 (Monterey).
-is_macos_11_compat = bool(_macos_ver and _macos_ver[0:2] == (10, 16))  # Big Sur or newer in compat mode
-is_macos_11_native = bool(_macos_ver and _macos_ver[0:2] >= (11, 0))  # Big Sur or newer in native mode
+is_macos_11_compat = bool(_macos_ver) and _macos_ver[0:2] == (10, 16)  # Big Sur or newer in compat mode
+is_macos_11_native = bool(_macos_ver) and _macos_ver[0:2] >= (11, 0)  # Big Sur or newer in native mode
 is_macos_11 = is_macos_11_compat or is_macos_11_native  # Big Sur or newer
 
 # On different platforms is different file for dynamic python library.

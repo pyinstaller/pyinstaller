@@ -258,7 +258,7 @@ setup(
         **wheel_commands,
         'bdist_wheels': bdist_wheels,
     },
-    packages=find_packages(include=["PyInstaller", "PyInstaller.*", "pyi_splash-stubs"]),
+    packages=find_packages(include=["PyInstaller", "PyInstaller.*"]),
     package_data={
         "PyInstaller": [
             # Include all bootloaders in wheels by default.
