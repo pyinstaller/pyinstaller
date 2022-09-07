@@ -75,7 +75,7 @@ _macos_ver = tuple(int(x) for x in platform.mac_ver()[0].split('.')) if is_darwi
 # The same logic applies to macOS 12 (Monterey).
 is_macos_11_compat = bool(_macos_ver and _macos_ver[0:2] == (10, 16))  # Big Sur or newer in compat mode
 is_macos_11_native = bool(_macos_ver and _macos_ver[0:2] >= (11, 0))  # Big Sur or newer in native mode
-is_macos_11 = bool(is_macos_11_compat or is_macos_11_native)  # Big Sur or newer
+is_macos_11 = is_macos_11_compat or is_macos_11_native  # Big Sur or newer
 
 # On different platforms is different file for dynamic python library.
 # TODO: When removing support for is_py37, the "m" variants can be
@@ -216,7 +216,7 @@ machine = _pyi_machine(platform.machine(), platform.system())
 
 
 # Wine detection and support
-def is_wine_dll(filename: str | bytes | os.PathLike | int):
+def is_wine_dll(filename: str | os.PathLike):
     """
     Check if the given PE file is a Wine DLL (PE-converted built-in, or fake/placeholder one).
 
@@ -283,10 +283,7 @@ def unsetenv(name: str):
 
 
 def exec_command(
-    *cmdargs: str,
-    encoding: str | None = None,
-    raise_enoent: bool | None = None,
-    **kwargs: int | bool | Iterable | None
+    *cmdargs: str, encoding: str | None = None, raise_enoent: bool | None = None, **kwargs: int | bool | list | None
 ):
     """
     Run the command specified by the passed positional arguments, optionally configured by the passed keyword arguments.
@@ -564,7 +561,7 @@ def exec_python_rc(*args: str, **kwargs: str | None):
 # Path handling.
 
 
-def expand_path(path: str | bytes | os.PathLike):
+def expand_path(path: str | os.PathLike):
     """
     Replace initial tilde '~' in path with user's home directory, and also expand environment variables
     (i.e., ${VARNAME} on Unix, %VARNAME% on Windows).
@@ -605,7 +602,7 @@ getsitepackages = getattr(site, 'getsitepackages', getsitepackages)
 
 
 # Wrapper to load a module from a Python source file. This function loads import hooks when processing them.
-def importlib_load_source(name: str, pathname: bytes | str):
+def importlib_load_source(name: str, pathname: str):
     # Import module from a file.
     mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
     return mod_loader.load_module()

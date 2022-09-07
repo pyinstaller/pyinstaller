@@ -127,7 +127,7 @@ def __exec_script(script_filename, *args, env=None, capture_stdout=True):
     return __exec_python_cmd(cmd, env=env, capture_stdout=capture_stdout)
 
 
-def exec_script(script_filename: str | bytes | os.PathLike, *args: str, env: dict | list | None = None):
+def exec_script(script_filename: str | os.PathLike, *args: str, env: dict | None = None):
     """
     Executes a Python script in an externally spawned interpreter, and returns anything that was emitted to the standard
     output as a single string.
@@ -138,7 +138,7 @@ def exec_script(script_filename: str | bytes | os.PathLike, *args: str, env: dic
     return __exec_script(script_filename, *args, env=env, capture_stdout=True)
 
 
-def exec_script_rc(script_filename: str | bytes | os.PathLike, *args: str, env: dict | list | None = None):
+def exec_script_rc(script_filename: str | os.PathLike, *args: str, env: dict | None = None):
     """
     Executes a Python script in an externally spawned interpreter, and returns the exit code.
 
@@ -173,7 +173,7 @@ def eval_statement(statement: str):
     return eval(txt)
 
 
-def eval_script(script_filename: str | bytes | os.PathLike, *args: str, env: dict | list | None = None):
+def eval_script(script_filename: str | os.PathLike, *args: str, env: dict | None = None):
     txt = exec_script(script_filename, *args, env=env).strip()
     if not txt:
         # Return an empty string, which is "not true" but is iterable.
@@ -757,7 +757,7 @@ PY_DYLIB_PATTERNS = [
 ]
 
 
-def collect_dynamic_libs(package: str, destdir: object | None = None):
+def collect_dynamic_libs(package: str, destdir: str | None = None):
     """
     This function produces a list of (source, dest) of dynamic library files that reside in package. Its output can be
     directly assigned to ``binaries`` in a hook script. The package parameter must be a string which names the package.
@@ -801,7 +801,7 @@ def collect_dynamic_libs(package: str, destdir: object | None = None):
 def collect_data_files(
     package: str,
     include_py_files: bool = False,
-    subdir: str | bytes | os.PathLike | None = None,
+    subdir: str | os.PathLike | None = None,
     excludes: list | None = None,
     includes: list | None = None,
 ):
@@ -907,9 +907,7 @@ def collect_data_files(
     return datas
 
 
-def collect_system_data_files(
-    path: str, destdir: str | bytes | os.PathLike | None = None, include_py_files: bool = False
-):
+def collect_system_data_files(path: str, destdir: str | os.PathLike | None = None, include_py_files: bool = False):
     """
     This function produces a list of (source, dest) non-Python (i.e., data) files that reside somewhere on the system.
     Its output can be directly assigned to ``datas`` in a hook script.
