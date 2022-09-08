@@ -172,7 +172,7 @@ def is_alive():
 
 
 @_check_connection
-def update_text(msg):
+def update_text(msg: str):
     """
     Updates the text on the splash screen window.
 

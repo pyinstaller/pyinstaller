@@ -33,6 +33,7 @@ a conditional clause::
 Packages are all referenced by the *distribution name* you use to install it, rather than the *package name* you import
 it with. I.e., use ``distribution("pillow")`` instead of ``distribution("PIL")`` or use ``package_distribution("PIL")``.
 """
+from __future__ import annotations
 
 import fnmatch
 import json
@@ -81,7 +82,7 @@ class Distribution:
     This class is not intended to be constructed directly by users. Rather use :meth:`distribution` or
     :meth:`package_distribution` to provide one for you.
     """
-    def __init__(self, json_path):
+    def __init__(self, json_path: str):
         try:
             self._json_path = Path(json_path)
             assert self._json_path.exists()
@@ -92,11 +93,11 @@ class Distribution:
             )
 
         # Everything we need (including this distribution's name) is kept in the metadata json.
-        self.raw = json.loads(self._json_path.read_text())
+        self.raw: dict = json.loads(self._json_path.read_text())
 
         # Unpack the more useful contents of the json.
-        self.name = self.raw["name"]
-        self.version = self.raw["version"]
+        self.name: str = self.raw["name"]
+        self.version: str = self.raw["version"]
         self.files = [PackagePath(i) for i in self.raw["files"]]
         self.dependencies = self._init_dependencies()
         self.packages = self._init_package_names()
@@ -138,7 +139,7 @@ class Distribution:
         return packages
 
     @classmethod
-    def from_name(cls, name):
+    def from_name(cls, name: str):
         """
         Get distribution information for a given distribution **name** (i.e., something you would ``conda install``).
 
@@ -151,7 +152,7 @@ class Distribution:
         )
 
     @classmethod
-    def from_package_name(cls, name):
+    def from_package_name(cls, name: str):
         """
         Get distribution information for a **package** (i.e., something you would import).
 
@@ -187,7 +188,7 @@ class PackagePath(_PackagePath):
         return Path(sys.prefix) / self
 
 
-def walk_dependency_tree(initial: str, excludes: Iterable[str] = None) -> dict:
+def walk_dependency_tree(initial: str, excludes: Iterable[str] | None = None):
     """
     Collect a :class:`Distribution` and all direct and indirect dependencies of that distribution.
 
@@ -244,7 +245,7 @@ def _iter_distributions(name, dependencies, excludes):
         return [Distribution.from_name(name)]
 
 
-def requires(name: str, strip_versions=False) -> List[str]:
+def requires(name: str, strip_versions: bool = False) -> List[str]:
     """
     List requirements of a distribution.
 
@@ -261,7 +262,7 @@ def requires(name: str, strip_versions=False) -> List[str]:
     return distribution(name).raw["depends"]
 
 
-def files(name: str, dependencies=False, excludes=None) -> List[PackagePath]:
+def files(name: str, dependencies: bool = False, excludes: list | None = None) -> List[PackagePath]:
     """
     List all files belonging to a distribution.
 
@@ -288,7 +289,7 @@ else:
     lib_dir = PackagePath("lib")
 
 
-def collect_dynamic_libs(name: str, dest: str = ".", dependencies: bool = True, excludes: Iterable[str] = None) -> List:
+def collect_dynamic_libs(name: str, dest: str = ".", dependencies: bool = True, excludes: Iterable[str] | None = None):
     """
     Collect DLLs for distribution **name**.
 

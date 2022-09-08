@@ -11,6 +11,7 @@
 """
 Main command-line interface to PyInstaller.
 """
+from __future__ import annotations
 
 import argparse
 import os
@@ -146,7 +147,7 @@ def generate_parser() -> _PyiArgumentParser:
     return parser
 
 
-def run(pyi_args=None, pyi_config=None):
+def run(pyi_args: list | None = None, pyi_config: dict | None = None):
     """
     pyi_args     allows running PyInstaller programmatically without a subprocess
     pyi_config   allows checking configuration once when running multiple tests
