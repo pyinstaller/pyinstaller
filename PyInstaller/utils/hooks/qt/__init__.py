@@ -307,11 +307,11 @@ class QtLibraryInfo:
         if short_module_name in self.python_modules:
             qt_module_info = self.python_modules[short_module_name]
 
-            # If there is a python extension module associated with Qt module, add it to hiddenimports
-            if qt_module_info.module:
-                hiddenimports.add(self.namespace + "." + qt_module_info.module)
+            # NOTE: no need to add a hiddenimport here, because this is the module under consideration.
+
             # Add plugins
             plugin_types.update(qt_module_info.plugins)
+
             # Add translation base name
             if qt_module_info.translation:
                 translation_base_names.add(qt_module_info.translation)
@@ -382,20 +382,33 @@ class QtLibraryInfo:
                     lib_name
                 )
 
-                # Analyze the linked shared libraries for its dependencies.
-                imported_libraries.update(bindepend.getImports(imported_library))
-
-                # Look up associated plugins and translations
+                # Look up associated module info
                 qt_module_info = self.shared_libraries[lib_name]
 
-                # If there is a python extension module associated with Qt module, add it to hiddenimports
+                # If there is a python extension module associated with Qt module, add it to hiddenimports. Since this
+                # means that we (most likely) have a hook available for that module, we can avoid analyzing the shared
+                # library itself (i.e., stop the recursive analysis), because this will be done by the corresponding
+                # hook.
                 if qt_module_info.module:
-                    hiddenimports.add(self.namespace + "." + qt_module_info.module)
+                    if qt_module_info.module == short_module_name:
+                        # The one exception is if we are analyzing shared library associated with the input module; in
+                        # that case, avoid adding a hidden import and analyze the library's link-time dependencies. We
+                        # do not need to worry about plugins and translations for this particular module, because those
+                        # have been handled at the beginning of this function.
+                        imported_libraries.update(bindepend.getImports(imported_library))
+                    else:
+                        hiddenimports.add(self.namespace + "." + qt_module_info.module)
+                    continue
+
                 # Add plugins
                 plugin_types.update(qt_module_info.plugins)
+
                 # Add translation base name
                 if qt_module_info.translation:
                     translation_base_names.add(qt_module_info.translation)
+
+                # Analyze the linked shared libraries for its dependencies (recursive analysis).
+                imported_libraries.update(bindepend.getImports(imported_library))
 
         # Collect plugin files.
         binaries = []
