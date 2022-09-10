@@ -18,6 +18,7 @@
 
 import atexit
 import os
+import sys
 import shutil
 import tempfile
 
@@ -35,6 +36,17 @@ try:
     atexit.register(shutil.rmtree, supportdir, ignore_errors=True)
 except OSError:
     pass
+
+# The following block of code is necessary because currently we have no guarantee that the pyi_rth_win32api run-time
+# hook is ran before this one. Similarly to that runtime hook, we need to set path to pywintypes3X.dll and import
+# pywintypes module, which results in pywintypes3X.dll being loaded. This in turn ensures that when win32api extension
+# module is loaded,  pywintypes3X.dll is already resolved and loaded (in this case, win32com imports win32api).
+pywin32_system32_path = os.path.join(sys._MEIPASS, 'pywin32_system32')
+if os.path.isdir(pywin32_system32_path) and pywin32_system32_path not in sys.path:
+    sys.path.append(pywin32_system32_path)
+del pywin32_system32_path
+
+import pywintypes  # noqa: F401, E402
 
 # Override the default path to gen_py cache.
 import win32com  # noqa: E402
