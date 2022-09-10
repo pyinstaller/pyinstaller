@@ -78,7 +78,7 @@ jobs:
       - name: Install PyInstaller
         run: |
           # Update pip.
-          python -m pip install -U pip setuptools wheel
+          python -m pip install --upgrade pip setuptools wheel
 
           # Compile bootloader
           cd bootloader
@@ -93,13 +93,13 @@ jobs:
 
       - name: Install test dependencies (tools)
         run: |
-          pip install --progress-bar=off -U -r tests/requirements-tools.txt
+          pip install --progress-bar=off --upgrade --requirement tests/requirements-tools.txt
 
       - name: Install test dependencies (libraries)
         id: install_libraries
         if: ${{ !endsWith(matrix.python-version, '-dev') }}
         run: |
-          pip install --progress-bar=off -U -r tests/requirements-libraries.txt
+          pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
 
       - name: Set up extra environment variables (non-Windows)
         if: ${{ !startsWith(matrix.os, 'windows') }}
