@@ -1,4 +1,0 @@
-(Windows) Attempt to extend DLL search paths with directories found in
-the `PATH` environment variable and by tracking calls to the
-`os.add_dll_directory` function during import of the packages in
-the isolated sub-process that performs the binary dependency scanning.

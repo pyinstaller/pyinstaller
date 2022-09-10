@@ -15,6 +15,92 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.4 (2022-09-10)
+-----------------
+
+Features
+~~~~~~~~
+
+* (Windows) When collecting a DLL that was discovered via link-time
+  dependency analysis of a collected binary/extension, attempt to preserve
+  its parent directory structure instead of collecting it into application's
+  top-level directory. This aims to preserve the parent directory structure
+  of DLLs bundled with python packages in PyPI wheels, while the DLLs
+  collected from system directories (as well as from ``Library\bin``
+  directory of the Anaconda's environment) are still collected into
+  top-level application directory. (:issue:`7028`)
+* Add support for ``setuptools``-provided ``distutils``, available since
+  ``setuptools >= 60.0``. (:issue:`7075`)
+* Implement a generic file filtering decision function for use in hooks,
+  based on the source filename and optional inclusion and exclusion pattern
+  list (:func:`PyInstaller.utils.hooks.include_or_exclude_file`).
+  (:issue:`7040`)
+* Rework the module exclusion mechanism. The excluded module entries,
+  specified via ``excludedimports`` list in the hooks, are now used to
+  suppress module imports from corresponding nodes *during modulegraph
+  construction*, rather than to remove the nodes from the graph as a
+  post-processing step. This should make the module exclusion more robust,
+  but the main benefit is that we avoid running (potentially many and
+  potentially costly) hooks for modules that would end up excluded anyway.
+  (:issue:`7066`)
+
+
+Bugfix
+~~~~~~
+
+* (Windows) Attempt to extend DLL search paths with directories found in
+  the `PATH` environment variable and by tracking calls to the
+  `os.add_dll_directory` function during import of the packages in
+  the isolated sub-process that performs the binary dependency scanning.
+  (:issue:`6924`)
+* (Windows) Ensure that ANGLE DLLs (``libEGL.dll`` and ``libGLESv2.dll``)
+  are collected when using Anaconda-installed ``PyQt5`` and ``Qt5``.
+  (:issue:`7029`)
+* Fix :class:`AssertionError` during build when analysing a ``.pyc`` file
+  containing more that 255 variable names followed by an import statement all
+  in
+  the same namespace. (:issue:`7055`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* (Windows) PyInstaller now attempts to preserve parent directory structure
+  of DLLs that are collected from python packages (e.g., bundled with
+  packages in PyPI wheels) instead of collecting them to the top-level
+  application directory. This behavior might be incompatible with 3rd
+  party hooks that assume the old behavior, and may result in duplication
+  of DLL files or missing DLLs in hook-provided runtime search paths.
+  (:issue:`7028`)
+
+
+Hooks
+~~~~~
+
+* Implement new ``gstreamer`` hook configuration group with
+  ``include_plugins`` and ``exclude_plugins`` options that enable control
+  over GStreamer plugins collected by the ``gi.repository.Gst`` hook.
+  (:issue:`7040`)
+* Provide hooks for additional ``gstreamer`` modules provided via
+  GObject introspection (``gi``) bindings: ``gi.repository.GstAllocators``,
+  ``gi.repository.GstApp``, ``gi.repository.GstBadAudio``,
+  ``gi.repository.GstCheck``,
+  ``gi.repository.GstCodecs``, ``gi.repository.GstController``,
+  ``gi.repository.GstGL``,
+  ``gi.repository.GstGLEGL``, ``gi.repository.GstGLWayland``,
+  ``gi.repository.GstGLX11``,
+  ``gi.repository.GstInsertBin``, ``gi.repository.GstMpegts``,
+  ``gi.repository.GstNet``,
+  ``gi.repository.GstPlay``, ``gi.repository.GstPlayer``,
+  ``gi.repository.GstRtp``,
+  ``gi.repository.GstRtsp``, ``gi.repository.GstRtspServer``,
+  ``gi.repository.GstSdp``,
+  ``gi.repository.GstTranscoder``, ``gi.repository.GstVulkan``,
+  ``gi.repository.GstVulkanWayland``,
+  ``gi.repository.GstVulkanXCB``, and ``gi.repository.GstWebRTC``.
+  (:issue:`7074`)
+
+
 5.3 (2022-07-30)
 -----------------
 

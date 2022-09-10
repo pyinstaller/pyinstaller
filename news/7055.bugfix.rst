@@ -1,3 +1,0 @@
-Fix :class:`AssertionError` during build when analysing a ``.pyc`` file
-containing more that 255 variable names followed by an import statement all in
-the same namespace.
