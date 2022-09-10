@@ -26,7 +26,7 @@ jobs:
         python-version: 3.8
 
     - name: Install dependencies
-      run: pip install -U flake8 wheel setuptools yapf==0.32.0 toml
+      run: pip install --upgrade flake8 wheel setuptools yapf==0.32.0 toml
 
     - name: Test that yapf has been applied
       # If this check fails for your PR, run `yapf -rip .`
