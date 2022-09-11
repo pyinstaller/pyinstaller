@@ -1,2 +1,0 @@
-(Windows) Fix run-time error raised by ``pyi_rth_win32comgenpy``, the run-time
-hook for ``win32com``.

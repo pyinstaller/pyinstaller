@@ -15,6 +15,17 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.4.1 (2022-09-11)
+-------------------
+
+Bugfix
+~~~~~~
+
+* (Windows) Fix run-time error raised by ``pyi_rth_win32comgenpy``, the
+  run-time
+  hook for ``win32com``. (:issue:`7079`)
+
+
 5.4 (2022-09-10)
 -----------------
 
