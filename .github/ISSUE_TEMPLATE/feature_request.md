@@ -11,8 +11,7 @@ assignees: ''
 Welcome to the PyInstaller issue tracker! Before creating an issue, please heed the following:
 
 1. This tracker should only be used to report bugs and request features / enhancements to PyInstaller
-    - For questions and general support, use the mailing list, see
-	  <http://www.pyinstaller.org/support.html#mailing-list>
+    - For questions and general support, use the discussions forum.
 2. Use the search function before creating a new issue. Duplicates will be closed and directed to
    the original discussion.
 -->
