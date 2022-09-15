@@ -1,6 +1,6 @@
 ---
 name: Open a blank issue.
-about: ''
+about: 'Use this if none of the above templates fit your needs.'
 title: ''
 labels: triage
 assignees: ''
