@@ -185,18 +185,15 @@ def hook(hook_api):
     if backends_method is None:
         backends_method = 'auto'  # default method
 
-    _method_names = {
-        'auto': 'automatic discovery of used backends',
-        'all': 'collection of all importable backends',
-    }
-    logger.info("Matplotlib backend selection method: %s", _method_names.get(backends_method, 'user-provided name(s)'))
-
     # Select backend(s)
     if backends_method == 'auto':
+        logger.info("Matplotlib backend selection method: automatic discovery of used backends")
         backend_names = _autodetect_used_backends(hook_api)
     elif backends_method == 'all':
+        logger.info("Matplotlib backend selection method: collection of all importable backends")
         backend_names = _collect_all_importable_backends(hook_api)
     else:
+        logger.info("Matplotlib backend selection method: user-provided name(s)")
         if isinstance(backends_method, str):
             backend_names = [backends_method]
         else:

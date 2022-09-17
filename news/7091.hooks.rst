@@ -1,0 +1,2 @@
+Fix an error raised by the ``matplotlib.backends`` hook when trying to
+specify the list of backends to collect via the hooks configuration.
