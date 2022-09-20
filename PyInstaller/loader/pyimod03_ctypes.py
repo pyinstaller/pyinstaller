@@ -92,6 +92,31 @@ def install():
         ctypes.OleDLL = PyInstallerOleDLL
         ctypes.oledll = ctypes.LibraryLoader(PyInstallerOleDLL)
 
+        try:
+            import ctypes.util
+        except ImportError:
+            # ctypes.util is not included in the frozen application
+            return
+
+        # Same implementation as ctypes.util.find_library, except it prepends sys._MEIPASS to the search directories.
+        def pyinstaller_find_library(name):
+            if name in ('c', 'm'):
+                return ctypes.util.find_msvcrt()
+            # See MSDN for the REAL search order.
+            search_dirs = [sys._MEIPASS] + os.environ['PATH'].split(os.pathsep)
+            for directory in search_dirs:
+                fname = os.path.join(directory, name)
+                if os.path.isfile(fname):
+                    return fname
+                if fname.lower().endswith(".dll"):
+                    continue
+                fname = fname + ".dll"
+                if os.path.isfile(fname):
+                    return fname
+            return None
+
+        ctypes.util.find_library = pyinstaller_find_library
+
 
 # On Mac OS insert sys._MEIPASS in the first position of the list of paths that ctypes uses to search for libraries.
 #
