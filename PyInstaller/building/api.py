@@ -481,8 +481,17 @@ class EXE(Target):
             self.toc.append(("pyi-macos-argv-emulation", "", "OPTION"))
 
         # If the icon path is relative, make it relative to the .spec file.
-        if self.icon and self.icon != "NONE" and not os.path.isabs(self.icon):
-            self.icon = os.path.join(CONF['specpath'], self.icon)
+        def makeabs(path):
+            if os.path.isabs(path):
+                return path
+            else:
+                return os.path.join(CONF['specpath'], path)
+
+        if self.icon and self.icon != "NONE":
+            if isinstance(self.icon, list):
+                self.icon = [makeabs(ic) for ic in self.icon]
+            else:
+                self.icon = [makeabs(self.icon)]
 
         if is_win:
             if not self.exclude_binaries:

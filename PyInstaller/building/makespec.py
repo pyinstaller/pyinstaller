@@ -452,13 +452,14 @@ def __add_options(parser):
     g.add_argument(
         "-i",
         "--icon",
+        action='append',
         dest="icon_file",
         metavar='<FILE.ico or FILE.exe,ID or FILE.icns or Image or "NONE">',
         help="FILE.ico: apply the icon to a Windows executable. FILE.exe,ID: extract the icon with ID from an exe. "
         "FILE.icns: apply the icon to the .app bundle on Mac OS. If an image file is entered that isn't in the "
         "platform format (ico on Windows, icns on Mac), PyInstaller tries to use Pillow to translate the icon into "
         "the correct format (if Pillow is installed). Use \"NONE\" to not apply any icon, thereby making the OS show "
-        "some default (default: apply PyInstaller's icon)",
+        "some default (default: apply PyInstaller's icon). This option can be used multiple times.",
     )
     g.add_argument(
         "--disable-windowed-traceback",
@@ -680,10 +681,13 @@ def main(
     if icon_file:
         # Icon file for Windows.
         # On Windows, the default icon is embedded in the bootloader executable.
-        exe_options += "\n    icon='%s'," % escape_win_filepath(icon_file)
+        if icon_file[0] == 'NONE':
+            exe_options += "\n    icon='NONE',"
+        else:
+            exe_options += "\n    icon=[%s]," % ','.join("'%s'" % escape_win_filepath(ic) for ic in icon_file)
         # Icon file for Mac OS.
         # We need to encapsulate it into apostrofes.
-        icon_file = "'%s'" % icon_file
+        icon_file = "'%s'" % icon_file[0]
     else:
         # On Mac OS, the default icon has to be copied into the .app bundle.
         # The the text value 'None' means - use default icon.

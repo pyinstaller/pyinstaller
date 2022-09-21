@@ -1,0 +1,1 @@
+(Windows) Support embedding multiple icons in the executable.
