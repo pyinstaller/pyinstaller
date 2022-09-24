@@ -46,7 +46,7 @@ from PyInstaller import log as logging
 from PyInstaller.building.datastruct import TOC
 from PyInstaller.compat import (
     BAD_MODULE_TYPES, BINARY_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT, PURE_PYTHON_MODULE_TYPES, PY3_BASE_MODULES,
-    VALID_MODULE_TYPES, importlib_load_source
+    VALID_MODULE_TYPES, importlib_load_source, is_win
 )
 from PyInstaller.depend import bytecode
 from PyInstaller.depend.imphook import AdditionalFilesCache, ModuleHookCache
@@ -880,12 +880,16 @@ def get_bootstrap_modules():
                 # Divert extensions originating from python's lib-dynload directory, to match behavior of #5604.
                 mod_name = os.path.join('lib-dynload', mod_name)
             loader_mods.append((mod_name, mod_file, 'EXTENSION'))
-    # NOTE:These modules should be kept simple without any complicated dependencies.
+    loader_mods.append(('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'))
+    # Loader/bootstrap modules.
+    # NOTE: These modules should be kept simple without any complicated dependencies.
     loader_mods += [
-        ('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'),
         ('pyimod01_archive', os.path.join(loaderpath, 'pyimod01_archive.py'), 'PYMODULE'),
         ('pyimod02_importers', os.path.join(loaderpath, 'pyimod02_importers.py'), 'PYMODULE'),
         ('pyimod03_ctypes', os.path.join(loaderpath, 'pyimod03_ctypes.py'), 'PYMODULE'),
-        ('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'),
     ]
+    if is_win:
+        loader_mods.append(('pyimod04_pywin32', os.path.join(loaderpath, 'pyimod04_pywin32.py'), 'PYMODULE'))
+    # The bootstrap script
+    loader_mods.append(('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'))
     return loader_mods

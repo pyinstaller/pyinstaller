@@ -105,6 +105,11 @@ import pyimod03_ctypes  # noqa: E402
 
 pyimod03_ctypes.install()
 
+# Install the hooks for pywin32 (Windows only)
+if sys.platform.startswith('win'):
+    import pyimod04_pywin32
+    pyimod04_pywin32.install()
+
 # Make .eggs and zipfiles available at runtime
 d = "eggs"
 d = os.path.join(sys._MEIPASS, d)
