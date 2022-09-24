@@ -22,7 +22,6 @@
     'PySide6':    ['pyi_rth_pyside6.py'],
     'PySide6.QtWebEngineCore': ['pyi_rth_pyside6webengine.py'],
     '_tkinter':    ['pyi_rth__tkinter.py'],
-    'win32api':   ['pyi_rth_win32api.py'],
     'win32com':   ['pyi_rth_win32comgenpy.py'],
     'multiprocessing': ['pyi_rth_multiprocessing.py'],
     'setuptools': ['pyi_rth_setuptools.py'],
