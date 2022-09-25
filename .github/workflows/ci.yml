@@ -17,6 +17,9 @@ env:
   # Colored pytest output on CI despite not having a tty
   FORCE_COLOR: 1
 
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
 jobs:
   tests:
     runs-on: ${{ matrix.os }}
