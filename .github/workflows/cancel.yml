@@ -4,8 +4,11 @@ on:
     workflows: ["CI"]
     types:
       - requested
+permissions: {}
 jobs:
   cancel:
+    permissions:
+      actions: write # to cancel/stop running workflows (styfle/cancel-workflow-action)
     runs-on: ubuntu-latest
     steps:
     - uses: styfle/cancel-workflow-action@0.8.0
