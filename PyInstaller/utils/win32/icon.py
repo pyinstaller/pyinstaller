@@ -188,16 +188,12 @@ def CopyIcons(dstpath, srcpath):
 
     if len(srcpath) > 1:
         # More than one icon source given. We currently handle multiple icons by calling CopyIcons_FromIco(), which only
-        # allows .ico. In principle we could accept a mix of .ico and .exe, but it would complicate things. If you need
-        # it, submit a pull request.
+        # allows .ico, but will convert to that format if needed.
         #
         # Note that a ",index" on a .ico is just ignored in the single or multiple case.
         srcs = []
         for s in srcpath:
-            e = os.path.splitext(s[0])[1]
-            if e.lower() != '.ico':
-                raise ValueError('Multiple icons supported only from .ico files')
-            srcs.append(s[0])
+            srcs.append(normalize_icon_type(s[0], ("ico",), "ico", config.CONF["workpath"]))
         return CopyIcons_FromIco(dstpath, srcs)
 
     # Just one source given.
