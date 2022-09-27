@@ -146,12 +146,13 @@ def find_binary_dependencies(binaries, binding_redirects, import_packages):
     from PyInstaller.building.build_main import logger
     from PyInstaller import compat
 
-    # In the case of MS App Store python, add compat.base_prefix to extra library search paths. In addition to
-    # python38.dll (that we manage to resolve by other means, if necessary), this directory also contains
-    # python3.dll that might be required by some 3rd-party extension modules, and would otherwise end up missing
-    # during the dependency analysis.
+    # Extra library search paths (used on Windows to resolve DLL paths).
+    #
+    # Always search `sys.base_prefix`, and search it first. This ensures that we resolve the correct version of
+    # `python3X.dll` and `python3.dll` (a PEP-0384 stable ABI stub that forwards symbols to the fully versioned
+    # `python3X.dll`), regardless of other python installations that might be present in the PATH.
     extra_libdirs = []
-    if compat.is_ms_app_store:
+    if compat.is_win:
         extra_libdirs.append(compat.base_prefix)
 
     # On Windows with python >= 3.8, attempt to track calls to os.add_dll_directory() to obtain DLL search paths that
