@@ -1,0 +1,4 @@
+(Windows) Fix a regression introduced in PyInstaller 5.4 (:issue:`#6925`),
+where incorrect copy of ``python3.dll`` (and consequently an additional,
+incorrect copy of ``python3X.dll`` from the same directory) is collected
+when additional python installations are present in ``PATH``.
