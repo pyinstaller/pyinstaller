@@ -707,12 +707,13 @@ PY_DYLIB_PATTERNS = [
 ]
 
 
-def collect_dynamic_libs(package: str, destdir: str | None = None):
+def collect_dynamic_libs(package: str, destdir: str | None = None, search_patterns: [str] = PY_DYLIB_PATTERNS):
     """
     This function produces a list of (source, dest) of dynamic library files that reside in package. Its output can be
     directly assigned to ``binaries`` in a hook script. The package parameter must be a string which names the package.
 
     :param destdir: Relative path to ./dist/APPNAME where the libraries should be put.
+    :param search_patterns: List of dynamic library filename patterns to collect.
     """
     logger.debug('Collecting dynamic libraries for %s' % package)
 
@@ -732,7 +733,7 @@ def collect_dynamic_libs(package: str, destdir: str | None = None):
     for pkg_dir in pkg_dirs:
         pkg_base = package_base_path(pkg_dir, package)
         # Recursively glob for all file patterns in the package directory
-        for pattern in PY_DYLIB_PATTERNS:
+        for pattern in search_patterns:
             files = Path(pkg_dir).rglob(pattern)
             for source in files:
                 # Produce the tuple ('/abs/path/to/source/mod/submod/file.pyd', 'mod/submod')
