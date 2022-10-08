@@ -1,7 +1,0 @@
-Fix the problem with ``pywin32`` DLLs not being found when importing
-``pywin32`` top-level extension modules, caused by the DLL directory
-structure preservation behavior introduced in :issue:`7028`. Introduce
-a new bootstrap/loader module that adds the ``pywin32_system32``
-directory, if available, to both ``sys.path`` and the DLL search paths,
-in lieu of having to provide a runtime hook script for every single
-top-level extension module from ``pywin32``.

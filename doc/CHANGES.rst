@@ -15,6 +15,42 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.5 (2022-10-08)
+-----------------
+
+Features
+~~~~~~~~
+
+* (Windows) Support embedding multiple icons in the executable. (:issue:`7103`)
+
+
+Bugfix
+~~~~~~
+
+* (Windows) Fix a regression introduced in PyInstaller 5.4 (:issue:`#6925`),
+  where incorrect copy of ``python3.dll`` (and consequently an additional,
+  incorrect copy of ``python3X.dll`` from the same directory) is collected
+  when additional python installations are present in ``PATH``. (:issue:`7102`)
+* (Windows) Provide run-time override for ``ctypes.util.find_library`` that
+  searches ``sys._MEIPASS`` in addition to directories specified in ``PATH``.
+  (:issue:`7097`)
+* Fix the problem with ``pywin32`` DLLs not being found when importing
+  ``pywin32`` top-level extension modules, caused by the DLL directory
+  structure preservation behavior introduced in :issue:`7028`. Introduce
+  a new bootstrap/loader module that adds the ``pywin32_system32``
+  directory, if available, to both ``sys.path`` and the DLL search paths,
+  in lieu of having to provide a runtime hook script for every single
+  top-level extension module from ``pywin32``. (:issue:`7110`)
+
+
+Hooks
+~~~~~
+
+* Fix an error raised by the ``matplotlib.backends`` hook when trying to
+  specify the list of backends to collect via the hooks configuration.
+  (:issue:`7091`)
+
+
 5.4.1 (2022-09-11)
 -------------------
 

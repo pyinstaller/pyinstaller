@@ -1,2 +1,0 @@
-(Windows) Provide run-time override for ``ctypes.util.find_library`` that
-searches ``sys._MEIPASS`` in addition to directories specified in ``PATH``.
