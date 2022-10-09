@@ -46,7 +46,7 @@ pyside6==6.3.2; (sys_platform != 'darwin' and sys_platform != 'linux') or python
 pyqt5==5.15.7; python_version < '3.10'
 pyqtwebengine==5.15.6; python_version < '3.10'
 pyqt6==6.4.0  # PyQt6 Qt6 bindings
-pyqt6-qt6==6.3.2  # Qt6 binaries (keep in sync with pyqt6 version!)
+pyqt6-qt6==6.4.0  # Qt6 binaries (keep in sync with pyqt6 version!)
 pyqt6-webengine==6.3.1  # PyQt6 QtWebEngine bindings
 pyqt6-webengine-qt6==6.3.2  # Qt6 QtWebEngine binaries
 python-dateutil==2.8.2
