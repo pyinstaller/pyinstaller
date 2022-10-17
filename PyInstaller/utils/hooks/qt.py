@@ -727,7 +727,13 @@ def get_qt_qml_files(qt_library_info):
     #
     # https://github.com/pyinstaller/pyinstaller/pull/3229#issuecomment-359735031
     # https://github.com/pyinstaller/pyinstaller/issues/3864
-    qmldir = qt_library_info.location['Qml2ImportsPath']
+    #
+    # In Qt 6, Qml2ImportsPath was deprecated in favor of QmlImportsPath. The former is not available in PySide6
+    # 6.4.0 anymore (but is in PyQt6 6.4.
+    if 'QmlImportsPath' in qt_library_info.location:
+        qmldir = qt_library_info.location['QmlImportsPath']
+    else:
+        qmldir = qt_library_info.location['Qml2ImportsPath']
     if not qmldir or not os.path.exists(qmldir):
         logger.warning(
             'QML directory for %s, %r, does not exist. QML files not packaged.', qt_library_info.namespace, qmldir
