@@ -1,5 +1,5 @@
 /* zlib.h -- interface of the 'zlib' general purpose compression library
-  version 1.2.12, March 11th, 2022
+  version 1.2.13, October 13th, 2022
 
   Copyright (C) 1995-2022 Jean-loup Gailly and Mark Adler
 
@@ -37,11 +37,11 @@
 extern "C" {
 #endif
 
-#define ZLIB_VERSION "1.2.12"
-#define ZLIB_VERNUM 0x12c0
+#define ZLIB_VERSION "1.2.13"
+#define ZLIB_VERNUM 0x12d0
 #define ZLIB_VER_MAJOR 1
 #define ZLIB_VER_MINOR 2
-#define ZLIB_VER_REVISION 12
+#define ZLIB_VER_REVISION 13
 #define ZLIB_VER_SUBREVISION 0
 
 /*
@@ -1437,7 +1437,7 @@ ZEXTERN z_size_t ZEXPORT gzfread OF((voidp buf, z_size_t size, z_size_t nitems,
 
      In the event that the end of file is reached and only a partial item is
    available at the end, i.e. the remaining uncompressed data length is not a
-   multiple of size, then the final partial item is nevetheless read into buf
+   multiple of size, then the final partial item is nevertheless read into buf
    and the end-of-file flag is set.  The length of the partial item read is not
    provided, but could be inferred from the result of gztell().  This behavior
    is the same as the behavior of fread() implementations in common libraries,
@@ -1913,7 +1913,7 @@ ZEXTERN int            ZEXPORT inflateSyncPoint OF((z_streamp));
 ZEXTERN const z_crc_t FAR * ZEXPORT get_crc_table    OF((void));
 ZEXTERN int            ZEXPORT inflateUndermine OF((z_streamp, int));
 ZEXTERN int            ZEXPORT inflateValidate OF((z_streamp, int));
-ZEXTERN unsigned long  ZEXPORT inflateCodesUsed OF ((z_streamp));
+ZEXTERN unsigned long  ZEXPORT inflateCodesUsed OF((z_streamp));
 ZEXTERN int            ZEXPORT inflateResetKeep OF((z_streamp));
 ZEXTERN int            ZEXPORT deflateResetKeep OF((z_streamp));
 #if defined(_WIN32) && !defined(Z_SOLO)
