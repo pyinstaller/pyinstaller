@@ -435,6 +435,7 @@ hooks.
 .. autofunction:: collect_entry_point
 .. autofunction:: get_homebrew_path
 .. autofunction:: include_or_exclude_file
+.. autofunction:: collect_delvewheel_libs_directory
 
 
 Support for Conda

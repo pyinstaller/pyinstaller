@@ -1369,6 +1369,73 @@ def include_or_exclude_file(
     return True
 
 
+def collect_delvewheel_libs_directory(package_name, libdir_name=None, datas=None, binaries=None):
+    """
+    Collect data files and binaries from the .libs directory of a delvewheel-enabled python wheel. Such wheels ship
+    their shared libraries in a .libs directory that is located next to the package directory, and therefore falls
+    outside the purview of the collect_dynamic_libs() utility function.
+
+    Args:
+        package_name:
+            Name of the package (e.g., scipy).
+        libdir_name:
+            Optional name of the .libs directory (e.g., scipy.libs). If not provided, ".libs" is added to
+            ``package_name``.
+        datas:
+            Optional list of datas to which collected data file entries are added. The combined result is retuned
+            as part of the output tuple.
+        binaries:
+            Optional list of binaries to which collected binaries entries are added. The combined result is retuned
+            as part of the output tuple.
+
+    Returns:
+        tuple: A ``(datas, binaries)`` pair that should be assigned to the ``datas`` and ``binaries``, respectively.
+
+    Examples:
+        Collect the ``scipy.libs`` delvewheel directory belonging to the Windows ``scipy`` wheel::
+
+            datas, binaries = collect_delvewheel_libs_directory("scipy")
+
+        When the collected entries should be added to existing ``datas`` and ``binaries`` listst, the following form
+        can be used to avoid using intermediate temporary variables and merging those into existing lists::
+
+            datas, binaries = collect_delvewheel_libs_directory("scipy", datas=datas, binaries=binaries)
+
+    .. versionadded:: 5.6
+    """
+
+    datas = datas or []
+    binaries = binaries or []
+
+    if libdir_name is None:
+        libdir_name = package_name + '.libs'
+
+    # delvewheel is applicable only to Windows wheels
+    if not compat.is_win:
+        return datas, binaries
+
+    # Get package's parent path
+    pkg_base, pkg_dir = get_package_paths(package_name)
+    pkg_base = Path(pkg_base)
+    libs_dir = pkg_base / libdir_name
+
+    if not libs_dir.is_dir():
+        return datas, binaries
+
+    # Collect all dynamic libs - collect them as binaries in order to facilitate proper binary dependency analysis
+    # (for example, to ensure that system-installed VC runtime DLLs are collected, if needed).
+    # As of PyInstaller 5.4, this should be safe (should not result in duplication), because binary dependency
+    # analysis attempts to preserve the DLL directory structure.
+    binaries += [(str(dll_file), str(dll_file.parent.relative_to(pkg_base))) for dll_file in libs_dir.glob('*.dll')]
+
+    # Collect the .load-order file; strictly speaking, this should be necessary only under python < 3.8, but let us
+    # collect it for completeness sake.
+    datas += [(str(load_order_file), str(load_order_file.parent.relative_to(pkg_base)))
+              for load_order_file in libs_dir.glob('.load-order*')]
+
+    return datas, binaries
+
+
 if compat.is_pure_conda:
     from PyInstaller.utils.hooks import conda as conda_support  # noqa: F401
 elif compat.is_conda:
