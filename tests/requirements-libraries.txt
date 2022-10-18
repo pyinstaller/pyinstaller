@@ -27,7 +27,7 @@ Django==2.1.8  # pyup: ignore
 # These packages work with no (known) issues.
 babel==2.10.3
 future==0.18.2
-gevent==22.8.0
+gevent==22.10.1
 ipython==8.5.0; python_version >= '3.8'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
@@ -48,10 +48,10 @@ requests==2.28.1
 scipy==1.9.2; python_version >= '3.8'
 # simplejson is used for text_c_extension
 simplejson==3.17.6
-sphinx==5.2.3
+sphinx==5.3.0
 # Required for test_namespace_package
 sqlalchemy==1.4.41
-zope.interface==5.4.0
+zope.interface==5.5.0
 Pillow==9.2.0
 
 
@@ -59,7 +59,7 @@ Pillow==9.2.0
 # -------------------------------------------------------
 
 # numpy dropped support for python 3.7 as of 1.22
-numpy==1.23.3; python_version >= '3.8'
+numpy==1.23.4; python_version >= '3.8'
 numpy==1.21.5; python_version == '3.7'  # pyup: ignore
 
 
