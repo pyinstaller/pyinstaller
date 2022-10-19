@@ -12,12 +12,14 @@
 # Tests for pkgutil.iter_modules(). The test attempts to list contents of a package in both unfrozen and frozen version,
 # and compares the obtained lists.
 #
-# We test two packages; altgraph (pure-python) and psutil (contains binary extensions). The extensions are present on
-# filesystem as-is, and are therefore handled by python's FileFinder. The collected .pyc modules, however, are embedded
-# in PYZ archive, and are not visible to standard python's finders/loaders. The exception to that is noarchive mode,
-# where .pyc modules are not collected into archive; as they are present on filesystem as-is, they are again handled
-# directly by python's FileFinder. Therefore, the test is performed both in archive and in noarchive mode, to cover both
-# cases.
+# We test three scenarios; a pure-python top-level package (using json package from stdlib), a pure-python sub-package
+# (using xml.dom package from stdlib), and a package with binary extensions (using psutil).
+#
+# The extensions are present on filesystem as-is, and are therefore handled by python's FileFinder. The collected .pyc
+# modules, however, are embedded in PYZ archive, and are not visible to standard python's finders/loaders. The exception
+# to that is noarchive mode, where .pyc modules are not collected into archive; as they are present on filesystem as-is,
+# they are again handled directly by python's FileFinder. Therefore, each test is performed both in archive and in
+# noarchive mode, to cover both cases.
 
 import os
 
@@ -43,9 +45,9 @@ def _read_results_file(filename):
 @pytest.mark.parametrize(
     'package',
     [
-        'altgraph',  # pure python package
-        'psutil',  # package with extensions
-        'psutil.tests',  # sub-package
+        'json',  # pure python package (stdlib)
+        'xml.dom',  # sub-package (stdlib)
+        'psutil',  # package with extensions (3rd party)
     ]
 )
 @pytest.mark.parametrize('archive', ['archive', 'noarchive'])
@@ -73,10 +75,6 @@ def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder, archive,
         pyi_args=[
             # ensure everything is collected
             '--collect-submodules', package,
-            # however, psutil.tests pulls in pip and wheel, which in turn manage to pull in pyinstaller.exe/__main__ and
-            # break Windows noarchive build. So exclude those explicitly.
-            '--exclude', 'pip',
-            '--exclude', 'wheel',
             # enable/disable noarchive
             *debug_args,
         ],
@@ -101,4 +99,4 @@ def test_pkgutil_iter_modules_resolve_pkg_path(script_dir, tmpdir, pyi_builder):
     if pyi_builder._mode != 'onefile':
         pytest.skip('The test is applicable only to onefile mode.')
     # A single combination (altgraph package, archive mode) is enough to check for proper symlink handling.
-    test_pkgutil_iter_modules('altgraph', script_dir, tmpdir, pyi_builder, archive=True, resolve_pkg_path=True)
+    test_pkgutil_iter_modules('json', script_dir, tmpdir, pyi_builder, archive=True, resolve_pkg_path=True)
