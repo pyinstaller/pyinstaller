@@ -29,10 +29,10 @@ jobs:
         os: ['windows-latest', 'ubuntu-latest', 'macos-11']
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -65,7 +65,7 @@ jobs:
 
       - name: Fetch cache
         id: cache-target
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ env.pip_cache_dir }}
           key: ${{ runner.os }}-${{ matrix.python-version }}
@@ -146,7 +146,7 @@ jobs:
   test-alpine:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: docker build -f alpine.dockerfile -t foo .
       - run: >
           docker run
