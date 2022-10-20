@@ -55,7 +55,9 @@ Main Advantages
 Installation
 ------------
 
-PyInstaller is available on PyPI. You can install it through `pip`::
+PyInstaller is available on PyPI. You can install it through `pip`:
+
+.. code:: bash
 
       pip install pyinstaller
 
@@ -101,7 +103,9 @@ Requirements and Tested Platforms
 Usage
 -----
 
-Basic usage is very simple, just run it against your main script::
+Basic usage is very simple, just run it against your main script:
+
+.. code:: bash
 
       pyinstaller /path/to/yourscript.py
 
