@@ -189,20 +189,23 @@ def _get_paths_for_parent_directory_preservation():
     frozen application's top-level directory.
     """
 
-    # NOTE: using all paths from `sys.path` entries instead of just `site.getsitepackages() implicitly ensures that we
-    # still collect DLLs from python's "DLLs" sub-directory into top-level directory (because "DLLs" directory is among
-    # the listed paths). On the other hand, `site.getsitepackages()` contains only python's top-level directory and its
-    # "lib/site-packages" subdirectory; so binaries from "DLLs" sub-directory would end up in sub-directory, due to
-    # being relative to python's top directory (which we would need to remove from the list).
-    orig_paths = sys.path
-
-    # Explicitly ignore top-level sys.prefix and sys.base_prefix, to prevent accidental matching of unforeseen
-    # auxiliary sub-directories. For example, under Windows anaconda, shared libraries are located in
-    # `sys.base_prefix`/Library/bin (which is not in `sys.path`), but we need to collect those to the top-level
-    # application directory.
+    # Use only site-packages paths. We have no control over contents of `sys.path`, so using all paths from that may
+    # lead to unintended behavior in corner cases. For example, if `sys.path` contained the drive root (see #7028),
+    # all paths that do not match some other sub-path rooted in that drive will end up recognized as relative to the
+    # drive root. In such case, any DLL collected from `c:\Windows\system32` will be collected into `Windows\system32`
+    # sub-directory; ucrt DLLs collected from MSVC or Windows SDK installed in `c:\Program Files\...` will end up
+    # collected into `Program Files\...` subdirectory; etc.
     #
-    # With top-level python directory excluded, we could switch from `sys.path` to `site.getsitepackages()`, but it
-    # is probably better to use `sys.path` lest it contains any extra user-defined paths.
+    # On the other hand, the DLL parent directory preservation is primarily aimed at packages installed via PyPI
+    # wheels, which are typically installed into site-packages. Therefore, limiting the directory preservation for
+    # shared libraries collected from site-packages should do the trick, and should be reasonably safe.
+    import site
+
+    orig_paths = site.getsitepackages()
+    orig_paths.append(site.getusersitepackages())
+
+    # Explicitly excluded paths. `site.getsitepackages` seems to include `sys.prefix`, which we need to exclude, to
+    # avoid issue swith DLLs in its sub-directories.
     excluded_paths = {
         pathlib.Path(sys.base_prefix).resolve(),
         pathlib.Path(sys.prefix).resolve(),
@@ -210,8 +213,10 @@ def _get_paths_for_parent_directory_preservation():
 
     paths = []
     for path in orig_paths:
+        if not path:
+            continue
         path = pathlib.Path(path).resolve()
-        # Filter out non-directories (e.g., /path/to/python3x.zip)
+        # Filter out non-directories (e.g., /path/to/python3x.zip) or non-existent paths
         if not path.is_dir():
             continue
         # Filter out explicitly excluded paths
