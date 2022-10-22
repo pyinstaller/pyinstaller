@@ -231,6 +231,27 @@ def _get_paths_for_parent_directory_preservation():
     return paths
 
 
+def _select_destination_directory(src_filename, parent_dir_preservation_paths):
+    # Special handling for pywin32 on Windows, because its .pyd extensions end up linking each other, but, due to
+    # sys.path modifications the packages perform, they all end up as top-modules and should be collected into
+    # top-level directory... i.e., we must NOT preserve the directory layout in this case.
+    if compat.is_win:
+        # match <...>/site-packages/pythonwin
+        parent_dir = src_filename.parent
+        if parent_dir.name == "pythonwin" and parent_dir.parent in parent_dir_preservation_paths:
+            # Collect into top-level directory.
+            return src_filename.name
+
+    # Check parent directory preservation paths
+    for parent_dir_preservation_path in parent_dir_preservation_paths:
+        if parent_dir_preservation_path in src_filename.parents:
+            # Collect into corresponding sub-directory.
+            return src_filename.relative_to(parent_dir_preservation_path)
+
+    # Collect into top-level directory.
+    return src_filename.name
+
+
 def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """
     Expand LTOC to include all the closure of binary dependencies.
@@ -270,17 +291,8 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
 
             # Try to preserve parent directory structure, if applicable.
             src_path = pathlib.Path(npth).resolve()
-            for parent_dir_preservation_path in parent_dir_preservation_paths:
-                if parent_dir_preservation_path in src_path.parents:
-                    # Collect into corresponding sub-directory.
-                    rel_lib_path = src_path.relative_to(parent_dir_preservation_path)
-                    lTOC.append((str(rel_lib_path), npth, 'BINARY'))
-                    # TODO: once this codepath is enabled on linux and macOS, add a symlink to the binary into the
-                    # application top-level directory.
-                    break
-            else:
-                # Collect into top-level directory.
-                lTOC.append((lib, npth, 'BINARY'))
+            dst_path = _select_destination_directory(src_path, parent_dir_preservation_paths)
+            lTOC.append((str(dst_path), npth, 'BINARY'))
 
     return lTOC
 
