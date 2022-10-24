@@ -25,5 +25,4 @@
     'win32com':   ['pyi_rth_win32comgenpy.py'],
     'multiprocessing': ['pyi_rth_multiprocessing.py'],
     'setuptools': ['pyi_rth_setuptools.py'],
-    'subprocess': ['pyi_rth_subprocess.py'],
 }
