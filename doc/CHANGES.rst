@@ -15,6 +15,67 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.6 (2022-10-23)
+-----------------
+
+Features
+~~~~~~~~
+
+* Add official support for Python 3.11. (Note that PyInstaller v5.5 is also
+  expected to work but has only been tested with a pre-release of Python 3.11.)
+  (:issue:`6783`)
+* Implement a new hook utility function,
+  :func:`~PyInstaller.utils.hooks.collect_delvewheel_libs_directory`,
+  intended for dealing with external shared library in ``delvewheel``-enabled
+  PyPI
+  wheels for Windows. (:issue:`7170`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) Fix OpenCV (``cv2``) loader error in generated macOS .app
+  bundles, caused by the relocation of package's source .py files.
+  (:issue:`7180`)
+* (Windows) Improve compatibility with ``scipy`` 1.9.2, whose Windows wheels
+  switched to ``delvewheel``, and therefore have shared libraries located in
+  external .libs directory. (:issue:`7168`)
+
+* (Windows) Limit the DLL parent path preservation behavior from :issue:`7028`
+  to files collected from site-packages directories (as returned by
+  :func:`site.getsitepackages` and :func:`site.getusersitepackages`) instead of all
+  paths in :data:`sys.path`, to avoid unintended behavior in corner cases, such as
+  :data:`sys.path` containing the drive root or user's home directory.
+  (:issue:`7155`)
+
+* Fix compatibility with ``PySide6`` 6.4.0, where the deprecated
+  ``Qml2ImportsPath`` location key is not available anymore; use the
+  new ``QmlImportsPath`` key when it is available. (:issue:`7164`)
+* Prevent PyInstaller runtime hook for ``setuptools`` from attempting to
+  override ``distutils`` with ``setuptools``-provided version when
+  ``setuptools`` is collected and its version is lower than 60.0. This
+  both mimics the unfrozen behavior and prevents errors on versions
+  between 50.0 and 60.0, where we do not explicitly collect
+  ``setuptools._distutils``. (:issue:`7172`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* (macOS) In generated macOS .app bundles, the collected source .py files
+  are not relocated from ``Contents/MacOS`` to ``Contents/Resources``
+  anymore, to avoid issues when the path to a .py file is supposed to
+  resolve to the same directory as adjacent binary extensions. On the
+  other hand, this change might result in regressions w.r.t. bundle
+  signing and/or notarization. (:issue:`7180`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Windows) Update the bundled ``zlib`` sources to v1.2.13. (:issue:`7166`)
+
+
 5.5 (2022-10-08)
 -----------------
 

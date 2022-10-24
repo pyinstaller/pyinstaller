@@ -1,3 +1,0 @@
-Implement a new hook utility function, :func:`~PyInstaller.utils.hooks.collect_delvewheel_libs_directory`,
-intended for dealing with external shared library in ``delvewheel``-enabled PyPI
-wheels for Windows.

@@ -1,3 +1,0 @@
-(Windows) Improve compatibility with ``scipy`` 1.9.2, whose Windows wheels 
-switched to ``delvewheel``, and therefore have shared libraries located in 
-external .libs directory.

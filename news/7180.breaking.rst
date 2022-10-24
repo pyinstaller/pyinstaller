@@ -1,6 +1,0 @@
-(macOS) In generated macOS .app bundles, the collected source .py files
-are not relocated from ``Contents/MacOS`` to ``Contents/Resources``
-anymore, to avoid issues when the path to a .py file is supposed to
-resolve to the same directory as adjacent binary extensions. On the
-other hand, this change might result in regressions w.r.t. bundle
-signing and/or notarization.

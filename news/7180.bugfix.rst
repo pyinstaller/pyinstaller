@@ -1,2 +1,0 @@
-(macOS) Fix OpenCV (``cv2``) loader error in generated macOS .app
-bundles, caused by the relocation of package's source .py files.

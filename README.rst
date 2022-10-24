@@ -139,7 +139,7 @@ either ``gcc`` or ``clang``) and zlib's development headers already installed.
 Support
 -------
 
-- Official debugging guide: https://pyinstaller.org/en/v5.5/when-things-go-wrong.html
+- Official debugging guide: https://pyinstaller.org/en/v5.6/when-things-go-wrong.html
 - Assorted user contributed help topics: https://github.com/pyinstaller/pyinstaller/wiki
 - Web based Q&A forums: https://github.com/pyinstaller/pyinstaller/discussions
 - Email based Q&A forums: https://groups.google.com/g/pyinstaller
@@ -153,5 +153,5 @@ in the `Changelog`_ section of the manual.
 
 
 .. _tinyaes: https://github.com/naufraghi/tinyaes-py
-.. _`manual`: https://pyinstaller.org/en/v5.5/
-.. _`Changelog`: https://pyinstaller.org/en/v5.5/CHANGES.html
+.. _`manual`: https://pyinstaller.org/en/v5.6/
+.. _`Changelog`: https://pyinstaller.org/en/v5.6/CHANGES.html
