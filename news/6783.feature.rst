@@ -1,2 +1,0 @@
-Add official support for Python 3.11. (Note that PyInstaller v5.5 is also
-expected to work but has only been tested with a pre-release of Python 3.11.)

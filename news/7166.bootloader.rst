@@ -1,1 +1,0 @@
-(Windows) Update the bundled ``zlib`` sources to v1.2.13.

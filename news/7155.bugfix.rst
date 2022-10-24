@@ -1,5 +1,0 @@
-(Windows) Limit the DLL parent path preservation behavior from :issue:``
-to files collected from site-packages directories (as returned by
-``site.getsitepackages`` and ``site.getusersitepackages``) instead of all paths
-in ``sys.path``, to avoid unintended behavior in corner cases, such as
-``sys.path`` containing the drive root or user's home directory.

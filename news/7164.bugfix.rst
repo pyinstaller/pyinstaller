@@ -1,3 +1,0 @@
-Fix compatibility with ``PySide6`` 6.4.0, where the deprecated
-``Qml2ImportsPath`` location key is not available anymore; use the
-new ``QmlImportsPath`` key when it is available.

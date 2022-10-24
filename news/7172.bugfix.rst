@@ -1,6 +1,0 @@
-Prevent PyInstaller runtime hook for ``setuptools`` from attempting to
-override ``distutils`` with ``setuptools``-provided version when
-``setuptools`` is collected and its version is lower than 60.0. This
-both mimics the unfrozen behavior and prevents errors on versions
-between 50.0 and 60.0, where we do not explicitly collect
-``setuptools._distutils``.
