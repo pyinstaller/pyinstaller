@@ -1,0 +1,3 @@
+(Windows) Fix the problem with ``windowed`` frozen application being unable
+to spawn interactive command prompt console via ``subprocess`` module due
+to interference of the ``subprocess`` runtime hook with stream handles.
