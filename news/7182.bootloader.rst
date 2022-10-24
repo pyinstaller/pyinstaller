@@ -1,0 +1,4 @@
+(Windows) In a ``onefile`` application, avoid passing invalid stream handles
+(the ``INVALID_HANDLE_VALUE`` constant with value ``-1``) to the launched 
+application child process when the standard streams are unavailable (for 
+example, in a windowed/no-console application).
