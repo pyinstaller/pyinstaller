@@ -810,6 +810,24 @@ _pyi_win32_console_ctrl(DWORD dwCtrlType)
     return TRUE;
 }
 
+static HANDLE
+_pyi_get_stream_handle(FILE *stream)
+{
+    HANDLE handle = (void *)_get_osfhandle(fileno(stream));
+    /* When stdin, stdout, and stderr are not associated with a stream (e.g., Windows application
+     * without console), _fileno() returns special value -2. Therefore, call to _get_osfhandle()
+     * returns INVALID_HANDLE_VALUE. If we caled _get_osfhandle() with 0, 1, or 2 instead of the
+     * result of _fileno(), _get_osfhandle() would also return -2 when the file descriptor is
+     * not associated with the stream. But because we take the _fileno() route, we need to handle
+     * only INVALID_HANDLE_VALUE (= -1).
+     * See: https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/get-osfhandle
+     */
+    if (handle == INVALID_HANDLE_VALUE) {
+        return NULL;
+    }
+    return handle;
+}
+
 int
 pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
                        const int argc, char *const argv[])
@@ -839,9 +857,9 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     si.lpTitle = NULL;
     si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
     si.wShowWindow = SW_NORMAL;
-    si.hStdInput = (void*)_get_osfhandle(fileno(stdin));
-    si.hStdOutput = (void*)_get_osfhandle(fileno(stdout));
-    si.hStdError = (void*)_get_osfhandle(fileno(stderr));
+    si.hStdInput = _pyi_get_stream_handle(stdin);
+    si.hStdOutput = _pyi_get_stream_handle(stdout);
+    si.hStdError = _pyi_get_stream_handle(stderr);
 
     VS("LOADER: Creating child process\n");
 
