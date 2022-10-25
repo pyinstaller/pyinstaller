@@ -15,6 +15,16 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.6.1 (2022-10-25)
+-------------------
+
+Bugfix
+~~~~~~
+
+* (macOS) Fix regression in macOS app bundle signing caused by a typo made
+  in :issue:`7180`. (:issue:`7184`)
+
+
 5.6 (2022-10-23)
 -----------------
 
