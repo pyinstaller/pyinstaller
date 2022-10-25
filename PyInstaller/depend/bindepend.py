@@ -237,8 +237,10 @@ def _select_destination_directory(src_filename, parent_dir_preservation_paths):
     # top-level directory... i.e., we must NOT preserve the directory layout in this case.
     if compat.is_win:
         # match <...>/site-packages/pythonwin
+        # The caller might not have resolved the src_filename, so we need to explicitly lower-case the parent_dir.name
+        # before comparing it to account for case variations.
         parent_dir = src_filename.parent
-        if parent_dir.name == "pythonwin" and parent_dir.parent in parent_dir_preservation_paths:
+        if parent_dir.name.lower() == "pythonwin" and parent_dir.parent in parent_dir_preservation_paths:
             # Collect into top-level directory.
             return src_filename.name
 
@@ -290,7 +292,10 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
             seen.add(npth.upper())
 
             # Try to preserve parent directory structure, if applicable.
-            src_path = pathlib.Path(npth).resolve()
+            # NOTE: do not resolve the source path, because on macOS and linux, it may be a versioned .so (e.g.,
+            # libsomething.so.1, pointing at libsomething.so.1.2.3), and we need to collect it under original
+            # name!
+            src_path = pathlib.Path(npth)
             dst_path = _select_destination_directory(src_path, parent_dir_preservation_paths)
             lTOC.append((str(dst_path), npth, 'BINARY'))
 
