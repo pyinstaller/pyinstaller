@@ -263,7 +263,11 @@ class BUNDLE(Target):
         try:
             osxutils.sign_binary(self.name, self.codesign_identity, self.entitlements_file, deep=True)
         except Exception as e:
-            logger.warning("Error while signing the bundle: %s", e)
-            logger.warning("You will need to sign the bundle manually!")
+            # Display a warning or re-raise the error, depending on the environment-variable setting.
+            if os.environ.get("PYINSTALLER_STRICT_BUNDLE_CODESIGN_ERROR", "0") == "0":
+                logger.warning("Error while signing the bundle: %s", e)
+                logger.warning("You will need to sign the bundle manually!")
+            else:
+                raise RuntimeError("Failed to codesign the bundle!") from e
 
         logger.info("Building BUNDLE %s completed successfully.", self.tocbasename)
