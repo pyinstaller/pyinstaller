@@ -1,0 +1,2 @@
+(macOS) Fix regression in macOS app bundle signing caused by a typo made
+in :issue:`7180`.
