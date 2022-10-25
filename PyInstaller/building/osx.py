@@ -194,7 +194,7 @@ class BUNDLE(Target):
             # Add most data files to a list for symlinking later.
             # Exempt python source files from this relocation, because their real path might need to resolve
             # to the directory that also contains the extension module.
-            relocate_file = type == 'DATA' and base_path not in _QT_BASE_PATH
+            relocate_file = typ == 'DATA' and base_path not in _QT_BASE_PATH
             if relocate_file and os.path.splitext(inm)[1].lower() in {'.py', '.pyc'}:
                 relocate_file = False
             if relocate_file:
