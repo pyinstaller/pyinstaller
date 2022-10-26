@@ -32,7 +32,6 @@ RUN apk add linux-headers
 RUN mkdir -p /io/tests
 WORKDIR /io
 COPY tests/requirements-tools.txt tests/
-COPY requirements.txt .
 RUN pip wheel -r tests/requirements-tools.txt -w wheels
 
 # Build a wheel for PyInstaller. Do this last and use as few files as possible to maximize cache-ability.

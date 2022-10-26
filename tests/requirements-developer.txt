@@ -7,8 +7,7 @@
 #   python -m pip install -r tests/requirements-developer.txt
 #   python -m pip install -r tests/requirements-libraries.txt  # extensive
 
-# include PyInstaller's requirements and for base testing
--r ../requirements.txt
+# include requirements for base testing
 -r requirements-tools.txt
 
 ### Helpers for development
