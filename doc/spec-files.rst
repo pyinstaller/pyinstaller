@@ -60,6 +60,7 @@ Only the following command-line options have an effect when building from a spec
 * :option:`--noconfirm`
 * :option:`--ascii`
 * :option:`--clean`
+* :option:`--log-level`
 
 .. _spec-file operations:
 
