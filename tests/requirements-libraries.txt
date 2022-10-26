@@ -11,21 +11,12 @@
 # Backport of importlib.resources for python 3.8 and earlier.
 importlib_resources==5.10.0; python_version < '3.9'
 
-# Needs work
-# ----------
-# These packages, if updated, produce test failures. Work needs to be done on
-# these hooks. Any requirement in this list should be followed by the
-# `# pyup: ignore <https://pyup.io/docs/bot/filter/>`_ comment.
-#
-# - v. 2.2 and above fails.
-Django==2.1.8  # pyup: ignore
-# - v 21.1.0 fails; earlier versions not tested.
-
 
 # Working
 # -------
 # These packages work with no (known) issues.
 babel==2.10.3
+Django==4.1.2; python_version >= '3.8'
 future==0.18.2
 gevent==22.10.1
 ipython==8.5.0; python_version >= '3.8'
