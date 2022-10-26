@@ -9,9 +9,6 @@
 #   python -m pip install -r tests/requirements-tools.txt
 #   python -m pip install -r tests/requirements-libraries.txt  # extensive
 
-# include PyInstaller's requirements
--r ../requirements.txt
-
 # Work-around for a bug in execnet 1.4.1
 execnet >= 1.5.0
 
