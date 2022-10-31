@@ -15,6 +15,19 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.6.2 (2022-10-31)
+-------------------
+
+Bugfix
+~~~~~~
+
+* (Linux, macOS) Fix the regression in shared library collection, where
+  the shared library would end up collected under its fully-versioned
+  .so name (e.g., ``libsomething.so.1.2.3``) instead of its originally
+  referenced name (e.g., ``libsomething.so.1``) due to accidental
+  symbolic link resolution. (:issue:`7189`)
+
+
 5.6.1 (2022-10-25)
 -------------------
 
