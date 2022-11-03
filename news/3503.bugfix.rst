@@ -1,0 +1,6 @@
+(Windows) In ``windowed``/``noconsole`` mode, stop setting ``sys.stdout``
+and ``sys.stderr`` to custom ``NullWriter`` object, and instead leave
+them at ``None``. This matches the behavior of windowed python interpreter
+(``pythonw.exe``) and prevents interoperability issues with code that
+(rightfully) expects the streams to be either ``None`` or objects that
+are fully compatible with ``io.IOBase``.

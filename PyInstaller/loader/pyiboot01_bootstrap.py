@@ -55,34 +55,6 @@ for pth in sys.path:
     python_path.append(os.path.abspath(pth))
     sys.path = python_path
 
-
-# Implement workaround for prints in non-console mode. In non-console mode (with "pythonw"), print randomly fails with
-# "[errno 9] Bad file descriptor" when the printed text is flushed (e.g., buffer full); this is because the sys.stdout
-# object is bound to an invalid file descriptor.
-# Python 3000 has a fix for it (http://bugs.python.org/issue1415), but we feel that a workaround in PyInstaller is a
-# good thing, because most people first encounter this problem with PyInstaller as they do not usually run their code
-# with "pythonw" (and it is difficult to debug, anyway).
-class NullWriter:
-    softspace = 0
-    encoding = 'UTF-8'
-
-    def write(*args):
-        pass
-
-    def flush(*args):
-        pass
-
-    # Some packages are checking if stdout/stderr is available (e.g., youtube-dl). For details, see #1883.
-    def isatty(self):
-        return False
-
-
-# sys.stdout/err is None in GUI mode on Windows.
-if sys.stdout is None:
-    sys.stdout = NullWriter()
-if sys.stderr is None:
-    sys.stderr = NullWriter()
-
 # At least on Windows, Python seems to hook up the codecs on this import, so it is not enough to just package up all
 # the encodings.
 #
