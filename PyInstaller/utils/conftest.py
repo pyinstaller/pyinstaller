@@ -43,8 +43,6 @@ from PyInstaller.utils.win32 import winutils  # noqa: E402
 
 # Timeout for running the executable. If executable does not exit in this time, it is interpreted as a test failure.
 _EXE_TIMEOUT = 3 * 60  # In sec.
-# Number of retries we should attempt if the executable times out.
-_MAX_RETRIES = 2
 # All currently supported platforms
 SUPPORTED_OSES = {"darwin", "linux", "win32"}
 # Have pyi_builder fixure clean-up the temporary directories of successful tests. Controlled by environment variable.
@@ -354,11 +352,7 @@ class AppBuilder:
         args = [prog_name] + args
         # Using sys.stdout/sys.stderr for subprocess fixes printing messages in Windows command prompt. Py.test is then
         # able to collect stdout/sterr messages and display them if a test fails.
-        for _ in range(_MAX_RETRIES):
-            retcode = self._run_executable_(args, exe_path, prog_env, prog_cwd, runtime)
-            if retcode != 1:  # retcode == 1 means a timeout
-                break
-        return retcode
+        return self._run_executable_(args, exe_path, prog_env, prog_cwd, runtime)
 
     def _run_executable_(self, args, exe_path, prog_env, prog_cwd, runtime):
         process = psutil.Popen(
