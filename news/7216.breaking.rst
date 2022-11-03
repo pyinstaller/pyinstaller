@@ -1,0 +1,8 @@
+(Windows) In ``windowed``/``noconsole`` mode, PyInstaller does not set
+``sys.stdout`` and ``sys.stderr`` to custom ``NullWriter`` object anymore,
+but leaves them at ``None``. The new behavior matches that of the windowed
+python interpreter (``pythonw.exe``), but may break the code that uses
+``sys.stdout`` or ``sys.stderr`` without first checking that they are
+available. The code intended to be run frozen in ``windowed``/``noconsole``
+mode should be therefore be validated using the windowed python interpreter
+to catch errors related to console being unavailable.
