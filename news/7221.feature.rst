@@ -1,0 +1,3 @@
+Add the package's location and exact interpreter path to the error message for
+the check for obsolete and PyInstaller-incompatible standard library back-port
+packages (``enum34`` and ``typing``).
