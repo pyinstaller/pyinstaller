@@ -750,15 +750,15 @@ def check_requirements():
 
     for name in ["enum34", "typing"]:
         try:
-            distribution(name)
+            dist = distribution(name)
         except PackageNotFoundError:
-            pass
-        else:
-            raise SystemExit(
-                f"The '{name}' package is an obsolete backport of a standard library package and is "
-                f"incompatible with PyInstaller. Please "
-                f"`{'conda remove' if is_conda else 'pip uninstall'} {name}` then try again."
-            )
+            continue
+        remove = "conda remove" if is_conda else f'"{sys.executable}" -m pip uninstall {name}'
+        raise SystemExit(
+            f"The '{name}' package is an obsolete backport of a standard library package and is incompatible with "
+            f"PyInstaller. Please remove this package (located in {dist.locate_file('')}) using\n    {remove}\n"
+            "then try again."
+        )
 
     # Bail out if binutils is not installed.
     if is_linux and shutil.which("objdump") is None:
