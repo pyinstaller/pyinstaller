@@ -15,7 +15,7 @@ importlib_resources==5.10.0; python_version < '3.9'
 # Working
 # -------
 # These packages work with no (known) issues.
-babel==2.10.3
+babel==2.11.0
 Django==4.1.2; python_version >= '3.8'
 future==0.18.2
 gevent==22.10.1
