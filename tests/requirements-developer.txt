@@ -21,4 +21,4 @@ pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
 wheel>0.24.0  # For creating .whl packages
 twine         # For secure upload of tar.gz to PYPI.
 
-towncrier>=21.3.0    # For creating the change-log file.
+towncrier==22.8.0    # For creating the change-log file.

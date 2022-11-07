@@ -24,8 +24,8 @@ sphinxcontrib-htmlhelp==2.0.0
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
-sphinxcontrib-towncrier==0.2.0a0
-towncrier==21.3.0
+sphinxcontrib-towncrier==0.3.1a3
+towncrier==22.8.0
 typing-extensions==3.10.0.0
 urllib3==1.26.5
 zipp==3.4.1
