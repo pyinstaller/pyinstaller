@@ -14,34 +14,41 @@ Logging module for PyInstaller.
 
 __all__ = ['getLogger', 'INFO', 'WARN', 'DEBUG', 'TRACE', 'ERROR', 'FATAL']
 
+import os
 import logging
 from logging import DEBUG, ERROR, FATAL, INFO, WARN, getLogger
 
 TRACE = logging.TRACE = DEBUG - 5
 logging.addLevelName(TRACE, 'TRACE')
+LEVELS = ('TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
 
 FORMAT = '%(relativeCreated)d %(levelname)s: %(message)s'
-logging.basicConfig(format=FORMAT, level=logging.INFO)
+_env_level = os.environ.get("PYI_LOG_LEVEL", "INFO")
+try:
+    level = getattr(logging, _env_level.upper())
+except AttributeError:
+    raise SystemExit(f"Invalid PYI_LOG_LEVEL value '{_env_level}'. Should be one of {LEVELS}.")
+logging.basicConfig(format=FORMAT, level=level)
 logger = getLogger('PyInstaller')
 
 
 def __add_options(parser):
-    levels = ('TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')
     parser.add_argument(
         '--log-level',
-        choices=levels,
+        choices=LEVELS,
         metavar="LEVEL",
-        default='INFO',
         dest='loglevel',
-        help='Amount of detail in build-time console messages. LEVEL may be one of %s (default: %%(default)s).' %
-        ', '.join(levels),
+        help='Amount of detail in build-time console messages. LEVEL may be one of %s (default: INFO). '
+        'Also settable via and overrides the PYI_LOG_LEVEL environment variable.' % ', '.join(LEVELS),
     )
 
 
 def __process_options(parser, opts):
-    try:
-        level = getattr(logging, opts.loglevel.upper())
-    except AttributeError:
-        parser.error('Unknown log level `%s`' % opts.loglevel)
-    else:
-        logger.setLevel(level)
+    if opts.loglevel:
+        try:
+            level = opts.loglevel.upper()
+            _level = getattr(logging, level)
+        except AttributeError:
+            parser.error('Unknown log level `%s`' % opts.loglevel)
+        logger.setLevel(_level)
+        os.environ["PYI_LOG_LEVEL"] = level

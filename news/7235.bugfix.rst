@@ -1,0 +1,2 @@
+Fix the log level (provided via :option:`--log-level`) being ignored by some
+build steps.
