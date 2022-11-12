@@ -51,6 +51,7 @@
 .. _PyWin32: http://sourceforge.net/projects/pywin32/files/
 .. _Qt: http://www.qt-project.org
 .. _setup_tools: https://pypi.python.org/pypi/setuptools
+.. _`shared COLLECT statement`: https://www.zacoding.com/en/post/pyinstaller-create-multiple-executables/
 .. _`Package resources`: https://pythonhosted.org/setuptools/pkg_resources.html#requirements-parsing
 .. _`Supported Packages`: https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
