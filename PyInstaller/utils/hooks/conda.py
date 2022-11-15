@@ -212,6 +212,13 @@ def walk_dependency_tree(initial: str, excludes: Iterable[str] | None = None):
     while names_to_do:
         # Grab a distribution name from the to-do list.
         name = names_to_do.pop()
+        # Skip the base "python" distribution and its dependencies. These should be collected as a part of the regular
+        # build process, lest we end up with defunct build when no hook uses these conda hook utility functions.
+        # In python 3.10, the "python" distribution on linux and macOS includes a symbolic link
+        #  /path/to/conda/env/lib/python3.1 -> python3.10
+        # which causes all content of the environment's lib directory to be collected as data.
+        if name == 'python':
+            continue
         try:
             # Collect and save it's metadata.
             done[name] = distribution = Distribution.from_name(name)
