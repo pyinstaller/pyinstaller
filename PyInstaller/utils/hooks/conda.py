@@ -308,11 +308,22 @@ def collect_dynamic_libs(name: str, dest: str = ".", dependencies: bool = True, 
     This collects libraries only from Conda's shared ``lib`` (Unix) or ``Library/bin`` (Windows) folders. To collect
     from inside a distribution's installation use the regular :func:`PyInstaller.utils.hooks.collect_dynamic_libs`.
     """
+    DLL_SUFFIXES = ("*.dll", "*.dylib", "*.so", "*.so.*")
     _files = []
     for file in files(name, dependencies, excludes):
-        # A file is classified as a DLL if it lives inside the dedicated ``lib_dir`` DLL folder.
-        if file.parent == lib_dir:
-            _files.append((str(file.locate()), dest))
+        # A file is classified as a dynamic library if:
+        #  1) it lives inside the dedicated ``lib_dir`` DLL folder
+        if file.parent != lib_dir:
+            continue
+        #  2) it is a file (and not a directory or a symbolic link pointing to a directory)
+        resolved_file = file.locate()
+        if not resolved_file.is_file():
+            continue
+        #  3) has a correct suffix
+        if not any([resolved_file.match(suffix) for suffix in DLL_SUFFIXES]):
+            continue
+
+        _files.append((str(resolved_file), dest))
     return _files
 
 

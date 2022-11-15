@@ -1,0 +1,6 @@
+(Anaconda) Fix the ``PyInstaller.utils.hooks.conda.collect_dynamic_libs`` 
+hook utility function to collect only dynamic libraries, by introducing 
+an additional type check (to exclude directories and symbolic links to 
+directories) and additional suffix check (to include only files whose 
+name matches the following patterns: ``*.dll``, ``*.dylib``, ``*.so``, 
+and ``*.so.*``).
