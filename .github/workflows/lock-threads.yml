@@ -1,0 +1,23 @@
+name: Lock Closed Threads
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: lock
+
+jobs:
+  action:
+    if: github.repository_owner == 'pyinstaller'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dessant/lock-threads@v3
+        with:
+          issue-inactive-days: 60
+          pr-inactive-days: 60
