@@ -486,3 +486,15 @@ def test_Qt_QtMultimedia_with_true_property(pyi_builder, QtPyLib):
         app = QtCore.QCoreApplication()
         """.format(QtPyLib), **USE_WINDOWED_KWARG
     )
+
+
+# In PySide6 >= 6.4.0, we need to collect `PySide6.support.deprecated` module for logical operators between Qt key and
+# key modifier enums to work. See #7249.
+@requires('PySide6')
+def test_Qt_PySide6_key_enums(pyi_builder):
+    pyi_builder.test_source(
+        """
+        from PySide6 import QtCore
+        key = QtCore.Qt.AltModifier | QtCore.Qt.Key_D
+        """
+    )
