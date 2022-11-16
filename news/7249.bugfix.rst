@@ -1,0 +1,4 @@
+Ensure that ``PySide6.support.deprecated`` module is collected for
+``PySide6`` 6.4.0 and later in order to enable continued support for
+``|`` and ``&`` operators between Qt key and key modifier enum values
+(e.g., ``QtCore.Qt.Key_D`` and ``QtCore.Qt.AltModifier``).
