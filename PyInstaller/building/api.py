@@ -955,43 +955,52 @@ class MERGE:
             path = os.path.splitext(path)[0]
             if os.path.normcase(path) in self._id_to_path:
                 path = self._id_to_path[os.path.normcase(path)]
-            self._set_dependencies(analysis, path)
+            # Process analysis.binaries and analysis.datas TOCs. self._process_toc() call returns two TOCs; the first
+            # contains entries that remain within this analysis, while the second contains entries that reference
+            # an entry in another executable.
+            binaries, binaries_refs = self._process_toc(analysis.binaries, path)
+            datas, datas_refs = self._process_toc(analysis.datas, path)
+            # Update analysis.bianries, analysis.datas, and analysis.dependencies
+            analysis.binaries = TOC(binaries)
+            analysis.datas = TOC(datas)
+            analysis.dependencies += binaries_refs + datas_refs
 
-    def _set_dependencies(self, analysis, path):
+    def _process_toc(self, toc, path):
         """
         Synchronize the Analysis result with the needed dependencies.
         """
-        for toc in (analysis.binaries, analysis.datas):
-            for i, tpl in enumerate(toc):
-                if not tpl[1] in self._dependencies:
-                    logger.debug("Adding dependency %s located in %s", tpl[1], path)
-                    self._dependencies[tpl[1]] = path
-                else:
-                    dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
-                    # Ignore references that point to the origin package. This can happen if the same resource is listed
-                    # multiple times in TOCs (e.g., once as binary and once as data).
-                    if dep_path.endswith(path):
-                        logger.debug(
-                            "Ignoring self-reference of %s for %s, located in %s - duplicated TOC entry?", tpl[1], path,
-                            dep_path
-                        )
-                        # Clear the entry as it is a duplicate.
-                        toc[i] = (None, None, None)
-                        continue
-                    logger.debug("Referencing %s to be a dependency for %s, located in %s", tpl[1], path, dep_path)
-                    # Determine the path relative to dep_path (i.e, within the target directory) from the 'name'
-                    # component of the TOC tuple.
-                    rel_path = os.path.dirname(tpl[0])
-                    # Take filename from 'path' (second component of TOC tuple); this way, we don't need to worry about
-                    # suffix of extensions.
-                    filename = os.path.basename(tpl[1])
-                    # Construct the full file path relative to dep_path...
-                    filename = os.path.join(rel_path, filename)
-                    # ...and use it in new DEPENDENCY entry
-                    analysis.dependencies.append((":".join((dep_path, filename)), tpl[1], "DEPENDENCY"))
-                    toc[i] = (None, None, None)
-            # Clean the list
-            toc[:] = [tpl for tpl in toc if tpl != (None, None, None)]
+        toc_keep = []
+        toc_refs = []
+        for i, tpl in enumerate(toc):
+            if not tpl[1] in self._dependencies:
+                logger.debug("Adding dependency %s located in %s", tpl[1], path)
+                self._dependencies[tpl[1]] = path
+                # Add entry to list of kept TOC entries
+                toc_keep.append(tpl)
+            else:
+                dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
+                # Ignore references that point to the origin package. This can happen if the same resource is listed
+                # multiple times in TOCs (e.g., once as binary and once as data).
+                if dep_path.endswith(path):
+                    logger.debug(
+                        "Ignoring self-reference of %s for %s, located in %s - duplicated TOC entry?", tpl[1], path,
+                        dep_path
+                    )
+                    # The entry is a duplicate, and should be ignored (i.e., do not add it to either of output TOCs).
+                    continue
+                logger.debug("Referencing %s to be a dependency for %s, located in %s", tpl[1], path, dep_path)
+                # Determine the path relative to dep_path (i.e, within the target directory) from the 'name'
+                # component of the TOC tuple.
+                rel_path = os.path.dirname(tpl[0])
+                # Take filename from 'path' (second component of TOC tuple); this way, we don't need to worry about
+                # suffix of extensions.
+                filename = os.path.basename(tpl[1])
+                # Construct the full file path relative to dep_path...
+                filename = os.path.join(rel_path, filename)
+                # ...and use it in new DEPENDENCY entry
+                toc_refs.append((":".join((dep_path, filename)), tpl[1], "DEPENDENCY"))
+
+        return toc_keep, toc_refs
 
     # TODO: use pathlib.Path.relative_to() instead.
     def _get_relative_path(self, startpath, topath):

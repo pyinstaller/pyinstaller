@@ -1,0 +1,5 @@
+Fix the problem with ``MERGE`` not properly cleaning up passed
+``Analysis.binaries`` and ``Analysis.datas`` TOCs due to changes made to
+``TOC`` class in PyInstaller 5.0. This effectively broke the supposed
+de-duplication functionality of ``MERGE`` and multi-package bundles,
+which should be restored now.
