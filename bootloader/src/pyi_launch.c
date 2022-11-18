@@ -258,7 +258,10 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 
         if (extractDependencyFromArchive(status, filename) == -1) {
             FATALERROR("Error extracting %s\n", filename);
-            pyi_arch_status_free(status);
+            /* Do not free the archive ("status") here, because its
+             * pointer is stored in the archive pool that is cleaned up
+             * by the caller.
+             */
             return -1;
         }
     }
@@ -316,7 +319,7 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splas
     TOC * ptoc = archive_status->tocbuff;
 
     /* Clean memory for archive_pool list. */
-    memset(&archive_pool, 0, _MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
+    memset(archive_pool, 0, _MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
 
     /* Current process is the 1st item. */
     archive_pool[0] = archive_status;
