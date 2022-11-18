@@ -16,6 +16,8 @@ on:
 env:
   # Colored pytest output on CI despite not having a tty
   FORCE_COLOR: 1
+  # Enable strict unpack mode to catch file duplication problems in onefile builds (at executable run-time).
+  PYINSTALLER_STRICT_UNPACK_MODE: 1
 
 permissions:
   contents: read # to fetch code (actions/checkout)
