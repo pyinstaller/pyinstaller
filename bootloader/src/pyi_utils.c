@@ -582,6 +582,23 @@ pyi_remove_temp_path(const char *dir)
 }
 #endif /* ifdef _WIN32 */
 
+
+static int
+_check_strict_unpack_mode ()
+{
+    static int enabled = -1;
+    if (enabled == -1) {
+        char *env_strict = pyi_getenv("PYINSTALLER_STRICT_UNPACK_MODE"); /* strdup'd copy or NULL */
+        if (strcmp(env_strict, "0") == 0) {
+            enabled = 0;
+        } else {
+            enabled = 1;
+        }
+        free(env_strict);
+    }
+    return enabled;
+}
+
 /*
  * helper for extract2fs
  * which may try multiple places
@@ -642,12 +659,22 @@ pyi_open_target(const char *path, const char* name_)
     pyi_win32_utils_from_utf8(wchar_buffer, fnm, PATH_MAX);
 
     if (_wstat(wchar_buffer, &sbuf) == 0) {
-        OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
+        if (_check_strict_unpack_mode()) {
+            OTHERERROR("ERROR: file already exists but should not: %s\n", fnm);
+            return NULL;
+        } else {
+            OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
+        }
     }
 #else
 
     if (stat(fnm, &sbuf) == 0) {
-        OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
+        if (_check_strict_unpack_mode()) {
+            OTHERERROR("ERROR: file already exists but should not: %s\n", fnm);
+            return NULL;
+        } else {
+            OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
+        }
     }
 #endif
     /*
