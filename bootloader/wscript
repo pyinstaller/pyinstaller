@@ -87,6 +87,18 @@ def machine(ctx):
     return _shared_with_waf._pyi_machine(ctx.env.DEST_CPU, DESTOS_TO_SYSTEM[ctx.env.DEST_OS])
 
 
+def is_msvc_target(ctx):
+    """
+    clang may be compiled to use either MSVC's headers or mingw's. If it's the former, it inherits some of MSVC's
+    quirks.
+    """
+    if ctx.env.CC_NAME == 'clang':
+        from subprocess import run, PIPE
+        spec = run(ctx.env.CC + ["-v"], stderr=PIPE).stderr
+        return re.search(rb'Target: .*msvc', spec)
+    return ctx.env.CC_NAME == 'msvc'
+
+
 @conf
 def is_musl(ctx):
     """Return true if the C compiler targets Linux using musl libc. Always false on non-Linux."""
@@ -296,6 +308,9 @@ def detect_arch(ctx):
         arch = ctx.options.target_arch
         ctx.msg('Platform', '%s-%s manually chosen' % (system, arch))
         ctx.env.ARCH_FLAGS_REQUIRED = True
+        if arch == '64bit-arm':
+            arch = '64bit'
+            ctx.env.DEST_CPU = 'arm64'
     else:
         # PyInstaller uses the result of platform.architecture() to determine the bits and this is testing the pointer
         # size (via module struct). We do the same here.
@@ -721,7 +736,8 @@ def configure(ctx):
             # The MSYS2/MINGW64 gcc toolchain seems to use 2 MiB (0x200000) stack by default, so we are slightly
             # decreasing the stack size here, in order to keep it synchronized with the python itself and with the
             # MSVC-compiled bootloaders.
-            ctx.env.append_value('LINKFLAGS', '-Wl,--stack,2000000')
+            if not is_msvc_target(ctx):
+                ctx.env.append_value('LINKFLAGS', '-Wl,--stack,2000000')
 
     # On linux link only with needed libraries.
     # On some platforms (Mac OS, Solaris, AIX), -Wl,--as-needed is detected as supported during configuration,
@@ -729,7 +745,7 @@ def configure(ctx):
     if ctx.env.DEST_OS == 'linux' and ctx.check_cc(cflags='-Wl,--as-needed'):
         ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
 
-    if ctx.env.CC_NAME != 'msvc':
+    if not is_msvc_target(ctx):
         # This tool allows reducing the size of executables.
         find_program_next_to_cc(ctx, 'strip', var='STRIP')
         ctx.load('strip', tooldir='tools')
@@ -803,11 +819,11 @@ def build(ctx):
     if not ctx.env.LIB_Z:
         # If the operating system does not provide zlib, build our own. The configure phase defines whether or not zlib
         # is mandatory for the given platform.
-        ctx.stlib(source=ctx.path.ant_glob('zlib/*.c'), target='static_zlib', name='Z', includes='zlib')
+        ctx.objects(source=ctx.path.ant_glob('zlib/*.c'), target='STATIC_ZLIB', includes='zlib')
 
     # By default strip final executables to make them smaller.
     features = 'strip'
-    if ctx.env.CC_NAME == 'msvc':
+    if is_msvc_target(ctx):
         # Do not strip bootloaders when using MSVC.
         features = ''
 
@@ -821,7 +837,7 @@ def build(ctx):
             source=['src/main.c'],
             target=exe_name,
             install_path=install_path,
-            use='OBJECTS USER32 COMCTL32 KERNEL32 ADVAPI32 GDI32 Z',
+            use='OBJECTS USER32 COMCTL32 KERNEL32 ADVAPI32 GDI32 Z STATIC_ZLIB',
             includes='src windows zlib',
             features=features
         )
@@ -852,7 +868,7 @@ def build(ctx):
             source='src/main.c',
             target=exe_name,
             includes='src',
-            use=libs + ["OBJECTS"],
+            use=libs + ["OBJECTS", "STATIC_ZLIB"],
             stlib=staticlibs,
             install_path=install_path,
             features=features

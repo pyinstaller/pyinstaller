@@ -1,0 +1,2 @@
+Support building native ARM applications for Windows. If PyInstaller is ran on
+an ARM machine with an ARM build of Python, it will prodice an ARM application.

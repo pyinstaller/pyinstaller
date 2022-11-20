@@ -45,10 +45,14 @@ def _pyi_machine(machine, system):
         # This explicitly inhibits cross compiling the bootloader for or on SunWay and LoongArch machine.
         return platform.machine()
 
+    if system == "Windows":
+        if machine.lower().startswith("arm"):
+            return "arm"
+        else:
+            return "intel"
+
     if system != "Linux":
         # No architecture specifier for anything par Linux.
-        # - Windows only has one 32 and one 64 bit architecture, but lots of aliases for each so it is both pointless
-        #   and painful to give Windows an architecture specifier.
         # - macOS is on two 64 bit architectures, but they are merged into one "universal2" bootloader.
         # - BSD supports a wide range of architectures, but according to PyPI's download statistics, every one of our
         #   BSD users are on x86_64. This may change in the distant future.
