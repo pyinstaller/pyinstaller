@@ -145,8 +145,9 @@ class Wheel(bdist_wheel):
 # Map PyInstaller platform names to their setuptools counterparts. Other OSs can be added as and when we start shipping
 # wheels for them.
 PLATFORMS = {
-    "Windows-64bit": "win_amd64",
-    "Windows-32bit": "win32",
+    "Windows-64bit-intel": "win_amd64",
+    "Windows-32bit-intel": "win32",
+    "Windows-64bit-arm": "win_arm64",
     # The manylinux version tag depends on the glibc version compiled against. If we ever change the docker image used
     # to build the bootloaders, we must check/update this tag. These are the only architectures currently supported
     # by manylinux. Other platforms must use the generic bdist_wheel command, which will produce a wheel that is not
@@ -213,7 +214,8 @@ class bdist_macos(wheel_commands["wheel_darwin_64bit"]):
 wheel_commands["wheel_darwin_64bit"] = bdist_macos
 
 wheel_commands["wheel_darwin_64bit"].ICON_TYPES = ["icns"]
-wheel_commands["wheel_windows_32bit"].ICON_TYPES = wheel_commands["wheel_windows_64bit"].ICON_TYPES = ["ico"]
+for name in ["wheel_windows_64bit_intel", "wheel_windows_32bit_intel", "wheel_windows_64bit_arm"]:
+    wheel_commands[name].ICON_TYPES = ["ico"]
 
 
 class bdist_wheels(Command):
