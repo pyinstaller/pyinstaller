@@ -86,6 +86,13 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: cd bootloader && python waf --static-zlib all
 
+      - name: Check if bootloader is buildable for Windows ARM
+        if: startsWith(matrix.os, 'windows')
+        run: |
+            cd bootloader
+            python waf --target-arch=64bit-arm all
+            ls ../PyInstaller/bootloader/Windows-64bit-arm
+
       - name: Install PyInstaller
         run: |
           # Update pip.
