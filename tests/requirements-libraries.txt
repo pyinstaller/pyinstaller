@@ -39,7 +39,7 @@ pytz==2022.6
 requests==2.28.1
 scipy==1.9.3; python_version >= '3.8'
 # simplejson is used for text_c_extension
-simplejson==3.17.6
+simplejson==3.18.0
 sphinx==5.3.0
 # Required for test_namespace_package
 sqlalchemy==1.4.44
