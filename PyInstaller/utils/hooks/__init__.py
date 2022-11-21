@@ -106,48 +106,6 @@ def exec_statement_rc(statement: str):
     return __exec_statement(statement, capture_stdout=False)
 
 
-def __exec_script(script_filename, *args, env=None, capture_stdout=True):
-    """
-    Executes a Python script in an externally spawned interpreter. If capture_stdout is set to True, returns anything
-    that was emitted in the standard output as a single string. Otherwise, returns the exit code.
-
-    To prevent misuse, the script passed to utils.hooks.exec_script must be located in the
-    `PyInstaller/utils/hooks/subproc` directory.
-    """
-    script_filename = os.path.basename(script_filename)
-    script_filename = os.path.join(os.path.dirname(__file__), 'subproc', script_filename)
-    if not os.path.exists(script_filename):
-        raise SystemError(
-            "To prevent misuse, the script passed to PyInstaller.utils.hooks.exec_script must be located in the "
-            "`PyInstaller/utils/hooks/subproc` directory."
-        )
-
-    cmd = [script_filename]
-    cmd.extend(args)
-    return __exec_python_cmd(cmd, env=env, capture_stdout=capture_stdout)
-
-
-def exec_script(script_filename: str | os.PathLike, *args: str, env: dict | None = None):
-    """
-    Executes a Python script in an externally spawned interpreter, and returns anything that was emitted to the standard
-    output as a single string.
-
-    To prevent misuse, the script passed to utils.hooks.exec_script must be located in the
-    `PyInstaller/utils/hooks/subproc` directory.
-    """
-    return __exec_script(script_filename, *args, env=env, capture_stdout=True)
-
-
-def exec_script_rc(script_filename: str | os.PathLike, *args: str, env: dict | None = None):
-    """
-    Executes a Python script in an externally spawned interpreter, and returns the exit code.
-
-    To prevent misuse, the script passed to utils.hooks.exec_script must be located in the
-    `PyInstaller/utils/hooks/subproc` directory.
-    """
-    return __exec_script(script_filename, *args, env=env, capture_stdout=False)
-
-
 def eval_statement(statement: str):
     """
     Execute a single Python statement in an externally-spawned interpreter, and :func:`eval` its output (if any).
@@ -167,14 +125,6 @@ def eval_statement(statement: str):
 
     """
     txt = exec_statement(statement).strip()
-    if not txt:
-        # Return an empty string, which is "not true" but is iterable.
-        return ''
-    return eval(txt)
-
-
-def eval_script(script_filename: str | os.PathLike, *args: str, env: dict | None = None):
-    txt = exec_script(script_filename, *args, env=env).strip()
     if not txt:
         # Return an empty string, which is "not true" but is iterable.
         return ''
