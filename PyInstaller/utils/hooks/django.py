@@ -10,31 +10,109 @@
 # ----------------------------------------------------------------------------
 import os
 
-from PyInstaller.utils import misc
-from PyInstaller.utils.hooks import eval_script
-
-__all__ = ['django_dottedstring_imports', 'django_find_root_dir']
+from PyInstaller import isolated
 
 
+@isolated.decorate
 def django_dottedstring_imports(django_root_dir):
     """
-    Get all the necessary Django modules specified in settings.py.
+    An isolated helper that returns list of all Django dependencies, parsed from the `mysite.settings` module.
 
-    In the settings.py the modules are specified in several variables as strings.
+    NOTE: With newer version of Django this is most likely the part of PyInstaller that will be broken.
+
+    Tested with Django 2.2
     """
-    pths = []
-    # Extend PYTHONPATH with parent dir of django_root_dir.
-    pths.append(misc.get_path_to_toplevel_modules(django_root_dir))
-    # Extend PYTHONPATH with django_root_dir.
-    # Often, Django users do not specify absolute imports in the settings module.
-    pths.append(django_root_dir)
 
+    import sys
+    import os
+
+    import PyInstaller.utils.misc
+    from PyInstaller.utils import hooks as hookutils
+
+    # Extra search paths to add to sys.path:
+    #  - parent directory of the django_root_dir
+    #  - django_root_dir itself; often, Django users do not specify absolute imports in the settings module.
+    search_paths = [
+        PyInstaller.utils.misc.get_path_to_toplevel_modules(django_root_dir),
+        django_root_dir,
+    ]
+    sys.path += search_paths
+
+    # Set the path to project's settings module
     default_settings_module = os.path.basename(django_root_dir) + '.settings'
     settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', default_settings_module)
-    env = {'DJANGO_SETTINGS_MODULE': settings_module, 'PYTHONPATH': os.pathsep.join(pths)}
-    ret = eval_script('django_import_finder.py', env=env)
+    os.environ['DJANGO_SETTINGS_MODULE'] = settings_module
 
-    return ret
+    # Calling django.setup() avoids the exception AppRegistryNotReady() and also reads the user settings
+    # from DJANGO_SETTINGS_MODULE.
+    # https://stackoverflow.com/questions/24793351/django-appregistrynotready
+    import django  # noqa: E402
+
+    django.setup()
+
+    # This allows to access all django settings even from the settings.py module.
+    from django.conf import settings  # noqa: E402
+
+    hiddenimports = list(settings.INSTALLED_APPS)
+
+    # Do not fail script when settings does not have such attributes.
+    if hasattr(settings, 'TEMPLATE_CONTEXT_PROCESSORS'):
+        hiddenimports += list(settings.TEMPLATE_CONTEXT_PROCESSORS)
+
+    if hasattr(settings, 'TEMPLATE_LOADERS'):
+        hiddenimports += list(settings.TEMPLATE_LOADERS)
+
+    hiddenimports += [settings.ROOT_URLCONF]
+
+    def _remove_class(class_name):
+        return '.'.join(class_name.split('.')[0:-1])
+
+    #-- Changes in Django 1.7.
+
+    # Remove class names and keep just modules.
+    if hasattr(settings, 'AUTHENTICATION_BACKENDS'):
+        for cl in settings.AUTHENTICATION_BACKENDS:
+            cl = _remove_class(cl)
+            hiddenimports.append(cl)
+    if hasattr(settings, 'DEFAULT_FILE_STORAGE'):
+        cl = _remove_class(settings.DEFAULT_FILE_STORAGE)
+        hiddenimports.append(cl)
+    if hasattr(settings, 'FILE_UPLOAD_HANDLERS'):
+        for cl in settings.FILE_UPLOAD_HANDLERS:
+            cl = _remove_class(cl)
+            hiddenimports.append(cl)
+    if hasattr(settings, 'MIDDLEWARE_CLASSES'):
+        for cl in settings.MIDDLEWARE_CLASSES:
+            cl = _remove_class(cl)
+            hiddenimports.append(cl)
+    # Templates is a dict:
+    if hasattr(settings, 'TEMPLATES'):
+        for templ in settings.TEMPLATES:
+            backend = _remove_class(templ['BACKEND'])
+            # Include context_processors.
+            if hasattr(templ, 'OPTIONS'):
+                if hasattr(templ['OPTIONS'], 'context_processors'):
+                    # Context processors are functions - strip last word.
+                    mods = templ['OPTIONS']['context_processors']
+                    mods = [_remove_class(x) for x in mods]
+                    hiddenimports += mods
+    # Include database backends - it is a dict.
+    for v in settings.DATABASES.values():
+        hiddenimports.append(v['ENGINE'])
+
+    # Add templatetags and context processors for each installed app.
+    for app in settings.INSTALLED_APPS:
+        app_templatetag_module = app + '.templatetags'
+        app_ctx_proc_module = app + '.context_processors'
+        hiddenimports.append(app_templatetag_module)
+        hiddenimports += hookutils.collect_submodules(app_templatetag_module)
+        hiddenimports.append(app_ctx_proc_module)
+
+    # Deduplicate imports.
+    hiddenimports = list(set(hiddenimports))
+
+    # Return the hidden imports
+    return hiddenimports
 
 
 def django_find_root_dir():
