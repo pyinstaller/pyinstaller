@@ -28,7 +28,7 @@ from PyInstaller.building.datastruct import TOC, Target, _check_guts_eq
 from PyInstaller.building.utils import (
     _check_guts_toc, _make_clean_directory, _rmtree, checkCache, get_code_object, strip_paths_in_code, compile_pymodule
 )
-from PyInstaller.compat import (is_cygwin, is_darwin, is_linux, is_win)
+from PyInstaller.compat import is_cygwin, is_darwin, is_linux, is_win, strict_collect_mode
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
@@ -903,6 +903,9 @@ class COLLECT(Target):
                 # At this point, fnm should be a valid file
                 if not os.path.isfile(fnm):
                     raise ValueError("Resource %r is not a valid file!", fnm)
+                # If strict collection mode is enabled, the destination should not exist yet.
+                if strict_collect_mode and os.path.exists(tofnm):
+                    raise ValueError(f"Attempting to collect a duplicated file into COLLECT: {inm} (type: {typ})")
                 shutil.copy2(fnm, tofnm)  # Use copy2 to (attempt to) preserve metadata
             if typ in ('EXTENSION', 'BINARY'):
                 os.chmod(tofnm, 0o755)

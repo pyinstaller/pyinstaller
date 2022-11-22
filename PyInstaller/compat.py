@@ -27,6 +27,9 @@ import shutil
 from PyInstaller._shared_with_waf import _pyi_machine
 from PyInstaller.exceptions import ExecCommandFailed
 
+# Strict collect mode, which raises error when trying to collect duplicate files into PKG/CArchive or COLLECT.
+strict_collect_mode = os.environ.get("PYINSTALLER_STRICT_COLLECT_MODE", "0") != "0"
+
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
 is_64bits: bool = sys.maxsize > 2**32
 

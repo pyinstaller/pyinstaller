@@ -26,7 +26,7 @@ import zlib
 from types import CodeType
 
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code
-from PyInstaller.compat import BYTECODE_MAGIC, is_win
+from PyInstaller.compat import BYTECODE_MAGIC, is_win, strict_collect_mode
 from PyInstaller.loader.pyimod01_archive import PYZ_TYPE_DATA, PYZ_TYPE_MODULE, PYZ_TYPE_NSPKG, PYZ_TYPE_PKG
 
 
@@ -309,6 +309,8 @@ class CArchiveWriter(ArchiveWriter):
         """
         self._pylib_name = pylib_name
 
+        self._collected_names = set()  # Track collected names for strict package mode.
+
         # A CArchive created from scratch starts at 0, no leading bootloader.
         super().__init__(archive_path, logical_toc)
 
@@ -337,6 +339,29 @@ class CArchiveWriter(ArchiveWriter):
                   s  (meaning do site.py processing.
         """
         dest, source, compress, type = entry[:4]
+
+        # Strict pack/collect mode: keep track of the destination names, and raise an error if we try to add a duplicate
+        # (a file with same destination name, subject to OS case normalization rules).
+        if strict_collect_mode:
+            normalized_dest = None
+            if type in ('o', 's', 'm', 'M'):
+                # Exempt options, python source script, and modules from the check
+                pass
+            elif type == 'd':
+                # Dependency; de-obfuscate the destination name.
+                _, normalized_dest = dest.split(':', 1)  # Split on first colon
+                normalized_dest = os.path.normcase(normalized_dest)
+            else:
+                # Everything else; normalize the case
+                normalized_dest = os.path.normcase(dest)
+            # Check for existing entry, if applicable
+            if normalized_dest:
+                if normalized_dest in self._collected_names:
+                    raise ValueError(
+                        f"Attempting to collect a duplicated file into CArchive: {normalized_dest} (type: {type})"
+                    )
+                self._collected_names.add(normalized_dest)
+
         try:
             if type in ('o', 'd'):
                 return self._write_blob(b"", dest, type)
