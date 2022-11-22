@@ -242,7 +242,8 @@ class PKG(Target):
         # 'fnm'  - absolute filename as it is on the file system.
         for inm, fnm, typ in self.toc:
             # Ensure that the source file exists, if neccessary. Skip the check for OPTION entries, where 'fnm' is None.
-            if typ != 'OPTION' and not os.path.exists(fnm):
+            # Also skip DEPENDENCY entries due to special contents of 'inm' and/or 'fnm'.
+            if typ not in ('OPTION', 'DEPENDENCY') and not os.path.exists(fnm):
                 # If file is contained within python egg, it will be added with the egg.
                 if not is_path_to_egg(fnm):
                     logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
@@ -868,8 +869,9 @@ class COLLECT(Target):
         _make_clean_directory(self.name)
         logger.info("Building COLLECT %s", self.tocbasename)
         for inm, fnm, typ in self.toc:
-            # Ensure that the source file exists, if neccessary.
-            if not os.path.exists(fnm):
+            # Ensure that the source file exists, if necessary. Skip the check for DEPENDENCY entries due to special
+            # contents of 'inm' and/or 'fnm'.
+            if typ != 'DEPENDENCY' and not os.path.exists(fnm):
                 # If file is contained within python egg, it will be added with the egg.
                 if not is_path_to_egg(fnm):
                     logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
