@@ -246,7 +246,10 @@ class PKG(Target):
             if typ not in ('OPTION', 'DEPENDENCY') and not os.path.exists(fnm):
                 # If file is contained within python egg, it will be added with the egg.
                 if not is_path_to_egg(fnm):
-                    logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
+                    if strict_collect_mode:
+                        raise ValueError(f"Non-existent resource {fnm}, meant to be collected as {inm}!")
+                    else:
+                        logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
                 continue
             if typ in ('BINARY', 'EXTENSION'):
                 if self.exclude_binaries and typ == 'EXTENSION':
@@ -895,7 +898,10 @@ class COLLECT(Target):
             if typ != 'DEPENDENCY' and not os.path.exists(fnm):
                 # If file is contained within python egg, it will be added with the egg.
                 if not is_path_to_egg(fnm):
-                    logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
+                    if strict_collect_mode:
+                        raise ValueError(f"Non-existent resource {fnm}, meant to be collected as {inm}!")
+                    else:
+                        logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
                 continue
             # Disallow collection outside of the dist directory.
             if os.pardir in os.path.normpath(inm).split(os.sep) or os.path.isabs(inm):
