@@ -252,9 +252,21 @@ class PKG(Target):
                         logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
                 continue
             if typ in ('BINARY', 'EXTENSION'):
-                if self.exclude_binaries and typ == 'EXTENSION':
+                if self.exclude_binaries:
+                    # This is onedir-specific codepath - the EXE and consequently PKG should not be passed the Analysis'
+                    # `datas` and `binaries` TOCs (unless the user messes up the .spec file). However, EXTENSION entries
+                    # might still slip in via `PYZ.dependencies`, which are merged by EXE into its TOC and passed on to
+                    # PKG here. Such entries need to be passed to the parent container (the COLLECT) via
+                    # `PKG.dependencies`.
+                    #
+                    # This codepath formerly performed such pass-through only for EXTENSION entries, but in order to
+                    # keep code simple, we now also do it for BINARY entries. In a sane world, we do not expect to
+                    # encounter them here; but if they do happen to pass through here and we pass them on, the
+                    # container's TOC de-duplication should take care of them (same as with EXTENSION ones, really).
                     self.dependencies.append((inm, fnm, typ))
-                elif not self.exclude_binaries:
+                else:
+                    # This is onefile-specific codepath. The binaries (both EXTENSION and BINARY entries) need to be
+                    # processed using `checkCache` helper.
                     fnm = checkCache(
                         fnm,
                         strip=self.strip_binaries,
