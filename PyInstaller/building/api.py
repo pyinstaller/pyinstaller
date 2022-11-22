@@ -429,14 +429,33 @@ class EXE(Target):
 
         self.toc = TOC()
 
+        _deps_toc = TOC()  # See the note below
+
         for arg in args:
             if isinstance(arg, TOC):
                 self.toc.extend(arg)
             elif isinstance(arg, Target):
                 self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
-                self.toc.extend(arg.dependencies)
+                # See the note below (and directly extend self.toc once this workaround is not necessary anymore).
+                # self.toc.extend(arg.dependencies)
+                for entry in arg.dependencies:
+                    if entry[2] in ('EXTENSION', 'BINARY', 'DATA'):
+                        _deps_toc.append(entry)
+                    else:
+                        self.toc.append(entry)
             else:
                 self.toc.extend(arg)
+
+        # NOTE: this is an ugly work-around that ensures that when MERGE is used, the EXE's TOC is first populated with
+        # MERGE'd `binaries` and `datas` entries (which should be DEPENDENCY references for shared resources, and BINARY
+        # or DATA entries for non-shared resources), and that `PYZ.dependencies` is merged last. The latter may contain
+        # entries for `_struct` and `zlib` extensions, and if they end up in the TOC first, they will block the
+        # corresponding DEPENDENCY entries (if they are available) from being added to TOC. Which will in turn result in
+        # missing extensions with certain onefile/onedir referencing combinations. And even if not, the result would be
+        # but sub-optimal, as the extensions could be shared via DEPENDENCY mechanism. This work-around can be removed
+        # once we replace the TOC class with mechanism that implements a typecode-based priority system for the entries.
+        self.toc.extend(_deps_toc)
+        del _deps_toc
 
         if self.runtime_tmpdir is not None:
             self.toc.append(("pyi-runtime-tmpdir " + self.runtime_tmpdir, "", "OPTION"))
