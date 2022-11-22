@@ -347,10 +347,6 @@ class CArchiveWriter(ArchiveWriter):
             if type in ('o', 's', 'm', 'M'):
                 # Exempt options, python source script, and modules from the check
                 pass
-            elif type == 'd':
-                # Dependency; de-obfuscate the destination name.
-                _, normalized_dest = dest.split(':', 1)  # Split on first colon
-                normalized_dest = os.path.normcase(normalized_dest)
             else:
                 # Everything else; normalize the case
                 normalized_dest = os.path.normcase(dest)
@@ -363,8 +359,13 @@ class CArchiveWriter(ArchiveWriter):
                 self._collected_names.add(normalized_dest)
 
         try:
-            if type in ('o', 'd'):
+            if type == 'o':
                 return self._write_blob(b"", dest, type)
+
+            elif type == 'd':
+                # Dependency; merge source (= reference path prefix) and dest (= name) into single-string format that is
+                # parsed by bootloader.
+                return self._write_blob(b"", f"{source}:{dest}", type)
 
             if type == 's':
                 # If it is a source code file, compile it to a code object and marshal the object, so it can be

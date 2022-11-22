@@ -158,11 +158,6 @@ def checkCache(
     if not strip and not upx and not is_darwin and not is_win:
         return fnm
 
-    if dist_nm is not None and ":" in dist_nm:
-        # A file embedded in another PyInstaller build via multipackage.
-        # No actual file exists to process.
-        return fnm
-
     if strip:
         strip = True
     else:
