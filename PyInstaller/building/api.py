@@ -248,10 +248,10 @@ class PKG(Target):
                 if not is_path_to_egg(fnm):
                     logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
                 continue
-            if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
+            if typ in ('BINARY', 'EXTENSION'):
                 if self.exclude_binaries and typ == 'EXTENSION':
                     self.dependencies.append((inm, fnm, typ))
-                elif not self.exclude_binaries or typ == 'DEPENDENCY':
+                elif not self.exclude_binaries:
                     fnm = checkCache(
                         fnm,
                         strip=self.strip_binaries,
@@ -270,6 +270,8 @@ class PKG(Target):
                 # collect sourcefiles and module in a toc of it's own which will not be sorted.
                 srctoc.append((inm, fnm, self.cdict[typ], self.xformdict[typ]))
             else:
+                # PYZ, PKG, DEPENDENCY, SPLASH
+                # TODO: are DATA and ZIPFILE valid here?
                 mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
@@ -962,7 +964,14 @@ class MERGE:
             # an entry in another executable.
             binaries, binaries_refs = self._process_toc(analysis.binaries, path)
             datas, datas_refs = self._process_toc(analysis.datas, path)
-            # Update analysis.bianries, analysis.datas, and analysis.dependencies
+            # Update `analysis.binaries`, `analysis.datas`, and `analysis.dependencies`.
+            # The entries that are found in preceding executable(s) are removed from `binaries` and `datas`, and their
+            # DEPENDENCY entry counterparts are added to `dependencies`. We cannot simply update the entries in
+            # `binaries` and `datas`, because at least in theory, we need to support both onefile and onedir mode. And
+            # while in onefile, `a.datas`, `a.binaries`, and `a.dependencies` are passed to `EXE` (and its `PKG`), with
+            # onedir, `a.datas` and `a.binaries` need to be passed to `COLLECT` (as they were before the MERGE), while
+            # `a.dependencies` needs to be passed to `EXE`. This split requires DEPENDENCY entries to be in a separate
+            # TOC.
             analysis.binaries = TOC(binaries)
             analysis.datas = TOC(datas)
             analysis.dependencies += binaries_refs + datas_refs
@@ -971,6 +980,8 @@ class MERGE:
         """
         Synchronize the Analysis result with the needed dependencies.
         """
+        # NOTE: unfortunately, these need to keep two separate lists. See the comment in `_merge_dependencies` on why
+        # this is so.
         toc_keep = []
         toc_refs = []
         for i, tpl in enumerate(toc):
@@ -991,16 +1002,9 @@ class MERGE:
                     # The entry is a duplicate, and should be ignored (i.e., do not add it to either of output TOCs).
                     continue
                 logger.debug("Referencing %s to be a dependency for %s, located in %s", tpl[1], path, dep_path)
-                # Determine the path relative to dep_path (i.e, within the target directory) from the 'name'
-                # component of the TOC tuple.
-                rel_path = os.path.dirname(tpl[0])
-                # Take filename from 'path' (second component of TOC tuple); this way, we don't need to worry about
-                # suffix of extensions.
-                filename = os.path.basename(tpl[1])
-                # Construct the full file path relative to dep_path...
-                filename = os.path.join(rel_path, filename)
-                # ...and use it in new DEPENDENCY entry
-                toc_refs.append((":".join((dep_path, filename)), tpl[1], "DEPENDENCY"))
+                # Create new DEPENDENCY entry; under destination path (first element), we store the original destination
+                # path, while source path contains the relative reference path.
+                toc_refs.append((tpl[0], dep_path, "DEPENDENCY"))
 
         return toc_keep, toc_refs
 
