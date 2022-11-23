@@ -643,7 +643,8 @@ Following this you can copy the ``PYZ``, ``EXE`` and ``COLLECT`` statements from
 the original three spec files,
 substituting the unique names of the Analysis objects
 where the original spec files have ``a.``
-Modify the EXE statements to pass in ``Analysis.dependencies.``
+Modify the EXE statements to pass in ``Analysis.dependencies``, in addition
+to all other arguments that are passed in the original EXE statements.
 For example::
 
     foo_pyz = PYZ(foo_a.pure)
@@ -654,11 +655,11 @@ For example::
 
 Save the combined spec file as ``foobarzap.spec`` and then build it::
 
-    pyi-build foobarzap.spec
+    pyinstaller foobarzap.spec
 
 The output in the :file:`dist` folder will be all three apps, but
 the apps :file:`dist/bar` and :file:`dist/zap` will refer to
-the contents of :file:`dist/foo/` for shared dependencies.
+the contents of :file:`dist/foo` for shared dependencies.
 
 Remember that a spec file is executable Python.
 You can use all the Python facilities (``for`` and ``with``
