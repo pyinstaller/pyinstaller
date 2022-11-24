@@ -28,9 +28,9 @@ traffic unicows url urlmon user32 userenv usp10 uuid uxtheme vcomp vcompd vdmdbg
 version vfw32 wbemuuid  webpost wiaguid wininet winmm winscard winspool winstrm
 wintrust wldap32 wmiutils wow32 ws2_32 wsnmp32 wsock32 wst wtsapi32 xaswitch xolehlp
 '''.split()
-all_msvc_platforms = [('x64', 'amd64'), ('x86', 'x86'), ('ia64', 'ia64'), ('x86_amd64', 'amd64'), ('x86_ia64', 'ia64'),
-                      ('x86_arm', 'arm'), ('x86_arm64', 'arm64'), ('amd64_x86', 'x86'), ('amd64_arm', 'arm'),
-                      ('amd64_arm64', 'arm64')]
+all_msvc_platforms = [('arm64', 'arm64'), ('x64', 'amd64'), ('x86', 'x86'), ('ia64', 'ia64'), ('x86_amd64', 'amd64'),
+                      ('x86_ia64', 'ia64'), ('x86_arm', 'arm'), ('x86_arm64', 'arm64'), ('amd64_x86', 'x86'),
+                      ('amd64_arm', 'arm'), ('amd64_arm64', 'arm64')]
 all_wince_platforms = [('armv4', 'arm'), ('armv4i', 'arm'), ('mipsii', 'mips'), ('mipsii_fp', 'mips'),
                        ('mipsiv', 'mips'), ('mipsiv_fp', 'mips'), ('sh4', 'sh'), ('x86', 'cex86')]
 all_icl_platforms = [('intel64', 'amd64'), ('em64t', 'amd64'), ('ia32', 'x86'), ('Itanium', 'ia64')]
