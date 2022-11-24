@@ -345,7 +345,10 @@ def set_arch_flags(ctx):
 
     if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME == 'msvc':
         # Set msvc linkflags based on architecture.
-        if ctx.env.PYI_ARCH == '32bit':
+        if machine(ctx) == 'arm':
+            ctx.env['MSVC_TARGETS'] = ['arm64']
+            ctx.env.append_value('LINKFLAGS', '/MACHINE:ARM64')
+        elif ctx.env.PYI_ARCH == '32bit':
             ctx.env['MSVC_TARGETS'] = ['x86']
             ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
             # Set LARGE_ADDRESS_AWARE_FLAG to True. On Windows, this allows 32-bit apps to use 4GB of memory.
@@ -452,6 +455,8 @@ def configure(ctx):
         ctx.env['MSVC_TARGETS'] = ['x86']
     elif ctx.options.target_arch == '64bit':
         ctx.env['MSVC_TARGETS'] = ['x64']
+    elif ctx.options.target_arch == '64bit-arm':
+        ctx.env['MSVC_TARGETS'] = ['arm64']
 
     # ** C compiler **
 
