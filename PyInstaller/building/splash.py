@@ -448,7 +448,7 @@ class Splash(Target):
         if self.minify_script:
             # Remove any documentation, empty lines and unnecessary spaces
             script = '\n'.join(
-                line for line in map(lambda l: l.strip(), script.splitlines())
+                line for line in map(lambda line: line.strip(), script.splitlines())
                 if not line.startswith('#')  # documentation
                 and line  # empty lines
             )
