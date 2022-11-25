@@ -11,6 +11,7 @@
 import os
 import re
 
+from PyInstaller.depend.utils import _resolveCtypesImports
 from PyInstaller.utils.hooks import collect_submodules, collect_system_data_files, get_hook_config
 from PyInstaller import isolated
 from PyInstaller import log as logging
@@ -112,11 +113,10 @@ class GiModuleInfo:
             raise ValueError(f"Module {self.name} {self.version} is unavailable!")
 
         # Find shared libraries
-        for lib in self.sharedlibs:
-            lib_path = findSystemLibrary(lib)
-            if lib_path:
-                logger.debug('Collecting shared library %s at %s', lib, lib_path)
-                binaries.append((lib_path, '.'))
+        resolved_libs = _resolveCtypesImports(self.sharedlibs)
+        for resolved_lib in resolved_libs:
+            logger.debug("Collecting shared library %s at %s", resolved_lib[0], resolved_lib[1])
+            binaries.append((resolved_lib[1], "."))
 
         # Find and collect .typelib file. Run it through the `gir_library_path_fix` to fix the library path, if
         # necessary.
