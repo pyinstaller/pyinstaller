@@ -244,6 +244,10 @@ QT_MODULES_INFO = (
     # No python module; shared library -> plugins association entry.
     _QtModuleDef(None, shared_lib="Gamepad", plugins=["gamepads"]),
 
+    # *** qt/qthttpserver ***
+    # Qt6 >= 6.4.0; python module is available only in PySide6.
+    _QtModuleDef("QtHttpServer", shared_lib="HttpServer", bindings=["PySide6"]),
+
     # *** qt/qtlocation ***
     # Qt5-only Qt module.
     _QtModuleDef(
@@ -285,6 +289,8 @@ QT_MODULES_INFO = (
         bindings=["PySide6", "PyQt6"]
     ),
     _QtModuleDef("QtMultimediaWidgets", shared_lib="MultimediaWidgets"),
+    # Qt6-only Qt module; python module is available in PySide6 >= 6.4.0
+    _QtModuleDef("QtSpatialAudio", shared_lib="SpatialAudio", bindings=["PySide6"]),
 
     # *** qt/qtnetworkauth ***
     # QtNetworkAuth python module is available in all bindings but PySide2.
@@ -378,6 +384,9 @@ QT_MODULES_INFO = (
     # QtWebEngineQuick is Qt6-only module (replacement for QtWebEngine in Qt5).
     _QtModuleDef("QtWebEngineQuick", shared_lib="WebEngineQuick", bindings=["PySide6", "PyQt6"]),
     _QtModuleDef("QtWebEngineWidgets", shared_lib="WebEngineWidgets"),
+    # QtPdf and QtPdfWidgets have python module available in PySide6 and PyQt6 >= 6.4.0.
+    _QtModuleDef("QtPdf", shared_lib="Pdf", bindings=["PySide6", "PyQt6"]),
+    _QtModuleDef("QtPdfWidgets", shared_lib="PdfWidgets", bindings=["PySide6", "PyQt6"]),
 
     # *** qt/qtwebsockets ***
     _QtModuleDef("QtWebSockets", shared_lib="WebSockets", translation="qtwebsockets"),
