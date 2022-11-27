@@ -346,16 +346,14 @@ def set_arch_flags(ctx):
     if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME == 'msvc':
         # Set msvc linkflags based on architecture.
         if machine(ctx) == 'arm':
-            ctx.env['MSVC_TARGETS'] = ['arm64']
             ctx.env.append_value('LINKFLAGS', '/MACHINE:ARM64')
         elif ctx.env.PYI_ARCH == '32bit':
-            ctx.env['MSVC_TARGETS'] = ['x86']
             ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
             # Set LARGE_ADDRESS_AWARE_FLAG to True. On Windows, this allows 32-bit apps to use 4GB of memory.
             ctx.env.append_value('LINKFLAGS', '/LARGEADDRESSAWARE')
         elif ctx.env.PYI_ARCH == '64bit':
-            ctx.env['MSVC_TARGETS'] = ['x64']
             ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
+        ctx.env['MSVC_TARGETS'] = _msvc_target(ctx)
 
         # Enable 64-bit porting warnings and other warnings.
         ctx.env.append_value('CFLAGS', '/W3')
@@ -448,15 +446,26 @@ int main ()
 """
 
 
+def _msvc_target(ctx):
+    try:
+        host = {"AMD64": "amd64", "x86": "x86", "ARM64": "arm64"}[platform.machine()]
+    except KeyError:
+        return []
+    if ctx.options.target_arch == '32bit':
+        target = 'x86'
+    elif ctx.options.target_arch == '64bit':
+        target = 'amd64'
+    elif ctx.options.target_arch == '64bit-arm':
+        target = 'arm64'
+    else:
+        return []
+    return [host + "_" + target]
+
+
 def configure(ctx):
     ctx.msg('Python Version', sys.version.replace(os.linesep, ''))
     # For MSVC the target arch must have already been set when the compiler is searched.
-    if ctx.options.target_arch == '32bit':
-        ctx.env['MSVC_TARGETS'] = ['x86']
-    elif ctx.options.target_arch == '64bit':
-        ctx.env['MSVC_TARGETS'] = ['x64']
-    elif ctx.options.target_arch == '64bit-arm':
-        ctx.env['MSVC_TARGETS'] = ['arm64']
+    ctx.env['MSVC_TARGETS'] = _msvc_target(ctx)
 
     # ** C compiler **
 
