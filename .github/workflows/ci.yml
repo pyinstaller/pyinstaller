@@ -81,7 +81,10 @@ jobs:
           # Compile bootloader
           cd bootloader
           CC="gcc -std=gnu90" python waf all
-          cd ..
+
+      - name: Check if bootloader is buildable with --static-zlib option
+        if: startsWith(matrix.os, 'ubuntu')
+        run: cd bootloader && python waf --static-zlib all
 
       - name: Install PyInstaller
         run: |
