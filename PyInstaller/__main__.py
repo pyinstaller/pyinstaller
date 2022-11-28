@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import os
 import platform
+import sys
 from collections import defaultdict
 
 from PyInstaller import __version__
@@ -183,6 +184,14 @@ def run(pyi_args: list | None = None, pyi_config: dict | None = None):
     except RecursionError:
         from PyInstaller import _recursion_too_deep_message
         _recursion_too_deep_message.raise_with_msg()
+
+
+def _console_script_run():
+    # Python prepends the main script's parent directory to sys.path. When PyInstaller is ran via the usual
+    # `pyinstaller` CLI entry point, this directory is $pythonprefix/bin which should not be in sys.path.
+    if os.path.basename(sys.path[0]) in ("bin", "Scripts"):
+        sys.path.pop(0)
+    run()
 
 
 if __name__ == '__main__':

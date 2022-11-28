@@ -1,0 +1,4 @@
+Prevent ``$pythonprefix/bin`` from being added to :data:`sys.path` when
+PyInstaller is invoked using ``pyinstaller your-code.py`` but not using
+``python -m PyInstaller your-code.py``. This prevents collection mismatch when
+a library has the same name as console script.
