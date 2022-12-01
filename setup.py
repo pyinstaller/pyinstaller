@@ -252,6 +252,28 @@ class bdist_wheels(Command):
 
 #--
 
+# --- Prevent `python setup.py install` from building and installing eggs ---
+
+if "bdist_egg" not in sys.argv:
+    from setuptools.command.bdist_egg import bdist_egg
+
+    class bdist_egg_disabled(bdist_egg):
+        """
+        Disabled version of bdist_egg, which prevents `setup.py install` from performing setuptools' default
+        easy_install, which is deprecated and should be avoided.
+        """
+        def run(self):
+            raise SystemExit(
+                "Error: Aborting implicit building of eggs. To install from source, use `pip install .` instead of "
+                "`python setup.py install`."
+            )
+
+    bdist_egg_override = {'bdist_egg': bdist_egg_disabled}
+else:
+    bdist_egg_override = {}
+
+#--
+
 setup(
     setup_requires=["setuptools >= 42.0.0"],
     cmdclass={
@@ -259,6 +281,7 @@ setup(
         'build': MyBuild,
         **wheel_commands,
         'bdist_wheels': bdist_wheels,
+        **bdist_egg_override,
     },
     packages=find_packages(include=["PyInstaller", "PyInstaller.*"]),
     package_data={
