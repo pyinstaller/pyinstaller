@@ -86,5 +86,5 @@ blank_line_before_nested_class_or_def = false
 # which has issues with unicode paths.
 requires = [
 	"wheel",
-	"setuptools",
+	"setuptools >= 42.0.0",
 ]
