@@ -251,7 +251,7 @@ class bdist_wheels(Command):
 #--
 
 setup(
-    setup_requires=["setuptools >= 39.2.0"],
+    setup_requires=["setuptools >= 42.0.0"],
     cmdclass={
         'build_bootloader': build_bootloader,
         'build': MyBuild,
