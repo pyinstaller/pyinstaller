@@ -1,41 +1,65 @@
 How to Install PyInstaller
 ===============================
 
-PyInstaller is a normal Python package.
-You can download the archive from PyPi_,
-but it is easier to install using pip_ where is is available,
-for example::
+PyInstaller is available as a regular Python package.
+The source archives for released versions are available from PyPi_,
+but it is easier to install the latest version using pip_::
 
     pip install pyinstaller
 
-or upgrade to a newer version::
+To upgrade existing PyInstaller installation to the latest version, use::
 
     pip install --upgrade pyinstaller
 
-To install the current development version use::
+To install the current development version, use::
 
     pip install https://github.com/pyinstaller/pyinstaller/tarball/develop
 
+To install directly using pip's built-in git checkout support, use::
 
-Installing from the archive
+    pip install git+https://github.com/pyinstaller/pyinstaller
+
+or to install specific branch (e.g., ``develop``)::
+
+    pip install git+https://github.com/pyinstaller/pyinstaller@develop
+
+Installing from the source archive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If pip is not available, download the compressed archive from PyPI_.
-If you are asked to test a problem using the latest development code,
-download the compressed archive from the *develop* branch of
-`PyInstaller Downloads`_ page.
+The source code archive for released versions of PyInstaller are
+available at PyPI_ and on `PyInstaller Downloads`_ page.
 
-Expand the archive.
-Inside is a script named ``setup.py``.
-Execute ``python setup.py install``
-with administrator privilege to install or upgrade PyInstaller.
+.. Note::
+    Even though the source archive provides the ``setup.py`` script,
+    installation via ``python setup.py install`` has been deprecated
+    and should not be used anymore. Instead, run ``pip install .`` from
+    the unpacked source directory, as described below.
+
+The installation procedure is:
+    1. Unpack the source archive.
+
+    2. Move into the unpacked source directory.
+
+    3. Run ``pip install .`` from the unpacked source directory. If
+       installing into system-wide python installation, administrator
+       privilege is required.
+
+The same procedure applies to installing from manual git checkout::
+
+    git clone https://github.com/pyinstaller/pyinstaller
+    cd pyinstaller
+    pip install .
+
+If you intend to make changes to the source code and want them to take
+effect immediately, without re-installing the package each time, you
+can install it in editable mode::
+
+    pip install -e .
 
 For platforms other than Windows, GNU/Linux and macOS, you must first
-build a bootloader program for your platform: see :ref:`Building the Bootloader`.
-After the bootloader has been created,
-use ``python setup.py install`` with administrator privileges
+build the bootloader for your platform: see :ref:`Building the Bootloader`.
+After the bootloader has been built, use the ``pip install .`` command
 to complete the installation.
-
 
 
 Verifying the installation
@@ -63,6 +87,15 @@ the proper directory:
 To display the current path in Windows the command is ``echo %path%``
 and in other systems, ``echo $PATH``.
 
+.. Note::
+    If you cannot use the ``pyinstaller`` command due to the scripts
+    directory not being in ``PATH``, you can instead invoke the
+    ``PyInstaller`` module, by running ``python -m PyInstaller``
+    (pay attention to the module name, which is case sensitive).
+    This form of invocation is also useful when you have PyInstaller
+    installed in multiple python environments, and you cannot be sure
+    from which installation the ``pyinstaller`` command will be ran.
+
 
 Installed commands
 ~~~~~~~~~~~~~~~~~~~~
@@ -83,15 +116,8 @@ The complete installation places these commands on the execution path:
 * ``pyi-grab_version`` is used to extract a version resource from a Windows
   executable.  See :ref:`Capturing Windows Version Data`.
 
-If you do not perform a complete installation
-(installing via ``pip`` or executing ``setup.py``),
-these commands will not be installed as commands.
-However, you can still execute all the functions documented below
-by running Python scripts found in the distribution folder.
-The equivalent of the ``pyinstaller`` command is
-:file:`{PyInstaller-folder}/pyinstaller.py`.
-The other commands are found in :file:`{PyInstaller-folder}/cliutils/`
-with meaningful names (``makespec.py``, etc.)
+* ``pyi-set_version`` can be used to apply previously-extracted version
+  resource to an existing Windows executable.
 
 
 .. include:: _common_definitions.txt
