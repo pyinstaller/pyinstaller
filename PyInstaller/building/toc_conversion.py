@@ -108,10 +108,6 @@ class DependencyProcessor:
                 and not dist._pyinstaller_info['zip-safe']
             ):
                 # this is a un-zipped, not-zip-safe egg
-                toplevel = dist.get_metadata('top_level.txt').strip()
-                basedir = dist.location
-                if toplevel:
-                    os.path.join(basedir, toplevel)
                 tree = Tree(dist.location, excludes=PY_IGNORE_EXTENSIONS)
                 toc.extend(tree)
         return toc
@@ -146,17 +142,12 @@ class DependencyProcessor:
         logger.debug('Looking for egg data files...')
         for dist in self._distributions:
             if dist._pyinstaller_info['egg']:
-                # TODO: check in docs if top_level.txt always exists
-                toplevel = dist.get_metadata('top_level.txt').strip()
                 if dist._pyinstaller_info['zipped']:
                     # this is a zipped egg
                     tree = self.__collect_data_files_from_zip(dist.location)
                     toc.extend(tree)
                 elif dist._pyinstaller_info['zip-safe']:
                     # this is an un-zipped, zip-safe egg
-                    basedir = dist.location
-                    if toplevel:
-                        os.path.join(basedir, toplevel)
                     tree = Tree(dist.location, excludes=PY_IGNORE_EXTENSIONS)
                     toc.extend(tree)
                 else:

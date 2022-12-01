@@ -1,0 +1,2 @@
+Fix spurious attempt at reading the ``top_level.txt`` metadata from
+packages installed in egg form.
