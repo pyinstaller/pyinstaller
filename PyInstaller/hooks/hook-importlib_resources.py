@@ -12,19 +12,11 @@
 `importlib_resources` is a backport of the 3.9+ module `importlib.resources`
 """
 
-import os
+from PyInstaller.utils.hooks import is_module_satisfies, collect_data_files
 
-from PyInstaller.utils.hooks import get_module_file_attribute, is_module_satisfies
-
-if is_module_satisfies("importlib_resources >= 1.2.0"):
-    # since 1.2.0 importlib.metadata is used which PyInstaller knows how to handle.
-    pass
-else:
-    # include the version.txt file, used to set __version__
-    res_loc = os.path.dirname(get_module_file_attribute('importlib_resources'))
-    datas = [
-        (os.path.join(res_loc, 'version.txt'), 'importlib_resources'),
-    ]
+# Prior to v1.2.0, a `version.txt` file is used to set __version__. Later versions use `importlib.metadata`.
+if is_module_satisfies("importlib_resources < 1.2.0"):
+    datas = collect_data_files("importlib_resources", includes=["version.txt"])
 
 if is_module_satisfies("importlib_resources >= 1.3.1"):
     hiddenimports = ['importlib_resources.trees']
