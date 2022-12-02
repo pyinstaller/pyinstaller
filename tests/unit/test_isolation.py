@@ -10,6 +10,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import logging
 
 import pytest
 
@@ -256,3 +257,45 @@ def test_default_kwargs():
     with isolated.Python() as child:
         actual = child.call(isolated_function, kwarg1='override1', kwarg3='override3')
     assert actual == expected
+
+
+@pytest.mark.parametrize("strict_mode", [True, False], ids=['strict', 'lax'])
+def test_shutdown_timeout_dangling_threads(strict_mode, caplog):
+    """
+    Simulate the scenario from #7290, where the isolated sub-process ends up spawning a non-daemon thread, which
+    prevents the sub-process from shutting down and in turn blocks the parent process on its _child.wait() call.
+
+    This situation might arise when, as part of analysis, PyInstaller performs an isolated import of a module
+    that spawns threads as part of executable statements that are ran on the first time the module is imported.
+    """
+    def isolated_function(*args):
+        import threading
+        import time
+
+        # Simulate some long-running background task with periodic activity
+        def background_task():
+            while True:
+                time.sleep(1)
+
+        thread = threading.Thread(target=background_task, name="Test non-daemon thread", daemon=False)
+        thread.start()
+
+        return args
+
+    expected = ('a', 'b', 'c', 1, 2, 3)
+
+    if strict_mode:
+        # In strict mode, we expect an error to be raised
+        with pytest.raises(RuntimeError, match="Timed out while waiting for the child process to exit!"):
+            with isolated.Python(strict_mode=strict_mode) as child:
+                actual = child.call(isolated_function, *expected)
+    else:
+        # In lax mode, we expect a warning message
+        with caplog.at_level(logging.WARNING):
+            with isolated.Python(strict_mode=strict_mode) as child:
+                actual = child.call(isolated_function, *expected)
+
+            assert "Timed out while waiting for the child process to exit!" in caplog.text
+
+        # The isolated function should finish and return its expected results, regardless of the shutdown timeout.
+        assert actual == expected

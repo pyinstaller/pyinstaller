@@ -1,0 +1,4 @@
+Prevent isolated-subprocess calls from indefinitely blocking in their
+clean-up codepath when the subprocess fails to exit. After the grace
+period of 5 seconds, we now attempt to terminate such subprocess in
+order to prevent hanging of the build process.
