@@ -24,6 +24,7 @@ def _restart_with_reloader(*args):
     finally:
         sys.argv.insert(0, a0)
 
+
 # Override restart_with_reloader() function, otherwise the app might complain that some commands do not exist;
 # e.g., runserver.
 django.utils.autoreload.restart_with_reloader = _restart_with_reloader
