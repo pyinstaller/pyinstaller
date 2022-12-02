@@ -98,9 +98,20 @@ def _autodetect_used_backends(hook_api):
     mpl_code_objs = modulegraph.get_code_using("matplotlib")
     used_backends = []
     for name, co in mpl_code_objs.items():
-        used_backends += _recursive_scan_code_objects_for_mpl_use(co)
+        co_backends = _recursive_scan_code_objects_for_mpl_use(co)
+        if co_backends:
+            logger.info(
+                "Discovered Matplotlib backend(s) via `matplotlib.use()` call in module %r: %r", name, co_backends
+            )
+            used_backends += co_backends
 
     if used_backends:
+        HOOK_CONFIG_DOCS = 'https://pyinstaller.org/en/stable/hooks-config.html#matplotlib-hooks'
+        logger.info(
+            "The following Matplotlib backends were discovered by scanning for `matplotlib.use()` calls: %r. If your "
+            "backend of choice is not in this list, either add a `matplotlib.use()` call to your code, or configure "
+            "the backend collection via hook options (see: %s).", used_backends, HOOK_CONFIG_DOCS
+        )
         return used_backends
 
     # Determine the default matplotlib backend.
