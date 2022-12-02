@@ -16,7 +16,10 @@ from base64 import b64encode, b64decode
 import functools
 import subprocess
 
-from PyInstaller.compat import __wrap_python
+from PyInstaller import compat
+from PyInstaller import log as logging
+
+logger = logging.getLogger(__name__)
 
 # WinAPI bindings for Windows-specific codepath
 if os.name == "nt":
@@ -153,7 +156,7 @@ def child(read_from_parent: int, write_to_parent: int):
         }
 
     # Run the _child.py script directly passing it the two file descriptors it needs to talk back to the parent.
-    cmd, options = __wrap_python([str(CHILD_PY), str(read_from_parent), str(write_to_parent)], extra_kwargs)
+    cmd, options = compat.__wrap_python([str(CHILD_PY), str(read_from_parent), str(write_to_parent)], extra_kwargs)
 
     # I'm intentionally leaving stdout and stderr alone so that print() can still be used for emergency debugging and
     # unhandled errors in the child are still visible.
@@ -181,6 +184,11 @@ class Python:
     that it allows multiple functions to be evaluated in a single subprocess, making it faster than multiple calls to
     :func:`call`.
 
+    The ``strict_mode`` argument controls behavior when the child process fails to shut down; if strict mode is enabled,
+    an error is raised, otherwise only warning is logged. If the value of ``strict_mode`` is ``None``, the value of
+    ``PyInstaller.compat.strict_collect_mode`` is used (which in turn is controlled by the
+    ``PYINSTALLER_STRICT_COLLECT_MODE`` environment variable.
+
     Examples:
         To call some predefined functions ``x = foo()``, ``y = bar("numpy")`` and ``z = bazz(some_flag=True)`` all using
         the same isolated subprocess use::
@@ -191,8 +199,12 @@ class Python:
                 z = child.call(bazz, some_flag=True)
 
     """
-    def __init__(self):
+    def __init__(self, strict_mode=None):
         self._child = None
+
+        # Re-use the compat.strict_collect_mode and its PYINSTALLER_STRICT_COLLECT_MODE environment variable for
+        # default strict-mode setting.
+        self._strict_mode = strict_mode if strict_mode is not None else compat.strict_collect_mode
 
     def __enter__(self):
         # We need two pipes. One for the child to send data to the parent. The (write) end-point passed to the
@@ -230,7 +242,27 @@ class Python:
         # Send the signal (a blank line) to the child to tell it that it's time to stop.
         self._write_handle.write(b"\n")
         self._write_handle.flush()
-        self._child.wait()
+
+        # Wait for the child process to exit. The timeout is necessary for corner cases when the sub-process fails to
+        # exit (such as due to dangling non-daemon threads; see #7290). At this point, the subprocess already did all
+        # its work, so it should be safe to terminate. And as we expect it to shut down quickly (or not at all), the
+        # timeout is relatively short.
+        #
+        # In strict build mode, we raise an error when the subprocess fails to exit on its own, but do so only after
+        # we attempt to kill the subprocess, to avoid leaving zombie processes.
+        shutdown_error = False
+
+        try:
+            self._child.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            logger.warning("Timed out while waiting for the child process to exit!")
+            shutdown_error = True
+            self._child.kill()
+            try:
+                self._child.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                logger.warning("Timed out while waiting for the child process to be killed!")
+                # Give up and fall through
 
         # Close the handles. This should also close the underlying file descriptors.
         self._write_handle.close()
@@ -238,6 +270,10 @@ class Python:
         del self._read_handle, self._write_handle
 
         self._child = None
+
+        # Raise an error in strict mode, after all clean-up has been performed.
+        if shutdown_error and self._strict_mode:
+            raise RuntimeError("Timed out while waiting for the child process to exit!")
 
     def call(self, function, *args, **kwargs):
         """
