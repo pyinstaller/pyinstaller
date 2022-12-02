@@ -1,0 +1,3 @@
+Introduce additional log messages to ``matplotlib.backend`` hook to
+provide better insight into what backends are selected and why when the
+detection of ``matplotlib.use`` calls comes into effect.
