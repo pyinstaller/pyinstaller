@@ -1,3 +1,0 @@
-(GNU/Linux) Fixes an issue with gi shared libraries not being packaged if they don't
-have version suffix and are in a special location set by ``LD_LIBRARY_PATH`` instead of
-a typical library path.

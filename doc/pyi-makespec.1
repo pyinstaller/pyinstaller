@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYI-MAKESPEC" "1" "2022-10-31" "5.6.2" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2022-12-04" "5.7.0" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -72,7 +72,8 @@ show this help message and exit
 .TP
 .BI \-\-log\-level \ LEVEL
 Amount of detail in build\-time console messages. LEVEL may be one of TRACE,
-DEBUG, INFO, WARN, ERROR, CRITICAL (default: INFO).
+DEBUG, INFO, WARN, DEPRECATION, ERROR, CRITICAL (default: INFO). Also
+settable via and overrides the PYI_LOG_LEVEL environment variable.
 .UNINDENT
 .SS What To Generate
 .INDENT 0.0
@@ -151,9 +152,6 @@ multiple times.
 Optional module or package (the Python name, not the path name) that will
 be ignored (as though it was not found). This option can be used multiple
 times.
-.TP
-.BI \-\-key \ KEY
-The key used to encrypt Python bytecode.
 .TP
 .BI \-\-splash \ IMAGE_FILE
 (EXPERIMENTAL) Add an splash screen with the image IMAGE_FILE to the

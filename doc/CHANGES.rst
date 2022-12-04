@@ -15,6 +15,152 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.7.0 (2022-12-04)
+------------------
+
+Features
+~~~~~~~~
+
+* Add the package's location and exact interpreter path to the error message
+  for
+  the check for obsolete and PyInstaller-incompatible standard library
+  back-port
+  packages (``enum34`` and ``typing``). (:issue:`7221`)
+* Allow controlling the build log level (:option:`--log-level`) via a
+  ``PYI_LOG_LEVEL`` environment variable. (:issue:`7235`)
+* Support building native ARM applications for Windows. If PyInstaller is ran
+  on
+  an ARM machine with an ARM build of Python, it will prodice an ARM
+  application. (:issue:`7257`)
+
+
+Bugfix
+~~~~~~
+
+* (Anaconda) Fix the ``PyInstaller.utils.hooks.conda.collect_dynamic_libs``
+  hook utility function to collect only dynamic libraries, by introducing
+  an additional type check (to exclude directories and symbolic links to
+  directories) and additional suffix check (to include only files whose
+  name matches the following patterns: ``*.dll``, ``*.dylib``, ``*.so``,
+  and ``*.so.*``). (:issue:`7248`)
+* (Anaconda) Fix the problem with Anaconda python 3.10 on linux and macOS,
+  where all content of the environment's ``lib`` directory would end up
+  collected as data  due to additional symbolic link pointing from
+  ``python3.1``
+  to ``python3.10``. (:issue:`7248`)
+* (GNU/Linux) Fixes an issue with gi shared libraries not being packaged if
+  they don't
+  have version suffix and are in a special location set by ``LD_LIBRARY_PATH``
+  instead of
+  a typical library path. (:issue:`7278`)
+* (Windows) Fix the problem with ``windowed`` frozen application being unable
+  to spawn interactive command prompt console via ``subprocess`` module due
+  to interference of the ``subprocess`` runtime hook with stream handles.
+  (:issue:`7118`)
+* (Windows) In ``windowed``/``noconsole`` mode, stop setting ``sys.stdout``
+  and ``sys.stderr`` to custom ``NullWriter`` object, and instead leave
+  them at ``None``. This matches the behavior of windowed python interpreter
+  (``pythonw.exe``) and prevents interoperability issues with code that
+  (rightfully) expects the streams to be either ``None`` or objects that
+  are fully compatible with ``io.IOBase``. (:issue:`3503`)
+* Ensure that ``PySide6.support.deprecated`` module is collected for
+  ``PySide6`` 6.4.0 and later in order to enable continued support for
+  ``|`` and ``&`` operators between Qt key and key modifier enum values
+  (e.g., ``QtCore.Qt.Key_D`` and ``QtCore.Qt.AltModifier``). (:issue:`7249`)
+* Fix potential duplication of python extension modules in ``onefile``
+  builds, which happened when an extension was collected both as an
+  ``EXTENSION`` and as a ``DATA`` (or a ``BINARY``) TOC type. This
+  resulted in run-time warnings about files already existing; the
+  most notorious example being ``WARNING: file already exists but
+  should not:
+  C:\Users\user\AppData\Local\Temp\MEI1234567\torch\_C.cp39-win_amd64.pyd``
+  when building ``onefile`` applications that use ``torch``. (:issue:`7273`)
+* Fix spurious attempt at reading the ``top_level.txt`` metadata from
+  packages installed in egg form. (:issue:`7086`)
+* Fix the log level (provided via :option:`--log-level`) being ignored by some
+  build steps. (:issue:`7235`)
+* Fix the problem with ``MERGE`` not properly cleaning up passed
+  ``Analysis.binaries`` and ``Analysis.datas`` TOCs due to changes made to
+  ``TOC`` class in PyInstaller 5.0. This effectively broke the supposed
+  de-duplication functionality of ``MERGE`` and multi-package bundles,
+  which should be restored now. (:issue:`7273`)
+* Prevent ``$pythonprefix/bin`` from being added to :data:`sys.path` when
+  PyInstaller is invoked using ``pyinstaller your-code.py`` but not using
+  ``python -m PyInstaller your-code.py``. This prevents collection mismatch
+  when
+  a library has the same name as console script. (:issue:`7120`)
+* Prevent isolated-subprocess calls from indefinitely blocking in their
+  clean-up codepath when the subprocess fails to exit. After the grace
+  period of 5 seconds, we now attempt to terminate such subprocess in
+  order to prevent hanging of the build process. (:issue:`7290`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* (Windows) In ``windowed``/``noconsole`` mode, PyInstaller does not set
+  ``sys.stdout`` and ``sys.stderr`` to custom ``NullWriter`` object anymore,
+  but leaves them at ``None``. The new behavior matches that of the windowed
+  python interpreter (``pythonw.exe``), but may break the code that uses
+  ``sys.stdout`` or ``sys.stderr`` without first checking that they are
+  available. The code intended to be run frozen in ``windowed``/``noconsole``
+  mode should be therefore be validated using the windowed python interpreter
+  to catch errors related to console being unavailable. (:issue:`7216`)
+
+
+Deprecations
+~~~~~~~~~~~~
+
+* Deprecate bytecode encryption (the ``--key`` option), to be removed in
+  PyInstaller v6.0. (:issue:`6999`)
+
+
+Hooks
+~~~~~
+
+* (Windows) Remove the ``subprocess`` runtime hook. The problem with invalid
+  standard stream handles, which caused the ``subprocess`` module raise an
+  ``OSError: [WinError 6] The handle is invalid`` error in a ``windowed``
+  ``onefile`` frozen application when trying to spawn a subprocess without
+  redirecting all standard streams, has been fixed in the bootloader.
+  (:issue:`7182`)
+* Ensure that each ``Qt*`` submodule of the ``PySide2``, ``PyQt5``,
+  ``PySide6``,
+  and ``PyQt6`` bindings has a corresponding hook, and can therefore been
+  imported in a frozen application on its own. Applicable to the latest
+  versions of packages at the time of writing: ``PySide2 == 5.15.2.1``,
+  ``PyQt5 == 5.15.7``, ``PySide6 == 6.4.0``, and ``PyQt6 == 6.4.0``.
+  (:issue:`7284`)
+* Improve compatibility with contemporary ``Django`` 4.x version by removing
+  the override of ``django.core.management.get_commands`` from the ``Django``
+  run-time hook. The static command list override is both outdated (based on
+  ``Django`` 1.8) and unnecessary due to dynamic command list being properly
+  populated under contemporary versions of ``PyInstaller`` and ``Django``.
+  (:issue:`7259`)
+* Introduce additional log messages to ``matplotlib.backend`` hook to
+  provide better insight into what backends are selected and why when the
+  detection of ``matplotlib.use`` calls comes into effect. (:issue:`7300`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Windows) In a ``onefile`` application, avoid passing invalid stream handles
+  (the ``INVALID_HANDLE_VALUE`` constant with value ``-1``) to the launched
+  application child process when the standard streams are unavailable (for
+  example, in a windowed/no-console application). (:issue:`7182`)
+
+
+Bootloader build
+~~~~~~~~~~~~~~~~
+
+* Support building ARM native binaries using MSVC using the command
+  ``python waf --target-arch=64bit-arm all``. If built on an ARM machine,
+  ``--target-arch=64bit-arm`` is the default. (:issue:`7257`)
+* Windows ARM64 bootloaders may now be built using an ARM build of clang with
+  ``python waf --target-arch=64bit-arm --clang all``. (:issue:`7257`)
+
+
 5.6.2 (2022-10-31)
 -------------------
 

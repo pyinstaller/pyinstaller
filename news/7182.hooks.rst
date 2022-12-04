@@ -1,5 +1,0 @@
-(Windows) Remove the ``subprocess`` runtime hook. The problem with invalid
-standard stream handles, which caused the ``subprocess`` module raise an
-``OSError: [WinError 6] The handle is invalid`` error in a ``windowed``
-``onefile`` frozen application when trying to spawn a subprocess without
-redirecting all standard streams, has been fixed in the bootloader.

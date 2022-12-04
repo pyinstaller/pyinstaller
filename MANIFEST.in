@@ -4,8 +4,8 @@ recursive-exclude PyInstaller/bootloader *
 recursive-include PyInstaller/bootloader/images *
 # Keep the Windows bootloaders so that MSYS2 users aren't required to build
 # from source. (Wheels don't work on MSYS2.)
-recursive-include PyInstaller/bootloader/Windows-32bit *
-recursive-include PyInstaller/bootloader/Windows-64bit *
+recursive-include PyInstaller/bootloader/Windows-32bit-intel *
+recursive-include PyInstaller/bootloader/Windows-64bit-intel *
 # Until pip 20.1.2 is considered old, keep the macOS bootloaders
 # in here too so that older pips which don't recognise the universal2
 # wheel tag can still use the sdist.

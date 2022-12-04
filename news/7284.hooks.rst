@@ -1,5 +1,0 @@
-Ensure that each ``Qt*`` submodule of the ``PySide2``, ``PyQt5``, ``PySide6``,
-and ``PyQt6`` bindings has a corresponding hook, and can therefore been
-imported in a frozen application on its own. Applicable to the latest
-versions of packages at the time of writing: ``PySide2 == 5.15.2.1``,
-``PyQt5 == 5.15.7``, ``PySide6 == 6.4.0``, and ``PyQt6 == 6.4.0``.

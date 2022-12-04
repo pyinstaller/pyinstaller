@@ -94,8 +94,8 @@ PyInstaller/bootloader/*
 !PyInstaller/bootloader/Darwin-64bit
 !PyInstaller/bootloader/Linux-32bit-intel/
 !PyInstaller/bootloader/Linux-64bit-intel/
-!PyInstaller/bootloader/Windows-32bit/
-!PyInstaller/bootloader/Windows-64bit/
+!PyInstaller/bootloader/Windows-32bit-intel/
+!PyInstaller/bootloader/Windows-64bit-intel/
 !PyInstaller/bootloader/images/
 
 # Mac OS X

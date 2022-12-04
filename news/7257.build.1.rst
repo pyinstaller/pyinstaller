@@ -1,3 +1,0 @@
-Support building ARM native binaries using MSVC using the command
-``python waf --target-arch=64bit-arm all``. If built on an ARM machine,
-``--target-arch=64bit-arm`` is the default.

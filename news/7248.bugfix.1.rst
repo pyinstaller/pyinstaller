@@ -1,4 +1,0 @@
-(Anaconda) Fix the problem with Anaconda python 3.10 on linux and macOS, 
-where all content of the environment's ``lib`` directory would end up 
-collected as data  due to additional symbolic link pointing from ``python3.1`` 
-to ``python3.10``.

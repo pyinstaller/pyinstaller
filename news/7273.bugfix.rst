@@ -1,7 +1,0 @@
-Fix potential duplication of python extension modules in ``onefile``
-builds, which happened when an extension was collected both as an
-``EXTENSION`` and as a ``DATA`` (or a ``BINARY``) TOC type. This
-resulted in run-time warnings about files already existing; the
-most notorious example being ``WARNING: file already exists but
-should not: C:\Users\user\AppData\Local\Temp\MEI1234567\torch\_C.cp39-win_amd64.pyd``
-when building ``onefile`` applications that use ``torch``.

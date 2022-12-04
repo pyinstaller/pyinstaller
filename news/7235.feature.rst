@@ -1,2 +1,0 @@
-Allow controlling the build log level (:option:`--log-level`) via a
-``PYI_LOG_LEVEL`` environment variable.

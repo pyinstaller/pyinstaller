@@ -1,5 +1,0 @@
-Improve compatibility with contemporary ``Django`` 4.x version by removing
-the override of ``django.core.management.get_commands`` from the ``Django``
-run-time hook. The static command list override is both outdated (based on
-``Django`` 1.8) and unnecessary due to dynamic command list being properly
-populated under contemporary versions of ``PyInstaller`` and ``Django``.

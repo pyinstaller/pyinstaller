@@ -1,1 +1,0 @@
-Deprecate bytecode encryption (the ``--key`` option), to be removed in PyInstaller v6.0.

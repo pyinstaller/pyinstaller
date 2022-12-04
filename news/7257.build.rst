@@ -1,2 +1,0 @@
-Windows ARM64 bootloaders may now be built using an ARM build of clang with
-``python waf --target-arch=64bit-arm --clang all``.
