@@ -12,25 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-
-      - name: Get out of detached head state
-        run: |
-          git fetch origin ${{ github.base_ref }}
-          git fetch origin ${{ github.ref }}
-          git checkout FETCH_HEAD --
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.7
 
       - name: Validate new news items
-        run: |
-          git diff --name-status origin/${{ github.base_ref }}
-          git diff --name-status origin/${{ github.base_ref }}\
-          | python scripts/verify-news-fragments.py
+        run: python scripts/verify-news-fragments.py
 
       - name: Install towncrier
         run: pip install -q -U setuptools wheel towncrier
