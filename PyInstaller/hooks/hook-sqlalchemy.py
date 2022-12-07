@@ -11,9 +11,10 @@
 
 import re
 
+from PyInstaller import isolated
 from PyInstaller.lib.modulegraph.modulegraph import SourceModule
 from PyInstaller.lib.modulegraph.util import guess_encoding
-from PyInstaller.utils.hooks import exec_statement, is_module_satisfies, logger
+from PyInstaller.utils.hooks import is_module_satisfies, logger
 
 # 'sqlalchemy.testing' causes bundling a lot of unnecessary modules.
 excludedimports = ['sqlalchemy.testing']
@@ -25,20 +26,20 @@ hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2', 'sqlalchemy.ext.baked']
 if is_module_satisfies('sqlalchemy >= 1.4'):
     hiddenimports.append("sqlalchemy.sql.default_comparator")
 
+
+@isolated.decorate
+def _get_dialect_modules(module_name):
+    import importlib
+    module = importlib.import_module(module_name)
+    return [f"{module_name}.{submodule_name}" for submodule_name in module.__all__]
+
+
 # In SQLAlchemy >= 0.6, the "sqlalchemy.dialects" package provides dialects.
-if is_module_satisfies('sqlalchemy >= 0.6'):
-    dialects = exec_statement("import sqlalchemy.dialects;print(sqlalchemy.dialects.__all__)")
-    dialects = eval(dialects.strip())
-
-    for n in dialects:
-        hiddenimports.append("sqlalchemy.dialects." + n)
 # In SQLAlchemy <= 0.5, the "sqlalchemy.databases" package provides dialects.
+if is_module_satisfies('sqlalchemy >= 0.6'):
+    hiddenimports += _get_dialect_modules("sqlalchemy.dialects")
 else:
-    databases = exec_statement("import sqlalchemy.databases; print(sqlalchemy.databases.__all__)")
-    databases = eval(databases.strip())
-
-    for n in databases:
-        hiddenimports.append("sqlalchemy.databases." + n)
+    hiddenimports += _get_dialect_modules("sqlalchemy.databases")
 
 
 def hook(hook_api):
@@ -60,8 +61,7 @@ def hook(hook_api):
     hidden_imports_set = set()
     known_imports = set()
     for node in hook_api.module_graph.iter_graph(start=hook_api.module):
-        if isinstance(node, SourceModule) and \
-                node.identifier.startswith('sqlalchemy.'):
+        if isinstance(node, SourceModule) and node.identifier.startswith('sqlalchemy.'):
             known_imports.add(node.identifier)
             # Determine the encoding of the source file.
             with open(node.filename, 'rb') as f:
