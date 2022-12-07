@@ -13,15 +13,56 @@ import locale
 import os
 
 from PyInstaller import compat
+from PyInstaller import isolated
 from PyInstaller import log as logging
 from PyInstaller.building.datastruct import Tree
 from PyInstaller.depend import bindepend
-from PyInstaller.utils import hooks as hookutils
 
 logger = logging.getLogger(__name__)
 
 TK_ROOTNAME = 'tk'
 TCL_ROOTNAME = 'tcl'
+
+
+@isolated.decorate
+def _get_tcl_tk_info():
+    """
+    Isolated-subprocess helper to retrieve the basic Tcl/Tk information:
+     - tcl_dir = path to the Tcl library/data directory.
+     - tcl_version = Tcl version
+     - tk_version = Tk version
+     - tcl_theaded = boolean indicating whether Tcl/Tk is built with multi-threading support.
+    """
+    try:
+        import tkinter
+        from _tkinter import TCL_VERSION, TK_VERSION
+    except ImportError:
+        # tkinter unavailable
+        return None, None, None, False
+
+    tcl = tkinter.Tcl()
+
+    # Query the location of Tcl library/data directory.
+    tcl_dir = tcl.eval("info library")
+
+    # Check if Tcl/Tk is built with multi-threaded support (built with --enable-threads), as indicated by the presence
+    # of optional `threaded` member in `tcl_platform` array.
+    try:
+        tcl.getvar("tcl_platform(threaded)")  # Ignore the actual value.
+        tcl_threaded = True
+    except tkinter.TclError:
+        tcl_threaded = False
+
+    return tcl_dir, TCL_VERSION, TK_VERSION, tcl_threaded
+
+
+# Populate the variables. If `tkinter` is unavailable, the values are set to `None` or `False`.
+(
+    tcl_dir,
+    tcl_version,
+    tk_version,
+    tcl_threaded,
+) = _get_tcl_tk_info()
 
 
 def _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree):
@@ -76,25 +117,6 @@ difficulty freezing. To fix this, comment out all references to "teapot" in:
 See https://github.com/pyinstaller/pyinstaller/issues/621 for more information.
             """ % init_resource
         )
-
-
-def _find_tcl_tk_dir():
-    """
-    Get a platform-agnostic 2-tuple of the absolute paths of the top-level external data directories for both
-    Tcl and Tk, respectively.
-
-    Returns
-    -------
-    list
-        2-tuple that contains the values of `${TCL_LIBRARY}` and `${TK_LIBRARY}`, respectively.
-    """
-    # Python code to get path to TCL_LIBRARY.
-    tcl_root = hookutils.exec_statement('from tkinter import Tcl; print(Tcl().eval("info library"))')
-    tk_version = hookutils.exec_statement('from _tkinter import TK_VERSION; print(TK_VERSION)')
-
-    # TK_LIBRARY is in the same prefix as Tcl.
-    tk_root = os.path.join(os.path.dirname(tcl_root), 'tk%s' % tk_version)
-    return tcl_root, tk_root
 
 
 def find_tcl_tk_shared_libs(tkinter_ext_file):
@@ -173,11 +195,15 @@ def _find_tcl_tk(tkinter_ext_file):
 
         # Bundled copy of Tcl/Tk; in this case, the dynamic library is
         # /Library/Frameworks/Python.framework/Versions/3.x/lib/libtcl8.6.dylib
-        # and the data directories have standard layout that is handled by _find_tcl_tk_dir().
-        return _find_tcl_tk_dir()
+        # and the data directories have standard layout that is handled by code below.
     else:
-        # On Windows and linux, data directories have standard layout that is handled by _find_tcl_tk_dir().
-        return _find_tcl_tk_dir()
+        # On Windows and linux, data directories have standard layout that is handled by code below.
+        pass
+
+    # The Tcl library location is already stored in `tcl_dir` global variable. The Tk library is in the same prefix, so
+    # construct the path using `tk_version` global variable.
+    tk_dir = os.path.join(os.path.dirname(tcl_dir), f"tk{tk_version}")
+    return tcl_dir, tk_dir
 
 
 def _collect_tcl_modules(tcl_root):
@@ -192,10 +218,9 @@ def _collect_tcl_modules(tcl_root):
     """
 
     # Obtain Tcl major version.
-    tcl_version = hookutils.exec_statement('from tkinter import Tcl; print(Tcl().eval("info tclversion"))')
-    tcl_version = tcl_version.split('.')[0]
+    tcl_major_version = tcl_version.split('.')[0]
 
-    modules_dirname = 'tcl' + str(tcl_version)
+    modules_dirname = f"tcl{tcl_major_version}"
     modules_path = os.path.join(tcl_root, '..', modules_dirname)
 
     if not os.path.isdir(modules_path):
@@ -239,8 +264,12 @@ def collect_tcl_tk_files(tkinter_ext_file):
         logger.error('Tk data directory "%s" not found.', tk_root)
         return []
 
-    tcltree = Tree(tcl_root, prefix='tcl', excludes=['demos', '*.lib', 'tclConfig.sh'])
-    tktree = Tree(tk_root, prefix='tk', excludes=['demos', '*.lib', 'tkConfig.sh'])
+    # Collect Tcl and Tk scripts from their corresponding library/data directories. In contrast to source directories,
+    # which are typically versioned (tcl8.6, tk8.6), the target directories are unversioned (tcl, tk); they are added
+    # to the Tcl/Tk search path via runtime hook for _tkinter, which sets the `TCL_LIBRARY` and `TK_LIBRARY` environment
+    # variables.
+    tcltree = Tree(tcl_root, prefix=TCL_ROOTNAME, excludes=['demos', '*.lib', 'tclConfig.sh'])
+    tktree = Tree(tk_root, prefix=TK_ROOTNAME, excludes=['demos', '*.lib', 'tkConfig.sh'])
 
     # If the current Tcl installation is a Teapot-distributed version of ActiveTcl and the current platform is Mac OS,
     # warn that this is bad.

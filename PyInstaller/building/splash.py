@@ -19,8 +19,7 @@ from PyInstaller.building import splash_templates
 from PyInstaller.building.datastruct import TOC, Target
 from PyInstaller.building.utils import _check_guts_eq, _check_guts_toc, misc
 from PyInstaller.compat import is_darwin, is_win, is_cygwin
-from PyInstaller.utils.hooks import exec_statement
-from PyInstaller.utils.hooks.tcl_tk import (TK_ROOTNAME, collect_tcl_tk_files, find_tcl_tk_shared_libs)
+from PyInstaller.utils.hooks import tcl_tk as tcltk_utils
 
 try:
     from PIL import Image as PILImage
@@ -32,16 +31,18 @@ logger = logging.getLogger(__name__)
 # These requirement files are checked against the current splash screen script. If you wish to modify the splash screen
 # and run into tcl errors/bad behavior, this is a good place to start and add components your implementation of the
 # splash screen might use.
+# NOTE: these paths use the *destination* layout for Tcl/Tk scripts, which uses unversioned tcl and tk directories
+# (see `PyInstaller.utils.hooks.tcl_tk.collect_tcl_tk_files`).
 splash_requirements = [
     # prepended tcl/tk binaries
-    os.path.join(TK_ROOTNAME, "license.terms"),
-    os.path.join(TK_ROOTNAME, "text.tcl"),
-    os.path.join(TK_ROOTNAME, "tk.tcl"),
+    os.path.join(tcltk_utils.TK_ROOTNAME, "license.terms"),
+    os.path.join(tcltk_utils.TK_ROOTNAME, "text.tcl"),
+    os.path.join(tcltk_utils.TK_ROOTNAME, "tk.tcl"),
     # Used for customizable font
-    os.path.join(TK_ROOTNAME, "ttk", "ttk.tcl"),
-    os.path.join(TK_ROOTNAME, "ttk", "fonts.tcl"),
-    os.path.join(TK_ROOTNAME, "ttk", "cursors.tcl"),
-    os.path.join(TK_ROOTNAME, "ttk", "utils.tcl"),
+    os.path.join(tcltk_utils.TK_ROOTNAME, "ttk", "ttk.tcl"),
+    os.path.join(tcltk_utils.TK_ROOTNAME, "ttk", "fonts.tcl"),
+    os.path.join(tcltk_utils.TK_ROOTNAME, "ttk", "cursors.tcl"),
+    os.path.join(tcltk_utils.TK_ROOTNAME, "ttk", "utils.tcl"),
 ]
 
 
@@ -188,7 +189,7 @@ class Splash(Target):
         # Calculated / analysed values
         self.uses_tkinter = self._uses_tkinter(binaries)
         self.script = self.generate_script()
-        self.tcl_lib, self.tk_lib = find_tcl_tk_shared_libs(self._tkinter_file)
+        self.tcl_lib, self.tk_lib = tcltk_utils.find_tcl_tk_shared_libs(self._tkinter_file)
         if is_darwin:
             # Outdated Tcl/Tk 8.5 system framework is not supported. Depending on macOS version, the library path will
             # come up empty (hidden system libraries on Big Sur), or will be
@@ -202,7 +203,7 @@ class Splash(Target):
         self.splash_requirements = set([self.tcl_lib[0], self.tk_lib[0]] + splash_requirements)
 
         logger.info("Collect tcl/tk binaries for the splash screen")
-        tcltk_tree = collect_tcl_tk_files(self._tkinter_file)
+        tcltk_tree = tcltk_utils.collect_tcl_tk_files(self._tkinter_file)
         if self.full_tk:
             # The user wants a full copy of tk, so make all tk files a requirement.
             self.splash_requirements.update(toc[0] for toc in tcltk_tree)
@@ -382,7 +383,7 @@ class Splash(Target):
             self.splash_requirements,
             self.tcl_lib[0],  # tcl86t.dll
             self.tk_lib[0],  # tk86t.dll
-            TK_ROOTNAME,
+            tcltk_utils.TK_ROOTNAME,
             self.rundir,
             image,
             self.script
@@ -407,19 +408,8 @@ class Splash(Target):
                 "versions" % (self._tkinter_module.TCL_VERSION, self._tkinter_module.TK_VERSION)
             )
 
-        # Test if tcl is threaded.
-        # If the variable tcl_platform(threaded) exist, the tcl interpreter was compiled with thread support.
-        threaded = bool(exec_statement(
-            """
-            from tkinter import Tcl, TclError
-            try:
-                print(Tcl().getvar('tcl_platform(threaded)'))
-            except TclError:
-                pass
-            """
-        ))  # yapf: disable
-
-        if not threaded:
+        # Ensure that Tcl is built with multi-threading support.
+        if not tcltk_utils.tcl_threaded:
             # This is a feature breaking problem, so exit.
             raise SystemExit(
                 "The installed tcl version is not threaded. PyInstaller only supports the splash screen "
