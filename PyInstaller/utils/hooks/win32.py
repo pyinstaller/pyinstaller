@@ -9,7 +9,10 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # ----------------------------------------------------------------------------
 
+from PyInstaller import isolated
 
+
+@isolated.decorate
 def get_pywin32_module_file_attribute(module_name):
     """
     Get the absolute path of the PyWin32 DLL specific to the PyWin32 module with the passed name.
@@ -38,13 +41,6 @@ def get_pywin32_module_file_attribute(module_name):
     `PyInstaller.utils.win32.winutils.import_pywin32_module()`
         For further details.
     """
-    from PyInstaller.utils.hooks import exec_statement
-    statement = """
-        from PyInstaller.utils.win32 import winutils
-        module = winutils.import_pywin32_module('%s')
-        print(module.__file__)
-    """
-    return exec_statement(statement % module_name)
-
-
-__all__ = ('get_pywin32_module_file_attribute',)
+    from PyInstaller.utils.win32 import winutils
+    module = winutils.import_pywin32_module(module_name)
+    return module.__file__
