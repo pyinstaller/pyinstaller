@@ -374,8 +374,7 @@ Spec File Options for a macOS Bundle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When you build a windowed macOS app
-(that is, running in macOS, you specify the :option:`--onefile`
-:option:`--windowed` options),
+(that is, running under macOS, you specify the :option:`--windowed` option),
 the spec file contains an additional statement to
 create the macOS application bundle, or app folder::
 
