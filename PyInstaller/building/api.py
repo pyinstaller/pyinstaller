@@ -179,7 +179,7 @@ class PKG(Target):
         toc,
         name=None,
         cdict=None,
-        exclude_binaries=0,
+        exclude_binaries=False,
         strip_binaries=False,
         upx_binaries=False,
         upx_exclude=None,
@@ -189,21 +189,22 @@ class PKG(Target):
     ):
         """
         toc
-                A TOC (Table of Contents)
+            A TOC (Table of Contents)
         name
-                An optional filename for the PKG.
+            An optional filename for the PKG.
         cdict
-                Dictionary that specifies compression by typecode. For Example, PYZ is left uncompressed so that it
-                can be accessed inside the PKG. The default uses sensible values. If zlib is not available, no
-                compression is used.
+            Dictionary that specifies compression by typecode. For Example, PYZ is left uncompressed so that it
+            can be accessed inside the PKG. The default uses sensible values. If zlib is not available, no
+            compression is used.
         exclude_binaries
-                If True, EXTENSIONs and BINARYs will be left out of the PKG, and forwarded to its container (usually
-                a COLLECT).
+            If True, EXTENSIONs and BINARYs will be left out of the PKG, and forwarded to its container (usually
+            a COLLECT).
         strip_binaries
-                If True, use 'strip' command to reduce the size of binary files.
+            If True, use 'strip' command to reduce the size of binary files.
         upx_binaries
         """
-        Target.__init__(self)
+        super().__init__()
+
         self.toc = toc
         self.cdict = cdict
         self.name = name
@@ -216,6 +217,7 @@ class PKG(Target):
         self.target_arch = target_arch
         self.codesign_identity = codesign_identity
         self.entitlements_file = entitlements_file
+
         # This dict tells PyInstaller what items embedded in the executable should be compressed.
         if self.cdict is None:
             self.cdict = {
@@ -226,9 +228,10 @@ class PKG(Target):
                 'PYSOURCE': COMPRESSED,
                 'PYMODULE': COMPRESSED,
                 'SPLASH': COMPRESSED,
-                # Do not compress PYZ as a whole. Single modules are compressed when creating PYZ archive.
+                # Do not compress PYZ as a whole, as it contains individually-compressed modules.
                 'PYZ': UNCOMPRESSED
             }
+
         self.__postinit__()
 
     _GUTS = (  # input parameters
@@ -245,29 +248,26 @@ class PKG(Target):
         # no calculated/analysed values
     )
 
-    def _check_guts(self, data, last_build):
-        if Target._check_guts(self, data, last_build):
-            return True
-        return False
-
     def assemble(self):
         logger.info("Building PKG (CArchive) %s", os.path.basename(self.name))
-        mytoc = []
-        srctoc = []
-        # 'inm'  - relative filename inside a CArchive
-        # 'fnm'  - absolute filename as it is on the file system.
-        for inm, fnm, typ in self.toc:
-            # Ensure that the source file exists, if neccessary. Skip the check for OPTION entries, where 'fnm' is None.
-            # Also skip DEPENDENCY entries due to special contents of 'inm' and/or 'fnm'.
-            if typ not in ('OPTION', 'DEPENDENCY') and not os.path.exists(fnm):
+
+        bootstrap_toc = []  # TOC containing bootstrap scripts and modules, which must not be sorted.
+        archive_toc = []  # TOC containing all other elements. Sorted to enable reproducible builds.
+
+        for dest_name, src_name, typecode in self.toc:
+            # Ensure that the source file exists, if necessary. Skip the check for OPTION entries, where 'src_name' is
+            # None. Also skip DEPENDENCY entries due to special contents of 'dest_name' and/or 'src_name'.
+            if typecode not in ('OPTION', 'DEPENDENCY') and not os.path.exists(src_name):
                 # If file is contained within python egg, it will be added with the egg.
-                if not is_path_to_egg(fnm):
+                if not is_path_to_egg(src_name):
                     if strict_collect_mode:
-                        raise ValueError(f"Non-existent resource {fnm}, meant to be collected as {inm}!")
+                        raise ValueError(f"Non-existent resource {src_name}, meant to be collected as {dest_name}!")
                     else:
-                        logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
+                        logger.warning(
+                            "Ignoring non-existent resource %s, meant to be collected as %s", src_name, dest_name
+                        )
                 continue
-            if typ in ('BINARY', 'EXTENSION'):
+            if typecode in ('BINARY', 'EXTENSION'):
                 if self.exclude_binaries:
                     # This is onedir-specific codepath - the EXE and consequently PKG should not be passed the Analysis'
                     # `datas` and `binaries` TOCs (unless the user messes up the .spec file). However, EXTENSION entries
@@ -279,40 +279,40 @@ class PKG(Target):
                     # keep code simple, we now also do it for BINARY entries. In a sane world, we do not expect to
                     # encounter them here; but if they do happen to pass through here and we pass them on, the
                     # container's TOC de-duplication should take care of them (same as with EXTENSION ones, really).
-                    self.dependencies.append((inm, fnm, typ))
+                    self.dependencies.append((dest_name, src_name, typecode))
                 else:
                     # This is onefile-specific codepath. The binaries (both EXTENSION and BINARY entries) need to be
                     # processed using `checkCache` helper.
-                    fnm = checkCache(
-                        fnm,
+                    src_name = checkCache(
+                        src_name,
                         strip=self.strip_binaries,
                         upx=self.upx_binaries,
                         upx_exclude=self.upx_exclude,
-                        dist_nm=inm,
+                        dist_nm=dest_name,
                         target_arch=self.target_arch,
                         codesign_identity=self.codesign_identity,
                         entitlements_file=self.entitlements_file,
-                        strict_arch_validation=(typ == 'EXTENSION'),
+                        strict_arch_validation=(typecode == 'EXTENSION'),
                     )
-                    mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
-            elif typ == 'OPTION':
-                mytoc.append((inm, '', 0, 'o'))
-            elif typ in ('PYSOURCE', 'PYMODULE'):
-                # collect sourcefiles and module in a toc of it's own which will not be sorted.
-                srctoc.append((inm, fnm, self.cdict[typ], self.xformdict[typ]))
+                    archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
+            elif typecode == 'OPTION':
+                archive_toc.append((dest_name, '', False, 'o'))
+            elif typecode in ('PYSOURCE', 'PYMODULE'):
+                # Collect python script and modules in a TOC that will not be sorted.
+                bootstrap_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
             else:
                 # PYZ, PKG, DEPENDENCY, SPLASH
                 # TODO: are DATA and ZIPFILE valid here?
-                mytoc.append((inm, fnm, self.cdict.get(typ, 0), self.xformdict.get(typ, 'b')))
+                archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
         pylib_name = os.path.basename(bindepend.get_python_library_path())
 
-        # Sort content alphabetically by type and name to support reproducible builds.
-        mytoc.sort(key=itemgetter(3, 0))
+        # Sort content alphabetically by type and name to enable reproducible builds.
+        archive_toc.sort(key=itemgetter(3, 0))
         # Do *not* sort modules and scripts, as their order is important.
         # TODO: Think about having all modules first and then all scripts.
-        CArchiveWriter(self.name, srctoc + mytoc, pylib_name=pylib_name)
+        CArchiveWriter(self.name, bootstrap_toc + archive_toc, pylib_name=pylib_name)
 
         logger.info("Building PKG (CArchive) %s completed successfully.", os.path.basename(self.name))
 
@@ -1072,8 +1072,8 @@ class MERGE:
             return topath
 
 
-UNCOMPRESSED = 0
-COMPRESSED = 1
+UNCOMPRESSED = False
+COMPRESSED = True
 
 _MISSING_BOOTLOADER_ERRORMSG = """Fatal error: PyInstaller does not include a pre-compiled bootloader for your
 platform. For more details and instructions how to build the bootloader see
