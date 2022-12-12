@@ -57,11 +57,9 @@ def _check_guts_eq(attr_name, old_value, new_value, last_build):
     return False
 
 
-def _check_guts_toc_mtime(attr_name, old_toc, new_toc, last_build, pyc=False):
+def _check_guts_toc_mtime(attr_name, old_toc, new_toc, last_build):
     """
     Rebuild is required if mtimes of files listed in old TOC are newer than last_build.
-
-    If pyc=True, check for .py files as well.
 
     Use this for calculated/analysed values read from cache.
     """
@@ -69,24 +67,17 @@ def _check_guts_toc_mtime(attr_name, old_toc, new_toc, last_build, pyc=False):
         if misc.mtime(src_name) > last_build:
             logger.info("Building because %s changed", src_name)
             return True
-        elif pyc and typecode == 'PYMODULE':
-            py_filename = src_name[:-1]
-            if misc.mtime(py_filename) > last_build:
-                logger.info("Building because %s changed", py_filename)
-                return True
     return False
 
 
-def _check_guts_toc(attr_name, old_toc, new_toc, last_build, pyc=False):
+def _check_guts_toc(attr_name, old_toc, new_toc, last_build):
     """
     Rebuild is required if either TOC content changed or mtimes of files listed in old TOC are newer than last_build.
-
-    If pyc=True, check for .py files as well.
 
     Use this for input parameters.
     """
     return _check_guts_eq(attr_name, old_toc, new_toc, last_build) or \
-        _check_guts_toc_mtime(attr_name, old_toc, new_toc, last_build, pyc=pyc)
+        _check_guts_toc_mtime(attr_name, old_toc, new_toc, last_build)
 
 
 def add_suffix_to_extension(dest_name, src_name, typecode):
