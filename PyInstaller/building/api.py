@@ -857,36 +857,35 @@ class COLLECT(Target):
     """
     In one-dir mode creates the output folder with all necessary files.
     """
-    def __init__(self, *args, **kws):
+    def __init__(self, *args, **kwargs):
         """
         args
-                One or more arguments that are either TOCs Targets.
-        kws
+            One or more arguments that are either TOCs or Targets.
+        kwargs
             Possible keyword arguments:
 
-                name
-                    The name of the directory to be built.
+            name
+                The name of the directory to be built.
         """
         from PyInstaller.config import CONF
-        Target.__init__(self)
-        self.strip_binaries = kws.get('strip', False)
-        self.upx_exclude = kws.get("upx_exclude", [])
+
+        super().__init__()
+
+        self.strip_binaries = kwargs.get('strip', False)
+        self.upx_exclude = kwargs.get("upx_exclude", [])
         self.console = True
         self.target_arch = None
         self.codesign_identity = None
         self.entitlements_file = None
 
         if CONF['hasUPX']:
-            self.upx_binaries = kws.get('upx', False)
+            self.upx_binaries = kwargs.get('upx', False)
         else:
             self.upx_binaries = False
 
-        self.name = kws.get('name')
-        # Old .spec format included in 'name' the path where to collect files for the created app. app. New format
-        # includes only directory name.
-        #
-        # The 'name' directory is created in DISTPATH and necessary files are then collected to this directory.
-        self.name = os.path.join(CONF['distpath'], os.path.basename(self.name))
+        # The `name` should be the output directory name, without the parent path (the directory is created in the
+        # DISTPATH). Old .spec formats included parent path, so strip it away.
+        self.name = os.path.join(CONF['distpath'], os.path.basename(kwargs.get('name')))
 
         self.toc = TOC()
         for arg in args:
@@ -899,75 +898,83 @@ class COLLECT(Target):
                     self.target_arch = arg.target_arch
                     self.codesign_identity = arg.codesign_identity
                     self.entitlements_file = arg.entitlements_file
-                    for tocnm, fnm, typ in arg.toc:
-                        if tocnm == os.path.basename(arg.name) + ".manifest":
-                            self.toc.append((tocnm, fnm, typ))
+                    # Search for the executable's external manifest, and collect it if available
+                    for dest_name, src_name, typecode in arg.toc:
+                        if dest_name == os.path.basename(arg.name) + ".manifest":
+                            self.toc.append((dest_name, src_name, typecode))
+                    # If PKG is not appended to the executable, we need to collect it.
                     if not arg.append_pkg:
                         self.toc.append((os.path.basename(arg.pkgname), arg.pkgname, 'PKG'))
                 self.toc.extend(arg.dependencies)
             else:
                 self.toc.extend(arg)
+
         self.__postinit__()
 
     _GUTS = (
-        # COLLECT always builds, just want the toc to be written out
+        # COLLECT always builds, we just want the TOC to be written out.
         ('toc', None),
     )
 
     def _check_guts(self, data, last_build):
-        # COLLECT always needs to be executed, since it will clean the output directory anyway to make sure there is no
-        # existing cruft accumulating
-        return 1
+        # COLLECT always needs to be executed, in order to clean the output directory.
+        return True
 
     def assemble(self):
         _make_clean_directory(self.name)
         logger.info("Building COLLECT %s", self.tocbasename)
-        for inm, fnm, typ in self.toc:
+        for dest_name, src_name, typecode in self.toc:
             # Ensure that the source file exists, if necessary. Skip the check for DEPENDENCY entries due to special
-            # contents of 'inm' and/or 'fnm'.
-            if typ != 'DEPENDENCY' and not os.path.exists(fnm):
+            # contents of 'dest_name' and/or 'src_name'.
+            if typecode != 'DEPENDENCY' and not os.path.exists(src_name):
                 # If file is contained within python egg, it will be added with the egg.
-                if not is_path_to_egg(fnm):
+                if not is_path_to_egg(src_name):
                     if strict_collect_mode:
-                        raise ValueError(f"Non-existent resource {fnm}, meant to be collected as {inm}!")
+                        raise ValueError(f"Non-existent resource {src_name}, meant to be collected as {dest_name}!")
                     else:
-                        logger.warning("Ignoring non-existent resource %s, meant to be collected as %s", fnm, inm)
+                        logger.warning(
+                            "Ignoring non-existent resource %s, meant to be collected as %s", src_name, dest_name
+                        )
                 continue
             # Disallow collection outside of the dist directory.
-            if os.pardir in os.path.normpath(inm).split(os.sep) or os.path.isabs(inm):
+            if os.pardir in os.path.normpath(dest_name).split(os.sep) or os.path.isabs(dest_name):
                 raise SystemExit(
-                    'Security-Alert: attempting to store file outside of the dist directory: %r. Aborting.' % inm
+                    'Security-Alert: attempting to store file outside of the dist directory: %r. Aborting.' % dest_name
                 )
-            tofnm = os.path.join(self.name, inm)
-            todir = os.path.dirname(tofnm)
-            if not os.path.exists(todir):
-                os.makedirs(todir)
-            elif not os.path.isdir(todir):
+            # Create parent directory structure, if necessary
+            dest_path = os.path.join(self.name, dest_name)  # Absolute destination path
+            dest_dir = os.path.dirname(dest_path)
+            if not os.path.exists(dest_dir):
+                os.makedirs(dest_dir)
+            elif not os.path.isdir(dest_dir):
                 raise SystemExit(
-                    "Pyinstaller needs to make a directory at %r, but there already exists a file at that path!" % todir
+                    f"Pyinstaller needs to create a directory at {dest_dir!r}, "
+                    "but there already exists a file at that path!"
                 )
-            if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(
-                    fnm,
+            if typecode in ('EXTENSION', 'BINARY'):
+                src_name = checkCache(
+                    src_name,
                     strip=self.strip_binaries,
                     upx=self.upx_binaries,
                     upx_exclude=self.upx_exclude,
-                    dist_nm=inm,
+                    dist_nm=dest_name,
                     target_arch=self.target_arch,
                     codesign_identity=self.codesign_identity,
                     entitlements_file=self.entitlements_file,
-                    strict_arch_validation=(typ == 'EXTENSION'),
+                    strict_arch_validation=(typecode == 'EXTENSION'),
                 )
-            if typ != 'DEPENDENCY':
-                # At this point, fnm should be a valid file
-                if not os.path.isfile(fnm):
-                    raise ValueError("Resource %r is not a valid file!", fnm)
+            if typecode != 'DEPENDENCY':
+                # At this point, `src_name` should be a valid file.
+                if not os.path.isfile(src_name):
+                    raise ValueError(f"Resource {src_name!r} is not a valid file!")
                 # If strict collection mode is enabled, the destination should not exist yet.
-                if strict_collect_mode and os.path.exists(tofnm):
-                    raise ValueError(f"Attempting to collect a duplicated file into COLLECT: {inm} (type: {typ})")
-                shutil.copy2(fnm, tofnm)  # Use copy2 to (attempt to) preserve metadata
-            if typ in ('EXTENSION', 'BINARY'):
-                os.chmod(tofnm, 0o755)
+                if strict_collect_mode and os.path.exists(dest_path):
+                    raise ValueError(
+                        f"Attempting to collect a duplicated file into COLLECT: {dest_name} (type: {typecode})"
+                    )
+                shutil.copy2(src_name, dest_path)  # Use copy2 to (attempt to) preserve metadata
+            if typecode in ('EXTENSION', 'BINARY'):
+                os.chmod(dest_path, 0o755)
         logger.info("Building COLLECT %s completed successfully.", self.tocbasename)
 
 
