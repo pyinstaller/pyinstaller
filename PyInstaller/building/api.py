@@ -326,7 +326,7 @@ class EXE(Target):
     def __init__(self, *args, **kwargs):
         """
         args
-                One or more arguments that are either TOCs Targets.
+            One or more arguments that are either instances of TOC or Target.
         kwargs
             Possible keyword arguments:
 
@@ -380,7 +380,8 @@ class EXE(Target):
                 (--entitlements option to codesign utility).
         """
         from PyInstaller.config import CONF
-        Target.__init__(self)
+
+        super().__init__()
 
         # Available options for EXE in .spec files.
         self.exclude_binaries = kwargs.get('exclude_binaries', False)
@@ -597,19 +598,19 @@ class EXE(Target):
     def _check_guts(self, data, last_build):
         if not os.path.exists(self.name):
             logger.info("Rebuilding %s because %s missing", self.tocbasename, os.path.basename(self.name))
-            return 1
+            return True
         if not self.append_pkg and not os.path.exists(self.pkgname):
             logger.info("Rebuilding because %s missing", os.path.basename(self.pkgname))
-            return 1
+            return True
 
         if Target._check_guts(self, data, last_build):
             return True
 
         if (data['versrsrc'] or data['resources']) and not is_win:
             # todo: really ignore :-)
-            logger.warning('ignoring version, manifest and resources, platform not capable')
+            logger.warning('Ignoring version, manifest and resources; platform not supported!')
         if data['icon'] and not (is_win or is_darwin):
-            logger.warning('ignoring icon, platform not capable')
+            logger.warning('Ignoring icon; platform not supported!')
 
         mtm = data['mtm']
         if mtm != misc.mtime(self.name):
@@ -618,6 +619,7 @@ class EXE(Target):
         if mtm < misc.mtime(self.pkg.tocfilename):
             logger.info("Rebuilding %s because pkg is more recent", self.tocbasename)
             return True
+
         return False
 
     def _bootloader_file(self, exe, extension=None):
