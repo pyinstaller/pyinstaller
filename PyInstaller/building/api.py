@@ -992,10 +992,6 @@ class MERGE:
         args  dependencies in a list of (Analysis, id, filename) tuples.
               Replace id with the correct filename.
         """
-        # The first Analysis object with all dependencies.
-        # Any item from the first executable cannot be removed.
-        self._main = None
-
         self._dependencies = {}
 
         self._id_to_path = {}
