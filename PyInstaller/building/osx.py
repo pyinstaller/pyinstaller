@@ -24,7 +24,7 @@ if is_darwin:
 
 
 class BUNDLE(Target):
-    def __init__(self, *args, **kws):
+    def __init__(self, *args, **kwargs):
         from PyInstaller.config import CONF
 
         # BUNDLE only has a sense under Mac OS, it's a noop on other platforms
@@ -32,7 +32,7 @@ class BUNDLE(Target):
             return
 
         # Get a path to a .icns icon for the app bundle.
-        self.icon = kws.get('icon')
+        self.icon = kwargs.get('icon')
         if not self.icon:
             # --icon not specified; use the default in the pyinstaller folder
             self.icon = os.path.join(
@@ -43,15 +43,15 @@ class BUNDLE(Target):
             if not os.path.isabs(self.icon):
                 self.icon = os.path.join(CONF['specpath'], self.icon)
 
-        Target.__init__(self)
+        super().__init__()
 
         # .app bundle is created in DISTPATH.
-        self.name = kws.get('name', None)
+        self.name = kwargs.get('name', None)
         base_name = os.path.basename(self.name)
         self.name = os.path.join(CONF['distpath'], base_name)
 
         self.appname = os.path.splitext(base_name)[0]
-        self.version = kws.get("version", "0.0.0")
+        self.version = kwargs.get("version", "0.0.0")
         self.toc = TOC()
         self.strip = False
         self.upx = False
@@ -61,12 +61,12 @@ class BUNDLE(Target):
         self.entitlements_file = None
 
         # .app bundle identifier for Code Signing
-        self.bundle_identifier = kws.get('bundle_identifier')
+        self.bundle_identifier = kwargs.get('bundle_identifier')
         if not self.bundle_identifier:
             # Fallback to appname.
             self.bundle_identifier = self.appname
 
-        self.info_plist = kws.get('info_plist', None)
+        self.info_plist = kwargs.get('info_plist', None)
 
         for arg in args:
             if isinstance(arg, EXE):
@@ -81,7 +81,7 @@ class BUNDLE(Target):
                 self.entitlements_file = arg.entitlements_file
             elif isinstance(arg, TOC):
                 self.toc.extend(arg)
-                # TOC doesn't have a strip or upx attribute, so there is no way for us to tell which cache we should
+                # TOC does not have a strip or upx attribute, so there is no way for us to tell which cache we should
                 # draw from.
             elif isinstance(arg, COLLECT):
                 self.toc.extend(arg.toc)
@@ -93,13 +93,15 @@ class BUNDLE(Target):
                 self.codesign_identity = arg.codesign_identity
                 self.entitlements_file = arg.entitlements_file
             else:
-                logger.info("unsupported entry %s", arg.__class__.__name__)
-        # Now, find values for app filepath (name), app name (appname), and name of the actual executable (exename) from
-        # the first EXECUTABLE item in toc, which might have come from a COLLECT too (not from an EXE).
-        for inm, name, typ in self.toc:
-            if typ == "EXECUTABLE":
-                self.exename = name
+                logger.warning("Unsupported argument type: %s", type(arg))
+
+        # Infer the executable name from the first EXECUTABLE entry in the TOC; it might have come from the COLLECT
+        # (as opposed to the stand-alone EXE).
+        for dest_name, src_name, typecode in self.toc:
+            if typecode == "EXECUTABLE":
+                self.exename = src_name
                 break
+
         self.__postinit__()
 
     _GUTS = (
@@ -108,15 +110,15 @@ class BUNDLE(Target):
     )
 
     def _check_guts(self, data, last_build):
-        # BUNDLE always needs to be executed, since it will clean the output directory anyway to make sure there is no
-        # existing cruft accumulating.
-        return 1
+        # BUNDLE always needs to be executed, in order to clean the output directory.
+        return True
 
     def assemble(self):
         from PyInstaller.config import CONF
 
         if _check_path_overlap(self.name) and os.path.isdir(self.name):
             _rmtree(self.name)
+
         logger.info("Building BUNDLE %s", self.tocbasename)
 
         # Create a minimal Mac bundle structure.
@@ -173,39 +175,39 @@ class BUNDLE(Target):
 
         links = []
         _QT_BASE_PATH = {'PySide2', 'PySide6', 'PyQt5', 'PySide6'}
-        for inm, fnm, typ in self.toc:
+        for dest_name, src_name, typecode in self.toc:
             # Copy files from cache. This ensures that are used files with relative paths to dynamic library
-            # dependencies (@executable_path)
-            base_path = inm.split('/', 1)[0]
-            if typ in ('EXTENSION', 'BINARY'):
-                fnm = checkCache(
-                    fnm,
+            # dependencies (@executable_path).
+            base_path = dest_name.split('/', 1)[0]
+            if typecode in ('EXTENSION', 'BINARY'):
+                src_name = checkCache(
+                    src_name,
                     strip=self.strip,
                     upx=self.upx,
                     upx_exclude=self.upx_exclude,
-                    dist_nm=inm,
+                    dist_nm=dest_name,
                     target_arch=self.target_arch,
                     codesign_identity=self.codesign_identity,
                     entitlements_file=self.entitlements_file,
-                    strict_arch_validation=(typ == 'EXTENSION'),
+                    strict_arch_validation=(typecode == 'EXTENSION'),
                 )
             # Add most data files to a list for symlinking later.
             # Exempt python source files from this relocation, because their real path might need to resolve
             # to the directory that also contains the extension module.
-            relocate_file = typ == 'DATA' and base_path not in _QT_BASE_PATH
-            if relocate_file and os.path.splitext(inm)[1].lower() in {'.py', '.pyc'}:
+            relocate_file = typecode == 'DATA' and base_path not in _QT_BASE_PATH
+            if relocate_file and os.path.splitext(dest_name)[1].lower() in {'.py', '.pyc'}:
                 relocate_file = False
             if relocate_file:
-                links.append((inm, fnm))
+                links.append((dest_name, src_name))
             else:
-                # At this point, fnm should be a valid file
-                if not os.path.isfile(fnm):
-                    raise ValueError("Resource %r is not a valid file!", fnm)
-                tofnm = os.path.join(self.name, "Contents", "MacOS", inm)
-                todir = os.path.dirname(tofnm)
-                if not os.path.exists(todir):
-                    os.makedirs(todir)
-                shutil.copy2(fnm, tofnm)  # Use copy2 to (attempt to) preserve metadata
+                # At this point, `src_name` should be a valid file.
+                if not os.path.isfile(src_name):
+                    raise ValueError(f"Resource {src_name!r} is not a valid file!")
+                dest_path = os.path.join(self.name, "Contents", "MacOS", dest_name)
+                dest_dir = os.path.dirname(dest_path)
+                if not os.path.exists(dest_dir):
+                    os.makedirs(dest_dir)
+                shutil.copy2(src_name, dest_path)  # Use copy2 to (attempt to) preserve metadata
 
         logger.info('Moving BUNDLE data files to Resource directory')
 
@@ -213,18 +215,18 @@ class BUNDLE(Target):
         # Put all data files in ./Resources and create symlinks in ./MacOS.
         bin_dir = os.path.join(self.name, 'Contents', 'MacOS')
         res_dir = os.path.join(self.name, 'Contents', 'Resources')
-        for inm, fnm in links:
-            # At this point, fnm should be a valid file
-            if not os.path.isfile(fnm):
-                raise ValueError("Resource %r is not a valid file!", fnm)
-            tofnm = os.path.join(res_dir, inm)
-            todir = os.path.dirname(tofnm)
-            if not os.path.exists(todir):
-                os.makedirs(todir)
-            shutil.copy2(fnm, tofnm)  # Use copy2 to (attempt to) preserve metadata
-            base_path = os.path.split(inm)[0]
+        for dest_name, src_name in links:
+            # At this point, `src_name` should be a valid file.
+            if not os.path.isfile(src_name):
+                raise ValueError(f"Resource {src_name!r} is not a valid file!")
+            dest_path = os.path.join(res_dir, dest_name)
+            dest_dir = os.path.dirname(dest_path)
+            if not os.path.exists(dest_dir):
+                os.makedirs(dest_dir)
+            shutil.copy2(src_name, dest_dir)  # Use copy2 to (attempt to) preserve metadata
+            base_path = os.path.split(dest_name)[0]
             if base_path:
-                if not os.path.exists(os.path.join(bin_dir, inm)):
+                if not os.path.exists(os.path.join(bin_dir, dest_name)):
                     path = ''
                     for part in iter(base_path.split(os.path.sep)):
                         # Build path from previous path and the next part of the base path
@@ -239,18 +241,21 @@ class BUNDLE(Target):
                             break
                         except FileExistsError:
                             pass
-                    if not os.path.exists(os.path.join(bin_dir, inm)):
+                    if not os.path.exists(os.path.join(bin_dir, dest_name)):
                         relative_source_path = os.path.relpath(
-                            os.path.join(res_dir, inm),
-                            os.path.split(os.path.join(bin_dir, inm))[0]
+                            os.path.join(res_dir, dest_name),
+                            os.path.split(os.path.join(bin_dir, dest_name))[0]
                         )
-                        dest_path = os.path.join(bin_dir, inm)
+                        dest_path = os.path.join(bin_dir, dest_name)
                         os.symlink(relative_source_path, dest_path)
-            else:  # If path is empty, e.g., a top-level file, try to just symlink the file.
-                os.symlink(
-                    os.path.relpath(os.path.join(res_dir, inm),
-                                    os.path.split(os.path.join(bin_dir, inm))[0]), os.path.join(bin_dir, inm)
+            else:
+                # If path is empty, e.g., a top-level file, try to just symlink the file.
+                relative_source_path = os.path.relpath(
+                    os.path.join(res_dir, dest_name),
+                    os.path.split(os.path.join(bin_dir, dest_name))[0]
                 )
+                dest_path = os.path.join(bin_dir, dest_name)
+                os.symlink(relative_source_path, dest_path)
 
         # Sign the bundle
         logger.info('Signing the BUNDLE...')
