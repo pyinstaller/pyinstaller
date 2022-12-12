@@ -169,22 +169,22 @@ class ZlibArchiveWriter(ArchiveWriter):
         super().__init__(archive_path, logical_toc)
 
     def add(self, entry):
-        name, path, typ = entry
-        if typ == 'PYMODULE':
-            typ = PYZ_TYPE_MODULE
-            if path in ('-', None):
+        name, src_path, typecode = entry
+        if typecode == 'PYMODULE':
+            typecode = PYZ_TYPE_MODULE
+            if src_path in ('-', None):
                 # This is a NamespacePackage, modulegraph marks them by using the filename '-'. (But wants to use None,
                 # so check for None, too, to be forward-compatible.)
-                typ = PYZ_TYPE_NSPKG
+                typecode = PYZ_TYPE_NSPKG
             else:
-                base, ext = os.path.splitext(os.path.basename(path))
-                if base == '__init__':
-                    typ = PYZ_TYPE_PKG
+                src_basename, _ = os.path.splitext(os.path.basename(src_path))
+                if src_basename == '__init__':
+                    typecode = PYZ_TYPE_PKG
             data = marshal.dumps(self.code_dict[name])
         else:
             # Any data files, that might be required by pkg_resources.
-            typ = PYZ_TYPE_DATA
-            with open(path, 'rb') as fh:
+            typecode = PYZ_TYPE_DATA
+            with open(src_path, 'rb') as fh:
                 data = fh.read()
             # No need to use forward slash as path-separator here since pkg_resources on Windows back slash as
             # path-separator.
@@ -195,7 +195,7 @@ class ZlibArchiveWriter(ArchiveWriter):
         if self.cipher:
             obj = self.cipher.encrypt(obj)
 
-        self.toc.append((name, (typ, self.lib.tell(), len(obj))))
+        self.toc.append((name, (typecode, self.lib.tell(), len(obj))))
         self.lib.write(obj)
 
     def update_headers(self, tocpos):

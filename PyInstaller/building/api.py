@@ -52,10 +52,10 @@ class PYZ(Target):
     def __init__(self, *tocs, **kwargs):
         """
         tocs
-                One or more TOCs (Tables of Contents), normally an Analysis.pure.
+            One or more TOCs (Tables of Contents), usually an `Analysis.pure` and an `Analysis.zipped_data`.
 
-                If this TOC has an attribute `_code_cache`, this is expected to be a dict of module code objects
-                from ModuleGraph.
+            If the passed TOC has an attribute `_code_cache`, it is expected to be a dictionary of module code objects
+            from ModuleGraph.
 
         kwargs
             Possible keyword arguments:
@@ -67,21 +67,19 @@ class PYZ(Target):
         """
 
         from PyInstaller.config import CONF
-        Target.__init__(self)
+
+        super().__init__()
+
         name = kwargs.get('name', None)
         cipher = kwargs.get('cipher', None)
-        self.toc = TOC()
-        # If available, use code objects directly from ModuleGraph to speed up PyInstaller.
-        self.code_dict = {}
-        for t in tocs:
-            self.toc.extend(t)
-            self.code_dict.update(getattr(t, '_code_cache', {}))
 
         self.name = name
         if name is None:
             self.name = os.path.splitext(self.tocfilename)[0] + '.pyz'
+
         # PyInstaller bootstrapping modules.
         bootstrap_dependencies = get_bootstrap_modules()
+
         # Bundle the crypto key.
         self.cipher = cipher
         if cipher:
@@ -103,38 +101,56 @@ class PYZ(Target):
                 # Include as is (extensions).
                 self.dependencies.append((name, src_path, typecode))
 
+        # Merge input TOC(s) and their code object dictionaries (if available). Skip the bootstrap modules, which will
+        # be passed on to CArchive.
+        bootstrap_module_names = set(name for name, _, typecode in self.dependencies if typecode == 'PYMODULE')
+        self.toc = TOC()
+        self.code_dict = {}
+        for toc in tocs:
+            self.code_dict.update(getattr(toc, '_code_cache', {}))
+            for entry in toc:
+                name, _, typecode = entry
+                # PYZ expects PYMODULE entries (python code objects) and DATA entries (data collected from zipped eggs).
+                assert typecode in ('PYMODULE', 'DATA'), f"Invalid entry passed to PYZ: {entry}!"
+                # Module required during bootstrap; skip to avoid collecting a duplicate.
+                if typecode == 'PYMODULE' and name in bootstrap_module_names:
+                    continue
+                self.toc.append(entry)
+
+        # Alphabetically sort the TOC to enable reproducible builds.
+        self.toc.sort()
+
         self.__postinit__()
 
-    _GUTS = (  # input parameters
+    _GUTS = (
+        # input parameters
         ('name', _check_guts_eq),
         ('toc', _check_guts_toc),  # todo: pyc=1
         # no calculated/analysed values
     )
 
-    def _check_guts(self, data, last_build):
-        if Target._check_guts(self, data, last_build):
-            return True
-        return False
-
     def assemble(self):
         logger.info("Building PYZ (ZlibArchive) %s", self.name)
-        # Do not bundle PyInstaller bootstrap modules into PYZ archive.
-        toc = self.toc - self.dependencies
-        for entry in toc[:]:
-            if not entry[0] in self.code_dict and entry[2] == 'PYMODULE':
-                # For some reason the code-object that modulegraph created is unavailable. Re-create it.
+
+        # Ensure code objects are available for all modules we are about to collect.
+        # NOTE: `self.toc` is already sorted by names.
+        archive_toc = []
+        for entry in self.toc:
+            name, src_path, typecode = entry
+            if typecode == 'PYMODULE' and name not in self.code_dict:
+                # The code object is not available from the ModuleGraph's cache; re-create it.
                 try:
-                    self.code_dict[entry[0]] = get_code_object(entry[0], entry[1])
+                    self.code_dict[name] = get_code_object(name, src_path)
                 except SyntaxError:
-                    # Exclude the module in case this is code meant for a newer Python version.
-                    toc.remove(entry)
-        # Sort content alphabetically to support reproducible builds.
-        toc.sort()
+                    # The module was likely written for different Python version; exclude it
+                    continue
+            archive_toc.append(entry)
 
         # Remove leading parts of paths in code objects.
-        self.code_dict = {key: strip_paths_in_code(code) for key, code in self.code_dict.items()}
+        self.code_dict = {name: strip_paths_in_code(code) for name, code in self.code_dict.items()}
 
-        ZlibArchiveWriter(self.name, toc, code_dict=self.code_dict, cipher=self.cipher)
+        # Create the archive
+        ZlibArchiveWriter(self.name, archive_toc, code_dict=self.code_dict, cipher=self.cipher)
         logger.info("Building PYZ (ZlibArchive) %s completed successfully.", self.name)
 
 
