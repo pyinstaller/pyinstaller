@@ -85,11 +85,11 @@ def test_format_binaries_and_datas_with_bracket(tmpdir):
 def test_add_suffix_to_extension():
     SUFFIX = EXTENSION_SUFFIXES[0]
     # Each test case is a tuple of four values:
-    #  * input inm
-    #  * output (expected) inm
-    #  * fnm
-    #  * typ
-    # where (inm, fnm, typ) is a TOC entry tuple.
+    #  * input dest_name
+    #  * output (expected) dest_name
+    #  * src
+    #  * typecode
+    # where (dest_name, src_name, typecode) is a TOC entry tuple.
     # All paths are in POSIX format (and are converted to OS-specific path during the test itself).
     CASES = [
         # Stand-alone extension module
@@ -110,13 +110,13 @@ def test_add_suffix_to_extension():
     ]  # yapf: disable
 
     for case in CASES:
-        inm1 = str(pathlib.PurePath(case[0]))
-        inm2 = str(pathlib.PurePath(case[1]))
-        fnm = str(pathlib.PurePath(case[2]))
-        typ = case[3]
+        dest_name1 = str(pathlib.PurePath(case[0]))
+        dest_name2 = str(pathlib.PurePath(case[1]))
+        src_name = str(pathlib.PurePath(case[2]))
+        typecode = case[3]
 
-        toc = (inm1, fnm, typ)
-        toc_expected = (inm2, fnm, typ)
+        toc = (dest_name1, src_name, typecode)
+        toc_expected = (dest_name2, src_name, typecode)
 
         # Ensure that processing a TOC entry produces expected result.
         toc2 = utils.add_suffix_to_extension(*toc)

@@ -86,30 +86,31 @@ def _check_guts_toc(attr, old, toc, last_build, pyc=0):
     return _check_guts_eq(attr, old, toc, last_build) or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc)
 
 
-def add_suffix_to_extension(inm, fnm, typ):
+def add_suffix_to_extension(dest_name, src_name, typecode):
     """
-    Take a TOC entry (inm, fnm, typ) and adjust the inm for EXTENSION to include the full library suffix.
+    Take a TOC entry (dest_name, src_name, typecode) and adjust the dest_name for EXTENSION to include the full library
+    suffix.
     """
     # No-op for non-extension
-    if typ != 'EXTENSION':
-        return inm, fnm, typ
+    if typecode != 'EXTENSION':
+        return dest_name, src_name, typecode
 
-    # If inm completely fits into end of the fnm, it has already been processed.
-    if fnm.endswith(inm):
-        return inm, fnm, typ
+    # If dest_name completely fits into end of the src_name, it has already been processed.
+    if src_name.endswith(dest_name):
+        return dest_name, src_name, typecode
 
     # Change the dotted name into a relative path. This places C extensions in the Python-standard location.
-    inm = inm.replace('.', os.sep)
+    dest_name = dest_name.replace('.', os.sep)
     # In some rare cases extension might already contain a suffix. Skip it in this case.
-    if os.path.splitext(inm)[1] not in EXTENSION_SUFFIXES:
+    if os.path.splitext(dest_name)[1] not in EXTENSION_SUFFIXES:
         # Determine the base name of the file.
-        base_name = os.path.basename(inm)
+        base_name = os.path.basename(dest_name)
         assert '.' not in base_name
         # Use this file's existing extension. For extensions such as ``libzmq.cp36-win_amd64.pyd``, we cannot use
         # ``os.path.splitext``, which would give only the ```.pyd`` part of the extension.
-        inm = inm + os.path.basename(fnm)[len(base_name):]
+        dest_name = dest_name + os.path.basename(src_name)[len(base_name):]
 
-    return inm, fnm, typ
+    return dest_name, src_name, typecode
 
 
 def applyRedirects(manifest, redirects):
