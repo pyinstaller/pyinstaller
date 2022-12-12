@@ -989,7 +989,12 @@ class MERGE:
     def __init__(self, *args):
         """
         args
-            Dependencies as a list of (Analysis, identifier, path_to_exe) tuples.
+            Dependencies as a list of (analysis, identifier, path_to_exe) tuples. `analysis` is an instance of
+            `Analysis`, `identifier` is the basename of the entry-point script (without .py suffix), and `path_to_exe`
+            is path to the corresponding executable, relative to the `dist` directory (without .exe suffix in the
+            filename component). For onefile executables, `path_to_exe` is usually just executable's base name
+            (e.g., `myexecutable`). For onedir executables, `path_to_exe` usually comprises both the application's
+            directory name and executable name (e.g., `myapp/myexecutable`).
         """
         self._dependencies = {}
 
@@ -1012,7 +1017,7 @@ class MERGE:
             analysis.datas = TOC(datas)
             analysis.dependencies += binaries_refs + datas_refs
 
-    def _process_toc(self, toc, path):
+    def _process_toc(self, toc, path_to_exe):
         # NOTE: unfortunately, these need to keep two separate lists. See the comment in the calling code on why this
         # is so.
         toc_keep = []
@@ -1020,37 +1025,29 @@ class MERGE:
         for entry in toc:
             dest_name, src_name, typecode = entry
             if src_name not in self._dependencies:
-                logger.debug("Adding dependency %s located in %s", src_name, path)
-                self._dependencies[src_name] = path
+                logger.debug("Adding dependency %s located in %s", src_name, path_to_exe)
+                self._dependencies[src_name] = path_to_exe
                 # Add entry to list of kept TOC entries
                 toc_keep.append(entry)
             else:
-                dep_path = self._get_relative_path(path, self._dependencies[src_name])
+                # Construct relative dependency path; i.e., the relative path from this executable (or rather, its
+                # parent directory) to the executable that contains the dependency.
+                dep_path = os.path.relpath(self._dependencies[src_name], os.path.dirname(path_to_exe))
                 # Ignore references that point to the origin package. This can happen if the same resource is listed
                 # multiple times in TOCs (e.g., once as binary and once as data).
-                if dep_path.endswith(path):
+                if dep_path.endswith(path_to_exe):
                     logger.debug(
-                        "Ignoring self-reference of %s for %s, located in %s - duplicated TOC entry?", src_name, path,
-                        dep_path
+                        "Ignoring self-reference of %s for %s, located in %s - duplicated TOC entry?", src_name,
+                        path_to_exe, dep_path
                     )
                     # The entry is a duplicate, and should be ignored (i.e., do not add it to either of output TOCs).
                     continue
-                logger.debug("Referencing %s to be a dependency for %s, located in %s", src_name, path, dep_path)
+                logger.debug("Referencing %s to be a dependency for %s, located in %s", src_name, path_to_exe, dep_path)
                 # Create new DEPENDENCY entry; under destination path (first element), we store the original destination
                 # path, while source path contains the relative reference path.
                 toc_refs.append((dest_name, dep_path, "DEPENDENCY"))
 
         return toc_keep, toc_refs
-
-    # TODO: use pathlib.Path.relative_to() instead.
-    def _get_relative_path(self, startpath, topath):
-        start = startpath.split(os.sep)[:-1]
-        start = ['..'] * len(start)
-        if start:
-            start.append(topath)
-            return os.sep.join(start)
-        else:
-            return topath
 
 
 UNCOMPRESSED = False
