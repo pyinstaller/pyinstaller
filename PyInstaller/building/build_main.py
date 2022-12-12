@@ -439,7 +439,7 @@ class Analysis(Target):
         # calculated/analysed values
         ('_python_version', _check_guts_eq),
         ('scripts', _check_guts_toc_mtime),
-        ('pure', lambda *args: _check_guts_toc_mtime(*args, pyc=True)),
+        ('pure', _check_guts_toc_mtime),
         ('binaries', _check_guts_toc_mtime),
         ('zipfiles', _check_guts_toc_mtime),
         ('zipped_data', None),  # TODO check this, too

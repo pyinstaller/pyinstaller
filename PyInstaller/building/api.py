@@ -125,7 +125,7 @@ class PYZ(Target):
     _GUTS = (
         # input parameters
         ('name', _check_guts_eq),
-        ('toc', _check_guts_toc),  # todo: pyc=1
+        ('toc', _check_guts_toc),
         # no calculated/analysed values
     )
 
