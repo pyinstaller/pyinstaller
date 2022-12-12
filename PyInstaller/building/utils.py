@@ -47,43 +47,46 @@ logger = logging.getLogger(__name__)
 # creating final executable.
 
 
-def _check_guts_eq(attr, old, new, _last_build):
+def _check_guts_eq(attr_name, old_value, new_value, last_build):
     """
     Rebuild is required if values differ.
     """
-    if old != new:
-        logger.info("Building because %s changed", attr)
+    if old_value != new_value:
+        logger.info("Building because %s changed", attr_name)
         return True
     return False
 
 
-def _check_guts_toc_mtime(_attr, old, _toc, last_build, pyc=0):
+def _check_guts_toc_mtime(attr_name, old_toc, new_toc, last_build, pyc=False):
     """
-    Rebuild is required if mtimes of files listed in old toc are newer than last_build.
+    Rebuild is required if mtimes of files listed in old TOC are newer than last_build.
 
-    If pyc=1, check for .py files as well.
+    If pyc=True, check for .py files as well.
 
     Use this for calculated/analysed values read from cache.
     """
-    for nm, fnm, typ in old:
-        if misc.mtime(fnm) > last_build:
-            logger.info("Building because %s changed", fnm)
+    for dest_name, src_name, typecode in old_toc:
+        if misc.mtime(src_name) > last_build:
+            logger.info("Building because %s changed", src_name)
             return True
-        elif pyc and misc.mtime(fnm[:-1]) > last_build:
-            logger.info("Building because %s changed", fnm[:-1])
-            return True
+        elif pyc and typecode == 'PYMODULE':
+            py_filename = src_name[:-1]
+            if misc.mtime(py_filename) > last_build:
+                logger.info("Building because %s changed", py_filename)
+                return True
     return False
 
 
-def _check_guts_toc(attr, old, toc, last_build, pyc=0):
+def _check_guts_toc(attr_name, old_toc, new_toc, last_build, pyc=False):
     """
-    Rebuild is required if either toc content changed or mtimes of files listed in old toc are newer than last_build.
+    Rebuild is required if either TOC content changed or mtimes of files listed in old TOC are newer than last_build.
 
-    If pyc=1, check for .py files as well.
+    If pyc=True, check for .py files as well.
 
     Use this for input parameters.
     """
-    return _check_guts_eq(attr, old, toc, last_build) or _check_guts_toc_mtime(attr, old, toc, last_build, pyc=pyc)
+    return _check_guts_eq(attr_name, old_toc, new_toc, last_build) or \
+        _check_guts_toc_mtime(attr_name, old_toc, new_toc, last_build, pyc=pyc)
 
 
 def add_suffix_to_extension(dest_name, src_name, typecode):
