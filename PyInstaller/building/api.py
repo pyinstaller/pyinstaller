@@ -980,48 +980,26 @@ class COLLECT(Target):
 
 class MERGE:
     """
-    Merge repeated dependencies from other executables into the first executable. Data and binary files are then
-    present only once and some disk space is thus reduced.
+    Given Analysis objects for multiple executables, replace occurrences of data and binary files with references to the
+    first executable in which they occur. The actual data and binary files are then collected only once, thereby
+    reducing the disk space used by multiple executables. Every executable (even onedir ones!) obtained from a
+    MERGE-processed Analysis gains onefile semantics, because it needs to extract its referenced dependencies from other
+    executables into temporary directory before they can run.
     """
     def __init__(self, *args):
         """
-        Repeated dependencies are then present only once in the first executable in the 'args' list. Other
-        executables depend on the first one. Other executables have to extract necessary files from the first
-        executable.
-
-        args  dependencies in a list of (Analysis, id, filename) tuples.
-              Replace id with the correct filename.
+        args
+            Dependencies as a list of (Analysis, identifier, path_to_exe) tuples.
         """
         self._dependencies = {}
 
-        self._id_to_path = {}
-        for _, i, p in args:
-            self._id_to_path[os.path.normcase(i)] = p
-
-        # Get the longest common path
-        common_prefix = os.path.commonprefix([os.path.normcase(os.path.abspath(a.scripts[-1][1])) for a, _, _ in args])
-        self._common_prefix = os.path.dirname(common_prefix)
-        if self._common_prefix[-1] != os.sep:
-            self._common_prefix += os.sep
-        logger.info("Common prefix: %s", self._common_prefix)
-
-        self._merge_dependencies(args)
-
-    def _merge_dependencies(self, args):
-        """
-        Filter shared dependencies to be only in first executable.
-        """
-        for analysis, _, _ in args:
-            path = os.path.normcase(os.path.abspath(analysis.scripts[-1][1]))
-            path = path.replace(self._common_prefix, "", 1)
-            path = os.path.splitext(path)[0]
-            if os.path.normcase(path) in self._id_to_path:
-                path = self._id_to_path[os.path.normcase(path)]
+        # Process all given (analysis, identifier, path_to_exe) tuples
+        for analysis, identifier, path_to_exe in args:
             # Process analysis.binaries and analysis.datas TOCs. self._process_toc() call returns two TOCs; the first
             # contains entries that remain within this analysis, while the second contains entries that reference
             # an entry in another executable.
-            binaries, binaries_refs = self._process_toc(analysis.binaries, path)
-            datas, datas_refs = self._process_toc(analysis.datas, path)
+            binaries, binaries_refs = self._process_toc(analysis.binaries, path_to_exe)
+            datas, datas_refs = self._process_toc(analysis.datas, path_to_exe)
             # Update `analysis.binaries`, `analysis.datas`, and `analysis.dependencies`.
             # The entries that are found in preceding executable(s) are removed from `binaries` and `datas`, and their
             # DEPENDENCY entry counterparts are added to `dependencies`. We cannot simply update the entries in
@@ -1035,11 +1013,8 @@ class MERGE:
             analysis.dependencies += binaries_refs + datas_refs
 
     def _process_toc(self, toc, path):
-        """
-        Synchronize the Analysis result with the needed dependencies.
-        """
-        # NOTE: unfortunately, these need to keep two separate lists. See the comment in `_merge_dependencies` on why
-        # this is so.
+        # NOTE: unfortunately, these need to keep two separate lists. See the comment in the calling code on why this
+        # is so.
         toc_keep = []
         toc_refs = []
         for entry in toc:
