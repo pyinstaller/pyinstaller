@@ -1046,27 +1046,28 @@ class MERGE:
         # this is so.
         toc_keep = []
         toc_refs = []
-        for i, tpl in enumerate(toc):
-            if not tpl[1] in self._dependencies:
-                logger.debug("Adding dependency %s located in %s", tpl[1], path)
-                self._dependencies[tpl[1]] = path
+        for entry in toc:
+            dest_name, src_name, typecode = entry
+            if src_name not in self._dependencies:
+                logger.debug("Adding dependency %s located in %s", src_name, path)
+                self._dependencies[src_name] = path
                 # Add entry to list of kept TOC entries
-                toc_keep.append(tpl)
+                toc_keep.append(entry)
             else:
-                dep_path = self._get_relative_path(path, self._dependencies[tpl[1]])
+                dep_path = self._get_relative_path(path, self._dependencies[src_name])
                 # Ignore references that point to the origin package. This can happen if the same resource is listed
                 # multiple times in TOCs (e.g., once as binary and once as data).
                 if dep_path.endswith(path):
                     logger.debug(
-                        "Ignoring self-reference of %s for %s, located in %s - duplicated TOC entry?", tpl[1], path,
+                        "Ignoring self-reference of %s for %s, located in %s - duplicated TOC entry?", src_name, path,
                         dep_path
                     )
                     # The entry is a duplicate, and should be ignored (i.e., do not add it to either of output TOCs).
                     continue
-                logger.debug("Referencing %s to be a dependency for %s, located in %s", tpl[1], path, dep_path)
+                logger.debug("Referencing %s to be a dependency for %s, located in %s", src_name, path, dep_path)
                 # Create new DEPENDENCY entry; under destination path (first element), we store the original destination
                 # path, while source path contains the relative reference path.
-                toc_refs.append((tpl[0], dep_path, "DEPENDENCY"))
+                toc_refs.append((dest_name, dep_path, "DEPENDENCY"))
 
         return toc_keep, toc_refs
 
