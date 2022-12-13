@@ -18,6 +18,7 @@ from PyInstaller.building.datastruct import TOC, Target, logger
 from PyInstaller.building.utils import _check_path_overlap, _rmtree, checkCache
 from PyInstaller.compat import is_darwin
 from PyInstaller.building.icon import normalize_icon_type
+import PyInstaller.utils.misc as miscutils
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
@@ -69,9 +70,12 @@ class BUNDLE(Target):
         self.info_plist = kwargs.get('info_plist', None)
 
         for arg in args:
+            # Valid arguments: EXE object, COLLECT object, and TOC-like iterables
             if isinstance(arg, EXE):
-                self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
+                # Add EXE as an entry to the TOC, and merge its dependencies TOC
+                self.toc.append((os.path.basename(arg.name), arg.name, 'EXECUTABLE'))
                 self.toc.extend(arg.dependencies)
+                # Inherit settings
                 self.strip = arg.strip
                 self.upx = arg.upx
                 self.upx_exclude = arg.upx_exclude
@@ -79,12 +83,10 @@ class BUNDLE(Target):
                 self.target_arch = arg.target_arch
                 self.codesign_identity = arg.codesign_identity
                 self.entitlements_file = arg.entitlements_file
-            elif isinstance(arg, TOC):
-                self.toc.extend(arg)
-                # TOC does not have a strip or upx attribute, so there is no way for us to tell which cache we should
-                # draw from.
             elif isinstance(arg, COLLECT):
+                # Merge the TOC
                 self.toc.extend(arg.toc)
+                # Inherit settings
                 self.strip = arg.strip_binaries
                 self.upx = arg.upx_binaries
                 self.upx_exclude = arg.upx_exclude
@@ -92,8 +94,11 @@ class BUNDLE(Target):
                 self.target_arch = arg.target_arch
                 self.codesign_identity = arg.codesign_identity
                 self.entitlements_file = arg.entitlements_file
+            elif miscutils.is_iterable(arg):
+                # TOC-like iterable
+                self.toc.extend(arg)
             else:
-                logger.warning("Unsupported argument type: %s", type(arg))
+                raise TypeError(f"Invalid argument type for BUNDLE: {type(arg)!r}")
 
         # Infer the executable name from the first EXECUTABLE entry in the TOC; it might have come from the COLLECT
         # (as opposed to the stand-alone EXE).
@@ -101,6 +106,8 @@ class BUNDLE(Target):
             if typecode == "EXECUTABLE":
                 self.exename = src_name
                 break
+        else:
+            raise ValueError("No EXECUTABLE entry found in the TOC!")
 
         self.__postinit__()
 

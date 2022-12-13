@@ -28,11 +28,12 @@ from PyInstaller.building.datastruct import TOC, Target, _check_guts_eq
 from PyInstaller.building.utils import (
     _check_guts_toc, _make_clean_directory, _rmtree, checkCache, get_code_object, strip_paths_in_code, compile_pymodule
 )
+from PyInstaller.building.splash import Splash  # argument type validation in EXE
 from PyInstaller.compat import is_cygwin, is_darwin, is_linux, is_win, strict_collect_mode
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 from PyInstaller.depend.utils import is_path_to_egg
-from PyInstaller.utils import misc
+import PyInstaller.utils.misc as miscutils
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +48,6 @@ class PYZ(Target):
     """
     Creates a ZlibArchive that contains all pure Python modules.
     """
-    typ = 'PYZ'
-
     def __init__(self, *tocs, **kwargs):
         """
         tocs
@@ -159,7 +158,6 @@ class PKG(Target):
     Creates a CArchive. CArchive is the data structure that is embedded into the executable. This data structure allows
     to include various read-only data in a single-file deployment.
     """
-    typ = 'PKG'
     xformdict = {
         'PYMODULE': 'm',
         'PYSOURCE': 's',
@@ -321,8 +319,6 @@ class EXE(Target):
     """
     Creates the final executable of the frozen app. This bundles all necessary files together.
     """
-    typ = 'EXECUTABLE'
-
     def __init__(self, *args, **kwargs):
         """
         args
@@ -464,19 +460,26 @@ class EXE(Target):
         _deps_toc = TOC()  # See the note below
 
         for arg in args:
-            if isinstance(arg, TOC):
-                self.toc.extend(arg)
-            elif isinstance(arg, Target):
-                self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
+            # Valid arguments: PYZ object, Splash object, and TOC-like iterables
+            if isinstance(arg, (PYZ, Splash)):
+                # Add object as an entry to the TOC, and merge its dependencies TOC
+                if isinstance(arg, PYZ):
+                    self.toc.append((os.path.basename(arg.name), arg.name, "PYZ"))
+                else:
+                    self.toc.append((os.path.basename(arg.name), arg.name, "SPLASH"))
                 # See the note below (and directly extend self.toc once this workaround is not necessary anymore).
                 # self.toc.extend(arg.dependencies)
                 for entry in arg.dependencies:
-                    if entry[2] in ('EXTENSION', 'BINARY', 'DATA'):
+                    _, _, typecode = entry
+                    if typecode in ('EXTENSION', 'BINARY', 'DATA'):
                         _deps_toc.append(entry)
                     else:
                         self.toc.append(entry)
-            else:
+            elif miscutils.is_iterable(arg):
+                # TOC-like iterable
                 self.toc.extend(arg)
+            else:
+                raise TypeError(f"Invalid argument type for EXE: {type(arg)!r}")
 
         # NOTE: this is an ugly work-around that ensures that when MERGE is used, the EXE's TOC is first populated with
         # MERGE'd `binaries` and `datas` entries (which should be DEPENDENCY references for shared resources, and BINARY
@@ -613,10 +616,10 @@ class EXE(Target):
             logger.warning('Ignoring icon; platform not supported!')
 
         mtm = data['mtm']
-        if mtm != misc.mtime(self.name):
+        if mtm != miscutils.mtime(self.name):
             logger.info("Rebuilding %s because mtimes don't match", self.tocbasename)
             return True
-        if mtm < misc.mtime(self.pkg.tocfilename):
+        if mtm < miscutils.mtime(self.pkg.tocfilename):
             logger.info("Rebuilding %s because pkg is more recent", self.tocbasename)
             return True
 
@@ -842,7 +845,7 @@ class EXE(Target):
         # Ensure executable flag is set
         os.chmod(build_name, 0o755)
         # Get mtime for storing into the guts
-        self.mtm = misc.mtime(build_name)
+        self.mtm = miscutils.mtime(build_name)
         if build_name != self.name:
             os.rename(build_name, self.name)
         logger.info("Building EXE from %s completed successfully.", self.tocbasename)
@@ -889,25 +892,28 @@ class COLLECT(Target):
 
         self.toc = TOC()
         for arg in args:
-            if isinstance(arg, TOC):
-                self.toc.extend(arg)
-            elif isinstance(arg, Target):
-                self.toc.append((os.path.basename(arg.name), arg.name, arg.typ))
-                if isinstance(arg, EXE):
-                    self.console = arg.console
-                    self.target_arch = arg.target_arch
-                    self.codesign_identity = arg.codesign_identity
-                    self.entitlements_file = arg.entitlements_file
-                    # Search for the executable's external manifest, and collect it if available
-                    for dest_name, src_name, typecode in arg.toc:
-                        if dest_name == os.path.basename(arg.name) + ".manifest":
-                            self.toc.append((dest_name, src_name, typecode))
-                    # If PKG is not appended to the executable, we need to collect it.
-                    if not arg.append_pkg:
-                        self.toc.append((os.path.basename(arg.pkgname), arg.pkgname, 'PKG'))
+            # Valid arguments: EXE object and TOC-like iterables
+            if isinstance(arg, EXE):
+                # Add EXE as an entry to the TOC, and merge its dependencies TOC
+                self.toc.append((os.path.basename(arg.name), arg.name, 'EXECUTABLE'))
                 self.toc.extend(arg.dependencies)
-            else:
+                # Inherit settings
+                self.console = arg.console
+                self.target_arch = arg.target_arch
+                self.codesign_identity = arg.codesign_identity
+                self.entitlements_file = arg.entitlements_file
+                # Search for the executable's external manifest, and collect it if available
+                for dest_name, src_name, typecode in arg.toc:
+                    if dest_name == os.path.basename(arg.name) + ".manifest":
+                        self.toc.append((dest_name, src_name, typecode))
+                # If PKG is not appended to the executable, we need to collect it.
+                if not arg.append_pkg:
+                    self.toc.append((os.path.basename(arg.pkgname), arg.pkgname, 'PKG'))
+            elif miscutils.is_iterable(arg):
+                # TOC-like iterable
                 self.toc.extend(arg)
+            else:
+                raise TypeError(f"Invalid argument type for COLLECT: {type(arg)!r}")
 
         self.__postinit__()
 
