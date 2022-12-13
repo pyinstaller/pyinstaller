@@ -366,9 +366,8 @@ QT_MODULES_INFO = (
         "QtDesigner", shared_lib="Designer", translation="designer", plugins=["designer"], bindings=["!PySide2"]
     ),
     _QtModuleDef("QtHelp", shared_lib="Help", translation="qt_help"),
-    # Python module is available only in PySide bindings. The "designer" plugins should also be collected alongside
-    # this module (in case we do not collect QtDesigner).
-    _QtModuleDef("QtUiTools", shared_lib="UiTools", plugins=["designer"], bindings=["PySide*"]),
+    # Python module is available only in PySide bindings.
+    _QtModuleDef("QtUiTools", shared_lib="UiTools", bindings=["PySide*"]),
 
     # *** qt/qtvirtualkeyboard ***
     # No python module; shared library -> plugins association entry.
