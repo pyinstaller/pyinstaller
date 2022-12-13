@@ -53,8 +53,6 @@ class Splash(Target):
     A Splash has two outputs, one is itself and one is sored in splash.binaries. Both need to be passed to other
     build targets in order to enable the splash screen.
     """
-    typ = 'SPLASH'
-
     def __init__(self, image_file, binaries, datas, **kwargs):
         """
         :param str image_file:

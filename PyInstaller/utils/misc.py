@@ -221,3 +221,14 @@ def decode(raw: bytes):
 
     encoding, _ = tokenize.detect_encoding(io.BytesIO(raw).readline)
     return raw.decode(encoding)
+
+
+def is_iterable(arg):
+    """
+    Check if the passed argument is an iterable."
+    """
+    try:
+        iter(arg)
+    except TypeError:
+        return False
+    return True
