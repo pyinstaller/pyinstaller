@@ -479,9 +479,9 @@ class Analysis(Target):
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):
             return True
-        for fnm in self.inputs:
-            if mtime(fnm) > last_build:
-                logger.info("Building because %s changed", fnm)
+        for filename in self.inputs:
+            if mtime(filename) > last_build:
+                logger.info("Building because %s changed", filename)
                 return True
         # Now we know that none of the input parameters and none of the input files has changed. So take the values
         # calculated resp. analysed in the last run and store them in `self`.
@@ -774,16 +774,15 @@ class Analysis(Target):
         Verify presence of the Python dynamic library in the binary dependencies. Python library is an essential
         piece that has to be always included.
         """
-        # First check that libpython is in resolved binary dependencies.
-        for (nm, filename, typ) in binaries:
-            if typ == 'BINARY' and nm in PYDYLIB_NAMES:
+        # First check if libpython is already among the resolved binary dependencies.
+        for dest_name, src_name, typecode in binaries:
+            if typecode == 'BINARY' and dest_name in PYDYLIB_NAMES:
                 # Just print its filename and return.
-                logger.info('Using Python library %s', filename)
-                # Checking was successful - end of function.
+                logger.info('Using Python library %s', src_name)
                 return
 
         # Python lib not in dependencies - try to find it.
-        logger.info('Python library not in binary dependencies. Doing additional searching...')
+        logger.info('Python library not among binary dependencies. Performing additional search...')
         python_lib = bindepend.get_python_library_path()
         logger.debug('Adding Python library to binary dependencies')
         binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
@@ -796,7 +795,9 @@ class Analysis(Target):
         '*python*' or are stored under 'lib-dynload' are always treated as exceptions and not excluded.
         """
 
-        self.binaries = [i for i in self.binaries if _should_include_system_binary(i, list_of_exceptions or [])]
+        self.binaries = [
+            entry for entry in self.binaries if _should_include_system_binary(entry, list_of_exceptions or [])
+        ]
 
 
 class ExecutableBuilder:
