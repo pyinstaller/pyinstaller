@@ -730,6 +730,7 @@ def _getImports_macholib(pth):
     # In cases with @loader_path or @executable_path try to look in the same directory as the checked binary is. This
     # seems to work in most cases.
     exec_path = os.path.abspath(os.path.dirname(pth))
+    python_bin_path = os.path.abspath(os.path.dirname(sys.executable))
 
     for lib in seen:
         # Suppose that @rpath is not used for system libraries and using macholib can be avoided. macholib cannot handle
@@ -761,10 +762,15 @@ def _getImports_macholib(pth):
                 lib = dyld_find(lib, executable_path=exec_path)
                 rslt.add(lib)
             except ValueError:
-                # Starting with Big Sur, system libraries are hidden. And we do not collect system libraries on any
-                # macOS version anyway, so suppress the corresponding error messages.
-                if not in_system_path(lib) and dylib.warn_missing_lib(lib):
-                    logger.warning('Cannot find path %s (needed by %s)', lib, pth)
+                # try to resolve the executable path with the path of the executable binary for the Python interpreter
+                try:
+                    lib = dyld_find(lib, executable_path=python_bin_path)
+                    rslt.add(lib)
+                except ValueError:
+                    # Starting with Big Sur, system libraries are hidden. And we do not collect system libraries on any
+                    # macOS version anyway, so suppress the corresponding error messages.
+                    if not in_system_path(lib) and dylib.warn_missing_lib(lib):
+                        logger.warning('Cannot find path %s (needed by %s)', lib, pth)
 
     return rslt
 
