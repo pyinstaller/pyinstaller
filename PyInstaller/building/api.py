@@ -561,9 +561,17 @@ class EXE(Target):
                 self.toc.append((manifest_filename, filename, 'BINARY'))
 
             if self.versrsrc:
-                if not isinstance(self.versrsrc, versioninfo.VSVersionInfo) and not os.path.isabs(self.versrsrc):
-                    # relative version-info path is relative to spec file
-                    self.versrsrc = os.path.join(CONF['specpath'], self.versrsrc)
+                if isinstance(self.versrsrc, versioninfo.VSVersionInfo):
+                    # We were passed a valid versioninfo.VSVersionInfo structure
+                    pass
+                elif isinstance(self.versrsrc, (str, bytes, os.PathLike)):
+                    # File path; either absolute, or relative to the spec file
+                    if not os.path.isabs(self.versrsrc):
+                        self.versrsrc = os.path.join(CONF['specpath'], self.versrsrc)
+                    logger.debug("Loading version info from file: %r", self.versrsrc)
+                    self.versrsrc = versioninfo.load_version_info_from_text_file(self.versrsrc)
+                else:
+                    raise TypeError(f"Unsupported type for version info argument: {type(self.versrsrc)!r}")
 
         self.pkg = PKG(
             self.toc,
@@ -687,7 +695,7 @@ class EXE(Target):
             # Embed version info.
             if self.versrsrc:
                 logger.info("Copying version information to EXE")
-                versioninfo.SetVersion(build_name, self.versrsrc)
+                versioninfo.write_version_info_to_executable(build_name, self.versrsrc)
             # Embed other resources.
             logger.info("Copying %d resources to EXE", len(self.resources))
             for res in self.resources:

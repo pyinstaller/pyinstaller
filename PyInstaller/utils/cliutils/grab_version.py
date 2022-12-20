@@ -36,13 +36,13 @@ def run():
     args = parser.parse_args()
 
     try:
-        import PyInstaller.utils.win32.versioninfo
-        vs = PyInstaller.utils.win32.versioninfo.decode(args.exe_file)
-        if not vs:
+        from PyInstaller.utils.win32 import versioninfo
+        info = versioninfo.read_version_info_from_executable(args.exe_file)
+        if not info:
             raise SystemExit("Error: VersionInfo resource not found in exe")
         with codecs.open(args.out_filename, 'w', 'utf-8') as fp:
-            fp.write(str(vs))
-        print('Version info written to: %s' % args.out_filename)
+            fp.write(str(info))
+        print(f"Version info written to: {args.out_filename!r}")
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
 
