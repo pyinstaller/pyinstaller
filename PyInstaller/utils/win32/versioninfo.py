@@ -12,7 +12,6 @@
 
 import struct
 
-# ::TODO:: #1920 revert to using pypi version
 import pefile
 
 from PyInstaller.compat import win32api
@@ -53,16 +52,20 @@ def getRaw(text):
     return text.encode('UTF-16LE')
 
 
-def decode(pathnm):
-    h = win32api.LoadLibraryEx(pathnm, 0, LOAD_LIBRARY_AS_DATAFILE)
+def read_version_info_from_executable(exe_filename):
+    """
+    Read the version information structure from the given executable's resources, and return it as an instance of
+    `VSVersionInfo` structure.
+    """
+    h = win32api.LoadLibraryEx(exe_filename, 0, LOAD_LIBRARY_AS_DATAFILE)
     res = win32api.EnumResourceNames(h, pefile.RESOURCE_TYPE['RT_VERSION'])
     if not len(res):
         return None
     data = win32api.LoadResource(h, pefile.RESOURCE_TYPE['RT_VERSION'], res[0])
-    vs = VSVersionInfo()
-    vs.fromRaw(data)
+    info = VSVersionInfo()
+    info.fromRaw(data)
     win32api.FreeLibrary(h)
-    return vs
+    return info
 
 
 def nextDWord(offset):
@@ -554,32 +557,49 @@ class VarStruct:
         return 'versioninfo.VarStruct(%r, %r)' % (self.name, self.kids)
 
 
-def SetVersion(exenm, versionfile):
-    if isinstance(versionfile, VSVersionInfo):
-        vs = versionfile
-    else:
-        # Read and parse the version file. It may have a byte order marker or encoding cookie - respect it if it does.
-        from PyInstaller.utils.misc import decode
-        with open(versionfile, 'rb') as fp:
-            txt = decode(fp.read())
-        vs = eval(txt)
+def load_version_info_from_text_file(filename):
+    """
+    Load the `VSVersionInfo` structure from its string-based (`VSVersionInfo.__str__`) serialization by reading the
+    text from the file and running it through `eval()`.
+    """
+
+    # Read and parse the version file. It may have a byte order marker or encoding cookie - respect it if it does.
+    import PyInstaller.utils.misc as miscutils
+    with open(filename, 'rb') as fp:
+        text = miscutils.decode(fp.read())
+
+    # Deserialize via eval()
+    try:
+        info = eval(text)
+    except Exception as e:
+        raise ValueError("Failed to deserialize VSVersionInfo from text-based representation!") from e
+
+    # Sanity check
+    assert isinstance(info, VSVersionInfo), \
+        f"Loaded incompatible structure type! Expected VSVersionInfo, got: {type(info)!r}"
+
+    return info
+
+
+def write_version_info_to_executable(exe_filename, info):
+    assert isinstance(info, VSVersionInfo)
 
     # Remember overlay
-    pe = pefile.PE(exenm, fast_load=True)
+    pe = pefile.PE(exe_filename, fast_load=True)
     overlay_before = pe.get_overlay()
     pe.close()
 
-    hdst = win32api.BeginUpdateResource(exenm, 0)
-    win32api.UpdateResource(hdst, pefile.RESOURCE_TYPE['RT_VERSION'], 1, vs.toRaw())
+    hdst = win32api.BeginUpdateResource(exe_filename, 0)
+    win32api.UpdateResource(hdst, pefile.RESOURCE_TYPE['RT_VERSION'], 1, info.toRaw())
     win32api.EndUpdateResource(hdst, 0)
 
     if overlay_before:
         # Check if the overlay is still present
-        pe = pefile.PE(exenm, fast_load=True)
+        pe = pefile.PE(exe_filename, fast_load=True)
         overlay_after = pe.get_overlay()
         pe.close()
 
         # If the update removed the overlay data, re-append it
         if not overlay_after:
-            with open(exenm, 'ab') as exef:
+            with open(exe_filename, 'ab') as exef:
                 exef.write(overlay_before)

@@ -1,0 +1,2 @@
+(Windows) Changes in the version info file now trigger rebuild of the
+executable file.
