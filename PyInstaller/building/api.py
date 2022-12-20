@@ -431,6 +431,20 @@ class EXE(Target):
         else:
             self.upx = False
 
+        # Catch and clear options that are unsupported on specific platforms.
+        if self.versrsrc and not is_win:
+            logger.warning('Ignoring version information; supported only on Windows!')
+            self.versrsrc = None
+        if self.manifest and not is_win:
+            logger.warning('Ignoring manifest; supported only on Windows!')
+            self.manifest = None
+        if self.resources and not is_win:
+            logger.warning('Ignoring resources; supported only on Windows!')
+            self.resources = []
+        if self.icon and not (is_win or is_darwin):
+            logger.warning('Ignoring icon; supported only on Windows and macOS!')
+            self.icon = None
+
         # Old .spec format included in 'name' the path where to put created app. New format includes only exename.
         #
         # Ignore fullpath in the 'name' and prepend DISTPATH or WORKPATH.
@@ -608,12 +622,6 @@ class EXE(Target):
 
         if Target._check_guts(self, data, last_build):
             return True
-
-        if (data['versrsrc'] or data['resources']) and not is_win:
-            # todo: really ignore :-)
-            logger.warning('Ignoring version, manifest and resources; platform not supported!')
-        if data['icon'] and not (is_win or is_darwin):
-            logger.warning('Ignoring icon; platform not supported!')
 
         mtm = data['mtm']
         if mtm != miscutils.mtime(self.name):
