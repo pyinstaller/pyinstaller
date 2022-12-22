@@ -9,196 +9,35 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# TODO clean up this module
-
-# Subclasses may not need marshal or struct, but since they are builtin, importing is safe.
-#
-# While an Archive is really an abstraction for any "filesystem within a file", it is tuned for use with the
-# imputil.FuncImporter. This assumes it contains python code objects, indexed by the the internal name (i.e.,
-# without '.py' suffix).
-
-# See pyi_carchive.py for a more general archive (contains anything) that can be understood by a C program.
-
 # **NOTE** This module is used during bootstrap.
-# Import *ONLY* builtin modules.
+# Import *ONLY* builtin modules or modules that are collected into the base_library.zip archive.
+# List of built-in modules: sys.builtin_module_names
+# List of modules collected into base_library.zip: PyInstaller.compat.PY3_BASE_MODULES
 
-import _thread as thread
-import marshal
-import struct
 import sys
+import os
+import struct
+import marshal
 import zlib
+
+# In Python3, the MAGIC_NUMBER value is available in the importlib module. However, in the bootstrap phase we cannot use
+# importlib directly, but rather its frozen variant.
+import _frozen_importlib
+
+PYTHON_MAGIC_NUMBER = _frozen_importlib._bootstrap_external.MAGIC_NUMBER
 
 # For decrypting Python modules.
 CRYPT_BLOCK_SIZE = 16
 
-# content types for PYZ
-PYZ_TYPE_MODULE = 0
-PYZ_TYPE_PKG = 1
-PYZ_TYPE_DATA = 2
-PYZ_TYPE_NSPKG = 3  # PEP-420 namespace package
-
-
-class FilePos:
-    """
-    This class keeps track of the file object representing and current position in a file.
-    """
-    def __init__(self):
-        # The file object representing this file.
-        self.file = None
-        # The position in the file when it was last closed.
-        self.pos = 0
-
-
-class ArchiveFile:
-    """
-    File class support auto open when access member from file object This class is use to avoid file locking on windows.
-    """
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-        self._filePos = {}
-
-    def local(self):
-        """
-        Return an instance of FilePos for the current thread. This is a crude # re-implementation of threading.local,
-        which isn't a built-in module # and therefore isn't available.
-        """
-        ti = thread.get_ident()
-        if ti not in self._filePos:
-            self._filePos[ti] = FilePos()
-        return self._filePos[ti]
-
-    def __getattr__(self, name):
-        """
-        Make this class act like a file, by invoking most methods on its underlying file object.
-        """
-        file = self.local().file
-        assert file
-        return getattr(file, name)
-
-    def __enter__(self):
-        """
-        Open file and seek to pos record from last close.
-        """
-        # The file shouldn't be open yet.
-        fp = self.local()
-        assert not fp.file
-        # Open the file and seek to the last position.
-        fp.file = open(*self.args, **self.kwargs)
-        fp.file.seek(fp.pos)
-
-    def __exit__(self, type, value, traceback):
-        """
-        Close file and record pos.
-        """
-        # The file should still be open.
-        fp = self.local()
-        assert fp.file
-
-        # Close the file and record its position.
-        fp.pos = fp.file.tell()
-        fp.file.close()
-        fp.file = None
+# Type codes for PYZ PYZ entries
+PYZ_ITEM_MODULE = 0
+PYZ_ITEM_PKG = 1
+PYZ_ITEM_DATA = 2
+PYZ_ITEM_NSPKG = 3  # PEP-420 namespace package
 
 
 class ArchiveReadError(RuntimeError):
     pass
-
-
-class ArchiveReader:
-    """
-    A base class for a repository of python code objects. The extract method is used by imputil.ArchiveImporter to
-    get code objects by name (fully qualified name), so an end-user "import a.b" becomes:
-        extract('a.__init__')
-        extract('a.b')
-    """
-    MAGIC = b'PYL\0'
-    HDRLEN = 12  # default is MAGIC followed by python's magic, int pos of toc
-    TOCPOS = 8
-    os = None
-    _bincache = None
-
-    def __init__(self, path=None, start=0):
-        """
-        Initialize an Archive. If path is omitted, it will be an empty Archive.
-        """
-        self.toc = None
-        self.path = path
-        self.start = start
-
-        # In Python3, the MAGIC_NUMBER value is available in the importlib module. However, in the bootstrap phase
-        # we cannot use importlib directly, but rather its frozen variant.
-        import _frozen_importlib
-        self.pymagic = _frozen_importlib._bootstrap_external.MAGIC_NUMBER
-
-        if path is not None:
-            self.lib = ArchiveFile(self.path, 'rb')
-            with self.lib:
-                self.checkmagic()
-                self.loadtoc()
-
-    def loadtoc(self):
-        """
-        Overridable. Default: After magic comes an int (4 byte native) giving the position of the TOC within
-        self.lib. Default: The TOC is a marshal-able string.
-        """
-        self.lib.seek(self.start + self.TOCPOS)
-        (offset,) = struct.unpack('!i', self.lib.read(4))
-        self.lib.seek(self.start + offset)
-        # Use marshal.loads() since load() arg must be a file object. Convert the loaded list into a dict for
-        # faster access.
-        self.toc = dict(marshal.loads(self.lib.read()))
-
-    #------ This is what is called by FuncImporter ------
-    def is_package(self, name):
-        ispkg, pos = self.toc.get(name, (0, None))
-        if pos is None:
-            return None
-        return bool(ispkg)
-
-    #------ Core method - Override as needed  ------
-    def extract(self, name):
-        """
-        Get the object corresponding to name, or None. For use with imputil ArchiveImporter, object is a python code
-        object. 'name' is the name as specified in an 'import name'. 'import a.b' becomes:
-             extract('a') (return None because 'a' is not a code object)
-             extract('a.__init__') (return a code object)
-             extract('a.b') (return a code object)
-        Default implementation:
-            self.toc is a dict
-            self.toc[name] is pos
-            self.lib has the code object marshal-ed at pos
-        """
-        ispkg, pos = self.toc.get(name, (0, None))
-        if pos is None:
-            return None
-        with self.lib:
-            self.lib.seek(self.start + pos)
-            # Use marshal.loads() since load() arg must be a file object.
-            obj = marshal.loads(self.lib.read())
-        return ispkg, obj
-
-    #------ Informational methods ------
-    def contents(self):
-        """
-        Return a list of the contents Default implementation assumes self.toc is a dict like object. Not required by
-        ArchiveImporter.
-        """
-        return list(self.toc.keys())
-
-    def checkmagic(self):
-        """
-        Overridable. Check to see if the file object self.lib actually has a file we understand.
-        """
-        self.lib.seek(self.start)  # default - magic is at the start of file
-
-        if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise ArchiveReadError("%s is not a valid %s archive file" % (self.path, self.__class__.__name__))
-
-        if self.lib.read(len(self.pymagic)) != self.pymagic:
-            raise ArchiveReadError("%s has version mismatch to dll" % self.path)
-
-        self.lib.read(4)
 
 
 class Cipher:
@@ -234,74 +73,128 @@ class Cipher:
         return cipher.CTR_xcrypt_buffer(data[CRYPT_BLOCK_SIZE:])
 
 
-class ZlibArchiveReader(ArchiveReader):
+class ZlibArchiveReader:
     """
-    ZlibArchive - an archive with compressed entries. Archive is read from the executable created by PyInstaller.
-
-    This archive is used for bundling python modules inside the executable.
-
-    NOTE: The whole ZlibArchive (PYZ) is compressed, so it is not necessary to compress individual modules.
+    Reader for PyInstaller's PYZ (ZlibArchive) archive. The archive is used to store collected byte-compiled Python
+    modules, as individually-compressed entries.
     """
-    MAGIC = b'PYZ\0'
-    TOCPOS = 8
-    HDRLEN = ArchiveReader.HDRLEN + 5
+    _PYZ_MAGIC_PATTERN = b'PYZ\0'
 
-    def __init__(self, path=None, offset=None):
-        if path is None:
-            offset = 0
-        elif offset is None:
-            for i in range(len(path) - 1, -1, -1):
-                if path[i] == '?':
-                    try:
-                        offset = int(path[i + 1:])
-                    except ValueError:
-                        # Just ignore any spurious "?" in the path (like in Windows UNC \\?\<path>).
-                        continue
-                    path = path[:i]
-                    break
-            else:
-                offset = 0
+    def __init__(self, filename, start_offset=None, check_pymagic=False):
+        self._filename = filename
+        self._start_offset = start_offset
 
-        super().__init__(path, offset)
+        self.toc = {}
 
-        # Try to import the key module. Its lack of availability indicates that the encryption is disabled.
+        self.cipher = None
+
+        # Try to create Cipher() instance; if encryption is not enabled, pyimod00_crypto_key is not available, and
+        # instantiation fails with ImportError.
         try:
-            import pyimod00_crypto_key  # noqa: F401
             self.cipher = Cipher()
         except ImportError:
-            self.cipher = None
+            pass
+
+        # If no offset is given, try inferring it from filename
+        if start_offset is None:
+            self._filename, self._start_offset = self._parse_offset_from_filename(filename)
+
+        # Parse header and load TOC. Standard header contains 12 bytes: PYZ magic pattern, python bytecode magic
+        # pattern, and offset to TOC (32-bit integer). It might be followed by additional fields, depending on
+        # implementation version.
+        with open(self._filename, "rb") as fp:
+            # Read PYZ magic pattern, located at the start of the file
+            fp.seek(self._start_offset, os.SEEK_SET)
+
+            magic = fp.read(len(self._PYZ_MAGIC_PATTERN))
+            if magic != self._PYZ_MAGIC_PATTERN:
+                raise ArchiveReadError("PYZ magic pattern mismatch!")
+
+            # Read python magic/version number
+            pymagic = fp.read(len(PYTHON_MAGIC_NUMBER))
+            if check_pymagic and pymagic != PYTHON_MAGIC_NUMBER:
+                raise ArchiveReadError("Python magic pattern mismatch!")
+
+            # Read TOC offset
+            toc_offset, *_ = struct.unpack('!i', fp.read(4))
+
+            # Load TOC
+            fp.seek(self._start_offset + toc_offset, os.SEEK_SET)
+            self.toc = dict(marshal.load(fp))
+
+    @staticmethod
+    def _parse_offset_from_filename(filename):
+        """
+        Parse the numeric offset from filename, stored as: `/path/to/file?offset`.
+        """
+        offset = 0
+
+        idx = filename.rfind('?')
+        if idx == -1:
+            return filename, offset
+
+        try:
+            offset = int(filename[idx + 1:])
+            filename = filename[:idx]  # Remove the offset from filename
+        except ValueError:
+            # Ignore spurious "?" in the path (for example, like in Windows UNC \\?\<path>).
+            pass
+
+        return filename, offset
 
     def is_package(self, name):
-        (typ, pos, length) = self.toc.get(name, (0, None, 0))
-        if pos is None:
-            return None
-        return typ in (PYZ_TYPE_PKG, PYZ_TYPE_NSPKG)
+        """
+        Check if the given name refers to a package entry. Used by FrozenImporter at runtime.
+        """
+        entry = self.toc.get(name)
+        if entry is None:
+            return False
+        typecode, entry_offset, entry_length = entry
+        return typecode in (PYZ_ITEM_PKG, PYZ_ITEM_NSPKG)
 
     def is_pep420_namespace_package(self, name):
-        (typ, pos, length) = self.toc.get(name, (0, None, 0))
-        if pos is None:
-            return None
-        return typ == PYZ_TYPE_NSPKG
+        """
+        Check if the given name refers to a namespace package entry. Used by FrozenImporter at runtime.
+        """
+        entry = self.toc.get(name)
+        if entry is None:
+            return False
+        typecode, entry_offset, entry_length = entry
+        return typecode == PYZ_ITEM_NSPKG
 
     def extract(self, name):
-        (typ, pos, length) = self.toc.get(name, (0, None, 0))
-        if pos is None:
+        """
+        Extract data from entry with the given name.
+        """
+        # Look up entry
+        entry = self.toc.get(name)
+        if entry is None:
             return None
+        typecode, entry_offset, entry_length = entry
+
+        # Read data blob
         try:
-            with self.lib:
-                self.lib.seek(self.start + pos)
-                obj = self.lib.read(length)
+            with open(self._filename, "rb") as fp:
+                fp.seek(self._start_offset + entry_offset)
+                obj = fp.read(entry_length)
         except FileNotFoundError:
+            # We open the archive file each time we need to read from it, to avoid locking the file by keeping it open.
+            # This allows executable to be deleted or moved (renamed) while it is running, which is useful in certain
+            # scenarios (e.g., automatic update that replaces the executable). The caveat is that once the executable is
+            # renamed, we cannot read from its embedded PYZ archive anymore. In such case, exit with informative
+            # message.
             raise SystemExit(
-                f"{self.path} appears to have been moved or deleted since this application was launched. "
+                f"{self._filename} appears to have been moved or deleted since this application was launched. "
                 "Continouation from this state is impossible. Exiting now."
             )
+
         try:
             if self.cipher:
                 obj = self.cipher.decrypt(obj)
             obj = zlib.decompress(obj)
-            if typ in (PYZ_TYPE_MODULE, PYZ_TYPE_PKG, PYZ_TYPE_NSPKG):
+            if typecode in (PYZ_ITEM_MODULE, PYZ_ITEM_PKG, PYZ_ITEM_NSPKG):
                 obj = marshal.loads(obj)
         except EOFError as e:
-            raise ImportError("PYZ entry '%s' failed to unmarshal" % name) from e
-        return typ, obj
+            raise ImportError(f"Failed to unmarshal PYZ entry {name!r}!") from e
+
+        return obj

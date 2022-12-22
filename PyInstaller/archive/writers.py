@@ -27,7 +27,7 @@ from types import CodeType
 
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code
 from PyInstaller.compat import BYTECODE_MAGIC, is_win, strict_collect_mode
-from PyInstaller.loader.pyimod01_archive import PYZ_TYPE_DATA, PYZ_TYPE_MODULE, PYZ_TYPE_NSPKG, PYZ_TYPE_PKG
+from PyInstaller.loader.pyimod01_archive import PYZ_ITEM_DATA, PYZ_ITEM_MODULE, PYZ_ITEM_NSPKG, PYZ_ITEM_PKG
 
 
 class ArchiveWriter:
@@ -171,19 +171,19 @@ class ZlibArchiveWriter(ArchiveWriter):
     def add(self, entry):
         name, src_path, typecode = entry
         if typecode == 'PYMODULE':
-            typecode = PYZ_TYPE_MODULE
+            typecode = PYZ_ITEM_MODULE
             if src_path in ('-', None):
                 # This is a NamespacePackage, modulegraph marks them by using the filename '-'. (But wants to use None,
                 # so check for None, too, to be forward-compatible.)
-                typecode = PYZ_TYPE_NSPKG
+                typecode = PYZ_ITEM_NSPKG
             else:
                 src_basename, _ = os.path.splitext(os.path.basename(src_path))
                 if src_basename == '__init__':
-                    typecode = PYZ_TYPE_PKG
+                    typecode = PYZ_ITEM_PKG
             data = marshal.dumps(self.code_dict[name])
         else:
             # Any data files, that might be required by pkg_resources.
-            typecode = PYZ_TYPE_DATA
+            typecode = PYZ_ITEM_DATA
             with open(src_path, 'rb') as fh:
                 data = fh.read()
             # No need to use forward slash as path-separator here since pkg_resources on Windows back slash as

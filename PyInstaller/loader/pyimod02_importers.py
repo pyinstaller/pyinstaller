@@ -90,7 +90,7 @@ class FrozenImporter:
         for pyz_filepath in sys.path:
             try:
                 # Unzip zip archive bundled with the executable.
-                self._pyz_archive = ZlibArchiveReader(pyz_filepath)
+                self._pyz_archive = ZlibArchiveReader(pyz_filepath, check_pymagic=True)
                 # Verify the integrity of the zip archive with Python modules.
                 # This is already done when creating the ZlibArchiveReader instance.
                 #self._pyz_archive.checkmagic()
@@ -148,7 +148,7 @@ class FrozenImporter:
 
             # extract() returns None if fullname is not in the archive, and the subsequent subscription attempt raises
             # exception, which is turned into ImportError.
-            return self._pyz_archive.extract(fullname)[1]
+            return self._pyz_archive.extract(fullname)
         except Exception as e:
             raise ImportError('Loader FrozenImporter cannot handle module ' + fullname) from e
 
@@ -190,7 +190,7 @@ class FrozenImporter:
         fullname = path[SYS_PREFIXLEN:]
         if fullname in self.toc:
             # If the file is in the archive, return this
-            return self._pyz_archive.extract(fullname)[1]
+            return self._pyz_archive.extract(fullname)
         else:
             # Otherwise try to fetch it from the filesystem. Since __file__ attribute works properly, just try to open
             # and read it.
