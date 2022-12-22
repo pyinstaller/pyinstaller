@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Viewer for archives packaged by archive.py.
+Viewer for PyInstaller-generated archives.
 """
 
 import argparse
@@ -20,8 +20,8 @@ import tempfile
 import zlib
 
 import PyInstaller.log
+from PyInstaller.loader.pyimod01_archive import ZlibArchiveReader
 from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
-from PyInstaller.loader import pyimod01_archive
 
 stack = []
 cleanup = []
@@ -120,11 +120,11 @@ def usage():
 def get_archive(name):
     if not stack:
         if name[-4:].lower() == '.pyz':
-            return ZlibArchive(name)
+            return ZlibArchiveReader(name)
         return CArchiveReader(name)
     parent = stack[-1][1]
     try:
-        return parent.openEmbedded(name)
+        return parent.open_embedded_archive(name)
     except KeyError:
         return None
     except (ValueError, RuntimeError):
@@ -136,7 +136,7 @@ def get_archive(name):
         with open(tempfilename, 'wb') as fp:
             fp.write(data)
         if typcd == 'z':
-            return ZlibArchive(tempfilename)
+            return ZlibArchiveReader(tempfilename)
         else:
             return CArchiveReader(tempfilename)
 
@@ -209,20 +209,6 @@ def get_archive_content(filename):
     get_content(archive, recursive=True, brief=True, output=output)
     do_cleanup()
     return output
-
-
-class ZlibArchive(pyimod01_archive.ZlibArchiveReader):
-    def checkmagic(self):
-        """
-        Overridable.
-        Check to see if the file object self.lib actually has a file we understand.
-        """
-        self.lib.seek(self.start)  # default - magic is at start of file.
-        if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise RuntimeError("%s is not a valid %s archive file" % (self.path, self.__class__.__name__))
-        if self.lib.read(len(self.pymagic)) != self.pymagic:
-            print("Warning: pyz is from a different Python version", file=sys.stderr)
-        self.lib.read(4)
 
 
 def run():
