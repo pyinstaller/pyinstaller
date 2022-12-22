@@ -194,6 +194,28 @@ class CArchiveReader:
             # Open as embedded archive, without extraction.
             return ZlibArchiveReader(self._filename, self._start_offset + entry_offset)
         elif typecode == PKG_ITEM_ZIPFILE:
-            return None
+            raise NotAnArchiveError("Zipfile archives not supported yet!")
         else:
             raise NotAnArchiveError(f"Entry {name} is not a supported embedded archive!")
+
+
+def pkg_archive_contents(filename, recursive=True):
+    """
+    List the contents of the PKG / CArchive. If `recursive` flag is set (the default), the contents of the embedded PYZ
+    archive is included as well.
+
+    Used by the tests.
+    """
+
+    contents = []
+
+    pkg_archive = CArchiveReader(filename)
+    for name, toc_entry in pkg_archive.toc.items():
+        *_, typecode = toc_entry
+        contents.append(name)
+        if typecode == PKG_ITEM_PYZ and recursive:
+            pyz_archive = pkg_archive.open_embedded_archive(name)
+            for name in pyz_archive.toc.keys():
+                contents.append(name)
+
+    return contents
