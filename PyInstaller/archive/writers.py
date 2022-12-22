@@ -12,164 +12,75 @@
 Utilities to create data structures for embedding Python modules and additional files into the executable.
 """
 
-# While an Archive is really an abstraction for any "filesystem within a file", it is tuned for use with
-# imputil.FuncImporter. This assumes it contains python code objects, indexed by the the internal name (ie, no '.py').
-#
-# See pyi_carchive.py for a more general archive (contains anything) that can be understood by a C program.
-
 import marshal
 import os
 import shutil
 import struct
 import sys
 import zlib
-from types import CodeType
 
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code
 from PyInstaller.compat import BYTECODE_MAGIC, is_win, strict_collect_mode
 from PyInstaller.loader.pyimod01_archive import PYZ_ITEM_DATA, PYZ_ITEM_MODULE, PYZ_ITEM_NSPKG, PYZ_ITEM_PKG
 
 
-class ArchiveWriter:
+class ZlibArchiveWriter:
     """
-    A base class for a repository of python code objects. The extract method is used by imputil.ArchiveImporter to
-    get code objects by name (fully qualified name), so an end-user "import a.b" becomes extract('a.__init__') and
-    extract('a.b').
+    Writer for PyInstaller's PYZ (ZlibArchive) archive. The archive is used to store collected byte-compiled Python
+    modules, as individually-compressed entries.
     """
-    MAGIC = b'PYL\0'
-    HDRLEN = 12  # default is MAGIC followed by python's magic, int pos of toc
-    TOCPOS = 8
+    _PYZ_MAGIC_PATTERN = b'PYZ\0'
+    _HEADER_LENGTH = 12 + 5
+    _COMPRESSION_LEVEL = 6  # zlib compression level
 
-    def __init__(self, archive_path, logical_toc):
+    def __init__(self, filename, entries, code_dict=None, cipher=None):
         """
-        Create an archive file of name 'archive_path'. logical_toc is a 'logical TOC', a list of (name, path, ...),
-        where name is the internal name (e.g., 'a') and path is a file to get the object from (e.g., './a.pyc').
+        filename
+            Target filename of the archive.
+        entries
+            An iterable containing entries in the form of tuples: (name, src_path, typecode), where `name` is the name
+            under which the resource is stored (e.g., python module name, without suffix), `src_path` is name of the
+            file from which the resource is read, and `typecode` is the Analysis-level TOC typecode (`PYMODULE` or
+            `DATA`).
+        code_dict
+            Optional code dictionary containing code objects for analyzed/collected python modules.
+        cipher
+            Optional `Cipher` object for bytecode encryption.
         """
-        self.start = 0
+        code_dict = code_dict or {}
 
-        self._start_add_entries(archive_path)
-        self._add_from_table_of_contents(logical_toc)
-        self._finalize()
+        with open(filename, "wb") as fp:
+            # Reserve space for the header.
+            fp.write(b'\0' * self._HEADER_LENGTH)
 
-    def _start_add_entries(self, archive_path):
-        """
-        Open an empty archive for addition of entries.
-        """
-        self.lib = open(archive_path, 'wb')
-        # Reserve space for the header.
-        if self.HDRLEN:
-            self.lib.write(b'\0' * self.HDRLEN)
-        # Create an empty table of contents. Use a list to support reproducible builds.
-        self.toc = []
+            # Write entries' data and collect TOC entries
+            toc = []
+            for entry in entries:
+                toc_entry = self._write_entry(fp, entry, code_dict, cipher)
+                toc.append(toc_entry)
 
-    def _add_from_table_of_contents(self, toc):
-        """
-        Add entries from a logical TOC (without absolute positioning info).
-        An entry in a logical TOC is a tuple:
-          entry[0] is name (under which it will be saved).
-          entry[1] is fullpathname of the file.
-          entry[2] is a flag for its storage format (True or 1 if compressed).
-          entry[3] is the entry's type code.
-        """
-        for toc_entry in toc:
-            self.add(toc_entry)  # The guts of the archive.
+            # Write TOC
+            toc_offset = fp.tell()
+            toc_data = marshal.dumps(toc)
+            fp.write(toc_data)
 
-    def _finalize(self):
-        """
-        Finalize an archive which has been opened using _start_add_entries(), writing any needed padding and the
-        table of contents.
-        """
-        toc_pos = self.lib.tell()
-        self.save_trailer(toc_pos)
-        if self.HDRLEN:
-            self.update_headers(toc_pos)
-        self.lib.close()
+            # Write header:
+            #  - PYZ magic pattern (4 bytes)
+            #  - python bytecode magic pattern (4 bytes)
+            #  - TOC offset (32-bit int, 4 bytes)
+            #  - encryption flag (1 byte)
+            #  - 4 unused bytes
+            fp.seek(0, os.SEEK_SET)
 
-    # manages keeping the internal TOC and the guts in sync #
-    def add(self, entry):
-        """
-        Override this to influence the mechanics of the Archive. Assumes entry is a seq beginning with (nm, pth, ...),
-        where nm is the key by which we will be asked for the object. pth is the name of where we find the object.
-        Overrides of get_obj_from can make use of further elements in entry.
-        """
-        nm = entry[0]
-        pth = entry[1]
-        pynm, ext = os.path.splitext(os.path.basename(pth))
-        ispkg = pynm == '__init__'
-        assert ext in ('.pyc', '.pyo')
-        self.toc.append((nm, (ispkg, self.lib.tell())))
-        with open(entry[1], 'rb') as f:
-            f.seek(8)  # skip magic and timestamp
-            self.lib.write(f.read())
+            fp.write(self._PYZ_MAGIC_PATTERN)
+            fp.write(BYTECODE_MAGIC)
+            fp.write(struct.pack('!i', toc_offset))
+            fp.write(struct.pack('!B', cipher is not None))
 
-    def save_trailer(self, tocpos):
-        """
-        Default - toc is a dict Gets marshaled to self.lib
-        """
-        try:
-            self.lib.write(marshal.dumps(self.toc))
-        # If the TOC to be marshalled contains an unmarshallable object, Python raises a cryptic exception providing no
-        # details on why such object is unmarshallable. Correct this by iteratively inspecting the TOC for
-        # unmarshallable objects.
-        except ValueError as exception:
-            if str(exception) == 'unmarshallable object':
-                # List of all marshallable types.
-                MARSHALLABLE_TYPES = {
-                    bool, int, float, complex, str, bytes, bytearray, tuple, list, set, frozenset, dict, CodeType
-                }
-                for module_name, module_tuple in self.toc.items():
-                    if type(module_name) not in MARSHALLABLE_TYPES:
-                        print('Module name "%s" (%s) unmarshallable.' % (module_name, type(module_name)))
-                    if type(module_tuple) not in MARSHALLABLE_TYPES:
-                        print(
-                            'Module "%s" tuple "%s" (%s) unmarshallable.' %
-                            (module_name, module_tuple, type(module_tuple))
-                        )
-                    elif type(module_tuple) == tuple:
-                        for i in range(len(module_tuple)):
-                            if type(module_tuple[i]) not in MARSHALLABLE_TYPES:
-                                print(
-                                    'Module "%s" tuple index %s item "%s" (%s) unmarshallable.' %
-                                    (module_name, i, module_tuple[i], type(module_tuple[i]))
-                                )
-
-            raise
-
-    def update_headers(self, tocpos):
-        """
-        Default - MAGIC + Python's magic + tocpos
-        """
-        self.lib.seek(self.start)
-        self.lib.write(self.MAGIC)
-        self.lib.write(BYTECODE_MAGIC)
-        self.lib.write(struct.pack('!i', tocpos))
-
-
-class ZlibArchiveWriter(ArchiveWriter):
-    """
-    ZlibArchive - an archive with compressed entries. Archive is read from the executable created by PyInstaller.
-
-    This archive is used for bundling python modules inside the executable.
-
-    NOTE: The whole ZlibArchive (PYZ) is compressed, so it is not necessary to compress individual modules.
-    """
-    MAGIC = b'PYZ\0'
-    TOCPOS = 8
-    HDRLEN = ArchiveWriter.HDRLEN + 5
-    COMPRESSION_LEVEL = 6  # Default level of the 'zlib' module from Python.
-
-    def __init__(self, archive_path, logical_toc, code_dict=None, cipher=None):
-        """
-        code_dict      dict containing module code objects from ModuleGraph.
-        """
-        # Keep references to module code objects constructed by ModuleGraph to avoid writing .pyc/pyo files to hdd.
-        self.code_dict = code_dict or {}
-        self.cipher = cipher or None
-
-        super().__init__(archive_path, logical_toc)
-
-    def add(self, entry):
+    @classmethod
+    def _write_entry(cls, fp, entry, code_dict, cipher):
         name, src_path, typecode = entry
+
         if typecode == 'PYMODULE':
             typecode = PYZ_ITEM_MODULE
             if src_path in ('-', None):
@@ -180,165 +91,102 @@ class ZlibArchiveWriter(ArchiveWriter):
                 src_basename, _ = os.path.splitext(os.path.basename(src_path))
                 if src_basename == '__init__':
                     typecode = PYZ_ITEM_PKG
-            data = marshal.dumps(self.code_dict[name])
+            data = marshal.dumps(code_dict[name])
         else:
             # Any data files, that might be required by pkg_resources.
             typecode = PYZ_ITEM_DATA
             with open(src_path, 'rb') as fh:
                 data = fh.read()
-            # No need to use forward slash as path-separator here since pkg_resources on Windows back slash as
+            # No need to use forward slash as path-separator here since pkg_resources on Windows uses back slash as
             # path-separator.
 
-        obj = zlib.compress(data, self.COMPRESSION_LEVEL)
+        # First compress, then encrypt.
+        obj = zlib.compress(data, cls._COMPRESSION_LEVEL)
+        if cipher:
+            obj = cipher.encrypt(obj)
 
-        # First compress then encrypt.
-        if self.cipher:
-            obj = self.cipher.encrypt(obj)
+        # Create TOC entry
+        toc_entry = (name, (typecode, fp.tell(), len(obj)))
 
-        self.toc.append((name, (typecode, self.lib.tell(), len(obj))))
-        self.lib.write(obj)
+        # Write data blob
+        fp.write(obj)
 
-    def update_headers(self, tocpos):
-        """
-        Add level.
-        """
-        ArchiveWriter.update_headers(self, tocpos)
-        self.lib.write(struct.pack('!B', self.cipher is not None))
+        return toc_entry
 
 
-class CTOC:
+class CArchiveWriter:
     """
-    A class encapsulating the table of contents of a CArchive.
+    Writer for PyInstaller's CArchive (PKG) archive.
 
-    When written to disk, it is easily read from C.
+    This archive contains all files that are bundled within an executable; a PYZ (ZlibArchive), DLLs, Python C
+    extensions, and other data files that are bundled in onefile mode.
+
+    The archive can be read from either C (bootloader code at application's run-time) or Python (for debug purposes).
     """
-    # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
-    ENTRYSTRUCT = '!iIIIBB'
-    ENTRYLEN = struct.calcsize(ENTRYSTRUCT)
+    _COOKIE_MAGIC_PATTERN = b'MEI\014\013\012\013\016'
 
-    def __init__(self):
-        self.data = []
+    # For cookie and TOC entry structure, see `PyInstaller.archive.readers.CArchiveReader`.
+    _COOKIE_FORMAT = '!8sIIii64s'
+    _COOKIE_LENGTH = struct.calcsize(_COOKIE_FORMAT)
 
-    def tobinary(self):
+    _TOC_ENTRY_FORMAT = '!iIIIBB'
+    _TOC_ENTRY_LENGTH = struct.calcsize(_TOC_ENTRY_FORMAT)
+
+    _COMPRESSION_LEVEL = 9  # zlib compression level
+
+    def __init__(self, filename, entries, pylib_name):
         """
-        Return self as a binary string.
+        filename
+            Target filename of the archive.
+        entries
+            An iterable containing entries in the form of tuples: (dest_name, src_name, compress, typecode), where
+            `dest_name` is the name under which the resource is stored in the archive (and name under which it is
+            extracted at runtime), `src_name` is name of the file from which the resouce is read, `compress` is a
+            boolean compression flag, and `typecode` is the Analysis-level TOC typecode.
+        pylib_name
+            Name of the python shared library.
         """
-        rslt = []
-        for (dpos, dlen, ulen, flag, typcd, nm) in self.data:
-            # Encode all names using UTF-8. This should be safe as standard python modules only contain ascii-characters
-            # (and standard shared libraries should have the same), and thus the C-code still can handle this correctly.
-            nm = nm.encode('utf-8')
-            nmlen = len(nm) + 1  # add 1 for a '\0'
-            # align to 16 byte boundary so xplatform C can read
-            toclen = nmlen + self.ENTRYLEN
-            if toclen % 16 == 0:
-                pad = b'\0'
-            else:
-                padlen = 16 - (toclen % 16)
-                pad = b'\0' * padlen
-                nmlen = nmlen + padlen
-            rslt.append(
-                struct.pack(
-                    self.ENTRYSTRUCT + '%is' % nmlen, nmlen + self.ENTRYLEN, dpos, dlen, ulen, flag, ord(typcd),
-                    nm + pad
-                )
+        self._collected_names = set()  # Track collected names for strict package mode.
+
+        with open(filename, "wb") as fp:
+            # Write entries' data and collect TOC entries
+            toc = []
+            for entry in entries:
+                toc_entry = self._write_entry(fp, entry)
+                toc.append(toc_entry)
+
+            # Write TOC
+            toc_offset = fp.tell()
+            toc_data = self._serialize_toc(toc)
+            toc_length = len(toc_data)
+
+            fp.write(toc_data)
+
+            # Write cookie
+            archive_length = toc_offset + toc_length + self._COOKIE_LENGTH
+            pyvers = sys.version_info[0] * 100 + sys.version_info[1]
+            cookie_data = struct.pack(
+                self._COOKIE_FORMAT,
+                self._COOKIE_MAGIC_PATTERN,
+                archive_length,
+                toc_offset,
+                toc_length,
+                pyvers,
+                pylib_name.encode('ascii'),
             )
 
-        return b''.join(rslt)
+            fp.write(cookie_data)
 
-    def add(self, dpos, dlen, ulen, flag, typcd, nm):
-        """
-        Add an entry to the table of contents.
+    def _write_entry(self, fp, entry):
+        dest_name, src_name, compress, typecode = entry
 
-        DPOS is data position.
-        DLEN is data length.
-        ULEN is the uncompressed data len.
-        FLAG says if the data is compressed.
-        TYPCD is the "type" of the entry (used by the C code)
-        NM is the entry's name.
-
-        This function is used only while creating an executable.
-        """
-        # Ensure forward slashes in paths are on Windows converted to back slashes '\\' since on Windows the bootloader
+        # Ensure forward slashes in paths are on Windows converted to back slashes '\\', as on Windows the bootloader
         # works only with back slashes.
-        nm = os.path.normpath(nm)
+        dest_name = os.path.normpath(dest_name)
         if is_win and os.path.sep == '/':
             # When building under MSYS, the above path normalization uses Unix-style separators, so replace them
             # manually.
-            nm = nm.replace(os.path.sep, '\\')
-        self.data.append((dpos, dlen, ulen, flag, typcd, nm))
-
-
-class CArchiveWriter(ArchiveWriter):
-    """
-    An Archive subclass that can hold arbitrary data.
-
-    This class encapsulates all files that are bundled within an executable. It can contain ZlibArchive (Python .pyc
-    files), dlls, Python C extensions and all other data files that are bundled in --onefile mode.
-
-    Easily handled from C or from Python.
-    """
-    # MAGIC is useful to verify that conversion of Python data types to C structure and back works properly.
-    MAGIC = b'MEI\014\013\012\013\016'
-    HDRLEN = 0
-    LEVEL = 9
-
-    # Cookie - holds some information for the bootloader. C struct format definition. '!' at the beginning means network
-    # byte order. C struct looks like:
-    #
-    #   typedef struct _cookie {
-    #       char magic[8]; /* 'MEI\014\013\012\013\016' */
-    #       uint32_t len;  /* len of entire package */
-    #       uint32_t TOC;  /* pos (rel to start) of TableOfContents */
-    #       int  TOClen;   /* length of TableOfContents */
-    #       int  pyvers;   /* new in v4 */
-    #       char pylibname[64];    /* Filename of Python dynamic library. */
-    #   } COOKIE;
-    #
-    _cookie_format = '!8sIIii64s'
-    _cookie_size = struct.calcsize(_cookie_format)
-
-    def __init__(self, archive_path, logical_toc, pylib_name):
-        """
-        Constructor.
-
-        archive_path path name of file (create empty CArchive if path is None).
-        start        is the seekposition within PATH.
-        len          is the length of the CArchive (if 0, then read till EOF).
-        pylib_name   name of Python DLL which bootloader will use.
-        """
-        self._pylib_name = pylib_name
-
-        self._collected_names = set()  # Track collected names for strict package mode.
-
-        # A CArchive created from scratch starts at 0, no leading bootloader.
-        super().__init__(archive_path, logical_toc)
-
-    def _start_add_entries(self, path):
-        """
-        Open an empty archive for addition of entries.
-        """
-        super()._start_add_entries(path)
-        # Override parents' toc {} with a class.
-        self.toc = CTOC()
-
-    def add(self, entry):
-        """
-        Add an ENTRY to the CArchive.
-
-        ENTRY must have:
-          entry[0] is name (under which it will be saved).
-          entry[1] is fullpathname of the file.
-          entry[2] is a flag for it's storage format (0==uncompressed, 1==compressed)
-          entry[3] is the entry's type code.
-            If the type code is 'o':
-              entry[0] is the runtime option
-              eg: v  (meaning verbose imports)
-                  u  (meaning unbuffered)
-                  W arg (warning option arg)
-                  s  (meaning do site.py processing.
-        """
-        dest, source, compress, type = entry[:4]
+            dest_name = dest_name.replace(os.path.sep, '\\')
 
         # Strict pack/collect mode: keep track of the destination names, and raise an error if we try to add a duplicate
         # (a file with same destination name, subject to OS case normalization rules).
@@ -349,108 +197,116 @@ class CArchiveWriter(ArchiveWriter):
                 pass
             else:
                 # Everything else; normalize the case
-                normalized_dest = os.path.normcase(dest)
+                normalized_dest = os.path.normcase(dest_name)
             # Check for existing entry, if applicable
             if normalized_dest:
                 if normalized_dest in self._collected_names:
                     raise ValueError(
-                        f"Attempting to collect a duplicated file into CArchive: {normalized_dest} (type: {type})"
+                        f"Attempting to collect a duplicated file into CArchive: {normalized_dest} (type: {typecode})"
                     )
                 self._collected_names.add(normalized_dest)
 
-        try:
-            if type == 'o':
-                return self._write_blob(b"", dest, type)
+        if typecode == 'o':
+            return self._write_blob(fp, b"", dest_name, typecode)
+        elif typecode == 'd':
+            # Dependency; merge src_name (= reference path prefix) and dest_name (= name) into single-string format that
+            # is parsed by bootloader.
+            return self._write_blob(fp, b"", f"{src_name}:{dest_name}", typecode)
+        elif typecode == 's':
+            # If it is a source code file, compile it to a code object and marshal the object, so it can be unmarshalled
+            # by the bootloader.
+            code = get_code_object(dest_name, src_name)
+            code = strip_paths_in_code(code)
+            return self._write_blob(fp, marshal.dumps(code), dest_name, typecode, compress=compress)
+        elif typecode in ('m', 'M'):
+            # Read the PYC file
+            with open(src_name, "rb") as in_fp:
+                data = in_fp.read()
+            assert data[:4] == BYTECODE_MAGIC
+            # Skip the PYC header, load the code object.
+            code = marshal.loads(data[16:])
+            code = strip_paths_in_code(code)
+            # These module entries are loaded and executed within the bootloader, which requires only the code
+            # object, without the PYC header.
+            return self._write_blob(fp, marshal.dumps(code), dest_name, typecode, compress=compress)
+        else:
+            return self._write_file(fp, src_name, dest_name, typecode, compress=compress)
 
-            elif type == 'd':
-                # Dependency; merge source (= reference path prefix) and dest (= name) into single-string format that is
-                # parsed by bootloader.
-                return self._write_blob(b"", f"{source}:{dest}", type)
-
-            if type == 's':
-                # If it is a source code file, compile it to a code object and marshal the object, so it can be
-                # unmarshalled by the bootloader.
-                code = get_code_object(dest, source)
-                code = strip_paths_in_code(code)
-                return self._write_blob(marshal.dumps(code), dest, type, compress=compress)
-
-            elif type in ('m', 'M'):
-                # Read the PYC file
-                with open(source, "rb") as f:
-                    data = f.read()
-                assert data[:4] == BYTECODE_MAGIC
-                # Skip the PYC header, load the code object.
-                code = marshal.loads(data[16:])
-                code = strip_paths_in_code(code)
-                # These module entries are loaded and executed within the bootloader, which requires only the code
-                # object, without the PYC header.
-                return self._write_blob(marshal.dumps(code), dest, type, compress=compress)
-
-            else:
-                self._write_file(source, dest, type, compress=compress)
-
-        except IOError:
-            print("Cannot find ('%s', '%s', %s, '%s')" % (dest, source, compress, type))
-            raise
-
-    def _write_blob(self, blob: bytes, dest, type, compress=False):
+    def _write_blob(self, out_fp, blob: bytes, dest_name, typecode, compress=False):
         """
-        Write the binary contents (**blob**) of a small file to both the archive and its table of contents.
+        Write the binary contents (**blob**) of a small file to the archive and return the corresponding CArchive TOC
+        entry.
         """
-        start = self.lib.tell()
-        length = len(blob)
+        data_offset = out_fp.tell()
+        data_length = len(blob)
         if compress:
-            blob = zlib.compress(blob, level=self.LEVEL)
-        self.lib.write(blob)
-        self.toc.add(start, len(blob), length, int(compress), type, dest)
+            blob = zlib.compress(blob, level=self._COMPRESSION_LEVEL)
+        out_fp.write(blob)
 
-    def _write_file(self, source, dest, type, compress=False):
+        return (data_offset, len(blob), data_length, int(compress), typecode, dest_name)
+
+    def _write_file(self, out_fp, src_name, dest_name, typecode, compress=False):
         """
-        Stream copy a large file into the archive and update the table of contents.
+        Stream copy a large file into the archive and return the corresponding CArchive TOC entry.
         """
-        start = self.lib.tell()
-        length = os.stat(source).st_size
-        with open(source, 'rb') as f:
+        data_offset = out_fp.tell()
+        data_length = os.stat(src_name).st_size
+        with open(src_name, 'rb') as in_fp:
             if compress:
-                buffer = bytearray(16 * 1024)
-                compressor = zlib.compressobj(self.LEVEL)
-                while 1:
-                    read = f.readinto(buffer)
-                    if not read:
+                tmp_buffer = bytearray(16 * 1024)
+                compressor = zlib.compressobj(self._COMPRESSION_LEVEL)
+                while True:
+                    num_read = in_fp.readinto(tmp_buffer)
+                    if not num_read:
                         break
-                    self.lib.write(compressor.compress(buffer[:read]))
-                self.lib.write(compressor.flush())
-
+                    out_fp.write(compressor.compress(tmp_buffer[:num_read]))
+                out_fp.write(compressor.flush())
             else:
-                shutil.copyfileobj(f, self.lib)
-        self.toc.add(start, self.lib.tell() - start, length, int(compress), type, dest)
+                shutil.copyfileobj(in_fp, out_fp)
 
-    def save_trailer(self, tocpos):
-        """
-        Save the table of contents and the cookie for the bootlader to disk.
+        return (data_offset, out_fp.tell() - data_offset, data_length, int(compress), typecode, dest_name)
 
-        CArchives can be opened from the end - the cookie points back to the start.
-        """
-        tocstr = self.toc.tobinary()
-        self.lib.write(tocstr)
-        toclen = len(tocstr)
+    @classmethod
+    def _serialize_toc(cls, toc):
+        serialized_toc = []
+        for toc_entry in toc:
+            data_offset, compressed_length, data_length, compress, typecode, name = toc_entry
 
-        # now save the cookie
-        total_len = tocpos + toclen + self._cookie_size
-        pyvers = sys.version_info[0] * 100 + sys.version_info[1]
-        # Before saving cookie we need to convert it to corresponding C representation.
-        cookie = struct.pack(
-            self._cookie_format, self.MAGIC, total_len, tocpos, toclen, pyvers, self._pylib_name.encode('ascii')
-        )
-        self.lib.write(cookie)
+            # Encode names as UTF-8. This should be safe as standard python modules only contain ASCII-characters (and
+            # standard shared libraries should have the same), and thus the C-code still can handle this correctly.
+            name = name.encode('utf-8')
+            name_length = len(name) + 1  # add 1 for a '\0'
+
+            # Align to 16-byte boundary so xplatform C can read
+            entry_length = cls._TOC_ENTRY_LENGTH + name_length
+            if entry_length % 16 == 0:
+                name_padding = b'\0'
+            else:
+                padding_length = 16 - (entry_length % 16)
+                name_padding = b'\0' * padding_length
+            name_length += padding_length
+
+            # Serialize
+            serialized_entry = struct.pack(
+                cls._TOC_ENTRY_FORMAT + f"{name_length}s",
+                cls._TOC_ENTRY_LENGTH + name_length,
+                data_offset,
+                compressed_length,
+                data_length,
+                compress,
+                ord(typecode),
+                name + name_padding,
+            )
+            serialized_toc.append(serialized_entry)
+
+        return b''.join(serialized_toc)
 
 
-class SplashWriter(ArchiveWriter):
+class SplashWriter:
     """
-    This ArchiveWriter bundles the data for the splash screen resources.
+    Writer for the splash screen resources archive.
 
-    Splash screen resources will be added as an entry into the CArchive with the typecode ARCHIVE_ITEM_SPLASH.
-    This writer creates the bundled information in the archive.
+    The resulting archive is added as an entry into the CArchive with the typecode PKG_ITEM_SPLASH.
     """
     # This struct describes the splash resources as it will be in an buffer inside the bootloader. All necessary parts
     # are bundled, the *_len and *_offset fields describe the data beyond this header definition.
@@ -475,16 +331,16 @@ class SplashWriter(ArchiveWriter):
     #
     #   } SPLASH_DATA_HEADER;
     #
-    _header_format = '!16s 16s 16s 16s ii ii ii'
-    HDRLEN = struct.calcsize(_header_format)
+    _HEADER_FORMAT = '!16s 16s 16s 16s ii ii ii'
+    _HEADER_LENGTH = struct.calcsize(_HEADER_FORMAT)
 
-    # The created resource will be compressed by the CArchive, so no need to compress the data here.
+    # The created archive is compressed by the CArchive, so no need to compress the data here.
 
-    def __init__(self, archive_path, name_list, tcl_libname, tk_libname, tklib, rundir, image, script):
+    def __init__(self, filename, name_list, tcl_libname, tk_libname, tklib, rundir, image, script):
         """
-        Custom writer for splash screen resources which will be bundled into the CArchive as an entry.
+        Writer for splash screen resources that are bundled into the CArchive as a single archive/entry.
 
-        :param archive_path: The filename of the archive to create
+        :param filename: The filename of the archive to create
         :param name_list: List of filenames for the requirements array
         :param str tcl_libname: Name of the tcl shared library file
         :param str tk_libname: Name of the tk shared library file
@@ -493,91 +349,55 @@ class SplashWriter(ArchiveWriter):
         :param Union[str, bytes] image: Image like object
         :param str script: The tcl/tk script to execute to create the screen.
         """
-        self._tcl_libname = tcl_libname
-        self._tk_libname = tk_libname
-        self._tklib = tklib
-        self._rundir = rundir
 
-        self._image = image
-        self._image_len = 0
-        self._image_offset = 0
+        with open(filename, "wb") as fp:
+            # Reserve space for the header.
+            fp.write(b'\0' * self._HEADER_LENGTH)
 
-        self._script = script
-        self._script_len = 0
-        self._script_offset = 0
+            # Serialize the requirements list. This list (more an array) contains the names of all files the bootloader
+            # needs to extract before the splash screen can be started. The implementation terminates every name with a
+            # null-byte, that keeps the list short memory wise and makes it iterable from C.
+            requirements_len = 0
+            requirements_offset = fp.tell()
+            for name in name_list:
+                name = name.encode('utf-8')
+                fp.write(name + b'\0')
+                requirements_len += len(name) + 1  # zero byte at the end
 
-        self._requirements_len = 0
-        self._requirements_offset = 0
+            # Write splash script
+            script_offset = fp.tell()
+            script_len = len(script)
+            fp.write(script.encode("utf-8"))
 
-        super().__init__(archive_path, name_list)
+            # Write splash image. If image is a bytes buffer, it is written directly into the archive. Otherwise, it
+            # is assumed to be a path and the file is copied into the archive.
+            image_offset = fp.tell()
+            if isinstance(image, bytes):
+                # Image was converted by PIL/Pillow and is already in buffer
+                image_len = len(image)
+                fp.write(image)
+            else:
+                # Read image into buffer
+                with open(image, 'rb') as image_fp:
+                    image_data = image_fp.read()
+                image_len = len(image_data)
+                fp.write(image_data)
+                del image_data
 
-    def add(self, name):
-        """
-        This methods adds a name to the requirement list in the splash data. This list (more an array) contains the
-        names of all files the bootloader needs to extract before the splash screen can be started. The
-        implementation terminates every name with a null-byte, that keeps the list short memory wise and makes it
-        iterable from C.
-        """
-        name = name.encode('utf-8')
-        self.lib.write(name + b'\0')
-        self._requirements_len += len(name) + 1  # zero byte at the end
-
-    def update_headers(self, tocpos):
-        """
-        Updates the offsets of the fields.
-
-        This function is called after self.save_trailer().
-        :param tocpos:
-        :return:
-        """
-        self.lib.seek(self.start)
-        self.lib.write(
-            struct.pack(
-                self._header_format,
-                self._tcl_libname.encode("utf-8"),
-                self._tk_libname.encode("utf-8"),
-                self._tklib.encode("utf-8"),
-                self._rundir.encode("utf-8"),
-                self._script_len,
-                self._script_offset,
-                self._image_len,
-                self._image_offset,
-                self._requirements_len,
-                self._requirements_offset,
+            # Write header
+            header_data = struct.pack(
+                self._HEADER_FORMAT,
+                tcl_libname.encode("utf-8"),
+                tk_libname.encode("utf-8"),
+                tklib.encode("utf-8"),
+                rundir.encode("utf-8"),
+                script_len,
+                script_offset,
+                image_len,
+                image_offset,
+                requirements_len,
+                requirements_offset,
             )
-        )
 
-    def save_trailer(self, script_pos):
-        """
-        Adds the image and script.
-        """
-        self._requirements_offset = script_pos - self._requirements_len
-
-        self._script_offset = script_pos
-        self.save_script()
-        self._image_offset = self.lib.tell()
-        self.save_image()
-
-    def save_script(self):
-        """
-        Add the tcl/tk script into the archive. This strips out every comment in the source to save some space.
-        """
-        self._script_len = len(self._script)
-        self.lib.write(self._script.encode("utf-8"))
-
-    def save_image(self):
-        """
-        Copy the image into the archive. If self._image are bytes the buffer will be written directly into the archive,
-        otherwise it is assumed to be a path and the file will be written into it.
-        """
-        if isinstance(self._image, bytes):
-            # image was converted by PIL/Pillow
-            buf = self._image
-            self.lib.write(self._image)
-        else:
-            # Copy image to lib
-            with open(self._image, 'rb') as image_file:
-                buf = image_file.read()
-
-        self._image_len = len(buf)
-        self.lib.write(buf)
+            fp.seek(0, os.SEEK_SET)
+            fp.write(header_data)
