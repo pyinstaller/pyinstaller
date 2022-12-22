@@ -1,0 +1,3 @@
+Remove deprecated ``PEP-302`` functionality from ``FrozenImporter``.
+The ``find_module()`` and ``load_module()`` methods are deprecated
+since python 3.4 in favor of ``PEP-451`` loader.

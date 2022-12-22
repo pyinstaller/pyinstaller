@@ -1,0 +1,6 @@
+The deprecated ``PEP-302`` ``find_module()`` and ``load_module()``
+methods have been removed from PyInstaller's ``FrozenImporter``. These
+methods have not been used by python's import machinery since
+python 3.4 and ``PEP-451``, and were effectively left untested and
+unmaintained. The removal affects 3rd party code that still relies
+on ``PEP-302`` finder/loader methods instead of the ``PEP-451`` ones.

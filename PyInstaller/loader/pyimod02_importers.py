@@ -45,22 +45,6 @@ else:
         pass
 
 
-class FrozenPackageImporter:
-    """
-    Wrapper class for FrozenImporter that imports one specific fullname from a module named by an alternate fullname.
-    The alternate fullname is derived from the __path__ of the package module containing that module.
-
-    This is called by FrozenImporter.find_module whenever a module is found as a result of searching module.__path__
-    """
-    def __init__(self, importer, entry_name):
-        self._entry_name = entry_name
-        self._importer = importer
-
-    def load_module(self, fullname):
-        # Deprecated in Python 3.4, see PEP-451.
-        return self._importer.load_module(fullname, self._entry_name)
-
-
 def _decode_source(source_bytes):
     """
     Decode bytes representing source code and return the string. Universal newline support is used in the decoding.
@@ -84,11 +68,13 @@ class FrozenImporter:
     The problem is that we have no control over zipimport; for instance, it does not work if the zip file is embedded
     into a PKG that is appended to an executable, like we create in one-file mode.
 
-    This is PEP-302 finder and loader class for the ``sys.meta_path`` hook. A PEP-302 finder requires method
-    find_module() to return loader class with method load_module(). Both these methods are implemented in one class.
+    This used to be PEP-302 finder and loader class for the ``sys.meta_path`` hook. A PEP-302 finder requires method
+    find_module() to return loader class with method load_module(). However, both of these methods were deprecated in
+    python 3.4 by PEP-451 (see below). Therefore, this class now provides only optional extensions to the PEP-302
+    importer protocol.
 
     This is also a PEP-451 finder and loader class for the ModuleSpec type import system. A PEP-451 finder requires
-    method find_spec(), a PEP-451 loader requires methods exec_module(), load_module(9 and (optionally) create_module().
+    method find_spec(), a PEP-451 loader requires methods exec_module(), load_module() and (optionally) create_module().
     All these methods are implemented in this one class.
 
     To use this class just call:
@@ -136,139 +122,6 @@ class FrozenImporter:
                 raise ImportError('Loader FrozenImporter cannot handle module ' + fullname) from e
         else:
             raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
-
-    def find_module(self, fullname, path=None):
-        # Deprecated in Python 3.4, see PEP-451
-        """
-        PEP-302 finder.find_module() method for the ``sys.meta_path`` hook.
-
-        fullname     fully qualified name of the module
-        path         None for a top-level module, or package.__path__ for submodules or subpackages.
-
-        Return a loader object if the module was found, or None if it was not. If find_module() raises an exception,
-        it will be propagated to the caller, aborting the import.
-        """
-        module_loader = None  # None means - no module found in this importer.
-
-        if fullname in self.toc:
-            # Tell the import machinery to use self.load_module() to load the module.
-            module_loader = self
-            trace("import %s # PyInstaller PYZ", fullname)
-        elif path is not None:
-            # Try to handle module.__path__ modifications by the modules themselves.
-            # Reverse the fake __path__ we added to the package module to a dotted module name, and add the tail module
-            # from fullname onto that to synthesize a new fullname.
-            modname = fullname.split('.')[-1]
-
-            for p in path:
-                if not p.startswith(SYS_PREFIX):
-                    continue
-                p = p[SYS_PREFIXLEN:]
-                parts = p.split(os.sep)
-                if not parts:
-                    continue
-                if not parts[0]:
-                    parts = parts[1:]
-                parts.append(modname)
-                entry_name = ".".join(parts)
-                if entry_name in self.toc:
-                    module_loader = FrozenPackageImporter(self, entry_name)
-                    trace("import %s as %s # PyInstaller PYZ (__path__ override: %s)", entry_name, fullname, p)
-                    break
-        # Release the interpreter's import lock.
-        if module_loader is None:
-            trace("# %s not found in PYZ", fullname)
-        return module_loader
-
-    def load_module(self, fullname, entry_name=None):
-        # Deprecated in Python 3.4, see PEP-451
-        """
-        PEP-302 loader.load_module() method for the ``sys.meta_path`` hook.
-
-        Return the loaded module (instance of imp_new_module()) or raise an exception, preferably ImportError if an
-        existing exception is not being propagated.
-
-        When called from FrozenPackageImporter, `entry_name` is the name of the module as it is stored in the archive.
-        This module will be loaded and installed into sys.modules using `fullname` as its name.
-        """
-        # Acquire the interpreter's import lock.
-        module = None
-        if entry_name is None:
-            entry_name = fullname
-        try:
-            # PEP302: if there is an existing module object named 'fullname' in sys.modules, the loader must use that
-            # existing module.
-            module = sys.modules.get(fullname)
-
-            # Module not in sys.modules - load it and add it to sys.modules.
-            if module is None:
-                # Load code object from the bundled ZIP archive.
-                is_pkg, bytecode = self._pyz_archive.extract(entry_name)
-                # Create new empty 'module' object.
-                module = imp_new_module(fullname)
-
-                # TODO: replace bytecode.co_filename by something more meaningful:
-                # e.g., /absolute/path/frozen_executable/path/to/module/module_name.pyc
-                # Paths from developer machine are masked.
-
-                # Set __file__ attribute of a module relative to the executable, so that data files can be found.
-                module.__file__ = self.get_filename(entry_name)
-
-                #-- Set __path__  if 'fullname' is a package.
-                # Python has modules and packages. A Python package is a container for several modules or packages.
-                if is_pkg:
-                    # If a module has a __path__ attribute, the import mechanism will treat it as a package.
-                    #
-                    # Since PYTHONHOME is set in bootloader, 'sys.prefix' points to the correct path where PyInstaller
-                    # should find bundled dynamic libraries. In one-file mode it points to the tmp directory where
-                    # bundled files are extracted at execution time.
-                    #
-                    # __path__ cannot be empty list because 'wx' module prepends something to it. It cannot contain
-                    # value 'sys.prefix' because 'xml.etree.cElementTree' fails otherwise.
-                    #
-                    # Set __path__ to point to 'sys.prefix/package/subpackage'.
-                    module.__path__ = [os.path.dirname(module.__file__)]
-
-                #-- Set __loader__
-                # The attribute __loader__ improves support for module 'pkg_resources' and enables the following
-                # functions within the frozen app: pkg_resources.resource_string(), pkg_resources.resource_stream().
-                module.__loader__ = self
-
-                #-- Set __package__
-                # According to PEP302, this attribute must be set. When it is present, relative imports will be based
-                # on this attribute rather than the module __name__ attribute. More details can be found in PEP366.
-                # For ordinary modules, this is set like: 'aa.bb.cc.dd' -> 'aa.bb.cc'
-                if is_pkg:
-                    module.__package__ = fullname
-                else:
-                    module.__package__ = fullname.rsplit('.', 1)[0]
-
-                #-- Set __spec__
-                # Python 3.4 introduced module attribute __spec__ to consolidate all module attributes.
-                module.__spec__ = _frozen_importlib.ModuleSpec(entry_name, self, is_package=is_pkg)
-
-                #-- Add module object to sys.modules dictionary.
-                # Module object must be in sys.modules before the loader executes the module code. This is crucial
-                # because the module code may (directly or indirectly) import itself; adding it to sys.modules
-                # beforehand prevents unbounded recursion in the worst case and multiple loading in the best.
-                sys.modules[fullname] = module
-
-                # Run the module code.
-                exec(bytecode, module.__dict__)
-                # Reread the module from sys.modules in case it has changed itself.
-                module = sys.modules[fullname]
-
-        except Exception:
-            # Remove 'fullname' from sys.modules if it was appended there.
-            if fullname in sys.modules:
-                sys.modules.pop(fullname)
-            # TODO: do we need to raise different types of Exceptions for better debugging?
-            # PEP302 requires to raise ImportError exception.
-            #raise ImportError("Can't load frozen module: %s" % fullname)
-            raise
-
-        # Module returned only in case of no exception.
-        return module
 
     #-- Optional Extensions to the PEP-302 Importer Protocol --
 
