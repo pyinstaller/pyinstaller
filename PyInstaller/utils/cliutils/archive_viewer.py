@@ -197,20 +197,6 @@ def show_log(arch, recursive, brief):
     pprint.pprint([out for out in output if not isinstance(out, dict)])
 
 
-def get_archive_content(filename):
-    """
-    Get a list of the (recursive) content of archive `filename`.
-
-    This function is primary meant to be used by runtests.
-    """
-    archive = get_archive(filename)
-    stack.append((filename, archive))
-    output = []
-    get_content(archive, recursive=True, brief=True, output=output)
-    do_cleanup()
-    return output
-
-
 def run():
     parser = argparse.ArgumentParser()
     parser.add_argument(
