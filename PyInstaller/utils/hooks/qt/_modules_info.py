@@ -285,7 +285,9 @@ QT_MODULES_INFO = (
         "QtMultimedia",
         shared_lib="Multimedia",
         translation="qtmultimedia",
-        plugins=["video/gstvideorenderer", "video/videonode"],
+        # `multimedia` plugins are available as of Qt6 >= 6.4.0; earlier versions had `video/gstvideorenderer` and
+        # `video/videonode` plugins.
+        plugins=["multimedia", "video/gstvideorenderer", "video/videonode"],
         bindings=["PySide6", "PyQt6"]
     ),
     _QtModuleDef("QtMultimediaWidgets", shared_lib="MultimediaWidgets"),

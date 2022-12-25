@@ -1,0 +1,2 @@
+Collect ``multimedia`` plugins that are required by ``QtMultimedia``
+module starting with Qt6 v6.4.0.
