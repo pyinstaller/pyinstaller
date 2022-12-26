@@ -468,6 +468,21 @@ def test_Qt_QtWebEngineQuick_PySide6(pyi_builder):
     _test_Qt_QtWebEngineQuick(pyi_builder, 'PySide6')
 
 
+# QtMultimedia test that triggers error when the module's plugins are missing (#7352).
+@QtPyLibs
+def test_Qt_QtMultimedia_player_init(pyi_builder, QtPyLib):
+    pyi_builder.test_source(
+        """
+        import sys
+
+        from {0} import QtCore, QtMultimedia
+
+        app = QtCore.QCoreApplication(sys.argv)
+        player = QtMultimedia.QMediaPlayer(app)
+        """.format(QtPyLib), **USE_WINDOWED_KWARG
+    )
+
+
 # QtMultimedia test that also uses PySide's true_property, which triggers hidden dependency on QtMultimediaWidgets
 # python module.
 # See:
