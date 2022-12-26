@@ -360,9 +360,9 @@ class SplashWriter:
             requirements_len = 0
             requirements_offset = fp.tell()
             for name in name_list:
-                name = name.encode('utf-8')
-                fp.write(name + b'\0')
-                requirements_len += len(name) + 1  # zero byte at the end
+                name = name.encode('utf-8') + b'\0'
+                fp.write(name)
+                requirements_len += len(name)
 
             # Write splash script
             script_offset = fp.tell()
