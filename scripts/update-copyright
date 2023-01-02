@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #-----------------------------------------------------------------------------
-# Copyright (c) 2016-2022, PyInstaller Development Team.
+# Copyright (c) 2016-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -12,12 +12,12 @@
 """
 This script updates the copyright year to the current year.
 
-If checks all non-binary files tracked by git. It also lists all non-binary files tracked missing our copyright header.
+It checks all non-binary files tracked by git. It also lists all non-binary files tracked missing our copyright header.
 
 Run this at the beginning of each new year.
 """
 
-__copyright__ = "Copyright (c) 2016-2022, PyInstaller Development Team."
+__copyright__ = "Copyright (c) 2016-2023, PyInstaller Development Team."
 __author__ = "Hartmut Goebel <h.goebel@crazy-compilers.com>"
 
 import os, sys, re
