@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #-----------------------------------------------------------------------------
-# Copyright (c) 2017-2022, PyInstaller Development Team.
+# Copyright (c) 2017-2023, PyInstaller Development Team.
 # Author: Hartmut Goebel
 #
 # Distributed under the terms of the GNU General Public License (version 2

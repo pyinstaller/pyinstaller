@@ -3,7 +3,7 @@
 #
 # Automated rebuild of bootloader on misc. platforms
 #
-# Copyright (C) 2016-2022 PyInstaller Development Team
+# Copyright (C) 2016-2023 PyInstaller Development Team
 #
 # Based on a Vagrantfile by Thomas Waldmann. Thanks!
 # Copyright (C) 2015 The Borg Collective http://borgbackup.readthedocs.org/
