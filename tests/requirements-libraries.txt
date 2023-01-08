@@ -25,7 +25,7 @@ keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: 
 keyring==23.13.1; sys_platform != 'darwin' or python_version >= '3.8.7'
 matplotlib==3.6.2; python_version >= '3.8'
 pandas==1.5.2; python_version >= '3.8'
-pygments==2.13.0
+pygments==2.14.0
 PyGObject==3.42.2; sys_platform == 'linux'
 # Current PySide2 wheels explicitly require python < 3.11
 PySide2==5.15.2.1; python_version < '3.11'
