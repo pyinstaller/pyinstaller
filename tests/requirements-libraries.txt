@@ -9,7 +9,7 @@
 -r requirements-tools.txt
 
 # Backport of importlib.resources for python 3.8 and earlier.
-importlib_resources==5.10.1; python_version < '3.9'
+importlib_resources==5.10.2; python_version < '3.9'
 
 
 # Working
