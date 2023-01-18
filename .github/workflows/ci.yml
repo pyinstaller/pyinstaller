@@ -46,6 +46,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -qq --no-install-recommends \
+            libcmocka-dev \
             libxml2-dev libxslt1-dev gfortran libatlas-base-dev \
             libespeak1 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
             libxkbcommon-x11-0 libxcb-icccm4 libxcb1 openssl \
