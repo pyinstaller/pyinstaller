@@ -53,7 +53,8 @@
  */
 
 /* Constructs the file path from given components and checks that the path exists. */
-static int
+/* NOTE: must be visible outside of this unit (i.e., non-static) due to tests! */
+int
 _format_and_check_path(char *buf, const char *fmt, ...)
 {
     va_list args;
@@ -69,7 +70,8 @@ _format_and_check_path(char *buf, const char *fmt, ...)
 }
 
 /* Splits the item in the form path:filename */
-static int
+/* NOTE: must be visible outside of this unit (i.e., non-static) due to tests! */
+int
 _split_dependency_name(char *path, char *filename, const char *item)
 {
     char *p;

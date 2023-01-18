@@ -20,20 +20,20 @@
 #include <setjmp.h> // required fo cmocka :-(
 #include <cmocka.h>
 
-int checkFile(char *buf, const char *fmt, ...);
+int _format_and_check_path(char *buf, const char *fmt, ...);
 
-static void test_checkFile(void **state) {
+static void test__format_and_check_path(void **state) {
     char result[PATH_MAX];
 
     // TODO: use some mocks to determine stat() output
 
     errno = 0;
-    assert_int_equal(-1, checkFile(result, "%s%s%s.pkg", "a1", "bb", "cc", "dd"));
+    assert_int_equal(-1, _format_and_check_path(result, "%s%s%s.pkg", "a1", "bb", "cc", "dd"));
     assert_int_not_equal(errno, 0); // formatting passed, stat failed
     assert_string_equal(result, "a1bbcc.pkg");
 
     errno = 0;
-    assert_int_equal(-1, checkFile(result, "%s", ""));
+    assert_int_equal(-1, _format_and_check_path(result, "%s", ""));
     assert_int_not_equal(errno, 0); // formatting passed, stat failed
     assert_string_equal(result, "");
 
@@ -42,55 +42,55 @@ static void test_checkFile(void **state) {
     // a few bytes more
     errno = 0;
     path2[PATH_MAX+8] = '\0';
-    assert_int_equal(-1, checkFile(result, "%s%s%s.pkg", "a1", path2, "ccc"));
+    assert_int_equal(-1, _format_and_check_path(result, "%s%s%s.pkg", "a1", path2, "ccc"));
     assert_int_equal(errno, 0); // formatting formatting failed
     // exact length
     errno = 0;
     path2[PATH_MAX] = '\0';
-    assert_int_equal(-1, checkFile(result, "%s", path2));
+    assert_int_equal(-1, _format_and_check_path(result, "%s", path2));
     assert_int_equal(errno, 0); // formatting formatting failed
     // one byte less
     errno = 0;
     path2[PATH_MAX-1] = '\0';
-    assert_int_equal(-1, checkFile(result, "%s", path2));
+    assert_int_equal(-1, _format_and_check_path(result, "%s", path2));
     assert_int_not_equal(errno, 0); // formatting passed, stat failed
 }
 
-int splitName(char *path, char *filename, const char *item);
+int _split_dependency_name(char *path, char *filename, const char *item);
 
-static void test_splitName(void **state) {
+static void test_split_dependency_name(void **state) {
     char path[PATH_MAX];
     char filename[PATH_MAX];
 
     // TODO: use some mocks to determine
 
-    assert_int_equal(0, splitName(path, filename, "aaa:bbb"));
+    assert_int_equal(0, _split_dependency_name(path, filename, "aaa:bbb"));
     assert_string_equal(path, "aaa");
     assert_string_equal(filename, "bbb");
 
-    assert_int_equal(-1, splitName(path, filename, ""));
-    assert_int_equal(-1, splitName(path, filename, ":"));
-    assert_int_equal(-1, splitName(path, filename, "aaa"));
-    assert_int_equal(-1, splitName(path, filename, "aaa:"));
-    assert_int_equal(-1, splitName(path, filename, ":bbb"));
+    assert_int_equal(-1, _split_dependency_name(path, filename, ""));
+    assert_int_equal(-1, _split_dependency_name(path, filename, ":"));
+    assert_int_equal(-1, _split_dependency_name(path, filename, "aaa"));
+    assert_int_equal(-1, _split_dependency_name(path, filename, "aaa:"));
+    assert_int_equal(-1, _split_dependency_name(path, filename, ":bbb"));
 
     // these cases are not expected to occur in real life
-    assert_int_equal(0, splitName(path, filename, "aaa:::"));
+    assert_int_equal(0, _split_dependency_name(path, filename, "aaa:::"));
     assert_string_equal(filename, "::");
-    assert_int_equal(-1, splitName(path, filename, ":::bbb"));
+    assert_int_equal(-1, _split_dependency_name(path, filename, ":::bbb"));
 
     char *path2 = (char *) malloc(PATH_MAX+10);
     memset(path2, 'a', PATH_MAX+8);
     path2[10] = ':';
     // a few bytes more
     path2[PATH_MAX+8] = '\0';
-    assert_int_equal(-1, splitName(path, filename, path2));
+    assert_int_equal(-1, _split_dependency_name(path, filename, path2));
     // exact length
     path2[PATH_MAX] = '\0';
-    assert_int_equal(-1, splitName(path, filename, path2));
+    assert_int_equal(-1, _split_dependency_name(path, filename, path2));
     // one byte less
     path2[PATH_MAX-1] = '\0';
-    assert_int_equal(0, splitName(path, filename, path2));
+    assert_int_equal(0, _split_dependency_name(path, filename, path2));
     assert_string_equal(path, "aaaaaaaaaa");
 }
 
@@ -101,8 +101,8 @@ int main(void)
 #endif
 {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_checkFile),
-        cmocka_unit_test(test_splitName),
+        cmocka_unit_test(test__format_and_check_path),
+        cmocka_unit_test(test_split_dependency_name),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
