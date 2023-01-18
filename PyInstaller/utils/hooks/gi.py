@@ -34,9 +34,9 @@ class GiModuleInfo:
         if hook_api is not None:
             module_versions = get_hook_config(hook_api, 'gi', 'module-versions')
             if module_versions:
-                version = module_versions.get(module, version)
+                self.version = module_versions.get(module, version)
 
-        logger.debug("Gathering GI module info for %s %s", module, version)
+        logger.debug("Gathering GI module info for %s %s", module, self.version)
 
         @isolated.decorate
         def _get_module_info(module, version):
