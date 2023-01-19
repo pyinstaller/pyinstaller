@@ -81,17 +81,17 @@ jobs:
         run: |
           # Compile bootloader
           cd bootloader
-          CC="gcc -std=gnu90" python waf all
+          CC="gcc -std=gnu90" python waf --tests all
 
       - name: Check if bootloader is buildable with --static-zlib option
         if: startsWith(matrix.os, 'ubuntu')
-        run: cd bootloader && python waf --static-zlib all
+        run: cd bootloader && python waf --static-zlib --tests all
 
       - name: Check if bootloader is buildable for Windows ARM
         if: startsWith(matrix.os, 'windows')
         run: |
             cd bootloader
-            python waf --target-arch=64bit-arm all
+            python waf --tests --target-arch=64bit-arm all
             ls ../PyInstaller/bootloader/Windows-64bit-arm
 
       - name: Install PyInstaller
@@ -101,7 +101,7 @@ jobs:
 
           # Compile bootloader
           cd bootloader
-          python waf all
+          python waf --tests all
           cd ..
 
           # Install PyInstaller.
