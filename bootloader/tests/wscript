@@ -11,7 +11,10 @@
 # -----------------------------------------------------------------------------
 
 def configure(ctx):
-    ctx.check_cc(lib='cmocka', mandatory=False, uselib_store='CMOCKA')
+    ctx.msg('Build tests', "enabled" if ctx.options.enable_tests else "disabled")
+    if ctx.options.enable_tests:
+        ctx.check_cc(lib='cmocka', mandatory=False, uselib_store='CMOCKA')
+
 
 def build(ctx):
 
@@ -37,6 +40,6 @@ def build(ctx):
         # be WinMain() instead of main().
         return
 
-    if "LIB_CMOCKA" in ctx.env:
+    if ctx.options.enable_tests and "LIB_CMOCKA" in ctx.env:
         test_program("path")
         test_program("launch")
