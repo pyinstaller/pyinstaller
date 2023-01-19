@@ -509,6 +509,13 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     toc_datas = set()
 
     for src_root_path_or_glob, trg_root_dir in binaries_or_datas:
+        # Disallow empty source path. Those are typically result of errors, and result in implicit collection of the
+        # whole current working directory, which is never a good idea.
+        if not src_root_path_or_glob:
+            raise SystemExit(
+                "Empty SRC is not allowed when adding binary and data files, as it would result in collection of the "
+                "whole current working directory."
+            )
         if not trg_root_dir:
             raise SystemExit(
                 "Empty DEST not allowed when adding binary and data files. Maybe you want to used %r.\nCaused by %r." %
