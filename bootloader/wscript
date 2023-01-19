@@ -170,6 +170,20 @@ def options(ctx):
         'This is always done on Windows.',
         default=False,
     )
+    ctx.add_option(
+        '--tests',
+        action='store_true',
+        help='Enable cmocka-based tests if cmocka library is found. The tests are disabled by default.',
+        default=False,
+        dest='enable_tests',
+    )
+    ctx.add_option(
+        '--no-tests',
+        action='store_false',
+        help='Disable cmocka-based tests, even if cmocka library is found. The tests are disabled by default.',
+        default=False,
+        dest='enable_tests',
+    )
 
     grp = ctx.add_option_group('Linux Standard Base (LSB) compliance', 'These options have effect only on Linux.')
     grp.add_option(
