@@ -25,6 +25,14 @@ def test_format_binaries_and_datas_not_found_raises_error(tmpdir):
         utils.format_binaries_and_datas(datas, str(tmpdir))
 
 
+def test_format_binaries_and_datas_empty_src(tmpdir):
+    # `format_binaries_and_datas()` must disallow empty src in `binaries`/`datas` tuples, as those result in implicit
+    # collection of the whole current working directory .
+    datas = [('', '.')]
+    with pytest.raises(SystemExit, match="Empty SRC is not allowed"):
+        utils.format_binaries_and_datas(datas, str(tmpdir))
+
+
 def test_format_binaries_and_datas_1(tmpdir):
     def _(path):
         return os.path.join(*path.split('/'))

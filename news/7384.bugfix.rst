@@ -1,0 +1,6 @@
+Disallow empty source path in the ``binaries`` and ``datas`` tuples
+that are returned from the hooks and sanitized in the
+``PyInstaller.building.utils.format_binaries_and_datas``. The empty
+source path is usually result of an error in the hook's path retrieval
+code, and causes implicit collection of the whole current working
+directory. This is never the intended behavior, so raise a ``SystemExit``.
