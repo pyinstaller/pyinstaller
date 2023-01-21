@@ -33,7 +33,7 @@ from PyInstaller.depend import dylib
 from PyInstaller.depend.bindepend import match_binding_redirect
 from PyInstaller.utils import misc
 
-if is_win or is_cygwin:
+if is_win:
     from PyInstaller.utils.win32 import versioninfo, winmanifest, winresource
 
 if is_darwin:
@@ -235,7 +235,7 @@ def checkCache(
             return cachedfile
 
     # Optionally change manifest and its dependencies to private assemblies.
-    if fnm.lower().endswith(".manifest") and (is_win or is_cygwin):
+    if fnm.lower().endswith(".manifest") and is_win:
         manifest = winmanifest.Manifest()
         manifest.filename = fnm
         with open(fnm, "rb") as f:
@@ -267,7 +267,7 @@ def checkCache(
                 strict_arch_validation=strict_arch_validation,
             )
         # We need to avoid using UPX with Windows DLLs that have Control Flow Guard enabled, as it breaks them.
-        if (is_win or is_cygwin) and versioninfo.pefile_check_control_flow_guard(fnm):
+        if is_win and versioninfo.pefile_check_control_flow_guard(fnm):
             logger.info('Disabling UPX for %s due to CFG!', fnm)
         elif misc.is_file_qt_plugin(fnm):
             logger.info('Disabling UPX for %s due to it being a Qt plugin!', fnm)
@@ -305,7 +305,7 @@ def checkCache(
             pass
     os.chmod(cachedfile, 0o755)
 
-    if os.path.splitext(fnm.lower())[1] in (".pyd", ".dll") and (is_win or is_cygwin):
+    if os.path.splitext(fnm.lower())[1] in (".pyd", ".dll") and is_win:
         # When shared assemblies are bundled into the app, they may optionally be changed into private assemblies.
         try:
             res = winmanifest.GetManifestResources(os.path.abspath(cachedfile))

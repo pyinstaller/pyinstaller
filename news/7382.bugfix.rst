@@ -1,0 +1,3 @@
+(Cygwin) Avoid using Windows-specific codepaths that require
+``pywin32-ctypes`` functionality that is not available in Cygwin
+environment.
