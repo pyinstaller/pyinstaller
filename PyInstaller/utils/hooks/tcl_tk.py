@@ -139,12 +139,12 @@ def find_tcl_tk_shared_libs(tkinter_ext_file):
     _tkinter_imports = bindepend.getImports(tkinter_ext_file)
 
     def _get_library_path(lib):
-        if not compat.is_win and not compat.is_cygwin:
-            # Non-Windows systems return the path of the library.
-            path = lib
-        else:
-            # We need to find the library.
+        if compat.is_win:
+            # On Windows, we need to resolve full path to the library.
             path = bindepend.getfullnameof(lib)
+        else:
+            # Non-Windows systems (including Cygwin) already return full path to the library.
+            path = lib
         return path
 
     for lib in _tkinter_imports:
