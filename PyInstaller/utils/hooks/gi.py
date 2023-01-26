@@ -9,6 +9,10 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # ----------------------------------------------------------------------------
 import os
+import pathlib
+import shutil
+import subprocess
+import hashlib
 import re
 
 from PyInstaller.depend.utils import _resolveCtypesImports
@@ -306,3 +310,111 @@ def collect_glib_translations(prog, lang_list=None):
     namelen = len(names[0])
 
     return [(src, dst) for src, dst in _glib_translations if src[-namelen:] in names]
+
+
+# Not a hook utility function per-se (used by main Analysis class), but kept here to have all GLib/GObject functions
+# in one place...
+def compile_glib_schema_files(datas_toc, workdir, collect_source_files=False):
+    """
+    Compile collected GLib schema files. Extracts the list of GLib schema files from the given input datas TOC, copies
+    them to temporary working directory, and compiles them. The resulting `gschemas.compiled` file is added to the
+    output TOC, replacing any existing entry with that name. If `collect_source_files` flag is set, the source XML
+    schema files are also (re)added to the output TOC; by default, they are not. This function is no-op (returns the
+    original TOC) if no GLib schemas are found in TOC or if `glib-compile-schemas` executable is not found in `PATH`.
+    """
+    SCHEMA_DEST_DIR = pathlib.PurePath("share/glib-2.0/schemas")
+    workdir = pathlib.Path(workdir)
+
+    schema_files = []
+    output_toc = []
+    for toc_entry in datas_toc:
+        dest_name, src_name, typecode = toc_entry
+        dest_name = pathlib.PurePath(dest_name)
+        src_name = pathlib.PurePath(src_name)
+
+        # Pass-through for non-schema files, identified based on the destination directory.
+        if dest_name.parent != SCHEMA_DEST_DIR:
+            output_toc.append(toc_entry)
+            continue
+
+        # It seems schemas directory contains different files with different suffices:
+        #  - .gschema.xml
+        #  - .schema.override
+        #  - .enums.xml
+        # To avoid omitting anything, simply collect everything into temporary directory.
+        # Exemptions are gschema.dtd (which should be unnecessary) and gschemas.compiled (which we will generate
+        # ourselves in this function).
+        if src_name.name in {"gschema.dtd", "gschemas.compiled"}:
+            continue
+
+        schema_files.append(src_name)
+
+    # If there are no schema files available, simply return the input datas TOC.
+    if not schema_files:
+        return datas_toc
+
+    # Ensure that `glib-compile-schemas` executable is in PATH, just in case...
+    schema_compiler_exe = shutil.which('glib-compile-schemas')
+    if not schema_compiler_exe:
+        logger.warning("GLib schema compiler (glib-compile-schemas) not found! Skipping GLib schema recompilation...")
+        return datas_toc
+
+    # If `gschemas.compiled` file already exists in the temporary working directory, record its modification time and
+    # hash. This will allow us to restore the modification time on the newly-compiled copy, if the latter turns out
+    # to be identical to the existing old one. Just in case, if the file becomes subject to timestamp-based caching
+    # mechanism.
+    compiled_file = workdir / "gschemas.compiled"
+    old_compiled_file_hash = None
+    old_compiled_file_stat = None
+
+    if compiled_file.is_file():
+        # Record creation/modification time
+        old_compiled_file_stat = compiled_file.stat()
+        # Compute SHA1 hash; since compiled schema files are relatively small, do it in single step.
+        old_compiled_file_hash = hashlib.sha1(compiled_file.read_bytes()).digest()
+
+    # Ensure that temporary working directory exists, and is empty.
+    if workdir.exists():
+        shutil.rmtree(workdir)
+    workdir.mkdir(exist_ok=True)
+
+    # Copy schema (source) files to temporary working directory
+    for schema_file in schema_files:
+        shutil.copy(schema_file, workdir)
+
+    # Compile. The glib-compile-schema might produce warnings on its own (e.g., schemas using deprecated paths, or
+    # overrides for non-existent keys). Since these are non-actionable, capture and display them only as a DEBUG
+    # message, or as a WARNING one if the command fails.
+    logger.info("Compiling collected GLib schema files in %r...", str(workdir))
+    try:
+        cmd_args = [schema_compiler_exe, str(workdir), '--targetdir', str(workdir)]
+        p = subprocess.run(
+            cmd_args,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=True,
+            text=True,
+        )
+        logger.debug("Extra output from glib-compile-schemas:\n%s", p.stdout)
+    except Exception:
+        # Compilation failed for whatever reason. Return original datas TOC to minimize damage.
+        logger.warning("Extra output from glib-compile-schemas:\n%s", p.stdout)
+        logger.warning("Failed to recompile GLib schemas! Returning collected files as-is!", exc_info=True)
+        return datas_toc
+
+    # Compute the checksum of the new compiled file, and if it matches the old checksum, restore the modification time.
+    if old_compiled_file_hash is not None:
+        new_compiled_file_hash = hashlib.sha1(compiled_file.read_bytes()).digest()
+        if new_compiled_file_hash == old_compiled_file_hash:
+            os.utime(compiled_file, ns=(old_compiled_file_stat.st_atime_ns, old_compiled_file_stat.st_mtime_ns))
+
+    # Add the resulting gschemas.compiled file to the output TOC
+    output_toc.append((str(SCHEMA_DEST_DIR / compiled_file.name), str(compiled_file), "DATA"))
+
+    # Include source schema files in the output TOC (optional)
+    if collect_source_files:
+        for schema_file in schema_files:
+            output_toc.append((str(SCHEMA_DEST_DIR / schema_file.name), str(schema_file), "DATA"))
+
+    return output_toc

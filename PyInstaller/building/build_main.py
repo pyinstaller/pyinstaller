@@ -40,6 +40,7 @@ from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.depend.utils import create_py3_base_library, scan_code_for_ctypes
 from PyInstaller import isolated
 from PyInstaller.utils.misc import absnormpath, get_path_to_toplevel_modules, get_unicode_modules, mtime
+from PyInstaller.utils.hooks.gi import compile_glib_schema_files
 
 if is_win:
     from PyInstaller.utils.win32 import winmanifest
@@ -618,6 +619,10 @@ class Analysis(Target):
 
         # Extend the binaries list with all the Extensions modulegraph has found.
         self.binaries = self.graph.make_binaries_toc(self.binaries)
+
+        # Post-process GLib schemas
+        self.datas = compile_glib_schema_files(self.datas, os.path.join(CONF['workpath'], "_pyi_gschema_compilation"))
+        self.datas = TOC(self.datas)
 
         # Process the pure-python modules list. Depending on the collection mode, these entries end up either in "pure"
         # list for collection into the PYZ archive, or in the "datas" list for collection as external data files.
