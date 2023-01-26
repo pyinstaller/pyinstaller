@@ -1,0 +1,5 @@
+Compile the collected GLib schema files using ``glib-schema-compiler``
+instead of collecting the pre-compiled ``gschemas.compiled`` file, in
+order to properly support collection of schema files from multiple
+locations. Do not collect the source schema files anymore, as only
+``gschemas.compiled`` file should be required at run time.
