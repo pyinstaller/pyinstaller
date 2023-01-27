@@ -751,7 +751,7 @@ def check_requirements():
     else:
         from importlib_metadata import distribution, PackageNotFoundError
 
-    for name in ["enum34", "typing"]:
+    for name in ["enum34", "typing", "pathlib"]:
         try:
             dist = distribution(name)
         except PackageNotFoundError:
