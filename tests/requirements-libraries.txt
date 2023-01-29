@@ -32,7 +32,7 @@ PySide2==5.15.2.1; python_version < '3.11'
 PySide6==6.4.2
 # PyQt5 and add-on packages
 PyQt5==5.15.7
-PyQt3D==5.15.5
+PyQt3D==5.15.6
 PyQtChart==5.15.6
 PyQtDataVisualization==5.15.5
 PyQtNetworkAuth==5.15.5
