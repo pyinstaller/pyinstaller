@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
+import threading
 import multiprocessing
 import multiprocessing.spawn as spawn
 # 'spawn' multiprocessing needs some adjustments on osx
@@ -64,14 +65,17 @@ else:
 
 # Mix-in to re-set _MEIPASS2 from sys._MEIPASS.
 class FrozenSupportMixIn:
+    _lock = threading.Lock()
+
     def __init__(self, *args, **kw):
-        if hasattr(sys, 'frozen'):
+        # The whole code block needs be executed under a lock to prevent race conditions between `os.putenv` and
+        # `os.unsetenv` calls when processes are spawned concurrently from multiple threads. See #7410.
+        with self._lock:
             # We have to set original _MEIPASS2 value from sys._MEIPASS to get --onefile mode working.
             os.putenv('_MEIPASS2', sys._MEIPASS)  # @UndefinedVariable
-        try:
-            super().__init__(*args, **kw)
-        finally:
-            if hasattr(sys, 'frozen'):
+            try:
+                super().__init__(*args, **kw)
+            finally:
                 # On some platforms (e.g. AIX) 'os.unsetenv()' is not available. In those cases we cannot delete the
                 # variable but only set it to the empty string. The bootloader can handle this case.
                 if hasattr(os, 'unsetenv'):
