@@ -1,0 +1,1 @@
+Fix *unknown log level* error raised with ``--log-level=DEPRECATION``.
