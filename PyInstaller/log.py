@@ -18,18 +18,26 @@ import os
 import logging
 from logging import DEBUG, ERROR, FATAL, INFO, WARN, getLogger
 
-TRACE = logging.TRACE = DEBUG - 5
+TRACE = DEBUG - 5
 logging.addLevelName(TRACE, 'TRACE')
 DEPRECATION = WARN + 5
 logging.addLevelName(DEPRECATION, 'DEPRECATION')
-LEVELS = ('TRACE', 'DEBUG', 'INFO', 'WARN', 'DEPRECATION', 'ERROR', 'CRITICAL')
+LEVELS = {
+    'TRACE': TRACE,
+    'DEBUG': DEBUG,
+    'INFO': INFO,
+    'WARN': WARN,
+    'DEPRECATION': DEPRECATION,
+    'ERROR': ERROR,
+    'FATAL': FATAL,
+}
 
 FORMAT = '%(relativeCreated)d %(levelname)s: %(message)s'
 _env_level = os.environ.get("PYI_LOG_LEVEL", "INFO")
 try:
-    level = getattr(logging, _env_level.upper())
-except AttributeError:
-    raise SystemExit(f"Invalid PYI_LOG_LEVEL value '{_env_level}'. Should be one of {LEVELS}.")
+    level = LEVELS[_env_level.upper()]
+except KeyError:
+    raise SystemExit(f"Invalid PYI_LOG_LEVEL value '{_env_level}'. Should be one of {list(LEVELS)}.")
 logging.basicConfig(format=FORMAT, level=level)
 logger = getLogger('PyInstaller')
 
@@ -49,8 +57,8 @@ def __process_options(parser, opts):
     if opts.loglevel:
         try:
             level = opts.loglevel.upper()
-            _level = getattr(logging, level)
-        except AttributeError:
+            _level = LEVELS[level]
+        except KeyError:
             parser.error('Unknown log level `%s`' % opts.loglevel)
         logger.setLevel(_level)
         os.environ["PYI_LOG_LEVEL"] = level
