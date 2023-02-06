@@ -588,15 +588,17 @@ class QtLibraryInfo:
         def _ssl_enabled(package):
             import importlib
 
-            # Create QCoreApplication instance (to suppress warnings)
-            # equivalent to: from package import QtCore
-            QtCore = importlib.import_module('.QtCore', package)
-            QtCore.QCoreApplication()
-
             # Import the Qt-based package
+            # equivalent to: from package.QtCore import QCoreApplication
+            QtCore = importlib.import_module('.QtCore', package)
+            QCoreApplication = QtCore.QCoreApplication
             # equivalent to: from package.QtNetwork import QSslSocket
             QtNetwork = importlib.import_module('.QtNetwork', package)
             QSslSocket = QtNetwork.QSslSocket
+
+            # Instantiate QCoreApplication to suppress warnings
+            app = QCoreApplication([])  # noqa: F841
+
             return QSslSocket.supportsSsl()
 
         if not _ssl_enabled(self.namespace):
