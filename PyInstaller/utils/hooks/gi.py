@@ -70,13 +70,13 @@ class GiModuleInfo:
 
         # Try to query information; if this fails, mark module as unavailable.
         try:
-            info = _get_module_info(module, version)
+            info = _get_module_info(module, self.version)
             self.sharedlibs = info['sharedlibs']
             self.typelib = info['typelib']
             self.dependencies = info['dependencies']
             self.available = True
         except Exception as e:
-            logger.debug("Failed to query GI module %s %s: %s", module, version, e)
+            logger.debug("Failed to query GI module %s %s: %s", module, self.version, e)
             self.available = False
 
     def get_libdir(self):
