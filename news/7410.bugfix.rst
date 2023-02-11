@@ -1,3 +1,0 @@
-(non-Windows) Fix race condition in environment modification done by
-``multiprocessing`` runtime hook when multiple threads concurrently
-spawn processes using the ``spawn`` method.

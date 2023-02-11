@@ -1,3 +1,0 @@
-Do not collect ``designer`` plugins as part of ``QtUiTools`` module in
-``PySide2`` and ``PySide6`` bindings. Instead, tie the collection of
-plugins only to the ``QtDesigner`` module.

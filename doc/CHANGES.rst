@@ -15,6 +15,71 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.8.0 (2023-02-11)
+------------------
+
+Features
+~~~~~~~~
+
+* Compile the collected GLib schema files using ``glib-schema-compiler``
+  instead of collecting the pre-compiled ``gschemas.compiled`` file, in
+  order to properly support collection of schema files from multiple
+  locations. Do not collect the source schema files anymore, as only
+  ``gschemas.compiled`` file should be required at run time. (:issue:`7394`)
+
+
+Bugfix
+~~~~~~
+
+* (Cygwin) Avoid using Windows-specific codepaths that require
+  ``pywin32-ctypes`` functionality that is not available in Cygwin
+  environment. (:issue:`7382`)
+* (non-Windows) Fix race condition in environment modification done by
+  ``multiprocessing`` runtime hook when multiple threads concurrently
+  spawn processes using the ``spawn`` method. (:issue:`7410`)
+* (Windows) Changes in the version info file now trigger rebuild of the
+  executable file. (:issue:`7338`)
+* Disallow empty source path in the ``binaries`` and ``datas`` tuples
+  that are returned from the hooks and sanitized in the
+  ``PyInstaller.building.utils.format_binaries_and_datas``. The empty
+  source path is usually result of an error in the hook's path retrieval
+  code, and causes implicit collection of the whole current working
+  directory. This is never the intended behavior, so raise a ``SystemExit``.
+  (:issue:`7384`)
+* Fix *unknown log level* error raised with ``--log-level=DEPRECATION``.
+  (:issue:`7413`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* The deprecated ``PEP-302`` ``find_module()`` and ``load_module()``
+  methods have been removed from PyInstaller's ``FrozenImporter``. These
+  methods have not been used by python's import machinery since
+  python 3.4 and ``PEP-451``, and were effectively left untested and
+  unmaintained. The removal affects 3rd party code that still relies
+  on ``PEP-302`` finder/loader methods instead of the ``PEP-451`` ones.
+  (:issue:`7344`)
+
+
+Hooks
+~~~~~
+
+* Collect ``multimedia`` plugins that are required by ``QtMultimedia``
+  module starting with Qt6 v6.4.0. (:issue:`7352`)
+* Do not collect ``designer`` plugins as part of ``QtUiTools`` module in
+  ``PySide2`` and ``PySide6`` bindings. Instead, tie the collection of
+  plugins only to the ``QtDesigner`` module. (:issue:`7322`)
+
+
+Module Loader
+~~~~~~~~~~~~~
+
+* Remove deprecated ``PEP-302`` functionality from ``FrozenImporter``.
+  The ``find_module()`` and ``load_module()`` methods are deprecated
+  since python 3.4 in favor of ``PEP-451`` loader. (:issue:`7344`)
+
+
 5.7.0 (2022-12-04)
 ------------------
 
