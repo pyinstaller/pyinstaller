@@ -31,7 +31,7 @@ PyGObject==3.42.2; sys_platform == 'linux'
 PySide2==5.15.2.1; python_version < '3.11'
 PySide6==6.4.2
 # PyQt5 and add-on packages
-PyQt5==5.15.7
+PyQt5==5.15.9
 PyQt3D==5.15.6
 PyQtChart==5.15.6
 PyQtDataVisualization==5.15.5
