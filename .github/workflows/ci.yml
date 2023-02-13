@@ -145,7 +145,7 @@ jobs:
         run: >
             pytest
             -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
-            --force-flaky --no-flaky-report --reruns 3 --reruns-delay 10
+            --force-flaky --no-flaky-report
 
       # hooksample is installed as part of tests/requirements-libraries.txt, so run this step only if we
       # installed all libraries.
@@ -169,7 +169,7 @@ jobs:
           foo
           pytest
           -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
-          --force-flaky --no-flaky-report --reruns 3 --reruns-delay 10
+          --force-flaky --no-flaky-report
 
       # Verify that installing from sdist works. This is mostly just a verification that the MANIFEST.in contains
       # all the extras needed to compile the bootloader.
