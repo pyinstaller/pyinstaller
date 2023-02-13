@@ -20,12 +20,12 @@ pytest-xdist
 
 # Plugin to abort hanging tests.
 pytest-timeout >= 2.0.0
-# allows specifying order without duplicates
+
+# Allows specifying order without duplicates
 pytest-drop-dup-tests
-# reruns failed flaky tests
-# Pin pytest-rerunfailures to 11.0 due to problems with 11.1:
-# https://github.com/pytest-dev/pytest-rerunfailures/issues/206
-pytest-rerunfailures==11.0
+
+# Ability to retry a failed test
+flaky
 
 # Better subprocess alternative with implemented timeout.
 psutil
@@ -40,6 +40,3 @@ lxml; python_version < '3.11'
 
 # crypto support (`--key` option)
 tinyaes ~= 1.0; python_version < '3.11'
-
-# Ability to retry a failed test
-flaky
