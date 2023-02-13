@@ -23,7 +23,9 @@ pytest-timeout >= 2.0.0
 # allows specifying order without duplicates
 pytest-drop-dup-tests
 # reruns failed flaky tests
-pytest-rerunfailures
+# Pin pytest-rerunfailures to 11.0 due to problems with 11.1:
+# https://github.com/pytest-dev/pytest-rerunfailures/issues/206
+pytest-rerunfailures==11.0
 
 # Better subprocess alternative with implemented timeout.
 psutil
