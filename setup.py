@@ -14,7 +14,7 @@ import os
 import subprocess
 from typing import Type
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 #-- plug-in building the bootloader
 
@@ -282,16 +282,5 @@ setup(
         **wheel_commands,
         'bdist_wheels': bdist_wheels,
         **bdist_egg_override,
-    },
-    packages=find_packages(include=["PyInstaller", "PyInstaller.*"]),
-    package_data={
-        "PyInstaller": [
-            # Include all bootloaders in wheels by default.
-            "bootloader/*/*",
-            # These files need to be explicitly included as well.
-            "fake-modules/*.py",
-            "hooks/rthooks.dat",
-            "lib/README.rst",
-        ],
     },
 )
