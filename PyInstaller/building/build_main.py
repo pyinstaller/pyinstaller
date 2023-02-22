@@ -108,6 +108,8 @@ def discover_hook_directories():
     from PyInstaller.log import logger
 
     entry_points = pkg_resources.iter_entry_points('pyinstaller40', 'hook-dirs')
+    # Ensure that pyinstaller_hooks_contrib comes last so that hooks from packages providing their own take priority.
+    entry_points = sorted(entry_points, key=lambda x: x.module_name == "_pyinstaller_hooks_contrib.hooks")
 
     hook_directories = []
     for entry_point in entry_points:

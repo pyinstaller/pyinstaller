@@ -115,7 +115,6 @@ jobs:
           pip install --progress-bar=off --upgrade --requirement tests/requirements-tools.txt
 
       - name: Install test dependencies (libraries)
-        id: install_libraries
         if: ${{ !endsWith(matrix.python-version, '-dev') }}
         run: |
           pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
@@ -147,10 +146,19 @@ jobs:
             -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
             --force-flaky --no-flaky-report
 
-      # hooksample is installed as part of tests/requirements-libraries.txt, so run this step only if we
-      # installed all libraries.
+      # Install and test PyInstaller Hook Sample, to ensure that tests declared in
+      # entry-points are discovered.
+      - name: Install hooksample
+        run: pip install "https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip"
+
+      - name: Inject bogus hook
+        shell: python
+        run: |
+          from _pyinstaller_hooks_contrib.hooks.stdhooks import __path__ as path
+          with open(path[0] + "/hook-pyi_hooksample.py", "w") as f:
+              f.write('assert 0, "Wrong hook! Use the pyi_hooksample copy instead!"\n')
+
       - name: Run hooksample tests
-        if: steps.install_libraries.outcome == 'success'
         run: |
           # The ``run_tests`` script is invoked with the ``-c`` option to
           # specify a ``pytest.ini``, rather than allowing pytest to find
