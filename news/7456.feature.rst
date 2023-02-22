@@ -1,0 +1,1 @@
+Choose :ref:`hooks provided by packages <provide hooks with package>` over hooks from `pyinstaller-hooks-contrib<github.com/pyinstaller/pyinstaller-hooks-contrib/>`_ if both provide the same hook.
