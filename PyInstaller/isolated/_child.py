@@ -90,6 +90,8 @@ if __name__ == '__main__':
 
     with _open(read_from_parent, "rb") as read_fh:
         with _open(write_to_parent, "wb") as write_fh:
+            sys.path = loads(b64decode(read_fh.readline()))
+
             # Keep receiving and running instructions until the parent sends the signal to stop.
             while run_next_command(read_fh, write_fh):
                 pass
