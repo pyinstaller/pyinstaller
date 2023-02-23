@@ -108,9 +108,6 @@ TEST_MOD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hookut
 
 @pytest.fixture
 def mod_list(monkeypatch):
-    # Add 'hookutils_files' to sys.path (so ``is_package`` can find it) and to
-    # ``pathex`` (so code run in a subprocess can find it).
-    monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': [TEST_MOD_PATH]})
     monkeypatch.syspath_prepend(TEST_MOD_PATH)
     # Use the hookutils_test_files package for testing.
     return collect_submodules(TEST_MOD)

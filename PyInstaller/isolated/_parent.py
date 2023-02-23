@@ -15,6 +15,7 @@ from marshal import loads, dumps
 from base64 import b64encode, b64decode
 import functools
 import subprocess
+import sys
 
 from PyInstaller import compat
 from PyInstaller import log as logging
@@ -236,6 +237,8 @@ class Python:
             self._write_handle = os.fdopen(write_to_child, "wb")
             self._read_handle = os.fdopen(read_from_child, "rb")
 
+        self._send(sys.path)
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -283,19 +286,7 @@ class Python:
         if self._child is None:
             raise RuntimeError("An isolated.Python object must be used in a 'with' clause.")
 
-        # Send 5 lines to the child process: The function's code attribute, its default args and kwargs, and its actual
-        # args and kwargs, all serialised.
-        self._write_handle.writelines([
-            b64encode(dumps(function.__code__)), b"\n",
-            b64encode(dumps(function.__defaults__)), b"\n",
-            b64encode(dumps(function.__kwdefaults__)), b"\n",
-            b64encode(dumps(args)), b"\n",
-            b64encode(dumps(kwargs)), b"\n",
-        ])  # yapf: disable
-
-        # Flushing is very important. Without it, the data is not sent but forever sits in a buffer so that the child is
-        # forever waiting for its data and the parent in turn is forever waiting for the child's response.
-        self._write_handle.flush()
+        self._send(function.__code__, function.__defaults__, function.__kwdefaults__, args, kwargs)
 
         # Read a single line of output back from the child. This contains if the function worked and either its return
         # value or a traceback. This will block indefinitely until it receives a '\n' byte.
@@ -309,6 +300,14 @@ class Python:
         # stacktrace. Having the output in this order gives a nice fluent transition from parent to child in the stack
         # trace.
         raise RuntimeError(f"Child process call to {function.__name__}() failed with:\n" + output)
+
+    def _send(self, *objects):
+        for object in objects:
+            self._write_handle.write(b64encode(dumps(object)))
+            self._write_handle.write(b"\n")
+        # Flushing is very important. Without it, the data is not sent but forever sits in a buffer so that the child is
+        # forever waiting for its data and the parent in turn is forever waiting for the child's response.
+        self._write_handle.flush()
 
 
 def call(function, *args, **kwargs):
