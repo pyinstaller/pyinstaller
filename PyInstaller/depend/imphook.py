@@ -114,11 +114,6 @@ class ModuleHookCache(dict):
                 # Fully-qualified name of this hook's corresponding module, constructed by removing the "hook-" prefix
                 # and ".py" suffix.
                 module_name = os.path.basename(hook_filename)[5:-3]
-                if module_name in self:
-                    logger.warning(
-                        "Several hooks defined for module %r. Using %r.", module_name,
-                        self[module_name][0].hook_filename
-                    )
 
                 # Lazily loadable hook object.
                 module_hook = ModuleHook(
