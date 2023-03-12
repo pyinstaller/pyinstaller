@@ -101,14 +101,14 @@ def open(path, mode='r'):
         try:
             zf = _zipfile.ZipFile(path, 'r')
 
-        except _zipfile.error:
+        except _zipfile.BadZipFile:
             raise IOError(
                 _errno.ENOENT, full_path,
                 "No such file or directory")
 
         try:
             data = zf.read(rest)
-        except (_zipfile.error, KeyError):
+        except (_zipfile.BadZipFile, KeyError):
             zf.close()
             raise IOError(
                 _errno.ENOENT, full_path,
@@ -135,7 +135,7 @@ def listdir(path):
         try:
             zf = _zipfile.ZipFile(path, 'r')
 
-        except _zipfile.error:
+        except _zipfile.BadZipFile:
             raise IOError(
                 _errno.ENOENT, full_path,
                 "No such file or directory")
@@ -163,7 +163,7 @@ def listdir(path):
 
                     if value:
                         result.add(value)
-        except _zipfile.error:
+        except _zipfile.BadZipFile:
             zf.close()
             raise IOError(
                 _errno.ENOENT, full_path,
@@ -188,7 +188,7 @@ def isfile(path):
             try:
                 zf = _zipfile.ZipFile(path, 'r')
                 return False
-            except (_zipfile.error, IOError):
+            except (_zipfile.BadZipFile, IOError):
                 return True
         return False
 
@@ -198,7 +198,7 @@ def isfile(path):
         zf.getinfo(rest)
         zf.close()
         return True
-    except (KeyError, _zipfile.error):
+    except (KeyError, _zipfile.BadZipFile):
         if zf is not None:
             zf.close()
 
@@ -230,7 +230,7 @@ def isdir(path):
         if not ok:
             try:
                 zf = _zipfile.ZipFile(path, 'r')
-            except (_zipfile.error, IOError):
+            except (_zipfile.BadZipFile, IOError):
                 return False
             return True
         return True
@@ -239,7 +239,7 @@ def isdir(path):
     try:
         try:
             zf = _zipfile.ZipFile(path)
-        except _zipfile.error:
+        except _zipfile.BadZipFile:
             raise IOError(
                 _errno.ENOENT, full_path,
                 "No such file or directory")
@@ -281,7 +281,7 @@ def islink(path):
 
     try:
         zf = _zipfile.ZipFile(path)
-    except _zipfile.error:
+    except _zipfile.BadZipFile:
         raise IOError(
             _errno.ENOENT, full_path,
             "No such file or directory")
