@@ -366,7 +366,7 @@ def check_extract_from_egg(pth, todir=None):
                 # eggs can also be directories!
                 try:
                     egg = zipfile.ZipFile(eggpth)
-                except zipfile.BadZipfile as e:
+                except zipfile.BadZipFile as e:
                     raise SystemExit("Error: %s %s" % (eggpth, e))
                 if todir is None:
                     # Use the same directory as setuptools/pkg_resources. So, if the specific egg was accessed before
