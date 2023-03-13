@@ -15,6 +15,26 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.9.0 (2023-03-13)
+------------------
+
+Features
+~~~~~~~~
+
+* Choose :ref:`hooks provided by packages <provide hooks with package>` over
+  hooks from
+  `pyinstaller-hooks-contrib <https://github.com/pyinstaller/pyinstaller-hooks-contrib/>`_
+  if both provide the same hook. (:issue:`7456`)
+
+
+Bugfix
+~~~~~~
+
+* Fix changes to :data:`sys.path` made in the spec file being ignored by hook
+  utility functions (e.g. :func:`~PyInstaller.utils.hooks.collect_submodules`).
+  (:issue:`7456`)
+
+
 5.8.0 (2023-02-11)
 ------------------
 

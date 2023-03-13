@@ -1,2 +1,0 @@
-Fix changes to :data:`sys.path` made in the spec file being ignored by hook
-utility functions (e.g. :func:`~PyInstaller.utils.hooks.collect_submodules`).
