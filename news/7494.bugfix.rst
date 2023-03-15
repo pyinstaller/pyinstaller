@@ -1,0 +1,7 @@
+Reorganize the ``multiprocessing`` run-time hook to override ``Popen``
+implementations only for ``spawn`` and ``forkserver`` start methods,
+but not for the ``fork`` start method. This avoids a dead-lock when
+attempting to perform nested multiprocessing using the ``fork`` start
+method, which occurred due to override-provided lock (introduced in
+:issue:`7411`) being copied in its locked state into the forked
+sub-process.
