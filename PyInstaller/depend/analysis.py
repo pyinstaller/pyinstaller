@@ -53,7 +53,7 @@ from PyInstaller.depend import bytecode
 from PyInstaller.depend.imphook import AdditionalFilesCache, ModuleHookCache
 from PyInstaller.depend.imphookapi import (PreFindModulePathAPI, PreSafeImportModuleAPI)
 from PyInstaller.lib.modulegraph.find_modules import get_implies
-from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph, DEFAULT_IMPORT_LEVEL
+from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph, DEFAULT_IMPORT_LEVEL, ABSOLUTE_IMPORT_LEVEL
 from PyInstaller.log import DEBUG, INFO, TRACE
 from PyInstaller.utils.hooks import collect_submodules, is_package
 
@@ -367,18 +367,69 @@ class PyiModuleGraph(ModuleGraph):
             # For example, we want the excluded imports specified by hook for PIL to be also applied when the referring
             # module is its submodule, PIL.Image.
             excluded_imports = self._find_all_excluded_imports(source_module.identifier)
-            target_module_parts = target_module_partname.split('.')
-            # An excluded import that specifies a package needs to recursively applied to all that package's children.
-            for excluded_import in excluded_imports:
-                excluded_import_parts = excluded_import.split('.')
-                match = target_module_parts[:len(excluded_import_parts)] == excluded_import_parts
-                if match:
+
+            # Apply extra processing only if we have any excluded-imports rules
+            if excluded_imports:
+                # Resolve the base module name. Level can be ABSOLUTE_IMPORT_LEVEL (= 0) for absolute imports, or an
+                # integer indicating the relative level. We do not use equality comparison just in case we ever happen
+                # to get ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL (-1), which is a remnant of python2 days.
+                if level > ABSOLUTE_IMPORT_LEVEL:
+                    if target_module_partname:
+                        base_module_name = source_module.identifier + '.' + target_module_partname
+                    else:
+                        base_module_name = source_module.identifier
+
+                    # Adjust the base module name based on level
+                    if level > 1:
+                        base_module_name = '.'.join(base_module_name.split('.')[:-(level - 1)])
+                else:
+                    base_module_name = target_module_partname
+
+                def _exclude_module(module_name, excluded_imports):
+                    """
+                    Helper for checking whether given module should be excluded.
+                    Returns the name of exclusion rule if module should be excluded, None otherwise.
+                    """
+                    module_name_parts = module_name.split('.')
+                    for excluded_import in excluded_imports:
+                        excluded_import_parts = excluded_import.split('.')
+                        match = module_name_parts[:len(excluded_import_parts)] == excluded_import_parts
+                        if match:
+                            return excluded_import
+                    return None
+
+                # First, check if base module name is to be excluded.
+                # This covers both basic `import a` and `import a.b.c`, as well as `from d import e, f` where base
+                # module `d` is excluded.
+                excluded_import_rule = _exclude_module(base_module_name, excluded_imports)
+                if excluded_import_rule:
                     logger.debug(
                         "Suppressing import of %r from module %r due to excluded import %r specified in a hook for %r "
-                        "(or its parent package(s)).", target_module_partname, source_module.identifier,
-                        excluded_import, source_module.identifier
+                        "(or its parent package(s)).", base_module_name, source_module.identifier, excluded_import_rule,
+                        source_module.identifier
                     )
                     return []
+
+                # If we have target attribute names, check each of them, and remove excluded ones from the
+                # `target_attr_names` list.
+                if target_attr_names:
+                    filtered_target_attr_names = []
+                    for target_attr_name in target_attr_names:
+                        submodule_name = base_module_name + '.' + target_attr_name
+                        excluded_import_rule = _exclude_module(submodule_name, excluded_imports)
+                        if excluded_import_rule:
+                            logger.debug(
+                                "Suppressing import of %r from module %r due to excluded import %r specified in a hook "
+                                "for %r (or its parent package(s)).", submodule_name, source_module.identifier,
+                                excluded_import_rule, source_module.identifier
+                            )
+                        else:
+                            filtered_target_attr_names.append(target_attr_name)
+
+                    # Swap with filtered target attribute names list; if no elements remain after the filtering, pass
+                    # None...
+                    target_attr_names = filtered_target_attr_names or None
+
         return super()._safe_import_hook(target_module_partname, source_module, target_attr_names, level, edge_attr)
 
     def _safe_import_module(self, module_basename, module_name, parent_package):
