@@ -1,0 +1,4 @@
+(Windows) Improve support for ``matplotlib >= 3.7.0`` by collecting all
+``delvewheel``-generated files from the ``matplotlib.libs`` directory,
+including the load-order file. This is required when PyPI ``matplotlib``
+wheels are used in combination with Anaconda python 3.8 and 3.9.
