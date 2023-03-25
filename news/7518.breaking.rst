@@ -1,0 +1,3 @@
+The ``archive_viewer`` utility has been rewritten with modified
+command-line interface (``--log`` has been renamed to ``--list``) and
+with changed output formatting.
