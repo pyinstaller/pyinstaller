@@ -162,9 +162,12 @@ class ZlibArchiveReader:
         typecode, entry_offset, entry_length = entry
         return typecode == PYZ_ITEM_NSPKG
 
-    def extract(self, name):
+    def extract(self, name, raw=False):
         """
         Extract data from entry with the given name.
+
+        If the entry belongs to a module or a package, the data is loaded (unmarshaled) into code object. To retrieve
+        raw data, set `raw` flag to True.
         """
         # Look up entry
         entry = self.toc.get(name)
@@ -192,7 +195,7 @@ class ZlibArchiveReader:
             if self.cipher:
                 obj = self.cipher.decrypt(obj)
             obj = zlib.decompress(obj)
-            if typecode in (PYZ_ITEM_MODULE, PYZ_ITEM_PKG, PYZ_ITEM_NSPKG):
+            if typecode in (PYZ_ITEM_MODULE, PYZ_ITEM_PKG, PYZ_ITEM_NSPKG) and not raw:
                 obj = marshal.loads(obj)
         except EOFError as e:
             raise ImportError(f"Failed to unmarshal PYZ entry {name!r}!") from e
