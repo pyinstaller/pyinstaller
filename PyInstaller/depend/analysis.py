@@ -844,8 +844,10 @@ class PyiModuleGraph(ModuleGraph):
         """
         Return the list of collected python packages.
         """
+        # `node.identifier` might be an instance of `modulegraph.Alias`, hence explicit conversion to `str`.
         return [
-            node.identifier for node in self.iter_graph(start=self._top_script_node) if type(node).__name__ == 'Package'
+            str(node.identifier) for node in self.iter_graph(start=self._top_script_node)
+            if type(node).__name__ == 'Package'
         ]
 
 

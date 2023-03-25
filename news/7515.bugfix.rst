@@ -1,0 +1,3 @@
+Fix marshal error in binary dependency search stage, caused by the list
+of collected packages containing a `modulegraph.Alias` instance instead
+of only plain `str` instances.
