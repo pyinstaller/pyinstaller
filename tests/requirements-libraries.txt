@@ -29,7 +29,7 @@ pygments==2.14.0
 PyGObject==3.44.1; sys_platform == 'linux'
 # Current PySide2 wheels explicitly require python < 3.11
 PySide2==5.15.2.1; python_version < '3.11'
-PySide6==6.4.2
+PySide6==6.4.3
 # PyQt5 and add-on packages
 PyQt5==5.15.9
 PyQt3D==5.15.6
