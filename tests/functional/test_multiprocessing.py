@@ -69,6 +69,15 @@ def test_multiprocessing_nested_process(pyi_builder, start_method):
     pyi_builder.test_script("pyi_multiprocessing_nested_process.py", app_args=[start_method])
 
 
+# Test that we are able to retrieve the code object for `__main__` module in the sub-process.
+# NOTE: in unfrozen version, this works only with `fork` start method. However, in current `multiprocessing` support,
+# it should work with all start methods when frozen.
+@pytest.mark.timeout(timeout=60)
+@pytest.mark.parametrize("start_method", START_METHODS)
+def test_multiprocessing_main_module_code_in_process(pyi_builder, start_method):
+    pyi_builder.test_script("pyi_multiprocessing_main_module_code_in_process.py", app_args=[start_method])
+
+
 # Test the basic usage of high-level `concurrent.futures` framework with its `ProcessPoolExecutor` (i.e., with default
 # `multiprocessing` start method). This test will be more interesting if/when we can remove the explicit
 # `multiprocessing.freeze_support` call in the entry-point script.
