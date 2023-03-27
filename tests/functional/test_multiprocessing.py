@@ -67,3 +67,29 @@ def test_multiprocessing_process_start_in_threads(pyi_builder, start_method):
 @pytest.mark.parametrize("start_method", START_METHODS)
 def test_multiprocessing_nested_process(pyi_builder, start_method):
     pyi_builder.test_script("pyi_multiprocessing_nested_process.py", app_args=[start_method])
+
+
+# Test the basic usage of high-level `concurrent.futures` framework with its `ProcessPoolExecutor` (i.e., with default
+# `multiprocessing` start method). This test will be more interesting if/when we can remove the explicit
+# `multiprocessing.freeze_support` call in the entry-point script.
+@pytest.mark.timeout(timeout=60)
+def test_concurrent_features_process_pool_executor(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import multiprocessing
+        import concurrent.futures
+
+        def square(x):
+            return x * x
+
+
+        if __name__ == '__main__':
+            multiprocessing.freeze_support()
+
+            values = range(10)
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                result = list(executor.map(square, values))
+
+            assert result == [x * x for x in values]
+        """
+    )
