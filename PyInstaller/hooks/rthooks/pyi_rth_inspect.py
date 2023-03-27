@@ -20,10 +20,10 @@ _orig_inspect_getsourcefile = inspect.getsourcefile
 # filenames obtained from object (e.g., inspect stack-frames). See #5963.
 def _pyi_getsourcefile(object):
     filename = inspect.getfile(object)
-    if hasattr(sys.modules['__main__'], "__file__") and not os.path.isabs(filename):
+    if not os.path.isabs(filename):
         # Check if given filename matches the basename of __main__'s __file__.
-        main_file = sys.modules['__main__'].__file__
-        if filename == os.path.basename(main_file):
+        main_file = getattr(sys.modules['__main__'], '__file__', None)
+        if main_file and filename == os.path.basename(main_file):
             return main_file
 
         # If filename ends with .py suffix and does not correspond to frozen entry-point script, convert it to
