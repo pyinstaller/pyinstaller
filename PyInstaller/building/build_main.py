@@ -411,10 +411,7 @@ class Analysis(Target):
         self.noarchive = noarchive
         self.module_collection_mode = module_collection_mode or {}
 
-        self.__postinit__()
-
-        # TODO: create a function to convert datas/binaries from 'hook format' to TOC.
-        # Initialise 'binaries' and 'datas' with lists specified in .spec file.
+        # Initialize 'binaries' and 'datas' with lists specified in .spec file.
         if binaries:
             logger.info("Appending 'binaries' from .spec")
             for name, pth in format_binaries_and_datas(binaries, workingdir=spec_dir):
@@ -423,6 +420,8 @@ class Analysis(Target):
             logger.info("Appending 'datas' from .spec")
             for name, pth in format_binaries_and_datas(datas, workingdir=spec_dir):
                 self.datas.append((name, pth, 'DATA'))
+
+        self.__postinit__()
 
     _GUTS = (  # input parameters
         ('inputs', _check_guts_eq),  # parameter `scripts`
