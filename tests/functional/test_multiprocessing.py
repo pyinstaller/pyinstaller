@@ -60,3 +60,10 @@ def test_multiprocessing_semaphore(pyi_builder, start_method, capfd):
 @pytest.mark.parametrize("start_method", START_METHODS)
 def test_multiprocessing_process_start_in_threads(pyi_builder, start_method):
     pyi_builder.test_script("pyi_multiprocessing_process_start_in_threads.py", app_args=[start_method])
+
+
+# Test that we can start a nested `multiprocessing.Process` from within a `multiprocessing.Process`. See #7494.
+@pytest.mark.timeout(timeout=60)
+@pytest.mark.parametrize("start_method", START_METHODS)
+def test_multiprocessing_nested_process(pyi_builder, start_method):
+    pyi_builder.test_script("pyi_multiprocessing_nested_process.py", app_args=[start_method])
