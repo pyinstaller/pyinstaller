@@ -9,27 +9,35 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+import sys
+import time
 import multiprocessing
 
 
-class SendeventProcess(multiprocessing.Process):
-    def __init__(self, resultQueue):
-        multiprocessing.Process.__init__(self)
-        self.resultQueue = resultQueue
-        self.start()
+def test_function():
+    time.sleep(1)
+    print('In subprocess')
 
-    def run(self):
-        print('SendeventProcess begins')
-        self.resultQueue.put((1, 2))
-        print('SendeventProcess ends')
+
+def main(start_method):
+    # Set start method
+    multiprocessing.set_start_method(start_method)
+
+    # Start a sub-process
+    print('In main')
+    process = multiprocessing.Process(target=test_function)
+    process.start()
+    process.join()
+
+    # Ensure process finished successfully
+    assert process.exitcode == 0, f"Process exited with non-success code {process.exitcode}!"
 
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
-    print('main begins')
-    resultQueue = multiprocessing.Queue()
-    sp = SendeventProcess(resultQueue)
-    assert resultQueue.get() == (1, 2)
-    print('get ends')
-    sp.join()
-    print('main ends')
+
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <start-method>")
+        sys.exit(1)
+
+    main(sys.argv[1])
