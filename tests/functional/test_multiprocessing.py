@@ -52,3 +52,11 @@ def test_multiprocessing_semaphore(pyi_builder, start_method, capfd):
     assert os.linesep.join(expected) in out
     for substring in expected:
         assert out.count(substring) == 1
+
+
+# Test that we can start `multiprocessing.Process` in thread-safe manner concurrently, from multiple threads at (almost)
+# the same time. See #7410.
+@pytest.mark.timeout(timeout=60)
+@pytest.mark.parametrize("start_method", START_METHODS)
+def test_multiprocessing_process_start_in_threads(pyi_builder, start_method):
+    pyi_builder.test_script("pyi_multiprocessing_process_start_in_threads.py", app_args=[start_method])
