@@ -50,7 +50,7 @@ class Splash(Target):
     """
     Bundles the required resources for the splash screen into a file, which will be included in the CArchive.
 
-    A Splash has two outputs, one is itself and one is sored in splash.binaries. Both need to be passed to other
+    A Splash has two outputs, one is itself and one is stored in splash.binaries. Both need to be passed to other
     build targets in order to enable the splash screen.
     """
     def __init__(self, image_file, binaries, datas, **kwargs):
@@ -61,8 +61,8 @@ class Splash(Target):
             .. note:: If a different file format is supplied and PIL (Pillow) is installed, the file will be converted
                 automatically.
 
-            .. note:: *Windows*: Due to the implementation, the color Magenta/ RGB(255, 0, 255) must not be used in the
-                image or text.
+            .. note:: *Windows*: The color ``'magenta'`` / ``'#ff00ff'`` must not be used in the image or text, as it is
+                used by splash screen to indicate transparent areas. Use a similar color (e.g., ``'#ff00fe'``) instead.
 
             .. note:: If PIL (Pillow) is installed and the image is bigger than max_img_size, the image will be resized
                 to fit into the specified area.
@@ -74,7 +74,7 @@ class Splash(Target):
             modules. This is required to check if all splash screen requirements can be bundled.
 
         :keyword text_pos:
-            An optional 2x integer tuple that represents the origin of the text on the splash screen image. The
+            An optional two-integer tuple that represents the origin of the text on the splash screen image. The
             origin of the text is its lower left corner. A unit in the respective coordinate system is a pixel of the
             image, its origin lies in the top left corner of the image. This parameter also acts like a switch for
             the text feature. If omitted, no text will be displayed on the splash screen. This text will be used to
@@ -88,11 +88,12 @@ class Splash(Target):
             An optional name of a font for the text. This font must be installed on the user system, otherwise the
             system default font is used. If this parameter is omitted, the default font is also used.
         :keyword text_color:
-            An optional color for the text. Either RGB HTML notation or color names are supported. Default: black
-            (Windows: Due to a implementation issue the color magenta/ rgb(255, 0, 255) is forbidden)
+            An optional color for the text. HTML color codes (``'#40e0d0'``) and color names (``'turquoise'``) are
+            supported. Default: ``'black'``
+            (Windows: the color ``'magenta'`` / ``'#ff00ff'`` is used to indicate transparency, and should not be used)
         :type text_color: str
         :keyword text_default:
-            The default text which will be displayed before the extraction starts. Default: "Initializing"
+            The default text which will be displayed before the extraction starts. Default: ``"Initializing"``
         :type text_default: str
         :keyword full_tk:
             By default Splash bundles only the necessary files for the splash screen (some tk components). This
@@ -102,10 +103,10 @@ class Splash(Target):
         :type full_tk: bool
         :keyword minify_script:
             The splash screen is created by executing an Tcl/Tk script. This option enables minimizing the script,
-            meaning removing all non essential parts from the script. Default: True
+            meaning removing all non essential parts from the script. Default: ``True``
         :keyword rundir:
             The folder name in which tcl/tk will be extracted at runtime. There should be no matching folder in your
-            application to avoid conflicts. Default:  ``__splash``
+            application to avoid conflicts. Default:  ``'__splash'``
         :type rundir: str
         :keyword name:
             An optional alternative filename for the .res file. If not specified, a name is generated.
@@ -117,12 +118,12 @@ class Splash(Target):
         :keyword max_img_size:
             Maximum size of the splash screen image as a tuple. If the supplied image exceeds this limit, it will be
             resized to fit the maximum width (to keep the original aspect ratio). This option can be disabled by
-            setting it to None. Default: (760, 480)
+            setting it to None. Default: ``(760, 480)``
         :type max_img_size: Tuple[int, int]
         :keyword always_on_top:
             Force the splashscreen to be always on top of other windows. If disabled, other windows (e.g., from other
             applications) can cover the splash screen by user bringing them to front. This might be useful for
-            frozen applications with long startup times. Default: True
+            frozen applications with long startup times. Default: ``True``
         :type always_on_top: bool
         """
         from ..config import CONF
