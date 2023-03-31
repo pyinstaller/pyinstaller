@@ -1,0 +1,2 @@
+Clarify the supported color specification formats and apply consistent
+formatting of default parameter values in the splash screen documentation.
