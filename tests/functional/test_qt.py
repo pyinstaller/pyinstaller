@@ -468,11 +468,19 @@ def test_Qt_QtWebEngineQuick_PyQt6(pyi_builder):
 
 
 @requires('PySide6 >= 6.2.2')
+@pytest.mark.skipif(
+    is_module_satisfies('PySide6 == 6.5.0') and is_win,
+    reason='PySide6 6.5.0 PyPI wheels for Windows are missing opengl32sw.dll.'
+)
 def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
     _test_Qt_QtWebEngineWidgets(pyi_builder, 'PySide6')
 
 
 @requires('PySide6 >= 6.2.2')
+@pytest.mark.skipif(
+    is_module_satisfies('PySide6 == 6.5.0') and is_win,
+    reason='PySide6 6.5.0 PyPI wheels for Windows are missing opengl32sw.dll.'
+)
 def test_Qt_QtWebEngineQuick_PySide6(pyi_builder):
     _test_Qt_QtWebEngineQuick(pyi_builder, 'PySide6')
 
