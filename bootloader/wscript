@@ -157,13 +157,6 @@ def options(ctx):
         dest='target_arch',
     )
     ctx.add_option(
-        '--show-warnings',
-        action='store_true',
-        help='Make gcc print out the warnings we consider as being non-fatal. All other warnings are still treated as '
-        'errors. Remember to delete the `build` directory first to ensure all files are actually recompiled.',
-        dest='show_warnings',
-    )
-    ctx.add_option(
         '--static-zlib',
         action='store_true',
         help='Statically compile zlib into the bootloaders rather than dynamically linking to the system-wide copy. '
@@ -571,8 +564,6 @@ def configure(ctx):
                 '-Wno-error=unused-function',
             ]
         )
-        if not ctx.options.show_warnings:
-            ctx.env.append_value('CFLAGS', ['-Wno-unused-variable', '-Wno-unused-function'])
 
     # ** Defines, includes **
 
