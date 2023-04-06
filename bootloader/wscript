@@ -562,7 +562,15 @@ def configure(ctx):
         # Turn on all warnings to improve code quality and avoid errors. Unused variables and unused functions are still
         # accepted to avoid even more conditional code. If you are ever tempted to change this, review the commit
         # history of this place first.
-        ctx.env.append_value('CFLAGS', ['-Wall', '-Werror', '-Wno-error=unused-variable', '-Wno-error=unused-function'])
+        ctx.env.append_value(
+            'CFLAGS', [
+                '-Wall',
+                '-Werror',
+                '-Wno-error=unused-variable',
+                '-Wno-error=unused-but-set-variable',
+                '-Wno-error=unused-function',
+            ]
+        )
         if not ctx.options.show_warnings:
             ctx.env.append_value('CFLAGS', ['-Wno-unused-variable', '-Wno-unused-function'])
 
