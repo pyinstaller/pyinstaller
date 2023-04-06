@@ -1081,7 +1081,6 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
 {
     pid_t pid = 0;
     int rc = 0;
-    int i;
 
     /* cause nonzero return unless this is overwritten
      * with a successful return code from wait() */
