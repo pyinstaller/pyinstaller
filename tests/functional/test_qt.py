@@ -18,7 +18,7 @@ from PyInstaller import isolated
 from PyInstaller.compat import is_win, is_darwin
 from PyInstaller.utils.hooks import is_module_satisfies, can_import_module
 from PyInstaller.utils.hooks.qt import get_qt_library_info
-from PyInstaller.utils.tests import importorskip, requires, xfail, skipif
+from PyInstaller.utils.tests import importorskip, requires, skipif
 
 PYQT5_NEED_OPENGL = pytest.mark.skipif(
     is_module_satisfies('PyQt5 <= 5.10.1'),
@@ -144,18 +144,27 @@ def test_Qt_QtQml(pyi_builder, QtPyLib):
     )
 
 
-@pytest.mark.parametrize(
-    'QtPyLib', [
-        qt_param('PyQt5'),
-        qt_param('PyQt6'),
-        qt_param('PySide2', marks=xfail(is_win, reason='PySide2 wheels on Windows do not include SSL DLLs.')),
-        qt_param('PySide6', marks=xfail(is_win, reason='PySide6 wheels on Windows do not include SSL DLLs.')),
-    ]
-)
+@QtPyLibs
 def test_Qt_QtNetwork_SSL_support(pyi_builder, QtPyLib):
+    # Skip the test if QtNetwork does not support SSL (e.g., due to lack of compatible OpenSSL shared library on the
+    # test system).
+    @isolated.decorate
+    def check_ssl_support(package):
+        import importlib
+        QtCore = importlib.import_module('.QtCore', package)
+        QtNetwork = importlib.import_module('.QtNetwork', package)
+        app = QtCore.QCoreApplication([])  # noqa: F841
+        return QtNetwork.QSslSocket.supportsSsl()
+
+    if not check_ssl_support(QtPyLib):
+        pytest.skip('QtNetwork does not support SSL on this platform.')
+
     pyi_builder.test_source(
         """
+        import sys
+        from {0}.QtCore import QCoreApplication
         from {0}.QtNetwork import QSslSocket
+        app = QCoreApplication(sys.argv)
         assert QSslSocket.supportsSsl()
         """.format(QtPyLib), **USE_WINDOWED_KWARG
     )
