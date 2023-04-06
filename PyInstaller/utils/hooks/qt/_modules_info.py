@@ -359,8 +359,7 @@ QT_MODULES_INFO = (
     _QtModuleDef("QtSvgWidgets", shared_lib="SvgWidgets", bindings=["PySide6", "PyQt6"]),
 
     # *** qt/qtspeech ***
-    # Qt5-only Qt module.
-    _QtModuleDef("QtTextToSpeech", shared_lib="TextToSpeech"),
+    _QtModuleDef("QtTextToSpeech", shared_lib="TextToSpeech", plugins=["texttospeech"]),
 
     # *** qt/qttools ***
     # QtDesigner python module is available in all bindings but PySide2.
