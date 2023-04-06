@@ -249,20 +249,19 @@ QT_MODULES_INFO = (
     _QtModuleDef("QtHttpServer", shared_lib="HttpServer", bindings=["PySide6"]),
 
     # *** qt/qtlocation ***
-    # Qt5-only Qt module.
+    # QtLocation was reintroduced in Qt6 v6.5.0.
     _QtModuleDef(
         "QtLocation",
         shared_lib="Location",
         translation="qtlocation",
         plugins=["geoservices"],
-        bindings=["PySide2", "PyQt5"]
+        bindings=["PySide2", "PyQt5", "PySide6"]
     ),
     _QtModuleDef(
         "QtPositioning",
         shared_lib="Positioning",
         translation="qtlocation",
         plugins=["position"],
-        bindings=["PySide2", "PyQt5"]
     ),
 
     # *** qt/qtmacextras ***
@@ -350,7 +349,9 @@ QT_MODULES_INFO = (
 
     # *** qt/qtserialbus ***
     # No python module; shared library -> plugins association entry.
-    _QtModuleDef(None, shared_lib="SerialBus", plugins=["canbus"]),
+    # PySide6 6.5.0 introduced python module.
+    _QtModuleDef(None, shared_lib="SerialBus", plugins=["canbus"], bindings=["!PySide6"]),
+    _QtModuleDef("QtSerialBus", shared_lib="SerialBus", plugins=["canbus"], bindings=["PySide6"]),
 
     # *** qt/qtsvg ***
     _QtModuleDef("QtSvg", shared_lib="Svg"),
