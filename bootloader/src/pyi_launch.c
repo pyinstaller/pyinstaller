@@ -356,6 +356,10 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splas
     return retcode;
 }
 
+
+/* These helper functions are used only in windowed bootloader variants. */
+#if defined(WINDOWED)
+
 /*
  * Extract python exception message (string representation) from pvalue
  * part of the error indicator data returned by PyErr_Fetch().
@@ -453,6 +457,8 @@ _pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
 
     return retval;
 }
+
+#endif /* if defined(WINDOWED) */
 
 /*
  * Run scripts
