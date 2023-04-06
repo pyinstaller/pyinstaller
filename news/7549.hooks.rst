@@ -1,3 +1,3 @@
 Extend ``PySide6`` hooks for ``PySide6`` 6.5.0 compatibility: add hooks
-for ``QtLocation`` and ``QtSerialBus`` modules that were introduced
-in ``PySide`` 6.5.0.
+for ``QtLocation``, ``QtTextToSpeech``, and ``QtSerialBus`` modules
+that were introduced in ``PySide`` 6.5.0.
