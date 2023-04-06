@@ -54,8 +54,6 @@ _pyi_allow_pkg_sideload(const char *executable)
     uint64_t magic_offset;
     unsigned char magic[8];
 
-    int rc = 0;
-
     /* First, find the PKG sideload signature in the executable */
     file = pyi_path_fopen(executable, "rb");
     if (!file) {
