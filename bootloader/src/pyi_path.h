@@ -33,6 +33,8 @@ bool pyi_path_executable(char *execfile, const char *appname);
 bool pyi_path_homepath(char *homepath, const char *executable);
 bool pyi_path_archivefile(char *archivefile, const char *executable);
 
+bool pyi_path_is_symlink(const char *path);
+
 #ifdef _WIN32
 FILE *pyi_path_fopen(const char *filename, const char *mode);
 #else

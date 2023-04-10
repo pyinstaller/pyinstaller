@@ -1,0 +1,5 @@
+(Linux) Ignore the executable name resolution based on ``/proc/self/exe``
+when the PyInstaller-frozen executable is launched via the ``ld.so``
+dynamic loader executable. In such cases, the resolved name points to
+the ``ld.so`` executable, causing the PyInstaller-frozen executable to
+fail with *Cannot open PyInstaller archive from executable...* error.
