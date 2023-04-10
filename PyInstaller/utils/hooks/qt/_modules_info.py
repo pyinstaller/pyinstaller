@@ -290,8 +290,8 @@ QT_MODULES_INFO = (
         bindings=["PySide6", "PyQt6"]
     ),
     _QtModuleDef("QtMultimediaWidgets", shared_lib="MultimediaWidgets"),
-    # Qt6-only Qt module; python module is available in PySide6 >= 6.4.0
-    _QtModuleDef("QtSpatialAudio", shared_lib="SpatialAudio", bindings=["PySide6"]),
+    # Qt6-only Qt module; python module is available in PySide6 >= 6.4.0 and PyQt6 >= 6.5.0
+    _QtModuleDef("QtSpatialAudio", shared_lib="SpatialAudio", bindings=["PySide6", "PyQt6"]),
 
     # *** qt/qtnetworkauth ***
     # QtNetworkAuth python module is available in all bindings but PySide2.
