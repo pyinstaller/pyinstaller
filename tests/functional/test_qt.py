@@ -150,10 +150,11 @@ def test_Qt_QtNetwork_SSL_support(pyi_builder, QtPyLib):
     # test system).
     @isolated.decorate
     def check_ssl_support(package):
+        import sys
         import importlib
         QtCore = importlib.import_module('.QtCore', package)
         QtNetwork = importlib.import_module('.QtNetwork', package)
-        app = QtCore.QCoreApplication([])  # noqa: F841
+        app = QtCore.QCoreApplication(sys.argv)  # noqa: F841
         return QtNetwork.QSslSocket.supportsSsl()
 
     if not check_ssl_support(QtPyLib):
@@ -174,11 +175,12 @@ def test_Qt_QtNetwork_SSL_support(pyi_builder, QtPyLib):
 def test_Qt_QTranslate(pyi_builder, QtPyLib):
     pyi_builder.test_source(
         """
+        import sys
         from {0}.QtWidgets import QApplication
         from {0}.QtCore import QTranslator, QLocale, QLibraryInfo
 
         # Initialize Qt default translations
-        app = QApplication([])
+        app = QApplication(sys.argv)
         translator = QTranslator()
         locale = QLocale('de_DE')
         if hasattr(QLibraryInfo, 'path'):
@@ -218,7 +220,7 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, QtPyLib):
         is_qt6 = '{0}' in {{'PyQt6', 'PySide6'}}
         is_pyqt = '{0}' in {{'PyQt5', 'PyQt6'}}
 
-        app = QApplication([])
+        app = QApplication(sys.argv)
 
         # In Qt6, QtQuick supports multiple render APIs and automatically selects one.
         # However, QtQuickWidgets.QQuickWidget that is used by the test UI file supports only OpenGL,
@@ -312,7 +314,7 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
             </html>
         '''
 
-        app = QApplication([])
+        app = QApplication(sys.argv)
 
         class JSResultTester:
 
@@ -382,7 +384,7 @@ def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
             from {0}.QtWebEngine import QtWebEngine as QtWebEngineQuick
         QtWebEngineQuick.initialize()
 
-        app = QGuiApplication([])
+        app = QGuiApplication(sys.argv)
         engine = QQmlApplicationEngine()
         engine.loadData(b'''
             import QtQuick 2.0
@@ -513,10 +515,11 @@ def test_Qt_QtMultimedia_player_init(pyi_builder, QtPyLib):
 def test_Qt_QtMultimedia_with_true_property(pyi_builder, QtPyLib):
     pyi_builder.test_source(
         """
+        import sys
         from {0} import QtCore, QtMultimedia
         from __feature__ import true_property
 
-        app = QtCore.QCoreApplication()
+        app = QtCore.QCoreApplication(sys.argv)
         """.format(QtPyLib), **USE_WINDOWED_KWARG
     )
 
