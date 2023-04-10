@@ -40,13 +40,13 @@ PyQtPurchasing==5.15.5
 QScintilla==2.13.4
 PyQtWebEngine==5.15.6
 # PyQt6 and add-on packages
-PyQt6==6.4.2
-PyQt6-3D==6.4.0
-PyQt6-Charts==6.4.0
-PyQt6-DataVisualization==6.4.0
-PyQt6-NetworkAuth==6.4.0
+PyQt6==6.5.0
+PyQt6-3D==6.5.0
+PyQt6-Charts==6.5.0
+PyQt6-DataVisualization==6.5.0
+PyQt6-NetworkAuth==6.5.0
 PyQt6-QScintilla==2.13.4
-PyQt6-WebEngine==6.4.0
+PyQt6-WebEngine==6.5.0
 python-dateutil==2.8.2
 pytz==2023.3
 requests==2.28.2
