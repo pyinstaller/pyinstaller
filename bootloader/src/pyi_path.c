@@ -245,6 +245,47 @@ pyi_search_path(char * result, const char * appname)
     return false;
 }
 
+
+#if defined(__linux__)
+
+/*
+ * Return 0 if the given executable name is in fact the ld.so dynamic loader.
+ */
+static bool
+pyi_is_ld_linux_so(const char *execfile)
+{
+    char basename[PATH_MAX];
+    int status;
+    char loader_name[65] = "";
+    int soversion = 0;
+
+    pyi_path_basename(basename, execfile);
+
+    /* Match the string against ld-*.so.X. In sscanf, the %s is greedy, so
+     * instead we match with character group that disallows dot (.). Also
+     * limit the name length; note that the output array must be one byte
+     * larger, to include the terminating NULL character. */
+    status = sscanf(basename, "ld-%64[^.].so.%d", loader_name, &soversion);
+    if (status != 2) {
+        return false;
+    }
+
+    /* If necessary, we could further validate the loader name and soversion
+     * against known patterns:
+     *  - ld-linux.so.2 (glibc, x86)
+     *  - ld-linux-x86-64.so.2 (glibc, x86_64)
+     *  - ld-linux-x32.so.2 (glibc, x32)
+     *  - ld-linux-aarch64.so.1 (glibc, aarch64)
+     *  - ld-musl-x86_64.so.1 (musl, x86_64)
+     *  - ...
+     */
+
+    return true;
+}
+
+#endif /* defined(__linux__) */
+
+
 /*
  * Return full path to the current executable.
  * Executable is the .exe created by pyinstaller: path/myappname.exe
@@ -292,7 +333,7 @@ pyi_path_executable(char *execfile, const char *appname)
 #else /* ifdef _WIN32 */
     /* On Linux, Cygwin, FreeBSD, and Solaris, we try these /proc paths first
      */
-    size_t name_len = -1;
+    ssize_t name_len = -1;
 
     #if defined(__linux__) || defined(__CYGWIN__)
     name_len = readlink("/proc/self/exe", execfile, PATH_MAX-1);  /* Linux, Cygwin */
@@ -304,8 +345,20 @@ pyi_path_executable(char *execfile, const char *appname)
 
     if (name_len != -1) {
         /* execfile is not yet zero-terminated. result is the byte count. */
-        *(execfile + name_len) = '\0';
-    } else {
+        execfile[name_len] = '\0';
+    }
+
+    /* On linux, we might have been launched using custom ld.so dynamic loader.
+     * In that case, /proc/self/exe points to the ld.so executable, and we need
+     * to ignore it. */
+#if defined(__linux__)
+    if (pyi_is_ld_linux_so(execfile) == true) {
+        VS("LOADER: resolved executable name %s is ld.so dynamic loader - ignoring it!\n", execfile);
+        name_len = -1;
+    }
+#endif
+
+    if (name_len == -1) {
         if (strchr(appname, PYI_SEP)) {
             /* Absolute or relative path: Canonicalize directory path,
              * but keep original basename.
@@ -333,6 +386,25 @@ pyi_path_executable(char *execfile, const char *appname)
             }
         }
     }
+
+    /* Check if execfile is a symbolic link. Usually, the /proc entry resolution
+     * ensures that it is a regular file path. However, in some cases, /proc entry
+     * resolution is unavailable (e.g., launching via ld.so dynamic loader), and
+     * we need to deal with symlinks ourselves... */
+    if (pyi_path_is_symlink(execfile)) {
+        /* Create a copy of original name; we need this to resolve relative symbolic
+         * link (as well as for the error message). */
+        char orig_execfile[PATH_MAX];
+        if (snprintf(orig_execfile, PATH_MAX, "%s", execfile) >= PATH_MAX) {
+            return false;
+        }
+        /* Fully resolve the path */
+        if (pyi_path_fullpath(execfile, PATH_MAX, orig_execfile) == false) {
+            VS("LOADER: Cannot resolve executable symbolic link %s\n", orig_execfile);
+            return false;
+        }
+    }
+
 #endif /* ifdef _WIN32 */
     VS("LOADER: executable is %s\n", execfile);
     return true;
@@ -384,3 +456,19 @@ pyi_path_fopen(const char* filename, const char* mode)
     return _wfopen(wfilename, wmode);
 }
 #endif
+
+bool
+pyi_path_is_symlink(const char *path)
+{
+#ifdef _WIN32
+    wchar_t wpath[PATH_MAX + 1];
+    pyi_win32_utils_from_utf8(wpath, path, PATH_MAX);
+    return pyi_win32_is_symlink(wpath);
+#else
+    struct stat buf;
+    if (lstat(path, &buf) < 0) {
+        return false;
+    }
+    return S_ISLNK(buf.st_mode);
+#endif
+}
