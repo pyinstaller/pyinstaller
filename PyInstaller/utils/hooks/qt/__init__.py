@@ -195,6 +195,7 @@ class QtLibraryInfo:
         @isolated.decorate
         def _read_qt_library_info(package):
             import os
+            import sys
             import importlib
 
             # Import the Qt-based package
@@ -204,7 +205,7 @@ class QtLibraryInfo:
             QCoreApplication = QtCore.QCoreApplication
 
             # QLibraryInfo is not always valid until a QCoreApplication is instantiated.
-            app = QCoreApplication([])  # noqa: F841
+            app = QCoreApplication(sys.argv)  # noqa: F841
 
             # Qt6 deprecated QLibraryInfo.location() in favor of QLibraryInfo.path(), and
             # QLibraryInfo.LibraryLocation enum was replaced by QLibraryInfo.LibraryPath.
@@ -586,6 +587,7 @@ class QtLibraryInfo:
         # Check if QtNetwork supports SSL
         @isolated.decorate
         def _ssl_enabled(package):
+            import sys
             import importlib
 
             # Import the Qt-based package
@@ -597,7 +599,7 @@ class QtLibraryInfo:
             QSslSocket = QtNetwork.QSslSocket
 
             # Instantiate QCoreApplication to suppress warnings
-            app = QCoreApplication([])  # noqa: F841
+            app = QCoreApplication(sys.argv)  # noqa: F841
 
             return QSslSocket.supportsSsl()
 
