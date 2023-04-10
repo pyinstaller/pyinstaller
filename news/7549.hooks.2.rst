@@ -1,0 +1,2 @@
+Add hook for ``PyQt6.QtSpatialAudio`` module, which was added in
+``PyQt6`` 6.5.0.
