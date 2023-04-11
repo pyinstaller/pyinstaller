@@ -1,7 +1,0 @@
-Extend the ``excludedimports`` mechanism rework from :issue:`7066`
-to properly handle the case of multiple submodules being imported in a
-single ``from ... import ...`` statement (using absolute or relative import).
-For example, when package ``c`` does ``from d import e, f``, we need to
-consider potential ``excludedimports`` rules matching package ``d`` and,
-if ``d`` itself is not excluded, potential rules individually matching
-``d.e`` and ``d.f``.

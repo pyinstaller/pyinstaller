@@ -15,6 +15,79 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.10.0 (2023-04-11)
+-------------------
+
+Bugfix
+~~~~~~
+
+* (Linux) Ignore the executable name resolution based on ``/proc/self/exe``
+  when the PyInstaller-frozen executable is launched via the ``ld.so``
+  dynamic loader executable. In such cases, the resolved name points to
+  the ``ld.so`` executable, causing the PyInstaller-frozen executable to
+  fail with *Cannot open PyInstaller archive from executable...* error.
+  (:issue:`7551`)
+* Ensure that binaries that are manually specified in the .spec file (or via
+  corresponding :option:`--add-binary` or :option:`--collect-binaries`
+  command-line switches) undergo the binary dependency analysis, so their
+  dependencies are automatically collected. (:issue:`7522`)
+* Extend the ``excludedimports`` mechanism rework from :issue:`7066`
+  to properly handle relative imports within the package. For example,
+  ensure that ``excludedimports = ['a.b']`` within the hook for package
+  ``a`` takes effect when package ``a`` does ``from . import b`` (in
+  addition to ``from a import b``). (:issue:`7495`)
+* Extend the ``excludedimports`` mechanism rework from :issue:`7066`
+  to properly handle the case of multiple submodules being imported in a
+  single ``from ... import ...`` statement (using absolute or relative import).
+  For example, when package ``c`` does ``from d import e, f``, we need to
+  consider potential ``excludedimports`` rules matching package ``d`` and,
+  if ``d`` itself is not excluded, potential rules individually matching
+  ``d.e`` and ``d.f``. (:issue:`7495`)
+* Fix marshal error in binary dependency search stage, caused by the list of
+  collected packages containing a ``modulegraph.Alias`` instance instead of only
+  plain :class:`str` instances. (:issue:`7515`)
+* Reorganize the ``multiprocessing`` run-time hook to override ``Popen``
+  implementations only for ``spawn`` and ``forkserver`` start methods,
+  but not for the ``fork`` start method. This avoids a dead-lock when
+  attempting to perform nested multiprocessing using the ``fork`` start
+  method, which occurred due to override-provided lock (introduced in
+  :issue:`7411`) being copied in its locked state into the forked
+  sub-process. (:issue:`7494`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* The ``archive_viewer`` utility has been rewritten with modified
+  command-line interface (``--log`` has been renamed to ``--list``) and
+  with changed output formatting. (:issue:`7518`)
+
+
+Hooks
+~~~~~
+
+* (Windows) Improve support for ``matplotlib >= 3.7.0`` by collecting all
+  ``delvewheel``-generated files from the ``matplotlib.libs`` directory,
+  including the load-order file. This is required when PyPI ``matplotlib``
+  wheels are used in combination with Anaconda python 3.8 and 3.9.
+  (:issue:`7503`)
+* Add hook for ``PyQt6.QtSpatialAudio`` module, which was added in
+  ``PyQt6`` 6.5.0. (:issue:`7549`)
+* Add hook for ``PyQt6.QtTextToSpeech`` module, which was added in
+  ``PyQt6`` 6.4 series. (:issue:`7549`)
+* Extend ``PySide6`` hooks for ``PySide6`` 6.5.0 compatibility: add hooks
+  for ``QtLocation``, ``QtTextToSpeech``, and ``QtSerialBus`` modules
+  that were introduced in ``PySide`` 6.5.0. (:issue:`7549`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Clarify the supported color specification formats and apply consistent
+  formatting of default parameter values in the splash screen documentation.
+  (:issue:`7529`)
+
+
 5.9.0 (2023-03-13)
 ------------------
 

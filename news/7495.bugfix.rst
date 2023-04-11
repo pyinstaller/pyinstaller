@@ -1,5 +1,0 @@
-Extend the ``excludedimports`` mechanism rework from :issue:`7066`
-to properly handle relative imports within the package. For example,
-ensure that ``excludedimports = ['a.b']`` within the hook for package
-``a`` takes effect when package ``a`` does ``from . import b`` (in
-addition to ``from a import b``).

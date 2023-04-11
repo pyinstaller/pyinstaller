@@ -1,4 +1,0 @@
-Ensure that binaries that are manually specified in the .spec file (or
-via corresponding `--add-binary` or ˙--collect-binaries˙ command-line
-switches) undergo the binary dependency analysis, so their dependencies
-are automatically collected.
