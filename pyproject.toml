@@ -1,3 +1,43 @@
+[tool.ruff]
+exclude = [
+   ".git",
+   "bootloader",
+   "build",
+   "dist",
+   "doc/_build",
+   "doc/conf.py",
+   "PyInstaller/lib",
+   "tests/functional/data/name_clash_with_entry_point",
+   "tests/functional/data/sphinx/conf.py",
+   "tests/unit/test_modulegraph",
+]
+ignore = ["PLC1901"]
+line-length=120
+select = [
+  "C90",     # McCabe cyclomatic complexity
+  "DTZ",     # flake8-datetimez
+  "E",       # pycodestyle
+  "F",       # Pyflakes
+  "INT",     # flake8-gettext
+  "PLC",     # Pylint conventions
+  "PLE",     # Pylint errors
+  "PLR091",  # Pylint refactor just for max-args, max-branches, etc.
+  "PYI",     # flake8-pyi
+  "T10",     # flake8-debugger
+  "W",       # pycodestyle
+  "YTT",     # flake8-2020
+]
+# show-source = true
+
+[tool.ruff.mccabe]
+max-complexity = 52
+
+[tool.ruff.pylint]
+max-args = 42
+max-branches = 65
+max-returns = 13
+max-statements = 148
+
 [tool.towncrier]
 	filename = "doc/CHANGES.rst"
 	directory = "news"

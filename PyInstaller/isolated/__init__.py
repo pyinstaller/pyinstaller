@@ -27,5 +27,5 @@ This submodule provides:
 
 """
 
-# flake8: noqa
+# ruff: noqa
 from ._parent import Python, call, decorate

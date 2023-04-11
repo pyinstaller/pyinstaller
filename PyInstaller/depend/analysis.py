@@ -599,7 +599,7 @@ class PyiModuleGraph(ModuleGraph):
         mg_type = type(node).__name__
         assert mg_type is not None
 
-        if typecode and not (mg_type in typecode):
+        if typecode and mg_type not in typecode:
             # Type is not a to be selected one, skip this one
             return None
         # Extract the identifier and a path if any.
