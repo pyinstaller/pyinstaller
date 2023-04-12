@@ -30,7 +30,7 @@ flaky
 # Better subprocess alternative with implemented timeout.
 psutil
 
-# Check new ruff violations on pull requests
+# Check new linter violations on pull requests
 ruff
 
 # These are required by some of basic tests
