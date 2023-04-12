@@ -17,7 +17,6 @@
 .. _Docker: https://www.docker.com/
 .. _`GPL License`: https://raw.github.com/pyinstaller/pyinstaller/develop/COPYING.txt
 .. _FAQ: https://github.com/pyinstaller/pyinstaller/wiki/FAQ
-.. _flake8: https://flake8.pycqa.org/
 .. _Git: http://git-scm.com/downloads
 .. _GraphViz: https://graphviz.org/
 .. _Homebrew: http://brew.sh/
@@ -49,6 +48,7 @@
 .. _PySide: http://qt-project.org/wiki/About-PySide
 .. _PyWin32: http://sourceforge.net/projects/pywin32/files/
 .. _Qt: http://www.qt-project.org
+.. _ruff: https://ruff.rs/docs/
 .. _setup_tools: https://pypi.python.org/pypi/setuptools
 .. _`shared COLLECT statement`: https://www.zacoding.com/en/post/pyinstaller-create-multiple-executables/
 .. _`Package resources`: https://pythonhosted.org/setuptools/pkg_resources.html#requirements-parsing

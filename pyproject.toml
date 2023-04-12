@@ -1,3 +1,24 @@
+[tool.ruff]
+exclude = [
+   ".git",
+   "bootloader",
+   "build",
+   "dist",
+   "doc/_build",
+   "doc/conf.py",
+   "PyInstaller/lib",
+   "tests/functional/data/name_clash_with_entry_point",
+   "tests/functional/data/sphinx/conf.py",
+   "tests/unit/test_modulegraph",
+]
+line-length=120
+select = [
+  "E",       # pycodestyle errors
+  "F",       # pyflakes
+  "W",       # pycodestyle warnings
+]
+show-source = true
+
 [tool.towncrier]
 	filename = "doc/CHANGES.rst"
 	directory = "news"

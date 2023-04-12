@@ -69,7 +69,7 @@ def _recursive_scan_code_objects_for_mpl_use(co):
             # matplotlib.use(backend) or matplotlib.use(backend, force)
             # We support only literal arguments. Similarly, kwargs are
             # not supported.
-            if not len(args) in {1, 2} or not isinstance(args[0], str):
+            if len(args) not in {1, 2} or not isinstance(args[0], str):
                 continue
             if name in mpl_use_names:
                 backends.append(args[0])

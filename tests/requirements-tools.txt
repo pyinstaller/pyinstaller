@@ -30,8 +30,8 @@ flaky
 # Better subprocess alternative with implemented timeout.
 psutil
 
-# Check new flake8 violations on pull requests
-flake8
+# Check new linter violations on pull requests
+ruff
 
 # These are required by some of basic tests
 pywin32; sys_platform == 'win32'
