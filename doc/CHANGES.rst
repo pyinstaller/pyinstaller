@@ -15,6 +15,19 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.10.1 (2023-04-14)
+-------------------
+
+Bugfix
+~~~~~~
+
+* Fix regression on platforms with strict data alignment requirements (such as
+  linux on ``armhf``/``armv7``), caused by bug in PKG/CArchive generation that
+  was introduced during the archive writer code cleanup. The regression caused
+  executable to terminate with ``Bus error`` on the affected platforms, such as
+  32-bit Debian Buster on Raspberry Pi 4. (:issue:`7566`)
+
+
 5.10.0 (2023-04-11)
 -------------------
 

@@ -33,7 +33,7 @@ set title 'Contributions to PyInstaller '(python setup.py --version)
 echo $title >> doc/CREDITS.rst
 echo $title | perl -pe 's/./-/g' >> doc/CREDITS.rst
 echo '' >> doc/CREDITS.rst
-git shortlog -ns (git tag -l)[-1].. | grep -v -w bot | perl -pe 's/^\s+\d+\s+/* /g' >> doc/CREDITS.rst
+git shortlog -ns (git tag -l --sort=version:refname)[-1].. | grep -v -w bot | perl -pe 's/^\s+\d+\s+/* /g' >> doc/CREDITS.rst
 printf '%s\n' $footer >> doc/CREDITS.rst
 
 # Update docs versions in the README.
