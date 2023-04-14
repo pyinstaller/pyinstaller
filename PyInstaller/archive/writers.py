@@ -277,14 +277,16 @@ class CArchiveWriter:
             name = name.encode('utf-8')
             name_length = len(name) + 1  # add 1 for a '\0'
 
-            # Align to 16-byte boundary so xplatform C can read
+            # Ensure TOC entries are aligned on 16-byte boundary, so they can be read by bootloader (C code) on
+            # platforms with strict data alignment requirements (for example linux on `armhf`/`armv7`, such as 32-bit
+            # Debian Buster on Raspberry Pi).
             entry_length = cls._TOC_ENTRY_LENGTH + name_length
             if entry_length % 16 == 0:
                 name_padding = b'\0'
             else:
                 padding_length = 16 - (entry_length % 16)
                 name_padding = b'\0' * padding_length
-            name_length += padding_length
+                name_length += padding_length
 
             # Serialize
             serialized_entry = struct.pack(
