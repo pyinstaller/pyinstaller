@@ -275,29 +275,26 @@ class CArchiveWriter:
             # Encode names as UTF-8. This should be safe as standard python modules only contain ASCII-characters (and
             # standard shared libraries should have the same), and thus the C-code still can handle this correctly.
             name = name.encode('utf-8')
-            name_length = len(name) + 1  # add 1 for a '\0'
+            name_length = len(name) + 1  # Add 1 for string-terminating zero byte.
 
             # Ensure TOC entries are aligned on 16-byte boundary, so they can be read by bootloader (C code) on
             # platforms with strict data alignment requirements (for example linux on `armhf`/`armv7`, such as 32-bit
             # Debian Buster on Raspberry Pi).
             entry_length = cls._TOC_ENTRY_LENGTH + name_length
-            if entry_length % 16 == 0:
-                name_padding = b'\0'
-            else:
+            if entry_length % 16 != 0:
                 padding_length = 16 - (entry_length % 16)
-                name_padding = b'\0' * padding_length
                 name_length += padding_length
 
             # Serialize
             serialized_entry = struct.pack(
-                cls._TOC_ENTRY_FORMAT + f"{name_length}s",
+                cls._TOC_ENTRY_FORMAT + f"{name_length}s",  # "Ns" format automatically pads the string with zero bytes.
                 cls._TOC_ENTRY_LENGTH + name_length,
                 data_offset,
                 compressed_length,
                 data_length,
                 compress,
                 ord(typecode),
-                name + name_padding,
+                name,
             )
             serialized_toc.append(serialized_entry)
 
