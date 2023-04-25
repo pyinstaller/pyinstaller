@@ -560,10 +560,13 @@ def configure(ctx):
                 '-Wall',
                 '-Werror',
                 '-Wno-error=unused-variable',
-                '-Wno-error=unused-but-set-variable',
                 '-Wno-error=unused-function',
             ]
         )
+
+        # -Wno-error=unused-but-set-variable is not available on old gcc versions (e.g., 4.4.3)
+        if ctx.check_cc(cflags='-Wno-error=unused-but-set-variable', execute=False, mandatory=False):
+            ctx.env.append_value('CFLAGS', ['-Wno-error=unused-but-set-variable'])
 
     # ** Defines, includes **
 
