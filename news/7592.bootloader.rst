@@ -1,0 +1,3 @@
+Fix bootloader building with old versions of ``gcc`` that do not
+support the ``-Wno-error=unused-but-set-variable`` compiler flag
+(e.g., ``gcc`` v4.4.3).
