@@ -147,16 +147,11 @@ def checkCache(
     """
     from PyInstaller.config import CONF
 
-    # On Mac OS, a cache is required anyway to keep the libraries with relative install names.
-    # Caching on Mac OS does not work since we need to modify binary headers to use relative paths to dll dependencies
-    # and starting with '@loader_path'.
-    if not strip and not upx and not is_darwin and not is_win:
-        return fnm
-
-    if strip:
-        strip = True
-    else:
-        strip = False
+    # Binding redirects should be taken into account to see if the file needs to be reprocessed. The redirects may
+    # change if the versions of dependent manifests change due to system updates.
+    redirects = CONF.get('binding_redirects', [])
+    # optionally change manifest to private assembly
+    win_private_assemblies = CONF.get('win_private_assemblies', False)
 
     # Disable UPX on non-Windows. Using UPX (3.96) on modern Linux shared libraries (for example, the python3.x.so
     # shared library) seems to result in segmentation fault when they are dlopen'd. This happens in recent versions
@@ -164,6 +159,12 @@ def checkCache(
     # UnknownExecutableFormatException on most .dylibs (and interferes with code signature on other occasions). And
     # even when it would succeed, compressed libraries cannot be (re)signed due to failed strict validation.
     upx = upx and (is_win or is_cygwin)
+
+    # On Mac OS, a cache is required anyway to keep the libraries with relative install names.
+    # Caching on Mac OS does not work since we need to modify binary headers to use relative paths to dll dependencies
+    # and starting with '@loader_path'.
+    if not strip and not upx and not is_darwin and not (is_win and (redirects or win_private_assemblies)):
+        return fnm
 
     # Match against provided UPX exclude patterns.
     upx_exclude = upx_exclude or []
@@ -222,9 +223,6 @@ def checkCache(
     else:
         basenm = os.path.normcase(os.path.basename(fnm))
 
-    # Binding redirects should be taken into account to see if the file needs to be reprocessed. The redirects may
-    # change if the versions of dependent manifests change due to system updates.
-    redirects = CONF.get('binding_redirects', [])
     digest = cacheDigest(fnm, redirects)
     cachedfile = os.path.join(cachedir, basenm)
     cmd = None
@@ -292,6 +290,7 @@ def checkCache(
 
     if not os.path.exists(os.path.dirname(cachedfile)):
         os.makedirs(os.path.dirname(cachedfile))
+
     # There are known some issues with 'shutil.copy2' on Mac OS 10.11 with copying st_flags. Issue #1650.
     # 'shutil.copy' copies also permission bits and it should be sufficient for PyInstaller's purposes.
     shutil.copy(fnm, cachedfile)
@@ -331,9 +330,7 @@ def checkCache(
                             logger.error("Cannot parse manifest resource %s, =%s", name, language)
                             logger.error("From file %s", cachedfile, exc_info=1)
                         else:
-                            # optionally change manifest to private assembly
-                            private = CONF.get('win_private_assemblies', False)
-                            if private:
+                            if win_private_assemblies:
                                 if manifest.publicKeyToken:
                                     logger.info("Changing %s into a private assembly", os.path.basename(fnm))
                                 manifest.publicKeyToken = None
@@ -344,7 +341,7 @@ def checkCache(
                                     if dep.name != "Microsoft.Windows.Common-Controls":
                                         dep.publicKeyToken = None
                             redirecting = applyRedirects(manifest, redirects)
-                            if redirecting or private:
+                            if redirecting or win_private_assemblies:
                                 try:
                                     manifest.update_resources(os.path.abspath(cachedfile), [name], [language])
                                 except Exception:
