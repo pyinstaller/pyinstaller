@@ -1,0 +1,3 @@
+(Windows) Avoid writing collected binaries to binary cache unless
+they need to be processed (i.e., only if binary stripping or ``upx``
+processing is enabled).
