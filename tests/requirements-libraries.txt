@@ -19,11 +19,12 @@ babel==2.12.1
 Django==4.2; python_version >= '3.8'
 future==0.18.3
 gevent==22.10.2
-ipython==8.13.1; python_version >= '3.8'
+ipython==8.13.1; python_version >= '3.9'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==23.13.1; sys_platform != 'darwin' or python_version >= '3.8.7'
 matplotlib==3.7.1; python_version >= '3.8'
+numpy==1.24.3; python_version >= '3.8'
 pandas==2.0.1; python_version >= '3.8'
 pygments==2.15.1
 PyGObject==3.44.1; sys_platform == 'linux'
@@ -64,5 +65,8 @@ Pillow==9.5.0
 # -------------------------------------------------------
 
 # numpy dropped support for python 3.7 as of 1.22
-numpy==1.24.3; python_version >= '3.8'
 numpy==1.21.5; python_version == '3.7'  # pyup: ignore
+
+# ipython dropped support for python 3.7 in v8.0.0 and for python 3.8 in v8.13.0
+ipython==7.34.0; python_version == '3.7'  # pyup: ignore
+ipython==8.12.1; python_version == '3.8'  # pyup: ignore
