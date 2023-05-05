@@ -17,7 +17,6 @@ these modifications into appropriate operations on the current `PyiModuleGraph` 
 modules will be frozen into the executable.
 """
 
-from PyInstaller.building.datastruct import TOC
 from PyInstaller.building.utils import format_binaries_and_datas
 from PyInstaller.lib.modulegraph.modulegraph import (RuntimeModule, RuntimePackage)
 
@@ -430,29 +429,37 @@ class PostGraphAPI:
         """
         self._deleted_imports.extend(module_names)
 
-    def add_binaries(self, list_of_tuples):
+    def add_binaries(self, binaries):
         """
-        Add all external dynamic libraries in the passed list of `(name, path)` 2-tuples as dependencies of the
+        Add all external dynamic libraries in the passed list of `(src_name, dest_name)` 2-tuples as dependencies of the
         current module. This is equivalent to adding to the global `binaries` hook attribute.
 
-        For convenience, the `list_of_tuples` may also be a single TOC or TREE instance.
+        For convenience, the `binaries` may also be a list of TOC-style 3-tuples `(dest_name, src_name, typecode)`.
         """
-        if isinstance(list_of_tuples, TOC):
-            self._added_binaries.extend(i[:2] for i in list_of_tuples)
-        else:
-            self._added_binaries.extend(format_binaries_and_datas(list_of_tuples))
 
-    def add_datas(self, list_of_tuples):
-        """
-        Add all external data files in the passed list of `(name, path)` 2-tuples as dependencies of the current
-        module. This is equivalent to adding to the global `datas` hook attribute.
-
-        For convenience, the `list_of_tuples` may also be a single TOC or TREE instance.
-        """
-        if isinstance(list_of_tuples, TOC):
-            self._added_datas.extend(i[:2] for i in list_of_tuples)
+        # Detect TOC 3-tuple list by checking the length of the first entry
+        if binaries and len(binaries[0]) == 3:
+            self._added_binaries.extend(entry[:2] for entry in binaries)
         else:
-            self._added_datas.extend(format_binaries_and_datas(list_of_tuples))
+            # NOTE: `format_binaries_and_datas` changes tuples from input format `(src_name, dest_name)` to output
+            # format `(dest_name, src_name)`.
+            self._added_binaries.extend(format_binaries_and_datas(binaries))
+
+    def add_datas(self, datas):
+        """
+        Add all external data files in the passed list of `(src_name, dest_name)` 2-tuples as dependencies of the
+        current module. This is equivalent to adding to the global `datas` hook attribute.
+
+        For convenience, the `datas` may also be a list of TOC-style 3-tuples `(dest_name, src_name, typecode)`.
+        """
+
+        # Detect TOC 3-tuple list by checking the length of the first entry
+        if datas and len(datas[0]) == 3:
+            self._added_datas.extend(entry[:2] for entry in datas)
+        else:
+            # NOTE: `format_binaries_and_datas` changes tuples from input format `(src_name, dest_name)` to output
+            # format `(dest_name, src_name)`.
+            self._added_datas.extend(format_binaries_and_datas(datas))
 
     def set_module_collection_mode(self, name, mode):
         """"
