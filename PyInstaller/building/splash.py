@@ -16,7 +16,7 @@ import struct
 from PyInstaller import log as logging
 from PyInstaller.archive.writers import SplashWriter
 from PyInstaller.building import splash_templates
-from PyInstaller.building.datastruct import TOC, Target
+from PyInstaller.building.datastruct import Target
 from PyInstaller.building.utils import _check_guts_eq, _check_guts_toc, misc
 from PyInstaller.compat import is_darwin, is_win, is_cygwin
 from PyInstaller.utils.hooks import tcl_tk as tcltk_utils
@@ -66,11 +66,11 @@ class Splash(Target):
 
             .. note:: If PIL (Pillow) is installed and the image is bigger than max_img_size, the image will be resized
                 to fit into the specified area.
-        :param TOC binaries:
-            The TOC of binaries the Analysis build target found. This TOC includes all extensionmodules and their
-            dependencies. This is required to figure out, if the users program uses tkinter.
-        :param TOC datas:
-            The TOC of data the Analysis build target found. This TOC includes all data-file dependencies of the
+        :param list binaries:
+            The TOC list of binaries the Analysis build target found. This TOC includes all extension modules and their
+            binary dependencies. This is required to determine whether the user's program uses `tkinter`.
+        :param list datas:
+            The TOC list of data the Analysis build target found. This TOC includes all data-file dependencies of the
             modules. This is required to check if all splash screen requirements can be bundled.
 
         :keyword text_pos:
@@ -207,7 +207,7 @@ class Splash(Target):
             # The user wants a full copy of tk, so make all tk files a requirement.
             self.splash_requirements.update(toc[0] for toc in tcltk_tree)
 
-        self.binaries = TOC()
+        self.binaries = []
         if not self.uses_tkinter:
             # The user's script does not use tkinter, so we need to provide a TOC of all necessary files add the shared
             # libraries to the binaries.
