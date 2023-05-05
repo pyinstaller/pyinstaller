@@ -198,14 +198,14 @@ class Splash(Target):
         # Check if tcl/tk was found
         assert all(self.tcl_lib)
         assert all(self.tk_lib)
-        logger.debug("Use Tcl Library from %s and Tk From %s" % (self.tcl_lib, self.tk_lib))
+        logger.debug("Use Tcl Library from %s and Tk From %s", self.tcl_lib, self.tk_lib)
         self.splash_requirements = set([self.tcl_lib[0], self.tk_lib[0]] + splash_requirements)
 
         logger.info("Collect tcl/tk binaries for the splash screen")
         tcltk_tree = tcltk_utils.collect_tcl_tk_files(self._tkinter_file)
         if self.full_tk:
             # The user wants a full copy of tk, so make all tk files a requirement.
-            self.splash_requirements.update(toc[0] for toc in tcltk_tree)
+            self.splash_requirements.update(entry[0] for entry in tcltk_tree)
 
         self.binaries = []
         if not self.uses_tkinter:
@@ -216,7 +216,7 @@ class Splash(Target):
 
             # Only add the intersection of the required and the collected resources, or add all entries if full_tk is
             # true.
-            self.binaries.extend(toc for toc in tcltk_tree if toc[0] in self.splash_requirements)
+            self.binaries.extend(entry for entry in tcltk_tree if entry[0] in self.splash_requirements)
 
         # Handle extra requirements of Tcl/Tk shared libraries (e.g., vcruntime140.dll on Windows - see issue #6284).
         # These need to be added to splash requirements, so they are extracted into the initial runtime directory in
@@ -237,26 +237,26 @@ class Splash(Target):
             self.splash_requirements.update([name for name, *_ in binaries if name.lower() in EXTRA_REQUIREMENTS])
 
         # Check if all requirements were found.
-        fnames = [toc[0] for toc in (binaries + datas + self.binaries)]
+        collected_files = set(entry[0] for entry in (binaries + datas + self.binaries))
 
-        def _filter(_item):
-            if _item not in fnames:
+        def _filter_requirement(filename):
+            if filename not in collected_files:
                 # Item is not bundled, so warn the user about it. This actually may happen on some tkinter installations
                 # that are missing the license.terms file.
                 logger.warning(
                     "The local Tcl/Tk installation is missing the file %s. The behavior of the splash screen is "
-                    "therefore undefined and may be unsupported." % _item
+                    "therefore undefined and may be unsupported.", filename
                 )
                 return False
             return True
 
         # Remove all files which were not found.
-        self.splash_requirements = set(filter(_filter, self.splash_requirements))
+        self.splash_requirements = set(filter(_filter_requirement, self.splash_requirements))
 
         # Test if the tcl/tk version is supported by the bootloader.
         self.test_tk_version()
 
-        logger.debug("Splash Requirements: %s" % self.splash_requirements)
+        logger.debug("Splash Requirements: %s", self.splash_requirements)
 
         self.__postinit__()
 
@@ -300,7 +300,7 @@ class Splash(Target):
         return False
 
     def assemble(self):
-        logger.info("Building Splash %s" % self.name)
+        logger.info("Building Splash %s", self.name)
 
         # Function to resize a given image to fit into the area defined by max_img_size.
         def _resize_image(_image, _orig_size):
@@ -331,16 +331,14 @@ class Splash(Target):
                 _img.close()
                 _img_resized.close()
                 _image_data = _image_stream.getvalue()
-                logger.info(
-                    "Resized image %s from dimensions %s to (%d, %d)" % (self.image_file, str(_orig_size), _w, _h)
-                )
+                logger.info("Resized image %s from dimensions %s to (%d, %d)", self.image_file, str(_orig_size), _w, _h)
                 return _image_data
             else:
                 raise ValueError(
                     "The splash image dimensions (w: %d, h: %d) exceed max_img_size (w: %d, h:%d), but the image "
                     "cannot be resized due to missing PIL.Image! Either install the Pillow package, adjust the "
-                    "max_img_size, or use an image of compatible dimensions." %
-                    (_orig_size[0], _orig_size[1], self.max_img_size[0], self.max_img_size[1])
+                    "max_img_size, or use an image of compatible dimensions.", _orig_size[0], _orig_size[1],
+                    self.max_img_size[0], self.max_img_size[1]
                 )
 
         # Open image file
@@ -368,11 +366,11 @@ class Splash(Target):
                 img.save(image_data, format='PNG')
                 img.close()
                 image = image_data.getvalue()
-            logger.info("Converted image %s to PNG format" % self.image_file)
+            logger.info("Converted image %s to PNG format", self.image_file)
         else:
             raise ValueError(
                 "The image %s needs to be converted to a PNG file, but PIL.Image is not available! Either install the "
-                "Pillow package, or use a PNG image for you splash screen." % self.image_file
+                "Pillow package, or use a PNG image for you splash screen.", self.image_file
             )
 
         image_file.close()
@@ -396,15 +394,15 @@ class Splash(Target):
         if tcl_version < 8.6 or tk_version < 8.6:
             logger.warning(
                 "The installed Tcl/Tk (%s/%s) version might not work with the splash screen feature of the bootloader. "
-                "The bootloader is tested against Tcl/Tk 8.6" %
-                (self._tkinter_module.TCL_VERSION, self._tkinter_module.TK_VERSION)
+                "The bootloader is tested against Tcl/Tk 8.6", self._tkinter_module.TCL_VERSION,
+                self._tkinter_module.TK_VERSION
             )
 
         # This should be impossible, since tcl/tk is released together with the same version number, but just in case
         if tcl_version != tk_version:
             logger.warning(
                 "The installed version of Tcl (%s) and Tk (%s) do not match. PyInstaller is tested against matching "
-                "versions" % (self._tkinter_module.TCL_VERSION, self._tkinter_module.TK_VERSION)
+                "versions", self._tkinter_module.TCL_VERSION, self._tkinter_module.TK_VERSION
             )
 
         # Ensure that Tcl is built with multi-threading support.
