@@ -921,7 +921,7 @@ def get_bootstrap_modules():
     # Import 'struct' modules to get real paths to module file names.
     mod_struct = __import__('struct')
     # Basic modules necessary for the bootstrap process.
-    loader_mods = TOC()
+    loader_mods = list()
     loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
     # On some platforms (Windows, Debian/Ubuntu) '_struct' and zlib modules are built-in modules (linked statically)
     # and thus does not have attribute __file__. 'struct' module is required for reading Python bytecode from
