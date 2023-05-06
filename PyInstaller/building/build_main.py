@@ -619,7 +619,7 @@ class Analysis(Target):
         self.scripts = self.graph.nodes_to_toc(priority_scripts)
 
         # Extend the binaries list with all the Extensions modulegraph has found.
-        self.binaries = self.graph.make_binaries_toc(self.binaries)
+        self.binaries += self.graph.make_binaries_toc()
 
         # Post-process GLib schemas
         self.datas = compile_glib_schema_files(self.datas, os.path.join(CONF['workpath'], "_pyi_gschema_compilation"))
