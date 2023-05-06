@@ -43,7 +43,6 @@ from copy import deepcopy
 
 from PyInstaller import HOMEPATH, PACKAGEPATH
 from PyInstaller import log as logging
-from PyInstaller.building.datastruct import TOC
 from PyInstaller.building.utils import add_suffix_to_extension
 from PyInstaller.compat import (
     BAD_MODULE_TYPES, BINARY_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT, PURE_PYTHON_MODULE_TYPES, PY3_BASE_MODULES,
@@ -541,9 +540,9 @@ class PyiModuleGraph(ModuleGraph):
                     code_dict[node.identifier] = node.code
         return code_dict
 
-    def _make_toc(self, typecode=None, existing_TOC=None):
+    def _make_toc(self, typecode=None):
         """
-        Return the name, path and type of selected nodes as a TOC, or appended to a TOC. The selection is via a list
+        Return the name, path and type of selected nodes as a TOC. The selection is determined by the given list
         of PyInstaller TOC typecodes. If that list is empty we return the complete flattened graph as a TOC with the
         ModuleGraph note types in place of typecodes -- meant for debugging only. Normally we return ModuleGraph
         nodes whose types map to the requested PyInstaller typecode(s) as indicated in the MODULE_TYPES_TO_TOC_DICT.
@@ -559,16 +558,17 @@ class PyiModuleGraph(ModuleGraph):
         regex_str = '(' + '|'.join(PY3_BASE_MODULES) + r')(\.|$)'
         module_filter = re.compile(regex_str)
 
-        result = existing_TOC or TOC()
+        toc = list()
         for node in self.iter_graph(start=self._top_script_node):
             # Skip modules that are in base_library.zip.
             if module_filter.match(node.identifier):
                 continue
             entry = self._node_to_toc(node, typecode)
+            # Append the entry. We do not check for duplicates here; the TOC normalization is left to caller.
+            # However, as entries are obtained from modulegraph, there should not be any duplicates at this stage.
             if entry is not None:
-                # TOC.append the data. This checks for a pre-existing name and skips it if it exists.
-                result.append(entry)
-        return result
+                toc.append(entry)
+        return toc
 
     def make_pure_toc(self):
         """
@@ -577,11 +577,11 @@ class PyiModuleGraph(ModuleGraph):
         # PyInstaller should handle special module types without code object.
         return self._make_toc(PURE_PYTHON_MODULE_TYPES)
 
-    def make_binaries_toc(self, existing_toc):
+    def make_binaries_toc(self):
         """
         Return all binary Python modules formatted as TOC.
         """
-        return self._make_toc(BINARY_MODULE_TYPES, existing_toc)
+        return self._make_toc(BINARY_MODULE_TYPES)
 
     def make_missing_toc(self):
         """
@@ -624,16 +624,13 @@ class PyiModuleGraph(ModuleGraph):
         toc_type = MODULE_TYPES_TO_TOC_DICT[mg_type]
         return name, path, toc_type
 
-    def nodes_to_toc(self, node_list, existing_TOC=None):
+    def nodes_to_toc(self, nodes):
         """
         Given a list of nodes, create a TOC representing those nodes. This is mainly used to initialize a TOC of
         scripts with the ones that are runtime hooks. The process is almost the same as _make_toc(), but the caller
         guarantees the nodes are valid, so minimal checking.
         """
-        result = existing_TOC or TOC()
-        for node in node_list:
-            result.append(self._node_to_toc(node))
-        return result
+        return [self._node_to_toc(node) for node in nodes]
 
     # Return true if the named item is in the graph as a BuiltinModule node. The passed name is a basename.
     def is_a_builtin(self, name):
