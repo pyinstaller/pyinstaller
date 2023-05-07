@@ -621,6 +621,24 @@ class Analysis(Target):
         # Extend the binaries list with all the Extensions modulegraph has found.
         self.binaries += self.graph.make_binaries_toc()
 
+        # Convert extension module names into full filenames, and append suffix. Ensure that extensions that come from
+        # the lib-dynload are collected into _MEIPASS/lib-dynload instead of directly into _MEIPASS.
+        for idx, (dest, source, typecode) in enumerate(self.binaries):
+            if typecode != 'EXTENSION':
+                continue
+
+            # Convert to full filename and append suffix
+            dest, source, typecode = add_suffix_to_extension(dest, source, typecode)
+
+            # Divert into lib-dyload, if necessary (i.e., if file comes from lib-dynload directory) and its destination
+            # path does not already have a directory prefix.
+            src_parent = os.path.basename(os.path.dirname(source))
+            if src_parent == 'lib-dynload' and not os.path.dirname(os.path.normpath(dest)):
+                dest = os.path.join('lib-dynload', dest)
+
+            # Update
+            self.binaries[idx] = (dest, source, typecode)
+
         # Post-process GLib schemas
         self.datas = compile_glib_schema_files(self.datas, os.path.join(CONF['workpath'], "_pyi_gschema_compilation"))
         self.datas = TOC(self.datas)
@@ -707,24 +725,6 @@ class Analysis(Target):
             # Remove duplicate redirects
             self.binding_redirects[:] = list(set(self.binding_redirects))
             logger.info("Found binding redirects: \n%s", self.binding_redirects)
-
-        # Convert extension module names into full filenames, and append suffix. Ensure that extensions that come from
-        # the lib-dynload are collected into _MEIPASS/lib-dynload instead of directly into _MEIPASS.
-        for idx, (dest, source, typecode) in enumerate(self.binaries):
-            if typecode != 'EXTENSION':
-                continue
-
-            # Convert to full filename and append suffix
-            dest, source, typecode = add_suffix_to_extension(dest, source, typecode)
-
-            # Divert into lib-dyload, if necessary (i.e., if file comes from lib-dynload directory) and its destination
-            # path does not already have a directory prefix.
-            src_parent = os.path.basename(os.path.dirname(source))
-            if src_parent == 'lib-dynload' and not os.path.dirname(os.path.normpath(dest)):
-                dest = os.path.join('lib-dynload', dest)
-
-            # Update
-            self.binaries[idx] = (dest, source, typecode)
 
         # Write warnings about missing modules.
         self._write_warnings()
