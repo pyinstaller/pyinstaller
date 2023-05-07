@@ -293,3 +293,15 @@ class Tree(Target, list):
                 else:
                     result.append((resfilename, fullfilename, self.typecode))
         self[:] = result
+
+
+def normalize_toc(toc):
+    # TODO: for now, this is a stub using TOC class. Replace it with priority-based de-duplication.
+    normalized_toc = TOC(toc)
+    return list(normalized_toc)
+
+
+def normalize_pyz_toc(toc):
+    # TODO: for now, this is a stub using TOC class. Replace it with priority-based de-duplication.
+    normalized_toc = TOC(toc)
+    return list(normalized_toc)

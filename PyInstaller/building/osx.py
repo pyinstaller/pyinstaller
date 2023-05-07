@@ -14,7 +14,7 @@ import plistlib
 import shutil
 
 from PyInstaller.building.api import COLLECT, EXE
-from PyInstaller.building.datastruct import TOC, Target, logger
+from PyInstaller.building.datastruct import Target, logger, normalize_toc
 from PyInstaller.building.utils import _check_path_overlap, _rmtree, checkCache
 from PyInstaller.compat import is_darwin
 from PyInstaller.building.icon import normalize_icon_type
@@ -53,7 +53,7 @@ class BUNDLE(Target):
 
         self.appname = os.path.splitext(base_name)[0]
         self.version = kwargs.get("version", "0.0.0")
-        self.toc = TOC()
+        self.toc = []
         self.strip = False
         self.upx = False
         self.console = True
@@ -108,6 +108,9 @@ class BUNDLE(Target):
                 break
         else:
             raise ValueError("No EXECUTABLE entry found in the TOC!")
+
+        # Normalize TOC
+        self.toc = normalize_toc(self.toc)
 
         self.__postinit__()
 
