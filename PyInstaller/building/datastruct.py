@@ -146,7 +146,7 @@ class Target:
         self.__class__.invcnum += 1
         self.tocfilename = os.path.join(CONF['workpath'], '%s-%02d.toc' % (self.__class__.__name__, self.invcnum))
         self.tocbasename = os.path.basename(self.tocfilename)
-        self.dependencies = TOC()
+        self.dependencies = []
 
     def __postinit__(self):
         """
@@ -198,9 +198,9 @@ class Target:
         misc.save_py_data_struct(self.tocfilename, data)
 
 
-class Tree(Target, TOC):
+class Tree(Target, list):
     """
-    This class is a way of creating a TOC (Table of Contents) that describes some or all of the files within a
+    This class is a way of creating a TOC (Table of Contents) list that describes some or all of the files within a
     directory.
     """
     def __init__(self, root=None, prefix=None, excludes=None, typecode='DATA'):
@@ -221,7 +221,7 @@ class Tree(Target, TOC):
                 the typcodes.
         """
         Target.__init__(self)
-        TOC.__init__(self)
+        list.__init__(self)
         self.root = root
         self.prefix = prefix
         self.excludes = excludes
