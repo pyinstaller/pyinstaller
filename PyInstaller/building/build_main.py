@@ -711,8 +711,15 @@ class Analysis(Target):
         # Normalize list of pure-python modules (these will end up in PYZ archive, so use specific normalization).
         self.pure = normalize_pyz_toc(self.pure)
 
-        # And get references to module code objects constructed by ModuleGraph to avoid writing .pyc files to hdd.
-        self.pure._code_cache = code_cache
+        # Associate the `pure` TOC list instance with code cache in the global `CONF`; this is used by `PYZ` writer
+        # to obtain modules' code from cache instead
+        #
+        # (NOTE: back when `pure` was an instance of `TOC` class, the code object was passed by adding an attribute
+        # to the `pure` itself; now that `pure` is plain `list`, we cannot do that anymore. But the association via
+        # object ID should have the same semantics as the added attribute).
+        from PyInstaller.config import CONF
+        global_code_cache_map = CONF['code_cache']
+        global_code_cache_map[id(self.pure)] = code_cache
 
         # Add remaining binary dependencies - analyze Python C-extensions and what DLLs they depend on.
         #
@@ -860,6 +867,8 @@ def build(spec, distpath, workpath, clean_build):
     CONF['warnfile'] = os.path.join(workpath, 'warn-%s.txt' % CONF['specnm'])
     CONF['dot-file'] = os.path.join(workpath, 'graph-%s.dot' % CONF['specnm'])
     CONF['xref-file'] = os.path.join(workpath, 'xref-%s.html' % CONF['specnm'])
+
+    CONF['code_cache'] = dict()
 
     # Clean PyInstaller cache (CONF['cachedir']) and temporary files (workpath) to be able start a clean build.
     if clean_build:

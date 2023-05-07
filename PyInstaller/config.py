@@ -44,6 +44,8 @@ upx_dir
 workpath
 
 tests_modgraph  - cached PyiModuleGraph object to speed up tests
+
+code_cache - dictionary associating `Analysis.pure` list instances with code cache dictionaries. Used by PYZ writer.
 """
 
 # NOTE: Do not import other PyInstaller modules here. Just define constants here.
