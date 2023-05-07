@@ -16,10 +16,10 @@ importlib_resources==5.12.0; python_version < '3.9'
 # -------
 # These packages work with no (known) issues.
 babel==2.12.1
-Django==4.2; python_version >= '3.8'
+Django==4.2.1; python_version >= '3.8'
 future==0.18.3
 gevent==22.10.2
-ipython==8.13.1; python_version >= '3.9'
+ipython==8.13.2; python_version >= '3.9'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==23.13.1; sys_platform != 'darwin' or python_version >= '3.8.7'
@@ -38,7 +38,7 @@ PyQtChart==5.15.6
 PyQtDataVisualization==5.15.5
 PyQtNetworkAuth==5.15.5
 PyQtPurchasing==5.15.5
-QScintilla==2.13.4
+QScintilla==2.14.0
 PyQtWebEngine==5.15.6
 # PyQt6 and add-on packages
 PyQt6==6.5.0
@@ -46,17 +46,17 @@ PyQt6-3D==6.5.0
 PyQt6-Charts==6.5.0
 PyQt6-DataVisualization==6.5.0
 PyQt6-NetworkAuth==6.5.0
-PyQt6-QScintilla==2.13.4
+PyQt6-QScintilla==2.14.0
 PyQt6-WebEngine==6.5.0
 python-dateutil==2.8.2
 pytz==2023.3
-requests==2.29.0
+requests==2.30.0
 scipy==1.10.1; python_version >= '3.8'
 # simplejson is used for text_c_extension
 simplejson==3.19.1
 sphinx==7.0.0;  python_version >= '3.8'
 # Required for test_namespace_package
-sqlalchemy==2.0.11
+sqlalchemy==2.0.12
 zope.interface==6.0
 Pillow==9.5.0
 
