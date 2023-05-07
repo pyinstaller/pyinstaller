@@ -26,7 +26,7 @@ from PyInstaller import DEFAULT_DISTPATH, DEFAULT_WORKPATH, HOMEPATH, compat
 from PyInstaller import log as logging
 from PyInstaller.archive import pyz_crypto
 from PyInstaller.building.api import COLLECT, EXE, MERGE, PYZ
-from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq
+from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq, normalize_toc, normalize_pyz_toc
 from PyInstaller.building.osx import BUNDLE
 from PyInstaller.building.splash import Splash
 from PyInstaller.building.toc_conversion import DependencyProcessor
@@ -255,7 +255,7 @@ class Analysis(Target):
     """
     Class that performs analysis of the user's main Python scripts.
 
-    An Analysis has five outputs, all TOCs (Table of Contents) accessed as attributes of the analysis.
+    An Analysis has five outputs, all TOC (Table of lists Contents) accessed as attributes of the analysis.
 
     scripts
             The scripts you gave Analysis as input, with any runtime hook scripts prepended.
@@ -397,13 +397,13 @@ class Analysis(Target):
             self.hiddenimports.append('tinyaes')
 
         self.excludes = excludes or []
-        self.scripts = TOC()
-        self.pure = TOC()
-        self.binaries = TOC()
-        self.zipfiles = TOC()
-        self.zipped_data = TOC()
-        self.datas = TOC()
-        self.dependencies = TOC()
+        self.scripts = []
+        self.pure = []
+        self.binaries = []
+        self.zipfiles = []
+        self.zipped_data = []
+        self.datas = []
+        self.dependencies = []
         self.binding_redirects = CONF['binding_redirects'] = []
         self.win_no_prefer_redirects = win_no_prefer_redirects
         self.win_private_assemblies = win_private_assemblies
@@ -412,14 +412,18 @@ class Analysis(Target):
         self.module_collection_mode = module_collection_mode or {}
 
         # Initialize 'binaries' and 'datas' with lists specified in .spec file.
+        # Ensure the lists are normalized before guts comparison.
         if binaries:
             logger.info("Appending 'binaries' from .spec")
             for name, pth in format_binaries_and_datas(binaries, workingdir=spec_dir):
                 self.binaries.append((name, pth, 'BINARY'))
+            self.binaries = normalize_toc(self.binaries)
+
         if datas:
             logger.info("Appending 'datas' from .spec")
             for name, pth in format_binaries_and_datas(datas, workingdir=spec_dir):
                 self.datas.append((name, pth, 'DATA'))
+            self.datas = normalize_toc(self.datas)
 
         self.__postinit__()
 
@@ -486,13 +490,14 @@ class Analysis(Target):
                 logger.info("Building because %s changed", filename)
                 return True
         # Now we know that none of the input parameters and none of the input files has changed. So take the values
-        # calculated resp. analysed in the last run and store them in `self`.
-        self.scripts = TOC(data['scripts'])
-        self.pure = TOC(data['pure'])
-        self.binaries = TOC(data['binaries'])
-        self.zipfiles = TOC(data['zipfiles'])
-        self.zipped_data = TOC(data['zipped_data'])
-        self.datas = TOC(data['datas'])
+        # that were calculated / analyzed in the last run and store them in `self`. These TOC lists should already
+        # be normalized.
+        self.scripts = data['scripts']
+        self.pure = data['pure']
+        self.binaries = data['binaries']
+        self.zipfiles = data['zipfiles']
+        self.zipped_data = data['zipped_data']
+        self.datas = data['datas']
 
         # Store previously found binding redirects in CONF for later use by PKG/COLLECT
         from PyInstaller.config import CONF
@@ -517,7 +522,7 @@ class Analysis(Target):
         libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
         create_py3_base_library(libzip_filename, graph=self.graph)
         # Bundle base_library.zip as data file.
-        # Data format of TOC item:   ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
+        # Data format of TOC item: ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
         self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
 
         # Expand sys.path of module graph. The attribute is the set of paths to use for imports: sys.path, plus our
@@ -583,9 +588,11 @@ class Analysis(Target):
 
         # Update 'binaries' TOC and 'datas' TOC.
         deps_proc = DependencyProcessor(self.graph, self.graph._additional_files_cache)
+
         self.binaries.extend(deps_proc.make_binaries_toc())
         self.datas.extend(deps_proc.make_datas_toc())
-        self.zipped_data.extend(deps_proc.make_zipped_data_toc())
+
+        self.zipped_data = deps_proc.make_zipped_data_toc()  # Already normalized
         # Note: zipped eggs are collected below
 
         # -- Look for dlls that are imported by Python 'ctypes' module. --
@@ -617,6 +624,7 @@ class Analysis(Target):
 
         # Initialize the scripts list with priority scripts in the proper order.
         self.scripts = self.graph.nodes_to_toc(priority_scripts)
+        self.scripts = normalize_toc(self.scripts)  # Should not really contain duplicates, but just in case...
 
         # Extend the binaries list with all the Extensions modulegraph has found.
         self.binaries += self.graph.make_binaries_toc()
@@ -639,9 +647,13 @@ class Analysis(Target):
             # Update
             self.binaries[idx] = (dest, source, typecode)
 
+        # Perform initial normalization of `datas` and `binaries`
+        self.datas = normalize_toc(self.datas)
+        self.binaries = normalize_toc(self.binaries)
+
         # Post-process GLib schemas
         self.datas = compile_glib_schema_files(self.datas, os.path.join(CONF['workpath'], "_pyi_gschema_compilation"))
-        self.datas = TOC(self.datas)
+        self.datas = normalize_toc(self.datas)
 
         # Process the pure-python modules list. Depending on the collection mode, these entries end up either in "pure"
         # list for collection into the PYZ archive, or in the "datas" list for collection as external data files.
@@ -696,6 +708,9 @@ class Analysis(Target):
 
                 self.datas.append((dest_path, obj_path, "DATA"))
 
+        # Normalize list of pure-python modules (these will end up in PYZ archive, so use specific normalization).
+        self.pure = normalize_pyz_toc(self.pure)
+
         # And get references to module code objects constructed by ModuleGraph to avoid writing .pyc files to hdd.
         self.pure._code_cache = code_cache
 
@@ -711,19 +726,23 @@ class Analysis(Target):
 
         collected_packages = self.graph.get_collected_packages()
         self.binaries.extend(
-            isolated.call(find_binary_dependencies, list(self.binaries), self.binding_redirects, collected_packages)
+            isolated.call(find_binary_dependencies, self.binaries, self.binding_redirects, collected_packages)
         )
 
         # Include zipped Python eggs.
         logger.info('Looking for eggs')
-        self.zipfiles.extend(deps_proc.make_zipfiles_toc())
+        self.zipfiles = deps_proc.make_zipfiles_toc()  # Already normalized
+
+        # Final normalization of datas and binaries
+        self.datas = normalize_toc(self.datas)
+        self.binaries = normalize_toc(self.binaries)
 
         # Verify that Python dynamic library can be found. Without dynamic Python library PyInstaller cannot continue.
         self._check_python_library(self.binaries)
 
         if is_win:
             # Remove duplicate redirects
-            self.binding_redirects[:] = list(set(self.binding_redirects))
+            self.binding_redirects = list(set(self.binding_redirects))
             logger.info("Found binding redirects: \n%s", self.binding_redirects)
 
         # Write warnings about missing modules.
@@ -876,7 +895,7 @@ def build(spec, distpath, workpath, clean_build):
         'WARNFILE': CONF['warnfile'],
         'workpath': CONF['workpath'],
         # PyInstaller classes for .spec.
-        'TOC': TOC,
+        'TOC': TOC,  # Kept for backward compatibility even though `TOC` class is deprecated.
         'Analysis': Analysis,
         'BUNDLE': BUNDLE,
         'COLLECT': COLLECT,
