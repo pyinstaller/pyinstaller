@@ -15,7 +15,7 @@ import zipfile
 import pkg_resources
 
 from PyInstaller import log as logging
-from PyInstaller.building.datastruct import TOC, Tree
+from PyInstaller.building.datastruct import Tree, normalize_toc
 from PyInstaller.compat import ALL_SUFFIXES
 from PyInstaller.depend.utils import get_path_to_egg
 
@@ -97,11 +97,11 @@ class DependencyProcessor:
     # Public methods.
 
     def make_binaries_toc(self):
-        # TODO create a real TOC when handling of more files is added.
-        return [(x, y, 'BINARY') for x, y in self._binaries]
+        toc = [(x, y, 'BINARY') for x, y in self._binaries]
+        return normalize_toc(toc)
 
     def make_datas_toc(self):
-        toc = TOC((x, y, 'DATA') for x, y in self._datas)
+        toc = [(x, y, 'DATA') for x, y in self._datas]
         for dist in self._distributions:
             if (
                 dist._pyinstaller_info['egg'] and not dist._pyinstaller_info['zipped']
@@ -110,7 +110,7 @@ class DependencyProcessor:
                 # this is a un-zipped, not-zip-safe egg
                 tree = Tree(dist.location, excludes=PY_IGNORE_EXTENSIONS)
                 toc.extend(tree)
-        return toc
+        return normalize_toc(toc)
 
     def make_zipfiles_toc(self):
         # TODO create a real TOC when handling of more files is added.
@@ -119,7 +119,7 @@ class DependencyProcessor:
             if dist._pyinstaller_info['zipped'] and not dist._pyinstaller_info['egg']:
                 # Hmm, this should never happen as normal zip-files are not associated with a distribution, are they?
                 toc.append(("eggs/" + os.path.basename(dist.location), dist.location, 'ZIPFILE'))
-        return toc
+        return normalize_toc(toc)
 
     @staticmethod
     def __collect_data_files_from_zip(zipfilename):
@@ -138,7 +138,7 @@ class DependencyProcessor:
         return Tree(workpath, excludes=PY_IGNORE_EXTENSIONS)
 
     def make_zipped_data_toc(self):
-        toc = TOC()
+        toc = []
         logger.debug('Looking for egg data files...')
         for dist in self._distributions:
             if dist._pyinstaller_info['egg']:
@@ -153,4 +153,4 @@ class DependencyProcessor:
                 else:
                     # this is an un-zipped, not-zip-safe egg, handled in make_datas_toc()
                     pass
-        return toc
+        return normalize_toc(toc)
