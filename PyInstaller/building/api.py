@@ -106,7 +106,11 @@ class PYZ(Target):
         self.toc = []
         self.code_dict = {}
         for toc in tocs:
-            self.code_dict.update(getattr(toc, '_code_cache', {}))
+            # Check if code cache association exists for the given TOC list
+            code_cache = CONF['code_cache'].get(id(toc))
+            if code_cache is not None:
+                self.code_dict.update(code_cache)
+
             for entry in toc:
                 name, _, typecode = entry
                 # PYZ expects PYMODULE entries (python code objects) and DATA entries (data collected from zipped eggs).
