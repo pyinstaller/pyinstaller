@@ -589,12 +589,16 @@ _check_strict_unpack_mode ()
     static int enabled = -1;
     if (enabled == -1) {
         char *env_strict = pyi_getenv("PYINSTALLER_STRICT_UNPACK_MODE"); /* strdup'd copy or NULL */
-        if (strcmp(env_strict, "0") == 0) {
-            enabled = 0;
+        if (env_strict) {
+            if (strcmp(env_strict, "0") == 0) {
+                enabled = 0;
+            } else {
+                enabled = 1;
+            }
+            free(env_strict);
         } else {
-            enabled = 1;
+            enabled = 0;
         }
-        free(env_strict);
     }
     return enabled;
 }

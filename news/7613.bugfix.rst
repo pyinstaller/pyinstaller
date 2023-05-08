@@ -1,0 +1,3 @@
+Fix a regression in bootloader that caused crash in onefile executables
+when encountering a duplicated entry in the PKG/CArchive and the
+``PYINSTALLER_STRICT_UNPACK_MODE`` environment variable not being set.
