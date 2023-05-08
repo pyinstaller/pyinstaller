@@ -12,6 +12,7 @@ import io
 import os
 import re
 import struct
+import pathlib
 
 from PyInstaller import log as logging
 from PyInstaller.archive.writers import SplashWriter
@@ -186,7 +187,8 @@ class Splash(Target):
             )
 
         # Calculated / analysed values
-        self.uses_tkinter = self._uses_tkinter(binaries)
+        self.uses_tkinter = self._uses_tkinter(self._tkinter_file, binaries)
+        logger.debug("Program uses tkinter: %r", self.uses_tkinter)
         self.script = self.generate_script()
         self.tcl_lib, self.tk_lib = tcltk_utils.find_tcl_tk_shared_libs(self._tkinter_file)
         if is_darwin:
@@ -448,9 +450,14 @@ class Splash(Target):
         return script
 
     @staticmethod
-    def _uses_tkinter(binaries):
-        # Test for _tkinter instead of tkinter, because a user might use a different wrapping library for tk.
-        return '_tkinter' in binaries.filenames
+    def _uses_tkinter(tkinter_file, binaries):
+        # Test for _tkinter extension instead of tkinter module, because user might use a different wrapping library for
+        # Tk. Use `pathlib.PurePath˙ in comparisons to account for case normalization and separator normalization.
+        tkinter_file = pathlib.PurePath(tkinter_file)
+        for dest_name, src_name, typecode in binaries:
+            if pathlib.PurePath(src_name) == tkinter_file:
+                return True
+        return False
 
     @staticmethod
     def _find_rundir(structure):
