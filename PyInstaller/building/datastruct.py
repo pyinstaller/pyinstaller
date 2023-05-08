@@ -10,6 +10,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import pathlib
 
 from PyInstaller import log as logging
 from PyInstaller.building.utils import _check_guts_eq
@@ -296,12 +297,55 @@ class Tree(Target, list):
 
 
 def normalize_toc(toc):
-    # TODO: for now, this is a stub using TOC class. Replace it with priority-based de-duplication.
-    normalized_toc = TOC(toc)
-    return list(normalized_toc)
+    # Default priority: 0
+    _TOC_TYPE_PRIORITIES = {
+        # DEPENDENCY entries need to replace original entries, so they need the highest priority.
+        'DEPENDENCY': 2,
+        # BINARY/EXTENSION entries undergo additional processing, so give them precedence over DATA and other entries.
+        'BINARY': 1,
+        'EXTENSION': 1,
+    }
+
+    def _type_case_normalization_fcn(typecode):
+        # Case-normalize all entries except OPTION.
+        return typecode not in {
+            "OPTION",
+        }
+
+    return _normalize_toc(toc, _TOC_TYPE_PRIORITIES, _type_case_normalization_fcn)
 
 
 def normalize_pyz_toc(toc):
-    # TODO: for now, this is a stub using TOC class. Replace it with priority-based de-duplication.
-    normalized_toc = TOC(toc)
-    return list(normalized_toc)
+    # Default priority: 0
+    _TOC_TYPE_PRIORITIES = {
+        # Ensure that modules are never shadowed by PYZ-embedded data files.
+        'PYMODULE': 1,
+    }
+
+    return _normalize_toc(toc, _TOC_TYPE_PRIORITIES)
+
+
+def _normalize_toc(toc, toc_type_priorities, type_case_normalization_fcn=lambda typecode: False):
+    tmp_toc = dict()
+    for entry in toc:
+        dest_name, src_name, typecode = entry
+
+        # Normalize the destination name for uniqueness. Use `pathlib.PurePath` to ensure that keys are both
+        # case-normalized (on OSes where applicable) and directory-separator normalized (just in case).
+        if type_case_normalization_fcn(typecode):
+            entry_key = pathlib.PurePath(dest_name)
+        else:
+            entry_key = dest_name
+
+        existing_entry = tmp_toc.get(entry_key)
+        if existing_entry is None:
+            # Entry does not exist - insert
+            tmp_toc[entry_key] = entry
+        else:
+            # Entry already exists - replace if its typecode has higher priority
+            _, _, existing_typecode = existing_entry
+            if toc_type_priorities.get(typecode, 0) > toc_type_priorities.get(existing_typecode, 0):
+                tmp_toc[entry_key] = entry
+
+    # Return the items as list. The order matches the original order due to python dict maintaining the insertion order.
+    return list(tmp_toc.values())
