@@ -33,7 +33,8 @@ def test_issue_2492(monkeypatch, tmpdir):
             'dot-file': str(tmpdir.join('imports.dot')),
             'xref-file': str(tmpdir.join('imports.xref')),
             'hiddenimports': [],
-            'specnm': 'issue_2492_script'
+            'specnm': 'issue_2492_script',
+            'code_cache': dict(),
         }
     )
     # Speedup: avoid analyzing base_library.zip
@@ -87,7 +88,8 @@ def test_issue_5131(monkeypatch, tmpdir):
             'dot-file': str(tmpdir.join('imports.dot')),
             'xref-file': str(tmpdir.join('imports.xref')),
             'hiddenimports': [],
-            'specnm': 'issue_5131_script'
+            'specnm': 'issue_5131_script',
+            'code_cache': dict(),
         }
     )
     # Speedup: avoid analyzing base_library.zip
