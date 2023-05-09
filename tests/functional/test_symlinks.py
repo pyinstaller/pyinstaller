@@ -119,6 +119,28 @@ def test_symlinks__samedir__orig_elsewhere(tmpdir, script_dir, pyi_builder):
     )
 
 
+# Collect symbolic link and original file; collect original multiple times, in original and alternative locations.
+def test_symlinks__samedir__orig_multiple(tmpdir, script_dir, pyi_builder):
+    # Create test data
+    _create_data(tmpdir, 'orig_file.txt', 'linked_file.txt')
+
+    # Collect only symbolic link
+    data_dir = os.path.join(tmpdir, 'data')
+    add_data_args = [
+        '--add-data', os.path.join(data_dir, 'orig_file.txt') + os.pathsep + 'data3',
+        '--add-data', os.path.join(data_dir, 'orig_file.txt') + os.pathsep + 'data',
+        '--add-data', os.path.join(data_dir, 'orig_file.txt') + os.pathsep + 'data2',
+        '--add-data', os.path.join(data_dir, 'linked_file.txt') + os.pathsep + 'data',
+    ]  # yapf: disable
+
+    # Run test script in 'samedir' mode
+    pyi_builder.test_script(
+        os.path.join(str(script_dir), 'pyi_symlinks_test.py'),
+        pyi_args=add_data_args,
+        app_args=['samedir'],
+    )
+
+
 # Test symbolic link pointing to a subdirectory
 def test_symlinks__subdir__wholedir(tmpdir, script_dir, pyi_builder):
     # Create test data
