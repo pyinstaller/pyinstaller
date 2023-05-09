@@ -1,0 +1,5 @@
+The ``TOC`` class is now deprecated; use a plain ``list`` with the same
+three-element tuples instead. PyInstaller now performs explicit
+normalization (i.e., entry de-duplication) of the TOC lists passed
+to the build targets (e.g., ``PYZ``, ``EXE``, ``COLLECT``) during their
+instantiation.
