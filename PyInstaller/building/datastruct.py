@@ -375,6 +375,18 @@ def toc_process_symbolic_links(toc):
     new_toc = []
     for entry in toc:
         dest_name, src_name, typecode = entry
+
+        # Skip entries that are already symbolic links
+        if typecode == 'SYMLINK':
+            new_toc.append(entry)
+            continue
+
+        # Skip entries without valid source name (e.g., OPTION)
+        if not src_name:
+            new_toc.append(entry)
+            continue
+
+        # Source path is not a symbolic link (i.e., it is a regular file or directory)
         if not os.path.islink(src_name):
             new_toc.append(entry)
             continue
