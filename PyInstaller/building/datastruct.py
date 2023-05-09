@@ -370,7 +370,7 @@ def toc_process_symbolic_links(toc):
     Process TOC entries and replace entries whose files are symbolic links with SYMLINK entries (provided original file
     is also being collected).
     """
-    all_source_files = {src_name for dest_name, src_name, typecode in toc}
+    all_source_files = {src_name: dest_name for dest_name, src_name, typecode in toc}
 
     new_toc = []
     for entry in toc:
@@ -400,13 +400,24 @@ def toc_process_symbolic_links(toc):
             new_toc.append(entry)
             continue
 
+        # Check if we are going to collect the original file.
         orig_file = os.path.join(os.path.dirname(src_name), symlink_target)
         orig_file = os.path.normpath(orig_file)  # remove any '..'
-        if orig_file in all_source_files:
-            # We are also collecting the original source file; add this entry as SYMLINK.
-            new_toc.append((dest_name, symlink_target, "SYMLINK"))
-        else:
-            # We are not collecting the original; make a hard-copy.
+
+        orig_file_dest = all_source_files.get(orig_file, None)
+        if not orig_file_dest:
+            # We are not going to collect the original; make a hard-copy.
             new_toc.append(entry)
+            continue
+
+        # The path relation between collected symbolic link and collected original file must also be preserved (although
+        # we could readjust it here).
+        target_relation = os.path.relpath(orig_file_dest, os.path.dirname(dest_name))
+        if symlink_target != target_relation:
+            # The relationship between collected files is not preserved; make a hard copy.
+            new_toc.append(entry)
+            continue
+
+        new_toc.append((dest_name, symlink_target, "SYMLINK"))
 
     return new_toc
