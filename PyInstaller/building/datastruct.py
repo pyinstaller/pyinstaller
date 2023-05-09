@@ -12,6 +12,7 @@
 import os
 import pathlib
 import warnings
+import collections
 
 from PyInstaller import log as logging
 from PyInstaller.building.utils import _check_guts_eq
@@ -370,8 +371,14 @@ def toc_process_symbolic_links(toc):
     Process TOC entries and replace entries whose files are symbolic links with SYMLINK entries (provided original file
     is also being collected).
     """
-    all_source_files = {src_name: dest_name for dest_name, src_name, typecode in toc}
+    # Create an src_name -> [dest_name1, dest_name2, ...] mapping of all collected files (account for possibility that a
+    # file might be collected multiple times).
+    all_source_files = collections.defaultdict(lambda: [])
+    for dest_name, src_name, typecode in toc:
+        all_source_files[src_name].append(dest_name)
+    all_source_files.default_factory = None
 
+    # Process the TOC to create SYMLINK entries
     new_toc = []
     for entry in toc:
         dest_name, src_name, typecode = entry
@@ -404,16 +411,18 @@ def toc_process_symbolic_links(toc):
         orig_file = os.path.join(os.path.dirname(src_name), symlink_target)
         orig_file = os.path.normpath(orig_file)  # remove any '..'
 
-        orig_file_dest = all_source_files.get(orig_file, None)
-        if not orig_file_dest:
+        orig_file_dests = all_source_files.get(orig_file, None)
+        if not orig_file_dests:
             # We are not going to collect the original; make a hard-copy.
             new_toc.append(entry)
             continue
 
         # The path relation between collected symbolic link and collected original file must also be preserved (although
         # we could readjust it here).
-        target_relation = os.path.relpath(orig_file_dest, os.path.dirname(dest_name))
-        if symlink_target != target_relation:
+        target_relations = [
+            os.path.relpath(orig_file_dest, os.path.dirname(dest_name)) for orig_file_dest in orig_file_dests
+        ]
+        if not any([symlink_target == target_relation for target_relation in target_relations]):
             # The relationship between collected files is not preserved; make a hard copy.
             new_toc.append(entry)
             continue
