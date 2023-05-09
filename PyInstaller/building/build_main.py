@@ -25,7 +25,9 @@ import sys
 from PyInstaller import DEFAULT_DISTPATH, DEFAULT_WORKPATH, HOMEPATH, compat
 from PyInstaller import log as logging
 from PyInstaller.building.api import COLLECT, EXE, MERGE, PYZ
-from PyInstaller.building.datastruct import TOC, Target, Tree, _check_guts_eq, normalize_toc, normalize_pyz_toc
+from PyInstaller.building.datastruct import (
+    TOC, Target, Tree, _check_guts_eq, normalize_toc, normalize_pyz_toc, toc_process_symbolic_links
+)
 from PyInstaller.building.osx import BUNDLE
 from PyInstaller.building.splash import Splash
 from PyInstaller.building.toc_conversion import DependencyProcessor
@@ -745,9 +747,21 @@ class Analysis(Target):
         logger.info('Looking for eggs')
         self.zipfiles = deps_proc.make_zipfiles_toc()  # Already normalized
 
-        # Final normalization of datas and binaries
-        self.datas = normalize_toc(self.datas)
-        self.binaries = normalize_toc(self.binaries)
+        # Final normalization of `datas` and `binaries`:
+        #  - normalize both TOCs together (to avoid having duplicates across the lists)
+        #  - process the combined normalized TOC for symlinks
+        #  - split back into `binaries` (BINARY, EXTENSION) and `datas` (everything else)
+        combined_toc = normalize_toc(self.datas + self.binaries)
+        combined_toc = toc_process_symbolic_links(combined_toc)
+
+        self.datas = []
+        self.binaries = []
+        for entry in combined_toc:
+            dest_name, src_name, typecode = entry
+            if typecode in {'BINARY', 'EXTENSION'}:
+                self.binaries.append(entry)
+            else:
+                self.datas.append(entry)
 
         # Verify that Python dynamic library can be found. Without dynamic Python library PyInstaller cannot continue.
         self._check_python_library(self.binaries)

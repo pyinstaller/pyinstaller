@@ -170,7 +170,8 @@ class PKG(Target):
         'ZIPFILE': 'Z',
         'EXECUTABLE': 'b',
         'DEPENDENCY': 'd',
-        'SPLASH': 'l'
+        'SPLASH': 'l',
+        'SYMLINK': 'n',
     }
 
     def __init__(
@@ -228,7 +229,9 @@ class PKG(Target):
                 'PYMODULE': COMPRESSED,
                 'SPLASH': COMPRESSED,
                 # Do not compress PYZ as a whole, as it contains individually-compressed modules.
-                'PYZ': UNCOMPRESSED
+                'PYZ': UNCOMPRESSED,
+                # Do not compress target names in symbolic links.
+                'SYMLINK': UNCOMPRESSED,
             }
 
         self.__postinit__()
@@ -255,8 +258,9 @@ class PKG(Target):
 
         for dest_name, src_name, typecode in self.toc:
             # Ensure that the source file exists, if necessary. Skip the check for OPTION entries, where 'src_name' is
-            # None. Also skip DEPENDENCY entries due to special contents of 'dest_name' and/or 'src_name'.
-            if typecode not in ('OPTION', 'DEPENDENCY') and not os.path.exists(src_name):
+            # None. Also skip DEPENDENCY entries due to special contents of 'dest_name' and/or 'src_name'. Same for the
+            # SYMLINK entries, where 'src_name' is relative target name for symbolic link.
+            if typecode not in {'OPTION', 'DEPENDENCY', 'SYMLINK'} and not os.path.exists(src_name):
                 # If file is contained within python egg, it will be added with the egg.
                 if not is_path_to_egg(src_name):
                     if strict_collect_mode:
@@ -309,7 +313,7 @@ class PKG(Target):
                 # Collect python script and modules in a TOC that will not be sorted.
                 bootstrap_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
             else:
-                # PYZ, PKG, DEPENDENCY, SPLASH
+                # PYZ, PKG, DEPENDENCY, SPLASH, SYMLINK
                 archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
@@ -938,8 +942,9 @@ class COLLECT(Target):
         logger.info("Building COLLECT %s", self.tocbasename)
         for dest_name, src_name, typecode in self.toc:
             # Ensure that the source file exists, if necessary. Skip the check for DEPENDENCY entries due to special
-            # contents of 'dest_name' and/or 'src_name'.
-            if typecode != 'DEPENDENCY' and not os.path.exists(src_name):
+            # contents of 'dest_name' and/or 'src_name'. Same for the SYMLINK entries, where 'src_name' is relative
+            # target name for symbolic link.
+            if typecode not in {'DEPENDENCY', 'SYMLINK'} and not os.path.exists(src_name):
                 # If file is contained within python egg, it will be added with the egg.
                 if not is_path_to_egg(src_name):
                     if strict_collect_mode:
@@ -976,7 +981,9 @@ class COLLECT(Target):
                     entitlements_file=self.entitlements_file,
                     strict_arch_validation=(typecode == 'EXTENSION'),
                 )
-            if typecode != 'DEPENDENCY':
+            if typecode == 'SYMLINK':
+                os.symlink(src_name, dest_path)  # Create link at dest_path, pointing at (relative) src_name
+            elif typecode != 'DEPENDENCY':
                 # At this point, `src_name` should be a valid file.
                 if not os.path.isfile(src_name):
                     raise ValueError(f"Resource {src_name!r} is not a valid file!")
