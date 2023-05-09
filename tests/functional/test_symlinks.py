@@ -11,6 +11,10 @@
 
 import os
 
+import pytest
+
+from PyInstaller.compat import is_win
+
 
 def _create_data(tmpdir, orig_filename, link_filename):
     # Create data directory
@@ -26,7 +30,14 @@ def _create_data(tmpdir, orig_filename, link_filename):
     abs_linked_filename = os.path.join(data_path, link_filename)
     os.makedirs(os.path.dirname(abs_linked_filename), exist_ok=True)
     rel_orig_filename = os.path.relpath(abs_orig_filename, os.path.dirname(abs_linked_filename))
-    os.symlink(rel_orig_filename, abs_linked_filename)
+
+    try:
+        os.symlink(rel_orig_filename, abs_linked_filename)
+    except OSError:
+        if is_win:
+            pytest.skip("OS does not support creation of symbolic links.")
+        else:
+            raise
 
 
 # Collect both symbolic link and file
