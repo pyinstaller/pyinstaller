@@ -11,6 +11,7 @@
 
 import os
 import pathlib
+import warnings
 
 from PyInstaller import log as logging
 from PyInstaller.building.utils import _check_guts_eq
@@ -38,8 +39,9 @@ def unique_name(entry):
     return name
 
 
+# This class is deprecated and has been replaced by plain lists with explicit normalization (de-duplication) via
+# `normalize_toc` and `normalize_pyz_toc` helper functions.
 class TOC(list):
-    # TODO: simplify the representation and use directly Modulegraph objects.
     """
     TOC (Table of Contents) class is a list of tuples of the form (name, path, typecode).
 
@@ -59,6 +61,14 @@ class TOC(list):
     """
     def __init__(self, initlist=None):
         super().__init__()
+
+        # Deprecation warning
+        warnings.warn(
+            "TOC class is deprecated. Use a plain list of 3-element tuples instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         self.filenames = set()
         if initlist:
             for entry in initlist:

@@ -29,6 +29,9 @@ ELEMS2 = (
 
 ELEMS3 = (('PIL.Image.py', '/usr/lib/python2.7/encodings/__init__.py', 'PYMODULE'),)
 
+# Ignore deprecation warnings for the TOC class
+pytestmark = pytest.mark.filterwarnings("ignore:TOC class is deprecated.")
+
 
 def test_init_empty():
     toc = TOC()
