@@ -186,6 +186,12 @@ class BUNDLE(Target):
         links = []
         _QT_BASE_PATH = {'PySide2', 'PySide6', 'PyQt5', 'PySide6'}
         for dest_name, src_name, typecode in self.toc:
+            # Skip the processing of SYMLINK entries here. They are handled in a separate loop, after resource
+            # reorganization is finished (i.e., after symbolic links from Contents/Resources into Contents/MacOS
+            # are fully stablished).
+            if typecode == 'SYMLINK':
+                continue
+
             # Copy files from cache. This ensures that are used files with relative paths to dynamic library
             # dependencies (@executable_path).
             base_path = dest_name.split('/', 1)[0]
@@ -266,6 +272,21 @@ class BUNDLE(Target):
                 )
                 dest_path = os.path.join(bin_dir, dest_name)
                 os.symlink(relative_source_path, dest_path)
+
+        # Create the symbolic links for SYMLINK entries. Do this after all other macOS bundle processing - specifically,
+        # after symbolic links between Contents/Resources and Contents/MacOS are created, because we are creating
+        # SYMLINK entries in Contents/MacOS, and the parent of our SYMLINK entry might have been moved to
+        # Contents/Resources and is now a symbolic link itself...
+        for dest_name, src_name, typecode in self.toc:
+            if typecode != 'SYMLINK':
+                continue
+
+            dest_path = os.path.join(self.name, "Contents", "MacOS", dest_name)
+            dest_dir = os.path.dirname(dest_path)
+            if not os.path.exists(dest_dir):
+                os.makedirs(dest_dir)
+
+            os.symlink(src_name, dest_path)  # Create link at dest_path, pointing at (relative) src_name
 
         # Sign the bundle
         logger.info('Signing the BUNDLE...')
