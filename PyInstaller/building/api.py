@@ -1050,6 +1050,13 @@ class MERGE:
                 # Add entry to list of kept TOC entries
                 toc_keep.append(entry)
             else:
+                # Keep SYMLINK entries intact (but add them to the references TOC instead of "for-keep" TOC, so they
+                # end up in `a.dependencies`).
+                if typecode == 'SYMLINK':
+                    logger.debug("Referenced dependency %s is symbolic link; keeping it intact!", src_name)
+                    toc_refs.append(entry)
+                    continue
+
                 # Construct relative dependency path; i.e., the relative path from this executable (or rather, its
                 # parent directory) to the executable that contains the dependency.
                 dep_path = os.path.relpath(self._dependencies[src_name], os.path.dirname(path_to_exe))
