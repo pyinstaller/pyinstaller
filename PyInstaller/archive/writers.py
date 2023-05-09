@@ -223,6 +223,10 @@ class CArchiveWriter:
             # These module entries are loaded and executed within the bootloader, which requires only the code
             # object, without the PYC header.
             return self._write_blob(fp, marshal.dumps(code), dest_name, typecode, compress=compress)
+        elif typecode == 'n':
+            # Symbolic link; store target name (as NULL-terminated string)
+            data = src_name.encode('utf-8') + b'\x00'
+            return self._write_blob(fp, data, dest_name, typecode, compress=compress)
         else:
             return self._write_file(fp, src_name, dest_name, typecode, compress=compress)
 
