@@ -27,9 +27,10 @@
 #elif __APPLE__
     #include <libgen.h>      /* basename(), dirname() */
     #include <mach-o/dyld.h> /* _NSGetExecutablePath() */
+    #include <unistd.h>  /* symlink() */
 #else
     #include <libgen.h>  /* basename() */
-    #include <unistd.h>  /* unlink */
+    #include <unistd.h>  /* unlink(), symlink() */
 #endif
 
 #include <stdio.h>  /* FILE, fopen */
@@ -485,5 +486,47 @@ pyi_path_mkdir(const char *path)
     return pyi_win32_mkdir(wpath);
 #else
     return mkdir(path, 0700);
+#endif
+}
+
+/*
+ * Create symbolic link.
+ */
+int
+pyi_path_mksymlink(const char *link_target, const char *link_name)
+{
+#ifdef _WIN32
+    static int unprivileged_create_available = 1;
+    wchar_t wlink_target[PATH_MAX];
+    wchar_t wlink_name[PATH_MAX];
+    DWORD flags = 0;
+
+    if (!pyi_win32_utils_from_utf8(wlink_target, link_target, PATH_MAX)) {
+        return -1;
+    }
+    if (!pyi_win32_utils_from_utf8(wlink_name, link_name, PATH_MAX)) {
+        return -1;
+    }
+    /* Creation of symbolic links in unprivileged mode was introduced
+     * in Windows 10 build 14972. However, its requirement for Developer
+     * Mode to be enabled makes it impractical for general cases. So
+     * we implement full support here, but avoid creating symbolic links
+     * on Windows in the first place...
+     */
+    if (unprivileged_create_available) {
+        flags |= SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+    }
+    if (CreateSymbolicLinkW(wlink_name, wlink_target, flags) == 0) {
+        /* Check if the error was caused by use of SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */
+        if (unprivileged_create_available && GetLastError() == ERROR_INVALID_PARAMETER) {
+            /* Disable it and try again */
+            unprivileged_create_available = 0;
+            return pyi_path_mksymlink(link_target, link_name);
+        }
+        return -1;
+    }
+    return 0;
+#else
+    return symlink(link_target, link_name);
 #endif
 }

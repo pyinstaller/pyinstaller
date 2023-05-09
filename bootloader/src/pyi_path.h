@@ -43,5 +43,6 @@ FILE *pyi_path_fopen(const char *filename, const char *mode);
 #define pyi_path_fclose(x)    fclose(x)
 
 int pyi_path_mkdir(const char *path);
+int pyi_path_mksymlink(const char *link_target, const char *link_name);
 
 #endif  /* PYI_PATH_H */

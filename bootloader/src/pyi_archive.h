@@ -33,6 +33,7 @@
 #define ARCHIVE_ITEM_DATA             'x'  /* data */
 #define ARCHIVE_ITEM_RUNTIME_OPTION   'o'  /* runtime option */
 #define ARCHIVE_ITEM_SPLASH           'l'  /* splash resources */
+#define ARCHIVE_ITEM_SYMLINK          'n'  /* symbolic link */
 
 /* TOC entry for a CArchive */
 typedef struct _toc {
