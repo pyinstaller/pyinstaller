@@ -286,6 +286,38 @@ cleanup:
 }
 
 /*
+ * Create/extract symbolic link from the archive.
+ */
+int pyi_arch_create_symlink(ARCHIVE_STATUS *status, TOC *ptoc)
+{
+    char *link_target = NULL;
+    char link_name[PATH_MAX];
+    int rc = -1;
+
+    /* Extract symlink target */
+    link_target = (char *) pyi_arch_extract(status, ptoc);
+    if (!link_target) {
+        goto cleanup;
+    }
+
+    /* Ensure parent path exists */
+    if (pyi_create_parent_directory(status->temppath, ptoc->name) < 0) {
+        goto cleanup;
+    }
+
+    /* Create the symbolic link */
+    if (snprintf(link_name, PATH_MAX, "%s%c%s", status->temppath, PYI_SEP, ptoc->name) >= PATH_MAX) {
+        goto cleanup;
+    }
+    rc = pyi_path_mksymlink(link_target, link_name);
+
+cleanup:
+    free(link_target);
+
+    return rc;
+}
+
+/*
  * Extract an archive entry into file on the filesystem.
  * The path is relative to the directory the archive is in.
  */
@@ -295,11 +327,21 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
     FILE *out = NULL;
     int rc = 0;
 
-    /* Ensure that tmp dir _MEIPASSxxx exists... */
+    /* Ensure that tmp dir _MEIPASSxxx exists */
     if (pyi_create_temp_path(status) == -1) {
         return -1;
     }
-    /* ... and open target file */
+
+    /* Handle symbolic links */
+    if (ptoc->typcd == ARCHIVE_ITEM_SYMLINK) {
+        rc = pyi_arch_create_symlink(status, ptoc);
+        if (rc < 0) {
+            FATALERROR("Failed to create symbolic link %s!\n", ptoc->name);
+        }
+        return rc;
+    }
+
+    /* Open target file */
     out = pyi_open_target_file(status->temppath, ptoc->name);
     if (out == NULL) {
         FATAL_PERROR("fopen", "Failed to extract %s: failed to open target file!\n", ptoc->name);
