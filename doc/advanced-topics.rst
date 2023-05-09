@@ -267,144 +267,159 @@ Functions
 
 .. _the toc and tree classes:
 
-The TOC and Tree Classes
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+The Table of Contents (TOC) lists and the Tree Class
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-PyInstaller manages lists of files using the ``TOC``
-(Table Of Contents) class.
-It provides the ``Tree`` class as a convenient way to build a ``TOC``
-from a folder path.
+PyInstaller manages lists of files that are to be collected in the
+so-called Table of Contents (TOC) list format. These lists contain
+three-element tuples that encapsulate information about a file's
+destination name, the file's full source path, and its type.
 
-TOC Class (Table of Contents)
----------------------------------
-
-Objects of the ``TOC`` class are used as input to the classes created in
-a spec file.
-For example, the ``scripts`` member of an Analysis object is a TOC
-containing a list of scripts.
-The ``pure`` member is a TOC with a list of modules, and so on.
-
-Basically a ``TOC`` object contains a list of tuples of the form
-
-    ``(``\ *name*\ ``,``\ *path*\ ``,``\ *typecode*\ ``)``
-
-In fact, it acts as an ordered set of tuples;
-that is, it contains no duplicates
-(where uniqueness is based on the *name* element of each tuple).
-Within this constraint, a TOC preserves the order of tuples added to it.
-
-A TOC behaves like a list and supports the same methods
-such as appending, indexing, etc.
-A TOC also behaves like a set, and supports taking differences and intersections.
-In all of these operations a list of tuples can be used as one argument.
-For example, the following expressions are equivalent ways to
-add a file to the ``a.datas`` member::
-
-    a.datas.append( [ ('README', 'src/README.txt', 'DATA' ) ] )
-    a.datas += [ ('README', 'src/README.txt', 'DATA' ) ]
-
-Set-difference makes excluding modules quite easy. For example::
-
-    a.binaries - [('badmodule', None, None)]
-
-is an expression that produces a new ``TOC`` that is a copy of
-``a.binaries`` from which any tuple named ``badmodule`` has been removed.
-The right-hand argument to the subtraction operator
-is a list that contains one tuple
-in which *name* is ``badmodule`` and the *path* and *typecode* elements
-are ``None``.
-Because set membership is based on the *name* element of a tuple only,
-it is not necessary to give accurate *path* and *typecode* elements when subtracting.
-
-In order to add files to a TOC, you need to know the *typecode* values
-and their related *path* values.
-A *typecode* is a one-word string.
-PyInstaller uses a number of *typecode* values internally,
-but for the normal case you need to know only these:
+As part of utilities for managing the TOC lists, PyInstaller provides
+a ``Tree`` class as a convenient way to build a TOC list from the
+contents of the given directory. This utility class can be used either
+in the :ref:`.spec files <using spec files>` file or from custom hooks.
 
 
-+---------------+--------------------------------------+-----------------------+--------------------------------------+
-| **typecode**  | **description**                      | **name**              | **path**                             |
-+===============+======================================+=======================+======================================+
-| 'DATA'        | Arbitrary files.                     | Run-time name.        | Full path name in build.             |
-+---------------+--------------------------------------+-----------------------+--------------------------------------+
-| 'BINARY'      | A shared library.                    | Run-time name.        | Full path name in build.             |
-+---------------+--------------------------------------+-----------------------+--------------------------------------+
-| 'EXTENSION'   | A binary extension to Python.        | Run-time name.        | Full path name in build.             |
-+---------------+--------------------------------------+-----------------------+--------------------------------------+
-| 'OPTION'      | A Python run-time option.            | Option code           | ignored.                             |
-+---------------+--------------------------------------+-----------------------+--------------------------------------+
+Table of Contents (TOC) lists
+-----------------------------
 
-The run-time name of a file will be used in the final bundle.
+The ``Analysis`` object produces several TOC lists that provide information
+about files to be collected. The files are grouped into distinct lists
+based on their type or function, for example:
+- ``Analysis.scripts``: program script(s)
+- ``Analysis.pure``: pure-python modules
+- ``Analysis.binaries``: binary extension modules and shared libraries
+- ``Analysis.datas``: data files
+
+The generated TOC lists are passed to various build targets within the
+:ref:`spec file <using spec files>`, such as ``PYZ``, ``EXE``, and
+``COLLECT``.
+
+Each TOC list contains three-element tuples,
+
+    ``(dest_name, src_name , typecode)``
+
+where ``dest_name`` is the destination file name (i.e., file name within
+the frozen application; as such, it must always be a relative name),
+``src_name`` is the source file name (the path from where the file is
+collected), and ``typecode`` is a string that denotes the type of the
+file (or entry).
+
+Internally, PyInstaller uses a number of *typecode* values, but for the
+normal case you need to know only these:
+
++---------------+---------------------------------------+----------------------------------+---------------------------------------------+
+| **typecode**  | **description**                       | **dest_name**                    | **src_name**                                |
++===============+=======================================+==================================+=============================================+
+| 'DATA'        | Arbitrary (data) files.               | Name in the frozen application.  | Full path to the file on the build system.  |
++---------------+---------------------------------------+----------------------------------+---------------------------------------------+
+| 'BINARY'      | A shared library.                     | Name in the frozen application.  | Full path to the file on the build system.  |
++---------------+---------------------------------------+----------------------------------+---------------------------------------------+
+| 'EXTENSION'   | A Python binary extension.            | Name in the frozen application.  | Full path to the file on the build system.  |
++---------------+---------------------------------------+----------------------------------+---------------------------------------------+
+| 'OPTION'      | A PyInstaller/Python run-time option. | Option name (and optional value, | Ignored.                                    |
+|               |                                       | separated by a whitespace).      |                                             |
++---------------+---------------------------------------+----------------------------------+---------------------------------------------+
+
+The destination name corresponds to the name of the final in the
+frozen application, relative to the top-level application directory.
 It may include path elements, for example :file:`extras/mydata.txt`.
 
-A ``BINARY`` file or an ``EXTENSION`` file is assumed to be loadable, executable code,
-for example a dynamic library.
-The types are treated the same.
-``EXTENSION`` is generally used for a Python extension module,
-for example a module compiled by Cython_.
-PyInstaller will examine either type of file for dependencies,
-and if any are found, they are also included.
+Entries of type ``BINARY`` and ``EXTENSION`` are assumed to represent a
+file containing loadable executable code, such as a dynamic library.
+Generally, ``EXTENSION`` is used to denote Python extensions modules,
+such as modules compiled by Cython_. The two file types are treated in
+the same way; PyInstaller scans them for additional link-time
+dependencies and collects any dependencies that are discovered. On some
+operating systems, binaries and extensions undergo additional processing
+(such as path rewriting for link-time dependencies and code-signing
+on macOS).
+
+The TOC lists produced by ``Analysis`` can be modified in the
+:ref:`spec file <using spec files>` file before they are passed on to
+the build targets to either include additional entries (although it is
+preferable to pass extra files to be included via `binaries` or `datas`
+arguments of `Analysis`) or remove unwanted entries.
+
+.. versionchanged:: 5.11
+
+   In PyInstaller versions prior to 5.11, the TOC lists were in fact
+   instances of the :class:`TOC` class, which internally performed
+   implicit entry de-duplication; i.e., trying to insert an entry with
+   existing target name would result in no changes to the list.
+
+   However, due to the shortcomings of the ``TOC`` class that resulted from
+   loosely-defined and conflicting semantics, the use of the ``TOC`` class
+   has been deprecated. The TOC lists are now instances of plain ``list``,
+   and PyInstaller performs explicit list normalization (entry de-duplication).
+   The explicit normalization is performed at the end of ``Analysis``
+   instantiation, when the lists are stored in the class' properties (such
+   as ``Analysis.datas`` and ``Analysis.binaries``). Similarly, explicit
+   list normalization is also performed once the build targets (``EXE``,
+   ``PYZ``, ``PKG``, ``COLLECT``, ``BUNDLE``) consolidate the input TOC
+   lists into the final list.
+
 
 The Tree Class
-------------------
+--------------
 
-The Tree class is a way of creating a TOC that describes some or all of the
-files within a directory:
+The ``Tree`` class offers a convenient way of creating a TOC list that
+describes contents of the given directory:
 
       ``Tree(``\ *root*\ ``, prefix=``\ *run-time-folder*\ ``, excludes=``\ *string_list*\ ``, typecode=``\ *code* | ``'DATA' )``
 
-* The *root* argument is a path string to a directory.
+* The *root* argument is a string denoting the path to the directory.
   It may be absolute or relative to the spec file directory.
 
-* The *prefix* argument, if given, is a name for a subfolder
-  within the run-time folder to contain the tree files.
-  If you omit *prefix* or give ``None``,
-  the tree files will be at
-  the top level of the run-time folder.
+* The optional *prefix* argument is a name for a sub-directory
+  in the application directory into which files are to be collected.
+  If not specified or set to ``None``, the files will be collected
+  into the top-level application directory.
 
-* The *excludes* argument, if given, is a list of one or more
+* The optional *excludes* argument is a list of one or more
   strings that match files in the *root* that should be omitted from the Tree.
   An item in the list can be either:
 
   - a name, which causes files or folders with this basename to be excluded
 
-  - ``*.ext``, which causes files with this extension to be excluded
+  - a glob pattern (e.g., ``*.ext``), which causes matching files to be excluded
 
-* The *typecode* argument, if given, specifies the TOC typecode string
-  that applies to all items in the Tree.
-  If omitted, the default is ``DATA``, which is appropriate for most cases.
+* The optional *typecode* argument specifies the TOC typecode string
+  that is assigned to all entries in the TOC list.
+  The default value is ``DATA``, which is appropriate for most cases.
 
 For example::
 
-    extras_toc = Tree('../src/extras', prefix='extras', excludes=['tmp','*.pyc'])
+    extras_toc = Tree('../src/extras', prefix='extras', excludes=['tmp', '*.pyc'])
 
-This creates ``extras_toc`` as a TOC object that lists
+This creates ``extras_toc`` as a TOC list that contains entries for
 all files from the relative path :file:`../src/extras`,
 omitting those that have the basename (or are in a folder named) ``tmp``
-or that have the type ``.pyc``.
+or have the ``.pyc`` extension.
 Each tuple in this TOC has:
 
-* A *name* composed of :file:`extras/{filename}`.
+* A *dest_name* in form of:file:`extras/{filename}`.
 
-* A *path* consisting of a complete, absolute path to that file in the
+* A *src_name* that corresponds to the full absolute path to that file in the
   :file:`../src/extras` folder (relative to the location of the spec file).
 
-* A *typecode* of ``DATA`` (by default).
+* A *typecode* of ``DATA`` (the default).
 
 An example of creating a TOC listing some binary modules::
 
-    cython_mods = Tree( '..src/cy_mods', excludes=['*.pyx','*.py','*.pyc'], typecode='EXTENSION' )
+    cython_mods = Tree('..src/cy_mods', excludes=['*.pyx', '*.py', '*.pyc'], typecode='EXTENSION')
 
-This creates a TOC with a tuple for every file in the :file:`cy_mods` folder,
-excluding any with the ``.pyx``, ``.py`` or ``.pyc`` suffixes
-(so presumably collecting the ``.pyd`` or ``.so`` modules created by Cython).
+This creates a TOC list with entries for each file in the :file:`cy_mods` directory,
+excluding files with the ``.pyx``, ``.py``, or ``.pyc`` extension
+(so presumably collecting only the ``.pyd`` or ``.so`` modules created by Cython).
 Each tuple in this TOC has:
 
-* Its own filename as *name* (no prefix; the file will be at the top level of the bundle).
+* A *dest_name* that corresponds to the file's basename (all files are collected
+  in top-level application directory).
 
-* A *path* as an absolute path to that file in :file:`../src/cy_mods`
-  relative to the spec file.
+* A *src_name* that corresponds to the full absolute path to that file in
+  :file:`../src/cy_mods` relative to the spec file.
 
 * A *typecode* of ``EXTENSION`` (``BINARY`` could be used as well).
 
