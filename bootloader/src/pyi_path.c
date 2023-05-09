@@ -472,3 +472,18 @@ pyi_path_is_symlink(const char *path)
     return S_ISLNK(buf.st_mode);
 #endif
 }
+
+/*
+ * Create directory.
+ */
+int
+pyi_path_mkdir(const char *path)
+{
+#ifdef _WIN32
+    wchar_t wpath[PATH_MAX];
+    pyi_win32_utils_from_utf8(wpath, path, PATH_MAX);
+    return pyi_win32_mkdir(wpath);
+#else
+    return mkdir(path, 0700);
+#endif
+}

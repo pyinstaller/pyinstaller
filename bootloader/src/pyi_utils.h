@@ -47,7 +47,8 @@ int pyi_create_temp_path(ARCHIVE_STATUS *status);
 void pyi_remove_temp_path(const char *dir);
 
 /* File manipulation. */
-FILE *pyi_open_target(const char *path, const char* name_);
+int pyi_create_parent_directory(const char *path, const char *name_);
+FILE *pyi_open_target_file(const char *path, const char* name_);
 int pyi_copy_file(const char *src, const char *dst, const char *filename);
 
 /* Other routines. */

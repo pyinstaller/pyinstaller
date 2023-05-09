@@ -278,7 +278,7 @@ pyi_splash_extract(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splash_status)
      *    - Implementing a check in pyi_launch_extract_binaries if an already extracted
      *      and therefore in temppath existing file belongs to the splash screen.
      *      -> Discarded this idea, because SPLASH_STATUS would need to be passed
-     *         down to pyi_open_target and for every file already extracted a loop
+     *         down to pyi_open_target_file and for every file already extracted a loop
      *         through the archive would need to check if it belongs to the splash screen
      *    - Implementing a "prioritized" TOC, which starts at a specific level to extract
      *      files. If splash resources are appended these would be extracted, because they

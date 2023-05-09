@@ -604,28 +604,25 @@ _check_strict_unpack_mode ()
 }
 
 /*
- * helper for extract2fs
- * which may try multiple places
+ * Helper that creates parent path for the given filename. The filename
+ * is given as a path prefix (which already exists) and name (which
+ * could be either just a basename or a path relative to the already
+ * existing prefix).
+ *
+ * Returns 0 on success, -1 on failure.
  */
-/* TODO find better name for function. */
-FILE *
-pyi_open_target(const char *path, const char* name_)
+int
+pyi_create_parent_directory(const char *path, const char *name_)
 {
-
-#ifdef _WIN32
-    wchar_t wchar_buffer[PATH_MAX];
-    struct _stat sbuf;
-#else
-    struct stat sbuf;
-#endif
     char fnm[PATH_MAX];
     char name[PATH_MAX];
     char *dir;
     size_t len;
 
+    /* Ensure given components do not exist PATH_MAX */
     if (snprintf(fnm, PATH_MAX, "%s", path) >= PATH_MAX ||
         snprintf(name, PATH_MAX, "%s", name_) >= PATH_MAX) {
-        return NULL;
+        return -1;
     }
 
     len = strlen(fnm);
@@ -635,7 +632,7 @@ pyi_open_target(const char *path, const char* name_)
         len += strlen(dir) + strlen(PYI_SEPSTR);
         /* Check if fnm does not exceed the buffer size */
         if (len >= PATH_MAX-1) {
-            return NULL;
+            return -1;
         }
         strcat(fnm, PYI_SEPSTR);
         strcat(fnm, dir);
@@ -645,24 +642,35 @@ pyi_open_target(const char *path, const char* name_)
             break;
         }
 
-#ifdef _WIN32
-        pyi_win32_utils_from_utf8(wchar_buffer, fnm, PATH_MAX);
-
-        if (_wstat(wchar_buffer, &sbuf) < 0) {
-            pyi_win32_mkdir(wchar_buffer);
+        if (pyi_path_exists(fnm) == 0) {
+            if (pyi_path_mkdir(fnm) < 0) {
+                return -1;
+            }
         }
-#else
-
-        if (stat(fnm, &sbuf) < 0) {
-            mkdir(fnm, 0700);
-        }
-#endif
     }
 
-#ifdef _WIN32
-    pyi_win32_utils_from_utf8(wchar_buffer, fnm, PATH_MAX);
+    return 0;
+}
 
-    if (_wstat(wchar_buffer, &sbuf) == 0) {
+/*
+ * Helper for extract2fs that attempts to open the given filename in
+ * (existing) prefix path, after ensuring that all its parent
+ * directories exist.
+ *
+ * Returns opened FILE handle on success, NULL on failure.
+ */
+FILE *
+pyi_open_target_file(const char *path, const char* name_)
+{
+    char fnm[PATH_MAX];
+
+    /* Merge prefix and name into full path */
+    if (snprintf(fnm, PATH_MAX, "%s%c%s", path, PYI_SEP, name_) >= PATH_MAX) {
+        return NULL;
+    }
+
+    /* Check if file already exists (it should not) */
+    if (pyi_path_exists(fnm) == 1) {
         if (_check_strict_unpack_mode()) {
             OTHERERROR("ERROR: file already exists but should not: %s\n", fnm);
             return NULL;
@@ -670,21 +678,13 @@ pyi_open_target(const char *path, const char* name_)
             OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
         }
     }
-#else
 
-    if (stat(fnm, &sbuf) == 0) {
-        if (_check_strict_unpack_mode()) {
-            OTHERERROR("ERROR: file already exists but should not: %s\n", fnm);
-            return NULL;
-        } else {
-            OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
-        }
+    /* Create parent directories, if necessary */
+    if (pyi_create_parent_directory(path, name_) < 0) {
+        return NULL;
     }
-#endif
-    /*
-     * pyi_path_fopen() wraps different fopen names. On Windows it uses
-     * wide-character version of fopen.
-     */
+
+    /* Open the file */
     return pyi_path_fopen(fnm, "wb");
 }
 
@@ -693,7 +693,7 @@ int
 pyi_copy_file(const char *src, const char *dst, const char *filename)
 {
     FILE *in = pyi_path_fopen(src, "rb");
-    FILE *out = pyi_open_target(dst, filename);
+    FILE *out = pyi_open_target_file(dst, filename);
     char buf[4096];
     size_t read_count = 0;
     int error = 0;
