@@ -310,7 +310,9 @@ def normalize_toc(toc):
     # Default priority: 0
     _TOC_TYPE_PRIORITIES = {
         # DEPENDENCY entries need to replace original entries, so they need the highest priority.
-        'DEPENDENCY': 2,
+        'DEPENDENCY': 3,
+        # SYMLINK entries have higher priority than other regular entries
+        'SYMLINK': 2,
         # BINARY/EXTENSION entries undergo additional processing, so give them precedence over DATA and other entries.
         'BINARY': 1,
         'EXTENSION': 1,
@@ -361,3 +363,38 @@ def _normalize_toc(toc, toc_type_priorities, type_case_normalization_fcn=lambda 
 
     # Return the items as list. The order matches the original order due to python dict maintaining the insertion order.
     return list(tmp_toc.values())
+
+
+def toc_process_symbolic_links(toc):
+    """
+    Process TOC entries and replace entries whose files are symbolic links with SYMLINK entries (provided original file
+    is also being collected).
+    """
+    all_source_files = {src_name for dest_name, src_name, typecode in toc}
+
+    new_toc = []
+    for entry in toc:
+        dest_name, src_name, typecode = entry
+        if not os.path.islink(src_name):
+            new_toc.append(entry)
+            continue
+
+        # Read the symbolic link's target, but do not fully resolve it using os.path.realpath(), because there might be
+        # other symbolic links involved as well (for example, /lib64 -> /usr/lib64 whereas we are processing
+        # /lib64/liba.so -> /lib64/liba.so.1)
+        symlink_target = os.readlink(src_name)
+        if os.path.isabs(symlink_target):
+            # We support only relative symbolic links.
+            new_toc.append(entry)
+            continue
+
+        orig_file = os.path.join(os.path.dirname(src_name), symlink_target)
+        orig_file = os.path.normpath(orig_file)  # remove any '..'
+        if orig_file in all_source_files:
+            # We are also collecting the original source file; add this entry as SYMLINK.
+            new_toc.append((dest_name, symlink_target, "SYMLINK"))
+        else:
+            # We are not collecting the original; make a hard-copy.
+            new_toc.append(entry)
+
+    return new_toc
