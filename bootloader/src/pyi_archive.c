@@ -300,7 +300,7 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
         return -1;
     }
     /* ... and open target file */
-    out = pyi_open_target(status->temppath, ptoc->name);
+    out = pyi_open_target_file(status->temppath, ptoc->name);
     if (out == NULL) {
         FATAL_PERROR("fopen", "Failed to extract %s: failed to open target file!\n", ptoc->name);
         return -1;
