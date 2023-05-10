@@ -11,6 +11,7 @@
 
 # Tests for explicit TOC list normalization that replaced the implicit normalization with class:``TOC``.
 import copy
+import pathlib
 
 from PyInstaller import compat
 from PyInstaller.building.datastruct import normalize_pyz_toc, normalize_toc
@@ -21,7 +22,7 @@ _BASE_TOC = [
     ('libpython3.10.so', '/usr/lib64/libpython3.10.so', 'BINARY'),
     ('libsomething.so', '/usr/local/lib64/libsomething.so', 'BINARY'),
     ('README', '/home/user/tmp/README', 'DATA'),
-    ('data/data.csv', '/home/user/tmp/data/data.csv', 'DATA'),
+    (str(pathlib.PurePath('data/data.csv')), '/home/user/tmp/data/data.csv', 'DATA'),
     ('dependency.bin', 'other_multipackage:dependency.bin', 'DEPENDENCY'),
     ('myextension.so', 'myextension.so', 'EXTENSION'),
 ]
@@ -120,6 +121,34 @@ def test_normalize_toc_multipackage_dependency():
     toc.insert(0, ('dependency.bin', '/mnt/somewhere/dependency.bin', 'BINARY'))
     toc.insert(0, ('dependency.bin', '/mnt/somewhere/dependency.bin', 'DATA'))
     expected_toc = _BASE_TOC
+
+    normalized_toc = normalize_toc(toc)
+    assert sorted(normalized_toc) == sorted(expected_toc)
+
+
+def test_normalize_toc_with_parent_pardir_loops():
+    # Check that de-duplication works even if destination paths contain local loop with parent directory (..) components
+    # but can be normalized to the same path. Furthermore, we expect TOC normalization to sanitize the dest_name with
+    # normalized version.
+    toc = [
+        (
+            str(pathlib.PurePath('numpy/core/../../numpy.libs/libquadmath-2d0c479f.so.0.0.0')),
+            '/path/to/venv/lib/python3.11/site-packages/numpy/core/../../numpy.libs/libquadmath-2d0c479f.so.0.0.0',
+            'BINARY',
+        ),
+        (
+            str(pathlib.PurePath('numpy/linalg/../../numpy.libs/libquadmath-2d0c479f.so.0.0.0')),
+            '/path/to/venv/lib/python3.11/site-packages/numpy/linalg/../../numpy.libs/libquadmath-2d0c479f.so.0.0.0',
+            'BINARY',
+        ),
+    ]
+    expected_toc = [
+        (
+            str(pathlib.PurePath('numpy.libs/libquadmath-2d0c479f.so.0.0.0')),
+            '/path/to/venv/lib/python3.11/site-packages/numpy/core/../../numpy.libs/libquadmath-2d0c479f.so.0.0.0',
+            'BINARY',
+        ),
+    ]
 
     normalized_toc = normalize_toc(toc)
     assert sorted(normalized_toc) == sorted(expected_toc)
