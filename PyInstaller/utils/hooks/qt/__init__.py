@@ -690,45 +690,33 @@ class QtLibraryInfo:
             )
 
         if is_macos_framework:
-            # On macOS, Qt shared libraries are provided in form of .framework bundles. However, PyInstaller collects
-            # shared library from the bundle into top-level application directory, breaking the bundle structure.
-            #
-            # QtWebEngine and its underlying Chromium engine, however, have very strict data file layout requirements
-            # due to sandboxing, and does not work if the helper process executable does not load the shared library
-            # from QtWebEngineCore.framework (which also needs to contain all resources).
-            #
-            # Therefore, we collect the QtWebEngineCore.framework manually, in order to obtain a working
-            # QtWebEngineProcess helper executable. But because that bypasses our dependency scanner, we need to collect
-            # the dependent .framework bundles as well. And we need to override QTWEBENGINEPROCESS_PATH in rthook,
-            # because the QtWebEngine python extensions actually load up the copy of shared library that is located in
-            # sys._MEIPASS (as opposed to the manually-copied one in .framework bundle). Furthermore, because the
-            # extension modules use Qt shared libraries in sys._MEIPASS, we also copy all contents of
-            # QtWebEngineCore.framework/Resources into sys._MEIPASS to make resource loading in the main process work.
-            #
-            # Besides being ugly, this approach has three main ramifications:
-            # 1. we bundle two copies of each Qt shared library involved: the copy used by main process, picked up by
-            #    dependency scanner; and a copy in manually-collected .framework bundle that is used by the helper
-            #    process.
-            # 2. the trick with copying contents of Resource directory of QtWebEngineCore.framework does not work in
-            #    onefile mode, and consequently QtWebEngine does not work in onefile mode.
-            # 3. copying contents of QtWebEngineCore.framework/Resource means that its Info.plist ends up in
-            #    sys._MEIPASS, causing the main process in onedir mode to be mis-identified as "QtWebEngineProcess".
-            #
-            # In the near future, this quagmire will hopefully be properly sorted out, but in the mean time, we have to
-            # live with what we have been given.
+            # macOS .framework bundle
             data_path = self.location['DataPath']
-            libraries = [
-                'QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml', 'QtQmlModels', 'QtNetwork', 'QtGui', 'QtWebChannel',
-                'QtPositioning'
-            ]
-            if self.qt_major == 6:
-                libraries.extend(['QtOpenGL', 'QtDBus'])
-            for i in libraries:
-                framework_dir = i + '.framework'
-                framework_src_path = os.path.join(data_path, 'lib', framework_dir)
-                framework_dst_path = os.path.join(rel_data_path, 'lib', framework_dir)
-                datas += hooks.collect_system_data_files(framework_src_path, framework_dst_path, True)
-            datas += [(os.path.join(data_path, 'lib', 'QtWebEngineCore.framework', 'Resources'), '.')]
+
+            src_framework_path = os.path.join(data_path, 'lib', 'QtWebEngineCore.framework')
+            dst_framework_path = os.path.join(rel_data_path, 'lib', 'QtWebEngineCore.framework')
+
+            # Collect files from QtWebEngineCore.framework/Helpers
+            helper_datas = hooks.collect_system_data_files(
+                os.path.join(src_framework_path, 'Helpers'),
+                os.path.join(dst_framework_path, 'Helpers'),
+            )
+            # Filter out the actual helper executable
+            helper_exe = os.path.join('Helpers', 'QtWebEngineProcess.app', 'Contents', 'MacOS', 'QtWebEngineProcess')
+            datas += [entry for entry in helper_datas if not entry[1].endswith(helper_exe)]
+
+            # Add helper executable as BINARY
+            if os.path.isfile(os.path.join(src_framework_path, helper_exe)):
+                binaries += [(
+                    os.path.join(src_framework_path, helper_exe),
+                    os.path.join(dst_framework_path, os.path.dirname(helper_exe)),
+                )]
+
+            # Collect resources from QtWebEngineCore.framework/Resources
+            datas += hooks.collect_system_data_files(
+                os.path.join(src_framework_path, 'Resources'),
+                os.path.join(dst_framework_path, 'Resources'),
+            )
         else:
             # Windows and linux (or Anaconda on macOS)
             locales = 'qtwebengine_locales'
