@@ -1,0 +1,4 @@
+(macOS) Sandboxing for ``QtWebEngine`` in ``PySide6`` and ``PyQt6`` is
+not disabled anymore by the corresponding run-time hooks
+(see :issue:`6903`), as it should work out-of-the-box thanks to PyInstaller
+now preserving the structure of the ``QtWebEngineCore.framework`` bundle.
