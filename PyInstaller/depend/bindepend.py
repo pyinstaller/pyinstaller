@@ -211,18 +211,23 @@ def _get_paths_for_parent_directory_preservation():
         pathlib.Path(sys.prefix).resolve(),
     }
 
-    paths = []
+    # For each path in orig_paths, append a resolved variant. This helps with linux venv where we need to consider
+    # both `venv/lib/python3.11/site-packages` and `venv/lib/python3.11/site-packages` and `lib64` is a symlink
+    # to `lib`.
+    orig_paths += [pathlib.Path(path).resolve() for path in orig_paths]
+
+    paths = set()
     for path in orig_paths:
         if not path:
             continue
-        path = pathlib.Path(path).resolve()
+        path = pathlib.Path(path)
         # Filter out non-directories (e.g., /path/to/python3x.zip) or non-existent paths
         if not path.is_dir():
             continue
         # Filter out explicitly excluded paths
         if path in excluded_paths:
             continue
-        paths.append(path)
+        paths.add(path)
 
     # Sort by length (in term of path components) to ensure match against the longest common prefix (for example, match
     # /path/to/venv/lib/site-packages instead of /path/to/venv when both paths are in site paths).
@@ -257,17 +262,16 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
     """
 
     # Get all path prefixes for binaries' parent-directory preservation. For binaries collected from packages in (for
-    # example) site-packages directory, we should try to preserve the parent directory structure. Currently, this
-    # behavior is active only on Windows. For macOS and linux, we need to implement symlink support first.
-    parent_dir_preservation_paths = []
-    if compat.is_win:
-        parent_dir_preservation_paths = _get_paths_for_parent_directory_preservation()
+    # example) site-packages directory, we should try to preserve the parent directory structure.
+    parent_dir_preservation_paths = _get_paths_for_parent_directory_preservation()
 
     # Extract all necessary binary modules from Python eggs to be included directly with PyInstaller.
     lTOC = _extract_from_egg(lTOC)
 
     for nm, pth, typ in lTOC:
         if nm.upper() in seen:
+            continue
+        if typ == 'SYMLINK':
             continue
         logger.debug("Analyzing %s", pth)
         seen.add(nm.upper())
@@ -285,7 +289,16 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
             # name!
             src_path = pathlib.Path(npth)
             dst_path = _select_destination_directory(src_path, parent_dir_preservation_paths)
-            lTOC.append((str(dst_path), npth, 'BINARY'))
+            lTOC.append((str(dst_path), str(src_path), 'BINARY'))
+
+            # On non-Windows, if we are not collecting the binary into application's top-level directory ('.'),
+            # add a symbolic link from top-level directory to the actual location. This is to accommodate
+            # LD_LIBRARY_PATH being set to the top-level application directory on linux (although library search
+            # should be mostly done via rpaths, so this might be redundant) and to accommodate library path
+            # rewriting on macOS, which assumes that the library was collected into top-level directory.
+            dst_path = pathlib.PurePath(dst_path)  # Might be a str() if it is just a basename...
+            if not compat.is_win and dst_path.parent != pathlib.PurePath('.'):
+                lTOC.append((str(dst_path.name), str(dst_path), 'SYMLINK'))
 
     return lTOC
 

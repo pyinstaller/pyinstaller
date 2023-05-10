@@ -1,0 +1,7 @@
+Implement support for creating symbolic links from special ``'SYMLINK'``
+TOC entries, either at build-time (``onedir`` mode) or at run-time
+(``onefile`` mode). Implement symbolic link preservation support in
+the analysis process; if a file and a symbolic link pointing to it are
+both to be collected, and if their relative relationship is preserved
+in the frozen application, the symbolic link is collected as a ``'SYMLINK'``
+entry.

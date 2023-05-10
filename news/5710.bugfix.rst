@@ -1,0 +1,6 @@
+(macOS) Fix the shared library duplication problem where a shared library
+that is also referred to via its symbolic links (e.g., a shared library
+``libwx_baseu-3.1.5.0.0.dylib`` with symbolic links
+``libwx_baseu-3.1.5.dylib`` and ``libwx_baseu-3.0.dylib``) ends up
+collected as duplicates and consequently crashes the program.
+The symbolic links should now be preserved, thus avoiding the problem.
