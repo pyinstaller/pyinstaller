@@ -284,12 +284,6 @@ def test_PyQt5_Qt(pyi_builder):
 
 # Run the the QtWebEngineWidgets test for chosen Qt-based package flavor.
 def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
-    if is_darwin:
-        # QtWebEngine on Mac OS only works with a onedir build -- onefile builds do not work.
-        # Skip the test execution for onefile builds.
-        if pyi_builder._mode != 'onedir':
-            pytest.skip('QtWebEngine on macOS is supported only in onedir mode.')
-
     source = """
         import sys
 
@@ -364,12 +358,6 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
 
 # Run the the QtWebEngineQuick test for chosen Qt-based package flavor.
 def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
-    if is_darwin:
-        # QtWebEngine on Mac OS only works with a onedir build -- onefile builds do not work.
-        # Skip the test execution for onefile builds.
-        if pyi_builder._mode != 'onedir':
-            pytest.skip('QtWebEngine on macOS is supported only in onedir mode.')
-
     source = """
         import sys
 
