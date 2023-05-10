@@ -337,8 +337,10 @@ def normalize_pyz_toc(toc):
 
 def _normalize_toc(toc, toc_type_priorities, type_case_normalization_fcn=lambda typecode: False):
     tmp_toc = dict()
-    for entry in toc:
-        dest_name, src_name, typecode = entry
+    for dest_name, src_name, typecode in toc:
+        # Always sanitize the dest_name with `os.path.normpath` to remove any local loops with parent directory path
+        # components. `pathlib` does not seem to offer equivalent functionality.
+        dest_name = os.path.normpath(dest_name)
 
         # Normalize the destination name for uniqueness. Use `pathlib.PurePath` to ensure that keys are both
         # case-normalized (on OSes where applicable) and directory-separator normalized (just in case).
@@ -350,12 +352,12 @@ def _normalize_toc(toc, toc_type_priorities, type_case_normalization_fcn=lambda 
         existing_entry = tmp_toc.get(entry_key)
         if existing_entry is None:
             # Entry does not exist - insert
-            tmp_toc[entry_key] = entry
+            tmp_toc[entry_key] = (dest_name, src_name, typecode)
         else:
             # Entry already exists - replace if its typecode has higher priority
             _, _, existing_typecode = existing_entry
             if toc_type_priorities.get(typecode, 0) > toc_type_priorities.get(existing_typecode, 0):
-                tmp_toc[entry_key] = entry
+                tmp_toc[entry_key] = (dest_name, src_name, typecode)
 
     # Return the items as list. The order matches the original order due to python dict maintaining the insertion order.
     return list(tmp_toc.values())
