@@ -1,0 +1,6 @@
+Fix file duplication when collecting a file and symbolic links pointing
+at it; with new symbolic link support, the symbolic links are now
+properly preserved. This should help reducing the size of builds made
+on Linux and macOS with Anaconda, which provides versioned symbolic
+links for packaged shared libraries, and PyInstaller tends to collect
+them all due to hook helper based on the packages' metadata.

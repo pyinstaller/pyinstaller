@@ -1,0 +1,8 @@
+(non-Windows) PyInstaller now attempts to preserve the parent directory
+structure for shared libraries discovered and collected by the binary
+dependency analysis, instead of automatically collecting them into the
+top-level application directory. Due to library search path assumptions
+made in various places, symbolic links to collected libraries are created
+in the top-level application directory. This complements earlier work
+(:issue:`7028`) that implemented DLL parent directory structure
+preservation on Windows.
