@@ -35,7 +35,7 @@ from PyInstaller.building.utils import (
     _check_guts_toc, _check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas, compile_pymodule,
     add_suffix_to_extension, postprocess_binaries_toc_pywin32, postprocess_binaries_toc_pywin32_anaconda
 )
-from PyInstaller.compat import PYDYLIB_NAMES, is_win, is_conda
+from PyInstaller.compat import PYDYLIB_NAMES, is_win, is_conda, is_darwin
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.depend.utils import create_py3_base_library, scan_code_for_ctypes
@@ -45,6 +45,9 @@ from PyInstaller.utils.hooks.gi import compile_glib_schema_files
 
 if is_win:
     from PyInstaller.utils.win32 import winmanifest
+
+if is_darwin:
+    from PyInstaller.utils.osx import collect_info_plist_for_framework_bundles
 
 logger = logging.getLogger(__name__)
 
@@ -753,6 +756,10 @@ class Analysis(Target):
         #  - split back into `binaries` (BINARY, EXTENSION) and `datas` (everything else)
         combined_toc = normalize_toc(self.datas + self.binaries)
         combined_toc = toc_process_symbolic_links(combined_toc)
+
+        # On macOS, look for binaries collected from .framework bundles, and collect their Info.plist files.
+        if is_darwin:
+            combined_toc += collect_info_plist_for_framework_bundles(combined_toc)
 
         self.datas = []
         self.binaries = []
