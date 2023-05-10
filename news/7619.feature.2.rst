@@ -1,0 +1,4 @@
+(macOS) PyInstaller now attempts to preserve the .framework bundles when
+collecting shared libraries from them. If a shared library is to be
+collected from a .framework bundle, the ``Info.plist`` is also
+automatically collected.
