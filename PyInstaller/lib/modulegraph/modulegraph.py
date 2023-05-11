@@ -2140,7 +2140,11 @@ class ModuleGraph(ObjectGraph):
         elif isinstance(loader, ExtensionFileLoader):
             cls = Extension
         else:
-            src = loader.get_source(partname)
+            try:
+                src = loader.get_source(partname)
+            except: 
+                path = loader.get_filename(partname)
+                src = loader.get_data(path)
             if src is not None:
                 try:
                     co = compile(src, pathname, 'exec', ast.PyCF_ONLY_AST,
