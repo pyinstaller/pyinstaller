@@ -1,0 +1,8 @@
+Add a work-around for pure-python modules that do not specify encoding
+via PEP263 encoding header but contain non-ASCII characters in local
+(non-UTF8) encoding. When such characters are present only in code
+comments, python still loads and runs the module, but attempting to
+retrieve its source code via the loader's ``get_source`` method results
+in a ``UnicodeDecodeError``, which interrupts the analysis process. The
+error is now caught and a fall-back codepath attempts to retrieve the
+source code as raw data to avoid encoding issues.
