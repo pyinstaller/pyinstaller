@@ -2142,9 +2142,10 @@ class ModuleGraph(ObjectGraph):
         else:
             try:
                 src = loader.get_source(partname)
-            except: 
+            except UnicodeDecodeError: 
                 path = loader.get_filename(partname)
                 src = loader.get_data(path)
+                
             if src is not None:
                 try:
                     co = compile(src, pathname, 'exec', ast.PyCF_ONLY_AST,
