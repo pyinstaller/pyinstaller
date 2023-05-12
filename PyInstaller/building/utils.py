@@ -738,3 +738,68 @@ def compile_pymodule(name, src_path, workpath, code_cache=None):
 
     # Return output path
     return pyc_path
+
+
+def postprocess_binaries_toc_pywin32(binaries):
+    """
+    Process the given `binaries` TOC list to apply work around for `pywin32` package, fixing the target directory
+    for collected extensions.
+    """
+    # Ensure that all files collected from `win32`  or `pythonwin` into top-level directory are put back into
+    # their corresponding directories. They end up in top-level directory because `pywin32.pth` adds both
+    # directories to the `sys.path`, so they end up visible as top-level directories. But these extensions
+    # might in fact be linked against each other, so we should preserve the directory layout for consistency
+    # between modulegraph-discovered extensions and linked binaries discovered by link-time dependency analysis.
+    # Within the same framework, also consider `pywin32_system32`, just in case.
+    PYWIN32_SUBDIRS = {'win32', 'pythonwin', 'pywin32_system32'}
+
+    processed_binaries = []
+    for dest_name, src_name, typecode in binaries:
+        dest_path = pathlib.PurePath(dest_name)
+        src_path = pathlib.PurePath(src_name)
+
+        if dest_path.parent == pathlib.PurePath('.') and src_path.parent.name.lower() in PYWIN32_SUBDIRS:
+            dest_path = pathlib.PurePath(src_path.parent.name) / dest_path
+            dest_name = str(dest_path)
+
+        processed_binaries.append((dest_name, src_name, typecode))
+
+    return processed_binaries
+
+
+def postprocess_binaries_toc_pywin32_anaconda(binaries):
+    """
+    Process the given `binaries` TOC list to apply work around for Anaconda `pywin32` package, fixing the location
+    of collected `pywintypes3X.dll` and `pythoncom3X.dll`.
+    """
+    # The Anaconda-provided `pywin32` package installs three copies of `pywintypes3X.dll` and `pythoncom3X.dll`,
+    # located in the following directories (relative to the environment):
+    # - Library/bin
+    # - Lib/site-packages/pywin32_system32
+    # - Lib/site-packages/win32
+    #
+    # This turns our dependency scanner and directory layout preservation mechanism into a lottery based on what
+    # `pywin32` modules are imported and in what order. To keep things simple, we deal with this insanity by
+    # post-processing the `binaries` list, modifying the destination of offending copies, and let the final TOC
+    # list normalization deal with potential duplicates.
+    DLL_CANDIDATES = {
+        f"pywintypes{sys.version_info[0]}{sys.version_info[1]}.dll",
+        f"pythoncom{sys.version_info[0]}{sys.version_info[1]}.dll",
+    }
+
+    DUPLICATE_DIRS = {
+        pathlib.PurePath('.'),
+        pathlib.PurePath('win32'),
+    }
+
+    processed_binaries = []
+    for dest_name, src_name, typecode in binaries:
+        # Check if we need to divert - based on the destination base name and destination parent directory.
+        dest_path = pathlib.PurePath(dest_name)
+        if dest_path.name.lower() in DLL_CANDIDATES and dest_path.parent in DUPLICATE_DIRS:
+            dest_path = pathlib.PurePath("pywin32_system32") / dest_path.name
+            dest_name = str(dest_path)
+
+        processed_binaries.append((dest_name, src_name, typecode))
+
+    return processed_binaries
