@@ -232,18 +232,6 @@ def _get_paths_for_parent_directory_preservation():
 
 
 def _select_destination_directory(src_filename, parent_dir_preservation_paths):
-    # Special handling for pywin32 on Windows, because its .pyd extensions end up linking each other, but, due to
-    # sys.path modifications the packages perform, they all end up as top-modules and should be collected into
-    # top-level directory... i.e., we must NOT preserve the directory layout in this case.
-    if compat.is_win:
-        # match <...>/site-packages/pythonwin
-        # The caller might not have resolved the src_filename, so we need to explicitly lower-case the parent_dir.name
-        # before comparing it to account for case variations.
-        parent_dir = src_filename.parent
-        if parent_dir.name.lower() == "pythonwin" and parent_dir.parent in parent_dir_preservation_paths:
-            # Collect into top-level directory.
-            return src_filename.name
-
     # Check parent directory preservation paths
     for parent_dir_preservation_path in parent_dir_preservation_paths:
         if parent_dir_preservation_path in src_filename.parents:
