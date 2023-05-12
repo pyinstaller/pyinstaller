@@ -32,9 +32,9 @@ from PyInstaller.building.splash import Splash
 from PyInstaller.building.toc_conversion import DependencyProcessor
 from PyInstaller.building.utils import (
     _check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas, compile_pymodule,
-    add_suffix_to_extension
+    add_suffix_to_extension, postprocess_binaries_toc_pywin32, postprocess_binaries_toc_pywin32_anaconda
 )
-from PyInstaller.compat import PYDYLIB_NAMES, is_win
+from PyInstaller.compat import PYDYLIB_NAMES, is_win, is_conda
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.depend.utils import create_py3_base_library, scan_code_for_ctypes
@@ -735,6 +735,13 @@ class Analysis(Target):
         self.binaries.extend(
             isolated.call(find_binary_dependencies, self.binaries, self.binding_redirects, collected_packages)
         )
+
+        # Apply work-around for (potential) binaries collected from `pywin32` package...
+        if is_win:
+            self.binaries = postprocess_binaries_toc_pywin32(self.binaries)
+            # With anaconda, we need additional work-around...
+            if is_conda:
+                self.binaries = postprocess_binaries_toc_pywin32_anaconda(self.binaries)
 
         # Include zipped Python eggs.
         logger.info('Looking for eggs')

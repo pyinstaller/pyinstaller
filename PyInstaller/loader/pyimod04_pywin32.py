@@ -16,10 +16,20 @@ import sys
 
 
 def install():
+    # Sub-directories containing extensions. In original python environment, these are added to `sys.path` by the
+    # `pywin32.pth` so the extensions end up treated as top-level modules. We attempt to preserve the directory
+    # layout, so we need to add these directories to `sys.path` ourselves.
+    pywin32_ext_paths = ('win32', 'pythonwin')
+    pywin32_ext_paths = [os.path.join(sys._MEIPASS, pywin32_ext_path) for pywin32_ext_path in pywin32_ext_paths]
+    pywin32_ext_paths = [path for path in pywin32_ext_paths if os.path.isdir(path)]
+    sys.path.extend(pywin32_ext_paths)
+
+    # Additional handling of `pywin32_system32` DLL directory
     pywin32_system32_path = os.path.join(sys._MEIPASS, 'pywin32_system32')
+
     if not os.path.isdir(pywin32_system32_path):
-        # Either pywin32 is not collected, or we are dealing with Anaconda-packaged version that does not use the
-        # pywin32_system32 sub-directory. In the latter case, the pywin32 DLLs should be in `sys._MEIPASS`, and nothing
+        # Either pywin32 is not collected, or we are dealing with version that does not use the pywin32_system32
+        # sub-directory. In the latter case, the pywin32 DLLs should be in `sys._MEIPASS`, and nothing
         # else needs to be done here.
         return
 
