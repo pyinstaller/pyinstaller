@@ -1380,9 +1380,10 @@ def collect_delvewheel_libs_directory(package_name, libdir_name=None, datas=None
     binaries += [(str(dll_file), str(dll_file.parent.relative_to(pkg_base))) for dll_file in libs_dir.glob('*.dll')]
 
     # Collect the .load-order file; strictly speaking, this should be necessary only under python < 3.8, but let us
-    # collect it for completeness sake.
+    # collect it for completeness sake. Differently named variants have been observed: `.load_order`, `.load-order`,
+    # and `.load-order-Name`.
     datas += [(str(load_order_file), str(load_order_file.parent.relative_to(pkg_base)))
-              for load_order_file in libs_dir.glob('.load-order*')]
+              for load_order_file in libs_dir.glob('.load[-_]order*')]
 
     return datas, binaries
 
