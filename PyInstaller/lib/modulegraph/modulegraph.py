@@ -2140,7 +2140,38 @@ class ModuleGraph(ObjectGraph):
         elif isinstance(loader, ExtensionFileLoader):
             cls = Extension
         else:
-            src = loader.get_source(partname)
+            try:
+                src = loader.get_source(partname)
+            except (UnicodeDecodeError, SyntaxError) as e:
+                # The `UnicodeDecodeError` is typically raised here when the
+                # source file contains non-ASCII characters in some local
+                # encoding that is different from UTF-8, but fails to
+                # declare it via PEP361 encoding header. Python seems to
+                # be able to load and run such module, but we cannot retrieve
+                # the source for it via the `loader.get_source()`.
+                #
+                # The `UnicodeDecoreError` in turn triggers a `SyntaxError`
+                # when such invalid character appears on the first line of
+                # the source file (and interrupts the scan for PEP361
+                # encoding header).
+                #
+                # In such cases, we try to fall back to reading the source
+                # as raw data file.
+
+                # If `SyntaxError` was not raised during handling of
+                # a `UnicodeDecodeError`, it was likely a genuine syntax
+                # error, so re-raise it.
+                if isinstance(e, SyntaxError):
+                    if not isinstance(e.__context__, UnicodeDecodeError):
+                        raise
+
+                self.msg(2, "load_module: failed to obtain source for "
+                         f"{partname}: {e}! Falling back to reading as "
+                         "raw data!")
+
+                path = loader.get_filename(partname)
+                src = loader.get_data(path)
+
             if src is not None:
                 try:
                     co = compile(src, pathname, 'exec', ast.PyCF_ONLY_AST,
