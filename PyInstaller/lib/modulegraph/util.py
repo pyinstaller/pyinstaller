@@ -11,6 +11,7 @@ import re
 import marshal
 import warnings
 import inspect
+import importlib.util
 
 try:
     unicode
@@ -83,7 +84,7 @@ def imp_walk(name):
                 elif res.path.endswith('.pyc') or res.path.endswith('.pyo'):
                     co = res.get_code(namepart)
                     fp = BytesIO(
-                        imp.get_magic() + b'\0\0\0\0' + marshal.dumps(co))
+                        importlib.util.MAGIC_NUMBER + b'\0\0\0\0' + marshal.dumps(co))
                     res = (fp, res.path, ('.pyc', 'rb', imp.PY_COMPILED))
 
                 else:

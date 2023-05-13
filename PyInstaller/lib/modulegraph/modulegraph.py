@@ -25,6 +25,7 @@ import sys
 import re
 from collections import deque, namedtuple
 import warnings
+import importlib.util
 
 from altgraph.ObjectGraph import ObjectGraph
 from altgraph import GraphError
@@ -241,11 +242,11 @@ def os_listdir(path):
 def _code_to_file(co):
     """ Convert code object to a .pyc pseudo-file """
     if sys.version_info >= (3, 7):
-        header = imp.get_magic() + (b'\0' * 12)
+        header = importlib.util.MAGIC_NUMBER + (b'\0' * 12)
     elif sys.version_info >= (3, 4):
-        header = imp.get_magic() + (b'\0' * 8)
+        header = importlib.util.MAGIC_NUMBER + (b'\0' * 8)
     else:
-        header = imp.get_magic() + (b'\0' * 4)
+        header = importlib.util.MAGIC_NUMBER + (b'\0' * 4)
     return BytesIO(header + marshal.dumps(co))
 
 
