@@ -1,9 +1,0 @@
-Remove the use of the ``TOC`` class in the analysis / build process,
-and use plain ``list`` instances instead. The implicit normalization
-(de-duplication) of TOC entries performed by the ``TOC`` class has been
-replaced with explicit normalization. The TOC lists produced by ``Analysis``
-are explicitly normalized at the end of Analysis instantiation, before
-they are stored in the Analysis properties (e.g., ``Analysis.pure``,
-``Analysis.binaries``, ``Analysis.datas``). Similarly, the TOC lists
-passed to the build targets (e.g., ``PYZ``, ``EXE``, ``COLLECT``) are
-explicitly normalized as part of the targets' instantiation process.

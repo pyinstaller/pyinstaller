@@ -1,2 +1,0 @@
-Update the documentation on TOC lists and ``Tree`` class to reflect the
-deprecation of the ``TOC`` class.

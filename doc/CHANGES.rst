@@ -15,6 +15,74 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.11.0 (2023-05-13)
+-------------------
+
+Features
+~~~~~~~~
+
+* Add a work-around for pure-python modules that do not specify encoding via
+  :pep:`263` encoding header but contain non-ASCII characters in local
+  (non-UTF8) encoding. When such characters are present only in code comments,
+  python still loads and runs the module, but attempting to retrieve its source
+  code via the loader's ``get_source()`` method results in a
+  :class:`UnicodeDecodeError`, which interrupts the analysis process. The error
+  is now caught and a fall-back codepath attempts to retrieve the source code as
+  raw data to avoid encoding issues. (:issue:`7622`)
+
+
+Bugfix
+~~~~~~
+
+* (Windows) Avoid writing collected binaries to binary cache unless
+  they need to be processed (i.e., only if binary stripping or ``upx``
+  processing is enabled). (:issue:`7595`)
+* Fix a regression in bootloader that caused crash in onefile executables
+  when encountering a duplicated entry in the PKG/CArchive and the
+  ``PYINSTALLER_STRICT_UNPACK_MODE`` environment variable not being set.
+  (:issue:`7613`)
+
+
+Deprecations
+~~~~~~~~~~~~
+
+* The ``TOC`` class is now deprecated; use a plain ``list`` with the same
+  three-element tuples instead. PyInstaller now performs explicit
+  normalization (i.e., entry de-duplication) of the TOC lists passed
+  to the build targets (e.g., ``PYZ``, ``EXE``, ``COLLECT``) during their
+  instantiation. (:issue:`7615`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* Fix bootloader building with old versions of ``gcc`` that do not
+  support the ``-Wno-error=unused-but-set-variable`` compiler flag
+  (e.g., ``gcc`` v4.4.3). (:issue:`7592`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Update the documentation on TOC lists and ``Tree`` class to reflect the
+  deprecation of the ``TOC`` class. (:issue:`7615`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* Remove the use of the ``TOC`` class in the analysis / build process,
+  and use plain ``list`` instances instead. The implicit normalization
+  (de-duplication) of TOC entries performed by the ``TOC`` class has been
+  replaced with explicit normalization. The TOC lists produced by ``Analysis``
+  are explicitly normalized at the end of Analysis instantiation, before
+  they are stored in the Analysis properties (e.g., ``Analysis.pure``,
+  ``Analysis.binaries``, ``Analysis.datas``). Similarly, the TOC lists
+  passed to the build targets (e.g., ``PYZ``, ``EXE``, ``COLLECT``) are
+  explicitly normalized as part of the targets' instantiation process.
+  (:issue:`7615`)
+
+
 5.10.1 (2023-04-14)
 -------------------
 
