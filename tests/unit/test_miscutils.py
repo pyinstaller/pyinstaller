@@ -81,6 +81,43 @@ def test_versioninfo_str(tmp_path):
     assert vsinfo == vsinfo2
 
 
+# Test that we properly serialize and deserialize VersionInfo that contains strings with quotes, such as the
+# `FileDescription`  of `winrshost.exe` being `Host Process for WinRM's Remote Shell plugin`. See #7630.
+@pytest.mark.win32
+def test_versioninfo_str_quotes(tmp_path):
+    from PyInstaller.utils.win32.versioninfo import VSVersionInfo, \
+        FixedFileInfo, StringFileInfo, StringTable, StringStruct, \
+        VarFileInfo, VarStruct
+
+    FILE_DESCRIPTION = """versioninfo with quotes (' and ") test"""
+
+    vsinfo = VSVersionInfo(
+        ffi=FixedFileInfo(
+            filevers=(1, 2, 3, 4),
+            prodvers=(5, 6, 7, 8),
+            mask=0x3f,
+            flags=0x1,
+            OS=0x40004,
+            fileType=0x42,
+            subtype=0x42,
+            date=(0, 0)
+        ),
+        kids=[
+            StringFileInfo([StringTable('040904b0', [StringStruct('FileDescription', FILE_DESCRIPTION)])]),
+            VarFileInfo([VarStruct('Translation', [1033, 1200])])
+        ]
+    )
+
+    # "Serialize" to string. This is what grab_version.py utility does to write VsVersionInfo to output text file.
+    vs_info_str = str(vsinfo)
+
+    # "Deserialize" via eval. This is what `versioninfo.load_version_info_from_text_file` does to read `VsVersionInfo`
+    # from text file.
+    vsinfo2 = eval(vs_info_str)
+
+    assert vsinfo == vsinfo2
+
+
 @pytest.mark.win32
 def test_versioninfo_written_to_exe(tmp_path):
     from PyInstaller.utils.win32 import versioninfo
