@@ -451,7 +451,7 @@ class StringStruct:
         return self.toRaw() == other
 
     def __str__(self, indent=''):
-        return "StringStruct('%s', '%s')" % (self.name, self.val)
+        return "StringStruct(%r, %r)" % (self.name, self.val)
 
     def __repr__(self):
         return 'versioninfo.StringStruct(%r, %r)' % (self.name, self.val)
