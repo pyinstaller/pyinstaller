@@ -27,6 +27,9 @@ from PyInstaller import log as logging
 from PyInstaller.depend import dylib, utils
 from PyInstaller.utils.win32 import winutils
 
+if compat.is_darwin:
+    import PyInstaller.utils.osx as osxutils
+
 logger = logging.getLogger(__name__)
 
 seen = set()
@@ -289,6 +292,15 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
             # name!
             src_path = pathlib.Path(npth)
             dst_path = _select_destination_directory(src_path, parent_dir_preservation_paths)
+            dst_path = pathlib.PurePath(dst_path)  # Might be a str() if it is just a basename...
+
+            # If we are collecting library into top-level directory on macOS, check whether it comes from a
+            # .framework bundle. If it does, re-create the .framework bundle in the top-level directory
+            # instead.
+            if compat.is_darwin and dst_path.parent == pathlib.PurePath('.'):
+                if osxutils.is_framework_bundle_lib(src_path):
+                    dst_path = pathlib.PurePath(src_path.relative_to(src_path.parent.parent.parent.parent))
+
             lTOC.append((str(dst_path), str(src_path), 'BINARY'))
 
             # On non-Windows, if we are not collecting the binary into application's top-level directory ('.'),
@@ -296,7 +308,6 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
             # LD_LIBRARY_PATH being set to the top-level application directory on linux (although library search
             # should be mostly done via rpaths, so this might be redundant) and to accommodate library path
             # rewriting on macOS, which assumes that the library was collected into top-level directory.
-            dst_path = pathlib.PurePath(dst_path)  # Might be a str() if it is just a basename...
             if not compat.is_win and dst_path.parent != pathlib.PurePath('.'):
                 lTOC.append((str(dst_path.name), str(dst_path), 'SYMLINK'))
 
