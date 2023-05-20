@@ -691,10 +691,18 @@ class QtLibraryInfo:
 
         if is_macos_framework:
             # macOS .framework bundle
-            data_path = self.location['DataPath']
+            src_framework_path = os.path.join(self.location['LibrariesPath'], 'QtWebEngineCore.framework')
 
-            src_framework_path = os.path.join(data_path, 'lib', 'QtWebEngineCore.framework')
-            dst_framework_path = os.path.join(rel_data_path, 'lib', 'QtWebEngineCore.framework')
+            # If Qt libraries are bundled with the package, collect the .framework bundle into corresponding package's
+            # subdirectory, because binary dependency analysis will also try to preserve the directory structure.
+            # However, if we are collecting from system-wide Qt installation (e.g., Homebrew-installed Qt), the binary
+            # depndency analysis will attempt to re-create .framework bundle in top-level directory, so we need to
+            # collect the extra files there.
+            bundled_qt_libs = pathlib.Path(self.package_location) in pathlib.Path(src_framework_path).parents
+            if bundled_qt_libs:
+                dst_framework_path = os.path.join(rel_data_path, 'lib', 'QtWebEngineCore.framework')
+            else:
+                dst_framework_path = 'QtWebEngineCore.framework'  # In top-level directory
 
             # Collect files from QtWebEngineCore.framework/Helpers
             helper_datas = hooks.collect_system_data_files(
