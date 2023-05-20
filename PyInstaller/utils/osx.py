@@ -542,6 +542,20 @@ def _set_dylib_dependency_paths(filename, target_rpath):
         )
 
 
+def is_framework_bundle_lib(lib_path):
+    """
+    Check if the given shared library is part of a .framework bundle.
+    """
+
+    # For now, focus only on versioned layout, such as `QtCore.framework/Versions/5/QtCore`
+    if lib_path.parent.parent.name != "Versions":
+        return False
+    if lib_path.parent.parent.parent.name != lib_path.name + ".framework":
+        return False
+
+    return True
+
+
 def collect_info_plist_for_framework_bundles(binaries):
     """
     Scan the given binaries TOC list for shared libraries that are collected from macOS .framework bundles, and collect
@@ -549,15 +563,6 @@ def collect_info_plist_for_framework_bundles(binaries):
 
     Returns datas TOC list for the discovered Info.plist files.
     """
-    def _is_framework_lib(lib_path):
-        # For now, focus only on versioned layout, such as `QtCore.framework/Versions/5/QtCore`
-        if lib_path.parent.parent.name != "Versions":
-            return False
-        if lib_path.parent.parent.parent.name != lib_path.name + ".framework":
-            return False
-
-        return True
-
     info_plist_files = set()
 
     for dest_name, src_name, typecode in binaries:
@@ -568,11 +573,11 @@ def collect_info_plist_for_framework_bundles(binaries):
         dest_path = pathlib.PurePath(dest_name)
 
         # Check whether binary originates from a .framework bundle
-        if not _is_framework_lib(src_path):
+        if not is_framework_bundle_lib(src_path):
             continue
 
         # Check whether binary is also collected into a .framework bundle (i.e., the original layout is preserved)
-        if not _is_framework_lib(dest_path):
+        if not is_framework_bundle_lib(dest_path):
             continue
 
         # Assuming versioned layout, check if Info.plist exists in Resources sub-directory under the top-level
