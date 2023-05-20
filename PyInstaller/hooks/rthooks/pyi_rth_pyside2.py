@@ -17,7 +17,7 @@ import sys
 if sys.platform.startswith('win'):
     pyqt_path = os.path.join(sys._MEIPASS, 'PySide2')
 else:
-    pyqt_path = os.path.join(sys._MEIPASS, 'Qt', 'PySide2')
+    pyqt_path = os.path.join(sys._MEIPASS, 'PySide2', 'Qt')
 os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
 os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')
 # Modelled after similar PATH modification in PyQt5 rthook. With PySide2, this modification seems necessary for SSL DLLs
