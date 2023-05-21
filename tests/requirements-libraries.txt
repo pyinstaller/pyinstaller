@@ -54,7 +54,7 @@ requests==2.30.0
 scipy==1.10.1; python_version >= '3.8'
 # simplejson is used for text_c_extension
 simplejson==3.19.1
-sphinx==7.0.0;  python_version >= '3.8'
+sphinx==7.0.1;  python_version >= '3.8'
 # Required for test_namespace_package
 sqlalchemy==2.0.12
 zope.interface==6.0
