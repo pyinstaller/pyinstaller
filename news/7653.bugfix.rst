@@ -1,0 +1,10 @@
+Changes made to ``datas`` and ``binaries`` lists that are passed to
+``Analysis`` constructor will now invalidate the cached ``Analysis``
+and trigger a re-build. This applies both to changes made by editing
+the .spec file manually and to automatic changes due to addition or
+removal of corresponding command-line options (:option:`--add-data`,
+:option:`--add-binaries`, :option:`--collect-data`,
+:option:`--collect-binaries`, :option:`--copy-metadata`).
+Previously, changes might not have taken effect as the old cached build
+was returned if available and unless user explicitly requested a clean
+build using the :option:`--clean` command-line option.

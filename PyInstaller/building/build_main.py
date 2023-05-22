@@ -31,7 +31,7 @@ from PyInstaller.building.osx import BUNDLE
 from PyInstaller.building.splash import Splash
 from PyInstaller.building.toc_conversion import DependencyProcessor
 from PyInstaller.building.utils import (
-    _check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas, compile_pymodule,
+    _check_guts_toc, _check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas, compile_pymodule,
     add_suffix_to_extension, postprocess_binaries_toc_pywin32, postprocess_binaries_toc_pywin32_anaconda
 )
 from PyInstaller.compat import PYDYLIB_NAMES, is_win, is_conda
@@ -396,6 +396,9 @@ class Analysis(Target):
                 f.write('# -*- coding: utf-8 -*-\nkey = %r\n' % cipher.key)
             self.hiddenimports.append('tinyaes')
 
+        self._input_binaries = []
+        self._input_datas = []
+
         self.excludes = excludes or []
         self.scripts = []
         self.pure = []
@@ -411,19 +414,25 @@ class Analysis(Target):
         self.noarchive = noarchive
         self.module_collection_mode = module_collection_mode or {}
 
-        # Initialize 'binaries' and 'datas' with lists specified in .spec file.
-        # Ensure the lists are normalized before guts comparison.
+        # Expand the `binaries` and `datas` lists specified in the .spec file, and ensure that the lists are normalized
+        # and sorted before guts comparison.
+        #
+        # While we use these lists to initialize `Analysis.binaries` and `Analysis.datas`, at this point, we need to
+        # store them in separate variables, which undergo *full* guts comparison (`_check_guts_toc`) as opposed to
+        # just mtime-based comparison (`_check_guts_toc_mtime`). Changes to these initial list *must* trigger a rebuild
+        # (and due to the way things work, a re-analysis), otherwise user might end up with a cached build that fails to
+        # reflect the changes.
         if binaries:
             logger.info("Appending 'binaries' from .spec")
-            for name, pth in format_binaries_and_datas(binaries, workingdir=spec_dir):
-                self.binaries.append((name, pth, 'BINARY'))
-            self.binaries = normalize_toc(self.binaries)
+            self._input_binaries = [(dest_name, src_name, 'BINARY')
+                                    for dest_name, src_name in format_binaries_and_datas(binaries, workingdir=spec_dir)]
+            self._input_binaries = sorted(normalize_toc(self._input_binaries))
 
         if datas:
             logger.info("Appending 'datas' from .spec")
-            for name, pth in format_binaries_and_datas(datas, workingdir=spec_dir):
-                self.datas.append((name, pth, 'DATA'))
-            self.datas = normalize_toc(self.datas)
+            self._input_datas = [(dest_name, src_name, 'DATA')
+                                 for dest_name, src_name in format_binaries_and_datas(datas, workingdir=spec_dir)]
+            self._input_datas = sorted(normalize_toc(self._input_datas))
 
         self.__postinit__()
 
@@ -439,6 +448,9 @@ class Analysis(Target):
         ('win_private_assemblies', _check_guts_eq),
         ('noarchive', _check_guts_eq),
         ('module_collection_mode', _check_guts_eq),
+
+        ('_input_binaries', _check_guts_toc),
+        ('_input_datas', _check_guts_toc),
 
         # 'cipher': no need to check as it is implied by an additional hidden import
 
@@ -514,6 +526,11 @@ class Analysis(Target):
         for m in self.excludes:
             logger.debug("Excluding module '%s'" % m)
         self.graph = initialize_modgraph(excludes=self.excludes, user_hook_dirs=self.hookspath)
+
+        # Initialize `binaries` and `datas` with `_input_binaries` and `_input_datas`. Make sure to copy the lists
+        # to prevent modifications of original lists, which we need to store in original form for guts comparison.
+        self.datas = [entry for entry in self._input_datas]
+        self.binaries = [entry for entry in self._input_binaries]
 
         # TODO: find a better place where to put 'base_library.zip' and when to created it.
         # For Python 3 it is necessary to create file 'base_library.zip' containing core Python modules. In Python 3
