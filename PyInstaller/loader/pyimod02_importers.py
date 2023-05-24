@@ -57,6 +57,17 @@ def _decode_source(source_bytes):
     return newline_decoder.decode(source_bytes.decode(encoding[0]))
 
 
+class PyiFrozenImporterState:
+    """
+    An object encapsulating extra information for PyiFrozenImporter, to be stored in `ModuleSpec.loader_state`. Having
+    a custom type allows us to verify that module spec indeed contains the original loader state data, as set by
+    `PyiFrozenImporter.find_spec`.
+    """
+    def __init__(self, entry_name):
+        # Module name, as recorded in the PYZ archive.
+        self.pyz_entry_name = entry_name
+
+
 class PyiFrozenImporter:
     """
     Load bytecode of Python modules from the executable created by PyInstaller.
@@ -282,8 +293,8 @@ class PyiFrozenImporter:
             self,
             is_package=is_pkg,
             origin=origin,
-            # Provide the entry_name for the loader to use during loading.
-            loader_state=entry_name
+            # Provide the entry_name (name of module entry in the PYZ) for the loader to use during loading.
+            loader_state=PyiFrozenImporterState(entry_name)
         )
 
         # Make the import machinery set __file__.
@@ -329,7 +340,17 @@ class PyiFrozenImporter:
         for reloading, where some kinds of modules do not support in-place reloading.
         """
         spec = module.__spec__
-        bytecode = self.get_code(spec.loader_state)
+
+        if isinstance(spec.loader_state, PyiFrozenImporterState):
+            # Use the module name stored in the `loader_state`, which was set by our `find_spec()` implementation.
+            # This is necessary to properly resolve aliased modules; for example, `module.__spec__.name` contains
+            # `pkg_resources.extern.jaraco.text`, but the original name stored in `loader_state`, which we need
+            # to use for code look-up, is `pkg_resources._vendor.jaraco.text`.
+            module_name = spec.loader_state.pyz_entry_name
+        else:
+            raise RuntimeError(f"Module's spec contains loader_state of incompatible type: {type(spec.loader_state)}")
+
+        bytecode = self.get_code(module_name)
 
         # Set by the import machinery
         assert hasattr(module, '__file__')
