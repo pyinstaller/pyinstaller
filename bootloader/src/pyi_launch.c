@@ -514,7 +514,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
             }
 
             /* Store the code object to __main__ module's _pyi_main_co
-             * attribute, so it can be retrieved by FrozenImporter,
+             * attribute, so it can be retrieved by PyiFrozenImporter,
              * if necessary. */
             PI_PyObject_SetAttrString(__main__, "_pyi_main_co", code);
 

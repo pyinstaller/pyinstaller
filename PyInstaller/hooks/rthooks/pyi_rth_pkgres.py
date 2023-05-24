@@ -14,13 +14,13 @@ import pathlib
 import sys
 
 import pkg_resources
-from pyimod02_importers import FrozenImporter
+from pyimod02_importers import PyiFrozenImporter
 
 SYS_PREFIX = pathlib.PurePath(sys._MEIPASS)
 
-# To make pkg_resources work with frozen modules we need to set the 'Provider' class for FrozenImporter. This class
+# To make pkg_resources work with frozen modules we need to set the 'Provider' class for PyiFrozenImporter. This class
 # decides where to look for resources and other stuff. 'pkg_resources.NullProvider' is dedicated to PEP302 import hooks
-# like FrozenImporter is. It uses method __loader__.get_data() in methods pkg_resources.resource_string() and
+# like PyiFrozenImporter is. It uses method __loader__.get_data() in methods pkg_resources.resource_string() and
 # pkg_resources.resource_stream()
 #
 # We provide PyiFrozenProvider, which subclasses the NullProvider and implements _has(), _isdir(), and _listdir()
@@ -32,7 +32,7 @@ SYS_PREFIX = pathlib.PurePath(sys._MEIPASS)
 # results are typically combined for both types of resources (e.g., when listing a directory or checking whether a
 # resource exists). When the order of precedence matters, the PYZ-embedded resources take precedence over the
 # on-filesystem ones, to keep the behavior consistent with the actual file content retrieval via _get() method (which in
-# turn uses FrozenImporter's get_data() method). For example, when checking whether a resource is a directory via
+# turn uses PyiFrozenImporter's get_data() method). For example, when checking whether a resource is a directory via
 # _isdir(), a PYZ-embedded file will take precedence over a potential on-filesystem directory. Also, in contrast to
 # unfrozen packages, the frozen ones do not contain source .py files, which are therefore absent from content listings.
 
@@ -95,7 +95,7 @@ _toc_tree_cache = {}
 
 class PyiFrozenProvider(pkg_resources.NullProvider):
     """
-    Custom pkg_resources provider for FrozenImporter.
+    Custom pkg_resources provider for PyiFrozenImporter.
     """
     def __init__(self, module):
         super().__init__(module)
@@ -197,4 +197,4 @@ class PyiFrozenProvider(pkg_resources.NullProvider):
         return content
 
 
-pkg_resources.register_loader_type(FrozenImporter, PyiFrozenProvider)
+pkg_resources.register_loader_type(PyiFrozenImporter, PyiFrozenProvider)

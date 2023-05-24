@@ -22,8 +22,8 @@ current wxPython version (e.g., `setupv1` for wxPython 2.8 or older) _before_ th
 
 
 NOTE: "wx.lib.pubsub.__init__" on 2.8 tries to use `imp.find_loader` to find out if the module is importable;
-because `imp.find_loader` does not honor our FrozenImporter path hook, it always returns None for *any* frozen module.
-This means that 2.8 never uses the v1 API when frozen, which is a deviation from its non-frozen behavior.
+because `imp.find_loader` does not honor our PyiFrozenImporter path hook, it always returns None for *any* frozen
+module. This means that 2.8 never uses the v1 API when frozen, which is a deviation from its non-frozen behavior.
 
 We work around this in the wx.lib.pubsub hook by including the `autosetuppubsubv1.py` as a data file instead of a
 python module, which stores it as a plain file in the exe folder (or temp folder) and thus makes it visible

@@ -144,7 +144,7 @@ class ZlibArchiveReader:
 
     def is_package(self, name):
         """
-        Check if the given name refers to a package entry. Used by FrozenImporter at runtime.
+        Check if the given name refers to a package entry. Used by PyiFrozenImporter at runtime.
         """
         entry = self.toc.get(name)
         if entry is None:
@@ -154,7 +154,7 @@ class ZlibArchiveReader:
 
     def is_pep420_namespace_package(self, name):
         """
-        Check if the given name refers to a namespace package entry. Used by FrozenImporter at runtime.
+        Check if the given name refers to a namespace package entry. Used by PyiFrozenImporter at runtime.
         """
         entry = self.toc.get(name)
         if entry is None:

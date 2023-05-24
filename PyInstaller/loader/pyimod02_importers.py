@@ -57,7 +57,7 @@ def _decode_source(source_bytes):
     return newline_decoder.decode(source_bytes.decode(encoding[0]))
 
 
-class FrozenImporter:
+class PyiFrozenImporter:
     """
     Load bytecode of Python modules from the executable created by PyInstaller.
 
@@ -76,9 +76,6 @@ class FrozenImporter:
     This is also a PEP-451 finder and loader class for the ModuleSpec type import system. A PEP-451 finder requires
     method find_spec(), a PEP-451 loader requires methods exec_module(), load_module() and (optionally) create_module().
     All these methods are implemented in this one class.
-
-    To use this class just call:
-        FrozenImporter.install()
     """
     def __init__(self):
         """
@@ -86,7 +83,7 @@ class FrozenImporter:
         """
         # Examine all items in sys.path and the one like /path/executable_name?117568 is the correct executable with
         # the bundled zip archive. Use this value for the ZlibArchiveReader class, and remove this item from sys.path.
-        # It was needed only for FrozenImporter class. Wrong path from sys.path raises an ArchiveReadError exception.
+        # It was needed only for PyiFrozenImporter class. Wrong path from sys.path raises an ArchiveReadError exception.
         for pyz_filepath in sys.path:
             try:
                 # Unzip zip archive bundled with the executable.
@@ -102,7 +99,7 @@ class FrozenImporter:
                 # accessible as a set().
                 self.toc = set(self._pyz_archive.toc.keys())
                 # Return - no error was raised.
-                trace("# PyInstaller: FrozenImporter(%s)", pyz_filepath)
+                trace("# PyInstaller: PyiFrozenImporter(%s)", pyz_filepath)
                 return
             except IOError:
                 # Item from sys.path is not ZlibArchiveReader; let's try next one.
@@ -119,9 +116,9 @@ class FrozenImporter:
             try:
                 return self._pyz_archive.is_pep420_namespace_package(fullname)
             except Exception as e:
-                raise ImportError('Loader FrozenImporter cannot handle module ' + fullname) from e
+                raise ImportError(f'PyiFrozenImporter cannot handle module {fullname!r}') from e
         else:
-            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+            raise ImportError(f'PyiFrozenImporter cannot handle module {fullname!r}')
 
     #-- Optional Extensions to the PEP-302 Importer Protocol --
 
@@ -130,9 +127,9 @@ class FrozenImporter:
             try:
                 return self._pyz_archive.is_package(fullname)
             except Exception as e:
-                raise ImportError('Loader FrozenImporter cannot handle module ' + fullname) from e
+                raise ImportError(f'PyiFrozenImporter cannot handle module {fullname!r}') from e
         else:
-            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname)
+            raise ImportError(f'PyiFrozenImporter cannot handle module {fullname!r}')
 
     def get_code(self, fullname):
         """
@@ -150,7 +147,7 @@ class FrozenImporter:
             # exception, which is turned into ImportError.
             return self._pyz_archive.extract(fullname)
         except Exception as e:
-            raise ImportError('Loader FrozenImporter cannot handle module ' + fullname) from e
+            raise ImportError(f'PyiFrozenImporter cannot handle module {fullname!r}') from e
 
     def get_source(self, fullname):
         """
@@ -355,10 +352,10 @@ class FrozenImporter:
         """
         Return importlib.resource-compatible resource reader.
         """
-        return FrozenResourceReader(self, fullname)
+        return PyiFrozenResourceReader(self, fullname)
 
 
-class FrozenResourceReader:
+class PyiFrozenResourceReader:
     """
     Resource reader for importlib.resources / importlib_resources support.
 
@@ -412,10 +409,10 @@ class FrozenResourceReader:
 
 def install():
     """
-    Install FrozenImporter class and other classes into the import machinery.
+    Install PyiFrozenImporter class into the import machinery.
 
-    This function installs the FrozenImporter class into the import machinery of the running process. The importer is
-    added to sys.meta_path. It could be added to sys.path_hooks, but sys.meta_path is processed by Python before
+    This function installs the PyiFrozenImporter class into the import machinery of the running process. The importer
+    is added to sys.meta_path. It could be added to sys.path_hooks, but sys.meta_path is processed by Python before
     looking at sys.path!
 
     The order of processing import hooks in sys.meta_path:
@@ -426,8 +423,8 @@ def install():
     4. Modules from sys.path
     """
     # Ensure Python looks in the bundled zip archive for modules before any other places.
-    fimp = FrozenImporter()
-    sys.meta_path.append(fimp)
+    importer = PyiFrozenImporter()
+    sys.meta_path.append(importer)
 
     # On Windows there is importer _frozen_importlib.WindowsRegistryFinder that looks for Python modules in Windows
     # registry. The frozen executable should not look for anything in the Windows registry. Remove this importer
@@ -440,18 +437,18 @@ def install():
     # importer as it uses extension names like 'module.submodle.so' (instead of paths). As of Python 3.7.0b2, there
     # are several PathFinder instances (and duplicate ones) on sys.meta_path. This propobly is a bug, see
     # https://bugs.python.org/issue33128. Thus we need to move all of them to the end, and eliminate the duplicates.
-    pathFinders = []
+    path_finders = []
     for item in reversed(sys.meta_path):
         if getattr(item, '__name__', None) == 'PathFinder':
             sys.meta_path.remove(item)
-            if item not in pathFinders:
-                pathFinders.append(item)
-    sys.meta_path.extend(reversed(pathFinders))
+            if item not in path_finders:
+                path_finders.append(item)
+    sys.meta_path.extend(reversed(path_finders))
     # TODO: do we need _frozen_importlib.FrozenImporter in Python 3? Could it be also removed?
 
     # Set the FrozenImporter as loader for __main__, in order for python to treat __main__ as a module instead of
     # a built-in.
     try:
-        sys.modules['__main__'].__loader__ = fimp
+        sys.modules['__main__'].__loader__ = importer
     except Exception:
         pass

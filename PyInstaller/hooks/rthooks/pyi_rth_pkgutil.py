@@ -9,24 +9,24 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 #
-# This rthook overrides pkgutil.iter_modules with custom implementation that uses PyInstaller's FrozenImporter to list
-# sub-modules embedded in the PYZ archive. The non-embedded modules (binary extensions, or .pyc modules in noarchive
-# build) are handled by original pkgutil iter_modules implementation (and consequently, python's FileFinder).
+# This rthook overrides pkgutil.iter_modules with custom implementation that uses PyInstaller's PyiFrozenImporter to
+# list sub-modules embedded in the PYZ archive. The non-embedded modules (binary extensions, or .pyc modules in
+# noarchive build) are handled by original pkgutil iter_modules implementation (and consequently, python's FileFinder).
 #
 # The preferred way of adding support for iter_modules would be adding non-standard iter_modules() method to
-# FrozenImporter itself. However, that seems to work only for path entry finders (for use with sys.path_hooks), while
-# PyInstaller's FrozenImporter is registered as meta path finders (for use with sys.meta_path). Turning FrozenImporter
-# into path entry finder, would seemingly require the latter to support on-filesystem resources (e.g., extension
-# modules) in addition to PYZ-embedded ones.
+# PyiFrozenImporter itself. However, that seems to work only for path entry finders (for use with sys.path_hooks), while
+# PyInstaller's PyiFrozenImporter is registered as meta path finders (for use with sys.meta_path). Turning
+# PyiFrozenImporter into path entry finder, would seemingly require the latter to support on-filesystem resources
+# (e.g., extension modules) in addition to PYZ-embedded ones.
 #
 # Therefore, we instead opt for overriding pkgutil.iter_modules with custom implementation that augments the output of
-# original implementation with contents of PYZ archive from FrozenImporter's TOC.
+# original implementation with contents of PYZ archive from PyiFrozenImporter's TOC.
 
 import os
 import pkgutil
 import sys
 
-from pyimod02_importers import FrozenImporter
+from pyimod02_importers import PyiFrozenImporter
 
 _orig_pkgutil_iter_modules = pkgutil.iter_modules
 
@@ -36,9 +36,9 @@ def _pyi_pkgutil_iter_modules(path=None, prefix=''):
     # extensions and compiled pyc modules in noarchive debug builds).
     yield from _orig_pkgutil_iter_modules(path, prefix)
 
-    # Find the instance of PyInstaller's FrozenImporter.
+    # Find the instance of PyInstaller's PyiFrozenImporter.
     for importer in pkgutil.iter_importers():
-        if isinstance(importer, FrozenImporter):
+        if isinstance(importer, PyiFrozenImporter):
             break
     else:
         return

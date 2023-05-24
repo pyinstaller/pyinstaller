@@ -15,7 +15,7 @@
 #
 # Running the unfrozen test script allows us to verify the behavior of importlib.resources (or its importlib_resources
 # back-port for python 3.8 and earlier) and thereby also validate the test script itself. Running the frozen test
-# validates the behavior of the resource reader implemented by PyInstaller's FrozenImporter.
+# validates the behavior of the resource reader implemented by PyInstaller's PyiFrozenImporter.
 #
 # For details on the structure of the test and the contents of the test package, see the top comment in the test script
 # itself.
