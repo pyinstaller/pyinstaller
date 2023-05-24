@@ -347,10 +347,25 @@ class PyiFrozenImporter:
             # `pkg_resources.extern.jaraco.text`, but the original name stored in `loader_state`, which we need
             # to use for code look-up, is `pkg_resources._vendor.jaraco.text`.
             module_name = spec.loader_state.pyz_entry_name
+        elif isinstance(spec.loader_state, dict):
+            # This seems to happen when `importlib.util.LazyLoader` is used, and our original `loader_state` is lost.
+            # We could use `spec.name` and hope for the best, but that will likely fail with aliased modules (see
+            # the comment in the branch above for an example).
+            #
+            # So try to reconstruct the original module name from the `origin` - which is essentially the reverse of
+            # our `get_filename()` implementation.
+            assert spec.origin.startswith(SYS_PREFIX)
+            module_name = spec.origin[SYS_PREFIXLEN:].replace(os.sep, '.')
+            if module_name.endswith('.pyc'):
+                module_name = module_name[:-4]
+            if module_name.endswith('.__init__'):
+                module_name = module_name[:-9]
         else:
             raise RuntimeError(f"Module's spec contains loader_state of incompatible type: {type(spec.loader_state)}")
 
         bytecode = self.get_code(module_name)
+        if bytecode is None:
+            raise RuntimeError(f"Failed to retrieve bytecode for {spec.name!r}!")
 
         # Set by the import machinery
         assert hasattr(module, '__file__')
