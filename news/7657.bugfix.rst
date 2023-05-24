@@ -1,0 +1,2 @@
+Attempt to fix compatibility of PyInstaller's ``PyiFrozenImporter`` with
+``importlib.util.LazyLoader``.
