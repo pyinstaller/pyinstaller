@@ -1,0 +1,9 @@
+(macOS) When rewriting the dylib identifier and paths to linked
+libraries in a collected binary, instead of directly using
+``@loader_path``-based path, use ``@rpath``-based path and replace
+rpaths in the binary with a single rpath that points to the top-level
+application directory, relative to ``@loader_path``. This ensures that
+the library identifiers of collected shared libraries and their
+references in referring binaries always match, which allows packages
+to pre-load a library from an arbitrary location via for example
+``ctypes``.
