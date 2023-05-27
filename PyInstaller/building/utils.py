@@ -29,7 +29,6 @@ from PyInstaller import compat
 from PyInstaller import log as logging
 from PyInstaller.compat import (EXTENSION_SUFFIXES, is_cygwin, is_darwin, is_win)
 from PyInstaller.config import CONF
-from PyInstaller.depend import dylib
 from PyInstaller.depend.bindepend import match_binding_redirect
 from PyInstaller.utils import misc
 
@@ -356,15 +355,22 @@ def checkCache(
     cache_index[basenm] = digest
     misc.save_py_data_struct(cacheindexfn, cache_index)
 
-    # On Mac OS we need relative paths to dll dependencies starting with @executable_path. While modifying
-    # the headers invalidates existing signatures, we avoid removing them in order to speed things up (and
-    # to avoid potential bugs in the codesign utility, like the one reported on Mac OS 10.13 in #6167).
+    # On macOS, we need to modify the given binary's paths to the dependent libraries, in order to ensure they are
+    # relocatable and always refer to location within the frozen application. Specifically, we make all dependent
+    # library paths relative to @rpath, and set @rpath to point to the top-level application directory, relative to
+    # the binary's location (i.e., @loader_path).
+    #
+    # While modifying the headers invalidates existing signatures, we avoid removing them in order to speed things up
+    # (and to avoid potential bugs in the codesign utility, like the one reported on Mac OS 10.13 in #6167).
     # The forced re-signing at the end should take care of the invalidated signatures.
     if is_darwin:
         try:
             osxutils.binary_to_target_arch(cachedfile, target_arch, display_name=fnm)
             #osxutils.remove_signature_from_binary(cachedfile)  # Disabled as per comment above.
-            dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
+            target_rpath = str(
+                pathlib.PurePath('@loader_path', *['..' for level in pathlib.PurePath(dist_nm).parent.parts])
+            )
+            osxutils.set_dylib_dependency_paths(cachedfile, target_rpath)
             osxutils.sign_binary(cachedfile, codesign_identity, entitlements_file)
         except osxutils.InvalidBinaryError:
             # Raised by osxutils.binary_to_target_arch when the given file is not a valid macOS binary (for example,
@@ -383,6 +389,8 @@ def checkCache(
             if strict_arch_validation:
                 raise
             logger.debug("File %s failed optional architecture validation - collecting as-is!", fnm)
+        except Exception as e:
+            raise SystemError(f"Failed to process binary {cachedfile!r}!") from e
 
     return cachedfile
 

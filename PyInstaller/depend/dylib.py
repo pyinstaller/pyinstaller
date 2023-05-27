@@ -26,8 +26,6 @@ from PyInstaller import compat
 
 logger = logging.getLogger(__name__)
 
-_BOOTLOADER_FNAMES = {'run', 'run_d', 'runw', 'runw_d'}
-
 # Ignoring some system libraries speeds up packaging process
 _excludes = {
     # Ignore annoying warnings with Windows system DLLs.
@@ -378,76 +376,3 @@ def warn_missing_lib(libname):
     Check if a missing-library warning should be displayed for the given library name (or full path).
     """
     return not missing_lib_warning_suppression_list.search(libname)
-
-
-def mac_set_relative_dylib_deps(libname, distname):
-    """
-    On Mac OS set relative paths to dynamic library dependencies of `libname`.
-
-    Relative paths allow to avoid using environment variable DYLD_LIBRARY_PATH. There are known some issues with
-    DYLD_LIBRARY_PATH. Relative paths is more flexible mechanism.
-
-    Current location of dependent libraries is derived from the location of the library path (paths start with
-    '@loader_path').
-
-    'distname'  path of the library relative to dist directory of frozen executable. We need this to determine the level
-                of directory level for @loader_path of binaries not found in dist directory.
-
-                For example, Qt5 plugins are not in the same directory as Qt*.dylib files. Without using
-                '@loader_path/../..' for Qt plugins, Mac OS would not be able to resolve shared library dependencies,
-                and Qt plugins will not be loaded.
-    """
-
-    from macholib import util
-    from macholib.MachO import MachO
-
-    # Ignore bootloader; otherwise PyInstaller fails with exception like
-    # 'ValueError: total_size > low_offset (288 > 0)'
-    if os.path.basename(libname) in _BOOTLOADER_FNAMES:
-        return
-
-    # Determine how many directories up ('../') is the directory with shared dynamic libraries.
-    # E.g., ./qt4_plugins/images/ -> ./../../
-    parent_dir = ''
-    # Check if distname is not only base filename.
-    if os.path.dirname(distname):
-        parent_level = len(os.path.dirname(distname).split(os.sep))
-        parent_dir = parent_level * (os.pardir + os.sep)
-
-    def match_func(pth):
-        """
-        For system libraries is still used absolute path. It is unchanged.
-        """
-        # Leave system dynamic libraries unchanged.
-        if util.in_system_path(pth):
-            return None
-
-        # The older python.org builds that use system Tcl/Tk framework have their _tkinter.cpython-*-darwin.so
-        # library linked against /Library/Frameworks/Tcl.framework/Versions/8.5/Tcl and
-        # /Library/Frameworks/Tk.framework/Versions/8.5/Tk, although the actual frameworks are located in
-        # /System/Library/Frameworks. Therefore, they slip through the above in_system_path() check, and we need to
-        # exempt them manually.
-        _exemptions = [
-            '/Library/Frameworks/Tcl.framework/',
-            '/Library/Frameworks/Tk.framework/',
-        ]
-        if any([x in pth for x in _exemptions]):
-            return None
-
-        # Use relative path to dependent dynamic libraries based on the location of the executable.
-        return os.path.join('@loader_path', parent_dir, os.path.basename(pth))
-
-    # Rewrite mach headers with @loader_path.
-    dll = MachO(libname)
-    dll.rewriteLoadCommands(match_func)
-
-    # Write changes into file. Write code is based on macholib example.
-    try:
-        with open(dll.filename, 'rb+') as f:
-            for header in dll.headers:
-                f.seek(0)
-                dll.write(f)
-            f.seek(0, 2)
-            f.flush()
-    except Exception:
-        pass
