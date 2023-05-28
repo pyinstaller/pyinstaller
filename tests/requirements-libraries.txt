@@ -50,7 +50,7 @@ PyQt6-QScintilla==2.14.0; sys_platform != 'linux'  # binary wheels incompatible 
 PyQt6-WebEngine==6.5.0
 python-dateutil==2.8.2
 pytz==2023.3
-requests==2.30.0
+requests==2.31.0
 scipy==1.10.1; python_version >= '3.8'
 # simplejson is used for text_c_extension
 simplejson==3.19.1
