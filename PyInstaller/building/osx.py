@@ -10,8 +10,10 @@
 #-----------------------------------------------------------------------------
 
 import os
+import pathlib
 import plistlib
 import shutil
+import subprocess
 
 from PyInstaller.building.api import COLLECT, EXE
 from PyInstaller.building.datastruct import Target, logger, normalize_toc
@@ -301,3 +303,53 @@ class BUNDLE(Target):
                 raise RuntimeError("Failed to codesign the bundle!") from e
 
         logger.info("Building BUNDLE %s completed successfully.", self.tocbasename)
+
+        # Optionally verify bundle's signature. This is primarily intended for our CI.
+        if os.environ.get("PYINSTALLER_VERIFY_BUNDLE_SIGNATURE", "0") != "0":
+            self.verify_bundle_signature(self.name)
+
+    @staticmethod
+    def verify_bundle_signature(bundle_dir):
+        logger.info("Verifying signature for BUNDLE %s...", bundle_dir)
+
+        # First, verify the bundle signature using codesign.
+        cmd_args = ['codesign', '--verify', '--all-architectures', '--deep', '--strict', bundle_dir]
+        p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        if p.returncode:
+            raise SystemError(
+                f"codesign command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}"
+            )
+
+        # Ensure that code-signing information is *NOT* embedded in the files' extended attributes.
+        #
+        # This happens when files other than binaries are present in Contents/MacOS directory; as the signature cannot
+        # be embedded within the file itself (contrary to binaries with LC_CODE_SIGNATURE section in their header), it
+        # ends up stores in the file's extended attributes. However, if such bundle is transferred using a method that
+        # does not support extended attributes (for example, a zip file), the signatures on these files are lost, and
+        # the signature of the bundle as a whole becomes invalid. This is the primary reason why we need to relocate
+        # non-binaries into `Contents/Resources` - the signatures for files in that directory end up stored in
+        # `Contents/_CodeSignature/CodeResources` file.
+        #
+        # This check therefore aims to ensure that all files have been properly relocated to their corresponding
+        # locations w.r.t. the code-signing requirements.
+        CODESIGN_ATTRS = (
+            "com.apple.cs.CodeRequirements",
+            "com.apple.cs.CodeRequirements-1",
+            "com.apple.cs.CodeSignature",
+        )
+
+        for entry in pathlib.Path(bundle_dir).rglob("*"):
+            if not entry.is_file():
+                continue
+
+            cmd_args = ["xattr", str(entry)]
+            p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            if p.returncode:
+                raise SystemError(
+                    f"xattr command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}"
+                )
+
+            if any([attr in p.stdout for attr in CODESIGN_ATTRS]):
+                raise ValueError(f"Code-sign attributes found in extended attributes of {str(entry)!r}!")
+
+        logger.info("BUNDLE verification complete!")
