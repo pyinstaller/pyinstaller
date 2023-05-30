@@ -1,0 +1,11 @@
+(macOS) In generated .app bundles, the data files from ``PySide2``,
+``PySide6``, ``PyQt5``, or ``PyQt6`` directory are now relocated to
+the directory structure rooted in ``Contents/Resources`` to ensure
+compliance with code-signing requirements. The content cross-linking
+between ``Contents/Resources`` and ``Contents/MacOS`` should ensure
+that ``QML`` components in the ``qml`` sub-directory continue to work in
+spite of plugins (shared libraries) being technically separated from
+their corresponding metadata files. The automatic-work around for directories
+with dots in names should prevent code-signing issues due to some ``QML``
+components in Qt5 having dot in their names (e.g., ``QtQuick.2`` and
+``QtQuick/Controls.2``.
