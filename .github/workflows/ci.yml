@@ -18,9 +18,13 @@ env:
   FORCE_COLOR: 1
   # Enable strict unpack mode to catch file duplication problems in onefile builds (at executable run-time).
   PYINSTALLER_STRICT_UNPACK_MODE: 1
-  # Enable strict cpllect mode to catch file duplication problems in PKG/Carchive (onefile builds) or COLLECT
+  # Enable strict collect mode to catch file duplication problems in PKG/Carchive (onefile builds) or COLLECT
   # (onedir builds) at build time.
   PYINSTALLER_STRICT_COLLECT_MODE: 1
+  # Enable strict handling of codesign errors for macOS bundles.
+  PYINSTALLER_STRICT_BUNDLE_CODESIGN_ERROR: 1
+  # Enable strict verification of macOS bundles w.r.t. the code-signing requirements.
+  PYINSTALLER_VERIFY_BUNDLE_SIGNATURE: 1
 
 permissions:
   contents: read # to fetch code (actions/checkout)
