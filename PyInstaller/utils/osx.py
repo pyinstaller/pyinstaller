@@ -556,14 +556,15 @@ def is_framework_bundle_lib(lib_path):
     return True
 
 
-def collect_info_plist_for_framework_bundles(binaries):
+def collect_files_from_framework_bundles(binaries):
     """
     Scan the given binaries TOC list for shared libraries that are collected from macOS .framework bundles, and collect
-    the bundles' Info.plist files.
+    the bundles' Info.plist files. Also create Versions/Current symlink pointing to the Versions/<version> directory
+    containing the binary.
 
     Returns datas TOC list for the discovered Info.plist files.
     """
-    info_plist_files = set()
+    framework_files = set()
 
     for dest_name, src_name, typecode in binaries:
         if typecode != 'BINARY':
@@ -580,13 +581,16 @@ def collect_info_plist_for_framework_bundles(binaries):
         if not is_framework_bundle_lib(dest_path):
             continue
 
-        # Assuming versioned layout, check if Info.plist exists in Resources sub-directory under the top-level
-        # .framework directory
-        info_plist_src = src_path.parent.parent.parent / "Resources" / "Info.plist"
+        # Assuming versioned layout, Info.plist should exist in Resources directory located next to the binary.
+        info_plist_src = src_path.parent / "Resources" / "Info.plist"
         if not info_plist_src.is_file():
-            continue
+            raise SystemError(f"Cannot find Info.plist file for .framework bundle: {info_plist_src}")
+        info_plist_dest = dest_path.parent / "Resources" / "Info.plist"
+        framework_files.add((str(info_plist_dest), str(info_plist_src), "DATA"))
 
-        info_plist_dest = dest_path.parent.parent.parent / "Resources" / "Info.plist"
-        info_plist_files.add((str(info_plist_dest), str(info_plist_src), "DATA"))
+        # Reconstruct the symlink Versions/Current -> Versions/<version>.
+        # This one seems to be necessary for code signing, but might be absent from .framework bundles shipped with
+        # python packages. So we always create it ourselves.
+        framework_files.add((str(dest_path.parent.parent / "Current"), str(dest_path.parent.name), "SYMLINK"))
 
-    return sorted(info_plist_files)
+    return sorted(framework_files)

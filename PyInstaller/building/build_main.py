@@ -47,7 +47,7 @@ if is_win:
     from PyInstaller.utils.win32 import winmanifest
 
 if is_darwin:
-    from PyInstaller.utils.osx import collect_info_plist_for_framework_bundles
+    from PyInstaller.utils.osx import collect_files_from_framework_bundles
 
 logger = logging.getLogger(__name__)
 
@@ -759,7 +759,7 @@ class Analysis(Target):
 
         # On macOS, look for binaries collected from .framework bundles, and collect their Info.plist files.
         if is_darwin:
-            combined_toc += collect_info_plist_for_framework_bundles(combined_toc)
+            combined_toc += collect_files_from_framework_bundles(combined_toc)
 
         self.datas = []
         self.binaries = []
