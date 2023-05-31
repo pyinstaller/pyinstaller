@@ -17,7 +17,6 @@ import pkg_resources
 
 import ast
 import codecs
-import imp
 import marshal
 import os
 import pkgutil
@@ -26,13 +25,14 @@ import re
 from collections import deque, namedtuple
 import warnings
 import importlib.util
+import importlib.machinery
 
 from altgraph.ObjectGraph import ObjectGraph
 from altgraph import GraphError
 
 from . import util
 from . import zipio
-from ._compat import BytesIO, StringIO, pathname2url, _READ_MODE
+from ._compat import BytesIO, pathname2url, _READ_MODE
 
 
 BOM = codecs.BOM_UTF8.decode('utf-8')
@@ -81,56 +81,9 @@ Specifically, under:
 * Python 3, this defaults to attempting only absolute imports.
 """
 
-# TODO: Refactor all uses of explicit filetypes in this module *AND* of the
-# imp.get_suffixes() function to use this dictionary instead. Unfortunately,
-# tests for explicit filetypes (e.g., ".py") are non-portable. Under Windows,
-# for example, both the ".py" *AND* ".pyw" filetypes signify valid uncompiled
-# Python modules.
-# TODO: The imp.get_suffixes() function (in fact, the entire "imp" package) has
-# been deprecated as of Python 3.3 by the importlib.machinery.all_suffixes()
-# function, which largely performs the same role. Unfortunately, the latter
-# function was only introduced with Python 3.3. Since PyInstaller requires
-# Python >= 3.3 when running under Python 3, refactor this as follows:
-#
-# * Under Python 2, continue calling imp.get_suffixes().
-# * Under Python 3, call importlib.machinery.all_suffixes() instead.
-_IMPORTABLE_FILETYPE_TO_METADATA = {
-    filetype: (filetype, open_mode, imp_type)
-    for filetype, open_mode, imp_type in imp.get_suffixes()
-}
 # Reverse sort by length so when comparing filenames the longest match first
-_IMPORTABLE_FILETYPE_EXTS = sorted(_IMPORTABLE_FILETYPE_TO_METADATA,
+_IMPORTABLE_FILETYPE_EXTS = sorted(importlib.machinery.all_suffixes(),
                                    key=lambda p: len(p), reverse=True)
-"""
-Dictionary mapping the filetypes of importable files to the 3-tuple of metadata
-describing such files returned by the `imp.get_suffixes()` function whose first
-element is that filetype.
-
-This dictionary simplifies platform-portable importation of importable files,
-including:
-
-* Uncompiled modules suffixed by `.py` (as well as `.pyw` under Windows).
-* Compiled modules suffixed by either `.pyc` or `.pyo`.
-* C extensions suffixed by the platform-specific shared library filetype (e.g.,
-  `.so` under Linux, `.dll` under Windows).
-
-The keys of this dictionary are `.`-prefixed filetypes (e.g., `.py`, `.so`) or
-`-`-prefixed filetypes (e.g., `-cpython-37m.dll`[1]);
-the values of this dictionary are 3-tuples whose:
-
-1. First element is the same `.` or `-` prefixed filetype.
-1. Second element is the mode to be passed to the `open()` built-in to open
-   files of that filetype under the current platform and Python interpreter
-   (e.g., `rU` for the `.py` filetype under Python 2, `r` for the same
-   filetype under Python 3).
-1. Third element is a magic number specific to the `imp` module (e.g.,
-   `imp.C_EXTENSION` for filetypes corresponding to C extensions).
-
-[1] For example of `-cpython-m37.dll` search on
-    https://packages.msys2.org/package/mingw-w64-x86_64-python3?repo=mingw64
-"""
-
-
 
 # Modulegraph does a good job at simulating Python's, but it can not
 # handle packagepath modifications packages make at runtime.  Therefore there
@@ -248,13 +201,6 @@ def _code_to_file(co):
     else:
         header = importlib.util.MAGIC_NUMBER + (b'\0' * 4)
     return BytesIO(header + marshal.dumps(co))
-
-
-def moduleInfoForPath(path):
-    for (ext, readmode, typ) in imp.get_suffixes():
-        if path.endswith(ext):
-            return os.path.basename(path)[:-len(ext)], readmode, typ
-    return None
 
 
 def AddPackagePath(packagename, path):
@@ -1876,11 +1822,15 @@ class ModuleGraph(ObjectGraph):
             except (os.error, IOError):
                 self.msg(2, "can't list directory", path)
                 continue
-            for info in (moduleInfoForPath(p) for p in names):
-                if info is None:
+            for name in names:
+                for suffix in importlib.machinery.all_suffixes():
+                    if path.endswith(suffix):
+                        name = os.path.basename(path)[:-len(suffix)]
+                        break
+                else:
                     continue
-                if info[0] != '__init__':
-                    yield info[0]
+                if name != '__init__':
+                    yield name
 
 
     def alias_module(self, src_module_name, trg_module_name):
