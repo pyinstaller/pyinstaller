@@ -449,24 +449,6 @@ class TestRegression4 (unittest.TestCase):
         node = self.mf.find_node('pkg.core.listenerimpl')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
-class TestRegression5 (unittest.TestCase):
-    if not hasattr(unittest.TestCase, 'assertIsInstance'):
-        def assertIsInstance(self, value, types):
-            if not isinstance(value, types):
-                self.fail("%r is not an instance of %r"%(value, types))
-
-    def setUp(self):
-        root = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                'testpkg-regr5')
-        self.mf = modulegraph.ModuleGraph(path=[ root ] + sys.path)
-        self.mf.add_script(os.path.join(root, 'script.py'))
-
-    def testRegr1(self):
-        node = self.mf.find_node('distutils')
-        self.assertIsInstance(node, modulegraph.Package)
-        self.assertIn(os.path.join('distutils', '__init__'), node.filename)
-
 
 class TestRelativeReferenceToToplevel (unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):

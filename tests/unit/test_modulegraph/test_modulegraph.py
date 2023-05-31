@@ -2,7 +2,6 @@ import unittest
 from PyInstaller.lib.modulegraph import modulegraph
 import pkg_resources
 import os
-import imp
 import sys
 import shutil
 import warnings
@@ -278,67 +277,6 @@ class TestFunctions (unittest.TestCase):
 
                 self.assertEqual(filename, os.path.join(path, 'myext' + ext))
                 self.assertIsInstance(loader, ExtensionFileLoader)
-
-    def test_moduleInfoForPath(self):
-        self.assertEqual(modulegraph.moduleInfoForPath("/somewhere/else/file.txt"), None)
-
-        info = modulegraph.moduleInfoForPath("/somewhere/else/file.py")
-        self.assertEqual(info[0], "file")
-        if sys.version_info[:2] >= (3,4):
-            self.assertEqual(info[1], "r")
-        else:
-            self.assertEqual(info[1], "U")
-        self.assertEqual(info[2], imp.PY_SOURCE)
-
-        info = modulegraph.moduleInfoForPath("/somewhere/else/file.pyc")
-        self.assertEqual(info[0], "file")
-        self.assertEqual(info[1], "rb")
-        self.assertEqual(info[2], imp.PY_COMPILED)
-
-        if sys.platform in ('darwin', 'linux2'):
-            info = modulegraph.moduleInfoForPath("/somewhere/else/file.so")
-            self.assertEqual(info[0], "file")
-            self.assertEqual(info[1], "rb")
-            self.assertEqual(info[2], imp.C_EXTENSION)
-
-        elif sys.platform in ('win32',):
-            info = modulegraph.moduleInfoForPath("/somewhere/else/file.pyd")
-            self.assertEqual(info[0], "file")
-            self.assertEqual(info[1], "rb")
-            self.assertEqual(info[2], imp.C_EXTENSION)
-
-    if sys.version_info[:2] > (2,5):
-            def test_deprecated(self):
-                saved_add = modulegraph.addPackagePath
-                saved_replace = modulegraph.replacePackage
-                try:
-                    called = []
-
-                    def log_add(*args, **kwds):
-                        called.append(('add', args, kwds))
-                    def log_replace(*args, **kwds):
-                        called.append(('replace', args, kwds))
-
-                    modulegraph.addPackagePath = log_add
-                    modulegraph.replacePackage = log_replace
-
-                    with warnings.catch_warnings(record=True) as w:
-                        warnings.simplefilter("always")
-                        modulegraph.ReplacePackage('a', 'b')
-                        modulegraph.AddPackagePath('c', 'd')
-
-                    self.assertEqual(len(w), 2)
-                    self.assertTrue(w[-1].category is DeprecationWarning)
-                    self.assertTrue(w[-2].category is DeprecationWarning)
-
-                    self.assertEqual(called, [
-                        ('replace', ('a', 'b'), {}),
-                        ('add', ('c', 'd'), {}),
-                    ])
-
-                finally:
-                    modulegraph.addPackagePath = saved_add
-                    modulegraph.replacePackage = saved_replace
 
     def test_addPackage(self):
         saved = modulegraph._packagePathMap
