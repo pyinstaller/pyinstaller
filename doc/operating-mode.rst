@@ -133,12 +133,6 @@ than the entire folder.
 or different dependencies, or if the dependencies
 are upgraded, you must redistribute the whole bundle.)
 
-A small disadvantage of the one-folder format is that the one folder contains
-a large number of files.
-Your user must find the :file:`myscript` executable
-in a long list of names or among a big array of icons.
-Also your user can create
-a problem by accidentally dragging files out of the folder.
 
 .. _how the one-folder program works:
 

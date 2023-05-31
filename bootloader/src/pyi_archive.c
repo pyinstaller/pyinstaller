@@ -511,25 +511,28 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * e
     if (snprintf(status->executablename, PATH_MAX, "%s", executable_path) >= PATH_MAX) {
         return false;
     }
-    /* Set homepath to where the archive is */
-#if defined(__APPLE__)
+    /* Set homepath (a.k.a. sys._MEIPASS) */
     char executable_dir[PATH_MAX];
-    size_t executable_dir_len;
-
     pyi_path_dirname(executable_dir, executable_path);
+#if defined(__APPLE__)
+    size_t executable_dir_len;
     executable_dir_len = strnlen(executable_dir, PATH_MAX);
-    if (executable_dir_len > 19 && strncmp(executable_dir + executable_dir_len - 19, ".app/Contents/MacOS", 19) == 0) {
+    bool is_macos_app_bundle = executable_dir_len > 19 && strncmp(executable_dir + executable_dir_len - 19, ".app/Contents/MacOS", 19) == 0;
+#else
+    bool is_macos_app_bundle = false;
+#endif
+    if (is_macos_app_bundle) {
         /* macOS .app bundle; relocate homepath from Contents/MacOS
          * directory to Contents/Frameworks */
         char contents_dir[PATH_MAX];
         pyi_path_dirname(contents_dir, executable_dir);
         pyi_path_join(status->homepath, contents_dir, "Frameworks");
     } else {
-        pyi_path_dirname(status->homepath, archive_path);
+        char root_path[PATH_MAX];
+        pyi_path_dirname(root_path, archive_path);
+        pyi_path_join(status->homepath, root_path, "_internal");
     }
-#else
-    pyi_path_dirname(status->homepath, archive_path);
-#endif
+
     /*
      * Initial value of mainpath is homepath. It might be overridden
      * by temppath if it is available.
