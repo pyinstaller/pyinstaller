@@ -13,11 +13,6 @@ import warnings
 import inspect
 import importlib.util
 
-try:
-    unicode
-except NameError:
-    unicode = str
-
 from ._compat import StringIO, BytesIO, get_instructions, _READ_MODE
 
 
@@ -27,7 +22,7 @@ def imp_find_module(name, path=None):
     """
     names = name.split('.')
     if path is not None:
-        if isinstance(path, (str, unicode)):
+        if isinstance(path, str):
             path = [os.path.realpath(path)]
     for name in names:
         result = imp.find_module(name, path)
