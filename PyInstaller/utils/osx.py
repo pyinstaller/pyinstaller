@@ -584,7 +584,15 @@ def collect_files_from_framework_bundles(binaries):
         # Assuming versioned layout, Info.plist should exist in Resources directory located next to the binary.
         info_plist_src = src_path.parent / "Resources" / "Info.plist"
         if not info_plist_src.is_file():
-            raise SystemError(f"Cannot find Info.plist file for .framework bundle: {info_plist_src}")
+            # Alas, the .framework bundles shipped with PySide/PyQt might have Info.plist available only in the
+            # top-level Resources directory. So accommodate this scenario as well, but collect the file into
+            # versioned directory to appease the code-signing gods...
+            info_plist_src_top = src_path.parent.parent.parent / "Resources" / "Info.plist"
+            if not info_plist_src_top.is_file():
+                raise SystemError(
+                    f"Could not find Info.plist file for .framework bundle in {info_plist_src} or {info_plist_src_top}!"
+                )
+            info_plist_src = info_plist_src_top
         info_plist_dest = dest_path.parent / "Resources" / "Info.plist"
         framework_files.add((str(info_plist_dest), str(info_plist_src), "DATA"))
 
