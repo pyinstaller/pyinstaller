@@ -649,15 +649,6 @@ class Node:
         if self.is_global_attr(attr_name):
             self._global_attr_names.remove(attr_name)
 
-
-    def __cmp__(self, other):
-        try:
-            otherIdent = getattr(other, 'graphident')
-        except AttributeError:
-            return NotImplemented
-
-        return cmp(self.graphident, otherIdent)  # noqa: F821
-
     def __eq__(self, other):
         try:
             otherIdent = getattr(other, 'graphident')
