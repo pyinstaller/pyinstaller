@@ -16,7 +16,8 @@ check "are we bundled?"::
 
 When a bundled app starts up, the bootloader sets the ``sys.frozen``
 attribute and stores the absolute path to the bundle folder in
-``sys._MEIPASS``. For a one-folder bundle, this is the path to that folder. For
+``sys._MEIPASS``. For a one-folder bundle, this is the path to the
+``_internal`` folder within the bundle. For
 a one-file bundle, this is the path to the temporary folder created by the
 bootloader (see :ref:`How the One-File Program Works`).
 

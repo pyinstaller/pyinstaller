@@ -960,7 +960,10 @@ class COLLECT(Target):
                     'Security-Alert: attempting to store file outside of the dist directory: %r. Aborting.' % dest_name
                 )
             # Create parent directory structure, if necessary
-            dest_path = os.path.join(self.name, dest_name)  # Absolute destination path
+            if typecode in ("EXECUTABLE", "PKG"):
+                dest_path = os.path.join(self.name, dest_name)
+            else:
+                dest_path = os.path.join(self.name, "_internal", dest_name)  # Absolute destination path
             dest_dir = os.path.dirname(dest_path)
             try:
                 os.makedirs(dest_dir, exist_ok=True)
