@@ -39,8 +39,10 @@ def _get_tcl_tk_info():
     except ImportError:
         # tkinter unavailable
         return None, None, None, False
-
-    tcl = tkinter.Tcl()
+    try:
+        tcl = tkinter.Tcl()
+    except tkinter.TclError:  # e.g. "Can't find a usable init.tcl in the following directories: ..."
+        return None, None, None, False
 
     # Query the location of Tcl library/data directory.
     tcl_dir = tcl.eval("info library")
