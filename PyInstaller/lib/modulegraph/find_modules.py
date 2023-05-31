@@ -9,7 +9,6 @@ Originally (loosely) based on code in py2exe's build_exe.py by Thomas Heller.
 """
 import sys
 import os
-import imp
 import warnings
 import pkgutil
 
@@ -283,17 +282,6 @@ def find_needed_modules(
     return mf
 
 #
-# resource constants
-#
-
-
-PY_SUFFIXES = ['.py', '.pyw', '.pyo', '.pyc']
-C_SUFFIXES = [
-    _triple[0] for _triple in imp.get_suffixes()
-    if _triple[2] == imp.C_EXTENSION
-]
-
-
 #
 # side-effects
 #
