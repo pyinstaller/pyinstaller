@@ -1,4 +1,10 @@
 (macOS) PyInstaller now attempts to preserve the .framework bundles when
 collecting shared libraries from them. If a shared library is to be
 collected from a .framework bundle, the ``Info.plist`` is also
-automatically collected.
+automatically collected. The .framework bundle collection code also
+attempts to fix the bundles' structure to conform to code-signing
+requirements (i.e., creation of the ``Current`` symbolic link in the
+``Versions`` directory, and top-level contents being symbolic links that
+point to counterparts in the ``Versions/Current`` directory). Note that
+other resources (for example from ``Resources`` or ``Helpers`` directories)
+still need to be explicitly collected by hooks.
