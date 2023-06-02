@@ -700,31 +700,61 @@ class QtLibraryInfo:
             # collect the extra files there.
             bundled_qt_libs = pathlib.Path(self.package_location) in pathlib.Path(src_framework_path).parents
             if bundled_qt_libs:
-                dst_framework_path = os.path.join(rel_data_path, 'lib', 'QtWebEngineCore.framework')
+                dst_framework_path = os.path.join(rel_data_path, 'lib/QtWebEngineCore.framework')
             else:
                 dst_framework_path = 'QtWebEngineCore.framework'  # In top-level directory
 
-            # Collect files from QtWebEngineCore.framework/Helpers
-            helper_datas = hooks.collect_system_data_files(
-                os.path.join(src_framework_path, 'Helpers'),
-                os.path.join(dst_framework_path, 'Helpers'),
-            )
-            # Filter out the actual helper executable
-            helper_exe = os.path.join('Helpers', 'QtWebEngineProcess.app', 'Contents', 'MacOS', 'QtWebEngineProcess')
-            datas += [entry for entry in helper_datas if not entry[1].endswith(helper_exe)]
+            # Determine the version directory - for now, we assume we are dealing with single-version framework;
+            # i.e., the Versions directory contains only a single <version> directory, and Current symlink to it.
+            versions = sorted([
+                version for version in os.listdir(os.path.join(src_framework_path, 'Versions')) if version != 'Current'
+            ])
+            if len(versions) == 0:
+                raise RuntimeError("Could not determine version of the QtWebEngineCore.framework!")
+            elif len(versions) > 1:
+                logger.warning(
+                    "Found multiple versions in QtWebEngineCore.framework (%r) - using the last one!", versions
+                )
+            version = versions[-1]
 
-            # Add helper executable as BINARY
-            if os.path.isfile(os.path.join(src_framework_path, helper_exe)):
-                binaries += [(
-                    os.path.join(src_framework_path, helper_exe),
-                    os.path.join(dst_framework_path, os.path.dirname(helper_exe)),
-                )]
+            # Collect the Helpers directory. In well-formed .framework bundles (such as the ones provided by Homebrew),
+            # the Helpers directory is located in the versioned directory, and symlinked to the top-level directory.
+            src_helpers_path = os.path.join(src_framework_path, 'Versions', version, 'Helpers')
+            dst_helpers_path = os.path.join(dst_framework_path, 'Versions', version, 'Helpers')
+            if not os.path.exists(src_helpers_path):
+                # Alas, the .framework bundles shipped with contemporary PyPI PyQt/PySide wheels are not well-formed
+                # (presumably because .whl cannot preserve symlinks?). The Helpers in the top-level directory is in fact
+                # the hard copy, and there is either no Helpers in versioned directory, or there is a duplicate.
+                # So fall back to collecting from the top-level, but collect into versioned directory in order to
+                # be compliant with codesign's expectations.
+                src_helpers_path = os.path.join(src_framework_path, 'Helpers')
 
-            # Collect resources from QtWebEngineCore.framework/Resources
-            datas += hooks.collect_system_data_files(
-                os.path.join(src_framework_path, 'Resources'),
-                os.path.join(dst_framework_path, 'Resources'),
-            )
+            helper_datas = hooks.collect_system_data_files(src_helpers_path, dst_helpers_path)
+
+            # Filter out the actual helper executable from datas, and add it to binaries instead. This ensures that it
+            # undergoes additional binary processing that rewrites the paths to linked libraries.
+            HELPER_EXE = 'QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess'
+            for src_name, dest_name in helper_datas:
+                if src_name.endswith(HELPER_EXE):
+                    binaries.append((src_name, dest_name))
+                else:
+                    datas.append((src_name, dest_name))
+
+            # Collect the Resources directory; same logic is used as with Helpers directory.
+            src_resources_path = os.path.join(src_framework_path, 'Versions', version, 'Resources')
+            dst_resources_path = os.path.join(dst_framework_path, 'Versions', version, 'Resources')
+            if not os.path.exists(src_resources_path):
+                src_resources_path = os.path.join(src_framework_path, 'Resources')
+
+            datas += hooks.collect_system_data_files(src_resources_path, dst_resources_path)
+
+            # NOTE: the QtWebEngineProcess helper is actually sought within the `QtWebEngineCore.framework/Helpers`,
+            # which ought to be a symlink to `QtWebEngineCore.framework/Versions/Current/Helpers`, where `Current`
+            # is also a symlink to the actual version directory, `A`.
+            #
+            # These symlinks are created automatically when the TOC list of collected resources is post-processed
+            # using `PyInstaller.utils.osx.collect_files_from_framework_bundles` helper, so we do not have to
+            # worry about them here...
         else:
             # Windows and linux (or Anaconda on macOS)
             locales = 'qtwebengine_locales'
