@@ -556,22 +556,33 @@ def is_framework_bundle_lib(lib_path):
     return True
 
 
-def collect_files_from_framework_bundles(binaries):
+def collect_files_from_framework_bundles(collected_files):
     """
-    Scan the given binaries TOC list for shared libraries that are collected from macOS .framework bundles, and collect
-    the bundles' Info.plist files. Also create Versions/Current symlink pointing to the Versions/<version> directory
-    containing the binary.
+    Scan the given TOC list of collected files for shared libraries that are collected from macOS .framework bundles,
+    and collect the bundles' Info.plist files. Additionally, the following symbolic links:
+      - `Versions/Current` pointing to the `Versions/<version>` directory containing the binary
+      - `<name>` in the top-level .framework directory, pointing to `Versions/Current/<name>`
+      - `Resources` in the top-level .framework directory, pointing to `Versions/Current/Resources`
+      - additional directories in top-level .framework directory, pointing to their counterparts in `Versions/Current`
+        directory.
 
-    Returns datas TOC list for the discovered Info.plist files.
+    Returns TOC list for the discovered Info.plist files and generated symbolic links. The list does not contain
+    duplicated entries.
     """
-    framework_files = set()
+    framework_files = set()  # Additional entries for collected files. Use set for de-duplication.
+    framework_paths = set()  # Registered framework paths for 2nd pass.
 
-    for dest_name, src_name, typecode in binaries:
+    # 1st pass: discover binaries from .framework bundles, and for each such binary:
+    #   - collect `Info.plist`
+    #   - create `Current` -> `<version>` symlink in `<name>.framework/Versions` directory.
+    #   - create `<name>.framework/<name>` -> `<name>.framework/Versions/Current/<name>` symlink.
+    #   - create `<name>.framework/Resources` -> `<name>.framework/Versions/Current/Resources` symlink.
+    for dest_name, src_name, typecode in collected_files:
         if typecode != 'BINARY':
             continue
 
-        src_path = pathlib.Path(src_name)
-        dest_path = pathlib.PurePath(dest_name)
+        src_path = pathlib.Path(src_name)  # /src/path/to/<name>.framework/Versions/<version>/<name>
+        dest_path = pathlib.PurePath(dest_name)  # /dest/path/to/<name>.framework/Versions/<version>/<name>
 
         # Check whether binary originates from a .framework bundle
         if not is_framework_bundle_lib(src_path):
@@ -600,5 +611,56 @@ def collect_files_from_framework_bundles(binaries):
         # This one seems to be necessary for code signing, but might be absent from .framework bundles shipped with
         # python packages. So we always create it ourselves.
         framework_files.add((str(dest_path.parent.parent / "Current"), str(dest_path.parent.name), "SYMLINK"))
+
+        dest_framework_path = dest_path.parent.parent.parent  # Top-level .framework directory path.
+
+        # Symlink the binary in the `Current` directory to the top-level .framework directory.
+        framework_files.add((
+            str(dest_framework_path / dest_path.name),
+            str(pathlib.PurePath("Versions/Current") / dest_path.name),
+            "SYMLINK",
+        ))
+
+        # Ditto for the `Resources` directory.
+        framework_files.add((
+            str(dest_framework_path / "Resources"),
+            "Versions/Current/Resources",
+            "SYMLINK",
+        ))
+
+        # Register the framework parent path to use in additional directories scan in subsequent pass.
+        framework_paths.add(dest_framework_path)
+
+    # 2nd pass: scan for additional collected directories from .framework bundles, and create symlinks to the top-level
+    # application directory. Make the outer loop go over the registered framework paths, so it becomes no-op if no
+    # framework paths are registered.
+    VALID_SUBDIRS = {'Helpers', 'Resources'}
+
+    for dest_framework_path in framework_paths:
+        for dest_name, src_name, typecode in collected_files:
+            dest_path = pathlib.PurePath(dest_name)
+
+            # Try matching against framework path
+            try:
+                remaining_path = dest_path.relative_to(dest_framework_path)
+            except ValueError:  # dest_path is not subpath of dest_framework_path
+                continue
+
+            remaining_path_parts = remaining_path.parts
+
+            # We are interested only in entries under Versions directory.
+            if remaining_path_parts[0] != 'Versions':
+                continue
+
+            # If the entry name is among valid sub-directory names, create symlink.
+            dir_name = remaining_path_parts[2]
+            if dir_name not in VALID_SUBDIRS:
+                continue
+
+            framework_files.add((
+                str(dest_framework_path / dir_name),
+                str(pathlib.PurePath("Versions/Current") / dir_name),
+                "SYMLINK",
+            ))
 
     return sorted(framework_files)
