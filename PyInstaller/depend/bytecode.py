@@ -230,9 +230,13 @@ def load(raw: bytes, code: CodeType) -> str:
         # Then this is a literal.
         return code.co_consts[index]
     # Otherwise, it is a global name.
-    if raw[-2] == opmap["LOAD_GLOBAL"] and compat.is_py311:
+    if compat.is_py311 and raw[-2] == opmap["LOAD_GLOBAL"]:
         # In python 3.11, namei>>1 is pushed on stack...
         return code.co_names[index >> 1]
+    if compat.is_py312 and raw[-2] == opmap["LOAD_ATTR"]:
+        # In python 3.12, namei>>1 is pushed on stack...
+        return code.co_names[index >> 1]
+
     return code.co_names[index]
 
 
