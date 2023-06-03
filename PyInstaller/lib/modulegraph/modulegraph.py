@@ -1080,22 +1080,10 @@ class ModuleGraph(ObjectGraph):
 
         pkgmap = {}
 
-        try:
-            from pkgutil import ImpImporter
-        except ImportError:
-            try:
-                from _pkgutil import ImpImporter
-            except ImportError:
-                ImpImporter = pkg_resources.ImpWrapper
-
-        if sys.version_info[:2] >= (3, 3):
-            import importlib.machinery
-            ImpImporter = importlib.machinery.FileFinder
-
         for entry in self.path:
             importer = pkg_resources.get_importer(entry)
 
-            if isinstance(importer, ImpImporter):
+            if isinstance(importer, importlib.machinery.FileFinder):
                 try:
                     ldir = os.listdir(entry)
                 except os.error:
