@@ -626,12 +626,12 @@ class BUNDLE(Target):
 
         # Optionally verify bundle's signature. This is primarily intended for our CI.
         if os.environ.get("PYINSTALLER_VERIFY_BUNDLE_SIGNATURE", "0") != "0":
+            logger.info("Verifying signature for BUNDLE %s...", self.name)
             self.verify_bundle_signature(self.name)
+            logger.info("BUNDLE verification complete!")
 
     @staticmethod
     def verify_bundle_signature(bundle_dir):
-        logger.info("Verifying signature for BUNDLE %s...", bundle_dir)
-
         # First, verify the bundle signature using codesign.
         cmd_args = ['codesign', '--verify', '--all-architectures', '--deep', '--strict', bundle_dir]
         p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
@@ -652,7 +652,15 @@ class BUNDLE(Target):
         #
         # This check therefore aims to ensure that all files have been properly relocated to their corresponding
         # locations w.r.t. the code-signing requirements.
+
+        try:
+            import xattr
+        except ModuleNotFoundError:
+            logger.info("xattr package not available; skipping verification of extended attributes!")
+            return
+
         CODESIGN_ATTRS = (
+            "com.apple.cs.CodeDirectory",
             "com.apple.cs.CodeRequirements",
             "com.apple.cs.CodeRequirements-1",
             "com.apple.cs.CodeSignature",
@@ -662,14 +670,6 @@ class BUNDLE(Target):
             if not entry.is_file():
                 continue
 
-            cmd_args = ["xattr", str(entry)]
-            p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-            if p.returncode:
-                raise SystemError(
-                    f"xattr command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}"
-                )
-
-            if any([attr in p.stdout for attr in CODESIGN_ATTRS]):
+            file_attrs = xattr.listxattr(entry)
+            if any([codesign_attr in file_attrs for codesign_attr in CODESIGN_ATTRS]):
                 raise ValueError(f"Code-sign attributes found in extended attributes of {str(entry)!r}!")
-
-        logger.info("BUNDLE verification complete!")

@@ -37,3 +37,6 @@ ruff
 pywin32; sys_platform == 'win32'
 
 lxml; python_version < '3.11'
+
+# Used for strict validation of generated macOS .app bundles
+xattr; sys_platform == 'darwin'
