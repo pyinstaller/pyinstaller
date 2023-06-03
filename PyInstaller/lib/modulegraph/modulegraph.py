@@ -2961,9 +2961,18 @@ class ModuleGraph(ObjectGraph):
 
                 # Get the PEP 302-compliant loader object loading this module.
                 #
-                # If this importer defines the PEP 302-compliant find_loader()
-                # method, prefer that.
-                if hasattr(importer, 'find_loader'):
+                # If this importer defines the PEP 451-compliant find_spec()
+                # method, use that, and obtain loader from spec. This should
+                # be available on python >= 3.4.
+                if hasattr(importer, 'find_spec'):
+                    loader = None
+                    spec = importer.find_spec(module_name)
+                    if spec is not None:
+                        loader = spec.loader
+                        namespace_dirs.extend(spec.submodule_search_locations or [])
+                # Else if this importer defines the PEP 302-compliant find_loader()
+                # method, use that.
+                elif hasattr(importer, 'find_loader'):
                     loader, loader_namespace_dirs = importer.find_loader(
                         module_name)
                     namespace_dirs.extend(loader_namespace_dirs)
