@@ -657,6 +657,10 @@ PY3_BASE_MODULES = {
 if not is_py310:
     PY3_BASE_MODULES.add('_bootlocale')
 
+if sys.version_info >= (3, 11, 4):
+    # required by loader/pymod02_importers.py -> pathlib -> urllib
+    PY3_BASE_MODULES.add('ipaddress')
+
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
 PURE_PYTHON_MODULE_TYPES = {
