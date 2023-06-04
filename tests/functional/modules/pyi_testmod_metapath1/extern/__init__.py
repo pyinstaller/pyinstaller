@@ -2,8 +2,9 @@
 # Copyright (C) 2016 Jason R Coombs <jaraco@jaraco.com>
 #
 # This file includes an almost complete copy of
-# pkg_resources/extern/__init__.py, taken from setuptools 28.6.1.
-# For PyInstaller the only change is to install a sub-class of VendorImporter.
+# setuptools/extern/__init__.py, taken from setuptools 67.8.0.
+# For PyInstaller the only change is to install a sub-class of VendorImporter,
+# and that the source is auto-formatted using yapf.
 #
 # setuptools is licensed under the MIT License (expat) license:
 #
@@ -27,7 +28,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-#--- Code of pkg_resources/extern/__init__.py starts here
+#--- Code of setuptools/extern/__init__.py starts here
+import importlib.util
 import sys
 
 
@@ -49,16 +51,10 @@ class VendorImporter:
         yield self.vendor_pkg + '.'
         yield ''
 
-    def find_module(self, fullname, path=None):
-        """
-        Return self when fullname starts with root_name and the target module is one vendored through this importer.
-        """
+    def _module_matches_namespace(self, fullname):
+        """Figure out if the target module is vendored."""
         root, base, target = fullname.partition(self.root_name + '.')
-        if root:
-            return
-        if not any(map(target.startswith, self.vendored_names)):
-            return
-        return self
+        return not root and any(map(target.startswith, self.vendored_names))
 
     def load_module(self, fullname):
         """
@@ -71,11 +67,6 @@ class VendorImporter:
                 __import__(extant)
                 mod = sys.modules[extant]
                 sys.modules[fullname] = mod
-                # mysterious hack: Remove the reference to the extant package/module on later Python versions to cause
-                # relative imports in the vendor package to resolve the same modules as those going through this
-                # importer.
-                if sys.version_info > (3, 3):
-                    del sys.modules[extant]
                 return mod
             except ImportError:
                 pass
@@ -85,6 +76,16 @@ class VendorImporter:
                 "this warning, consult the packager of your distribution.".format(**locals())
             )
 
+    def create_module(self, spec):
+        return self.load_module(spec.name)
+
+    def exec_module(self, module):
+        pass
+
+    def find_spec(self, fullname, path=None, target=None):
+        """Return a module spec for vendored names."""
+        return importlib.util.spec_from_loader(fullname, self) if self._module_matches_namespace(fullname) else None
+
     def install(self):
         """
         Install this importer into sys.meta_path if not already present.
@@ -93,7 +94,7 @@ class VendorImporter:
             sys.meta_path.append(self)
 
 
-# --- Code of pkg_resources/extern/__init__.py ends here
+# --- Code of setuptools/extern/__init__.py ends here
 
 
 class MyVendorImporter(VendorImporter):
