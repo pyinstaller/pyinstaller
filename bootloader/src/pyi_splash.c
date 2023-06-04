@@ -370,6 +370,8 @@ cleanup:
 int
 pyi_splash_attach(SPLASH_STATUS *status)
 {
+    status->dlls_fully_loaded= false;
+
     VS("SPLASH: Load Tcl library from: %s\n", status->tcl_libpath);
     VS("SPLASH: Load Tk library from: %s\n", status->tk_libpath);
 
@@ -377,12 +379,20 @@ pyi_splash_attach(SPLASH_STATUS *status)
     status->dll_tk = pyi_utils_dlopen(status->tk_libpath);
 
     if (status->dll_tcl == 0 || status->dll_tk == 0) {
-        FATALERROR("LOADER: Failed to load tcl/tk libraries\n");
+        FATALERROR("SPLASH: Failed to load Tcl/Tk libraries!\n");
         return -1;
     }
 
     /* Attach library to this process */
-    return pyi_splashlib_attach(status->dll_tcl, status->dll_tk);
+    if (pyi_splashlib_attach(status->dll_tcl, status->dll_tk) < 0) {
+        return -1;
+    }
+
+    /* Tcl/Tk libraries are fully loaded, and it is safe to use their
+     * symbols */
+    status->dlls_fully_loaded = true;
+
+    return 0;
 }
 
 /*
@@ -392,56 +402,75 @@ pyi_splash_attach(SPLASH_STATUS *status)
 int
 pyi_splash_finalize(SPLASH_STATUS *status)
 {
-    if (status != NULL) {
-        if (status->thread_id == PI_Tcl_GetCurrentThread()) {
-            /* We are in the interpreter thread */
-            if (status->interp != NULL) {
-                /* We can only call this function safely, if we are
-                 * in the tcl interpreter thread */
-                PI_Tcl_DeleteInterp(status->interp);
-                /* prevent dangling pointers */
-                status->interp = NULL;
-            }
+    if (status == NULL) {
+        return 0;
+    }
+
+    /* If we failed to fully attach Tcl/Tk libraries (either because one
+     * of the libraries failed to load, or because we failed to load one
+     * of the symbols from the libraries), we are guaranteed to be in the
+     * bootloader thread, and we only need to clean up the shared libraries,
+     * in case any of them were successfully loaded. */
+    if (status->dlls_fully_loaded != true) {
+        if (status->dll_tcl != NULL) {
+            pyi_utils_dlclose(status->dll_tcl);
+            status->dll_tcl = NULL;
         }
-        else {
-            /* We run in the bootloader thread */
-            if (status->interp != NULL) {
-                /* We notify the tcl thread, if it still exists
-                 * to exit and wait for it */
-                PI_Tcl_MutexLock(&exit_mutex);
-                exitMainLoop = true;
-                /* We need to post a fake event into the event queue in order
-                 * to unblock Tcl_DoOneEvent, so the main loop can exit */
-                pyi_splash_send(status, true, NULL, NULL);
-                PI_Tcl_ConditionWait(&exit_wait, &exit_mutex, NULL);
-                PI_Tcl_MutexUnlock(&exit_mutex);
-                PI_Tcl_ConditionFinalize(&exit_wait);
-            }
-            /* This function should only be called after python has been
-             * destroyed with Py_Finalize. Tcl/Tk/tkinter do **not** support
-             * multiple instances of themselves due to restrictions of Tcl
-             * (for reference see _tkinter PyMethodDef m_size field or
-             * disabled registration of Tcl_Finalize inside _tkinter.c)
-             * The python program may have imported tkinter, which keeps
-             * its own tcl interpreter. If we finalized Tcl here, the
-             * Tcl interpreter of tkinter would also be finalized, resulting
-             * in a weird state of tkinter. */
-            PI_Tcl_Finalize();
 
-            /* If the dll's aren't already unloaded/still valid
-             * unload them, since otherwise the files of the
-             * libraries cannot be deleted */
-            if (status->dll_tcl != NULL) {
-                pyi_utils_dlclose(status->dll_tcl);
-                status->dll_tcl = NULL;
-                status->is_tcl_loaded = false;
-            }
+        if (status->dll_tk != NULL) {
+            pyi_utils_dlclose(status->dll_tk);
+            status->dll_tk = NULL;
+        }
 
-            if (status->dll_tk != NULL) {
-                pyi_utils_dlclose(status->dll_tk);
-                status->dll_tk = NULL;
-                status->is_tk_loaded = false;
-            }
+        return 0;
+    }
+
+    if (status->thread_id == PI_Tcl_GetCurrentThread()) {
+        /* We are in the interpreter thread */
+        if (status->interp != NULL) {
+            /* We can only call this function safely, if we are
+             * in the tcl interpreter thread */
+            PI_Tcl_DeleteInterp(status->interp);
+            /* prevent dangling pointers */
+            status->interp = NULL;
+        }
+    }
+    else {
+        /* We run in the bootloader thread */
+        if (status->interp != NULL) {
+            /* We notify the tcl thread, if it still exists
+             * to exit and wait for it */
+            PI_Tcl_MutexLock(&exit_mutex);
+            exitMainLoop = true;
+            /* We need to post a fake event into the event queue in order
+             * to unblock Tcl_DoOneEvent, so the main loop can exit */
+            pyi_splash_send(status, true, NULL, NULL);
+            PI_Tcl_ConditionWait(&exit_wait, &exit_mutex, NULL);
+            PI_Tcl_MutexUnlock(&exit_mutex);
+            PI_Tcl_ConditionFinalize(&exit_wait);
+        }
+        /* This function should only be called after python has been
+         * destroyed with Py_Finalize. Tcl/Tk/tkinter do **not** support
+         * multiple instances of themselves due to restrictions of Tcl
+         * (for reference see _tkinter PyMethodDef m_size field or
+         * disabled registration of Tcl_Finalize inside _tkinter.c)
+         * The python program may have imported tkinter, which keeps
+         * its own tcl interpreter. If we finalized Tcl here, the
+         * Tcl interpreter of tkinter would also be finalized, resulting
+         * in a weird state of tkinter. */
+        PI_Tcl_Finalize();
+
+        /* If the dll's aren't already unloaded/still valid
+         * unload them, since otherwise the files of the
+         * libraries cannot be deleted */
+        if (status->dll_tcl != NULL) {
+            pyi_utils_dlclose(status->dll_tcl);
+            status->dll_tcl = NULL;
+        }
+
+        if (status->dll_tk != NULL) {
+            pyi_utils_dlclose(status->dll_tk);
+            status->dll_tk = NULL;
         }
     }
     return 0;
@@ -911,10 +940,6 @@ _splash_init(ClientData client_data)
         goto cleanup;      /* If an error occurred exit */
 
     }
-    /* Update the splash status, that tcl and tk
-     * are initialized */
-    status->is_tcl_loaded = true;
-    status->is_tk_loaded = true;
 
     /* Print version if tcl and tk for debugging */
     VS("SPLASH: Running tcl version %s and tk version %s.\n",

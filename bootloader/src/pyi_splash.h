@@ -120,12 +120,13 @@ typedef struct _splash_status {
     char *requirements;
     int   requirements_len;
     /*
-     * Flag if tcl and tk libraries were loaded. This indicate if it is safe
-     * to call functions from Tcl/Tk. If the binaries are missing the splash
-     * screen cannot be shown.
+     * Flag indicating that Tcl/Tk shared libraries were successfully loaded
+     * and required symbols from them have been succesfully loaded and bound.
+     * This is primarily used in finalization function to detect properly
+     * handle tear-down of splash screen that failed to load the libraries or
+     * symbols.
      */
-    bool is_tcl_loaded;
-    bool is_tk_loaded;
+    bool dlls_fully_loaded;
     /*
      * Keep the handles to the shared library, in order to close
      * them at finalization.

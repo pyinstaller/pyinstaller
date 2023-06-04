@@ -1,0 +1,4 @@
+Fix splash-enabled program crashing due to NULL-pointer dereference
+in the bootloader when the Tcl/Tk shared libraries cannot be loaded.
+The program should now run the user's python code, where it will
+raise an exception if the ``pyi_splash`` module is used.
