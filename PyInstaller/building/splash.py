@@ -19,7 +19,8 @@ from PyInstaller.archive.writers import SplashWriter
 from PyInstaller.building import splash_templates
 from PyInstaller.building.datastruct import Target
 from PyInstaller.building.utils import _check_guts_eq, _check_guts_toc, misc
-from PyInstaller.compat import is_darwin, is_win, is_cygwin
+from PyInstaller.compat import is_darwin
+from PyInstaller.depend import bindepend
 from PyInstaller.utils.hooks import tcl_tk as tcltk_utils
 
 try:
@@ -209,34 +210,21 @@ class Splash(Target):
             # The user wants a full copy of tk, so make all tk files a requirement.
             self.splash_requirements.update(entry[0] for entry in tcltk_tree)
 
-        self.binaries = []
+        # Scan for binary dependencies of the Tcl/Tk shared libraries, and add them to `binaries` TOC list (which
+        # should really be called `dependencies` as it is not limited to binaries. But it is too late now, and
+        # existing spec files depend on this naming). We specify these binary dependencies (which include the
+        # Tcl and Tk shared libaries themselves) even if the user's program uses tkinter and they would be collected
+        # anyway; let the collection mechanism deal with potential duplicates.
+        tcltk_libs = [(dest_name, src_name, 'BINARY') for dest_name, src_name in (self.tcl_lib, self.tk_lib)]
+        self.binaries = bindepend.Dependencies(tcltk_libs)
+
+        # Put all shared library dependencies in `splash_requirements`, so they are made available in onefile mode.
+        self.splash_requirements.update(entry[0] for entry in self.binaries)
+
+        # If the user's program does not use tkinter, add resources from Tcl/Tk tree to the dependencies list.
+        # Do so only for the resources that are part of splash requirements.
         if not self.uses_tkinter:
-            # The user's script does not use tkinter, so we need to provide a TOC of all necessary files add the shared
-            # libraries to the binaries.
-            self.binaries.append((self.tcl_lib[0], self.tcl_lib[1], 'BINARY'))
-            self.binaries.append((self.tk_lib[0], self.tk_lib[1], 'BINARY'))
-
-            # Only add the intersection of the required and the collected resources, or add all entries if full_tk is
-            # true.
             self.binaries.extend(entry for entry in tcltk_tree if entry[0] in self.splash_requirements)
-
-        # Handle extra requirements of Tcl/Tk shared libraries (e.g., vcruntime140.dll on Windows - see issue #6284).
-        # These need to be added to splash requirements, so they are extracted into the initial runtime directory in
-        # order to make onefile builds work.
-        #
-        # The really proper way to implement this would be to perform full dependency analysis on self.tcl_lib[0] and
-        # self.tk_lib[0], and ensure that those dependencies are collected and added to splash requirements. This
-        # would, for example, ensure that on Linux, dependent X libraries are collected, just as if the frozen app
-        # itself was using tkinter. On the other hand, collecting all the extra shared libraries on Linux is currently
-        # futile anyway, because the bootloader's parent process would need to set LD_LIBRARY_PATH to the initial
-        # runtime directory to actually have them loaded (and that requires process to be restarted to take effect).
-        #
-        # So for now, we only deal with this on Windows, in a quick'n'dirty work-around way, by assuming that
-        # vcruntime140.dll is already collected as dependency of some other shared library (e.g., the python shared
-        # library).
-        if is_win or is_cygwin:
-            EXTRA_REQUIREMENTS = {'vcruntime140.dll'}
-            self.splash_requirements.update([name for name, *_ in binaries if name.lower() in EXTRA_REQUIREMENTS])
 
         # Check if all requirements were found.
         collected_files = set(entry[0] for entry in (binaries + datas + self.binaries))
