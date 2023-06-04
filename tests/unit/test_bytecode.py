@@ -136,13 +136,14 @@ def test_nested_codes():
     # The following compile() creates 3 code objects:
     #   - A global code.
     #   = The contents of foo().
-    #   - And the body of the comprehension loop.
+    #   - And the body of the embedded lambda.
 
     code = compile_(
         """
         def foo():
             bar()
-            return [fizz(3) for i in range(10)]
+            whoop = lambda : fizz(3)
+            return range(10)
         """
     )
     # There are no function calls in the global code.
@@ -153,15 +154,15 @@ def test_nested_codes():
     # foo() contains bar() and the iterable of the comprehension loop.
     assert function_calls(foo_code) == [('bar', []), ('range', [10])]
 
-    # Get the body of the comprehension loop.
-    list_code, = (i for i in foo_code.co_consts if isinstance(i, CodeType))
+    # Get the body of the embedded lambda.
+    lambda_code = next(i for i in foo_code.co_consts if isinstance(i, CodeType))
     # This contains fizz(3).
-    assert function_calls(list_code) == [('fizz', [3])]
+    assert function_calls(lambda_code) == [('fizz', [3])]
 
     assert recursive_function_calls(code) == {
         code: [],
         foo_code: [('bar', []), ('range', [10])],
-        list_code: [('fizz', [3])],
+        lambda_code: [('fizz', [3])],
     }
 
 
