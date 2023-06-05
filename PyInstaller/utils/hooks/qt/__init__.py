@@ -76,7 +76,7 @@ logger = logging.getLogger(__name__)
 # associated plugins and translations. It is used within QtLibraryInfo_ to establish name-based mappings for file
 # collection.
 class QtModuleInfo:
-    def __init__(self, module, shared_lib=None, translation=None, plugins=None):
+    def __init__(self, module, shared_lib=None, translations=None, plugins=None):
         # Python module (extension) name without package namespace. For example, `QtCore`.
         # Can be None if python bindings do not bind the module, but we still need to establish relationship between
         # the Qt module (shared library) and its plugins and translations.
@@ -88,14 +88,16 @@ class QtModuleInfo:
         # Qt shared library (for example, the corresponding Qt module is headers-only) and hence they cannot be
         # inferred from recursive link-time dependency analysis.
         self.shared_lib = shared_lib
-        # Base name of translation files (if any) associated with the Qt module. For example, `qtcore`.
-        self.translation = translation
+        # List of base names of translation files (if any) associated with the Qt module. Multiple base names may be
+        # associated with a single module.
+        # For example, `['qt', 'qtbase']` for `QtCore` or `['qtmultimedia']` for `QtMultimedia`.
+        self.translations = translations or []
         # List of plugins associated with the Qt module.
         self.plugins = plugins or []
 
     def __repr__(self):
         return f"(module={self.module!r}, shared_lib={self.shared_lib!r}, " \
-               f"translation={self.translation!r}, plugins={self.plugins!r}"
+               f"translations={self.translations!r}, plugins={self.plugins!r}"
 
 
 # QtLibraryInfo
@@ -267,7 +269,7 @@ class QtLibraryInfo:
             info_entry = QtModuleInfo(
                 module=entry.module,
                 shared_lib=f"Qt{self.qt_major}{entry.shared_lib}" if entry.shared_lib else None,
-                translation=entry.translation,
+                translations=entry.translations,
                 plugins=entry.plugins
             )
 
@@ -313,9 +315,8 @@ class QtLibraryInfo:
             # Add plugins
             plugin_types.update(qt_module_info.plugins)
 
-            # Add translation base name
-            if qt_module_info.translation:
-                translation_base_names.add(qt_module_info.translation)
+            # Add translation base name(s)
+            translation_base_names.update(qt_module_info.translations)
 
         # Find the actual module extension file.
         module_file = hooks.get_module_file_attribute(module_name)
@@ -404,9 +405,8 @@ class QtLibraryInfo:
                 # Add plugins
                 plugin_types.update(qt_module_info.plugins)
 
-                # Add translation base name
-                if qt_module_info.translation:
-                    translation_base_names.add(qt_module_info.translation)
+                # Add translation base name(s)
+                translation_base_names.update(qt_module_info.translations)
 
                 # Analyze the linked shared libraries for its dependencies (recursive analysis).
                 imported_libraries.update(bindepend.getImports(imported_library))

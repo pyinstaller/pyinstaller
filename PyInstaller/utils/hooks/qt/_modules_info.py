@@ -109,10 +109,10 @@
 
 
 # This structure is used to define Qt module information, such as python module/extension name, Qt module (shared
-# library) name, translations file base name, plugins, as well as associated python bindings (which implicitly
+# library) name, translation files' base names, plugins, as well as associated python bindings (which implicitly
 # also encode major Qt version).
 class _QtModuleDef:
-    def __init__(self, module, shared_lib=None, translation=None, plugins=None, bindings=None):
+    def __init__(self, module, shared_lib=None, translations=None, plugins=None, bindings=None):
         # Python module (extension) name without package namespace. For example, `QtCore`.
         # Can be None if python bindings do not bind the module, but we still need to establish relationship between
         # the Qt module (shared library) and its plugins and translations.
@@ -124,8 +124,10 @@ class _QtModuleDef:
         # Qt shared library (for example, the corresponding Qt module is headers-only) and hence they cannot be
         # inferred from recursive link-time dependency analysis.
         self.shared_lib = shared_lib
-        # Base name of translation files (if any) associated with the Qt module. For example, `qtcore`.
-        self.translation = translation
+        # List of base names of translation files (if any) associated with the Qt module. Multiple base names may be
+        # associated with a single module.
+        # For example, `['qt', 'qtbase']` for `QtCore` or `['qtmultimedia']` for `QtMultimedia`.
+        self.translations = translations or []
         # List of plugins associated with the Qt module.
         self.plugins = plugins or []
         # List of bindings (PySide2, PyQt5, PySide6, PyQt6) that provide the python module. This allows association of
@@ -170,7 +172,7 @@ QT_MODULES_INFO = (
     # QtConcurrent python module is available only in PySide bindings.
     _QtModuleDef(None, shared_lib="Concurrent", bindings=["PyQt*"]),
     _QtModuleDef("QtConcurrent", shared_lib="Concurrent", bindings=["PySide*"]),
-    _QtModuleDef("QtCore", shared_lib="Core", translation="qtbase"),
+    _QtModuleDef("QtCore", shared_lib="Core", translations=["qt", "qtbase"]),
     # QtDBus python module is available in all bindings but PySide2.
     _QtModuleDef(None, shared_lib="DBus", bindings=["PySide2"]),
     _QtModuleDef("QtDBus", shared_lib="DBus", bindings=["!PySide2"]),
@@ -218,19 +220,19 @@ QT_MODULES_INFO = (
     _QtModuleDef("QtXml", shared_lib="Xml"),
 
     # *** qt/qtconnectivity ***
-    _QtModuleDef("QtBluetooth", shared_lib="QtBluetooth", translation="qtconnectivity"),
-    _QtModuleDef("QtNfc", shared_lib="Nfc", translation="qtconnectivity"),
+    _QtModuleDef("QtBluetooth", shared_lib="QtBluetooth", translations=["qtconnectivity"]),
+    _QtModuleDef("QtNfc", shared_lib="Nfc", translations=["qtconnectivity"]),
 
     # *** qt/qtdatavis3d ***
     _QtModuleDef("QtDataVisualization", shared_lib="DataVisualization"),
 
     # *** qt/qtdeclarative ***
-    _QtModuleDef("QtQml", shared_lib="Qml", translation="qtdeclarative", plugins=["qmltooling"]),
+    _QtModuleDef("QtQml", shared_lib="Qml", translations=["qtdeclarative"], plugins=["qmltooling"]),
     # Have the Qt5 variant collect translations for qtquickcontrols (qt/qtquickcontrols provides only QtQuick plugins).
     _QtModuleDef(
         "QtQuick",
         shared_lib="Quick",
-        translation="qtquickcontrols",
+        translations=["qtquickcontrols"],
         plugins=["scenegraph"],
         bindings=["PySide2", "PyQt5"]
     ),
@@ -253,14 +255,14 @@ QT_MODULES_INFO = (
     _QtModuleDef(
         "QtLocation",
         shared_lib="Location",
-        translation="qtlocation",
+        translations=["qtlocation"],
         plugins=["geoservices"],
         bindings=["PySide2", "PyQt5", "PySide6"]
     ),
     _QtModuleDef(
         "QtPositioning",
         shared_lib="Positioning",
-        translation="qtlocation",
+        translations=["qtlocation"],
         plugins=["position"],
     ),
 
@@ -273,7 +275,7 @@ QT_MODULES_INFO = (
     _QtModuleDef(
         "QtMultimedia",
         shared_lib="Multimedia",
-        translation="qtmultimedia",
+        translations=["qtmultimedia"],
         plugins=[
             "mediaservice", "audio", "video/bufferpool", "video/gstvideorenderer", "video/videonode", "playlistformats",
             "resourcepolicy"
@@ -283,7 +285,7 @@ QT_MODULES_INFO = (
     _QtModuleDef(
         "QtMultimedia",
         shared_lib="Multimedia",
-        translation="qtmultimedia",
+        translations=["qtmultimedia"],
         # `multimedia` plugins are available as of Qt6 >= 6.4.0; earlier versions had `video/gstvideorenderer` and
         # `video/videonode` plugins.
         plugins=["multimedia", "video/gstvideorenderer", "video/videonode"],
@@ -307,7 +309,7 @@ QT_MODULES_INFO = (
     _QtModuleDef(
         "QtDeclarative",
         shared_lib="Declarative",
-        translation="qtquick1",
+        translations=["qtquick1"],
         plugins=["qml1tooling"],
         bindings=["PySide2", "PyQt5"]
     ),
@@ -321,8 +323,10 @@ QT_MODULES_INFO = (
 
     # *** qt/qtquickcontrols2 ***
     # Qt5-only module; in Qt6, this module is part of qt/declarative. Python module is available only in PySide2.
-    _QtModuleDef(None, translation="qtquickcontrols2", shared_lib="QuickControls2", bindings=["PyQt5"]),
-    _QtModuleDef("QtQuickControls2", translation="qtquickcontrols2", shared_lib="QuickControls2", bindings=["PySide2"]),
+    _QtModuleDef(None, translations=["qtquickcontrols2"], shared_lib="QuickControls2", bindings=["PyQt5"]),
+    _QtModuleDef(
+        "QtQuickControls2", translations=["qtquickcontrols2"], shared_lib="QuickControls2", bindings=["PySide2"]
+    ),
 
     # *** qt/qtremoteobjects ***
     _QtModuleDef("QtRemoteObjects", shared_lib="RemoteObjects"),
@@ -339,12 +343,12 @@ QT_MODULES_INFO = (
     _QtModuleDef("QtSensors", shared_lib="Sensors", plugins=["sensors", "sensorgestures"]),
 
     # *** qt/qtserialport ***
-    _QtModuleDef("QtSerialPort", shared_lib="SerialPort", translation="qtserialport"),
+    _QtModuleDef("QtSerialPort", shared_lib="SerialPort", translations=["qtserialport"]),
 
     # *** qt/qtscript ***
     # Qt5-only Qt module, python module is available only in PySide2. PyQt5 wheels do not seem to ship the corresponding
     # Qt modules (shared libs) at all.
-    _QtModuleDef("QtScript", shared_lib="Script", translation="qtscript", plugins=["script"], bindings=["PySide2"]),
+    _QtModuleDef("QtScript", shared_lib="Script", translations=["qtscript"], plugins=["script"], bindings=["PySide2"]),
     _QtModuleDef("QtScriptTools", shared_lib="ScriptTools", bindings=["PySide2"]),
 
     # *** qt/qtserialbus ***
@@ -365,9 +369,9 @@ QT_MODULES_INFO = (
     # QtDesigner python module is available in all bindings but PySide2.
     _QtModuleDef(None, shared_lib="Designer", plugins=["designer"], bindings=["PySide2"]),
     _QtModuleDef(
-        "QtDesigner", shared_lib="Designer", translation="designer", plugins=["designer"], bindings=["!PySide2"]
+        "QtDesigner", shared_lib="Designer", translations=["designer"], plugins=["designer"], bindings=["!PySide2"]
     ),
-    _QtModuleDef("QtHelp", shared_lib="Help", translation="qt_help"),
+    _QtModuleDef("QtHelp", shared_lib="Help", translations=["qt_help"]),
     # Python module is available only in PySide bindings.
     _QtModuleDef("QtUiTools", shared_lib="UiTools", bindings=["PySide*"]),
 
@@ -381,7 +385,7 @@ QT_MODULES_INFO = (
     # *** qt/qtwebengine ***
     # QtWebEngine is Qt5-only module (replaced by QtWebEngineQuick in Qt6).
     _QtModuleDef("QtWebEngine", shared_lib="WebEngine", bindings=["PySide2", "PyQt5"]),
-    _QtModuleDef("QtWebEngineCore", shared_lib="WebEngineCore", translation="qtwebengine"),
+    _QtModuleDef("QtWebEngineCore", shared_lib="WebEngineCore", translations=["qtwebengine"]),
     # QtWebEngineQuick is Qt6-only module (replacement for QtWebEngine in Qt5).
     _QtModuleDef("QtWebEngineQuick", shared_lib="WebEngineQuick", bindings=["PySide6", "PyQt6"]),
     _QtModuleDef("QtWebEngineWidgets", shared_lib="WebEngineWidgets"),
@@ -390,7 +394,7 @@ QT_MODULES_INFO = (
     _QtModuleDef("QtPdfWidgets", shared_lib="PdfWidgets", bindings=["PySide6", "PyQt6"]),
 
     # *** qt/qtwebsockets ***
-    _QtModuleDef("QtWebSockets", shared_lib="WebSockets", translation="qtwebsockets"),
+    _QtModuleDef("QtWebSockets", shared_lib="WebSockets", translations=["qtwebsockets"]),
 
     # *** qt/qtwebview ***
     # No python module; shared library -> plugins association entry.
@@ -406,11 +410,13 @@ QT_MODULES_INFO = (
 
     # *** qt/qtxmlpatterns ***
     # Qt5-only Qt module.
-    _QtModuleDef("QtXmlPatterns", shared_lib="XmlPatterns", translation="qtxmlpatterns", bindings=["PySide2", "PyQt5"]),
+    _QtModuleDef(
+        "QtXmlPatterns", shared_lib="XmlPatterns", translations=["qtxmlpatterns"], bindings=["PySide2", "PyQt5"]
+    ),
 
     # *** qscintilla ***
     # Python module is available only in PyQt bindings. No associated shared library.
-    _QtModuleDef("Qsci", translation="qscintilla", bindings=["PyQt*"]),
+    _QtModuleDef("Qsci", translations=["qscintilla"], bindings=["PyQt*"]),
 )
 
 
