@@ -205,7 +205,7 @@ class BUNDLE(Target):
             # Exempt python source files from this relocation, because their real path might need to resolve
             # to the directory that also contains the extension module.
             relocate_file = typecode == 'DATA' and base_path not in _QT_BASE_PATH
-            if relocate_file and os.path.splitext(dest_name)[1].lower() in {'.py', '.pyc'}:
+            if relocate_file and os.path.splitext(dest_name)[1].lower() in {'.py', '.pyc', '.dylib', '.so'}:
                 relocate_file = False
             if relocate_file:
                 links.append((dest_name, src_name))
