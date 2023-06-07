@@ -1,7 +1,6 @@
 alabaster==0.7.12
 altgraph==0.17
 Babel==2.9.1
-certifi==2022.12.07
 chardet==4.0.0
 # docutils must be kept below 0.17 or bullet lists don't render properly
 docutils==0.16
