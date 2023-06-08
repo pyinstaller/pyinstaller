@@ -1,4 +1,4 @@
-# Setup an Alpine test environment with Python 3.9, PyInstaller and its test dependencies.
+# Setup an Alpine test environment with Python, PyInstaller and its test dependencies.
 #
 # To build, boot into and invoke pytest inside this image run:
 #
@@ -17,7 +17,7 @@
 # runtime and test dependencies - no C compiler or dev packages. Once other packages start shipping musl compatible
 # wheels, most or possibly all of the build half will be safely removable.
 
-FROM python:3.9-alpine AS wheel-factory
+FROM python:alpine AS wheel-factory
 
 # Install a C compiler.
 RUN apk add musl-dev gcc
@@ -40,7 +40,7 @@ COPY PyInstaller PyInstaller
 RUN python setup.py -qqq bdist_wheel -d wheels
 
 
-FROM python:3.9-alpine
+FROM python:alpine
 
 CMD ash
 WORKDIR /io
