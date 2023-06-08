@@ -1,8 +1,0 @@
-(macOS) Use macOS-provided ``install_name_tool`` utility to modify headers
-on collected binaries: change the dylib identifier to ``@rpath/<name>.dylib``,
-rewrite paths to linked non-system shared libraries to ``@rpath/<dependency>``,
-remove any additional rpaths and add an rpath pointing to the application's
-top-level directory, relative to the ``@loader_path``. Previously, the
-header modification was performed using ``macholib`` and was limited
-only to modification of dylib identifier and paths to linked non-system
-shared libraries.

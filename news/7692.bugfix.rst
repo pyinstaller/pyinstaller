@@ -1,2 +1,0 @@
-Fix ``ModuleNotFoundError: No module named 'ipaddress'`` for any application
-built with Python >=3.11.4.

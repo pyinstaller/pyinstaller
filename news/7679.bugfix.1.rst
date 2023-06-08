@@ -1,6 +1,0 @@
-Implement proper binary dependency scanning in the ``SPLASH`` target,
-so that binary dependencies of the Tcl and Tk shared libraries are
-always collected and added to the list of splash requirements
-(for pre-extraction in onefile builds). This fixes the splash screen
-when building with Windows build of python.org Python 3.12b1, which
-ships Tcl shared library with new dependency on ``zlib1.dll``.

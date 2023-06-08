@@ -1,3 +1,0 @@
-Attempt to mitigate issues with Anaconda ``pywin32`` package that
-result from the package installing three copies of ``pywintypes3X.dll``
-and ``pythoncom3X.dll`` in different locations.

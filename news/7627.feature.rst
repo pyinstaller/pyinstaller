@@ -1,3 +1,0 @@
-Attempt to preserve the parent directory layout for ``pywin32``
-extensions that originate from ``win32`` and ``pythonwin`` directories,
-instead of collecting those extensions to top-level application directory.

@@ -1,2 +1,0 @@
-(Windows) Fix string serialization of ``VSVersionInfo`` to account for
-the possibility of ``StringStruct`` values containing quote characters.

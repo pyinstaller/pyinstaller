@@ -15,6 +15,90 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.12.0 (2023-06-08)
+-------------------
+
+Features
+~~~~~~~~
+
+* (macOS) PyInstaller now removes all rpaths from collected binaries
+  and replaces them with a single rpath pointing to the top-level
+  application directory, relative to ``@loader_path``. (:issue:`7664`)
+* Attempt to preserve the parent directory layout for ``pywin32``
+  extensions that originate from ``win32`` and ``pythonwin`` directories,
+  instead of collecting those extensions to top-level application directory.
+  (:issue:`7627`)
+
+
+Bugfix
+~~~~~~
+
+* (Linux/macOS) Fix the Qt directory path override in ``PySide2`` and
+  ``PySide6`` run-time hooks. These paths, set via ``QT_PLUGIN_PATH`` and
+  ``QML2_IMPORT_PATH`` environment variables, are used with ``PySide2``
+  and ``PySide6`` builds that that use system-wide Qt installation and
+  are not portable by default (e.g., Homebrew). (:issue:`7649`)
+* (macOS) When rewriting the dylib identifier and paths to linked
+  libraries in a collected binary, instead of directly using
+  ``@loader_path``-based path, use ``@rpath``-based path and replace
+  rpaths in the binary with a single rpath that points to the top-level
+  application directory, relative to ``@loader_path``. This ensures that
+  the library identifiers of collected shared libraries and their
+  references in referring binaries always match, which allows packages
+  to pre-load a library from an arbitrary location via for example
+  ``ctypes``. (:issue:`7664`)
+* (Windows) Fix string serialization of ``VSVersionInfo`` to account for
+  the possibility of ``StringStruct`` values containing quote characters.
+  (:issue:`7630`)
+* Attempt to fix compatibility of PyInstaller's ``PyiFrozenImporter`` with
+  ``importlib.util.LazyLoader``. (:issue:`7657`)
+* Attempt to mitigate issues with Anaconda ``pywin32`` package that
+  result from the package installing three copies of ``pywintypes3X.dll``
+  and ``pythoncom3X.dll`` in different locations. (:issue:`7627`)
+* Changes made to ``datas`` and ``binaries`` lists that are passed to
+  ``Analysis`` constructor will now invalidate the cached ``Analysis``
+  and trigger a re-build. This applies both to changes made by editing
+  the .spec file manually and to automatic changes due to addition or
+  removal of corresponding command-line options (:option:`--add-data`,
+  :option:`--add-binary`, :option:`--collect-data`,
+  :option:`--collect-binaries`, :option:`--copy-metadata`).
+  Previously, changes might not have taken effect as the old cached build
+  was returned if available and unless user explicitly requested a clean
+  build using the :option:`--clean` command-line option. (:issue:`7653`)
+* Ensure that ``qt_{lang}`` translation files are collected with the
+  ``QtCore`` module, in addition to already-collected ``qtbase_{lang}``
+  files. Applies to all four Qt-bindings: ``PySide2``, ``PySide6``,
+  ``PyQt5``, and ``PyQt6``. (:issue:`7682`)
+* Fix ``ModuleNotFoundError: No module named 'ipaddress'`` for any application
+  built with Python >=3.11.4. (:issue:`7692`)
+* Fix splash-enabled program crashing due to NULL-pointer dereference
+  in the bootloader when the Tcl/Tk shared libraries cannot be loaded.
+  The program should now run the user's python code, where it will
+  raise an exception if the ``pyi_splash`` module is used. (:issue:`7679`)
+* Implement proper binary dependency scanning in the ``SPLASH`` target,
+  so that binary dependencies of the Tcl and Tk shared libraries are
+  always collected and added to the list of splash requirements
+  (for pre-extraction in onefile builds). This fixes the splash screen
+  when building with Windows build of python.org Python 3.12b1, which
+  ships Tcl shared library with new dependency on ``zlib1.dll``.
+  (:issue:`7679`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* (macOS) Use macOS-provided ``install_name_tool`` utility to modify headers
+  on collected binaries: change the dylib identifier to
+  ``@rpath/<name>.dylib``,
+  rewrite paths to linked non-system shared libraries to
+  ``@rpath/<dependency>``,
+  remove any additional rpaths and add an rpath pointing to the application's
+  top-level directory, relative to the ``@loader_path``. Previously, the
+  header modification was performed using ``macholib`` and was limited
+  only to modification of dylib identifier and paths to linked non-system
+  shared libraries. (:issue:`7664`)
+
+
 5.11.0 (2023-05-13)
 -------------------
 

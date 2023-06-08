@@ -1,4 +1,0 @@
-Ensure that ``qt_{lang}`` translation files are collected with the
-``QtCore`` module, in addition to already-collected ``qtbase_{lang}``
-files. Applies to all four Qt-bindings: ``PySide2``, ``PySide6``,
-``PyQt5``, and ``PyQt6``.

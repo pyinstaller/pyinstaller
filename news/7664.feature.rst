@@ -1,3 +1,0 @@
-(macOS) PyInstaller now removes all rpaths from collected binaries
-and replaces them with a single rpath pointing to the top-level
-application directory, relative to ``@loader_path``.

@@ -1,5 +1,0 @@
-(Linux/macOS) Fix the Qt directory path override in ``PySide2`` and
-``PySide6`` run-time hooks. These paths, set via ``QT_PLUGIN_PATH`` and
-``QML2_IMPORT_PATH`` environment variables, are used with ``PySide2``
-and ``PySide6`` builds that that use system-wide Qt installation and
-are not portable by default (e.g., Homebrew).
