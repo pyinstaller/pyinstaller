@@ -23,8 +23,6 @@ FROM python:3.9-alpine AS wheel-factory
 RUN apk add musl-dev gcc
 # With zlib headers to compiler the bootloader,
 RUN apk add zlib-dev
-# Development packages to build lxml from source,
-RUN apk add libxml2-dev libxslt-dev
 # Linux headers to build psutil from source.
 RUN apk add linux-headers
 
