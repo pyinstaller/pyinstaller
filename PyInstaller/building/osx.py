@@ -25,8 +25,8 @@ import PyInstaller.utils.misc as miscutils
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
 
-# Character sequence used to replace dot (`.`) in names of directories that are created in `Contents/MacOS` (where only
-# .framework bundle directories are allowed to have dot in name).
+# Character sequence used to replace dot (`.`) in names of directories that are created in `Contents/MacOS` or
+# `Contents/Frameworks`, where only .framework bundle directories are allowed to have dot in name.
 DOT_REPLACEMENT = '__dot__'
 
 
@@ -160,10 +160,11 @@ class BUNDLE(Target):
     # The requirements, framed from PyInstaller's perspective, can be summarized as follows:
     #
     # 1. The `Contents/MacOS` directory is expected to contain only the program executable and (binary) code (= dylibs
-    #    and nested .framework bundles). Strictly speaking, dylibs and .framework bundles should be put into
-    #    `Contents/Frameworks`, but from PyInstaller's point of view, there is no benefit in doing so (see remarks
-    #    at the end). The code in `Contents/MacOS` is expected to be signed, and the `codesign` utility will
-    #    recursively sign all found code when using `--deep` option to sign the .app bundle.
+    #    and nested .framework bundles). Alternatively, the dylibs and .framework bundles can be also placed into
+    #    `Contents/Frameworks` directory (where same rules apply as for `Contents/MacOS`, so the remainder of this
+    #    text refers to the two inter-changeably, unless explicitly noted otherwise). The code in `Contents/MacOS`
+    #    is expected to be signed, and the `codesign` utility will recursively sign all found code when using `--deep`
+    #    option to sign the .app bundle.
     #
     # 2. All non-code files should be be placed in `Contents/Resources`, so they become sealed (data) resources;
     #    i.e., their signature data is recorded in `Contents/_CodeSignature/CodeResources`. (As a side note,
@@ -224,34 +225,45 @@ class BUNDLE(Target):
     #   `numpy-1.24.3.dist-info`).
     #
     # In the light of all above, PyInstaller attempts to strictly place all files to their mandated location
-    # (`Contents/MacOS` vs `Contents/Resources`). To preserve the illusion of mixed-content directories, the content
-    # is cross-linked from one directory to the other. Specifically:
+    # (`Contents/MacOS` or `Contents/Frameworks` vs `Contents/Resources`). To preserve the illusion of mixed-content
+    # directories, the content is cross-linked from one directory to the other. Specifically:
     #
     # * All entries with DATA typecode are assumed to be data files, and are always placed in corresponding directory
     #   structure rooted in `Contents/Resources`.
     #
-    # * All entries with non-DATA typecode (assumed to be BINARY, EXECUTABLE, or EXTENSION) are always placed in
-    #   corresponding directory structure rooted in `Contents/MacOS`.
+    # * All entries with BINARY or EXTENSION typecode are always placed in corresponding directory structure rooted in
+    #   `Contents/Frameworks`.
+    #
+    # * All entries with EXECUTABLE are placed in `Contents/MacOS` directory.
     #
     # * For the purposes of relocation, nested .framework bundles are treated as a single BINARY entity; i.e., the
-    #   whole .bundle directory is placed in corresponding directory structure rooted in `Contents/MacOS` (even though
-    #   some of its contents, such as `Info.plist` file, are actually data files).
+    #   whole .bundle directory is placed in corresponding directory structure rooted in `Contents/Frameworks` (even
+    #   though some of its contents, such as `Info.plist` file, are actually data files).
     #
     # * Top-level data files and binaries are always cross-linked to the other directory. For example, given a data file
     #   `data_file.txt` that was collected into `Contents/Resources`, we create a symbolic link called
     #   `Contents/MacOS/data_file.txt` that points to `../Resources/data_file.txt`.
     #
+    # * The executable itself, while placed in `Contents/MacOS`, are cross-linked into both `Contents/Framworks` and
+    #   `Contents/Resources`.
+    #
+    # * The stand-alone PKG entries (used with onefile builds that side-load the PKG archive) are treated as data files
+    #   and collected into `Contents/Resources`, but cross-linked only into `Contents/MacOS` directory (because they
+    #   must appear to be next to the program executable). This is the only entry type that is cross-linked into the
+    #   `Contents/MacOS` directory and also the only data-like entry type that is not cross-linked into the
+    #   `Contents/Frameworks` directory.
+    #
     # * For files in sub-directories, the cross-linking behavior depends on the type of directory:
     #
     #    * A data-only directory is created in directory structure rooted in `Contents/Resources`, and cross-linked
-    #      into directory structure rooted in `Contents/MacOS` at directory level (i.e., we link the whole directory
-    #      instead of individual files).
+    #      into directory structure rooted in `Contents/Frameworks` at directory level (i.e., we link the whole
+    #      directory instead of individual files).
     #
     #      This largely saves us from having to deal with dots in the names of collected metadata directories, which
     #      are examples of data-only directories.
     #
-    #    * A binary-only directory is created in directory structure rooted in `Contents/MacOS`, and cross-linked into
-    #     `Contents/Resources` at directory level.
+    #    * A binary-only directory is created in directory structure rooted in `Contents/Frameworks`, and cross-linked
+    #      into `Contents/Resources` at directory level.
     #
     #    * A mixed-content directory is created in both directory structures. Files are placed into corresponding
     #      directory structure based on their type, and cross-linked into other directory structure at file level.
@@ -259,12 +271,12 @@ class BUNDLE(Target):
     #    * This rule is applied recursively; for example, a data-only sub-directory in a mixed-content directory is
     #      cross-linked at directory level, while adjacent binary and data files are cross-linked at file level.
     #
-    # * To work around the issue with dots in the names of directories in `Contents/MacOS` (applicable to binary-only
-    #   or mixed-content directories), such directories are created with modified name (the dot replaced with a
-    #   pre-defined pattern). Next to the modified directory, a symbolic link with original name is created,
+    # * To work around the issue with dots in the names of directories in `Contents/Frameworks` (applicable to
+    #   binary-only or mixed-content directories), such directories are created with modified name (the dot replaced
+    #   with a pre-defined pattern). Next to the modified directory, a symbolic link with original name is created,
     #   pointing to the directory with modified name. With mixed-content directories, this modification is performed
-    #   only on the `Contents/MacOS` side; the corresponding directory in `Contents/Resources` can be created directly,
-    #   without name modification and symbolic link.
+    #   only on the `Contents/Frameworks` side; the corresponding directory in `Contents/Resources` can be created
+    #   directly, without name modification and symbolic link.
     #
     # * If a symbolic link needs to be created in a mixed-content directory due to a SYMLINK entry from the original
     #   TOC (i.e., a "collected" symlink originating from analysis, as opposed to the cross-linking mechanism described
@@ -275,13 +287,11 @@ class BUNDLE(Target):
     #
     # NOTE: the relocation mechanism is codified by tests in `tests/functional/test_macos_bundle_structure.py`.
     #
-    # NOTE: we could put all binaries and nested .framework bundles into `Contents/Frameworks` directory and leave only
-    # program executable in `Contents/MacOS`. However, we would either need to symlink all of them into `sys._MEIPASS`
-    # (= `Contents/MacOS`), which would negate any benefit of moving them in the first place. Or, we would have to
-    # have `sys._MEIPASS` point to `Contents/MacOS` at the cost of breaking the identity relation between
-    # `sys._MEIPASS` and `os.path.dirname(sys.executable)` that is otherwise valid in onedir builds. Neither option
-    # seems to be worth the hassle, considering there is no practical benefit in using `Contents/Frameworks` over
-    # `Contents/MacOS`.
+    # NOTE: by placing binaries and nested .framework entries into `Contents/Frameworks` instead of `Contents/MacOS`,
+    # we have effectively relocated the `sys._MEIPASS` directory from the `Contents/MacOS` (= the parent directory of
+    # the program executable) into `Contents/Frameworks`. This requires the PyInstaller's bootloader to detect that it
+    # is running in the app-bundle mode (e.g., by checking if program executable's parent directory is `Contents/NacOS`)
+    # and adjust the path accordingly.
     #
     # NOTE: the implemented relocation mechanism depends on the input TOC containing properly classified entries
     # w.r.t. BINARY vs DATA. So hooks and .spec files triggering collection of binaries as datas (and vice versa) will
@@ -324,7 +334,8 @@ class BUNDLE(Target):
 
             # (Re)classify parent directories
             for parent_dir in parent_dirs:
-                # Skip the top-level `.` dir.
+                # Skip the top-level `.` dir. This is also the only directory that can contain EXECUTABLE and PKG
+                # entries, so we do not have to worry about.
                 if parent_dir == _TOP_LEVEL_DIR:
                     continue
 
@@ -363,19 +374,19 @@ class BUNDLE(Target):
             # create parent directory structure for collected files.
             if directory_type == _DATA_DIR_TYPE:
                 symlink_src = os.path.join('Contents/Resources', directory_path)
-                symlink_dest = os.path.join('Contents/MacOS', directory_path)
+                symlink_dest = os.path.join('Contents/Frameworks', directory_path)
             else:
-                symlink_src = os.path.join('Contents/MacOS', directory_path)
+                symlink_src = os.path.join('Contents/Frameworks', directory_path)
                 symlink_dest = os.path.join('Contents/Resources', directory_path)
             symlink_ref = self._compute_relative_crosslink(symlink_dest, symlink_src)
 
             bundle_toc.append((symlink_dest, symlink_ref, 'SYMLINK'))
 
-        # Step 3: first part of the work-around for directories that are located in `Contents/MacOS` but contain a dot
-        # in their name. As per `codesign` rules, the only directories in `Contents/MacOS` that are allowed to contain
-        # a dot in their name are .framework bundle directories. So we replace the dot with a custom character sequence
-        # (stored in global `DOT_REPLACEMENT` variable), and create a symbolic with original name pointing to the
-        # modified name. This is the best we can do with code-sign requirements vs. python community showing their
+        # Step 3: first part of the work-around for directories that are located in `Contents/Frameworks` but contain a
+        # dot in their name. As per `codesign` rules, the only directories in `Contents/Frameworks` that are allowed to
+        # contain a dot in their name are .framework bundle directories. So we replace the dot with a custom character
+        # sequence (stored in global `DOT_REPLACEMENT` variable), and create a symbolic with original name pointing to
+        # the modified name. This is the best we can do with code-sign requirements vs. python community showing their
         # packages' dylibs into `.dylib` subdirectories, or Qt storing their Qml components in directories named
         # `QtQuick.2`, `QtQuick/Controls.2`, `QtQuick/Particles.2`, `QtQuick/Templates.2`, etc.
         #
@@ -386,8 +397,8 @@ class BUNDLE(Target):
             if directory_type == _FRAMEWORK_DIR_TYPE:
                 continue
 
-            # Data-only directories are fully located in `Contents/Resources` and cross-linked to `Contents/MacOS` at
-            # directory level, so they are also allowed a dot in their name.
+            # Data-only directories are fully located in `Contents/Resources` and cross-linked to `Contents/Frameworks`
+            # at directory level, so they are also allowed a dot in their name.
             if directory_type == _DATA_DIR_TYPE:
                 continue
 
@@ -403,30 +414,60 @@ class BUNDLE(Target):
             # Create a SYMLINK entry, but only for this level. In case of nested directories with dots in names, the
             # symlinks for ancestors will be created by corresponding loop iteration.
             bundle_toc.append((
-                os.path.join('Contents/MacOS', directory_path),
+                os.path.join('Contents/Frameworks', directory_path),
                 directory_path.name.replace('.', DOT_REPLACEMENT),
                 'SYMLINK',
             ))
 
-        # Step 4: process the entries for collected files, deciding whether they go to `Contents/MacOS` or
-        # `Contents/Resources`, and whether they need to be cross-linked into the other directory.
+        # Step 4: process the entries for collected files, and decide whether they should be placed into
+        # `Contents/MacOS`, `Contents/Frameworks`, or `Contents/Resources`, and whether they should be cross-linked into
+        # other directories.
         for orig_dest_name, src_name, typecode in toc:
             orig_dest_path = pathlib.PurePath(orig_dest_name)
 
+            # Special handling for EXECUTABLE and PKG entries
+            if typecode == 'EXECUTABLE':
+                # Place into `Contents/MacOS`, ...
+                file_dest = os.path.join('Contents/MacOS', orig_dest_name)
+                bundle_toc.append((file_dest, src_name, typecode))
+                # ... cross-link into `Contents/Frameworks`, ...
+                symlink_dest = os.path.join('Contents/Frameworks', orig_dest_name)
+                symlink_ref = self._compute_relative_crosslink(symlink_dest, file_dest)
+                bundle_toc.append((symlink_dest, symlink_ref, 'SYMLINK'))
+                # ... and cross-link into `Contents/Resources`.
+                symlink_dest = os.path.join('Contents/Resources', orig_dest_name)
+                symlink_ref = self._compute_relative_crosslink(symlink_dest, file_dest)
+                bundle_toc.append((symlink_dest, symlink_ref, 'SYMLINK'))
+                continue
+            elif typecode == 'PKG':
+                # Place into `Contents/Resources` ...
+                file_dest = os.path.join('Contents/Resources', orig_dest_name)
+                bundle_toc.append((file_dest, src_name, typecode))
+                # ... and cross-link only into `Contents/MacOS`.
+                # This is used only in `onefile` mode, where there is actually no other content to distribute among the
+                # `Contents/Resources` and `Contents/Frameworks` directories, so cross-linking into the latter makes
+                # little sense.
+                symlink_dest = os.path.join('Contents/MacOS', orig_dest_name)
+                symlink_ref = self._compute_relative_crosslink(symlink_dest, file_dest)
+                bundle_toc.append((symlink_dest, symlink_ref, 'SYMLINK'))
+                continue
+
+            # Standard data vs binary processing...
+
             # Determine file location based on its type.
             if self._is_framework_file(orig_dest_path):
-                # File from a framework bundle; put into `Contents/MacOS`, but never cross-link the file itself. The
-                # whole .framework bundle directory will be linked as necessary by the directory cross-linking
+                # File from a framework bundle; put into `Contents/Frameworks`, but never cross-link the file itself.
+                # The whole .framework bundle directory will be linked as necessary by the directory cross-linking
                 # mechanism.
-                file_base_dir = 'Contents/MacOS'
+                file_base_dir = 'Contents/Frameworks'
                 crosslink_base_dir = None
             elif typecode == 'DATA':
-                # Data file; relocate to `Contents/Resources` and cross-link it back into `Contents/MacOS`.
+                # Data file; relocate to `Contents/Resources` and cross-link it back into `Contents/Frameworks`.
                 file_base_dir = 'Contents/Resources'
-                crosslink_base_dir = 'Contents/MacOS'
+                crosslink_base_dir = 'Contents/Frameworks'
             else:
-                # Binary; put into `Contents/MacOS` and cross-link it into `Contents/Resources`.
-                file_base_dir = 'Contents/MacOS'
+                # Binary; put into `Contents/Frameworks` and cross-link it into `Contents/Resources`.
+                file_base_dir = 'Contents/Frameworks'
                 crosslink_base_dir = 'Contents/Resources'
 
             # Determine if we need to cross-link the file. We need to do this for top-level files (the ones without
@@ -455,8 +496,8 @@ class BUNDLE(Target):
                 bundle_toc.append((symlink_dest, symlink_ref, 'SYMLINK'))
 
         # Step 5: sanitize all destination paths in the new TOC, to ensure that paths that are rooted in
-        # `Contents/MacOS` do not contain directories with dots in their names. Doing this as a post-processing step
-        # keeps code simple and clean and ensures that this step is applied to files, symlinks that originate from
+        # `Contents/Frameworks` do not contain directories with dots in their names. Doing this as a post-processing
+        # step keeps code simple and clean and ensures that this step is applied to files, symlinks that originate from
         # cross-linking files, and symlinks that originate from cross-linking directories. This in turn ensures that
         # all directory hierarchies created during the actual file collection have sanitized names, and that collection
         # outcome does not depend on the order of entries in the TOC.
@@ -480,7 +521,7 @@ class BUNDLE(Target):
                 remaining_path = dest_path.name
 
             sanitized_dest_path = pathlib.PurePath(
-                *parent_path.parts[:2],  # Contents/MacOS
+                *parent_path.parts[:2],  # Contents/Frameworks
                 *[part.replace('.', DOT_REPLACEMENT) for part in parent_path.parts[2:]],
                 remaining_path,
             )
@@ -562,6 +603,7 @@ class BUNDLE(Target):
         bundle_toc = self._process_bundle_toc(self.toc)
 
         # Perform the actual collection.
+        CONTENTS_FRAMEWORKS_PATH = pathlib.PurePath('Contents/Frameworks')
         for dest_name, src_name, typecode in bundle_toc:
             # Create parent directory structure, if necessary
             dest_path = os.path.join(self.name, dest_name)  # Absolute destination path
@@ -580,7 +622,7 @@ class BUNDLE(Target):
             # the cache retrieval function the *original* destination path (which is without preceding
             # `Contents/MacOS`).
             if typecode in ('EXTENSION', 'BINARY'):
-                orig_dest_name = str(pathlib.PurePath(dest_name).relative_to(pathlib.PurePath('Contents/MacOS')))
+                orig_dest_name = str(pathlib.PurePath(dest_name).relative_to(CONTENTS_FRAMEWORKS_PATH))
                 src_name = checkCache(
                     src_name,
                     strip=self.strip,
@@ -607,7 +649,7 @@ class BUNDLE(Target):
                         f"Attempting to collect a duplicated file into BUNDLE: {dest_name} (type: {typecode})"
                     )
                 shutil.copy2(src_name, dest_path)  # Use copy2 to (attempt to) preserve metadata
-            if typecode in ('EXTENSION', 'BINARY'):
+            if typecode in ('EXTENSION', 'BINARY', 'EXECUTABLE'):
                 os.chmod(dest_path, 0o755)
 
         # Sign the bundle
@@ -642,13 +684,13 @@ class BUNDLE(Target):
 
         # Ensure that code-signing information is *NOT* embedded in the files' extended attributes.
         #
-        # This happens when files other than binaries are present in Contents/MacOS directory; as the signature cannot
-        # be embedded within the file itself (contrary to binaries with LC_CODE_SIGNATURE section in their header), it
-        # ends up stores in the file's extended attributes. However, if such bundle is transferred using a method that
-        # does not support extended attributes (for example, a zip file), the signatures on these files are lost, and
-        # the signature of the bundle as a whole becomes invalid. This is the primary reason why we need to relocate
-        # non-binaries into `Contents/Resources` - the signatures for files in that directory end up stored in
-        # `Contents/_CodeSignature/CodeResources` file.
+        # This happens when files other than binaries are present in `Contents/MacOS` or `Contents/Frameworks`
+        # directory; as the signature cannot be embedded within the file itself (contrary to binaries with
+        # `LC_CODE_SIGNATURE` section in their header), it ends up stores in the file's extended attributes. However,
+        # if such bundle is transferred using a method that does not support extended attributes (for example, a zip
+        # file), the signatures on these files are lost, and the signature of the bundle as a whole becomes invalid.
+        # This is the primary reason why we need to relocate non-binaries into `Contents/Resources` - the signatures
+        # for files in that directory end up stored in `Contents/_CodeSignature/CodeResources` file.
         #
         # This check therefore aims to ensure that all files have been properly relocated to their corresponding
         # locations w.r.t. the code-signing requirements.

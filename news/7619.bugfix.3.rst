@@ -2,7 +2,7 @@
 ``PySide6``, ``PyQt5``, or ``PyQt6`` directory are now relocated to
 the directory structure rooted in ``Contents/Resources`` to ensure
 compliance with code-signing requirements. The content cross-linking
-between ``Contents/Resources`` and ``Contents/MacOS`` should ensure
+between ``Contents/Resources`` and ``Contents/Frameworks`` should ensure
 that ``QML`` components in the ``qml`` sub-directory continue to work in
 spite of plugins (shared libraries) being technically separated from
 their corresponding metadata files. The automatic-work around for directories

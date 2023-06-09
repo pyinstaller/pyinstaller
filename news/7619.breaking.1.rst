@@ -1,0 +1,9 @@
+(macOS) Due to relocation of all dynamic libraries into directory
+structure rooted in the ``Contents/Frameworks`` directory, the
+``sys._MEIPASS`` variable as well as the ``os.path.dirname(__file__)``
+in the entry-point script now point to ``Contents/Frameworks`` instead of
+``Contents/MacOS``, while ``os.path.dirname(sys.executable)`` continues
+to point to the ``Contents/MacOS`` directory. The behavior change applies
+only to ``onedir`` .app bundles (in ``onefile`` ones, ``sys._MEIPASS``
+and ``__file__`` of the entry-point script have always pointed to the
+temporary extraction directory and continue to do so).
