@@ -512,7 +512,24 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * e
         return false;
     }
     /* Set homepath to where the archive is */
+#if defined(__APPLE__)
+    char executable_dir[PATH_MAX];
+    size_t executable_dir_len;
+
+    pyi_path_dirname(executable_dir, executable_path);
+    executable_dir_len = strnlen(executable_dir, PATH_MAX);
+    if (executable_dir_len > 19 && strncmp(executable_dir + executable_dir_len - 19, ".app/Contents/MacOS", 19) == 0) {
+        /* macOS .app bundle; relocate homepath from Contents/MacOS
+         * directory to Contents/Frameworks */
+        char contents_dir[PATH_MAX];
+        pyi_path_dirname(contents_dir, executable_dir);
+        pyi_path_join(status->homepath, contents_dir, "Frameworks");
+    } else {
+        pyi_path_dirname(status->homepath, archive_path);
+    }
+#else
     pyi_path_dirname(status->homepath, archive_path);
+#endif
     /*
      * Initial value of mainpath is homepath. It might be overridden
      * by temppath if it is available.

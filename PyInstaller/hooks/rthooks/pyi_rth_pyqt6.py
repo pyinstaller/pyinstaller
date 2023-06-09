@@ -25,13 +25,13 @@ def _pyi_rthook():
 
     os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
 
-    if sys.platform == 'darwin' and sys._MEIPASS.endswith("Contents/MacOS"):
+    if sys.platform == 'darwin' and sys._MEIPASS.endswith("Contents/Frameworks"):
         # Special handling for macOS .app bundles. To satisfy codesign requirements, we are forced to split `qml`
-        # directory into two parts; one that keeps only binaries (rooted in `Contents/MacOS`) and one that keeps only
-        # data files (rooted in `Contents/Resources), with files from one directory tree being symlinked to the other
-        # to maintain illusion of a single mixed-content directory. As Qt seems to compute the identifier of its QML
-        # components based on location of the `qmldir` file w.r.t. the registered QML import paths, we need to register
-        # both paths, because the `qmldir` file for a component could be reached via either directory tree.
+        # directory into two parts; one that keeps only binaries (rooted in `Contents/Frameworks`) and one that keeps
+        # only data files (rooted in `Contents/Resources), with files from one directory tree being symlinked to the
+        # other to maintain illusion of a single mixed-content directory. As Qt seems to compute the identifier of its
+        # QML components based on location of the `qmldir` file w.r.t. the registered QML import paths, we need to
+        # register both paths, because the `qmldir` file for a component could be reached via either directory tree.
         pyqt_path_res = os.path.normpath(
             os.path.join(sys._MEIPASS, '..', 'Resources', os.path.relpath(pyqt_path, sys._MEIPASS))
         )

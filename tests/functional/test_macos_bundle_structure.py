@@ -146,7 +146,7 @@ def _create_test_framework(bundle_path):
         plistlib.dump(info_plist, fp)
 
 
-# Test that top-level data file is relocated into `Contents/Resources` and symlinked back into `Contents/MacOS`.
+# Test that top-level data file is relocated into `Contents/Resources` and symlinked back into `Contents/Frameworks`.
 @pytest.mark.darwin
 @pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
 def test_macos_bundle_layout_data_file(pyi_builder, monkeypatch, tmpdir):
@@ -164,13 +164,13 @@ def test_macos_bundle_layout_data_file(pyi_builder, monkeypatch, tmpdir):
     assert not os.path.islink(filename)
 
     # ... and symlinked into `Contents/MacOS`.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/data_file.txt')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/data_file.txt')
     assert os.path.islink(filename)
     assert os.path.isfile(filename)  # Is link valid?
     assert os.readlink(filename) == '../Resources/data_file.txt'
 
 
-# Test that top-level binary is kept in `Contents/MacOS` and symlinked into `Contents/Resources`.
+# Test that top-level binary is kept in `Contents/Frameworks` and symlinked into `Contents/Resources`.
 @pytest.mark.darwin
 @pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
 def test_macos_bundle_layout_binary(pyi_builder, monkeypatch, tmpdir):
@@ -182,8 +182,8 @@ def test_macos_bundle_layout_binary(pyi_builder, monkeypatch, tmpdir):
 
     bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmpdir, binaries=binaries)
 
-    # The binary is placed into `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary.dylib')
+    # The binary is placed into `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -191,10 +191,10 @@ def test_macos_bundle_layout_binary(pyi_builder, monkeypatch, tmpdir):
     filename = os.path.join(bundle_path, 'Contents/Resources/binary.dylib')
     assert os.path.islink(filename)
     assert os.path.isfile(filename)  # Is link valid?
-    assert os.readlink(filename) == '../MacOS/binary.dylib'
+    assert os.readlink(filename) == '../Frameworks/binary.dylib'
 
 
-# Test that data-only directory is relocated into `Contents/Resources` and symlinked back into `Contents/MacOS`.
+# Test that data-only directory is relocated into `Contents/Resources` and symlinked back into `Contents/Frameworks`.
 @pytest.mark.darwin
 @pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
 def test_macos_bundle_layout_data_only_dir(pyi_builder, monkeypatch, tmpdir):
@@ -218,8 +218,8 @@ def test_macos_bundle_layout_data_only_dir(pyi_builder, monkeypatch, tmpdir):
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
-    # ... and symlinked (at directory level) into `Contents/MacOS`.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/data_dir')
+    # ... and symlinked (at directory level) into `Contents/Frameworks`.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/data_dir')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == '../Resources/data_dir'
@@ -229,9 +229,9 @@ def test_macos_bundle_layout_data_only_dir(pyi_builder, monkeypatch, tmpdir):
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... but it is also reachable from `Contents/MacOS`. The linking is done at the parent directory level, so the file
-    # itself is NOT seen as a symlink.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/data_dir/data_file1.txt')
+    # ... but it is also reachable from `Contents/Frameworks`. The linking is done at the parent directory level, so
+    # the file itself is NOT seen as a symlink.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/data_dir/data_file1.txt')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -240,12 +240,12 @@ def test_macos_bundle_layout_data_only_dir(pyi_builder, monkeypatch, tmpdir):
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    filename = os.path.join(bundle_path, 'Contents/MacOS/data_dir/data_file2.txt')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/data_dir/data_file2.txt')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
 
-# Test that binary-only directory is kept in `Contents/MacOS` and symlinked into `Contents/Resources`.
+# Test that binary-only directory is kept in `Contents/Frameworks` and symlinked into `Contents/Resources`.
 @pytest.mark.darwin
 @pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
 def test_macos_bundle_layout_binary_only_dir(pyi_builder, monkeypatch, tmpdir):
@@ -264,8 +264,8 @@ def test_macos_bundle_layout_binary_only_dir(pyi_builder, monkeypatch, tmpdir):
 
     bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmpdir, binaries=binaries)
 
-    # (1) The whole binary directory is placed into `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir')
+    # (1) The whole binary directory is placed into `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -273,21 +273,21 @@ def test_macos_bundle_layout_binary_only_dir(pyi_builder, monkeypatch, tmpdir):
     filename = os.path.join(bundle_path, 'Contents/Resources/binary_dir')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
-    assert os.readlink(filename) == '../MacOS/binary_dir'
+    assert os.readlink(filename) == '../Frameworks/binary_dir'
 
-    # (2) The binary file is placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir/binary1.dylib')
+    # (2) The binary file is placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir/binary1.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... but it is also reachable from `Resources/MacOS`. The linking is done at the parent directory level, so the
-    # file itself is NOT seen as a symlink.
+    # ... but it is also reachable from `Resources/Frameworks`. The linking is done at the parent directory level,
+    # so the file itself is NOT seen as a symlink.
     filename = os.path.join(bundle_path, 'Contents/Resources/binary_dir/binary1.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
     # (3) Same goes for the second binary file.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir/binary2.dylib')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir/binary2.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -296,8 +296,8 @@ def test_macos_bundle_layout_binary_only_dir(pyi_builder, monkeypatch, tmpdir):
     assert not os.path.islink(filename)
 
 
-# Test that mxied-content directory is created in both `Contents/MacOS` and `Contents/Resources`, and that files are
-# put into the proper directory and cross-linked into the other directory.
+# Test that mxied-content directory is created in both `Contents/Frameworks` and `Contents/Resources`, and that files
+# are put into the proper directory and cross-linked into the other directory.
 @pytest.mark.darwin
 @pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
 def test_macos_bundle_layout_mixed_dir(pyi_builder, monkeypatch, tmpdir):
@@ -317,9 +317,9 @@ def test_macos_bundle_layout_mixed_dir(pyi_builder, monkeypatch, tmpdir):
 
     bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmpdir, datas=datas, binaries=binaries)
 
-    # (1) The mixed-content directory is created in both `Contents/MacOS` and `Contents/Resources` (i.e., no linking at
-    # the directory level).
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir')
+    # (1) The mixed-content directory is created in both `Contents/Frameworks` and `Contents/Resources` (i.e., no
+    # linking at the directory level).
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -332,14 +332,14 @@ def test_macos_bundle_layout_mixed_dir(pyi_builder, monkeypatch, tmpdir):
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... and symlinked into directory in `Contents/MacOS`.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/data_file.txt')
+    # ... and symlinked into directory in `Contents/Frameworks`.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/data_file.txt')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == '../../Resources/mixed_dir/data_file.txt'
 
-    # (3) The binary is placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/binary.dylib')
+    # (3) The binary is placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -347,7 +347,7 @@ def test_macos_bundle_layout_mixed_dir(pyi_builder, monkeypatch, tmpdir):
     filename = os.path.join(bundle_path, 'Contents/Resources/mixed_dir/binary.dylib')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
-    assert os.readlink(filename) == '../../MacOS/mixed_dir/binary.dylib'
+    assert os.readlink(filename) == '../../Frameworks/mixed_dir/binary.dylib'
 
 
 # Repeat the test with mixed-content directory, except that it now contains three sub-directories: a data-only one,
@@ -384,9 +384,9 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs(pyi_builder, monkeypatch, tm
 
     bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmpdir, datas=datas, binaries=binaries)
 
-    # (1) The mixed-content directory is created in both `Contents/MacOS` and `Contents/Resources` (i.e., no linking at
-    # the directory level).
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir')
+    # (1) The mixed-content directory is created in both `Contents/Frameworkds` and `Contents/Resources` (i.e., no
+    # linking at the directory level).
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -399,8 +399,8 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs(pyi_builder, monkeypatch, tm
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
-    # ... and symlinked (at directory level) into directory in `Contents/MacOS`.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/data_subdir')
+    # ... and symlinked (at directory level) into directory in `Contents/Frameworks`.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/data_subdir')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == '../../Resources/mixed_dir/data_subdir'
@@ -410,14 +410,14 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs(pyi_builder, monkeypatch, tm
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... but it is also reachable from `Contents/MacOS`. The linking is done at the parent directory level, so the file
-    # itself is NOT seen as a symlink.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/data_subdir/data_file.txt')
+    # ... but it is also reachable from `Contents/Frameworks`. The linking is done at the parent directory level, so
+    # the file itself is NOT seen as a symlink.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/data_subdir/data_file.txt')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # (4) The whole binary sub-directory is placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/binary_subdir')
+    # (4) The whole binary sub-directory is placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/binary_subdir')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -425,22 +425,22 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs(pyi_builder, monkeypatch, tm
     filename = os.path.join(bundle_path, 'Contents/Resources/mixed_dir/binary_subdir')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
-    assert os.readlink(filename) == '../../MacOS/mixed_dir/binary_subdir'
+    assert os.readlink(filename) == '../../Frameworks/mixed_dir/binary_subdir'
 
-    # (5) The binary file is placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/binary_subdir/binary.dylib')
+    # (5) The binary file is placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/binary_subdir/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... but it is also reachable from `Resources/MacOS`. The linking is done at the parent directory level, so the
-    # file itself is NOT seen as a symlink.
+    # ... but it is also reachable from `Resources/Frameworks`. The linking is done at the parent directory level,
+    # so the file itself is NOT seen as a symlink.
     filename = os.path.join(bundle_path, 'Contents/Resources/mixed_dir/binary_subdir/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # (6) The mixed-content sub-directory is created in both `Contents/MacOS` and `Contents/Resources` (i.e., no linking
-    # at the directory level).
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/mixed_subdir')
+    # (6) The mixed-content sub-directory is created in both `Contents/Frameworks` and `Contents/Resources` (i.e., no
+    # linking at the directory level).
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/mixed_subdir')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -453,14 +453,14 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs(pyi_builder, monkeypatch, tm
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... and symlinked into directory in `Contents/MacOS`.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/mixed_subdir/data_file.txt')
+    # ... and symlinked into directory in `Contents/Frameworks`.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/mixed_subdir/data_file.txt')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == '../../../Resources/mixed_dir/mixed_subdir/data_file.txt'
 
-    # (3) The binary is placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/mixed_subdir/binary.dylib')
+    # (3) The binary is placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/mixed_subdir/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -468,7 +468,7 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs(pyi_builder, monkeypatch, tm
     filename = os.path.join(bundle_path, 'Contents/Resources/mixed_dir/mixed_subdir/binary.dylib')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
-    assert os.readlink(filename) == '../../../MacOS/mixed_dir/mixed_subdir/binary.dylib'
+    assert os.readlink(filename) == '../../../Frameworks/mixed_dir/mixed_subdir/binary.dylib'
 
 
 # Repeat the test with mixed-content directory and sub-directories, except that all directories now contain a dot in
@@ -505,15 +505,15 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs_and_dots(pyi_builder, monkey
 
     bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmpdir, datas=datas, binaries=binaries)
 
-    # (1) The mixed-content directory is created in both `Contents/MacOS` and `Contents/Resources` (i.e., no linking at
-    # the directory level). For directory in `Contents/MacOS`, the `.` in the name is replaced with `DOT_REPLACEMENT`,
-    # and a symlink is created from original name to the modified one. For directory in `Contents/Resources`, this is
-    # not necessary.
-    filename = os.path.join(bundle_path, f'Contents/MacOS/mixed{DOT_REPLACEMENT}dir')
+    # (1) The mixed-content directory is created in both `Contents/Frameworks` and `Contents/Resources` (i.e., no
+    # linking at the directory level). For directory in `Contents/MacOS`, the `.` in the name is replaced with
+    # `DOT_REPLACEMENT`, and a symlink is created from original name to the modified one. For directory in
+    # `Contents/Resources`, this is not necessary.
+    filename = os.path.join(bundle_path, f'Contents/Frameworks/mixed{DOT_REPLACEMENT}dir')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed.dir')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed.dir')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'mixed__dot__dir'
@@ -534,14 +534,14 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs_and_dots(pyi_builder, monkey
     filename = os.path.join(bundle_path, f'Contents/Resources/mixed.dir/{DOT_REPLACEMENT}data_subdir')
     assert not os.path.exists(filename)
 
-    # The data sub-directory is symlinked (at directory level) into directory in `Contents/MacOS`. Due to this being
-    # a symlink, we do not need name modification here, either.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed.dir/.data_subdir')
+    # The data sub-directory is symlinked (at directory level) into directory in `Contents/Frameworks`. Due to this
+    # being a symlink, we do not need name modification here, either.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed.dir/.data_subdir')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == '../../Resources/mixed.dir/.data_subdir'
 
-    filename = os.path.join(bundle_path, f'Contents/MacOS/mixed.dir/{DOT_REPLACEMENT}data_subdir')
+    filename = os.path.join(bundle_path, f'Contents/Frameworks/mixed.dir/{DOT_REPLACEMENT}data_subdir')
     assert not os.path.exists(filename)
 
     # (3) The data file is placed into data sub-directory in `Contents/Resources`...
@@ -549,20 +549,20 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs_and_dots(pyi_builder, monkey
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... but it is also reachable from `Contents/MacOS`. The linking is done at the parent directory level, so the file
-    # itself is NOT seen as a symlink.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed.dir/.data_subdir/data_file.txt')
+    # ... but it is also reachable from `Contents/Frameworks`. The linking is done at the parent directory level,
+    # so the file itself is NOT seen as a symlink.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed.dir/.data_subdir/data_file.txt')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # (4) The whole binary sub-directory is placed into directory in `Contents/MacOS`. Due to the dot in the name, the
-    # directory is created with modified name (`.` replaced by `DOT_REPLACEMENT`). A symlink is created from original
-    # name to the modified one.
-    filename = os.path.join(bundle_path, f'Contents/MacOS/mixed.dir/{DOT_REPLACEMENT}binary_subdir')
+    # (4) The whole binary sub-directory is placed into directory in `Contents/Frameworks`. Due to the dot in the name,
+    # the directory is created with modified name (`.` replaced by `DOT_REPLACEMENT`). A symlink is created from
+    # original name to the modified one.
+    filename = os.path.join(bundle_path, f'Contents/Frameworks/mixed.dir/{DOT_REPLACEMENT}binary_subdir')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed.dir/.binary_subdir')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed.dir/.binary_subdir')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == f'{DOT_REPLACEMENT}binary_subdir'
@@ -571,31 +571,31 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs_and_dots(pyi_builder, monkey
     filename = os.path.join(bundle_path, 'Contents/Resources/mixed.dir/.binary_subdir')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
-    assert os.readlink(filename) == '../../MacOS/mixed.dir/.binary_subdir'
+    assert os.readlink(filename) == '../../Frameworks/mixed.dir/.binary_subdir'
 
     filename = os.path.join(bundle_path, f'Contents/Resources/mixed.dir/{DOT_REPLACEMENT}binary_subdir')
     assert not os.path.exists(filename)
 
-    # (5) The binary file is placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed.dir/.binary_subdir/binary.dylib')
+    # (5) The binary file is placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed.dir/.binary_subdir/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... but it is also reachable from `Resources/MacOS`. The linking is done at the parent directory level, so the
-    # file itself is NOT seen as a symlink.
+    # ... but it is also reachable from `Resources/Frameworks`. The linking is done at the parent directory level,
+    # so the file itself is NOT seen as a symlink.
     filename = os.path.join(bundle_path, 'Contents/Resources/mixed.dir/.binary_subdir/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # (6) The mixed-content sub-directory is created in both `Contents/MacOS` and `Contents/Resources` (i.e., no linking
-    # at the directory level). The directory in `Contents/MacOS` requires special handling due to dot in the name
-    # (replacement of `.` with `DOT_REPLACEMENT`, and symlink from original to modified name), while the directory in
-    # `Contents/Resources` does not.
-    filename = os.path.join(bundle_path, f'Contents/MacOS/mixed.dir/mixed_subdir{DOT_REPLACEMENT}')
+    # (6) The mixed-content sub-directory is created in both `Contents/Frameworks` and `Contents/Resources` (i.e., no
+    # linking at the directory level). The directory in `Contents/MacOS` requires special handling due to dot in the
+    # name (replacement of `.` with `DOT_REPLACEMENT`, and symlink from original to modified name), while the directory
+    # in `Contents/Resources` does not.
+    filename = os.path.join(bundle_path, f'Contents/Frameworks/mixed.dir/mixed_subdir{DOT_REPLACEMENT}')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed.dir/mixed_subdir.')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed.dir/mixed_subdir.')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == f'mixed_subdir{DOT_REPLACEMENT}'
@@ -612,14 +612,14 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs_and_dots(pyi_builder, monkey
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... and symlinked into directory in `Contents/MacOS`.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed.dir/mixed_subdir./data_file.txt')
+    # ... and symlinked into directory in `Contents/Frameworks`.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed.dir/mixed_subdir./data_file.txt')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == '../../../Resources/mixed.dir/mixed_subdir./data_file.txt'
 
-    # (3) The binary is placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed.dir/mixed_subdir./binary.dylib')
+    # (3) The binary is placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed.dir/mixed_subdir./binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -627,7 +627,7 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs_and_dots(pyi_builder, monkey
     filename = os.path.join(bundle_path, 'Contents/Resources/mixed.dir/mixed_subdir./binary.dylib')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
-    assert os.readlink(filename) == '../../../MacOS/mixed.dir/mixed_subdir./binary.dylib'
+    assert os.readlink(filename) == '../../../Frameworks/mixed.dir/mixed_subdir./binary.dylib'
 
 
 # Test with symlink in top-level directory pointing to a data file in data-only directory.
@@ -654,8 +654,8 @@ def test_macos_bundle_layout_symlink_into_data_dir(pyi_builder, monkeypatch, tmp
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
-    # ... and symlinked (at directory level) into `Contents/MacOS`.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/data_dir')
+    # ... and symlinked (at directory level) into `Contents/Frameworks`.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/data_dir')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == '../Resources/data_dir'
@@ -665,15 +665,15 @@ def test_macos_bundle_layout_symlink_into_data_dir(pyi_builder, monkeypatch, tmp
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... but it is also reachable from `Contents/MacOS`. The linking is done at the parent directory level, so the file
-    # itself is NOT seen as a symlink.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/data_dir/data_file.txt')
+    # ... but it is also reachable from `Contents/Frameworks`. The linking is done at the parent directory level,
+    # so the file itself is NOT seen as a symlink.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/data_dir/data_file.txt')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # (3) The symlink is replicated in both `Contents/MacOS` and `Contents/Resources`, and points to the resource
+    # (3) The symlink is replicated in both `Contents/Frameworks` and `Contents/Resources`, and points to the resource
     # (file or symlink) in the same directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/link_to_data_file.txt')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/link_to_data_file.txt')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'data_dir/data_file.txt'
@@ -703,8 +703,8 @@ def test_macos_bundle_layout_symlink_into_binary_dir(pyi_builder, monkeypatch, t
 
     bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmpdir, binaries=binaries)
 
-    # (1) The whole binary directory is placed into `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir')
+    # (1) The whole binary directory is placed into `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -712,22 +712,22 @@ def test_macos_bundle_layout_symlink_into_binary_dir(pyi_builder, monkeypatch, t
     filename = os.path.join(bundle_path, 'Contents/Resources/binary_dir')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
-    assert os.readlink(filename) == '../MacOS/binary_dir'
+    assert os.readlink(filename) == '../Frameworks/binary_dir'
 
-    # (2) The binary file is placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir/binary.dylib')
+    # (2) The binary file is placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... but it is also reachable from `Resources/MacOS`. The linking is done at the parent directory level, so the
-    # file itself is NOT seen as a symlink.
+    # ... but it is also reachable from `Resources/Frameworks`. The linking is done at the parent directory level,
+    # so the file itself is NOT seen as a symlink.
     filename = os.path.join(bundle_path, 'Contents/Resources/binary_dir/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # (3) The symlink is replicated in both `Contents/MacOS` and `Contents/Resources`, and points to the resource
+    # (3) The symlink is replicated in both `Contents/Frameworks` and `Contents/Resources`, and points to the resource
     # (file or symlink) in the same directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/link_to_binary.dylib')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/link_to_binary.dylib')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'binary_dir/binary.dylib'
@@ -768,9 +768,9 @@ def test_macos_bundle_layout_symlink_into_mixed_dir(pyi_builder, monkeypatch, tm
 
     bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmpdir, datas=datas, binaries=binaries)
 
-    # (1) The mixed-content directory is created in both `Contents/MacOS` and `Contents/Resources` (i.e., no linking at
-    # the directory level).
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir')
+    # (1) The mixed-content directory is created in both `Contents/Frameworks` and `Contents/Resources` (i.e., no
+    # linking at the directory level).
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -783,14 +783,14 @@ def test_macos_bundle_layout_symlink_into_mixed_dir(pyi_builder, monkeypatch, tm
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... and symlinked into directory in `Contents/MacOS`.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/data_file.txt')
+    # ... and symlinked into directory in `Contents/Frameworks`.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/data_file.txt')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == '../../Resources/mixed_dir/data_file.txt'
 
-    # (3) The binary is placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/binary.dylib')
+    # (3) The binary is placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -798,11 +798,11 @@ def test_macos_bundle_layout_symlink_into_mixed_dir(pyi_builder, monkeypatch, tm
     filename = os.path.join(bundle_path, 'Contents/Resources/mixed_dir/binary.dylib')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
-    assert os.readlink(filename) == '../../MacOS/mixed_dir/binary.dylib'
+    assert os.readlink(filename) == '../../Frameworks/mixed_dir/binary.dylib'
 
-    # (4) The symlink is replicated in both `Contents/MacOS` and `Contents/Resources`, and points to the resource
+    # (4) The symlink is replicated in both `Contents/Frameworks` and `Contents/Resources`, and points to the resource
     # (file or symlink) in the same directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/link_to_data_file.txt')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/link_to_data_file.txt')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'mixed_dir/data_file.txt'
@@ -812,9 +812,9 @@ def test_macos_bundle_layout_symlink_into_mixed_dir(pyi_builder, monkeypatch, tm
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'mixed_dir/data_file.txt'
 
-    # (5) The symlink is replicated in both `Contents/MacOS` and `Contents/Resources`, and points to the resource
+    # (5) The symlink is replicated in both `Contents/Frameworks` and `Contents/Resources`, and points to the resource
     # (file or symlink) in the same directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/link_to_binary.dylib')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/link_to_binary.dylib')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'mixed_dir/binary.dylib'
@@ -827,7 +827,7 @@ def test_macos_bundle_layout_symlink_into_mixed_dir(pyi_builder, monkeypatch, tm
 
 # Test with .framework bundle in top-level directory and framework's binary symlinked to top-level directory.
 # This implicitly also tests that we do not replace the dot in the .framework bundle's directory name (the .framework
-# bundle directories are the only directories in `Contents/MacOS` that are allowed to have a dot in name).
+# bundle directories are the only directories in `Contents/Frameworks` that are allowed to have a dot in name).
 @pytest.mark.darwin
 @pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
 def test_macos_bundle_layout_framework_in_top_level(pyi_builder, monkeypatch, tmpdir):
@@ -854,8 +854,8 @@ def test_macos_bundle_layout_framework_in_top_level(pyi_builder, monkeypatch, tm
 
     bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmpdir, datas=datas, binaries=binaries)
 
-    # (1) The .framework directory is placed into `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/Dummy.framework')
+    # (1) The .framework directory is placed into `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/Dummy.framework')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -863,21 +863,21 @@ def test_macos_bundle_layout_framework_in_top_level(pyi_builder, monkeypatch, tm
     filename = os.path.join(bundle_path, 'Contents/Resources/Dummy.framework')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
-    assert os.readlink(filename) == '../MacOS/Dummy.framework'
+    assert os.readlink(filename) == '../Frameworks/Dummy.framework'
 
-    # (2) The content of .framework are placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/Dummy.framework/Versions')
+    # (2) The content of .framework are placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/Dummy.framework/Versions')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
-    # ... but are also reachable from `Resources/MacOS`. The linking is done at the parent directory level, so the
+    # ... but are also reachable from `Resources/Frameworks`. The linking is done at the parent directory level, so the
     # files/directories themselves are NOT seen as symlinks.
     filename = os.path.join(bundle_path, 'Contents/Resources/Dummy.framework/Versions')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
     # (3) Same for `Versions/<version>` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/Dummy.framework/Versions/A')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/Dummy.framework/Versions/A')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -886,7 +886,7 @@ def test_macos_bundle_layout_framework_in_top_level(pyi_builder, monkeypatch, tm
     assert not os.path.islink(filename)
 
     # (4) Same for binary within the `<version>` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/Dummy.framework/Versions/A/Dummy')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/Dummy.framework/Versions/A/Dummy')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -895,7 +895,7 @@ def test_macos_bundle_layout_framework_in_top_level(pyi_builder, monkeypatch, tm
     assert not os.path.islink(filename)
 
     # (5) Same for `Resources` directory within the `<version>` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/Dummy.framework/Versions/A/Resources')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/Dummy.framework/Versions/A/Resources')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -904,7 +904,7 @@ def test_macos_bundle_layout_framework_in_top_level(pyi_builder, monkeypatch, tm
     assert not os.path.islink(filename)
 
     # (6) Same for `Info.plist` in `Resources` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/Dummy.framework/Versions/A/Resources/Info.plist')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/Dummy.framework/Versions/A/Resources/Info.plist')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -913,7 +913,7 @@ def test_macos_bundle_layout_framework_in_top_level(pyi_builder, monkeypatch, tm
     assert not os.path.islink(filename)
 
     # (X) A symlink `Current` pointing to `<version>` should be automatically created inside `Versions` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/Dummy.framework/Versions/Current')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/Dummy.framework/Versions/Current')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'A'
@@ -923,9 +923,9 @@ def test_macos_bundle_layout_framework_in_top_level(pyi_builder, monkeypatch, tm
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'A'
 
-    # (7) The symlink is replicated in both `Contents/MacOS` and `Contents/Resources`, and points to the resource
+    # (7) The symlink is replicated in both `Contents/Frameworks` and `Contents/Resources`, and points to the resource
     # (file or symlink) in the same directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/Dummy')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/Dummy')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'Dummy.framework/Versions/A/Dummy'
@@ -969,8 +969,8 @@ def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, t
 
     bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmpdir, datas=datas, binaries=binaries)
 
-    # (1) The whole binary directory is placed into `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir')
+    # (1) The whole binary directory is placed into `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -978,21 +978,21 @@ def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, t
     filename = os.path.join(bundle_path, 'Contents/Resources/binary_dir')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
-    assert os.readlink(filename) == '../MacOS/binary_dir'
+    assert os.readlink(filename) == '../Frameworks/binary_dir'
 
-    # (2) The binary file is placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir/binary.dylib')
+    # (2) The binary file is placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... but it is also reachable from `Resources/MacOS`. The linking is done at the parent directory level, so the
-    # file itself is NOT seen as a symlink.
+    # ... but it is also reachable from `Resources/Frameworks`. The linking is done at the parent directory level,
+    # so the file itself is NOT seen as a symlink.
     filename = os.path.join(bundle_path, 'Contents/Resources/binary_dir/binary.dylib')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
     # (3) The same applies to the .framework directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir/Dummy.framework')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir/Dummy.framework')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -1001,7 +1001,7 @@ def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, t
     assert not os.path.islink(filename)
 
     # (4) Same for `Versions` directory inside .framework directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir/Dummy.framework/Versions')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir/Dummy.framework/Versions')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -1010,7 +1010,7 @@ def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, t
     assert not os.path.islink(filename)
 
     # (5) Same for `Versions/<version>` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir/Dummy.framework/Versions/A')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir/Dummy.framework/Versions/A')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -1019,7 +1019,7 @@ def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, t
     assert not os.path.islink(filename)
 
     # (6) Same for binary within the `<version>` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir/Dummy.framework/Versions/A/Dummy')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir/Dummy.framework/Versions/A/Dummy')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -1028,7 +1028,7 @@ def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, t
     assert not os.path.islink(filename)
 
     # (7) Same for `Resources` directory within the `<version>` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir/Dummy.framework/Versions/A/Resources')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir/Dummy.framework/Versions/A/Resources')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -1037,7 +1037,9 @@ def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, t
     assert not os.path.islink(filename)
 
     # (8) Same for `Info.plist` in `Resources` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir/Dummy.framework/Versions/A/Resources/Info.plist')
+    filename = os.path.join(
+        bundle_path, 'Contents/Frameworks/binary_dir/Dummy.framework/Versions/A/Resources/Info.plist'
+    )
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -1048,7 +1050,7 @@ def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, t
     assert not os.path.islink(filename)
 
     # (X) A symlink `Current` pointing to `<version>` should be automatically created inside `Versions` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/binary_dir/Dummy.framework/Versions/Current')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/binary_dir/Dummy.framework/Versions/Current')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'A'
@@ -1058,9 +1060,9 @@ def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, t
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'A'
 
-    # (9) The symlink is replicated in both `Contents/MacOS` and `Contents/Resources`, and points to the resource
+    # (9) The symlink is replicated in both `Contents/Frameworks` and `Contents/Resources`, and points to the resource
     # (file or symlink) in the same directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/Dummy')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/Dummy')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'binary_dir/Dummy.framework/Versions/A/Dummy'
@@ -1106,9 +1108,9 @@ def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tm
 
     bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmpdir, datas=datas, binaries=binaries)
 
-    # (1) The mixed-content directory is created in both `Contents/MacOS` and `Contents/Resources` (i.e., no linking at
-    # the directory level).
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir')
+    # (1) The mixed-content directory is created in both `Contents/Frameworks` and `Contents/Resources` (i.e., no
+    # linking at the directory level).
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -1121,27 +1123,27 @@ def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tm
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
-    # ... and symlinked into directory in `Contents/MacOS`.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/data_file.txt')
+    # ... and symlinked into directory in `Contents/Frameworks`.
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/data_file.txt')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == '../../Resources/mixed_dir/data_file.txt'
 
-    # (3) The .framework bundle directory is placed into directory in `Contents/MacOS`...
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/Dummy.framework')
+    # (3) The .framework bundle directory is placed into directory in `Contents/Frameworks`...
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/Dummy.framework')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
-    # ... and symlinked into `Resources/MacOS`.
+    # ... and symlinked into `Resources/Frameworks`.
     filename = os.path.join(bundle_path, 'Contents/Resources/mixed_dir/Dummy.framework')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
-    assert os.readlink(filename) == '../../MacOS/mixed_dir/Dummy.framework'
+    assert os.readlink(filename) == '../../Frameworks/mixed_dir/Dummy.framework'
 
     # (4) The contents inside the .framework directory is reachable from both directories, and due to symlinking at
     # parent (= .framework) directory, they are not visible as symlinks themselves. In this case, this applies to the
     # `Versions` directory inside .framework directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/Dummy.framework/Versions')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/Dummy.framework/Versions')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -1150,7 +1152,7 @@ def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tm
     assert not os.path.islink(filename)
 
     # (5) Same for `Versions/<version>` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/Dummy.framework/Versions/A')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/Dummy.framework/Versions/A')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -1159,7 +1161,7 @@ def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tm
     assert not os.path.islink(filename)
 
     # (6) Same for binary within the `<version>` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/Dummy.framework/Versions/A/Dummy')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/Dummy.framework/Versions/A/Dummy')
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -1168,7 +1170,7 @@ def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tm
     assert not os.path.islink(filename)
 
     # (7) Same for `Resources` directory within the `<version>` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/Dummy.framework/Versions/A/Resources')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/Dummy.framework/Versions/A/Resources')
     assert os.path.isdir(filename)
     assert not os.path.islink(filename)
 
@@ -1177,7 +1179,9 @@ def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tm
     assert not os.path.islink(filename)
 
     # (8) Same for `Info.plist` in `Resources` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/Dummy.framework/Versions/A/Resources/Info.plist')
+    filename = os.path.join(
+        bundle_path, 'Contents/Frameworks/mixed_dir/Dummy.framework/Versions/A/Resources/Info.plist'
+    )
     assert os.path.isfile(filename)
     assert not os.path.islink(filename)
 
@@ -1186,7 +1190,7 @@ def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tm
     assert not os.path.islink(filename)
 
     # (X) A symlink `Current` pointing to `<version>` should be automatically created inside `Versions` directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/mixed_dir/Dummy.framework/Versions/Current')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/mixed_dir/Dummy.framework/Versions/Current')
     assert os.path.isdir(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'A'
@@ -1196,9 +1200,9 @@ def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tm
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'A'
 
-    # (9) The symlink is replicated in both `Contents/MacOS` and `Contents/Resources`, and points to the resource
+    # (9) The symlink is replicated in both `Contents/Frameworks` and `Contents/Resources`, and points to the resource
     # (file or symlink) in the same directory.
-    filename = os.path.join(bundle_path, 'Contents/MacOS/Dummy')
+    filename = os.path.join(bundle_path, 'Contents/Frameworks/Dummy')
     assert os.path.isfile(filename)
     assert os.path.islink(filename)
     assert os.readlink(filename) == 'mixed_dir/Dummy.framework/Versions/A/Dummy'

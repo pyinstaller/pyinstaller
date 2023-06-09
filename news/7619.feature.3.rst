@@ -1,13 +1,16 @@
 (macOS) The file relocation mechanism in ``BUNDLE`` that generates
 macOS .app bundles has been completely redesigned. All data files are
 now placed into directory structure rooted in ``Contents/Resources``,
-and all shared libraries (as well as nested .framework bundles) are
-placed into directory structure rooted in ``Contents/MacOS``. Both
-directory structures are cross-linked between each other to maintain
-illusion of mixed-content directories (in both directory trees). The
-cross-linking is done at either file level or (sub)directory level,
-depending on the content type of a (sub)directory. For directories in
-``Contents/MacOS`` that contain a dot in the name, a work-around is
-automatically applied: the directory is created with a modified name
-that does not include the dot, and next to it, a symbolic link is created
-under the original name and pointing to the directory with modified name.
+all shared libraries (as well as nested .framework bundles) are placed
+into directory structure rooted in ``Contents/Frameworks``, and only
+the the program executable is placed into the ``Contents/MacOS``
+directory. The contents of ``Contents/Resources`` and ``Contents/Frameworks``
+directories are cross-linked between the two directory trees in
+order to maintain illusion of mixed-content directories (in both
+directory trees). The cross-linking is done at either file level or
+(sub)directory level, depending on the content type of a (sub)directory.
+For directories in ``Contents/Frameworks`` that contain a dot in the name,
+a work-around is automatically applied: the directory is created with a
+modified name that does not include the dot, and next to it, a symbolic
+link is created under the original name and pointing to the directory
+with modified name.
