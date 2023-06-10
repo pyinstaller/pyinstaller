@@ -159,31 +159,36 @@ def find_binary_dependencies(binaries, binding_redirects, import_packages):
     if compat.is_win:
         extra_libdirs.append(compat.base_prefix)
 
-    # On Windows with python >= 3.8, attempt to track calls to os.add_dll_directory() to obtain DLL search paths that
-    # are dynamically set during packages' initialization.
-    if compat.is_win and compat.is_py38:
-        added_dll_directories = []
-        _orig_add_dll_directory = os.add_dll_directory
-
-        def _pyi_add_dll_directory(path):
-            added_dll_directories.append(path)
-            return _orig_add_dll_directory(path)
-
-        os.add_dll_directory = _pyi_add_dll_directory
-
-    # Import collected packages to set up environment
-    for package in import_packages:
-        try:
-            __import__(package)
-        except Exception:
-            pass
-
-    # Process extra search paths on Windows
+    # On Windows, packages' initialization code might register additional DLL search paths, either by modifying the
+    # `PATH` environment variable, or (on pythonn >= 3.8) by calling `os.add_dll_directory`. Therefore, we import
+    # all collected packages, and track changes made to the environment.
     if compat.is_win:
+        # Track changes made via `os.add_dll_directory`.
+        if compat.is_py38:
+            added_dll_directories = []
+            _orig_add_dll_directory = os.add_dll_directory
+
+            def _pyi_add_dll_directory(path):
+                added_dll_directories.append(path)
+                return _orig_add_dll_directory(path)
+
+            os.add_dll_directory = _pyi_add_dll_directory
+
+        # Import collected packages to set up environment.
+        for package in import_packages:
+            try:
+                __import__(package)
+            except Exception:
+                pass
+
+        # Process extra search paths...
         # Directories added via os.add_dll_directory() calls.
         if compat.is_py38:
             logger.info("Extra DLL search directories (AddDllDirectory): %r", added_dll_directories)
             extra_libdirs += added_dll_directories
+
+            # Restore original function
+            os.add_dll_directory = _orig_add_dll_directory
 
         # Directories set via PATH environment variable.
         # NOTE: PATH might contain empty entries that need to be filtered out.
