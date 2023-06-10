@@ -1,0 +1,4 @@
+Limit the import of collected packages prior to performing binary
+dependency analysis to only Windows, where it is actually useful.
+On non-Windows platforms, there is no benefit to it, and it might
+cause issues with particular orders of package imports.
