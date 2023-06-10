@@ -13,6 +13,7 @@ import copy
 import glob
 import logging
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -541,7 +542,7 @@ def compiled_dylib(tmpdir, request):
         elif is_darwin:
             tmp_data_dir = tmp_data_dir.join('ctypes_dylib.dylib')
             # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
-            arch = 'i386' if architecture == '32bit' else 'x86_64'
+            arch = 'arm64' if platform.machine() == 'arm64' else 'i386' if architecture == '32bit' else 'x86_64'
             cmd = (
                 'gcc -arch ' + arch + ' -Wall -dynamiclib '
                 'ctypes_dylib.c -o ctypes_dylib.dylib -headerpad_max_install_names'
