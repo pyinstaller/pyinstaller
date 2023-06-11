@@ -16,7 +16,7 @@ importlib_resources==5.12.0; python_version < '3.9'
 # -------
 # These packages work with no (known) issues.
 babel==2.12.1
-Django==4.2.1; python_version >= '3.8'
+Django==4.2.2; python_version >= '3.8'
 future==0.18.3
 gevent==22.10.2
 ipython==8.14.0; python_version >= '3.9'
@@ -30,7 +30,7 @@ pygments==2.15.1
 PyGObject==3.44.1; sys_platform == 'linux'
 # Current PySide2 wheels explicitly require python < 3.11
 PySide2==5.15.2.1; python_version < '3.11'
-PySide6==6.5.1
+PySide6==6.5.1.1
 # PyQt5 and add-on packages
 PyQt5==5.15.9
 PyQt3D==5.15.6
@@ -56,7 +56,7 @@ scipy==1.10.1; python_version >= '3.8'
 simplejson==3.19.1
 sphinx==7.0.1;  python_version >= '3.8'
 # Required for test_namespace_package
-sqlalchemy==2.0.15
+sqlalchemy==2.0.16
 zope.interface==6.0
 Pillow==9.5.0
 
