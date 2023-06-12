@@ -1,0 +1,10 @@
+Add automatic binary vs. data file (re)classification step to the
+analysis process. PyInstaller now inspects all files passed to ``Analysis``
+via ``datas`` and ``binaries`` arguments, as well as all files returned
+by hooks via ``datas`` and ``binaries`` hook global variables. The
+inspection mechanism is platform-specific, and currently implemented for
+Windows, Linux, and macOS. Proper file classification ensures that all
+collected binary files undergo binary dependency analysis and any other
+platform-specific binary processing. On macOS, it also helps ensuring
+that the collected files are placed in the proper directory in the
+generated .app bundles.

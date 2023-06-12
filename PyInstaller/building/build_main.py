@@ -598,6 +598,40 @@ class Analysis(Target):
         self.zipped_data = deps_proc.make_zipped_data_toc()  # Already normalized
         # Note: zipped eggs are collected below
 
+        # -- Automatic binary vs. data reclassification. --
+        #
+        # At this point, `binaries` and `datas` contain  TOC entries supplied by user via input arguments, and by hooks
+        # that were ran during the analysis. Neither source can be fully trusted regarding the DATA vs BINARY
+        # classification (no thanks to our hookutils not being 100% reliable, either!). Therefore, inspect the files and
+        # automatically reclassify them as necessary.
+        #
+        # The proper classification is important especially for collected binaries - to ensure that they undergo binary
+        # dependency analysis and platform-specific binary processing. On macOS, the .app bundle generation code also
+        # depends on files to be properly classified.
+        #
+        # For entries added to `binaries` and `datas` after this point, we trust their typecodes due to the nature of
+        # their origin.
+        combined_toc = normalize_toc(self.datas + self.binaries)
+
+        self.datas = []
+        self.binaries = []
+
+        for dest_name, src_name, typecode in combined_toc:
+            # Returns 'BINARY' or 'DATA', or None if file cannot be classified.
+            detected_typecode = bindepend.classify_binary_vs_data(src_name)
+            if detected_typecode is not None:
+                if detected_typecode != typecode:
+                    logger.debug(
+                        "Reclassifying collected file %r from %s to %s...", src_name, typecode, detected_typecode
+                    )
+                typecode = detected_typecode
+
+            # Put back into corresponding TOC list.
+            if typecode in {'BINARY', 'EXTENSION'}:
+                self.binaries.append((dest_name, src_name, typecode))
+            else:
+                self.datas.append((dest_name, src_name, typecode))
+
         # -- Look for dlls that are imported by Python 'ctypes' module. --
         # First get code objects of all modules that import 'ctypes'.
         logger.info('Looking for ctypes DLLs')
