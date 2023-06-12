@@ -1059,3 +1059,74 @@ def findSystemLibrary(name):
     else:
         # This seems to work, and is similar to what we have above..
         return ctypes.util.find_library(name)
+
+
+def classify_binary_vs_data(filename):
+    """
+    Classify the given file as either BINARY or a DATA, using appropriate platform-specific method. Returns 'BINARY'
+    or 'DATA' string depending on the determined file type, or None if classification cannot be performed (non-existing
+    file, missing tool, and other errors during classification).
+    """
+
+    # We cannot classify non-existent files.
+    if not os.path.isfile(filename):
+        return None
+
+    # Use platform-specific implementation.
+    return _classify_binary_vs_data(filename)
+
+
+if compat.is_linux:
+
+    def _classify_binary_vs_data(filename):
+        # See if `objdump` recognizes the file. Strictly speaking, we should probably also check that it recognizes it
+        # as an ELF file, or even as an ELF file for the running platform.
+        cmd_args = ['objdump', '-a', filename]
+        try:
+            p = subprocess.run(
+                cmd_args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.DEVNULL,
+                universal_newlines=True,
+            )
+        except Exception:
+            return None  # Failed to run `objdump` or `objdump` unavailable.
+
+        return 'BINARY' if p.returncode == 0 else 'DATA'
+
+elif compat.is_win:
+
+    def _classify_binary_vs_data(filename):
+        # See if the file can be opened using `pefile`.
+        import pefile
+
+        try:
+            pe = pefile.PE(filename, fast_load=True)  # noqa: F841
+            return 'BINARY'
+        except Exception:
+            # TODO: catch only `pefile.PEFormatError`?
+            pass
+
+        return 'DATA'
+
+elif compat.is_darwin:
+
+    def _classify_binary_vs_data(filename):
+        # See if the file can be opened using `macholib`.
+        import macholib.MachO
+
+        try:
+            macho = macholib.MachO.MachO(filename)  # noqa: F841
+            return 'BINARY'
+        except Exception:
+            # TODO: catch only `ValueError`?
+            pass
+
+        return 'DATA'
+
+else:
+
+    def _classify_binary_vs_data(filename):
+        # Classification not implemented for the platform.
+        return None
