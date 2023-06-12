@@ -302,7 +302,7 @@ pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
     wchar_t *wchar_ret;
     wchar_t prefix[16];
     wchar_t wchar_buffer[PATH_MAX];
-    char *original_tmpdir;
+    char *original_tmpdir = NULL;
     wchar_t *wruntime_tmpdir_abspath;
     DWORD rc;
 
