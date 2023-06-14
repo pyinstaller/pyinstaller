@@ -28,6 +28,7 @@ from macholib.mach_o import (
     LC_SEGMENT_64,
     LC_SYMTAB,
     LC_VERSION_MIN_MACOSX,
+    LC_REEXPORT_DYLIB,
 )
 from macholib.MachO import MachO
 import macholib.util
@@ -436,13 +437,13 @@ def _set_dylib_dependency_paths(filename, target_rpath):
     for header in binary.headers:
         for cmd in header.commands:
             lc_type = cmd[0].cmd
-            if lc_type not in {LC_LOAD_DYLIB, LC_RPATH, LC_ID_DYLIB}:
+            if lc_type not in {LC_LOAD_DYLIB, LC_RPATH, LC_ID_DYLIB, LC_REEXPORT_DYLIB}:
                 continue
 
             # Decode path, strip trailing NULL characters
             path = cmd[2].decode('utf-8').rstrip('\x00')
 
-            if lc_type == LC_LOAD_DYLIB:
+            if lc_type == LC_LOAD_DYLIB or lc_type == LC_REEXPORT_DYLIB:
                 linked_libs.add(path)
             elif lc_type == LC_RPATH:
                 rpaths.add(path)
