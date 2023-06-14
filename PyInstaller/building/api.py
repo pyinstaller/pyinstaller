@@ -962,9 +962,9 @@ class COLLECT(Target):
             # Create parent directory structure, if necessary
             dest_path = os.path.join(self.name, dest_name)  # Absolute destination path
             dest_dir = os.path.dirname(dest_path)
-            if not os.path.exists(dest_dir):
-                os.makedirs(dest_dir)
-            elif not os.path.isdir(dest_dir):
+            try:
+                os.makedirs(dest_dir, exist_ok=True)
+            except FileExistsError:
                 raise SystemExit(
                     f"Pyinstaller needs to create a directory at {dest_dir!r}, "
                     "but there already exists a file at that path!"
