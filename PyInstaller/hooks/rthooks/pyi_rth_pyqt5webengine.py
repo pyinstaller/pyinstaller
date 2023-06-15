@@ -9,11 +9,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-import os
-import sys
 
-# See ``pyi_rth_qt5.py`: use a "standard" PyQt5 layout.
-if sys.platform == 'darwin':
+def _pyi_rthook():
+    import os
+    import sys
+
+    # Special handling is needed only on macOS.
+    if sys.platform != 'darwin':
+        return
+
+    # See ``pyi_rth_qt5.py`: use a "standard" PyQt5 layout.
     # Try PyQt5 5.15.4-style path first...
     pyqt_path = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt5')
     if not os.path.isdir(pyqt_path):
@@ -30,3 +35,7 @@ if sys.platform == 'darwin':
     )
     if os.path.exists(process_path):
         os.environ['QTWEBENGINEPROCESS_PATH'] = process_path
+
+
+_pyi_rthook()
+del _pyi_rthook
