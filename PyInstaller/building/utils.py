@@ -272,7 +272,7 @@ def checkCache(
             bestopt = "--best"
             # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out).
             # A better configure-time check is due.
-            if CONF["hasUPX"] >= (3,) and os.name == "nt":
+            if CONF["hasUPX"] and os.name == "nt":
                 bestopt = "--lzma"
 
             upx_executable = "upx"

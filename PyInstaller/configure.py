@@ -13,59 +13,52 @@ Configure PyInstaller for the current Python installation.
 """
 
 import os
+import subprocess
 
 from PyInstaller import compat
 from PyInstaller import log as logging
-from PyInstaller.compat import is_darwin, is_win
 
 logger = logging.getLogger(__name__)
 
 
-def test_UPX(config, upx_dir):
-    logger.debug('Testing for UPX ...')
-    cmd = "upx"
+def _check_upx_availability(upx_dir):
+    logger.debug('Testing UPX availability ...')
+
+    upx_exe = "upx"
     if upx_dir:
-        cmd = os.path.normpath(os.path.join(upx_dir, cmd))
+        upx_exe = os.path.normpath(os.path.join(upx_dir, upx_exe))
 
-    hasUPX = 0
+    # Check if we can call `upx -V`.
     try:
-        vers = compat.exec_command(cmd, '-V', raise_enoent=True).strip().splitlines()
-        if vers:
-            v = vers[0].split()[1]
-            try:
-                # v = "3.96-git-d7ba31cab8ce"
-                v = v.split("-")[0]
-            except Exception:
-                pass
-            hasUPX = tuple(map(int, v.split(".")))
-            if is_win and hasUPX < (1, 92):
-                logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+.')
-                hasUPX = 0
-    except Exception as e:
-        if isinstance(e, OSError) and e.errno == 2:
-            # No such file or directory
-            pass
-        else:
-            logger.info('An exception occurred when testing for UPX:')
-            logger.info('  %r', e)
-    if hasUPX:
-        is_available = 'available'
-    else:
-        is_available = 'not available'
-    logger.info('UPX is %s.', is_available)
-    config['hasUPX'] = hasUPX
-    config['upx_dir'] = upx_dir
+        output = subprocess.check_output(
+            [upx_exe, '-V'],
+            stdin=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            universal_newlines=True,
+        )
+    except Exception:
+        logger.debug('UPX is not available.')
+        return False
+
+    # Read the first line to display version string
+    try:
+        version_string = output.splitlines()[0]
+    except IndexError:
+        version_string = 'version string unavailable'
+
+    logger.debug('UPX is available: %s', version_string)
+    return True
 
 
-def _get_pyinst_cache_dir():
+def _get_pyinstaller_cache_dir():
     old_cache_dir = None
     if compat.getenv('PYINSTALLER_CONFIG_DIR'):
         cache_dir = compat.getenv('PYINSTALLER_CONFIG_DIR')
-    elif is_win:
+    elif compat.is_win:
         cache_dir = compat.getenv('LOCALAPPDATA')
         if not cache_dir:
             cache_dir = os.path.expanduser('~\\Application Data')
-    elif is_darwin:
+    elif compat.is_darwin:
         cache_dir = os.path.expanduser('~/Library/Application Support')
     else:
         # According to XDG specification: http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
@@ -89,7 +82,9 @@ def _get_pyinst_cache_dir():
 
 def get_config(upx_dir, **kw):
     config = {}
-    test_UPX(config, upx_dir)
-    config['cachedir'] = _get_pyinst_cache_dir()
+
+    config['cachedir'] = _get_pyinstaller_cache_dir()
+    config['upx_dir'] = upx_dir
+    config['hasUPX'] = _check_upx_availability(upx_dir)
 
     return config
