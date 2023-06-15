@@ -9,10 +9,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-import os
-import sys
 
-root = os.path.join(sys._MEIPASS, 'kivy_install')
+def _pyi_rthook():
+    import os
+    import sys
 
-os.environ['KIVY_DATA_DIR'] = os.path.join(root, 'data')
-os.environ['KIVY_MODULES_DIR'] = os.path.join(root, 'modules')
+    root = os.path.join(sys._MEIPASS, 'kivy_install')
+
+    os.environ['KIVY_DATA_DIR'] = os.path.join(root, 'data')
+    os.environ['KIVY_MODULES_DIR'] = os.path.join(root, 'modules')
+
+
+_pyi_rthook()
+del _pyi_rthook

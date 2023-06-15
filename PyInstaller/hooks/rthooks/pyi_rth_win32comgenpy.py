@@ -16,37 +16,44 @@
 #
 # http://www.py2exe.org/index.cgi/UsingEnsureDispatch
 
-import atexit
-import os
-import shutil
-import tempfile
 
-# Put gen_py cache in temp directory.
-supportdir = tempfile.mkdtemp()
-# gen_py has to be put into directory 'gen_py'.
-genpydir = os.path.join(supportdir, 'gen_py')
+def _pyi_rthook():
+    import atexit
+    import os
+    import shutil
+    import tempfile
 
-# Create 'gen_py' directory. This directory does not need to contain '__init__.py' file.
-try:
-    # win32com gencache cannot be put directly to 'supportdir' with any random name. It has to be put in a directory
-    # called 'gen_py'. This is the reason why to create this directory in supportdir'.
-    os.makedirs(genpydir)
-    # Remove temp directory at application exit and ignore any errors.
-    atexit.register(shutil.rmtree, supportdir, ignore_errors=True)
-except OSError:
-    pass
+    # Put gen_py cache in temp directory.
+    supportdir = tempfile.mkdtemp()
+    # gen_py has to be put into directory 'gen_py'.
+    genpydir = os.path.join(supportdir, 'gen_py')
 
-# Override the default path to gen_py cache.
-import win32com  # noqa: E402
+    # Create 'gen_py' directory. This directory does not need to contain '__init__.py' file.
+    try:
+        # win32com gencache cannot be put directly to 'supportdir' with any random name. It has to be put in a directory
+        # called 'gen_py'. This is the reason why to create this directory in supportdir'.
+        os.makedirs(genpydir)
+        # Remove temp directory at application exit and ignore any errors.
+        atexit.register(shutil.rmtree, supportdir, ignore_errors=True)
+    except OSError:
+        pass
 
-win32com.__gen_path__ = genpydir
+    # Override the default path to gen_py cache.
+    import win32com  # noqa: E402
 
-# The attribute __loader__ makes module 'pkg_resources' working but On Windows it breaks pywin32 (win32com) and test
-# 'basic/test_pyttsx' will fail. Just removing that attribute for win32com fixes that and gencache is created properly.
-if hasattr(win32com, '__loader__'):
-    del win32com.__loader__
+    win32com.__gen_path__ = genpydir
 
-# Ensure genpydir is in 'gen_py' module paths.
-import win32com.gen_py  # noqa: E402
+    # The attribute __loader__ makes module 'pkg_resources' working but On Windows it breaks pywin32 (win32com) and test
+    # 'basic/test_pyttsx' will fail. Just removing that attribute for win32com fixes that and gencache is created
+    # properly.
+    if hasattr(win32com, '__loader__'):
+        del win32com.__loader__
 
-win32com.gen_py.__path__.insert(0, genpydir)
+    # Ensure genpydir is in 'gen_py' module paths.
+    import win32com.gen_py  # noqa: E402
+
+    win32com.gen_py.__path__.insert(0, genpydir)
+
+
+_pyi_rthook()
+del _pyi_rthook

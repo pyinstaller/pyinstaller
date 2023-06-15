@@ -9,7 +9,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-import os
-import sys
 
-os.environ['GI_TYPELIB_PATH'] = os.path.join(sys._MEIPASS, 'gi_typelibs')
+def _pyi_rthook():
+    import os
+    import sys
+
+    os.environ['GI_TYPELIB_PATH'] = os.path.join(sys._MEIPASS, 'gi_typelibs')
+
+
+_pyi_rthook()
+del _pyi_rthook

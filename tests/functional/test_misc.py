@@ -182,3 +182,43 @@ def test_program_importing_module_with_invalid_encoding2(pyi_builder):
         """,
         pyi_args=['--paths', extra_path]
     )
+
+
+# Test the robustness of `inspect` run-time hook w.r.t. to the issue #7642.
+#
+# If our run-time hook imports a module in the global namespace and attempts to use this module in a function that
+# might get called later on in the program (e.g., a function override or registered callback function), we are at the
+# mercy of user's program, which might re-bind the module's name to something else (variable, function), leading to
+# an error.
+#
+# This particular test will raise:
+# ```
+# Traceback (most recent call last):
+#  File "test_source.py", line 17, in <module>
+#  File "test_source.py", line 14, in some_interactive_debugger_function
+#  File "inspect.py", line 1755, in stack
+#  File "inspect.py", line 1730, in getouterframes
+#  File "inspect.py", line 1688, in getframeinfo
+#  File "PyInstaller/hooks/rthooks/pyi_rth_inspect.py", line 22, in _pyi_getsourcefile
+# AttributeError: 'function' object has no attribute 'getfile'
+# ```
+def test_inspect_rthook_robustness(pyi_builder):
+    pyi_builder.test_source(
+        """
+        # A custom function in global namespace that happens to have name clash with `inspect` module.
+        def inspect(something):
+            print(f"Inspecting {something}: type is {type(something)}")
+
+
+        # A call to `inspect.stack` function somewhere deep in an interactive debugger framework.
+        # This eventually ends up calling our `_pyi_getsourcefile` override in the `inspect` run-time hook. The
+        # override calls `inspect.getfile`; if the run-time hook imported `inspect` in a global namespace, the
+        # name at this point is bound the the custom function that program defined, leading to an error.
+        def some_interactive_debugger_function():
+            import inspect
+            print(f"Current stack: {inspect.stack()}")
+
+
+        some_interactive_debugger_function()
+        """
+    )

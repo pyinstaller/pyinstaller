@@ -22,17 +22,23 @@
 #
 # We need to force matplotlib to recreate config directory every time you run your app.
 
-import atexit
-import os
-import shutil
-import tempfile
 
-# Put matplot config dir to temp directory.
-configdir = tempfile.mkdtemp()
-os.environ['MPLCONFIGDIR'] = configdir
+def _pyi_rthook():
+    import atexit
+    import os
+    import shutil
+    import tempfile
 
-try:
-    # Remove temp directory at application exit and ignore any errors.
-    atexit.register(shutil.rmtree, configdir, ignore_errors=True)
-except OSError:
-    pass
+    # Put matplot config dir to temp directory.
+    configdir = tempfile.mkdtemp()
+    os.environ['MPLCONFIGDIR'] = configdir
+
+    try:
+        # Remove temp directory at application exit and ignore any errors.
+        atexit.register(shutil.rmtree, configdir, ignore_errors=True)
+    except OSError:
+        pass
+
+
+_pyi_rthook()
+del _pyi_rthook

@@ -9,10 +9,15 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-import os
-import sys
 
-if sys.platform == 'darwin':
+def _pyi_rthook():
+    import os
+    import sys
+
+    # Special handling is needed only on macOS.
+    if sys.platform != 'darwin':
+        return
+
     # If QtWebEngineProcess was collected from a framework-based Qt build, we need to set QTWEBENGINEPROCESS_PATH.
     # If not (a dylib-based build; Anaconda on macOS), it should be found automatically, same as on other OSes.
     process_path = os.path.normpath(
@@ -23,3 +28,7 @@ if sys.platform == 'darwin':
     )
     if os.path.exists(process_path):
         os.environ['QTWEBENGINEPROCESS_PATH'] = process_path
+
+
+_pyi_rthook()
+del _pyi_rthook

@@ -11,20 +11,24 @@
 
 # This Django rthook was tested with Django 1.8.3.
 
-import django.utils.autoreload
 
-_old_restart_with_reloader = django.utils.autoreload.restart_with_reloader
+def _pyi_rthook():
+    import django.utils.autoreload
+
+    _old_restart_with_reloader = django.utils.autoreload.restart_with_reloader
+
+    def _restart_with_reloader(*args):
+        import sys
+        a0 = sys.argv.pop(0)
+        try:
+            return _old_restart_with_reloader(*args)
+        finally:
+            sys.argv.insert(0, a0)
+
+    # Override restart_with_reloader() function, otherwise the app might complain that some commands do not exist;
+    # e.g., runserver.
+    django.utils.autoreload.restart_with_reloader = _restart_with_reloader
 
 
-def _restart_with_reloader(*args):
-    import sys
-    a0 = sys.argv.pop(0)
-    try:
-        return _old_restart_with_reloader(*args)
-    finally:
-        sys.argv.insert(0, a0)
-
-
-# Override restart_with_reloader() function, otherwise the app might complain that some commands do not exist;
-# e.g., runserver.
-django.utils.autoreload.restart_with_reloader = _restart_with_reloader
+_pyi_rthook()
+del _pyi_rthook

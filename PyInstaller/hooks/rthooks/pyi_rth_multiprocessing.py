@@ -10,7 +10,7 @@
 #-----------------------------------------------------------------------------
 
 
-def _pyi_rth_multiprocessing():
+def _pyi_rthook():
     import os
     import sys
 
@@ -106,6 +106,5 @@ def _pyi_rth_multiprocessing():
         popen_forkserver.Popen = _ForkserverPopen
 
 
-# Run the hook function, then delete it. This prevents unnecessary pollution of the global namespace.
-_pyi_rth_multiprocessing()
-del _pyi_rth_multiprocessing
+_pyi_rthook()
+del _pyi_rthook

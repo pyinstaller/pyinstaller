@@ -9,11 +9,17 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-import os
-import sys
 
-# See ``pyi_rth_qt6.py`: use a "standard" PyQt6 layout.
-if sys.platform == 'darwin':
+def _pyi_rthook():
+    import os
+    import sys
+
+    # Special handling is needed only on macOS.
+    if sys.platform != 'darwin':
+        return
+
+    # See ``pyi_rth_qt6.py`: use a "standard" PyQt6 layout.
+
     # NOTE: QtWebEngine support was added in Qt6 6.2.x series, so we do not need to worry about pre-6.0.3 path layout.
     pyqt_path = os.path.join(sys._MEIPASS, 'PyQt6', 'Qt6')
 
@@ -33,3 +39,7 @@ if sys.platform == 'darwin':
         # This runtime hook should avoid importing PyQt6, so we have no way of querying the version, and always disable
         # sandboxing.
         os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
+
+
+_pyi_rthook()
+del _pyi_rthook
