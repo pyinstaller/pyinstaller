@@ -80,19 +80,6 @@ IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
 """
 
 
-# TODO find better place for function.
-def setupUPXFlags():
-    f = compat.getenv("UPX", "")
-    if is_win:
-        # Binaries built with Visual Studio 7.1 require --strip-loadconf or they will not compress. Configure.py makes
-        # sure that UPX is new enough to support --strip-loadconf.
-        f = "--strip-loadconf " + f
-    # Do not compress any icon, so that additional icons in the executable can still be externally bound.
-    f = "--compress-icons=0 " + f
-    f = "--best " + f
-    compat.setenv("UPX", f)
-
-
 @isolated.decorate
 def discover_hook_directories():
     """
@@ -1022,12 +1009,9 @@ def main(
     # If configuration dict is supplied - skip configuration step.
     if pyi_config is None:
         import PyInstaller.configure as configure
-        CONF.update(configure.get_config(upx_dir))
+        CONF.update(configure.get_config(upx_dir=upx_dir))
     else:
         CONF.update(pyi_config)
-
-    if CONF['hasUPX']:
-        setupUPXFlags()
 
     CONF['ui_admin'] = kw.get('ui_admin', False)
     CONF['ui_access'] = kw.get('ui_uiaccess', False)

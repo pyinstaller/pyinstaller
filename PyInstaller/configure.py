@@ -80,11 +80,24 @@ def _get_pyinstaller_cache_dir():
     return cache_dir
 
 
-def get_config(upx_dir, **kw):
+def get_config(upx_dir=None):
     config = {}
 
     config['cachedir'] = _get_pyinstaller_cache_dir()
     config['upx_dir'] = upx_dir
-    config['hasUPX'] = _check_upx_availability(upx_dir)
+
+    # Disable UPX on non-Windows. Using UPX (3.96) on modern Linux shared libraries (for example, the python3.x.so
+    # shared library) seems to result in segmentation fault when they are dlopen'd. This happens in recent versions
+    # of Fedora and Ubuntu linux, as well as in Alpine containers. On macOS, UPX (3.96) fails with
+    # UnknownExecutableFormatException on most .dylibs (and interferes with code signature on other occasions). And
+    # even when it would succeed, compressed libraries cannot be (re)signed due to failed strict validation.
+    upx_available = _check_upx_availability(upx_dir)
+    if upx_available:
+        if compat.is_win or compat.is_cygwin:
+            logger.info("UPX is available and will be used if enabled on build targets.")
+        else:
+            upx_available = False
+            logger.info("UPX is available but is disabled on non-Windows due to known compatibility problems.")
+    config['upx_available'] = upx_available
 
     return config

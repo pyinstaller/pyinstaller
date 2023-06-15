@@ -27,7 +27,7 @@ import sys
 
 from PyInstaller import compat
 from PyInstaller import log as logging
-from PyInstaller.compat import (EXTENSION_SUFFIXES, is_cygwin, is_darwin, is_win)
+from PyInstaller.compat import (EXTENSION_SUFFIXES, is_darwin, is_win)
 from PyInstaller.config import CONF
 from PyInstaller.depend.bindepend import match_binding_redirect
 from PyInstaller.utils import misc
@@ -152,13 +152,6 @@ def checkCache(
     # optionally change manifest to private assembly
     win_private_assemblies = CONF.get('win_private_assemblies', False)
 
-    # Disable UPX on non-Windows. Using UPX (3.96) on modern Linux shared libraries (for example, the python3.x.so
-    # shared library) seems to result in segmentation fault when they are dlopen'd. This happens in recent versions
-    # of Fedora and Ubuntu linux, as well as in Alpine containers. On Mac OS, UPX (3.96) fails with
-    # UnknownExecutableFormatException on most .dylibs (and interferes with code signature on other occasions). And
-    # even when it would succeed, compressed libraries cannot be (re)signed due to failed strict validation.
-    upx = upx and (is_win or is_cygwin)
-
     # On Mac OS, a cache is required anyway to keep the libraries with relative install names.
     # Caching on Mac OS does not work since we need to modify binary headers to use relative paths to dll dependencies
     # and starting with '@loader_path'.
@@ -269,23 +262,31 @@ def checkCache(
         elif misc.is_file_qt_plugin(fnm):
             logger.info('Disabling UPX for %s due to it being a Qt plugin!', fnm)
         else:
-            bestopt = "--best"
-            # FIXME: Linux builds of UPX do not seem to contain LZMA (they assert out).
-            # A better configure-time check is due.
-            if CONF["hasUPX"] and os.name == "nt":
-                bestopt = "--lzma"
+            upx_exe = 'upx'
+            upx_dir = CONF['upx_dir']
+            if upx_dir:
+                upx_exe = os.path.join(upx_dir, upx_exe)
 
-            upx_executable = "upx"
-            if CONF.get('upx_dir'):
-                upx_executable = os.path.join(CONF['upx_dir'], upx_executable)
-            cmd = [upx_executable, bestopt, "-q", cachedfile]
+            upx_options = [
+                # Do not compress icons, so that they can still be accessed externally.
+                '--compress-icons=0',
+                # Use LZMA compression.
+                '--lzma',
+                # Quiet mode.
+                '-q',
+            ]
+            if is_win:
+                # Binaries built with Visual Studio 7.1 require --strip-loadconf or they will not compress.
+                upx_options.append('--strip-loadconf')
+
+            cmd = [upx_exe, *upx_options, cachedfile]
     else:
         if strip:
             strip_options = []
             if is_darwin:
                 # The default strip behavior breaks some shared libraries under Mac OS.
                 strip_options = ["-S"]  # -S = strip only debug symbols.
-            cmd = ["strip"] + strip_options + [cachedfile]
+            cmd = ["strip", *strip_options, cachedfile]
 
     if not os.path.exists(os.path.dirname(cachedfile)):
         os.makedirs(os.path.dirname(cachedfile))
