@@ -348,7 +348,7 @@ def checkCache(
                                     raise
 
     if cmd:
-        logger.info("Executing - " + "".join(cmd))
+        logger.info("Executing: %s", " ".join(cmd))
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # update cache index
