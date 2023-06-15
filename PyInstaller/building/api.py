@@ -433,10 +433,8 @@ class EXE(Target):
         # Code signing entitlements
         self.entitlements_file = kwargs.get('entitlements_file', None)
 
-        if CONF['hasUPX']:
-            self.upx = kwargs.get('upx', False)
-        else:
-            self.upx = False
+        # UPX needs to be both available and enabled for the target.
+        self.upx = CONF['upx_available'] and kwargs.get('upx', False)
 
         # Catch and clear options that are unsupported on specific platforms.
         if self.versrsrc and not is_win:
@@ -887,10 +885,8 @@ class COLLECT(Target):
         self.codesign_identity = None
         self.entitlements_file = None
 
-        if CONF['hasUPX']:
-            self.upx_binaries = kwargs.get('upx', False)
-        else:
-            self.upx_binaries = False
+        # UPX needs to be both available and enabled for the taget.
+        self.upx_binaries = CONF['upx_available'] and kwargs.get('upx', False)
 
         # The `name` should be the output directory name, without the parent path (the directory is created in the
         # DISTPATH). Old .spec formats included parent path, so strip it away.

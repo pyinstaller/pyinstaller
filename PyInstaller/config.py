@@ -34,12 +34,12 @@ And to use this variable in the build phase:
 This is the list of known variables. (Please update it if necessary.)
 
 cachedir
-hasUPX
 hiddenimports
 noconfirm
 pathex
 ui_admin
 ui_access
+upx_available
 upx_dir
 workpath
 

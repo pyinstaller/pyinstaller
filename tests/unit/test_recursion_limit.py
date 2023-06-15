@@ -72,7 +72,7 @@ def test_RecursionError_prints_message(tmpdir, large_import_chain, monkeypatch):
     ]  # yapf: disable
 
     pyi_args = [script] + default_args
-    PYI_CONFIG = configure.get_config(upx_dir=None)
+    PYI_CONFIG = configure.get_config()
     PYI_CONFIG['cachedir'] = str(tmpdir)
 
     with pytest.raises(SystemExit) as execinfo:

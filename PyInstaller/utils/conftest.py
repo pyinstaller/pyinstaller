@@ -425,7 +425,7 @@ class AppBuilder:
 
         pyi_args = [self.script] + default_args + args
         # TODO: fix return code in running PyInstaller programmatically.
-        PYI_CONFIG = configure.get_config(upx_dir=None)
+        PYI_CONFIG = configure.get_config()
         # Override CACHEDIR for PyInstaller and put it into self.tmpdir
         PYI_CONFIG['cachedir'] = str(self._tmpdir)
 
