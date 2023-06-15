@@ -95,6 +95,10 @@ def get_config(upx_dir=None):
     if upx_available:
         if compat.is_win or compat.is_cygwin:
             logger.info("UPX is available and will be used if enabled on build targets.")
+        elif os.environ.get("PYINSTALLER_FORCE_UPX", "0") != "0":
+            logger.warning(
+                "UPX is available and force-enabled on platform with known compatibility problems - use at own risk!"
+            )
         else:
             upx_available = False
             logger.info("UPX is available but is disabled on non-Windows due to known compatibility problems.")
