@@ -300,6 +300,15 @@ class PKG(Target):
                         strict_arch_validation=(typecode == 'EXTENSION'),
                     )
                     archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
+            elif typecode in ('DATA', 'ZIPFILE'):
+                # Same logic as above for BINARY and EXTENSION; if `exclude_binaries` is set, we are in onedir mode;
+                # we should exclude DATA (and ZIPFILE) entries and instead pass them on via PKG's `dependencies`. This
+                # prevents a onedir application from becoming a broken onefile one if user accidentally passes datas
+                # and binaries TOCs to EXE instead of COLLECT.
+                if self.exclude_binaries:
+                    self.dependencies.append((dest_name, src_name, typecode))
+                else:
+                    archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
             elif typecode == 'OPTION':
                 archive_toc.append((dest_name, '', False, 'o'))
             elif typecode in ('PYSOURCE', 'PYMODULE'):
@@ -307,7 +316,6 @@ class PKG(Target):
                 bootstrap_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
             else:
                 # PYZ, PKG, DEPENDENCY, SPLASH
-                # TODO: are DATA and ZIPFILE valid here?
                 archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
 
         # Bootloader has to know the name of Python library. Pass python libname to CArchive.
