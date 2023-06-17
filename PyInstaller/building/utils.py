@@ -24,6 +24,7 @@ import shutil
 import struct
 import subprocess
 import sys
+import zipfile
 
 from PyInstaller import compat
 from PyInstaller import log as logging
@@ -593,22 +594,38 @@ def get_code_object(modname, filename):
     This is a simplifed non-performant version which circumvents __pycache__.
     """
 
-    try:
-        if filename in ('-', None):
-            # This is a NamespacePackage, modulegraph marks them by using the filename '-'. (But wants to use None, so
-            # check for None, too, to be forward-compatible.)
-            logger.debug('Compiling namespace package %s', modname)
-            txt = '#\n'
-            return compile(txt, filename, 'exec')
+    if filename in ('-', None):
+        # This is a NamespacePackage, modulegraph marks them by using the filename '-'. (But wants to use None, so
+        # check for None, too, to be forward-compatible.)
+        logger.debug('Compiling namespace package %s', modname)
+        txt = '#\n'
+        code_object = compile(txt, filename, 'exec')
+    else:
+        _, ext = os.path.splitext(filename)
+        ext = ext.lower()
+
+        if ext == '.pyc':
+            # The module is available in binary-only form. Read the contents of .pyc file using helper function, which
+            # supports reading from either stand-alone or archive-embedded .pyc files.
+            logger.debug('Reading code object from .pyc file %s', filename)
+            pyc_data = _read_pyc_data(filename)
+            code_object = marshal.loads(pyc_data[16:])
         else:
-            logger.debug('Compiling %s', filename)
+            # Assume this is a source .py file, but allow an arbitrary extension (other than .pyc, which is taken in
+            # the above branch). This allows entry-point scripts to have an arbitrary (or no) extension, as tested by
+            # the `test_arbitrary_ext` in `test_basic.py`.
+            logger.debug('Compiling python script/module file %s', filename)
+
             with open(filename, 'rb') as f:
                 source = f.read()
-            return compile(source, filename, 'exec')
-    except SyntaxError as e:
-        print("Syntax error in ", filename)
-        print(e.args)
-        raise
+
+            try:
+                code_object = compile(source, filename, 'exec')
+            except SyntaxError:
+                logger.warning("Sytnax error while compiling %s", filename)
+                raise
+
+    return code_object
 
 
 def strip_paths_in_code(co, new_filename=None):
@@ -722,12 +739,9 @@ def compile_pymodule(name, src_path, workpath, code_cache=None):
             with open(pyc_path, 'rb') as fp:
                 pyc_data = fp.read()
         elif ext == '.pyc':
-            # The module is available in binary-only form. Read it...
-            with open(src_path, 'rb') as fp:
-                pyc_data = fp.read()
-            # ... verify the python version...
-            if pyc_data[:4] != compat.BYTECODE_MAGIC:
-                raise ValueError(f"The .pyc module {src_path} was compiled for incompatible version of python!")
+            # The module is available in binary-only form. Read the contents of .pyc file using helper function, which
+            # supports reading from either stand-alone or archive-embedded .pyc files.
+            pyc_data = _read_pyc_data(src_path)
         else:
             raise ValueError(f"Invalid python module file {src_path}; unhandled extension {ext}!")
 
@@ -746,6 +760,35 @@ def compile_pymodule(name, src_path, workpath, code_cache=None):
 
     # Return output path
     return pyc_path
+
+
+def _read_pyc_data(filename):
+    """
+    Helper for reading data from .pyc files. Supports both stand-alone and archive-embedded .pyc files. Used by
+    `compile_pymodule` and `get_code_object` helper functions.
+    """
+    src_file = pathlib.Path(filename)
+
+    if src_file.is_file():
+        # Stand-alone .pyc file.
+        pyc_data = src_file.read_bytes()
+    else:
+        # Check if .pyc file is stored in a .zip archive, as is the case for stdlib modules in embeddable
+        # python on Windows.
+        parent_zip_file = misc.path_to_parent_archive(src_file)
+        if parent_zip_file is not None and zipfile.is_zipfile(parent_zip_file):
+            with zipfile.ZipFile(parent_zip_file, 'r') as zip_archive:
+                # NOTE: zip entry names must be in POSIX format, even on Windows!
+                zip_entry_name = str(src_file.relative_to(parent_zip_file).as_posix())
+                pyc_data = zip_archive.read(zip_entry_name)
+        else:
+            raise FileNotFoundError(f"Cannot find .pyc file {filename!r}!")
+
+        # Verify the python version
+        if pyc_data[:4] != compat.BYTECODE_MAGIC:
+            raise ValueError(f"The .pyc module {filename} was compiled for incompatible version of python!")
+
+    return pyc_data
 
 
 def postprocess_binaries_toc_pywin32(binaries):
