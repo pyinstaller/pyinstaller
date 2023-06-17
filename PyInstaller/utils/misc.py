@@ -19,6 +19,7 @@ import codecs
 import re
 import tokenize
 import io
+import pathlib
 
 from PyInstaller import log as logging
 from PyInstaller.compat import is_win
@@ -232,3 +233,15 @@ def is_iterable(arg):
     except TypeError:
         return False
     return True
+
+
+def path_to_parent_archive(filename):
+    """
+    Check if the given file path points to a file inside an existing archive file. Returns first path from the set of
+    parent paths that points to an existing file, or `None` if no such path exists (i.e., file is an actual stand-alone
+    file).
+    """
+    for parent in pathlib.Path(filename).parents:
+        if parent.is_file():
+            return parent
+    return None

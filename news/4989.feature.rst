@@ -1,0 +1,2 @@
+(Windows) Add support for collecting .pyc files from the ``python3X.zip`` archive
+where ``Windows embeddable package`` Python stores its stdlib modules.
