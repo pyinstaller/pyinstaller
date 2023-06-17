@@ -387,6 +387,8 @@ class EXE(Target):
             entitlements_file
                 macOS only. Optional path to entitlements file to use with code signing of collected binaries
                 (--entitlements option to codesign utility).
+            contents_directory
+                Onedir mode only. Specifies the name of the directory where all files par the executable will be placed.
         """
         from PyInstaller.config import CONF
 
@@ -407,6 +409,7 @@ class EXE(Target):
         self.strip = kwargs.get('strip', False)
         self.upx_exclude = kwargs.get("upx_exclude", [])
         self.runtime_tmpdir = kwargs.get('runtime_tmpdir', None)
+        self.contents_directory = kwargs.get("contents_directory", "_internal")
         # If ``append_pkg`` is false, the archive will not be appended to the exe, but copied beside it.
         self.append_pkg = kwargs.get('append_pkg', True)
 
@@ -455,6 +458,13 @@ class EXE(Target):
         if self.icon and not (is_win or is_darwin):
             logger.warning('Ignoring icon; supported only on Windows and macOS!')
             self.icon = None
+
+        if self.contents_directory in ("", ".", "..") \
+                or "/" in self.contents_directory or "\\" in self.contents_directory:
+            raise SystemExit(
+                f'Invalid value "{self.contents_directory}" passed to `--contents-directory` or `contents_directory`. '
+                'Exactly one directory level is required.'
+            )
 
         # Old .spec format included in 'name' the path where to put created app. New format includes only exename.
         #
@@ -511,6 +521,8 @@ class EXE(Target):
         if self.argv_emulation:
             # no value; presence means "true"
             self.toc.append(("pyi-macos-argv-emulation", "", "OPTION"))
+
+        self.toc.append(("pyi-contents-directory " + self.contents_directory, "", "OPTION"))
 
         # If the icon path is relative, make it relative to the .spec file.
         def makeabs(path):
@@ -898,6 +910,13 @@ class COLLECT(Target):
         # DISTPATH). Old .spec formats included parent path, so strip it away.
         self.name = os.path.join(CONF['distpath'], os.path.basename(kwargs.get('name')))
 
+        for arg in args:
+            if isinstance(arg, EXE):
+                self.contents_directory = arg.contents_directory
+                break
+        else:
+            raise ValueError("No EXE() instance was passed to COLLECT()")
+
         self.toc = []
         for arg in args:
             # Valid arguments: EXE object and TOC-like iterables
@@ -963,7 +982,7 @@ class COLLECT(Target):
             if typecode in ("EXECUTABLE", "PKG"):
                 dest_path = os.path.join(self.name, dest_name)
             else:
-                dest_path = os.path.join(self.name, "_internal", dest_name)  # Absolute destination path
+                dest_path = os.path.join(self.name, self.contents_directory, dest_name)
             dest_dir = os.path.dirname(dest_path)
             try:
                 os.makedirs(dest_dir, exist_ok=True)

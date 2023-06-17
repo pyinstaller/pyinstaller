@@ -511,6 +511,16 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * e
     if (snprintf(status->executablename, PATH_MAX, "%s", executable_path) >= PATH_MAX) {
         return false;
     }
+
+    /* Open the archive */
+    if (pyi_arch_open(status)) {
+        /* If this is not an archive, we MUST close the file, */
+        /* otherwise the open file-handle will be reused when */
+        /* testing the next file. */
+        pyi_arch_close_fp(status);
+        return false;
+    }
+
     /* Set homepath (a.k.a. sys._MEIPASS) */
     char executable_dir[PATH_MAX];
     pyi_path_dirname(executable_dir, executable_path);
@@ -528,9 +538,14 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * e
         pyi_path_dirname(contents_dir, executable_dir);
         pyi_path_join(status->homepath, contents_dir, "Frameworks");
     } else {
+        char * contents_directory = pyi_arch_get_option(status, "pyi-contents-directory");
+        if (!contents_directory) {
+            FATALERROR("pyi-contents-directory option not found in onedir bundle archive!");
+            return false;
+        }
         char root_path[PATH_MAX];
         pyi_path_dirname(root_path, archive_path);
-        pyi_path_join(status->homepath, root_path, "_internal");
+        pyi_path_join(status->homepath, root_path, contents_directory);
     }
 
     /*
@@ -540,14 +555,6 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * e
     status->has_temp_directory = false;
     strcpy(status->mainpath, status->homepath);
 
-    /* Open the archive */
-    if (pyi_arch_open(status)) {
-        /* If this is not an archive, we MUST close the file, */
-        /* otherwise the open file-handle will be reused when */
-        /* testing the next file. */
-        pyi_arch_close_fp(status);
-        return false;
-    }
     return true;
 }
 

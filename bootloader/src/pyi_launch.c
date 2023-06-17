@@ -66,6 +66,7 @@ _format_and_check_path(char *buf, const char *fmt, ...)
     };
     va_end(args);
 
+    VS("Checking for file %s\n", buf);
     return stat(buf, &tmp);
 }
 
@@ -206,6 +207,11 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 
     pyi_path_dirname(dirname, path);
     pyi_path_dirname(homepath_parent, archive_status->homepath);
+    char * contents_directory = pyi_arch_get_option(archive_pool[0], "pyi-contents-directory");
+    if (!contents_directory) {
+        FATALERROR("pyi-contents-directory option not found in onedir bundle archive!");
+        return -1;
+    }
 
     /* We need to identify and handle three situations:
      *  1) dependencies are in a onedir archive next to the current onefile archive,
@@ -214,7 +220,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
      */
     VS("LOADER: homepath is %s\n", archive_status->homepath);
     /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-    if (_format_and_check_path(srcpath, "%s%c%s%c%s%c%s", homepath_parent, PYI_SEP, dirname, PYI_SEP, "_internal", PYI_SEP, filename) == 0) {
+    if (_format_and_check_path(srcpath, "%s%c%s%c%s%c%s", homepath_parent, PYI_SEP, dirname, PYI_SEP, contents_directory, PYI_SEP, filename) == 0) {
         VS("LOADER: File %s found, assuming onedir reference\n", srcpath);
 
         if (_copy_dependency_from_dir(archive_status, srcpath, filename) == -1) {
@@ -223,7 +229,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
         }
         /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
     }
-    else if (_format_and_check_path(srcpath, "%s%c%s%c%s%c%s", homepath_parent, PYI_SEP, dirname, PYI_SEP, "_internal", PYI_SEP, filename) == 0) {
+    else if (_format_and_check_path(srcpath, "%s%c%s%c%s%c%s", homepath_parent, PYI_SEP, dirname, PYI_SEP, contents_directory, PYI_SEP, filename) == 0) {
         VS("LOADER: File %s found, assuming onedir reference\n", srcpath);
 
         if (_copy_dependency_from_dir(archive_status, srcpath, filename) == -1) {
@@ -235,7 +241,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
         VS("LOADER: File %s not found, assuming onefile reference.\n", srcpath);
 
         /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-        if ((_format_and_check_path(archive_path, "%s%c%s%c%s.pkg", homepath_parent, PYI_SEP, "_internal", PYI_SEP, path) != 0) &&
+        if ((_format_and_check_path(archive_path, "%s%c%s%c%s.pkg", homepath_parent, PYI_SEP, contents_directory, PYI_SEP, path) != 0) &&
             (_format_and_check_path(archive_path, "%s%c%s.exe", homepath_parent, PYI_SEP, path) != 0) &&
             (_format_and_check_path(archive_path, "%s%c%s", homepath_parent, PYI_SEP, path) != 0)) {
             FATALERROR("Archive not found: %s\n", archive_path);
