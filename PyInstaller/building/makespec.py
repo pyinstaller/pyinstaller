@@ -227,6 +227,11 @@ def __add_options(parser):
         "--name",
         help="Name to assign to the bundled app and spec file (default: first script's basename)",
     )
+    g.add_argument(
+        "--contents-directory",
+        help="For onedir builds only, specify the name of the directory in which all supporting files (i.e. everything "
+        "except the executable itself) will be placed in.",
+    )
 
     g = parser.add_argument_group('What to bundle, where to search')
     g.add_argument(
@@ -615,6 +620,7 @@ def main(
     noupx=False,
     upx_exclude=None,
     runtime_tmpdir=None,
+    contents_directory=None,
     pathex=[],
     version_file=None,
     specpath=None,
@@ -695,6 +701,8 @@ def main(
         # On Mac OS, the default icon has to be copied into the .app bundle.
         # The the text value 'None' means - use default icon.
         icon_file = 'None'
+    if contents_directory:
+        exe_options += "\n    contents_directory='%s'," % (contents_directory or "_internal")
 
     if bundle_identifier:
         # We need to encapsulate it into apostrofes.

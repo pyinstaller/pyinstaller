@@ -1,0 +1,13 @@
+All of onedir build's contents except for the executable are now moved into a
+sub-directory (called ``_internal`` by default). ``sys._MEIPASS`` is adjusted to
+point to this ``_internal`` directory. The breaking implications for this are:
+
+* Assumptions that ``os.path.dirname(sys.executable) == sys._MEIPASS`` will
+  break. Code locating application resources using
+  ``os.path.dirname(sys.executable)`` should be adjusted to use ``__file__``
+  or ``sys._MEIPASS`` and any code locating the original executable using
+  ``sys._MEIPASS`` should use :data:`sys.executable` directly.
+
+* Any custom post processing steps (either in the ``.spec`` file or
+  externally) which modify the bundle will likely need adjusting to
+  accommodate the new directory.

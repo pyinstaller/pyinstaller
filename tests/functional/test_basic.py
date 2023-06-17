@@ -771,3 +771,23 @@ def test_package_entry_point_name_collision(pyi_builder):
     exe, = pyi_builder._find_executables("matching_name")
     p = subprocess.run([exe], stdout=subprocess.PIPE, universal_newlines=True)
     assert re.findall("Running (.*) as (.*)", p.stdout) == expected
+
+
+def test_contents_directory(pyi_builder):
+    """
+    Test the --contents-directory option, including changing it without --clean.
+    """
+    if pyi_builder._mode != 'onedir':
+        pytest.skip('--contents-directory does not affect onefile builds.')
+
+    pyi_builder.test_source("", pyi_args=["--contents-directory=foo"])
+    exe, = pyi_builder._find_executables("test_source")
+    bundle = Path(exe).parent
+    assert (bundle / "foo").is_dir()
+
+    pyi_builder.test_source("", pyi_args=["--contents-directory=é³þ³źć🚀", "--noconfirm"])
+    assert not (bundle / "foo").exists()
+    assert (bundle / "é³þ³źć🚀").is_dir()
+
+    with pytest.raises(SystemExit, match='Invalid value "\\." passed'):
+        pyi_builder.test_source("", pyi_args=["--contents-directory=.", "--noconfirm"])
