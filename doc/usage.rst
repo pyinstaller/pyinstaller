@@ -592,7 +592,8 @@ Building 32-bit Apps in macOS
           on modern versions of macOS, see :ref:`here <macos multi-arch support>`).
           However, PyInstaller still supports building 32-bit bootloader,
           and 32-bit/64-bit Python installers are still available from
-          python.org for (some) versions of Python 3.7.
+          python.org for (some) versions of Python 3.7 which PyInstaller dropped
+          support for in v6.0.
 
 Older versions of macOS supported both 32-bit and 64-bit executables.
 PyInstaller builds an app using the the word-length of the Python used to execute it.

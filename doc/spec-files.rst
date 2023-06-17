@@ -363,10 +363,6 @@ For example modify the spec file this way::
           exclude_binaries=...
           )
 
-.. Note:: The unbuffered stdio mode (the ``u`` option) enables unbuffered
-   binary layer of ``stdout`` and ``stderr`` streams on all supported Python
-   versions. The unbuffered text layer requires Python 3.7 or later.
-
 
 .. _spec file options for a macOS bundle:
 

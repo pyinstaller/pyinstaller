@@ -652,20 +652,7 @@ def strip_paths_in_code(co, new_filename=None):
         for const_co in co.co_consts
     )
 
-    if hasattr(co, 'replace'):  # is_py38
-        return co.replace(co_consts=consts, co_filename=new_filename)
-    elif hasattr(co, 'co_kwonlyargcount'):
-        # co_kwonlyargcount was added in some version of Python 3
-        return code_func(
-            co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize, co.co_flags, co.co_code, consts,
-            co.co_names, co.co_varnames, new_filename, co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars,
-            co.co_cellvars
-        )
-    else:
-        return code_func(
-            co.co_argcount, co.co_nlocals, co.co_stacksize, co.co_flags, co.co_code, consts, co.co_names,
-            co.co_varnames, new_filename, co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars, co.co_cellvars
-        )
+    return co.replace(co_consts=consts, co_filename=new_filename)
 
 
 def _should_include_system_binary(binary_tuple, exceptions):

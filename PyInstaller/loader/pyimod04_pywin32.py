@@ -41,15 +41,13 @@ def install():
     # `pywin32_system32` sub-directory instead of the top-level application directory.
     sys.path.append(pywin32_system32_path)
 
-    # Add the DLL directory to DLL search path using os.add_dll_directory(), if available (python >= 3.8).
+    # Add the DLL directory to DLL search path using os.add_dll_directory().
     # This allows extensions from win32 directory (e.g., win32api, win32crypt) to be loaded on their own without
     # importing pywintypes first. The extensions are linked against pywintypes3X.dll.
-    if hasattr(os, 'add_dll_directory'):
-        os.add_dll_directory(pywin32_system32_path)
+    os.add_dll_directory(pywin32_system32_path)
 
-    # Add the DLL directory to PATH.
-    # This is necessary on python 3.7 that lacks `os.add_dll_directory`, and under certain versions of Anaconda python,
-    # where `os.add_dll_directory` does not work.
+    # Add the DLL directory to PATH. This is necessary under certain versions of
+    # Anaconda python, where `os.add_dll_directory` does not work.
     path = os.environ.get('PATH', None)
     if not path:
         path = pywin32_system32_path

@@ -1,0 +1,1 @@
+Drop support for end of life Python 3.7.

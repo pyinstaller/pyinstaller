@@ -24,7 +24,7 @@ Welcome to the PyInstaller issue tracker! Before creating an issue, please heed 
 ### Context information (for bug reports)
 
 * Output of `pyinstaller --version`: ```(paste here)```
-* Version of Python: <!-- e.g. 3.7 -->
+* Version of Python: <!-- e.g. 3.11 -->
 * Platform: <!-- e.g GNU/Linux (distribution), Windows (language settings), OS X, FreeBSD -->
 * How you installed Python: <!-- e.g. python.org/downloads, conda, brew, pyenv, apt, Windows store -->
 * Did you also try this on another platform? Does it work there?

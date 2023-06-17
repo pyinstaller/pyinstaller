@@ -42,10 +42,7 @@ if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
             sys.stderr.write('WARN: failed to parse git revision')
 else:
     # PyInstaller was installed by `python setup.py install'.
-    if compat.is_py38:
-        from importlib.metadata import version
-    else:
-        from importlib_metadata import version
+    from importlib.metadata import version
     __version__ = version('PyInstaller')
 # Default values of paths where to put files created by PyInstaller. If changing these, do not forget to update the
 # help text for corresponding command-line options, defined in build_main.

@@ -91,17 +91,7 @@ def finditer(pattern: Pattern, string: bytes):
 # themselves need to be enclosed in another (non-capturing) group. E.g., "(?:(?:_OPCODES_FUNCTION_GLOBAL).)".
 # NOTE2: _OPCODES_EXTENDED_ARG2 is an exception, as it is used as a list of opcodes to exclude, i.e.,
 # "[^_OPCODES_EXTENDED_ARG2]". Therefore, multiple opcodes are not separated by the OR operator.
-if not compat.is_py37:
-    _OPCODES_EXTENDED_ARG = rb"`EXTENDED_ARG`"
-    _OPCODES_EXTENDED_ARG2 = _OPCODES_EXTENDED_ARG
-    _OPCODES_FUNCTION_GLOBAL = rb"`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`"
-    _OPCODES_FUNCTION_LOAD = rb"`LOAD_ATTR`"
-    _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`"
-    _OPCODES_FUNCTION_CALL = rb"`CALL_FUNCTION`|`CALL_FUNCTION_EX`"
-
-    def _cleanup_bytecode_string(bytecode):
-        return bytecode  # Nothing to do here
-elif not compat.is_py311:
+if not compat.is_py311:
     # Python 3.7 introduced two new function-related opcodes, LOAD_METHOD and CALL_METHOD
     _OPCODES_EXTENDED_ARG = rb"`EXTENDED_ARG`"
     _OPCODES_EXTENDED_ARG2 = _OPCODES_EXTENDED_ARG

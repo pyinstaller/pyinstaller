@@ -108,7 +108,7 @@ Build-Time Python Errors
 PyInstaller sometimes terminates by raising a Python exception.
 In most cases the reason is clear from the exception message,
 for example "Your system is not supported", or "Pyinstaller
-requires at least Python 3.7".
+requires at least Python 3.8".
 Others clearly indicate a bug that should be reported.
 
 One of these errors can be puzzling, however:
