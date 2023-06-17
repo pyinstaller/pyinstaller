@@ -14,7 +14,7 @@ import pytest
 import textwrap
 
 from PyInstaller.depend import utils
-from PyInstaller.compat import is_win, is_musl, is_macos_11_compat
+from PyInstaller import compat
 
 CTYPES_CLASSNAMES = (
     'CDLL', 'ctypes.CDLL',
@@ -66,11 +66,14 @@ def test_ctypes_LibraryLoader_LoadLibrary(monkeypatch, classname, extended_args)
 
 
 @pytest.mark.parametrize('extended_args', [False, True])
-@pytest.mark.skipif(is_musl, reason="find_library() doesn't work on musl")
-@pytest.mark.skipif(is_macos_11_compat, reason="find_library() requires python built with Big Sur support.")
+@pytest.mark.skipif(compat.is_musl, reason="find_library() doesn't work on musl")
+@pytest.mark.skipif(
+    compat.is_macos_11 and not (compat.is_macos_11_native and compat.is_py39),
+    reason="find_library() requires python >= 3.9 built with Big Sur support.",
+)
 def test_ctypes_util_find_library(monkeypatch, extended_args):
     # for lind_library() we need a lib actually existing on the system
-    if is_win:
+    if compat.is_win:
         libname = "KERNEL32"
     else:
         libname = "c"
@@ -97,7 +100,7 @@ def test_ctypes_util_find_library_as_default_argument():
 def test_ldconfig_cache():
     utils.load_ldconfig_cache()
 
-    if is_musl:
+    if compat.is_musl:
         # load_ldconfig_cache() should be a no-op on musl because musl does not use ldconfig.
         assert not utils.LDCONFIG_CACHE
         return
