@@ -32,11 +32,9 @@ def _pyi_rthook():
         # Look for those flags and the import statement, then `exec()` the code ourselves.
 
         if (
-            len(sys.argv) >= 2 and sys.argv[-2] == '-c' and sys.argv[-1].startswith((
-                'from multiprocessing.semaphore_tracker import main',  # Py<3.8
-                'from multiprocessing.resource_tracker import main',  # Py>=3.8
-                'from multiprocessing.forkserver import main'
-            )) and set(sys.argv[1:-2]) == set(_args_from_interpreter_flags())
+            len(sys.argv) >= 2 and sys.argv[-2] == '-c' and sys.argv[-1].startswith(
+                ('from multiprocessing.resource_tracker import main', 'from multiprocessing.forkserver import main')
+            ) and set(sys.argv[1:-2]) == set(_args_from_interpreter_flags())
         ):
             exec(sys.argv[-1])
             sys.exit()

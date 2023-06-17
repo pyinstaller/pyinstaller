@@ -8,7 +8,7 @@
 # by the PyInstaller maintainers. If you find it useful,
 # please consider contributing to its maintenance and improvement.
 
-FROM python:3.7
+FROM python:3.11
 
 RUN mkdir -p /src
 

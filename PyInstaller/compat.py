@@ -83,56 +83,42 @@ is_macos_11_native = bool(_macos_ver) and _macos_ver[0:2] >= (11, 0)  # Big Sur 
 is_macos_11 = is_macos_11_compat or is_macos_11_native  # Big Sur or newer
 
 # On different platforms is different file for dynamic python library.
-# TODO: When removing support for is_py37, the "m" variants can be
-# removed, see <https://docs.python.org/3/whatsnew/3.8.html#build-and-c-api-changes>
 _pyver = sys.version_info[:2]
 if is_win or is_cygwin:
     PYDYLIB_NAMES = {
         'python%d%d.dll' % _pyver,
         'libpython%d%d.dll' % _pyver,
-        'libpython%d%dm.dll' % _pyver,
         'libpython%d.%d.dll' % _pyver,
-        'libpython%d.%dm.dll' % _pyver
     }  # For MSYS2 environment
 elif is_darwin:
     # libpython%d.%dm.dylib for Conda virtual environment installations
     PYDYLIB_NAMES = {
-        'Python', '.Python',
+        'Python',
+        '.Python',
         'Python%d' % _pyver[0],
         'libpython%d.%d.dylib' % _pyver,
-        'libpython%d.%dm.dylib' % _pyver
     }
 elif is_aix:
     # Shared libs on AIX may be archives with shared object members, hence the ".a" suffix. However, starting with
     # python 2.7.11 libpython?.?.so and Python3 libpython?.?m.so files are produced.
     PYDYLIB_NAMES = {
         'libpython%d.%d.a' % _pyver,
-        'libpython%d.%dm.a' % _pyver,
         'libpython%d.%d.so' % _pyver,
-        'libpython%d.%dm.so' % _pyver
     }
 elif is_freebsd:
     PYDYLIB_NAMES = {
         'libpython%d.%d.so.1' % _pyver,
-        'libpython%d.%dm.so.1' % _pyver,
         'libpython%d.%d.so.1.0' % _pyver,
-        'libpython%d.%dm.so.1.0' % _pyver
     }
 elif is_openbsd:
-    PYDYLIB_NAMES = {'libpython%d.%d.so.0.0' % _pyver, 'libpython%d.%dm.so.0.0' % _pyver}
+    PYDYLIB_NAMES = {'libpython%d.%d.so.0.0' % _pyver}
 elif is_hpux:
     PYDYLIB_NAMES = {'libpython%d.%d.so' % _pyver}
 elif is_unix:
     # Other *nix platforms.
     # Python 2 .so library on Linux is: libpython2.7.so.1.0
-    # Python 3 .so library on Linux is: libpython3.2mu.so.1.0, libpython3.3m.so.1.0
-    PYDYLIB_NAMES = {
-        'libpython%d.%d.so.1.0' % _pyver,
-        'libpython%d.%dm.so.1.0' % _pyver,
-        'libpython%d.%dmu.so.1.0' % _pyver,
-        'libpython%d.%dm.so' % _pyver,
-        'libpython%d.%d.so' % _pyver
-    }
+    # Python 3 .so library on Linux is: libpython3.3.so.1.0
+    PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver, 'libpython%d.%d.so' % _pyver}
 else:
     raise SystemExit('Your platform is not yet supported. Please define constant PYDYLIB_NAMES for your platform.')
 
@@ -745,16 +731,13 @@ def check_requirements():
     Fail hard if any requirement is not met.
     """
     # Fail hard if Python does not have minimum required version
-    if sys.version_info < (3, 7):
-        raise EnvironmentError('PyInstaller requires at Python 3.7 or newer.')
+    if sys.version_info < (3, 8):
+        raise EnvironmentError('PyInstaller requires Python 3.8 or newer.')
 
     # There are some old packages which used to be backports of libraries which are now part of the standard library.
     # These backports are now unmaintained and contain only an older subset of features leading to obscure errors like
     # "enum has not attribute IntFlag" if installed.
-    if is_py38:
-        from importlib.metadata import distribution, PackageNotFoundError
-    else:
-        from importlib_metadata import distribution, PackageNotFoundError
+    from importlib.metadata import distribution, PackageNotFoundError
 
     for name in ["enum34", "typing", "pathlib"]:
         try:

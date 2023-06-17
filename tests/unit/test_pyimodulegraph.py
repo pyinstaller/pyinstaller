@@ -14,7 +14,7 @@ import pytest
 import itertools
 from textwrap import dedent
 
-from PyInstaller import HOMEPATH, compat
+from PyInstaller import HOMEPATH
 from PyInstaller.depend import analysis
 from PyInstaller.lib.modulegraph import modulegraph
 import PyInstaller.log as logging
@@ -53,19 +53,14 @@ def test_metadata_collection(tmpdir):
     mg = analysis.PyiModuleGraph(HOMEPATH, excludes=["xencodings"])
     script = tmpdir.join('script.py')
 
-    if compat.is_py38:
-        importlib_metadata = "importlib.metadata"
-    else:
-        importlib_metadata = "importlib_metadata"
-
     script.write(
         dedent(
-            f'''
-            from {importlib_metadata} import distribution, version
-            import {importlib_metadata}
+            '''
+            from importlib.metadata import distribution, version
+            import importlib.metadata
 
             distribution("setuptools")
-            {importlib_metadata}.version("altgraph")
+            importlib.metadata.version("altgraph")
             '''
         )
     )

@@ -40,14 +40,10 @@ import json
 import sys
 from pathlib import Path
 from typing import Iterable, List
+from importlib.metadata import PackagePath as _PackagePath
 
 from PyInstaller import compat
 from PyInstaller.log import logger
-
-if compat.is_py38:
-    from importlib.metadata import PackagePath as _PackagePath
-else:
-    from importlib_metadata import PackagePath as _PackagePath
 
 # Conda virtual environments each get their own copy of `conda-meta` so the use of `sys.prefix` instead of
 # `sys.base_prefix`, `sys.real_prefix` or anything from our `compat` module is intentional.
