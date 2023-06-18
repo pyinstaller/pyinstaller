@@ -430,14 +430,10 @@ class BUNDLE(Target):
                 # Place into `Contents/MacOS`, ...
                 file_dest = os.path.join('Contents/MacOS', orig_dest_name)
                 bundle_toc.append((file_dest, src_name, typecode))
-                # ... cross-link into `Contents/Frameworks`, ...
-                symlink_dest = os.path.join('Contents/Frameworks', orig_dest_name)
-                symlink_ref = self._compute_relative_crosslink(symlink_dest, file_dest)
-                bundle_toc.append((symlink_dest, symlink_ref, 'SYMLINK'))
-                # ... and cross-link into `Contents/Resources`.
-                symlink_dest = os.path.join('Contents/Resources', orig_dest_name)
-                symlink_ref = self._compute_relative_crosslink(symlink_dest, file_dest)
-                bundle_toc.append((symlink_dest, symlink_ref, 'SYMLINK'))
+                # ... and do nothing else. We explicitly avoid cross-linking the executable to `Contents/Frameworks` and
+                # `Contents/Resources`, because it should be not necessary (the executable's location should be
+                # discovered via `sys.executable`) and to prevent issues when executable name collides with name of a
+                # package from which we collect either binaries or data files (or both); see #7314.
                 continue
             elif typecode == 'PKG':
                 # Place into `Contents/Resources` ...
