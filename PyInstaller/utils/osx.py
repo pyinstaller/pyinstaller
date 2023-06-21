@@ -24,6 +24,10 @@ from macholib.mach_o import (
     LC_CODE_SIGNATURE,
     LC_ID_DYLIB,
     LC_LOAD_DYLIB,
+    LC_LOAD_UPWARD_DYLIB,
+    LC_LOAD_WEAK_DYLIB,
+    LC_PREBOUND_DYLIB,
+    LC_REEXPORT_DYLIB,
     LC_RPATH,
     LC_SEGMENT_64,
     LC_SYMTAB,
@@ -423,8 +427,17 @@ def _set_dylib_dependency_paths(filename, target_rpath):
     Implicitly assumes that a single-arch thin binary is given.
     """
 
+    # Relocatable commands that we should overwrite - same list as used by `macholib`.
+    _RELOCATABLE = {
+        LC_LOAD_DYLIB,
+        LC_LOAD_UPWARD_DYLIB,
+        LC_LOAD_WEAK_DYLIB,
+        LC_PREBOUND_DYLIB,
+        LC_REEXPORT_DYLIB,
+    }
+
     # Parse dylib's header to extract the following commands:
-    #  - LC_LOAD_DYLIB: dylib load commands (dependent libraries)
+    #  - LC_LOAD_DYLIB (or any member of _RELOCATABLE list): dylib load commands (dependent libraries)
     #  - LC_RPATH: rpath definitions
     #  - LC_ID_DYLIB: dylib's identity
     binary = MachO(filename)
@@ -436,13 +449,13 @@ def _set_dylib_dependency_paths(filename, target_rpath):
     for header in binary.headers:
         for cmd in header.commands:
             lc_type = cmd[0].cmd
-            if lc_type not in {LC_LOAD_DYLIB, LC_RPATH, LC_ID_DYLIB}:
+            if lc_type not in _RELOCATABLE and lc_type not in {LC_RPATH, LC_ID_DYLIB}:
                 continue
 
             # Decode path, strip trailing NULL characters
             path = cmd[2].decode('utf-8').rstrip('\x00')
 
-            if lc_type == LC_LOAD_DYLIB:
+            if lc_type in _RELOCATABLE:
                 linked_libs.add(path)
             elif lc_type == LC_RPATH:
                 rpaths.add(path)
