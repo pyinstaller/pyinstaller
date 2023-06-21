@@ -84,7 +84,6 @@ pyi_main(int argc, char * argv[])
     ARCHIVE_STATUS *archive_status = NULL;
     SPLASH_STATUS *splash_status = NULL;
     char executable[PATH_MAX];
-    char homepath[PATH_MAX];
     char archivefile[PATH_MAX];
     int rc = 0;
     int in_child = 0;
@@ -102,8 +101,7 @@ pyi_main(int argc, char * argv[])
         return -1;
     }
     if ((! pyi_path_executable(executable, argv[0])) ||
-        (! pyi_path_archivefile(archivefile, executable)) ||
-        (! pyi_path_homepath(homepath, executable))) {
+        (! pyi_path_archivefile(archivefile, executable))) {
         return -1;
     }
 
@@ -196,7 +194,7 @@ pyi_main(int argc, char * argv[])
     /* On Windows and Mac use single-process for --onedir mode. */
     if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
         VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");
-        extractionpath = homepath;
+        extractionpath = archive_status->homepath;
     }
 
 #else
@@ -211,7 +209,7 @@ pyi_main(int argc, char * argv[])
 
         /* Set _MEIPASS2, so that the restarted bootloader process will enter
          * the codepath that corresponds to child process. */
-        pyi_setenv("_MEIPASS2", homepath);
+        pyi_setenv("_MEIPASS2", archive_status->homepath);
 
         /* Set _PYI_ONEDIR_MODE to signal to restarted bootloader that it
          * should reset in_child variable even though it is operating in
@@ -296,7 +294,7 @@ pyi_main(int argc, char * argv[])
         /*  If binaries were extracted to temppath,
          *  we pass it through status variable
          */
-        if (strcmp(homepath, extractionpath) != 0) {
+        if (strcmp(archive_status->homepath, extractionpath) != 0) {
             if (snprintf(archive_status->temppath, PATH_MAX,
                          "%s", extractionpath) >= PATH_MAX) {
                 VS("LOADER: temppath exceeds PATH_MAX\n");
@@ -372,7 +370,7 @@ pyi_main(int argc, char * argv[])
         VS("LOADER: Executing self as child\n");
         pyi_setenv("_MEIPASS2",
                    archive_status->temppath[0] !=
-                   0 ? archive_status->temppath : homepath);
+                   0 ? archive_status->temppath : archive_status->homepath);
 
         VS("LOADER: set _MEIPASS2 to %s\n", pyi_getenv("_MEIPASS2"));
 

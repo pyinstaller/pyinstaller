@@ -412,18 +412,6 @@ pyi_path_executable(char *execfile, const char *appname)
 }
 
 /*
- * Return absolute path to homepath. It is the directory containing executable.
- */
-bool
-pyi_path_homepath(char *homepath, const char *thisfile)
-{
-    /* Fill in here (directory of thisfile). */
-    bool rc = pyi_path_dirname(homepath, thisfile);
-    VS("LOADER: homepath is %s\n", homepath);
-    return rc;
-}
-
-/*
  * Return full path to an external PYZ-archive.
  * The name is based on the excutable's name: path/myappname.pkg
  *
