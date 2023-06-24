@@ -15,6 +15,34 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.13.0 (2023-06-24)
+-------------------
+
+Features
+~~~~~~~~
+
+* Add support for Python 3.12. (:issue:`7670`)
+* (Windows) Add support for collecting .pyc files from the ``python3X.zip``
+  archive where ``Windows embeddable package`` Python stores its stdlib modules.
+  (:issue:`4989`)
+
+
+Bugfix
+~~~~~~
+
+* Limit the import of collected packages prior to performing binary
+  dependency analysis to only Windows, where it is actually useful.
+  On non-Windows platforms, there is no benefit to it, and it might
+  cause issues with particular orders of package imports. (:issue:`7698`)
+* When building PKG for ``onedir`` build, ensure that ``DATA`` entries
+  are put into dependencies list instead of including them in the PKG.
+  This complements existing behavior for ``BINARY`` and ``EXTENSION``
+  entries, and prevents a ``onedir`` build from becoming a broken
+  ``onefile`` one if user accidentally passes binaries and data files
+  TOCs to ``EXE`` instead of `COLLECT` when manually editing the
+  spec file. (:issue:`7708`)
+
+
 5.12.0 (2023-06-08)
 -------------------
 
