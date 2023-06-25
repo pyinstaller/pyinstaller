@@ -347,6 +347,14 @@ class EXE(Target):
             console
                 On Windows or Mac OS governs whether to use the console executable or the windowed executable. Always
                 True on Linux/Unix (always console executable - it does not matter there).
+            hide_console
+                Windows only. In console-enabled executable, hide or minimize the console window if the program owns the
+                console window (i.e., was not launched from existing console window). Depending on the setting, the
+                console is hidden/mininized either early in the bootloader execution ('hide-early', 'minimize-early') or
+                late in the bootloader execution ('hide-late', 'minimize-late'). The early option takes place as soon as
+                the PKG archive is found. In onefile builds, the late option takes place after application has unpacked
+                itself and before it launches the child process. In onedir builds, the late option takes place before
+                starting the embedded python interpreter.
             disable_windowed_traceback
                 Disable traceback dump of unhandled exception in windowed (noconsole) mode (Windows and macOS only),
                 and instead display a message that this feature is disabled.
@@ -393,6 +401,7 @@ class EXE(Target):
         self.exclude_binaries = kwargs.get('exclude_binaries', False)
         self.bootloader_ignore_signals = kwargs.get('bootloader_ignore_signals', False)
         self.console = kwargs.get('console', True)
+        self.hide_console = kwargs.get('hide_console', None)
         self.disable_windowed_traceback = kwargs.get('disable_windowed_traceback', False)
         self.debug = kwargs.get('debug', False)
         self.name = kwargs.get('name', None)
@@ -452,6 +461,9 @@ class EXE(Target):
         if self.icon and not (is_win or is_darwin):
             logger.warning('Ignoring icon; supported only on Windows and macOS!')
             self.icon = None
+        if self.hide_console and not is_win:
+            logger.warning('Ignoring hide_console; supported only on Windows!')
+            self.hide_console = None
 
         if self.contents_directory in ("", ".", "..") \
                 or "/" in self.contents_directory or "\\" in self.contents_directory:
@@ -523,6 +535,16 @@ class EXE(Target):
             self.toc.append(("pyi-macos-argv-emulation", "", "OPTION"))
 
         self.toc.append(("pyi-contents-directory " + self.contents_directory, "", "OPTION"))
+
+        if self.hide_console:
+            # Validate the value
+            _HIDE_CONSOLE_VALUES = {'hide-early', 'minimize-early', 'hide-late', 'minimize-late'}
+            self.hide_console = self.hide_console.lower()
+            if self.hide_console not in _HIDE_CONSOLE_VALUES:
+                raise ValueError(
+                    f"Invalid hide_console value: {self.hide_console}! Allowed values: {_HIDE_CONSOLE_VALUES}"
+                )
+            self.toc.append((f"pyi-hide-console {self.hide_console}", "", "OPTION"))
 
         # If the icon path is relative, make it relative to the .spec file.
         if self.icon and self.icon != "NONE":

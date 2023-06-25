@@ -33,6 +33,13 @@ int pyi_win32_is_symlink(const wchar_t *path);
 
 int pyi_win32_is_drive_root(const wchar_t *path);
 
+#if !defined(WINDOWED)
+
+void pyi_win32_hide_console();
+void pyi_win32_minimize_console();
+
+#endif
+
 #endif /* ifdef _WIN32 */
 
 #endif  /* UTILS_H */

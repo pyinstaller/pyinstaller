@@ -493,6 +493,14 @@ def __add_options(parser):
         "file. This option is ignored on *NIX systems.",
     )
     g.add_argument(
+        "--hide-console",
+        type=str,
+        choices={'hide-early', 'hide-late', 'minimize-early', 'minimize-late'},
+        default=None,
+        help="Windows only: in console-enabled executable, have bootloader automatically hide or minimize the console "
+        "window if the program owns the console window (i.e., was not launched from an existing console window).",
+    )
+    g.add_argument(
         "-i",
         "--icon",
         action='append',
@@ -673,6 +681,7 @@ def main(
     codesign_identity=None,
     entitlements_file=None,
     argv_emulation=False,
+    hide_console=None,
     **_kwargs
 ):
     # Default values for onefile and console when not explicitly specified on command-line (indicated by None)
@@ -723,6 +732,8 @@ def main(
         icon_file = 'None'
     if contents_directory:
         exe_options += "\n    contents_directory='%s'," % (contents_directory or "_internal")
+    if hide_console:
+        exe_options += "\n    hide_console='%s'," % hide_console
 
     if bundle_identifier:
         # We need to encapsulate it into apostrofes.
