@@ -58,7 +58,7 @@ scipy==1.10.1
 simplejson==3.19.1
 sphinx==7.0.1
 # Required for test_namespace_package
-sqlalchemy==2.0.16
+sqlalchemy==2.0.17
 zope.interface==6.0
 Pillow==9.5.0
 
