@@ -16,6 +16,17 @@ import pytest
 from PyInstaller.compat import is_win
 
 
+# Wrapper for os.symlink that skips the test if symlink cannot be created on Windows.
+def _create_symlink(*args, **kwargs):
+    try:
+        os.symlink(*args, **kwargs)
+    except OSError:
+        if is_win:
+            pytest.skip("OS does not support creation of symbolic links.")
+        else:
+            raise
+
+
 def _create_data(tmpdir, orig_filename, link_filename):
     # Create data directory
     data_path = os.path.join(tmpdir, "data")
@@ -31,13 +42,7 @@ def _create_data(tmpdir, orig_filename, link_filename):
     os.makedirs(os.path.dirname(abs_linked_filename), exist_ok=True)
     rel_orig_filename = os.path.relpath(abs_orig_filename, os.path.dirname(abs_linked_filename))
 
-    try:
-        os.symlink(rel_orig_filename, abs_linked_filename)
-    except OSError:
-        if is_win:
-            pytest.skip("OS does not support creation of symbolic links.")
-        else:
-            raise
+    _create_symlink(rel_orig_filename, abs_linked_filename)
 
 
 # Collect both symbolic link and file
@@ -215,4 +220,193 @@ def test_symlinks__parentdir__symlink_only(tmpdir, script_dir, pyi_builder):
         os.path.join(str(script_dir), 'pyi_symlinks_test.py'),
         pyi_args=add_data_args,
         app_args=['parentdir', '--link-only'],
+    )
+
+
+# The tests below verify the behavior when collecting chained symbolic links: file_d -> file_c -> file_b -> file_a.
+#
+# This reproduces the scenario found under Homebrew python environment on macOS, where shared libraries for `wxwidgets`
+# have the following layout:
+#  * libwx_baseu-3.2.0.2.1.dylib
+#  * libwx_baseu-3.2.0.dylib -> libwx_baseu-3.2.0.2.1.dylib
+#  * libwx_baseu-3.2.dylib -> libwx_baseu-3.2.0.dylib
+#
+# And only `libwx_baseu-3.2.0.2.1.dylib` and `libwx_baseu-3.2.dylib` end up referenced by other binaries, so the
+# "intermediate" link is not collected. So to prevent the symlink to be collected as a duplicated copy (which leads to
+# problems on macOS...), PyInstaller needs to be able to rewrite the link to "jump over" the missing intermediate link.
+
+
+# Prepare the file and links for the test
+def _prepare_chained_links_example(tmpdir):
+    # Create data directory
+    data_path = os.path.join(tmpdir, "data")
+    os.makedirs(data_path)
+
+    # Create original file: file_a
+    with open(os.path.join(data_path, "file_a"), 'w') as fp:
+        fp.write("secret")
+
+    # Create symbolic link: file_b -> file_a
+    _create_symlink("file_a", os.path.join(data_path, "file_b"))
+
+    # Create symbolic link: file_c -> file_b
+    _create_symlink("file_b", os.path.join(data_path, "file_c"))
+
+    # Create symbolic link: file_d -> file_c
+    _create_symlink("file_c", os.path.join(data_path, "file_d"))
+
+    return data_path
+
+
+# Helper to generate --add-data arguments for PyInstaller.
+def _collect_data(src_dir, filenames, dest_dir='.'):
+    for filename in filenames:
+        yield '--add-data'
+        yield os.pathsep.join([os.path.join(src_dir, filename), dest_dir])
+
+
+def test_symlinks__chained_links_abc(tmpdir, pyi_builder):
+    data_path = _prepare_chained_links_example(tmpdir)
+    collected_files = ['file_a', 'file_b', 'file_c']
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        # file_a should be a regular file
+        file_a = os.path.join(sys._MEIPASS, "file_a")
+        assert os.path.isfile(file_a), "file_a does not exist!"
+        assert not os.path.islink(file_a), "file_a is a symbolic link, but should not be!"
+
+        # file_b should be a symlink pointing to file_a
+        file_b = os.path.join(sys._MEIPASS, "file_b")
+        assert os.path.isfile(file_b), "file_b does not exist!"
+        assert os.path.islink(file_b), "file_b is not a symbolic link!"
+        assert os.readlink(file_b) == "file_a", "file_b does not point to file_a!"
+
+        # file_c should be a symlink pointing to file_b
+        file_c = os.path.join(sys._MEIPASS, "file_c")
+        assert os.path.isfile(file_c), "file_c does not exist!"
+        assert os.path.islink(file_c), "file_c is not a symbolic link!"
+        assert os.readlink(file_c) == "file_b", "file_c does not point to file_b!"
+        """,
+        pyi_args=list(_collect_data(data_path, collected_files))
+    )
+
+
+def test_symlinks__chained_links_ab(tmpdir, pyi_builder):
+    data_path = _prepare_chained_links_example(tmpdir)
+    collected_files = ['file_a', 'file_b']
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        # file_a should be a regular file
+        file_a = os.path.join(sys._MEIPASS, "file_a")
+        assert os.path.isfile(file_a), "file_a does not exist!"
+        assert not os.path.islink(file_a), "file_a is a symbolic link, but should not be!"
+
+        # file_b should be a symlink pointing to file_a
+        file_b = os.path.join(sys._MEIPASS, "file_b")
+        assert os.path.isfile(file_b), "file_b does not exist!"
+        assert os.path.islink(file_b), "file_b is not a symbolic link!"
+        assert os.readlink(file_b) == "file_a", "file_b does not point to file_a!"
+        """,
+        pyi_args=list(_collect_data(data_path, collected_files))
+    )
+
+
+def test_symlinks__chained_links_bc(tmpdir, pyi_builder):
+    data_path = _prepare_chained_links_example(tmpdir)
+    collected_files = ['file_b', 'file_c']
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        # file_b should be a regular file
+        file_b = os.path.join(sys._MEIPASS, "file_b")
+        assert os.path.isfile(file_b), "file_b does not exist!"
+        assert not os.path.islink(file_b), "file_b is a symbolic link, but should not be!"
+
+        # file_c should be a symlink pointing to file_b
+        file_c = os.path.join(sys._MEIPASS, "file_c")
+        assert os.path.isfile(file_c), "file_c does not exist!"
+        assert os.path.islink(file_c), "file_c is not a symbolic link!"
+        assert os.readlink(file_c) == "file_b", "file_c does not point to file_b!"
+        """,
+        pyi_args=list(_collect_data(data_path, collected_files))
+    )
+
+
+# This is a special case, because PyInstaller needs to relink file_c to file_a due to missing link (file_b).
+def test_symlinks__chained_links_ac(tmpdir, pyi_builder):
+    data_path = _prepare_chained_links_example(tmpdir)
+    collected_files = ['file_a', 'file_c']
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        # file_a should be a regular file
+        file_a = os.path.join(sys._MEIPASS, "file_a")
+        assert os.path.isfile(file_a), "file_a does not exist!"
+        assert not os.path.islink(file_a), "file_a is a symbolic link, but should not be!"
+
+        # file_c should be a symlink pointing to file_a
+        file_c = os.path.join(sys._MEIPASS, "file_c")
+        assert os.path.isfile(file_c), "file_c does not exist!"
+        assert os.path.islink(file_c), "file_c is not a symbolic link!"
+        assert os.readlink(file_c) == "file_a", "file_c does not point to file_a!"
+        """,
+        pyi_args=list(_collect_data(data_path, collected_files))
+    )
+
+
+# This is a special case, because PyInstaller needs to relink file_d to file_a due to missing links (file_b, file_c).
+def test_symlinks__chained_links_ad(tmpdir, pyi_builder):
+    data_path = _prepare_chained_links_example(tmpdir)
+    collected_files = ['file_a', 'file_d']
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        # file_a should be a regular file
+        file_a = os.path.join(sys._MEIPASS, "file_a")
+        assert os.path.isfile(file_a), "file_a does not exist!"
+        assert not os.path.islink(file_a), "file_a is a symbolic link, but should not be!"
+
+        # file_d should be a symlink pointing to file_a
+        file_d = os.path.join(sys._MEIPASS, "file_d")
+        assert os.path.isfile(file_d), "file_d does not exist!"
+        assert os.path.islink(file_d), "file_d is not a symbolic link!"
+        assert os.readlink(file_d) == "file_a", "file_d does not point to file_a!"
+        """,
+        pyi_args=list(_collect_data(data_path, collected_files))
+    )
+
+
+# Similar to the BC test case (file_b needs to be collected as a copy), but with a missing intermediate link (file_c).
+def test_symlinks__chained_links_bd(tmpdir, pyi_builder):
+    data_path = _prepare_chained_links_example(tmpdir)
+    collected_files = ['file_b', 'file_d']
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        # file_b should be a regular file
+        file_b = os.path.join(sys._MEIPASS, "file_b")
+        assert os.path.isfile(file_b), "file_b does not exist!"
+        assert not os.path.islink(file_b), "file_b is a symbolic link, but should not be!"
+
+        # file_d should be a symlink pointing to file_b
+        file_d = os.path.join(sys._MEIPASS, "file_d")
+        assert os.path.isfile(file_d), "file_d does not exist!"
+        assert os.path.islink(file_d), "file_d is not a symbolic link!"
+        assert os.readlink(file_d) == "file_b", "file_d does not point to file_b!"
+        """,
+        pyi_args=list(_collect_data(data_path, collected_files))
     )
