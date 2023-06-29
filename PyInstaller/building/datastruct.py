@@ -407,11 +407,26 @@ def toc_process_symbolic_links(toc):
             new_toc.append(entry)
             continue
 
-        # Check if we are going to collect the original file.
+        # Check if we are going to collect the referenced file.
         orig_file = os.path.join(os.path.dirname(src_name), symlink_target)
         orig_file = os.path.normpath(orig_file)  # remove any '..'
 
-        orig_file_dests = all_source_files.get(orig_file, None)
+        while True:
+            orig_file_dests = all_source_files.get(orig_file, None)
+            if orig_file_dests:
+                break  # We are collecting the referenced file
+
+            # If the referenced file itself is a link, try to resolve it again...
+            if not os.path.islink(orig_file):
+                break
+
+            symlink_target = os.readlink(orig_file)
+            if os.path.isabs(symlink_target):
+                break  # We support only relative symbolic links.
+
+            orig_file = os.path.join(os.path.dirname(orig_file), symlink_target)
+            orig_file = os.path.normpath(orig_file)  # remove any '..'
+
         if not orig_file_dests:
             # We are not going to collect the original; make a hard-copy.
             new_toc.append(entry)
