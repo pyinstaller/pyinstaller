@@ -410,3 +410,91 @@ def test_symlinks__chained_links_bd(tmpdir, pyi_builder):
         """,
         pyi_args=list(_collect_data(data_path, collected_files))
     )
+
+
+# The tests below reproduce another quirk of the Homebrew python environments: the directories containing the shared
+# libraries (and the corresponding versioned symbolic links) can themselves be linked to different locations, which can
+# all be referenced from other binaries.
+#
+# For example, we have the following layout:
+# * /usr/local/Cellar/wxwidgets/3.2.2.1_1/lib/libwx_baseu-3.2.0.2.1.dylib
+# * /usr/local/Cellar/wxwidgets/3.2.2.1_1/lib/libwx_baseu-3.2.0.dylib -> libwx_baseu-3.2.0.2.1.dylib
+# * /usr/local/Cellar/wxwidgets/3.2.2.1_1/lib/libwx_baseu-3.2.dylib -> libwx_baseu-3.2.0.dylib
+# and
+# * /usr/local/opt/wxwidgets/lib/libwx_baseu-3.2.0.2.1.dylib
+# * /usr/local/opt/wxwidgets/lib/libwx_baseu-3.2.0.dylib -> libwx_baseu-3.2.0.2.1.dylib
+# * /usr/local/opt/wxwidgets/lib/libwx_baseu-3.2.dylib -> libwx_baseu-3.2.0.dylib
+# which are actually the same, because
+# * /usr/local/opt/wxwidgets -> ../Cellar/wxwidgets/3.2.2.1_1
+#
+# Other binaries end up referencing `/usr/local/opt/wxwidgets/lib/libwx_baseu-3.2.dylib` and
+# `/usr/local/Cellar/wxwidgets/3.2.2.1_1/lib/libwx_baseu-3.2.0.2.1.dylib`. So in addition the the problem with chained
+# links and missing intermediate link, we also need to be able to handle the situation where the files appear to be
+# originating from different locations due to the linking of parent directories.
+
+
+# Prepare the file and links for the test
+def _prepare_parent_directory_link_example(tmpdir):
+    # Create data directory
+    data_path = os.path.join(tmpdir, "data")
+
+    # Create directory containing the actual files
+    original_dir = os.path.join(data_path, 'original', 'mydata', 'v1.0.0')
+    os.makedirs(original_dir)
+
+    # Create original file: file_a
+    with open(os.path.join(original_dir, "file_a"), 'w') as fp:
+        fp.write("secret")
+
+    # Create symbolic link: file_b -> file_a
+    _create_symlink("file_a", os.path.join(original_dir, "file_b"))
+
+    # Create symbolic link: file_c -> file_b
+    _create_symlink("file_b", os.path.join(original_dir, "file_c"))
+
+    # Create symbolic link: file_d -> file_c
+    _create_symlink("file_c", os.path.join(original_dir, "file_d"))
+
+    # Create a symbolic link at the directory level
+    linked_dir = os.path.join(data_path, 'linked')
+    os.makedirs(linked_dir)
+
+    _create_symlink(
+        os.path.join('..', 'original', 'mydata', 'v1.0.0'),
+        os.path.join(linked_dir, 'mydata-v1.0.0'),
+        target_is_directory=True,
+    )
+
+    return data_path
+
+
+@pytest.mark.parametrize(
+    "collected_files",
+    [
+        # Collect file_a from one directory and file_d from the other; this also causes missing intermediate links
+        # (file_b, file_c).
+        ['original/mydata/v1.0.0/file_a', 'linked/mydata-v1.0.0/file_d'],
+        ['linked/mydata-v1.0.0/file_a', 'original/mydata/v1.0.0/file_d'],
+    ],
+    ids=['original', 'reversed'],
+)
+def test_symlinks__collect_chained_links_from_linked_directories(tmpdir, pyi_builder, collected_files):
+    data_path = _prepare_parent_directory_link_example(tmpdir)
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        # file_a should be a regular file
+        file_a = os.path.join(sys._MEIPASS, "file_a")
+        assert os.path.isfile(file_a), "file_a does not exist!"
+        assert not os.path.islink(file_a), "file_a is a symbolic link, but should not be!"
+
+        # file_d should be a symlink pointing to file_a
+        file_d = os.path.join(sys._MEIPASS, "file_d")
+        assert os.path.isfile(file_d), "file_d does not exist!"
+        assert os.path.islink(file_d), "file_d is not a symbolic link!"
+        assert os.readlink(file_d) == "file_a", "file_d does not point to file_a!"
+        """,
+        pyi_args=list(_collect_data(data_path, collected_files))
+    )

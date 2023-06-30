@@ -12,7 +12,6 @@
 import os
 import pathlib
 import warnings
-import collections
 
 from PyInstaller import log as logging
 from PyInstaller.building.utils import _check_guts_eq
@@ -371,12 +370,8 @@ def toc_process_symbolic_links(toc):
     Process TOC entries and replace entries whose files are symbolic links with SYMLINK entries (provided original file
     is also being collected).
     """
-    # Create an src_name -> [dest_name1, dest_name2, ...] mapping of all collected files (account for possibility that a
-    # file might be collected multiple times).
-    all_source_files = collections.defaultdict(lambda: [])
-    for dest_name, src_name, typecode in toc:
-        all_source_files[src_name].append(dest_name)
-    all_source_files.default_factory = None
+    # Dictionary of all destination names, for a fast look-up.
+    all_dest_files = set([dest_name for dest_name, src_name, typecode in toc])
 
     # Process the TOC to create SYMLINK entries
     new_toc = []
@@ -398,50 +393,58 @@ def toc_process_symbolic_links(toc):
             new_toc.append(entry)
             continue
 
+        # Try preserving the symbolic link, under strict relative-relationship-preservation check
+        symlink_entry = _try_preserving_symbolic_link(dest_name, src_name, all_dest_files)
+
+        if symlink_entry:
+            new_toc.append(symlink_entry)
+        else:
+            new_toc.append(entry)
+
+    return new_toc
+
+
+def _try_preserving_symbolic_link(dest_name, src_name, all_dest_files):
+    seen_src_files = set()
+
+    # Set initial values for the loop
+    ref_src_file = src_name
+    ref_dest_file = dest_name
+
+    while True:
+        # Guard against cyclic links...
+        if ref_src_file in seen_src_files:
+            break
+        seen_src_files.add(ref_src_file)
+
+        # Stop when referenced source file is not a symbolic link anymore.
+        if not os.path.islink(ref_src_file):
+            break
+
         # Read the symbolic link's target, but do not fully resolve it using os.path.realpath(), because there might be
         # other symbolic links involved as well (for example, /lib64 -> /usr/lib64 whereas we are processing
         # /lib64/liba.so -> /lib64/liba.so.1)
-        symlink_target = os.readlink(src_name)
+        symlink_target = os.readlink(ref_src_file)
         if os.path.isabs(symlink_target):
-            # We support only relative symbolic links.
-            new_toc.append(entry)
-            continue
+            break  # We support only relative symbolic links.
 
-        # Check if we are going to collect the referenced file.
-        orig_file = os.path.join(os.path.dirname(src_name), symlink_target)
-        orig_file = os.path.normpath(orig_file)  # remove any '..'
+        ref_dest_file = os.path.join(os.path.dirname(ref_dest_file), symlink_target)
+        ref_dest_file = os.path.normpath(ref_dest_file)  # remove any '..'
 
-        while True:
-            orig_file_dests = all_source_files.get(orig_file, None)
-            if orig_file_dests:
-                break  # We are collecting the referenced file
+        ref_src_file = os.path.join(os.path.dirname(ref_src_file), symlink_target)
+        ref_src_file = os.path.normpath(ref_src_file)  # remove any '..'
 
-            # If the referenced file itself is a link, try to resolve it again...
-            if not os.path.islink(orig_file):
-                break
+        # Check if referenced destination file is valid (i.e., we are collecting a file under referenced name).
+        if ref_dest_file in all_dest_files:
+            # Sanity check: original source name and current referenced source name must, after complete resolution,
+            # point to the same file.
+            if os.path.realpath(src_name) == os.path.realpath(ref_src_file):
+                # Compute relative link for the destination file (might be modified, if we went over non-collected
+                # intermediate links).
+                rel_link = os.path.relpath(ref_dest_file, os.path.dirname(dest_name))
+                return dest_name, rel_link, 'SYMLINK'
 
-            symlink_target = os.readlink(orig_file)
-            if os.path.isabs(symlink_target):
-                break  # We support only relative symbolic links.
+        # If referenced destination is not valid, do another iteration in case we are dealing with chained links and we
+        # are not collecting an intermediate link...
 
-            orig_file = os.path.join(os.path.dirname(orig_file), symlink_target)
-            orig_file = os.path.normpath(orig_file)  # remove any '..'
-
-        if not orig_file_dests:
-            # We are not going to collect the original; make a hard-copy.
-            new_toc.append(entry)
-            continue
-
-        # The path relation between collected symbolic link and collected original file must also be preserved (although
-        # we could readjust it here).
-        target_relations = [
-            os.path.relpath(orig_file_dest, os.path.dirname(dest_name)) for orig_file_dest in orig_file_dests
-        ]
-        if not any([symlink_target == target_relation for target_relation in target_relations]):
-            # The relationship between collected files is not preserved; make a hard copy.
-            new_toc.append(entry)
-            continue
-
-        new_toc.append((dest_name, symlink_target, "SYMLINK"))
-
-    return new_toc
+    return None
