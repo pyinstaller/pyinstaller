@@ -212,9 +212,9 @@ _unix_excludes = {
     # a subset of libraries included as part of the Nvidia Linux Graphics Driver as of 520.56.06:
     # https://download.nvidia.com/XFree86/Linux-x86_64/520.56.06/README/installedcomponents.html
     r'nvidia_drv\.so',
-    r'libglxserver_nvidia\.so(\..*)?'
+    r'libglxserver_nvidia\.so(\..*)?',
     r'libnvidia-egl-(gbm|wayland)\.so(\..*)?',
-    r'libnvidia-(cfg|compiler|e?glcore|glsi|glvkspirv|rtcore|allocator|tls|ml)\.so(\..*)?',  # |cfg|compiler
+    r'libnvidia-(cfg|compiler|e?glcore|glsi|glvkspirv|rtcore|allocator|tls|ml)\.so(\..*)?',
     r'lib(EGL|GLX)_nvidia\.so(\..*)?',
     # libxcb-dri changes ABI frequently (e.g.: between Ubuntu LTS releases) and is usually installed as dependency of
     # the graphics stack anyway. No need to bundle it.
