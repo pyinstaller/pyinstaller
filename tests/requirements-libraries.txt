@@ -23,9 +23,9 @@ ipython==8.14.0; python_version >= '3.9'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==24.2.0; sys_platform != 'darwin' or python_version >= '3.8.7'
-matplotlib==3.7.1; python_version >= '3.8'
+matplotlib==3.7.1
 numpy==1.25.0; python_version >= '3.9'
-pandas==2.0.2; python_version >= '3.8'
+pandas==2.0.3
 pygments==2.15.1
 PyGObject==3.44.1; sys_platform == 'linux'
 # Current PySide2 wheels explicitly require python < 3.11
@@ -52,20 +52,21 @@ PyQt6-WebEngine==6.5.0
 python-dateutil==2.8.2
 pytz==2023.3
 requests==2.31.0
-scipy==1.10.1
+scipy==1.11.1; python_version >= '3.9'
 # simplejson is used for text_c_extension
 simplejson==3.19.1
 sphinx==7.0.1
 # Required for test_namespace_package
 sqlalchemy==2.0.17
 zope.interface==6.0
-Pillow==9.5.0
+Pillow==10.0.0
 
 
 # Python versions not supported / supported for older package versions
 # -------------------------------------------------------
 
 numpy==1.24.3; python_version == '3.8'  # pyup: ignore
+scipy==1.10.1; python_version == '3.8'  # pyup: ignore
 
 # ipython dropped support for python 3.8 in v8.13.0
 ipython==8.12.1; python_version == '3.8'  # pyup: ignore
