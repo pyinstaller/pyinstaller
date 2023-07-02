@@ -52,7 +52,7 @@ PyQt6-WebEngine==6.5.0
 python-dateutil==2.8.2
 pytz==2023.3
 requests==2.31.0
-scipy==1.11.1
+scipy==1.11.1; python_version >= '3.9'
 # simplejson is used for text_c_extension
 simplejson==3.19.1
 sphinx==7.0.1
@@ -66,6 +66,7 @@ Pillow==10.0.0
 # -------------------------------------------------------
 
 numpy==1.24.3; python_version == '3.8'  # pyup: ignore
+scipy==1.10.1; python_version == '3.8'  # pyup: ignore
 
 # ipython dropped support for python 3.8 in v8.13.0
 ipython==8.12.1; python_version == '3.8'  # pyup: ignore
