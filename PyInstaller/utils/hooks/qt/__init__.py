@@ -121,33 +121,12 @@ class QtLibraryInfo:
         # Windows, or with Qt and PyQt5 installed on linux using native package manager), and in those, the Qt
         # PrefixPath does not reflect the required relative target path for the frozen application.
         if namespace == 'PyQt5':
-            # PyQt5 uses PyQt5/Qt on all platforms, or PyQt5/Qt5 from version 5.15.4 on
-            try:
-                # The call below might fail with AttributeError on some PyQt5 versions (e.g., 5.9.2 from conda's main
-                # channel); missing dist information forces a fallback codepath that tries to check for __version__
-                # attribute that does not exist, either. So handle the error gracefully and assume old layout.
-                new_layout = hooks.is_module_satisfies("PyQt5 >= 5.15.4")
-            except AttributeError:
-                new_layout = False
-            if new_layout:
+            if self._use_new_layout("PyQt5", "5.15.4", False):
                 self.qt_rel_dir = os.path.join('PyQt5', 'Qt5')
             else:
                 self.qt_rel_dir = os.path.join('PyQt5', 'Qt')
         elif namespace == 'PyQt6':
-            # Similarly to PyQt5, PyQt6 switched from PyQt6/Qt to PyQt6/Qt6 in 6.0.3
-            try:
-                # The call below might fail with AttributeError in case of a partial PyQt6 installation. For example,
-                # user installs PyQt6 via pip, which also installs PyQt6-Qt6 and PyQt6-sip. Then they naively uninstall
-                # PyQt6 package, which leaves the other two behind. PyQt6 now becomes a namespace package and there is
-                # no dist metadata, so a fallback codepath in is_module_satisfies tries to check for __version__
-                # attribute that does not exist, either. Handle such errors gracefully and assume new layout (with
-                # PyQt6, the new layout is more likely); it does not really matter what layout we assume, as library is
-                # not usable anyway, but we do need to be able to return an instance of QtLibraryInfo with "version"
-                # attribute set to a falsey value.
-                new_layout = hooks.is_module_satisfies("PyQt6 >= 6.0.3")
-            except AttributeError:
-                new_layout = True
-            if new_layout:
+            if self._use_new_layout("PyQt6", "6.0.3", True):
                 self.qt_rel_dir = os.path.join('PyQt6', 'Qt6')
             else:
                 self.qt_rel_dir = os.path.join('PyQt6', 'Qt')
@@ -180,6 +159,31 @@ class QtLibraryInfo:
         self._load_qt_info()
         # ... and return the requested attribute
         return getattr(self, name)
+
+    # Check whether we must use the new layout (e.g. PyQt5/Qt5, PyQt6/Qt6) instead of the old layout (PyQt5/Qt,
+    # PyQt6/Qt).
+    @staticmethod
+    def _use_new_layout(package_basename: str, version: str, fallback_value: bool) -> bool:
+        # The call to is_module_satisfies might fail with AttributeError in case of a partial installation, or when dist
+        # information is missing, in which case a fallback codepath tries to check for a __version__ attribute that does
+        # not exist.
+        #
+        # This may happen for the following (not exhaustive) reasons:
+        #
+        # - PyQt 5.9.2 installed from conda's main channel.
+        # - User installs PyQt6 via pip, which also installs PyQt6-Qt6 and PyQt6-sip. Then they naively uninstall PyQt6
+        #   package, which leaves the other two behind. PyQt6 now becomes a namespace package and there is no dist
+        #   metadata.
+        # - The PyQt5 commercial wheel is installed. It creates the PyQt5 namespace package but dist information is
+        #   available under PyQt5_commercial. Since we first check for the non-commercial wheel, we trip the fallback
+        #   codepath inside is_module_satisfies.
+        try:
+            return hooks.is_module_satisfies(f"{package_basename} >= {version}")
+        except AttributeError:
+            try:
+                return hooks.is_module_satisfies(f"{package_basename}_commercial >= {version}")
+            except AttributeError:
+                return fallback_value
 
     # Load Qt information (called on first access to related fields)
     def _load_qt_info(self):
