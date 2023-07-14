@@ -1,0 +1,1 @@
+Add support for commercial PyQt5 and PyQt6 wheels.
