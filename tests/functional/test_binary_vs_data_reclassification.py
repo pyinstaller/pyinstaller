@@ -55,8 +55,8 @@ def _create_test_build(pyi_builder, tmpdir, datas=None, binaries=None):
     # The indices correspond to the lists' location in the `Analysis._guts`.
     analysis_data = miscutils.load_py_data_struct(analysis_toc_file)
     return (
-        analysis_data[16],  # binaries
-        analysis_data[19],  # datas
+        analysis_data[14],  # binaries
+        analysis_data[17],  # datas
     )
 
 
