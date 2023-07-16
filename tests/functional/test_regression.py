@@ -105,7 +105,7 @@ def test_issue_5131(monkeypatch, tmpdir):
     script = tmpdir.join('script.py')
     script.write('import mypkg')
     a = Analysis([str(script)], excludes=['encodings', 'pydoc', 'xml', 'distutils'])
-    PYZ(a.pure, a.zipped_data)
+    PYZ(a.pure)
 
 
 def test_issue_4141(pyi_builder):

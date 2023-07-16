@@ -243,20 +243,20 @@ class Analysis(Target):
     """
     Class that performs analysis of the user's main Python scripts.
 
-    An Analysis has five outputs, all TOC (Table of lists Contents) accessed as attributes of the analysis.
+    An Analysis contains multiple TOC (Table of Contents) lists, accessed as attributes of the analysis object.
 
     scripts
             The scripts you gave Analysis as input, with any runtime hook scripts prepended.
     pure
             The pure Python modules.
     binaries
-            The extensionmodules and their dependencies. The secondary dependencies are filtered. On Windows files from
-            C:\\Windows are excluded by default. On Linux/Unix only system libraries from /lib or /usr/lib are excluded.
+            The extension modules and their dependencies.
     datas
-            Data-file dependencies. These are data-file that are found to be needed by modules. They can be anything:
-            plugins, font files, images, translations, etc.
+            Data files collected from packages.
     zipfiles
-            The zipfiles dependencies (usually .egg files).
+            Deprecated - always empty.
+    zipped_data
+            Deprecated - always empty.
     """
     _old_scripts = {
         absnormpath(os.path.join(HOMEPATH, "support", "_mountzlib.py")),

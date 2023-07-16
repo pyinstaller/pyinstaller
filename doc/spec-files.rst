@@ -81,7 +81,7 @@ The following is a shortened example of a spec file for a minimal, one-folder ap
              hookspath=None,
              runtime_hooks=None,
              excludes=None)
-    pyz = PYZ(a.pure, a.zipped_data)
+    pyz = PYZ(a.pure)
     exe = EXE(pyz,... )
     coll = COLLECT(...)
 

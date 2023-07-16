@@ -27,13 +27,12 @@ a = Analysis(
     excludes=%(excludes)s,
     noarchive=%(noarchive)s,
 )
-pyz = PYZ(a.pure, a.zipped_data)
+pyz = PYZ(a.pure)
 %(splash_init)s
 exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
-    a.zipfiles,
     a.datas,%(splash_target)s%(splash_binaries)s
     %(options)s,
     name='%(name)s',
@@ -67,7 +66,7 @@ a = Analysis(
     excludes=%(excludes)s,
     noarchive=%(noarchive)s,
 )
-pyz = PYZ(a.pure, a.zipped_data)
+pyz = PYZ(a.pure)
 %(splash_init)s
 exe = EXE(
     pyz,
@@ -89,7 +88,6 @@ exe = EXE(
 coll = COLLECT(
     exe,
     a.binaries,
-    a.zipfiles,
     a.datas,%(splash_binaries)s
     strip=%(strip)s,
     upx=%(upx)s,
