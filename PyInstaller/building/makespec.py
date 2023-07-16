@@ -645,7 +645,6 @@ def main(
     bundle_identifier=None,
     hiddenimports=[],
     hookspath=[],
-    key=None,
     runtime_hooks=[],
     excludes=[],
     uac_admin=False,
