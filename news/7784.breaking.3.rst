@@ -1,0 +1,3 @@
+Removed support for zipped eggs. PyInstaller will not collect python
+code nor resources from zipped eggs, nor will it collect zipped eggs
+as a whole.

@@ -17,8 +17,6 @@ import os
 import pathlib
 import re
 import sys
-# Required for extracting eggs.
-import zipfile
 import subprocess
 
 from PyInstaller import compat
@@ -111,25 +109,6 @@ def _getImports_pe(pth):
 
     pe.close()
     return dlls
-
-
-def _extract_from_egg(toc):
-    """
-    Ensure all binary modules in zipped eggs get extracted and included with the frozen executable.
-
-    return  modified table of content
-    """
-    new_toc = []
-    for item in toc:
-        # Item is a tuple
-        #  (mod_name, path, type)
-        modname, pth, typ = item
-        if not os.path.isfile(pth):
-            pth = check_extract_from_egg(pth)[0][0]
-
-        # Add value to new data structure.
-        new_toc.append((modname, pth, typ))
-    return new_toc
 
 
 _exe_machine_type = None
@@ -246,8 +225,7 @@ def Dependencies(lTOC, xtrapath=None):
     # example) site-packages directory, we should try to preserve the parent directory structure.
     parent_dir_preservation_paths = _get_paths_for_parent_directory_preservation()
 
-    # Extract all necessary binary modules from Python eggs to be included directly with PyInstaller.
-    lTOC = _extract_from_egg(lTOC)
+    lTOC = lTOC[:]  # Create a copy
 
     for nm, pth, typ in lTOC:
         if nm.upper() in seen:
@@ -287,94 +265,6 @@ def Dependencies(lTOC, xtrapath=None):
                 lTOC.append((str(dst_path.name), str(dst_path), 'SYMLINK'))
 
     return lTOC
-
-
-def pkg_resources_get_default_cache():
-    """
-    Determine the default cache location
-
-    This returns the ``PYTHON_EGG_CACHE`` environment variable, if set. Otherwise, on Windows, it returns a
-    'Python-Eggs' subdirectory of the 'Application Data' directory.  On all other systems, it's '~/.python-eggs'.
-    """
-    # This function borrowed from setuptools/pkg_resources
-    egg_cache = compat.getenv('PYTHON_EGG_CACHE')
-    if egg_cache is not None:
-        return egg_cache
-
-    if os.name != 'nt':
-        return os.path.expanduser('~/.python-eggs')
-
-    app_data = 'Application Data'  # XXX this may be locale-specific!
-    app_homes = [
-        (('APPDATA',), None),  # best option, should be locale-safe
-        (('USERPROFILE',), app_data),
-        (('HOMEDRIVE', 'HOMEPATH'), app_data),
-        (('HOMEPATH',), app_data),
-        (('HOME',), None),
-        (('WINDIR',), app_data),  # 95/98/ME
-    ]
-
-    for keys, subdir in app_homes:
-        dirname = ''
-        for key in keys:
-            if key in os.environ:
-                dirname = os.path.join(dirname, compat.getenv(key))
-            else:
-                break
-        else:
-            if subdir:
-                dirname = os.path.join(dirname, subdir)
-            return os.path.join(dirname, 'Python-Eggs')
-    else:
-        raise RuntimeError("Please set the PYTHON_EGG_CACHE environment variable")
-
-
-def check_extract_from_egg(pth, todir=None):
-    r"""
-    Check if path points to a file inside a python egg file, extract the file from the egg to a cache directory (
-    following pkg_resources convention) and return [(extracted path, egg file path, relative path inside egg file)].
-
-    Otherwise, just return [(original path, None, None)]. If path points to an egg file directly, return a list with
-    all files from the egg formatted like above.
-
-    Example:
-    >>> check_extract_from_egg(r'C:\Python26\Lib\site-packages\my.egg\mymodule\my.pyd')
-    [(r'C:\Users\UserName\AppData\Roaming\Python-Eggs\my.egg-tmp\mymodule\my.pyd',
-    r'C:\Python26\Lib\site-packages\my.egg', r'mymodule/my.pyd')]
-    """
-    rv = []
-    if os.path.altsep:
-        pth = pth.replace(os.path.altsep, os.path.sep)
-    components = pth.split(os.path.sep)
-    for i, name in enumerate(components):
-        if name.lower().endswith(".egg"):
-            eggpth = os.path.sep.join(components[:i + 1])
-            if os.path.isfile(eggpth):
-                # eggs can also be directories!
-                try:
-                    egg = zipfile.ZipFile(eggpth)
-                except zipfile.BadZipFile as e:
-                    raise SystemExit("Error: %s %s" % (eggpth, e))
-                if todir is None:
-                    # Use the same directory as setuptools/pkg_resources. So, if the specific egg was accessed before
-                    # (not necessarily by pyinstaller), the extracted contents already exist (pkg_resources puts them
-                    # there) and can be used.
-                    todir = os.path.join(pkg_resources_get_default_cache(), name + "-tmp")
-                if components[i + 1:]:
-                    members = ["/".join(components[i + 1:])]
-                else:
-                    members = egg.namelist()
-                for member in members:
-                    pth = os.path.join(todir, member)
-                    if not os.path.isfile(pth):
-                        dirname = os.path.dirname(pth)
-                        if not os.path.isdir(dirname):
-                            os.makedirs(dirname)
-                        with open(pth, "wb") as f:
-                            f.write(egg.read(member))
-                    rv.append((pth, eggpth, member))
-                return rv
-    return [(pth, None, None)]
 
 
 def selectImports(pth, xtrapath=None):
