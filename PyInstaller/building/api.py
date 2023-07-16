@@ -32,7 +32,6 @@ from PyInstaller.building.splash import Splash  # argument type validation in EX
 from PyInstaller.compat import is_cygwin, is_darwin, is_linux, is_win, strict_collect_mode
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
-from PyInstaller.depend.utils import is_path_to_egg
 import PyInstaller.utils.misc as miscutils
 
 logger = logging.getLogger(__name__)
@@ -261,15 +260,13 @@ class PKG(Target):
             # None. Also skip DEPENDENCY entries due to special contents of 'dest_name' and/or 'src_name'. Same for the
             # SYMLINK entries, where 'src_name' is relative target name for symbolic link.
             if typecode not in {'OPTION', 'DEPENDENCY', 'SYMLINK'} and not os.path.exists(src_name):
-                # If file is contained within python egg, it will be added with the egg.
-                if not is_path_to_egg(src_name):
-                    if strict_collect_mode:
-                        raise ValueError(f"Non-existent resource {src_name}, meant to be collected as {dest_name}!")
-                    else:
-                        logger.warning(
-                            "Ignoring non-existent resource %s, meant to be collected as %s", src_name, dest_name
-                        )
-                continue
+                if strict_collect_mode:
+                    raise ValueError(f"Non-existent resource {src_name}, meant to be collected as {dest_name}!")
+                else:
+                    logger.warning(
+                        "Ignoring non-existent resource %s, meant to be collected as %s", src_name, dest_name
+                    )
+                    continue
             if typecode in ('BINARY', 'EXTENSION'):
                 if self.exclude_binaries:
                     # This is onedir-specific codepath - the EXE and consequently PKG should not be passed the Analysis'
@@ -960,14 +957,13 @@ class COLLECT(Target):
             # target name for symbolic link.
             if typecode not in {'DEPENDENCY', 'SYMLINK'} and not os.path.exists(src_name):
                 # If file is contained within python egg, it will be added with the egg.
-                if not is_path_to_egg(src_name):
-                    if strict_collect_mode:
-                        raise ValueError(f"Non-existent resource {src_name}, meant to be collected as {dest_name}!")
-                    else:
-                        logger.warning(
-                            "Ignoring non-existent resource %s, meant to be collected as %s", src_name, dest_name
-                        )
-                continue
+                if strict_collect_mode:
+                    raise ValueError(f"Non-existent resource {src_name}, meant to be collected as {dest_name}!")
+                else:
+                    logger.warning(
+                        "Ignoring non-existent resource %s, meant to be collected as %s", src_name, dest_name
+                    )
+                    continue
             # Disallow collection outside of the dist directory.
             if os.pardir in os.path.normpath(dest_name).split(os.sep) or os.path.isabs(dest_name):
                 raise SystemExit(
