@@ -499,7 +499,7 @@ conversion of ``.png`` and ``.jpg`` images:
    # img2gray.spec
    a = Analysis(['img2gray.py'], )
 
-   pyz = PYZ(a.pure, a.zipped_data)
+   pyz = PYZ(a.pure)
 
    exe = EXE(
         pyz,
@@ -517,7 +517,6 @@ conversion of ``.png`` and ``.jpg`` images:
    coll = COLLECT(
         exe,
         a.binaries,
-        a.zipfiles,
         a.datas,
         strip=False,
         upx=False,
@@ -634,7 +633,7 @@ a ``onedir`` application bundle with a custom file association
 
    a = Analysis(['eventlogger_tk.py'])
 
-   pyz = PYZ(a.pure, a.zipped_data)
+   pyz = PYZ(a.pure)
 
    exe = EXE(
        pyz,
@@ -652,7 +651,6 @@ a ``onedir`` application bundle with a custom file association
    coll = COLLECT(
        exe,
        a.binaries,
-       a.zipfiles,
        a.datas,
        strip=False,
        upx=False,
@@ -788,7 +786,7 @@ Below is an example application and its corresponding :ref:`.spec file <using sp
    # eventlogger_qt.spec
    a = Analysis(['eventlogger_qt.py'])
 
-   pyz = PYZ(a.pure, a.zipped_data)
+   pyz = PYZ(a.pure)
 
    exe = EXE(
        pyz,
@@ -806,7 +804,6 @@ Below is an example application and its corresponding :ref:`.spec file <using sp
    coll = COLLECT(
        exe,
        a.binaries,
-       a.zipfiles,
        a.datas,
        strip=False,
        upx=False,

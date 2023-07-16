@@ -50,7 +50,7 @@ class PYZ(Target):
     def __init__(self, *tocs, **kwargs):
         """
         tocs
-            One or more TOC (Table of Contents) lists, usually an `Analysis.pure` and an `Analysis.zipped_data`.
+            One or more TOC (Table of Contents) lists, usually an `Analysis.pure`.
 
             If the passed TOC has an attribute `_code_cache`, it is expected to be a dictionary of module code objects
             from ModuleGraph.
