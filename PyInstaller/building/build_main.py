@@ -30,7 +30,6 @@ from PyInstaller.building.datastruct import (
 )
 from PyInstaller.building.osx import BUNDLE
 from PyInstaller.building.splash import Splash
-from PyInstaller.building.toc_conversion import DependencyProcessor
 from PyInstaller.building.utils import (
     _check_guts_toc, _check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas, compile_pymodule,
     add_suffix_to_extension, postprocess_binaries_toc_pywin32, postprocess_binaries_toc_pywin32_anaconda
@@ -568,14 +567,13 @@ class Analysis(Target):
         # -- Post-graph hooks. --
         self.graph.process_post_graph_hooks(self)
 
-        # Update 'binaries' TOC and 'datas' TOC.
-        deps_proc = DependencyProcessor(self.graph, self.graph._additional_files_cache)
+        # Update 'binaries' and 'datas' TOC lists with entries collected from hooks.
+        self.binaries += self.graph.make_hook_binaries_toc()
+        self.datas += self.graph.make_hook_datas_toc()
 
-        self.binaries.extend(deps_proc.make_binaries_toc())
-        self.datas.extend(deps_proc.make_datas_toc())
-
-        self.zipped_data = deps_proc.make_zipped_data_toc()  # Already normalized
-        # Note: zipped eggs are collected below
+        # We do not support zipped eggs anymore (PyInstaller v6.0), so `zipped_data` and `zipfiles` are always empty.
+        self.zipped_data = []
+        self.zipfiles = []
 
         # -- Automatic binary vs. data reclassification. --
         #
@@ -756,10 +754,6 @@ class Analysis(Target):
             # With anaconda, we need additional work-around...
             if is_conda:
                 self.binaries = postprocess_binaries_toc_pywin32_anaconda(self.binaries)
-
-        # Include zipped Python eggs.
-        logger.info('Looking for eggs')
-        self.zipfiles = deps_proc.make_zipfiles_toc()  # Already normalized
 
         # Final normalization of `datas` and `binaries`:
         #  - normalize both TOCs together (to avoid having duplicates across the lists)
