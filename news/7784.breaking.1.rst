@@ -1,0 +1,6 @@
+(Windows) Removed support for analyzing and collection of dependencies
+referenced via WinSxS (side-by-side) assemblies. This affects binaries
+compiled with Visual Studio 2008 and earlier, as VC9 run-time was the
+last version to make use of WinSxS. If you require support for such
+binaries and you need referenced WinSxS binaries collected with your
+application, use older version of PyInstaller.

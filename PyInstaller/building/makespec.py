@@ -93,15 +93,29 @@ def removed_key_option(x):
     raise RemovedCipherFeatureError("Please remove your --key=xxx argument.")
 
 
-class _RemovedNoEmbedManifestAction(argparse.Action):
+class _RemovedFlagAction(argparse.Action):
     def __init__(self, *args, **kwargs):
         kwargs["help"] = argparse.SUPPRESS
         kwargs["nargs"] = 0
         super().__init__(*args, **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+
+class _RemovedNoEmbedManifestAction(_RemovedFlagAction):
+    def __call__(self, *args, **kwargs):
         from PyInstaller.exceptions import RemovedExternalManifestError
         raise RemovedExternalManifestError("Please remove your --no-embed-manifest argument.")
+
+
+class _RemovedWinPrivateAssembliesAction(_RemovedFlagAction):
+    def __call__(self, *args, **kwargs):
+        from PyInstaller.exceptions import RemovedWinSideBySideSupportError
+        raise RemovedWinSideBySideSupportError("Please remove your --win-private-assemblies argument.")
+
+
+class _RemovedWinNoPreferRedirectsAction(_RemovedFlagAction):
+    def __call__(self, *args, **kwargs):
+        from PyInstaller.exceptions import RemovedWinSideBySideSupportError
+        raise RemovedWinSideBySideSupportError("Please remove your --win-no-prefer-redirects argument.")
 
 
 # An object used in place of a "path string", which knows how to repr() itself using variable names instead of
@@ -537,19 +551,11 @@ def __add_options(parser):
     g = parser.add_argument_group('Windows Side-by-side Assembly searching options (advanced)')
     g.add_argument(
         "--win-private-assemblies",
-        dest="win_private_assemblies",
-        action="store_true",
-        help="Any Shared Assemblies bundled into the application will be changed into Private Assemblies. This means "
-        "the exact versions of these assemblies will always be used, and any newer versions installed on user machines "
-        "at the system level will be ignored.",
+        action=_RemovedWinPrivateAssembliesAction,
     )
     g.add_argument(
         "--win-no-prefer-redirects",
-        dest="win_no_prefer_redirects",
-        action="store_true",
-        help="While searching for Shared or Private Assemblies to bundle into the application, PyInstaller will "
-        "prefer not to follow policies that redirect to newer versions, and will try to bundle the exact versions of "
-        "the assembly.",
+        action=_RemovedWinNoPreferRedirectsAction,
     )
 
     g = parser.add_argument_group('Mac OS specific options')
@@ -646,8 +652,6 @@ def main(
     excludes=[],
     uac_admin=False,
     uac_uiaccess=False,
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
     collect_submodules=[],
     collect_binaries=[],
     collect_data=[],
@@ -800,9 +804,6 @@ def main(
         'codesign_identity': codesign_identity,
         # Entitlements file (macOS only)
         'entitlements_file': entitlements_file,
-        # Windows assembly searching options
-        'win_no_prefer_redirects': win_no_prefer_redirects,
-        'win_private_assemblies': win_private_assemblies,
         # splash screen
         'splash_init': splash_init,
         'splash_target': splash_target,

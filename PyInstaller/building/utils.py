@@ -30,11 +30,10 @@ from PyInstaller import compat
 from PyInstaller import log as logging
 from PyInstaller.compat import (EXTENSION_SUFFIXES, is_darwin, is_win)
 from PyInstaller.config import CONF
-from PyInstaller.depend.bindepend import match_binding_redirect
 from PyInstaller.utils import misc
 
 if is_win:
-    from PyInstaller.utils.win32 import versioninfo, winmanifest, winresource
+    from PyInstaller.utils.win32 import versioninfo
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
@@ -107,27 +106,6 @@ def add_suffix_to_extension(dest_name, src_name, typecode):
     return dest_name, src_name, typecode
 
 
-def applyRedirects(manifest, redirects):
-    """
-    Apply the binding redirects specified by 'redirects' to the dependent assemblies of 'manifest'.
-
-    :param manifest:
-    :type manifest:
-    :param redirects:
-    :type redirects:
-    :return:
-    :rtype:
-    """
-    redirecting = False
-    for binding in redirects:
-        for dep in manifest.dependentAssemblies:
-            if match_binding_redirect(dep, binding):
-                logger.info("Redirecting %s version %s -> %s", binding.name, dep.version, binding.newVersion)
-                dep.version = binding.newVersion
-                redirecting = True
-    return redirecting
-
-
 def checkCache(
     fnm,
     strip=False,
@@ -147,16 +125,16 @@ def checkCache(
     """
     from PyInstaller.config import CONF
 
-    # Binding redirects should be taken into account to see if the file needs to be reprocessed. The redirects may
-    # change if the versions of dependent manifests change due to system updates.
-    redirects = CONF.get('binding_redirects', [])
-    # optionally change manifest to private assembly
-    win_private_assemblies = CONF.get('win_private_assemblies', False)
+    # We need to use cache in the following scenarios:
+    #  * extra binary processing due to use of `strip` or `upx`
+    #  * building on macOS, where we need to rewrite library paths in binaries' headers and (re-)sign the binaries.
+    if not strip and not upx and not is_darwin:
+        return fnm
 
-    # On Mac OS, a cache is required anyway to keep the libraries with relative install names.
-    # Caching on Mac OS does not work since we need to modify binary headers to use relative paths to dll dependencies
-    # and starting with '@loader_path'.
-    if not strip and not upx and not is_darwin and not (is_win and (redirects or win_private_assemblies)):
+    # Skip processing if this is Windows .manifest file. We used to process these as part of support for collecting
+    # WinSxS assemblies, but that was removed in PyInstaller 6.0. So in case we happen to get a .manifest file here,
+    # return it as-is.
+    if is_win and fnm.lower().endswith(".manifest"):
         return fnm
 
     # Match against provided UPX exclude patterns.
@@ -216,7 +194,7 @@ def checkCache(
     else:
         basenm = os.path.normcase(os.path.basename(fnm))
 
-    digest = cacheDigest(fnm, redirects)
+    digest = cacheDigest(fnm)
     cachedfile = os.path.join(cachedir, basenm)
     cmd = None
     if basenm in cache_index:
@@ -224,26 +202,6 @@ def checkCache(
             os.remove(cachedfile)
         else:
             return cachedfile
-
-    # Optionally change manifest and its dependencies to private assemblies.
-    if fnm.lower().endswith(".manifest") and is_win:
-        manifest = winmanifest.Manifest()
-        manifest.filename = fnm
-        with open(fnm, "rb") as f:
-            manifest.parse_string(f.read())
-        if CONF.get('win_private_assemblies', False):
-            if manifest.publicKeyToken:
-                logger.info("Changing %s into private assembly", os.path.basename(fnm))
-            manifest.publicKeyToken = None
-            for dep in manifest.dependentAssemblies:
-                # Exclude common-controls which is not bundled
-                if dep.name != "Microsoft.Windows.Common-Controls":
-                    dep.publicKeyToken = None
-
-        applyRedirects(manifest, redirects)
-
-        manifest.writeprettyxml(cachedfile)
-        return cachedfile
 
     if upx:
         if strip:
@@ -305,50 +263,6 @@ def checkCache(
             pass
     os.chmod(cachedfile, 0o755)
 
-    if os.path.splitext(fnm.lower())[1] in (".pyd", ".dll") and is_win:
-        # When shared assemblies are bundled into the app, they may optionally be changed into private assemblies.
-        try:
-            res = winmanifest.GetManifestResources(os.path.abspath(cachedfile))
-        except winresource.pywintypes.error as e:
-            if e.args[0] == winresource.ERROR_BAD_EXE_FORMAT:
-                # Not a win32 PE file
-                pass
-            else:
-                logger.error(os.path.abspath(cachedfile))
-                raise
-        else:
-            if winmanifest.RT_MANIFEST in res and len(res[winmanifest.RT_MANIFEST]):
-                for name in res[winmanifest.RT_MANIFEST]:
-                    for language in res[winmanifest.RT_MANIFEST][name]:
-                        try:
-                            manifest = winmanifest.Manifest()
-                            manifest.filename = ":".join([
-                                cachedfile, str(winmanifest.RT_MANIFEST),
-                                str(name), str(language)
-                            ])
-                            manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language], False)
-                        except Exception:
-                            logger.error("Cannot parse manifest resource %s, =%s", name, language)
-                            logger.error("From file %s", cachedfile, exc_info=1)
-                        else:
-                            if win_private_assemblies:
-                                if manifest.publicKeyToken:
-                                    logger.info("Changing %s into a private assembly", os.path.basename(fnm))
-                                manifest.publicKeyToken = None
-
-                                # Change dep to private assembly
-                                for dep in manifest.dependentAssemblies:
-                                    # Exclude common-controls which is not bundled
-                                    if dep.name != "Microsoft.Windows.Common-Controls":
-                                        dep.publicKeyToken = None
-                            redirecting = applyRedirects(manifest, redirects)
-                            if redirecting or win_private_assemblies:
-                                try:
-                                    manifest.update_resources(os.path.abspath(cachedfile), [name], [language])
-                                except Exception:
-                                    logger.error(os.path.abspath(cachedfile))
-                                    raise
-
     if cmd:
         logger.info("Executing: %s", " ".join(cmd))
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -397,14 +311,11 @@ def checkCache(
     return cachedfile
 
 
-def cacheDigest(fnm, redirects):
+def cacheDigest(fnm):
     hasher = hashlib.md5()
     with open(fnm, "rb") as f:
         for chunk in iter(lambda: f.read(16 * 1024), b""):
             hasher.update(chunk)
-    if redirects:
-        redirects = str(redirects).encode('utf-8')
-        hasher.update(redirects)
     digest = bytearray(hasher.digest())
     return digest
 

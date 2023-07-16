@@ -25,8 +25,6 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=%(runtime_hooks)r,
     excludes=%(excludes)s,
-    win_no_prefer_redirects=%(win_no_prefer_redirects)s,
-    win_private_assemblies=%(win_private_assemblies)s,
     noarchive=%(noarchive)s,
 )
 pyz = PYZ(a.pure, a.zipped_data)
@@ -67,8 +65,6 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=%(runtime_hooks)r,
     excludes=%(excludes)s,
-    win_no_prefer_redirects=%(win_no_prefer_redirects)s,
-    win_private_assemblies=%(win_private_assemblies)s,
     noarchive=%(noarchive)s,
 )
 pyz = PYZ(a.pure, a.zipped_data)

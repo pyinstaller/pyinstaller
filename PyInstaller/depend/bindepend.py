@@ -12,7 +12,6 @@
 Find external dependencies of binary libraries.
 """
 
-import collections
 import ctypes.util
 import os
 import pathlib
@@ -39,8 +38,6 @@ if compat.is_win:
     from distutils.sysconfig import get_python_lib
 
     import pefile
-
-    from PyInstaller.utils.win32 import winmanifest, winresource
 
 
 def getfullnameof(mod, xtrapath=None):
@@ -133,19 +130,6 @@ def _extract_from_egg(toc):
         # Add value to new data structure.
         new_toc.append((modname, pth, typ))
     return new_toc
-
-
-BindingRedirect = collections.namedtuple('BindingRedirect', 'name language arch oldVersion newVersion publicKeyToken')
-
-
-def match_binding_redirect(manifest, redirect):
-    return all([
-        manifest.name == redirect.name,
-        manifest.version == redirect.oldVersion,
-        manifest.language == redirect.language,
-        manifest.processorArchitecture == redirect.arch,
-        manifest.publicKeyToken == redirect.publicKeyToken,
-    ])
 
 
 _exe_machine_type = None
@@ -250,18 +234,12 @@ def _select_destination_directory(src_filename, parent_dir_preservation_paths):
     return src_filename.name
 
 
-def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
+def Dependencies(lTOC, xtrapath=None):
     """
     Expand LTOC to include all the closure of binary dependencies.
 
     `LTOC` is a logical table of contents, ie, a seq of tuples (name, path). Return LTOC expanded by all the binary
     dependencies of the entries in LTOC, except those listed in the module global EXCLUDES
-
-    `manifest` may be a winmanifest.Manifest instance for a program manifest, so that all dependent assemblies of
-    python.exe can be added to the built exe.
-
-    `redirects` may be a list. Any assembly redirects found via policy files will be added to the list as
-    BindingRedirect objects so they can later be used to modify any manifests that reference the redirected assembly.
     """
 
     # Get all path prefixes for binaries' parent-directory preservation. For binaries collected from packages in (for
@@ -278,9 +256,6 @@ def Dependencies(lTOC, xtrapath=None, manifest=None, redirects=None):
             continue
         logger.debug("Analyzing %s", pth)
         seen.add(nm.upper())
-        if compat.is_win:
-            for ftocnm, fn in getAssemblyFiles(pth, manifest, redirects):
-                lTOC.append((ftocnm, fn, 'BINARY'))
         for lib, npth in selectImports(pth, xtrapath):
             if lib.upper() in seen or npth.upper() in seen:
                 continue
@@ -400,149 +375,6 @@ def check_extract_from_egg(pth, todir=None):
                     rv.append((pth, eggpth, member))
                 return rv
     return [(pth, None, None)]
-
-
-def getAssemblies(pth):
-    """
-    On Windows return the dependent Side-by-Side (SxS) assemblies of a binary as a list of Manifest objects.
-
-    Dependent assemblies are required only by binaries compiled with MSVC 9.0. Python 2.7 and 3.2 are compiled with
-    MSVC 9.0 and thus depend on Microsoft Redistributable runtime libraries 9.0.
-
-    Python 3.3+ is compiled with version 10.0 and does not use SxS assemblies.
-
-    FIXME: Can this be removed since we now only support Python 3.5+?
-    FIXME: IS there some test-case covering this?
-    """
-    if pth.lower().endswith(".manifest"):
-        return []
-    # check for manifest file
-    manifestnm = pth + ".manifest"
-    if os.path.isfile(manifestnm):
-        with open(manifestnm, "rb") as fd:
-            res = {winmanifest.RT_MANIFEST: {1: {0: fd.read()}}}
-    else:
-        # check the binary for embedded manifest
-        try:
-            res = winmanifest.GetManifestResources(pth)
-        except winresource.pywintypes.error as exc:
-            if exc.args[0] == winresource.ERROR_BAD_EXE_FORMAT:
-                logger.info('Cannot get manifest resource from non-PE file %s', pth)
-                return []
-            raise
-    rv = []
-    if winmanifest.RT_MANIFEST in res and len(res[winmanifest.RT_MANIFEST]):
-        for name in res[winmanifest.RT_MANIFEST]:
-            for language in res[winmanifest.RT_MANIFEST][name]:
-                # check the manifest for dependent assemblies
-                try:
-                    manifest = winmanifest.Manifest()
-                    manifest.filename = ":".join([
-                        pth,
-                        str(winmanifest.RT_MANIFEST),
-                        str(name),
-                        str(language),
-                    ])
-                    manifest.parse_string(res[winmanifest.RT_MANIFEST][name][language], False)
-                except Exception:
-                    logger.error("Cannot parse manifest resource %s, %s from %s", name, language, pth, exc_info=1)
-                else:
-                    if manifest.dependentAssemblies:
-                        logger.debug("Dependent assemblies of %s:", pth)
-                        logger.debug(", ".join([assembly.getid() for assembly in manifest.dependentAssemblies]))
-                    rv.extend(manifest.dependentAssemblies)
-    return rv
-
-
-def getAssemblyFiles(pth, manifest=None, redirects=None):
-    """
-    Find all assemblies that are dependencies of the given binary and return the files that make up the assemblies as
-    (name, fullpath) tuples.
-
-    If a WinManifest object is passed as `manifest`, also updates that manifest to reference the returned assemblies.
-    This is done only to update the built app's .exe with the dependencies of python.exe
-
-    If a list is passed as `redirects`, and binding redirects in policy files are applied when searching for
-    assemblies, BindingRedirect objects are appended to this list.
-
-    Return a list of pairs (name, fullpath)
-    """
-    rv = []
-    if manifest:
-        _depNames = set(dep.name for dep in manifest.dependentAssemblies)
-    for assembly in getAssemblies(pth):
-        if assembly.getid().upper() in seen:
-            continue
-        if manifest and assembly.name not in _depNames:
-            # Add assembly as dependency to our final output exe's manifest
-            logger.info("Adding %s to dependent assemblies of final executable\n  required by %s", assembly.name, pth)
-            manifest.dependentAssemblies.append(assembly)
-            _depNames.add(assembly.name)
-        if not dylib.include_library(assembly.name):
-            logger.debug("Skipping assembly %s", assembly.getid())
-            continue
-        if assembly.optional:
-            logger.debug("Skipping optional assembly %s", assembly.getid())
-            continue
-
-        from PyInstaller.config import CONF
-        if CONF.get("win_no_prefer_redirects"):
-            files = assembly.find_files()
-        else:
-            files = []
-        if not len(files):
-            # If no files were found, it may be the case that the required version of the assembly is not installed, and
-            # the policy file is redirecting it to a newer version. So, we collect the newer version instead.
-            files = assembly.find_files(ignore_policies=False)
-            if len(files) and redirects is not None:
-                # New version was found, old version was not. Add a redirect in the app configuration.
-                old_version = assembly.version
-                new_version = assembly.get_policy_redirect()
-                logger.info("Adding redirect %s version %s -> %s", assembly.name, old_version, new_version)
-                redirects.append(
-                    BindingRedirect(
-                        name=assembly.name,
-                        language=assembly.language,
-                        arch=assembly.processorArchitecture,
-                        publicKeyToken=assembly.publicKeyToken,
-                        oldVersion=old_version,
-                        newVersion=new_version,
-                    )
-                )
-
-        if files:
-            seen.add(assembly.getid().upper())
-            for fn in files:
-                fname, fext = os.path.splitext(fn)
-                if fext.lower() == ".manifest":
-                    nm = assembly.name + fext
-                else:
-                    nm = os.path.basename(fn)
-                ftocnm = nm
-                if assembly.language not in (None, "", "*", "neutral"):
-                    ftocnm = os.path.join(assembly.getlanguage(), ftocnm)
-                nm, ftocnm, fn = [item.encode(sys.getfilesystemencoding()) for item in (nm, ftocnm, fn)]
-                if fn.upper() not in seen:
-                    logger.debug("Adding %s", ftocnm)
-                    seen.add(nm.upper())
-                    seen.add(fn.upper())
-                    rv.append((ftocnm, fn))
-                else:
-                    #logger.info("skipping %s part of assembly %s dependency of %s", ftocnm, assembly.name, pth)
-                    pass
-        else:
-            logger.error("Assembly %s not found", assembly.getid())
-
-    # Convert items in list from 'bytes' type to 'str' type.
-    # NOTE: with Python 3 we somehow get type 'bytes' and it then causes other issues and failures with PyInstaller.
-    new_rv = []
-    for item in rv:
-        a = item[0].decode('ascii')
-        b = item[1].decode('ascii')
-        new_rv.append((a, b))
-    rv = new_rv
-
-    return rv
 
 
 def selectImports(pth, xtrapath=None):
