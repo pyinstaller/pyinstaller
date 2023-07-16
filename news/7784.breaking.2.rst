@@ -1,0 +1,4 @@
+(Windows) Removed command-line options related to processing of the
+WinSxS assemblies: ``--win-private-assemblies`` and ``--win-no-prefer-redirects``.
+The corresponding arguments to ``Analysis`` are deprecated and raise and
+error if set to ``True``.

@@ -115,7 +115,7 @@ def discover_hook_directories():
 # NOTE: this helper is called via isolated.call() in Analysis.assemble(). We cannot use @isolated.decorate here, because
 # one of the tests (test_regression::test_issue_5131) needs to be able to monkey-patch it, in order to override the
 # bindepend.getImports() in the isolated subprocess (!) with its own implementation...
-def find_binary_dependencies(binaries, binding_redirects, import_packages):
+def find_binary_dependencies(binaries, import_packages):
     """
     Find dynamic dependencies (linked shared libraries) for the provided list of binaries.
 
@@ -125,8 +125,6 @@ def find_binary_dependencies(binaries, binding_redirects, import_packages):
 
     binaries
             List of binaries to scan for dynamic dependencies.
-    binding_redirects
-            List of assembly binding redirects.
     import_packages
             List of packages to import prior to scanning binaries.
 
@@ -183,7 +181,7 @@ def find_binary_dependencies(binaries, binding_redirects, import_packages):
         extra_libdirs += path_directories
 
     # Search for dependencies of the given binaries
-    return bindepend.Dependencies(binaries, redirects=binding_redirects, xtrapath=extra_libdirs)
+    return bindepend.Dependencies(binaries, xtrapath=extra_libdirs)
 
 
 class _ModuleCollectionMode(enum.IntFlag):
@@ -285,6 +283,7 @@ class Analysis(Target):
         win_private_assemblies=False,
         noarchive=False,
         module_collection_mode=None,
+        **_kwargs,
     ):
         """
         scripts
@@ -306,10 +305,12 @@ class Analysis(Target):
                 ignored (as though they were not found).
         runtime_hooks
                 An optional list of scripts to use as users' runtime hooks. Specified as file names.
+        cipher
+                Deprecated. Raises an error if not None.
         win_no_prefer_redirects
-                If True, prefer not to follow version redirects when searching for Windows SxS Assemblies.
+                Deprecated. Raises an error if not False.
         win_private_assemblies
-                If True, change all bundled Windows SxS Assemblies into Private Assemblies to enforce assembly versions.
+                Deprecated. Raises an error if not False.
         noarchive
                 If True, do not place source files in a archive, but keep them as individual files.
         module_collection_mode
@@ -320,6 +321,16 @@ class Analysis(Target):
             from PyInstaller.exceptions import RemovedCipherFeatureError
             raise RemovedCipherFeatureError(
                 "Please remove the 'cipher' arguments to PYZ() and Analysis() in your spec file."
+            )
+        if win_no_prefer_redirects:
+            from PyInstaller.exceptions import RemovedWinSideBySideSupportError
+            raise RemovedWinSideBySideSupportError(
+                "Please remove the 'win_no_prefer_redirects' argument to Analysis() in your spec file."
+            )
+        if win_private_assemblies:
+            from PyInstaller.exceptions import RemovedWinSideBySideSupportError
+            raise RemovedWinSideBySideSupportError(
+                "Please remove the 'win_private_assemblies' argument to Analysis() in your spec file."
             )
         super().__init__()
         from PyInstaller.config import CONF
@@ -358,9 +369,6 @@ class Analysis(Target):
             if hasattr(pkg_resources, '_initialize_master_working_set'):
                 pkg_resources._initialize_master_working_set()
 
-        # Set global variable to hold assembly binding redirects
-        CONF['binding_redirects'] = []
-
         self.hiddenimports = hiddenimports or []
         # Include hidden imports passed via CONF['hiddenimports']; these might be populated if user has a wrapper script
         # that calls `build_main.main()` with custom `pyi_config` dictionary that contains `hiddenimports`.
@@ -393,9 +401,6 @@ class Analysis(Target):
         self.zipped_data = []
         self.datas = []
         self.dependencies = []
-        self.binding_redirects = CONF['binding_redirects'] = []
-        self.win_no_prefer_redirects = win_no_prefer_redirects
-        self.win_private_assemblies = win_private_assemblies
         self._python_version = sys.version
         self.noarchive = noarchive
         self.module_collection_mode = module_collection_mode or {}
@@ -430,8 +435,6 @@ class Analysis(Target):
         ('hooksconfig', _check_guts_eq),
         ('excludes', _check_guts_eq),
         ('custom_runtime_hooks', _check_guts_eq),
-        ('win_no_prefer_redirects', _check_guts_eq),
-        ('win_private_assemblies', _check_guts_eq),
         ('noarchive', _check_guts_eq),
         ('module_collection_mode', _check_guts_eq),
 
@@ -447,9 +450,6 @@ class Analysis(Target):
         ('zipped_data', None),  # TODO check this, too
         ('datas', _check_guts_toc_mtime),
         # TODO: Need to add "dependencies"?
-
-        # cached binding redirects - loaded into CONF for PYZ/COLLECT to find.
-        ('binding_redirects', None),
     )
 
     def _extend_pathex(self, spec_pathex, scripts):
@@ -494,10 +494,6 @@ class Analysis(Target):
         self.zipfiles = data['zipfiles']
         self.zipped_data = data['zipped_data']
         self.datas = data['datas']
-
-        # Store previously found binding redirects in CONF for later use by PKG/COLLECT
-        from PyInstaller.config import CONF
-        self.binding_redirects = CONF['binding_redirects'] = data['binding_redirects']
 
         return False
 
@@ -752,9 +748,7 @@ class Analysis(Target):
         logger.info('Looking for dynamic libraries')
 
         collected_packages = self.graph.get_collected_packages()
-        self.binaries.extend(
-            isolated.call(find_binary_dependencies, self.binaries, self.binding_redirects, collected_packages)
-        )
+        self.binaries.extend(isolated.call(find_binary_dependencies, self.binaries, collected_packages))
 
         # Apply work-around for (potential) binaries collected from `pywin32` package...
         if is_win:
@@ -789,11 +783,6 @@ class Analysis(Target):
 
         # Verify that Python dynamic library can be found. Without dynamic Python library PyInstaller cannot continue.
         self._check_python_library(self.binaries)
-
-        if is_win:
-            # Remove duplicate redirects
-            self.binding_redirects = list(set(self.binding_redirects))
-            logger.info("Found binding redirects: \n%s", self.binding_redirects)
 
         # Write warnings about missing modules.
         self._write_warnings()

@@ -41,3 +41,10 @@ class RemovedCipherFeatureError(SystemExit):
 class RemovedExternalManifestError(SystemExit):
     def __init__(self, message):
         super().__init__(f"Support for external executable manifest was removed in PyInstaller v6.0. {message}")
+
+
+class RemovedWinSideBySideSupportError(SystemExit):
+    def __init__(self, message):
+        super().__init__(
+            f"Support for collecting and processing WinSxS assemblies was removed in PyInstaller v6.0. {message}"
+        )

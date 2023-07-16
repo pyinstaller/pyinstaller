@@ -115,9 +115,6 @@ def load_py_data_struct(filename):
     :return:
     """
     with open(filename, 'r', encoding='utf-8') as f:
-        # Binding redirects are stored as a named tuple, so bring the namedtuple class into scope for parsing the TOC.
-        from PyInstaller.depend.bindepend import BindingRedirect  # noqa: F401
-
         if is_win:
             # import versioninfo so that VSVersionInfo can parse correctly.
             from PyInstaller.utils.win32 import versioninfo  # noqa: F401

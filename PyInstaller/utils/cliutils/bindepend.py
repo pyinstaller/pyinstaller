@@ -17,7 +17,6 @@ import glob
 
 import PyInstaller.depend.bindepend
 import PyInstaller.log
-from PyInstaller.compat import is_win
 
 
 def run():
@@ -40,9 +39,6 @@ def run():
         for a in args.filenames:
             for fn in glob.glob(a):
                 imports = PyInstaller.depend.bindepend.getImports(fn)
-                if is_win:
-                    assemblies = PyInstaller.depend.bindepend.getAssemblies(fn)
-                    imports.update([a.getid() for a in assemblies])
                 print(fn, imports)
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
