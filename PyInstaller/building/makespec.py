@@ -107,6 +107,17 @@ def removed_key_option(x):
     raise RemovedCipherFeatureError("Please remove your --key=xxx argument.")
 
 
+class _RemovedNoEmbedManifestAction(argparse.Action):
+    def __init__(self, *args, **kwargs):
+        kwargs["help"] = argparse.SUPPRESS
+        kwargs["nargs"] = 0
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        from PyInstaller.exceptions import RemovedExternalManifestError
+        raise RemovedExternalManifestError("Please remove your --no-embed-manifest argument.")
+
+
 # An object used in place of a "path string", which knows how to repr() itself using variable names instead of
 # hard-coded paths.
 class Path:
@@ -503,10 +514,7 @@ def __add_options(parser):
     )
     g.add_argument(
         "--no-embed-manifest",
-        dest="embed_manifest",
-        action="store_false",
-        help="Generate an external .exe.manifest file instead of embedding the manifest into the exe. Applicable only "
-        "to onedir mode; in onefile mode, the manifest is always embedded, regardless of this option.",
+        action=_RemovedNoEmbedManifestAction,
     )
     g.add_argument(
         "-r",
@@ -640,7 +648,6 @@ def main(
     binaries=[],
     icon_file=None,
     manifest=None,
-    embed_manifest=True,
     resources=[],
     bundle_identifier=None,
     hiddenimports=[],
@@ -724,8 +731,6 @@ def main(
         else:
             # Assume filename
             exe_options += "\n    manifest='%s'," % escape_win_filepath(manifest)
-    if not embed_manifest:
-        exe_options += "\n    embed_manifest=False,"
     if resources:
         resources = list(map(escape_win_filepath, resources))
         exe_options += "\n    resources=%s," % repr(resources)
