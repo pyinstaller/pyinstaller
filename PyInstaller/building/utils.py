@@ -449,18 +449,7 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
             src_root_paths = glob.glob(src_root_path_or_glob)
 
         if not src_root_paths:
-            msg = 'Unable to find "%s" when adding binary and data files.' % src_root_path_or_glob
-            # on Debian/Ubuntu, missing pyconfig.h files can be fixed with installing python-dev
-            if src_root_path_or_glob.endswith("pyconfig.h"):
-                msg += """This means your Python installation does not come with proper shared library files.
-This usually happens due to missing development package, or unsuitable build parameters of the Python installation.
-
-* On Debian/Ubuntu, you need to install Python development packages:
-  * apt-get install python3-dev
-  * apt-get install python-dev
-* If you are building Python by yourself, rebuild with `--enable-shared` (or, `--enable-framework` on macOS).
-"""
-            raise SystemExit(msg)
+            raise SystemExit(f'Unable to find {src_root_path_or_glob!r} when adding binary and data files.')
 
         for src_root_path in src_root_paths:
             if os.path.isfile(src_root_path):
