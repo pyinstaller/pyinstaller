@@ -411,10 +411,3 @@ def get_path_to_egg(path):
         lastpath = path
         path = os.path.dirname(path)
     return None
-
-
-def is_path_to_egg(path):
-    """
-    Check if the given path points to a file inside (or directly to) a python egg file.
-    """
-    return get_path_to_egg(path) is not None
