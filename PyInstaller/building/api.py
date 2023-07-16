@@ -368,11 +368,6 @@ class EXE(Target):
                 Windows only. Setting to True creates a Manifest with will request elevation upon application start.
             uac_uiaccess
                 Windows only. Setting to True allows an elevated application to work with Remote Desktop.
-            embed_manifest
-                Windows only. Setting to True (the default) embeds the manifest into the executable. Setting to False
-                generates an external .exe.manifest file. Applicable only in onedir mode (exclude_binaries=True); in
-                onefile mode (exclude_binaries=False), the manifest is always embedded in the executable, regardless
-                of this option.
             argv_emulation
                 macOS only. Enables argv emulation in macOS .app bundles (i.e., windowed bootloader). If enabled, the
                 initial open document/URL Apple Events are intercepted by bootloader and converted into sys.argv.
@@ -404,7 +399,6 @@ class EXE(Target):
         self.icon = kwargs.get('icon', None)
         self.versrsrc = kwargs.get('version', None)
         self.manifest = kwargs.get('manifest', None)
-        self.embed_manifest = kwargs.get('embed_manifest', True)
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
         self.upx_exclude = kwargs.get("upx_exclude", [])
@@ -464,6 +458,12 @@ class EXE(Target):
             raise SystemExit(
                 f'Invalid value "{self.contents_directory}" passed to `--contents-directory` or `contents_directory`. '
                 'Exactly one directory level is required.'
+            )
+
+        if not kwargs.get('embed_manifest', True):
+            from PyInstaller.exceptions import RemovedExternalManifestError
+            raise RemovedExternalManifestError(
+                "Please remove the 'embed_manifest' argument to EXE() in your spec file."
             )
 
         # Old .spec format included in 'name' the path where to put created app. New format includes only exename.
@@ -538,11 +538,6 @@ class EXE(Target):
                 self.icon = [makeabs(self.icon)]
 
         if is_win:
-            if not self.exclude_binaries:
-                # onefile mode forces embed_manifest=True
-                if not self.embed_manifest:
-                    logger.warning("Ignoring embed_manifest=False setting in onefile mode!")
-                self.embed_manifest = True
             if not self.icon:
                 # --icon not specified; use default from bootloader folder
                 if self.console:
@@ -554,14 +549,6 @@ class EXE(Target):
             self.manifest = winmanifest.create_manifest(
                 filename, self.manifest, self.console, self.uac_admin, self.uac_uiaccess
             )
-
-            manifest_filename = os.path.basename(self.name) + ".manifest"
-
-            # If external manifest file is requested (supported only in onedir mode), add the file to the TOC in order
-            # for it to be collected as an external manifest file. Otherwise, the assembly pipeline will embed the
-            # manifest into the executable later on.
-            if not self.embed_manifest:
-                self.toc.append((manifest_filename, filename, 'BINARY'))
 
             if self.versrsrc:
                 if isinstance(self.versrsrc, versioninfo.VSVersionInfo):
@@ -609,7 +596,6 @@ class EXE(Target):
         ('uac_admin', _check_guts_eq),
         ('uac_uiaccess', _check_guts_eq),
         ('manifest', _check_guts_eq),
-        ('embed_manifest', _check_guts_eq),
         ('append_pkg', _check_guts_eq),
         ('argv_emulation', _check_guts_eq),
         ('target_arch', _check_guts_eq),
@@ -758,9 +744,8 @@ class EXE(Target):
                             exc_info=1
                         )
             # Embed the manifest into the executable.
-            if self.embed_manifest:
-                logger.info("Embedding manifest in EXE")
-                self.manifest.update_resources(build_name, [1])
+            logger.info("Embedding manifest in EXE")
+            self.manifest.update_resources(build_name, [1])
         elif is_darwin:
             # Convert bootloader to the target arch
             logger.info("Converting EXE to target arch (%s)", self.target_arch)

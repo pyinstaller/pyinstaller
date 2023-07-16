@@ -1,0 +1,4 @@
+(Windows) Removed support for external application manifest in onedir
+builds. Removed the ``--no-embed-manifest`` command-line option and
+deprecated the corresponding ``embed_manifest`` argument to ``EXE``
+to raise an error if set to ``False``.

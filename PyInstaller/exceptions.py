@@ -36,3 +36,8 @@ class RemovedCipherFeatureError(SystemExit):
             f"Bytecode encryption was removed in PyInstaller v6.0. {message}"
             " For the rationale and alternatives see https://github.com/pyinstaller/pyinstaller/pull/6999"
         )
+
+
+class RemovedExternalManifestError(SystemExit):
+    def __init__(self, message):
+        super().__init__(f"Support for external executable manifest was removed in PyInstaller v6.0. {message}")
