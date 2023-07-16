@@ -533,10 +533,10 @@ class AdditionalFilesCache:
         """
         Return list of binaries for given module name.
         """
-        return self._binaries[modname]
+        return self._binaries.get(modname, [])
 
     def datas(self, modname):
         """
         Return list of datas for given module name.
         """
-        return self._datas[modname]
+        return self._datas.get(modname, [])

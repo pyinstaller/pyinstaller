@@ -394,20 +394,3 @@ def load_ldconfig_cache():
         # Use the first entry.
         if name not in LDCONFIG_CACHE:
             LDCONFIG_CACHE[name] = path
-
-
-def get_path_to_egg(path):
-    """
-    Return the path to the python egg file, if the given path points to a file inside (or directly to) an egg.
-    Return `None` otherwise.
-    """
-    # This assumes that eggs are not nested.
-    # TODO: add support for unpacked eggs and for new .whl packages.
-    lastpath = None  # marker to stop recursion
-    while path and path != lastpath:
-        if os.path.splitext(path)[1].lower() == ".egg":
-            if os.path.isfile(path) or os.path.isdir(path):
-                return path
-        lastpath = path
-        path = os.path.dirname(path)
-    return None

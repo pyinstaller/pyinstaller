@@ -847,6 +847,30 @@ class PyiModuleGraph(ModuleGraph):
             if type(node).__name__ == 'Package'
         ]
 
+    def make_hook_binaries_toc(self) -> list:
+        """
+        Return the TOC list of binaries collected by hooks."
+        """
+        toc = []
+        for node in self.iter_graph(start=self._top_script_node):
+            module_name = str(node.identifier)
+            for dest_name, src_name in self._additional_files_cache.binaries(module_name):
+                toc.append((dest_name, src_name, 'BINARY'))
+
+        return toc
+
+    def make_hook_datas_toc(self) -> list:
+        """
+        Return the TOC list of data files collected by hooks."
+        """
+        toc = []
+        for node in self.iter_graph(start=self._top_script_node):
+            module_name = str(node.identifier)
+            for dest_name, src_name in self._additional_files_cache.datas(module_name):
+                toc.append((dest_name, src_name, 'DATA'))
+
+        return toc
+
 
 _cached_module_graph_ = None
 

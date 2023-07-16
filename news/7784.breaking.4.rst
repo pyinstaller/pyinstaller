@@ -1,0 +1,4 @@
+Remove the built-in attempt at collection of data files from packages
+that are installed as python eggs. Collection of all non-python resources
+from packages should be handled in the standardized way via hooks,
+regardless of how a package is installed.
