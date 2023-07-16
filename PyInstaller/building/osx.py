@@ -17,7 +17,7 @@ import subprocess
 
 from PyInstaller.building.api import COLLECT, EXE
 from PyInstaller.building.datastruct import Target, logger, normalize_toc
-from PyInstaller.building.utils import _check_path_overlap, _rmtree, checkCache
+from PyInstaller.building.utils import _check_path_overlap, _rmtree, process_collected_binary
 from PyInstaller.compat import is_darwin, strict_collect_mode
 from PyInstaller.building.icon import normalize_icon_type
 import PyInstaller.utils.misc as miscutils
@@ -619,12 +619,12 @@ class BUNDLE(Target):
             # `Contents/MacOS`).
             if typecode in ('EXTENSION', 'BINARY'):
                 orig_dest_name = str(pathlib.PurePath(dest_name).relative_to(CONTENTS_FRAMEWORKS_PATH))
-                src_name = checkCache(
+                src_name = process_collected_binary(
                     src_name,
-                    strip=self.strip,
-                    upx=self.upx,
+                    orig_dest_name,
+                    use_strip=self.strip,
+                    use_upx=self.upx,
                     upx_exclude=self.upx_exclude,
-                    dist_nm=orig_dest_name,
                     target_arch=self.target_arch,
                     codesign_identity=self.codesign_identity,
                     entitlements_file=self.entitlements_file,

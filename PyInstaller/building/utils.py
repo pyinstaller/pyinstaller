@@ -9,9 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# --- functions for checking guts ---
-# NOTE: by GUTS it is meant intermediate files and data structures that PyInstaller creates for bundling files and
-# creating final executable.
 import fnmatch
 import glob
 import hashlib
@@ -106,120 +103,122 @@ def add_suffix_to_extension(dest_name, src_name, typecode):
     return dest_name, src_name, typecode
 
 
-def checkCache(
-    fnm,
-    strip=False,
-    upx=False,
+def process_collected_binary(
+    src_name,
+    dest_name,
+    use_strip=False,
+    use_upx=False,
     upx_exclude=None,
-    dist_nm=None,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
     strict_arch_validation=False
 ):
     """
-    Cache prevents preprocessing binary files again and again.
+    Process the collected binary using strip or UPX (or both), and apply any platform-specific processing. On macOS,
+    this rewrites the library paths in the headers, and (re-)signs the binary. On-disk cache is used to avoid processing
+    the same binary with same options over and over.
 
-    'dist_nm'  Filename relative to dist directory. We need it on Mac to determine level of paths for @loader_path like
-               '@loader_path/../../' for qt4 plugins.
+    In addition to given arguments, this function also uses CONF['cachedir'] and CONF['upx_dir'].
     """
     from PyInstaller.config import CONF
 
     # We need to use cache in the following scenarios:
     #  * extra binary processing due to use of `strip` or `upx`
     #  * building on macOS, where we need to rewrite library paths in binaries' headers and (re-)sign the binaries.
-    if not strip and not upx and not is_darwin:
-        return fnm
+    if not use_strip and not use_upx and not is_darwin:
+        return src_name
 
     # Skip processing if this is Windows .manifest file. We used to process these as part of support for collecting
     # WinSxS assemblies, but that was removed in PyInstaller 6.0. So in case we happen to get a .manifest file here,
     # return it as-is.
-    if is_win and fnm.lower().endswith(".manifest"):
-        return fnm
+    if is_win and src_name.lower().endswith(".manifest"):
+        return src_name
 
     # Match against provided UPX exclude patterns.
     upx_exclude = upx_exclude or []
-    if upx:
-        fnm_path = pathlib.PurePath(fnm)
+    if use_upx:
+        src_path = pathlib.PurePath(src_name)
         for upx_exclude_entry in upx_exclude:
             # pathlib.PurePath.match() matches from right to left, and supports * wildcard, but does not support the
             # "**" syntax for directory recursion. Case sensitivity follows the OS default.
-            if fnm_path.match(upx_exclude_entry):
-                logger.info("Disabling UPX for %s due to match in exclude pattern: %s", fnm, upx_exclude_entry)
-                upx = False
+            if src_path.match(upx_exclude_entry):
+                logger.info("Disabling UPX for %s due to match in exclude pattern: %s", src_name, upx_exclude_entry)
+                use_upx = False
                 break
 
-    # Load cache index.
-    # Make cachedir per Python major/minor version.
-    # This allows parallel building of executables with different Python versions as one user.
-    pyver = 'py%d%s' % (sys.version_info[0], sys.version_info[1])
+    # Prepare cache directory path. Cache is tied to python major/minor version, but also to various processing options.
+    pyver = f'py{sys.version_info[0]}{sys.version_info[1]}'
     arch = platform.architecture()[0]
-    cachedir = os.path.join(CONF['cachedir'], 'bincache%d%d_%s_%s' % (strip, upx, pyver, arch))
+    cache_dir = os.path.join(
+        CONF['cachedir'],
+        f'bincache{use_strip:d}{use_upx:d}{pyver}{arch}',
+    )
     if target_arch:
-        cachedir = os.path.join(cachedir, target_arch)
+        cache_dir = os.path.join(cache_dir, target_arch)
     if is_darwin:
         # Separate by codesign identity
         if codesign_identity:
             # Compute hex digest of codesign identity string to prevent issues with invalid characters.
             csi_hash = hashlib.sha256(codesign_identity.encode('utf-8'))
-            cachedir = os.path.join(cachedir, csi_hash.hexdigest())
+            cache_dir = os.path.join(cache_dir, csi_hash.hexdigest())
         else:
-            cachedir = os.path.join(cachedir, 'adhoc')  # ad-hoc signing
+            cache_dir = os.path.join(cache_dir, 'adhoc')  # ad-hoc signing
         # Separate by entitlements
         if entitlements_file:
             # Compute hex digest of entitlements file contents
             with open(entitlements_file, 'rb') as fp:
                 ef_hash = hashlib.sha256(fp.read())
-            cachedir = os.path.join(cachedir, ef_hash.hexdigest())
+            cache_dir = os.path.join(cache_dir, ef_hash.hexdigest())
         else:
-            cachedir = os.path.join(cachedir, 'no-entitlements')
-    if not os.path.exists(cachedir):
-        os.makedirs(cachedir)
-    cacheindexfn = os.path.join(cachedir, "index.dat")
-    if os.path.exists(cacheindexfn):
-        try:
-            cache_index = misc.load_py_data_struct(cacheindexfn)
-        except Exception:
-            # Tell the user they may want to fix their cache... However, do not delete it for them; if it keeps getting
-            # corrupted, we will never find out.
-            logger.warning("PyInstaller bincache may be corrupted; use pyinstaller --clean to fix it.")
-            raise
-    else:
+            cache_dir = os.path.join(cache_dir, 'no-entitlements')
+    os.makedirs(cache_dir, exist_ok=True)
+
+    # Load cache index, if available
+    cache_index_file = os.path.join(cache_dir, "index.dat")
+    try:
+        cache_index = misc.load_py_data_struct(cache_index_file)
+    except FileNotFoundError:
         cache_index = {}
+    except Exception:
+        # Tell the user they may want to fix their cache... However, do not delete it for them; if it keeps getting
+        # corrupted, we will never find out.
+        logger.warning("PyInstaller bincache may be corrupted; use pyinstaller --clean to fix it.")
+        raise
 
-    # Verify that the file we are looking for is present in the cache. Use the dist_mn if given to avoid different
-    # extension modules sharing the same basename get corrupted.
-    if dist_nm:
-        basenm = os.path.normcase(dist_nm)
-    else:
-        basenm = os.path.normcase(os.path.basename(fnm))
+    # Look up the file in cache; use case-normalized destination name as identifier.
+    cached_id = os.path.normcase(dest_name)
+    cached_name = os.path.join(cache_dir, dest_name)
+    src_digest = _compute_file_digest(src_name)
 
-    digest = cacheDigest(fnm)
-    cachedfile = os.path.join(cachedir, basenm)
+    if cached_id in cache_index:
+        # If digest matches to the cached digest, return the cached file...
+        if src_digest == cache_index[cached_id]:
+            return cached_name
+
+        # ... otherwise remove it.
+        os.remove(cached_name)
+
     cmd = None
-    if basenm in cache_index:
-        if digest != cache_index[basenm]:
-            os.remove(cachedfile)
-        else:
-            return cachedfile
 
-    if upx:
-        if strip:
-            fnm = checkCache(
-                fnm,
+    if use_upx:
+        # If we are to apply both strip and UPX, apply strip first.
+        if use_strip:
+            src_name = process_collected_binary(
+                src_name,
+                dest_name,
                 strip=True,
                 upx=False,
-                dist_nm=dist_nm,
                 target_arch=target_arch,
                 codesign_identity=codesign_identity,
                 entitlements_file=entitlements_file,
                 strict_arch_validation=strict_arch_validation,
             )
         # We need to avoid using UPX with Windows DLLs that have Control Flow Guard enabled, as it breaks them.
-        if is_win and versioninfo.pefile_check_control_flow_guard(fnm):
-            logger.info('Disabling UPX for %s due to CFG!', fnm)
-        elif misc.is_file_qt_plugin(fnm):
-            logger.info('Disabling UPX for %s due to it being a Qt plugin!', fnm)
+        if is_win and versioninfo.pefile_check_control_flow_guard(src_name):
+            logger.info('Disabling UPX for %s due to CFG!', src_name)
+        elif misc.is_file_qt_plugin(src_name):
+            logger.info('Disabling UPX for %s due to it being a Qt plugin!', src_name)
         else:
             upx_exe = 'upx'
             upx_dir = CONF['upx_dir']
@@ -238,38 +237,37 @@ def checkCache(
                 # Binaries built with Visual Studio 7.1 require --strip-loadconf or they will not compress.
                 upx_options.append('--strip-loadconf')
 
-            cmd = [upx_exe, *upx_options, cachedfile]
-    else:
-        if strip:
-            strip_options = []
-            if is_darwin:
-                # The default strip behavior breaks some shared libraries under Mac OS.
-                strip_options = ["-S"]  # -S = strip only debug symbols.
-            cmd = ["strip", *strip_options, cachedfile]
+            cmd = [upx_exe, *upx_options, cached_name]
+    elif use_strip:
+        strip_options = []
+        if is_darwin:
+            # The default strip behavior breaks some shared libraries under macOS.
+            strip_options = ["-S"]  # -S = strip only debug symbols.
+        cmd = ["strip", *strip_options, cached_name]
 
-    if not os.path.exists(os.path.dirname(cachedfile)):
-        os.makedirs(os.path.dirname(cachedfile))
+    # Ensure parent path exists
+    os.makedirs(os.path.dirname(cached_name), exist_ok=True)
 
     # There are known some issues with 'shutil.copy2' on Mac OS 10.11 with copying st_flags. Issue #1650.
     # 'shutil.copy' copies also permission bits and it should be sufficient for PyInstaller's purposes.
-    shutil.copy(fnm, cachedfile)
+    shutil.copy(src_name, cached_name)
     # TODO: find out if this is still necessary when no longer using shutil.copy2()
     if hasattr(os, 'chflags'):
         # Some libraries on FreeBSD have immunable flag (libthr.so.3, for example). If this flag is preserved,
         # os.chmod() fails with: OSError: [Errno 1] Operation not permitted.
         try:
-            os.chflags(cachedfile, 0)
+            os.chflags(cached_name, 0)
         except OSError:
             pass
-    os.chmod(cachedfile, 0o755)
+    os.chmod(cached_name, 0o755)
 
     if cmd:
         logger.info("Executing: %s", " ".join(cmd))
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    # update cache index
-    cache_index[basenm] = digest
-    misc.save_py_data_struct(cacheindexfn, cache_index)
+    # Update cache index
+    cache_index[cached_id] = src_digest
+    misc.save_py_data_struct(cache_index_file, cache_index)
 
     # On macOS, we need to modify the given binary's paths to the dependent libraries, in order to ensure they are
     # relocatable and always refer to location within the frozen application. Specifically, we make all dependent
@@ -281,13 +279,13 @@ def checkCache(
     # The forced re-signing at the end should take care of the invalidated signatures.
     if is_darwin:
         try:
-            osxutils.binary_to_target_arch(cachedfile, target_arch, display_name=fnm)
-            #osxutils.remove_signature_from_binary(cachedfile)  # Disabled as per comment above.
+            osxutils.binary_to_target_arch(cached_name, target_arch, display_name=src_name)
+            #osxutils.remove_signature_from_binary(cached_name)  # Disabled as per comment above.
             target_rpath = str(
-                pathlib.PurePath('@loader_path', *['..' for level in pathlib.PurePath(dist_nm).parent.parts])
+                pathlib.PurePath('@loader_path', *['..' for level in pathlib.PurePath(dest_name).parent.parts])
             )
-            osxutils.set_dylib_dependency_paths(cachedfile, target_rpath)
-            osxutils.sign_binary(cachedfile, codesign_identity, entitlements_file)
+            osxutils.set_dylib_dependency_paths(cached_name, target_rpath)
+            osxutils.sign_binary(cached_name, codesign_identity, entitlements_file)
         except osxutils.InvalidBinaryError:
             # Raised by osxutils.binary_to_target_arch when the given file is not a valid macOS binary (for example,
             # a linux .so file; see issue #6327). The error prevents any further processing, so just ignore it.
@@ -304,20 +302,19 @@ def checkCache(
             #    the actual python code is running on M1 in native arm64 mode.
             if strict_arch_validation:
                 raise
-            logger.debug("File %s failed optional architecture validation - collecting as-is!", fnm)
+            logger.debug("File %s failed optional architecture validation - collecting as-is!", src_name)
         except Exception as e:
-            raise SystemError(f"Failed to process binary {cachedfile!r}!") from e
+            raise SystemError(f"Failed to process binary {cached_name!r}!") from e
 
-    return cachedfile
+    return cached_name
 
 
-def cacheDigest(fnm):
+def _compute_file_digest(filename):
     hasher = hashlib.md5()
-    with open(fnm, "rb") as f:
-        for chunk in iter(lambda: f.read(16 * 1024), b""):
+    with open(filename, "rb") as fp:
+        for chunk in iter(lambda: fp.read(16 * 1024), b""):
             hasher.update(chunk)
-    digest = bytearray(hasher.digest())
-    return digest
+    return bytearray(hasher.digest())
 
 
 def _check_path_overlap(path):

@@ -26,7 +26,8 @@ from PyInstaller import log as logging
 from PyInstaller.archive.writers import CArchiveWriter, ZlibArchiveWriter
 from PyInstaller.building.datastruct import Target, _check_guts_eq, normalize_pyz_toc, normalize_toc
 from PyInstaller.building.utils import (
-    _check_guts_toc, _make_clean_directory, _rmtree, checkCache, get_code_object, strip_paths_in_code, compile_pymodule
+    _check_guts_toc, _make_clean_directory, _rmtree, process_collected_binary, get_code_object, strip_paths_in_code,
+    compile_pymodule
 )
 from PyInstaller.building.splash import Splash  # argument type validation in EXE
 from PyInstaller.compat import is_cygwin, is_darwin, is_linux, is_win, strict_collect_mode
@@ -282,13 +283,13 @@ class PKG(Target):
                     self.dependencies.append((dest_name, src_name, typecode))
                 else:
                     # This is onefile-specific codepath. The binaries (both EXTENSION and BINARY entries) need to be
-                    # processed using `checkCache` helper.
-                    src_name = checkCache(
+                    # processed using `process_collected_binary` helper.
+                    src_name = process_collected_binary(
                         src_name,
-                        strip=self.strip_binaries,
-                        upx=self.upx_binaries,
+                        dest_name,
+                        use_strip=self.strip_binaries,
+                        use_upx=self.upx_binaries,
                         upx_exclude=self.upx_exclude,
-                        dist_nm=dest_name,
                         target_arch=self.target_arch,
                         codesign_identity=self.codesign_identity,
                         entitlements_file=self.entitlements_file,
@@ -983,12 +984,12 @@ class COLLECT(Target):
                     "but there already exists a file at that path!"
                 )
             if typecode in ('EXTENSION', 'BINARY'):
-                src_name = checkCache(
+                src_name = process_collected_binary(
                     src_name,
-                    strip=self.strip_binaries,
-                    upx=self.upx_binaries,
+                    dest_name,
+                    use_strip=self.strip_binaries,
+                    use_upx=self.upx_binaries,
                     upx_exclude=self.upx_exclude,
-                    dist_nm=dest_name,
                     target_arch=self.target_arch,
                     codesign_identity=self.codesign_identity,
                     entitlements_file=self.entitlements_file,
