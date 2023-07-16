@@ -43,9 +43,6 @@ from PyInstaller import isolated
 from PyInstaller.utils.misc import absnormpath, get_path_to_toplevel_modules, mtime
 from PyInstaller.utils.hooks.gi import compile_glib_schema_files
 
-if is_win:
-    from PyInstaller.utils.win32 import winmanifest
-
 if is_darwin:
     from PyInstaller.utils.osx import collect_files_from_framework_bundles
 
@@ -535,22 +532,13 @@ class Analysis(Target):
         self.graph.set_setuptools_nspackages()
 
         logger.info("running Analysis %s", self.tocbasename)
-        # Get paths to Python and, in Windows, the manifest.
+
+        # Get path to python executable.
         python = compat.python_executable
         if not is_win:
-            # Linux/MacOS: get a real, non-link path to the running Python executable.
+            # Linux/MacOS: resolve symbolic links.
             while os.path.islink(python):
                 python = os.path.join(os.path.dirname(python), os.readlink(python))
-            depmanifest = None
-        else:
-            # Windows: Create a manifest to embed into built .exe, containing the same dependencies as python.exe.
-            depmanifest = winmanifest.Manifest(
-                type_="win32",
-                name=CONF['specnm'],
-                processorArchitecture=winmanifest.processor_architecture(),
-                version=(1, 0, 0, 0)
-            )
-            depmanifest.filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
 
         # We record "binaries" separately from the modulegraph, as there is no way to record those dependencies in the
         # graph. These include the python executable and any binaries added by hooks later. "binaries" are not the same
@@ -558,14 +546,8 @@ class Analysis(Target):
         # seen variable before running bindepend. We use bindepend only for the python executable.
         bindepend.seen.clear()
 
-        # Add binary and assembly dependencies of Python.exe. This also ensures that its assembly dependencies under
-        # Windows get added to the built .exe's manifest. Python 2.7 extension modules have no assembly dependencies,
-        # and rely on the app-global dependencies set by the .exe.
-        self.binaries.extend(
-            bindepend.Dependencies([('', python, '')], manifest=depmanifest, redirects=self.binding_redirects)[1:]
-        )
-        if is_win:
-            depmanifest.writeprettyxml()
+        # Add binary dependencies of python executable - this mainly aims to identify the python shared library.
+        self.binaries.extend(bindepend.Dependencies([('', python, '')])[1:])
 
         # -- Module graph. --
         #

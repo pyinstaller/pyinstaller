@@ -545,9 +545,19 @@ class EXE(Target):
                 else:
                     ico = 'icon-windowed.ico'
                 self.icon = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'bootloader', 'images', ico)
-            filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
+
+            # Prepare manifest for the executable by creating minimal manifest or modifying the supplied one.
+            manifest_filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
+            if not self.manifest:
+                self.manifest = winmanifest.Manifest(
+                    type_="win32",
+                    name=CONF['specnm'],
+                    processorArchitecture=winmanifest.processor_architecture(),
+                    version=(1, 0, 0, 0)
+                )
+                self.manifest.filename = manifest_filename  # Needs to be set for create_manifest below to work...
             self.manifest = winmanifest.create_manifest(
-                filename, self.manifest, self.console, self.uac_admin, self.uac_uiaccess
+                manifest_filename, self.manifest, self.console, self.uac_admin, self.uac_uiaccess
             )
 
             if self.versrsrc:
