@@ -27,7 +27,7 @@ PACKAGEPATH = os.path.abspath(os.path.dirname(__file__))
 HOMEPATH = os.path.dirname(PACKAGEPATH)
 
 # Update __version__ as necessary.
-if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
+if os.path.isfile(os.path.join(HOMEPATH, 'setup.py')):
     # PyInstaller is run directly from source without installation, or __version__ is called from 'setup.py'...
     if compat.getenv('PYINSTALLER_DO_RELEASE') == '1':
         # Suppress the git revision when doing a release.
