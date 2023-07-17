@@ -378,13 +378,19 @@ def _get_imports_macholib(filename):
     output = set()
     referenced_libs = set()  # Libraries referenced in Mach-O headers.
 
+    # Parent directory of the input binary and parent directory of python executable, used to substitute @loader_path
+    # and @executable_path.
+    bin_path = os.path.abspath(os.path.dirname(filename))
+    python_bin_path = os.path.abspath(os.path.dirname(sys.executable))
+
     # Walk through Mach-O headers, and collect all referenced libraries.
     m = MachO(filename)
     for header in m.headers:
         for idx, name, lib in header.walkRelocatables():
             referenced_libs.add(lib)
 
-    # Find LC_RPATH commands to collect rpaths. macholib does not handle @rpath, so we need to handle it ourselves.
+    # Find LC_RPATH commands to collect rpaths. macholib does not handle @rpath, so we need to handle run paths
+    # ourselves.
     run_paths = set()
     for header in m.headers:
         for command in header.commands:
@@ -397,66 +403,94 @@ def _get_imports_macholib(filename):
                 rpath = command[2].decode('utf-8')
                 # Remove trailing '\x00' characters. E.g., '../lib\x00\x00'
                 rpath = rpath.rstrip('\x00')
-                # Replace the @executable_path and @loader_path keywords with the actual path to the binary.
-                executable_path = os.path.dirname(filename)
-                rpath = re.sub('^@(executable_path|loader_path|rpath)(/|$)', executable_path + r'\2', rpath)
-                # Make rpath absolute. According to Apple doc LC_RPATH is always relative to the binary location.
-                rpath = os.path.normpath(os.path.join(executable_path, rpath))
+                # If run path starts with @, ensure it starts with either @loader_path or @executable_path. We cannot
+                # process anything else.
+                if rpath.startswith("@") and not rpath.startswith(("@executable_path", "@loader_path")):
+                    logger.warning("Unsupported rpath format %r found in binary %r - ignoring...", rpath, filename)
+                    continue
                 run_paths.add(rpath)
 
     # For distributions like Anaconda, all of the dylibs are stored in the lib directory of the Python distribution, not
-    # alongside of the .so's in each module's subdirectory.
+    # alongside of the .so's in each module's subdirectory. Usually, libraries using @rpath to reference their
+    # dependencies also set up their run-paths via LC_RPATH commands. However, they are not strictly required to do so,
+    # because run-paths are inherited from the process within which the libraries are loaded. Therefore, if the python
+    # executable uses an LC_RPATH command to set up run-path that resolves the shared lib directory (for example,
+    # `@loader_path/../lib` in case of the Anaconda python), all libraries loaded within the python process are able
+    # to resolve the shared libraries within the environment's shared lib directory without using LC_RPATH commands
+    # themselves.
+    #
+    # Our analysis does not account for inherited run-paths, and we attempt to work around this limitation by
+    # registering the following fall-back run-path.
     run_paths.add(os.path.join(compat.base_prefix, 'lib'))
 
-    #- Try to find files in file system.
+    def _resolve_using_loader_path(lib, bin_path, python_bin_path):
+        # macholib does not support @loader_path, so replace it with @executable_path. Strictly speaking, @loader_path
+        # should be anchored to parent directory of analyzed binary (`bin_path`), while @executable_path should be
+        # anchored to the parent directory of the process' executable. Typically, this would be python executable
+        # (`python_bin_path`), unless we are analyzing a collected 3rd party executable. In that case, `bin_path`
+        # is correct option. So we first try resolving using `bin_path`, and then fall back to `python_bin_path`.
+        # This does not account for transitive run paths of higher-order dependencies, but there is only so much we
+        # can do here...
+        if lib.startswith('@loader_path'):
+            lib = lib.replace('@loader_path', '@executable_path')
 
-    # In cases with @loader_path or @executable_path try to look in the same directory as the analyzed binary is. This
-    # seems to work in most cases.
-    bin_path = os.path.abspath(os.path.dirname(filename))
-    python_bin_path = os.path.abspath(os.path.dirname(sys.executable))
-
-    for lib in referenced_libs:
-        # If path starts with @rpath, we have to handle it ourselves.
-        if lib.startswith('@rpath'):
-            lib = lib.replace('@rpath', '.')  # Make path relative.
-            final_lib = None  # Absolute path to existing lib on disk.
-            # Try multiple locations.
-            for run_path in run_paths:
-                # @rpath may contain relative value. Use binary's path (bin_path) as base path.
-                if not os.path.isabs(run_path):
-                    run_path = os.path.join(bin_path, run_path)
-                # Stop looking for lib when found in first location.
-                if os.path.exists(os.path.join(run_path, lib)):
-                    final_lib = os.path.abspath(os.path.join(run_path, lib))
-                    output.add(final_lib)
-                    break
-            # Log warning if no existing file found.
-            if not final_lib and dylib.warn_missing_lib(lib):
-                logger.warning('Cannot find path %s (needed by %s)', lib, filename)
-
-        # macholib can be used to get absolute path to libraries that are not referenced via @rpath.
-        else:
-            # macholib cannot handle @loader_path. It has to be handled the same way as @executable_path. It is also
-            # replaced by 'bin_path'. Strictly speaking, @loader_path should be anchored to the analyzed binary's
-            # parent directory (bin_path), while @executable_path should be anchored in the parent directory of the
-            # process' executable (which in python context, is the python executable - python_bin_path). Here, we do
-            # not make this distinction, and instead search with both paths.
-            if lib.startswith('@loader_path'):
-                lib = lib.replace('@loader_path', '@executable_path')
+        try:
+            # Try resolving with binary's path first...
+            return dyld_find(lib, executable_path=bin_path)
+        except ValueError:
+            # ... and fall-back to resolving with python executable's path
             try:
-                # Try resolving with binary's path first...
-                lib = dyld_find(lib, executable_path=bin_path)
-                output.add(lib)
+                return dyld_find(lib, executable_path=python_bin_path)
             except ValueError:
-                # ... and fall-back to resolving with python executable's path
-                try:
-                    lib = dyld_find(lib, executable_path=python_bin_path)
-                    output.add(lib)
-                except ValueError:
-                    # Starting with Big Sur, system libraries are hidden. And we do not collect system libraries on any
-                    # macOS version anyway, so suppress the corresponding error messages.
-                    if not in_system_path(lib) and dylib.warn_missing_lib(lib):
-                        logger.warning('Cannot find path %s (needed by %s)', lib, filename)
+                return None
+
+    def _resolve_using_path(lib):
+        try:
+            return dyld_find(lib)
+        except ValueError:
+            return None
+
+    # Try to resolve full path of the referenced libraries.
+    for referenced_lib in referenced_libs:
+        resolved_lib = None
+
+        # If path starts with @rpath, we have to handle it ourselves.
+        if referenced_lib.startswith('@rpath'):
+            lib = os.path.join(*referenced_lib.split(os.sep)[1:])  # Remove the @rpath/ prefix
+
+            # Try all run paths.
+            for run_path in run_paths:
+                # Join the path.
+                lib_path = os.path.join(run_path, lib)
+
+                if lib_path.startswith(("@executable_path", "@loader_path")):
+                    # Run path starts with @executable_path or @loader_path.
+                    lib_path = _resolve_using_loader_path(lib_path, bin_path, python_bin_path)
+                else:
+                    # If run path was relative, anchor it to binary's location.
+                    if not os.path.isabs(lib_path):
+                        os.path.join(bin_path, lib_path)
+                    lib_path = _resolve_using_path(lib_path)
+
+                if lib_path and os.path.exists(lib_path):
+                    resolved_lib = lib_path
+                    break
+        else:
+            if referenced_lib.startswith(("@executable_path", "@loader_path")):
+                resolved_lib = _resolve_using_loader_path(referenced_lib, bin_path, python_bin_path)
+            else:
+                resolved_lib = _resolve_using_path(referenced_lib)
+
+        # TODO: fall back to supplied search paths
+
+        # Log warning if no existing file found. Starting with Big Sur, system libraries are hidden. And we do not
+        # collect system libraries on any macOS version anyway, so suppress the corresponding error messages.
+        if resolved_lib:
+            # Normalize the resolved path, to remove any extraneous "../" elements.
+            resolved_lib = os.path.normpath(resolved_lib)
+            output.add(resolved_lib)
+        elif not in_system_path(referenced_lib) and dylib.warn_missing_lib(referenced_lib):
+            logger.warning('Cannot resolve path for library %r (referenced by %r)', referenced_lib, filename)
 
     return output
 
