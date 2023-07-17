@@ -547,6 +547,8 @@ def is_framework_bundle_lib(lib_path):
     Check if the given shared library is part of a .framework bundle.
     """
 
+    lib_path = pathlib.PurePath(lib_path)
+
     # For now, focus only on versioned layout, such as `QtCore.framework/Versions/5/QtCore`
     if lib_path.parent.parent.name != "Versions":
         return False
