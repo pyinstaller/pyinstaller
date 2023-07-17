@@ -177,6 +177,7 @@ class PKG(Target):
     def __init__(
         self,
         toc,
+        python_lib_name,
         name=None,
         cdict=None,
         exclude_binaries=False,
@@ -190,6 +191,8 @@ class PKG(Target):
         """
         toc
             A TOC (Table of Contents) list.
+        python_lib_name
+            Name of the python shared library to store in PKG. Required by bootloader.
         name
             An optional filename for the PKG.
         cdict
@@ -206,6 +209,7 @@ class PKG(Target):
         super().__init__()
 
         self.toc = normalize_toc(toc)  # Ensure guts contain normalized TOC
+        self.python_lib_name = python_lib_name
         self.cdict = cdict
         self.name = name
         if name is None:
@@ -240,6 +244,7 @@ class PKG(Target):
         ('name', _check_guts_eq),
         ('cdict', _check_guts_eq),
         ('toc', _check_guts_toc),  # list unchanged and no newer files
+        ('python_lib_name', _check_guts_eq),
         ('exclude_binaries', _check_guts_eq),
         ('strip_binaries', _check_guts_eq),
         ('upx_binaries', _check_guts_eq),
@@ -314,14 +319,11 @@ class PKG(Target):
                 # PYZ, PKG, DEPENDENCY, SPLASH, SYMLINK
                 archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
 
-        # Bootloader has to know the name of Python library. Pass python libname to CArchive.
-        pylib_name = os.path.basename(bindepend.get_python_library_path())
-
         # Sort content alphabetically by type and name to enable reproducible builds.
         archive_toc.sort(key=itemgetter(3, 0))
         # Do *not* sort modules and scripts, as their order is important.
         # TODO: Think about having all modules first and then all scripts.
-        CArchiveWriter(self.name, bootstrap_toc + archive_toc, pylib_name=pylib_name)
+        CArchiveWriter(self.name, bootstrap_toc + archive_toc, pylib_name=self.python_lib_name)
 
         logger.info("Building PKG (CArchive) %s completed successfully.", os.path.basename(self.name))
 
@@ -571,11 +573,24 @@ class EXE(Target):
                 else:
                     raise TypeError(f"Unsupported type for version info argument: {type(self.versrsrc)!r}")
 
+        # Identify python shared library. This is needed both for PKG (where we need to store the name so that
+        # bootloader can look it up), and for macOS-specific processing of the generated executable (adjusting the SDK
+        # version).
+        #
+        # NOTE: we already performed an equivalent search (using the same `get_python_library_path` helper) during the
+        # analysis stage to ensure that the python shared library is collected. Unfortunately, with the way data passing
+        # works in onedir builds, we cannot look up the value in the TOC at this stage, and we need to search again.
+        self.python_lib = bindepend.get_python_library_path()
+        if self.python_lib is None:
+            from PyInstaller.exceptions import PythonLibraryNotFoundError
+            raise PythonLibraryNotFoundError()
+
         # Normalize TOC
         self.toc = normalize_toc(self.toc)
 
         self.pkg = PKG(
-            self.toc,
+            toc=self.toc,
+            python_lib_name=os.path.basename(self.python_lib),
             name=self.pkgname,
             cdict=kwargs.get('cdict', None),
             exclude_binaries=self.exclude_binaries,
@@ -594,7 +609,8 @@ class EXE(Target):
 
         self.__postinit__()
 
-    _GUTS = (  # input parameters
+    _GUTS = (
+        # input parameters
         ('name', _check_guts_eq),
         ('console', _check_guts_eq),
         ('debug', _check_guts_eq),
@@ -609,15 +625,16 @@ class EXE(Target):
         ('target_arch', _check_guts_eq),
         ('codesign_identity', _check_guts_eq),
         ('entitlements_file', _check_guts_eq),
-        # for the case the directory ius shared between platforms:
+        # for the case the directory is shared between platforms:
         ('pkgname', _check_guts_eq),
         ('toc', _check_guts_eq),
         ('resources', _check_guts_eq),
         ('strip', _check_guts_eq),
         ('upx', _check_guts_eq),
         ('mtm', None),  # checked below
-        # no calculated/analysed values
+        # derived values
         ('exefiles', _check_guts_toc),
+        ('python_lib', _check_guts_eq),
     )
 
     def _check_guts(self, data, last_build):
@@ -843,7 +860,7 @@ class EXE(Target):
             # mode, and Tk libraries being built against an earlier SDK version that does not support the dark mode).
             # With python.org Intel macOS installers, this manifests as black Tk windows and UI elements (see issue
             # #5827), while in Anaconda python, it may result in white text on bright background.
-            pylib_version = osxutils.get_macos_sdk_version(bindepend.get_python_library_path())
+            pylib_version = osxutils.get_macos_sdk_version(self.python_lib)
             exe_version = osxutils.get_macos_sdk_version(build_name)
             if pylib_version < exe_version:
                 logger.info(

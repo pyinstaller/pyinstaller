@@ -16,6 +16,7 @@ NOTE: All global variables, classes and imported modules create API for .spec fi
 
 import glob
 import os
+import pathlib
 import pprint
 import shutil
 import enum
@@ -34,7 +35,7 @@ from PyInstaller.building.utils import (
     _check_guts_toc, _check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas, compile_pymodule,
     add_suffix_to_extension, postprocess_binaries_toc_pywin32, postprocess_binaries_toc_pywin32_anaconda
 )
-from PyInstaller.compat import PYDYLIB_NAMES, is_win, is_conda, is_darwin
+from PyInstaller.compat import is_win, is_conda, is_darwin
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.depend.utils import create_py3_base_library, scan_code_for_ctypes
@@ -43,7 +44,7 @@ from PyInstaller.utils.misc import absnormpath, get_path_to_toplevel_modules, mt
 from PyInstaller.utils.hooks.gi import compile_glib_schema_files
 
 if is_darwin:
-    from PyInstaller.utils.osx import collect_files_from_framework_bundles
+    from PyInstaller.utils import osx as osxutils
 
 logger = logging.getLogger(__name__)
 
@@ -526,14 +527,7 @@ class Analysis(Target):
         self.graph.path = self.pathex + self.graph.path
         self.graph.set_setuptools_nspackages()
 
-        logger.info("running Analysis %s", self.tocbasename)
-
-        # Get path to python executable.
-        python = compat.python_executable
-        if not is_win:
-            # Linux/MacOS: resolve symbolic links.
-            while os.path.islink(python):
-                python = os.path.join(os.path.dirname(python), os.readlink(python))
+        logger.info("Running Analysis %s", self.tocbasename)
 
         # We record "binaries" separately from the modulegraph, as there is no way to record those dependencies in the
         # graph. These include the python executable and any binaries added by hooks later. "binaries" are not the same
@@ -541,8 +535,22 @@ class Analysis(Target):
         # seen variable before running bindepend. We use bindepend only for the python executable.
         bindepend.seen.clear()
 
-        # Add binary dependencies of python executable - this mainly aims to identify the python shared library.
-        self.binaries.extend(bindepend.Dependencies([('', python, '')])[1:])
+        # Search for python shared library, which we need to collect into frozen application.
+        logger.info('Looking for Python shared library...')
+        python_lib = bindepend.get_python_library_path()
+        if python_lib is None:
+            from PyInstaller.exceptions import PythonLibraryNotFoundError
+            raise PythonLibraryNotFoundError()
+        logger.info('Using Python shared library: %s', python_lib)
+        if is_darwin and osxutils.is_framework_bundle_lib(python_lib):
+            # If python library is located in macOS .framework bundle, collect the bundle, and create symbolic link to
+            # top-level directory.
+            src_path = pathlib.PurePath(python_lib)
+            dst_path = pathlib.PurePath(src_path.relative_to(src_path.parent.parent.parent.parent))
+            self.binaries.append((str(dst_path), str(src_path), 'BINARY'))
+            self.binaries.append((os.path.basename(python_lib), str(dst_path), 'SYMLINK'))
+        else:
+            self.binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
 
         # -- Module graph. --
         #
@@ -764,7 +772,7 @@ class Analysis(Target):
 
         # On macOS, look for binaries collected from .framework bundles, and collect their Info.plist files.
         if is_darwin:
-            combined_toc += collect_files_from_framework_bundles(combined_toc)
+            combined_toc += osxutils.collect_files_from_framework_bundles(combined_toc)
 
         self.datas = []
         self.binaries = []
@@ -774,9 +782,6 @@ class Analysis(Target):
                 self.binaries.append(entry)
             else:
                 self.datas.append(entry)
-
-        # Verify that Python dynamic library can be found. Without dynamic Python library PyInstaller cannot continue.
-        self._check_python_library(self.binaries)
 
         # Write warnings about missing modules.
         self._write_warnings()
@@ -826,25 +831,6 @@ class Analysis(Target):
         with open(CONF['dot-file'], 'w', encoding='utf-8') as fh:
             self.graph.graphreport(fh)
             logger.info("Graph drawing written to %s", CONF['dot-file'])
-
-    def _check_python_library(self, binaries):
-        """
-        Verify presence of the Python dynamic library in the binary dependencies. Python library is an essential
-        piece that has to be always included.
-        """
-        # First check if libpython is already among the resolved binary dependencies.
-        for dest_name, src_name, typecode in binaries:
-            if typecode == 'BINARY' and dest_name in PYDYLIB_NAMES:
-                # Just print its filename and return.
-                logger.info('Using Python library %s', src_name)
-                return
-
-        # Python lib not in dependencies - try to find it.
-        logger.info('Python library not among binary dependencies. Performing additional search...')
-        python_lib = bindepend.get_python_library_path()
-        logger.debug('Adding Python library to binary dependencies')
-        binaries.append((os.path.basename(python_lib), python_lib, 'BINARY'))
-        logger.info('Using Python library %s', python_lib)
 
     def exclude_system_libraries(self, list_of_exceptions=None):
         """

@@ -723,13 +723,14 @@ def get_python_library_path():
 
     # Try to get Python library name from the Python executable. It assumes that Python library is not statically
     # linked.
+    python_exe_dir = os.path.dirname(compat.python_executable)
     dlls = get_imports(compat.python_executable)
     for filename in dlls:
         for name in compat.PYDYLIB_NAMES:
             if os.path.basename(filename) == name:
-                # On Windows filename is just like 'python27.dll'. Convert it to absolute path.
+                # On Windows filename is just like 'python27.dll'. Resolve it into absolute path.
                 if compat.is_win and not os.path.isabs(filename):
-                    filename = getfullnameof(filename)
+                    filename = getfullnameof(filename, [python_exe_dir])
                 # Python library found. Return absolute path to it.
                 return filename
 
@@ -738,7 +739,7 @@ def get_python_library_path():
     # Work around for python venv having VERSION.dll rather than pythonXY.dll
     if compat.is_win and 'VERSION.dll' in dlls:
         pydll = 'python%d%d.dll' % sys.version_info[:2]
-        return getfullnameof(pydll)
+        return getfullnameof(pydll, [python_exe_dir])
 
     # Applies only to non Windows platforms and conda.
 
@@ -770,17 +771,8 @@ def get_python_library_path():
         if python_libname:
             return python_libname
 
-    # Python library NOT found. Provide helpful feedback.
-    msg = """Python library not found: %s
-    This means your Python installation does not come with proper shared library files.
-    This usually happens due to missing development package, or unsuitable build parameters of the Python installation.
-
-    * On Debian/Ubuntu, you need to install Python development packages:
-      * apt-get install python3-dev
-      * apt-get install python-dev
-    * If you are building Python by yourself, rebuild with `--enable-shared` (or, `--enable-framework` on macOS).
-    """ % (", ".join(compat.PYDYLIB_NAMES),)
-    raise IOError(msg)
+    # Python library NOT found. Return None and let the caller deal with this.
+    return None
 
 
 #- Binary vs data (re)classification
