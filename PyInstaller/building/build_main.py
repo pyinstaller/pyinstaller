@@ -113,7 +113,7 @@ def discover_hook_directories():
 
 # NOTE: this helper is called via isolated.call() in Analysis.assemble(). We cannot use @isolated.decorate here, because
 # one of the tests (test_regression::test_issue_5131) needs to be able to monkey-patch it, in order to override the
-# bindepend.getImports() in the isolated subprocess (!) with its own implementation...
+# bindepend.get_imports() in the isolated subprocess (!) with its own implementation...
 def find_binary_dependencies(binaries, import_packages):
     """
     Find dynamic dependencies (linked shared libraries) for the provided list of binaries.

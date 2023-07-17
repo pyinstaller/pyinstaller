@@ -36,10 +36,10 @@ def run():
     PyInstaller.log.getLogger('PyInstaller.build.bindepend').setLevel(PyInstaller.log.WARN)
 
     try:
-        for a in args.filenames:
-            for fn in glob.glob(a):
-                imports = PyInstaller.depend.bindepend.getImports(fn)
-                print(fn, imports)
+        for input_filename_or_pattern in args.filenames:
+            for filename in glob.glob(input_filename_or_pattern):
+                imports = PyInstaller.depend.bindepend.get_imports(filename)
+                print(filename, imports)
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")
 

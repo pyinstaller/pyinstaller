@@ -174,7 +174,7 @@ def selectImports(pth, xtrapath=None):
     else:
         assert isinstance(xtrapath, list)
         xtrapath = [os.path.dirname(pth)] + xtrapath  # make a copy
-    dlls = getImports(pth)
+    dlls = get_imports(pth)
     for lib in dlls:
         if lib.upper() in seen:
             continue
@@ -214,39 +214,31 @@ def selectImports(pth, xtrapath=None):
 #- Low-level import analysis
 
 
-def getImports(pth):
+def get_imports(filename):
     """
-    Forwards to the correct getImports implementation for the platform.
+    Analyze the given binary file (shared library or executable), and obtain the list of shared libraries it imports
+    (i.e., link-time dependencies). On POSIX platforms (e.g., Linux and macOS), the imports should already be full
+    absolute paths to the libraries. On Windows, the retrieved imports are only library basenames.
     """
     if compat.is_win:
-        if pth.lower().endswith(".manifest"):
+        if filename.lower().endswith(".manifest"):
             return []
-        try:
-            return _getImports_pe(pth)
-        except Exception as exception:
-            # Assemblies can pull in files which aren't necessarily PE, but are still needed by the assembly. Any
-            # additional binary dependencies should already have been handled by selectAssemblies in that case, so just
-            # warn, return an empty list and continue. For less specific errors also log the traceback.
-            logger.warning('Cannot get binary dependencies for file: %s', pth)
-            logger.warning('  Reason: %s', exception, exc_info=not isinstance(exception, pefile.PEFormatError))
-            return []
+        return _get_imports_pefile(filename)
     elif compat.is_darwin:
-        return _getImports_macholib(pth)
+        return _get_imports_macholib(filename)
     else:
-        return _getImports_ldd(pth)
+        return _get_imports_ldd(filename)
 
 
-def _getImports_pe(pth):
+def _get_imports_pefile(filename):
     """
-    Find the binary dependencies of PTH.
-
-    This implementation walks through the PE header and uses library pefile for that and supports 32/64bit Windows
+    Windows-specific helper for `get_imports`, which uses the `pefile` library to walk through PE header.
     """
-    dlls = set()
+    output = set()
+
     # By default, pefile library parses all PE information. We are only interested in the list of dependent dlls.
     # Performance is improved by reading only needed information. https://code.google.com/p/pefile/wiki/UsageExamples
-
-    pe = pefile.PE(pth, fast_load=True)
+    pe = pefile.PE(filename, fast_load=True)
     pe.parse_data_directories(
         directories=[
             pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
@@ -256,59 +248,66 @@ def _getImports_pe(pth):
         import_dllnames_only=True,
     )
 
-    # Some libraries have no other binary dependencies. Use empty list in that case. Otherwise pefile would return None.
-    # e.g., C:\windows\system32\kernel32.dll on Wine
+    # If a library has no binary dependencies, pe.DIRECTORY_ENTRY_IMPORT does not exist.
     for entry in getattr(pe, 'DIRECTORY_ENTRY_IMPORT', []):
-        dll_str = winutils.convert_dll_name_to_str(entry.dll)
-        dlls.add(dll_str)
+        dll_str = entry.dll.decode('utf-8')
+        output.add(dll_str)
 
     # We must also read the exports table to find forwarded symbols:
     # http://blogs.msdn.com/b/oldnewthing/archive/2006/07/19/671238.aspx
-    exportSymbols = getattr(pe, 'DIRECTORY_ENTRY_EXPORT', None)
-    if exportSymbols:
-        for sym in exportSymbols.symbols:
-            if sym.forwarder is not None:
-                # sym.forwarder is a bytes object. Convert it to a string.
-                forwarder = winutils.convert_dll_name_to_str(sym.forwarder)
-                # sym.forwarder is for example 'KERNEL32.EnterCriticalSection'
+    exported_symbols = getattr(pe, 'DIRECTORY_ENTRY_EXPORT', None)
+    if exported_symbols:
+        for symbol in exported_symbols.symbols:
+            if symbol.forwarder is not None:
+                # symbol.forwarder is a bytes object. Convert it to a string.
+                forwarder = symbol.forwarder.decode('utf-8')
+                # symbol.forwarder is for example 'KERNEL32.EnterCriticalSection'
                 dll = forwarder.split('.')[0]
-                dlls.add(dll + ".dll")
+                output.add(dll + ".dll")
 
     pe.close()
-    return dlls
+    return output
 
 
-def _getImports_ldd(pth):
+def _get_imports_ldd(filename):
     """
-    Find the binary dependencies of PTH.
-
-    This implementation is for ldd platforms (mostly unix).
+    Helper for `get_imports`, which uses `ldd` to analyze shared libraries. Used on Linux and other POSIX-like platforms
+    (with exception of macOS).
     """
-    rslt = set()
+
+    output = set()
+
+    # Output of ldd varies between platforms...
     if compat.is_aix:
         # Match libs of the form
         #   'archivelib.a(objectmember.so/.o)'
         # or
         #   'sharedlib.so'
         # Will not match the fake lib '/unix'
-        lddPattern = re.compile(r"^\s*(((?P<libarchive>(.*\.a))(?P<objectmember>\(.*\)))|((?P<libshared>(.*\.so))))$")
+        LDD_PATTERN = re.compile(r"^\s*(((?P<libarchive>(.*\.a))(?P<objectmember>\(.*\)))|((?P<libshared>(.*\.so))))$")
     elif compat.is_hpux:
         # Match libs of the form
         #   'sharedlib.so => full-path-to-lib
         # e.g.
         #   'libpython2.7.so =>      /usr/local/lib/hpux32/libpython2.7.so'
-        lddPattern = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
+        LDD_PATTERN = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
     elif compat.is_solar:
         # Match libs of the form
         #   'sharedlib.so => full-path-to-lib
         # e.g.
         #   'libpython2.7.so.1.0 => /usr/local/lib/libpython2.7.so.1.0'
         # Will not match the platform specific libs starting with '/platform'
-        lddPattern = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
+        LDD_PATTERN = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
     else:
-        lddPattern = re.compile(r"\s*(.*?)\s+=>\s+(.*?)\s+\(.*\)")
+        LDD_PATTERN = re.compile(r"\s*(.*?)\s+=>\s+(.*?)\s+\(.*\)")
 
-    p = subprocess.run(['ldd', pth], stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+    p = subprocess.run(
+        ['ldd', filename],
+        stdin=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    )
 
     for line in p.stderr.splitlines():
         if not line:
@@ -322,7 +321,7 @@ def _getImports_ldd(pth):
         print(line, file=sys.stderr)
 
     for line in p.stdout.splitlines():
-        m = lddPattern.search(line)
+        m = LDD_PATTERN.search(line)
         if m:
             if compat.is_aix:
                 libarchive = m.group('libarchive')
@@ -351,11 +350,10 @@ def _getImports_ldd(pth):
                     continue
 
             if os.path.exists(lib):
-                # Add lib if it is not already found.
-                if lib not in rslt:
-                    rslt.add(lib)
+                # Add lib to the output set
+                output.add(lib)
             elif dylib.warn_missing_lib(name):
-                logger.warning('Cannot find %s in path %s (needed by %s)', name, lib, pth)
+                logger.warning('Cannot find %s in path %s (needed by %s)', name, lib, filename)
         elif line.endswith("not found"):
             # On glibc-based linux distributions, missing libraries are marked with name.so => not found
             tokens = line.split('=>')
@@ -363,36 +361,30 @@ def _getImports_ldd(pth):
                 continue
             name = tokens[0].strip()
             if dylib.warn_missing_lib(name):
-                logger.warning('Cannot find %s (needed by %s)', name, pth)
-    return rslt
+                logger.warning('Cannot find %s (needed by %s)', name, filename)
+
+    return output
 
 
-def _getImports_macholib(pth):
+def _get_imports_macholib(filename):
     """
-    Find the binary dependencies of PTH.
-
-    This implementation is for Mac OS X and uses library macholib.
+    macOS-specific helper for `get_imports`, which uses `macholib` to analyze library load commands in Mach-O headers.
     """
     from macholib.dyld import dyld_find
     from macholib.mach_o import LC_RPATH
     from macholib.MachO import MachO
     from macholib.util import in_system_path
-    rslt = set()
-    seen = set()  # Libraries read from binary headers.
 
-    #- Walk through mach binary headers.
+    output = set()
+    referenced_libs = set()  # Libraries referenced in Mach-O headers.
 
-    m = MachO(pth)
+    # Walk through Mach-O headers, and collect all referenced libraries.
+    m = MachO(filename)
     for header in m.headers:
         for idx, name, lib in header.walkRelocatables():
-            # Sometimes libraries are present multiple times.
-            if lib not in seen:
-                seen.add(lib)
+            referenced_libs.add(lib)
 
-    # Walk through mach binary headers and look for LC_RPATH. macholib can't handle @rpath. LC_RPATH has to be read from
-    # the MachO header.
-    # TODO Do we need to remove LC_RPATH from MachO load commands? Will it cause any harm to leave them untouched?
-    #      Removing LC_RPATH should be implemented when getting files from the bincache if it is necessary.
+    # Find LC_RPATH commands to collect rpaths. macholib does not handle @rpath, so we need to handle it ourselves.
     run_paths = set()
     for header in m.headers:
         for command in header.commands:
@@ -406,16 +398,11 @@ def _getImports_macholib(pth):
                 # Remove trailing '\x00' characters. E.g., '../lib\x00\x00'
                 rpath = rpath.rstrip('\x00')
                 # Replace the @executable_path and @loader_path keywords with the actual path to the binary.
-                executable_path = os.path.dirname(pth)
+                executable_path = os.path.dirname(filename)
                 rpath = re.sub('^@(executable_path|loader_path|rpath)(/|$)', executable_path + r'\2', rpath)
                 # Make rpath absolute. According to Apple doc LC_RPATH is always relative to the binary location.
                 rpath = os.path.normpath(os.path.join(executable_path, rpath))
-                run_paths.update([rpath])
-            else:
-                # Frameworks that have this structure Name.framework/Versions/N/Name need to search at the same level
-                # as the framework dir. This is specifically needed so that the QtWebEngine dependencies can be found.
-                if '.framework' in pth:
-                    run_paths.update(['../../../'])
+                run_paths.add(rpath)
 
     # For distributions like Anaconda, all of the dylibs are stored in the lib directory of the Python distribution, not
     # alongside of the .so's in each module's subdirectory.
@@ -423,52 +410,55 @@ def _getImports_macholib(pth):
 
     #- Try to find files in file system.
 
-    # In cases with @loader_path or @executable_path try to look in the same directory as the checked binary is. This
+    # In cases with @loader_path or @executable_path try to look in the same directory as the analyzed binary is. This
     # seems to work in most cases.
-    exec_path = os.path.abspath(os.path.dirname(pth))
+    bin_path = os.path.abspath(os.path.dirname(filename))
     python_bin_path = os.path.abspath(os.path.dirname(sys.executable))
 
-    for lib in seen:
-        # Suppose that @rpath is not used for system libraries and using macholib can be avoided. macholib cannot handle
-        # @rpath.
+    for lib in referenced_libs:
+        # If path starts with @rpath, we have to handle it ourselves.
         if lib.startswith('@rpath'):
             lib = lib.replace('@rpath', '.')  # Make path relative.
             final_lib = None  # Absolute path to existing lib on disk.
             # Try multiple locations.
             for run_path in run_paths:
-                # @rpath may contain relative value. Use exec_path as base path.
+                # @rpath may contain relative value. Use binary's path (bin_path) as base path.
                 if not os.path.isabs(run_path):
-                    run_path = os.path.join(exec_path, run_path)
+                    run_path = os.path.join(bin_path, run_path)
                 # Stop looking for lib when found in first location.
                 if os.path.exists(os.path.join(run_path, lib)):
                     final_lib = os.path.abspath(os.path.join(run_path, lib))
-                    rslt.add(final_lib)
+                    output.add(final_lib)
                     break
             # Log warning if no existing file found.
             if not final_lib and dylib.warn_missing_lib(lib):
-                logger.warning('Cannot find path %s (needed by %s)', lib, pth)
+                logger.warning('Cannot find path %s (needed by %s)', lib, filename)
 
-        # Macholib has to be used to get absolute path to libraries.
+        # macholib can be used to get absolute path to libraries that are not referenced via @rpath.
         else:
             # macholib cannot handle @loader_path. It has to be handled the same way as @executable_path. It is also
-            # replaced by 'exec_path'.
+            # replaced by 'bin_path'. Strictly speaking, @loader_path should be anchored to the analyzed binary's
+            # parent directory (bin_path), while @executable_path should be anchored in the parent directory of the
+            # process' executable (which in python context, is the python executable - python_bin_path). Here, we do
+            # not make this distinction, and instead search with both paths.
             if lib.startswith('@loader_path'):
                 lib = lib.replace('@loader_path', '@executable_path')
             try:
-                lib = dyld_find(lib, executable_path=exec_path)
-                rslt.add(lib)
+                # Try resolving with binary's path first...
+                lib = dyld_find(lib, executable_path=bin_path)
+                output.add(lib)
             except ValueError:
-                # try to resolve the executable path with the path of the executable binary for the Python interpreter
+                # ... and fall-back to resolving with python executable's path
                 try:
                     lib = dyld_find(lib, executable_path=python_bin_path)
-                    rslt.add(lib)
+                    output.add(lib)
                 except ValueError:
                     # Starting with Big Sur, system libraries are hidden. And we do not collect system libraries on any
                     # macOS version anyway, so suppress the corresponding error messages.
                     if not in_system_path(lib) and dylib.warn_missing_lib(lib):
-                        logger.warning('Cannot find path %s (needed by %s)', lib, pth)
+                        logger.warning('Cannot find path %s (needed by %s)', lib, filename)
 
-    return rslt
+    return output
 
 
 #- Library full path resolution
@@ -733,7 +723,7 @@ def get_python_library_path():
 
     # Try to get Python library name from the Python executable. It assumes that Python library is not statically
     # linked.
-    dlls = getImports(compat.python_executable)
+    dlls = get_imports(compat.python_executable)
     for filename in dlls:
         for name in compat.PYDYLIB_NAMES:
             if os.path.basename(filename) == name:

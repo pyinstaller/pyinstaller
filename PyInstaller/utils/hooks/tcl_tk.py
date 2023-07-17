@@ -138,7 +138,7 @@ def find_tcl_tk_shared_libs(tkinter_ext_file):
     tk_libpath = None
 
     # Do not use bindepend.selectImports, as it ignores libraries seen during previous invocations.
-    _tkinter_imports = bindepend.getImports(tkinter_ext_file)
+    _tkinter_imports = bindepend.get_imports(tkinter_ext_file)
 
     def _get_library_path(lib):
         if compat.is_win:
