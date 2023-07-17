@@ -27,124 +27,19 @@ from PyInstaller.utils.win32 import winutils
 if compat.is_darwin:
     import PyInstaller.utils.osx as osxutils
 
-logger = logging.getLogger(__name__)
-
-seen = set()
-
 # Import windows specific stuff.
 if compat.is_win:
     from distutils.sysconfig import get_python_lib
 
     import pefile
 
+logger = logging.getLogger(__name__)
 
-def getfullnameof(mod, xtrapath=None):
-    """
-    Return the full path name of MOD.
-
-    * MOD is the basename of a dll or pyd.
-    * XTRAPATH is a path or list of paths to search first.
-
-    Return the full path name of MOD. Will search the full Windows search path, as well as sys.path
-    """
-    pywin32_paths = []
-    if compat.is_win:
-        pywin32_paths = [os.path.join(get_python_lib(), 'pywin32_system32')]
-        if compat.is_venv:
-            pywin32_paths.append(os.path.join(compat.base_prefix, 'Lib', 'site-packages', 'pywin32_system32'))
-
-    epath = (
-        sys.path +  # Search sys.path first!
-        pywin32_paths + winutils.get_system_path() + compat.getenv('PATH', '').split(os.pathsep)
-    )
-    if xtrapath is not None:
-        if isinstance(xtrapath, str):
-            epath.insert(0, xtrapath)
-        else:
-            epath = xtrapath + epath
-    for p in epath:
-        npth = os.path.join(p, mod)
-        if os.path.exists(npth) and matchDLLArch(npth):
-            return npth
-    return ''
-
-
-def _getImports_pe(pth):
-    """
-    Find the binary dependencies of PTH.
-
-    This implementation walks through the PE header and uses library pefile for that and supports 32/64bit Windows
-    """
-    dlls = set()
-    # By default, pefile library parses all PE information. We are only interested in the list of dependent dlls.
-    # Performance is improved by reading only needed information. https://code.google.com/p/pefile/wiki/UsageExamples
-
-    pe = pefile.PE(pth, fast_load=True)
-    pe.parse_data_directories(
-        directories=[
-            pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
-            pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_EXPORT'],
-        ],
-        forwarded_exports_only=True,
-        import_dllnames_only=True,
-    )
-
-    # Some libraries have no other binary dependencies. Use empty list in that case. Otherwise pefile would return None.
-    # e.g., C:\windows\system32\kernel32.dll on Wine
-    for entry in getattr(pe, 'DIRECTORY_ENTRY_IMPORT', []):
-        dll_str = winutils.convert_dll_name_to_str(entry.dll)
-        dlls.add(dll_str)
-
-    # We must also read the exports table to find forwarded symbols:
-    # http://blogs.msdn.com/b/oldnewthing/archive/2006/07/19/671238.aspx
-    exportSymbols = getattr(pe, 'DIRECTORY_ENTRY_EXPORT', None)
-    if exportSymbols:
-        for sym in exportSymbols.symbols:
-            if sym.forwarder is not None:
-                # sym.forwarder is a bytes object. Convert it to a string.
-                forwarder = winutils.convert_dll_name_to_str(sym.forwarder)
-                # sym.forwarder is for example 'KERNEL32.EnterCriticalSection'
-                dll = forwarder.split('.')[0]
-                dlls.add(dll + ".dll")
-
-    pe.close()
-    return dlls
-
+seen = set()
 
 _exe_machine_type = None
 
-
-def matchDLLArch(filename):
-    """
-    Return True if the DLL given by filename matches the CPU type/architecture of the Python process running
-    PyInstaller.
-
-    Always returns True on non-Windows platforms.
-
-    :param filename:
-    :type filename:
-    :return:
-    :rtype:
-    """
-    # TODO: check machine type on other platforms?
-    if not compat.is_win:
-        return True
-
-    global _exe_machine_type
-    try:
-        if _exe_machine_type is None:
-            pefilename = compat.python_executable  # for exception handling
-            exe_pe = pefile.PE(pefilename, fast_load=True)
-            _exe_machine_type = exe_pe.FILE_HEADER.Machine
-            exe_pe.close()
-
-        pefilename = filename  # for exception handling
-        pe = pefile.PE(filename, fast_load=True)
-        match_arch = pe.FILE_HEADER.Machine == _exe_machine_type
-        pe.close()
-    except pefile.PEFormatError as exc:
-        raise SystemExit('Cannot get architecture from file: %s\n  Reason: %s' % (pefilename, exc))
-    return match_arch
+#- High-level binary dependency analysis
 
 
 def _get_paths_for_parent_directory_preservation():
@@ -314,6 +209,73 @@ def selectImports(pth, xtrapath=None):
             logger.warning("lib not found: %s dependency of %s", lib, pth)
 
     return rv
+
+
+#- Low-level import analysis
+
+
+def getImports(pth):
+    """
+    Forwards to the correct getImports implementation for the platform.
+    """
+    if compat.is_win:
+        if pth.lower().endswith(".manifest"):
+            return []
+        try:
+            return _getImports_pe(pth)
+        except Exception as exception:
+            # Assemblies can pull in files which aren't necessarily PE, but are still needed by the assembly. Any
+            # additional binary dependencies should already have been handled by selectAssemblies in that case, so just
+            # warn, return an empty list and continue. For less specific errors also log the traceback.
+            logger.warning('Cannot get binary dependencies for file: %s', pth)
+            logger.warning('  Reason: %s', exception, exc_info=not isinstance(exception, pefile.PEFormatError))
+            return []
+    elif compat.is_darwin:
+        return _getImports_macholib(pth)
+    else:
+        return _getImports_ldd(pth)
+
+
+def _getImports_pe(pth):
+    """
+    Find the binary dependencies of PTH.
+
+    This implementation walks through the PE header and uses library pefile for that and supports 32/64bit Windows
+    """
+    dlls = set()
+    # By default, pefile library parses all PE information. We are only interested in the list of dependent dlls.
+    # Performance is improved by reading only needed information. https://code.google.com/p/pefile/wiki/UsageExamples
+
+    pe = pefile.PE(pth, fast_load=True)
+    pe.parse_data_directories(
+        directories=[
+            pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
+            pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_EXPORT'],
+        ],
+        forwarded_exports_only=True,
+        import_dllnames_only=True,
+    )
+
+    # Some libraries have no other binary dependencies. Use empty list in that case. Otherwise pefile would return None.
+    # e.g., C:\windows\system32\kernel32.dll on Wine
+    for entry in getattr(pe, 'DIRECTORY_ENTRY_IMPORT', []):
+        dll_str = winutils.convert_dll_name_to_str(entry.dll)
+        dlls.add(dll_str)
+
+    # We must also read the exports table to find forwarded symbols:
+    # http://blogs.msdn.com/b/oldnewthing/archive/2006/07/19/671238.aspx
+    exportSymbols = getattr(pe, 'DIRECTORY_ENTRY_EXPORT', None)
+    if exportSymbols:
+        for sym in exportSymbols.symbols:
+            if sym.forwarder is not None:
+                # sym.forwarder is a bytes object. Convert it to a string.
+                forwarder = winutils.convert_dll_name_to_str(sym.forwarder)
+                # sym.forwarder is for example 'KERNEL32.EnterCriticalSection'
+                dll = forwarder.split('.')[0]
+                dlls.add(dll + ".dll")
+
+    pe.close()
+    return dlls
 
 
 def _getImports_ldd(pth):
@@ -509,26 +471,90 @@ def _getImports_macholib(pth):
     return rslt
 
 
-def getImports(pth):
+#- Library full path resolution
+
+
+def findSystemLibrary(name):
     """
-    Forwards to the correct getImports implementation for the platform.
+    Given a library name, try to resolve the path to that library.
+
+    If the path is already an absolute path, return it without searching.
     """
-    if compat.is_win:
-        if pth.lower().endswith(".manifest"):
-            return []
-        try:
-            return _getImports_pe(pth)
-        except Exception as exception:
-            # Assemblies can pull in files which aren't necessarily PE, but are still needed by the assembly. Any
-            # additional binary dependencies should already have been handled by selectAssemblies in that case, so just
-            # warn, return an empty list and continue. For less specific errors also log the traceback.
-            logger.warning('Cannot get binary dependencies for file: %s', pth)
-            logger.warning('  Reason: %s', exception, exc_info=not isinstance(exception, pefile.PEFormatError))
-            return []
-    elif compat.is_darwin:
-        return _getImports_macholib(pth)
+
+    if os.path.isabs(name):
+        return name
+
+    if compat.is_unix:
+        return findLibrary(name)
+    elif compat.is_win:
+        return getfullnameof(name)
     else:
-        return _getImports_ldd(pth)
+        # This seems to work, and is similar to what we have above..
+        return ctypes.util.find_library(name)
+
+
+def getfullnameof(mod, xtrapath=None):
+    """
+    Return the full path name of MOD.
+
+    * MOD is the basename of a dll or pyd.
+    * XTRAPATH is a path or list of paths to search first.
+
+    Return the full path name of MOD. Will search the full Windows search path, as well as sys.path
+    """
+    pywin32_paths = []
+    if compat.is_win:
+        pywin32_paths = [os.path.join(get_python_lib(), 'pywin32_system32')]
+        if compat.is_venv:
+            pywin32_paths.append(os.path.join(compat.base_prefix, 'Lib', 'site-packages', 'pywin32_system32'))
+
+    epath = (
+        sys.path +  # Search sys.path first!
+        pywin32_paths + winutils.get_system_path() + compat.getenv('PATH', '').split(os.pathsep)
+    )
+    if xtrapath is not None:
+        if isinstance(xtrapath, str):
+            epath.insert(0, xtrapath)
+        else:
+            epath = xtrapath + epath
+    for p in epath:
+        npth = os.path.join(p, mod)
+        if os.path.exists(npth) and matchDLLArch(npth):
+            return npth
+    return ''
+
+
+def matchDLLArch(filename):
+    """
+    Return True if the DLL given by filename matches the CPU type/architecture of the Python process running
+    PyInstaller.
+
+    Always returns True on non-Windows platforms.
+
+    :param filename:
+    :type filename:
+    :return:
+    :rtype:
+    """
+    # TODO: check machine type on other platforms?
+    if not compat.is_win:
+        return True
+
+    global _exe_machine_type
+    try:
+        if _exe_machine_type is None:
+            pefilename = compat.python_executable  # for exception handling
+            exe_pe = pefile.PE(pefilename, fast_load=True)
+            _exe_machine_type = exe_pe.FILE_HEADER.Machine
+            exe_pe.close()
+
+        pefilename = filename  # for exception handling
+        pe = pefile.PE(filename, fast_load=True)
+        match_arch = pe.FILE_HEADER.Machine == _exe_machine_type
+        pe.close()
+    except pefile.PEFormatError as exc:
+        raise SystemExit('Cannot get architecture from file: %s\n  Reason: %s' % (pefilename, exc))
+    return match_arch
 
 
 def findLibrary(name):
@@ -661,6 +687,9 @@ def _get_so_name(filename):
     return m.group(1)
 
 
+#- Python shared library search
+
+
 def get_python_library_path():
     """
     Find dynamic Python library that will be bundled with frozen executable.
@@ -764,23 +793,7 @@ def get_python_library_path():
     raise IOError(msg)
 
 
-def findSystemLibrary(name):
-    """
-    Given a library name, try to resolve the path to that library.
-
-    If the path is already an absolute path, return it without searching.
-    """
-
-    if os.path.isabs(name):
-        return name
-
-    if compat.is_unix:
-        return findLibrary(name)
-    elif compat.is_win:
-        return getfullnameof(name)
-    else:
-        # This seems to work, and is similar to what we have above..
-        return ctypes.util.find_library(name)
+#- Binary vs data (re)classification
 
 
 def classify_binary_vs_data(filename):
