@@ -12,7 +12,7 @@
 from pathlib import Path
 from importlib.machinery import EXTENSION_SUFFIXES
 
-from PyInstaller.depend import analysis, bindepend
+from PyInstaller.depend import analysis
 from PyInstaller.building import build_main
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.api import PYZ
@@ -54,29 +54,25 @@ def test_issue_5131(monkeypatch, tmpdir):
     PyInstaller.building._utils._load_code() tried to complete the source code for extension module - triggered by
     PYZ.assemble(), which is collecting all source files - caused by this being marked as "PYMODULE" in the TOC.
     """
-    def getImports(*args, **kwargs):
-        # Our faked binary does not match the expected file-format for all platforms, thus the resp. code might crash.
-        # Simply ignore this.
-        try:
-            return orig_getImports(*args, **kwargs)
-        except Exception:
-            return []
-
     def find_binary_dependencies(*args, **kwargs):
-        # This function from build_main is executed in an isolated sub-process, and also uses getImports(); due to
-        # isolation, we need to provide local override for getImports.
+        # This function from build_main is executed in an isolated sub-process, and also uses get_imports(); due to
+        # isolation, we need to provide local override for get_imports(). Also note that due to being in isolated
+        # sub-process, `PyInstaller.building.build_main.find_binary_dependencies` here was not overridden by the
+        # parent test's monkeypatch.
         from PyInstaller.building.build_main import find_binary_dependencies as orig_find_binary_dependencies
         from PyInstaller.depend import bindepend
 
-        orig_getImports = bindepend.getImports
+        orig_get_imports = bindepend.get_imports
 
-        def getImports(*args, **kwargs):
+        def get_imports(*args, **kwargs):
+            # Our faked binary does not match the expected file-format for all platforms, thus the resp. code might
+            # crash. Simply ignore this.
             try:
-                return orig_getImports(*args, **kwargs)
+                return orig_get_imports(*args, **kwargs)
             except Exception:
                 return []
 
-        bindepend.getImports = getImports
+        bindepend.get_imports = get_imports
 
         return orig_find_binary_dependencies(*args, **kwargs)
 
@@ -95,8 +91,6 @@ def test_issue_5131(monkeypatch, tmpdir):
     # Speedup: avoid analyzing base_library.zip
     monkeypatch.setattr(analysis, 'PY3_BASE_MODULES', [])
 
-    orig_getImports = bindepend.getImports
-    monkeypatch.setattr(bindepend, "getImports", getImports)
     monkeypatch.setattr(build_main, "find_binary_dependencies", find_binary_dependencies)
 
     pkg = (tmpdir / 'mypkg').mkdir()

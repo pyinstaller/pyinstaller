@@ -326,7 +326,7 @@ class QtLibraryInfo:
         module_file = hooks.get_module_file_attribute(module_name)
 
         # Walk through all the link-time dependencies of a dynamically-linked library (``.so``/``.dll``/``.dylib``).
-        imported_libraries = set(bindepend.getImports(module_file))
+        imported_libraries = set(bindepend.get_imports(module_file))
         while imported_libraries:
             imported_library = imported_libraries.pop()
 
@@ -401,7 +401,7 @@ class QtLibraryInfo:
                         # that case, avoid adding a hidden import and analyze the library's link-time dependencies. We
                         # do not need to worry about plugins and translations for this particular module, because those
                         # have been handled at the beginning of this function.
-                        imported_libraries.update(bindepend.getImports(imported_library))
+                        imported_libraries.update(bindepend.get_imports(imported_library))
                     else:
                         hiddenimports.add(self.namespace + "." + qt_module_info.module)
                     continue
@@ -413,7 +413,7 @@ class QtLibraryInfo:
                 translation_base_names.update(qt_module_info.translations)
 
                 # Analyze the linked shared libraries for its dependencies (recursive analysis).
-                imported_libraries.update(bindepend.getImports(imported_library))
+                imported_libraries.update(bindepend.get_imports(imported_library))
 
         # Collect plugin files.
         binaries = []
@@ -816,7 +816,7 @@ class QtLibraryInfo:
 
             # First, get all libraries linked to ``QtWebEngineCore`` extension module.
             module_file = hooks.get_module_file_attribute(self.namespace + '.QtWebEngineCore')
-            module_imports = bindepend.getImports(module_file)
+            module_imports = bindepend.get_imports(module_file)
             for imp in module_imports:
                 # Look for ``libnss3.so``.
                 if os.path.basename(imp).startswith('libnss3.so'):

@@ -133,21 +133,6 @@ def import_pywin32_module(module_name):
     return module
 
 
-def convert_dll_name_to_str(dll_name):
-    """
-    Convert dll names from 'bytes' to 'str'.
-
-    Latest pefile returns type 'bytes'.
-    :param dll_name:
-    :return:
-    """
-    # Imported here to avoid circular import.
-    if isinstance(dll_name, bytes):
-        return str(dll_name, encoding='UTF-8')
-    else:
-        return dll_name
-
-
 def set_exe_build_timestamp(exe_path, timestamp):
     """
     Modifies the executable's build timestamp by updating values in the corresponding PE headers.
