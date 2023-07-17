@@ -299,3 +299,14 @@ def test_shutdown_timeout_dangling_threads(strict_mode, caplog):
 
         # The isolated function should finish and return its expected results, regardless of the shutdown timeout.
         assert actual == expected
+
+
+def test_subprocess_crash():
+    def crash(a):
+        import os
+        os.kill(os.getpid(), 9)
+
+    with pytest.raises(
+        isolated._parent.SubprocessDiedError, match=r"died calling crash\(\) with args=\(12,\) and kwargs=\{\}. .* -?9"
+    ):
+        isolated.call(crash, 12)

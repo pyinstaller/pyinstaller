@@ -174,28 +174,37 @@ def find_binary_dependencies(binaries, import_packages):
     if compat.is_win:
         # Track changes made via `os.add_dll_directory`.
         added_dll_directories = []
-        _orig_add_dll_directory = os.add_dll_directory
+        with isolated.Python() as child:
 
-        def _pyi_add_dll_directory(path):
-            added_dll_directories.append(path)
-            return _orig_add_dll_directory(path)
+            @child.call
+            def setup():
+                import os
+                _original_add_dll_directory = os.add_dll_directory
+                os.added_dll_directories = []
 
-        os.add_dll_directory = _pyi_add_dll_directory
+                def _pyi_add_dll_directory(path):
+                    os.added_dll_directories.append(path)
+                    return _original_add_dll_directory(path)
 
-        # Import collected packages to set up environment.
-        for package in import_packages:
-            try:
-                __import__(package)
-            except Exception:
-                pass
+                os.add_dll_directory = _pyi_add_dll_directory
+
+            # Import collected packages to set up environment.
+            def import_library(package):
+                try:
+                    __import__(package)
+                except Exception:
+                    pass
+
+            for package in import_packages:
+                child.call(import_library, package)
+
+            # Retrieve all values passed to out custom os.add_dll_directory()
+            added_dll_directories = child.call(lambda: __import__("os").added_dll_directories)
 
         # Process extra search paths...
         # Directories added via os.add_dll_directory() calls.
         logger.info("Extra DLL search directories (AddDllDirectory): %r", added_dll_directories)
         extra_libdirs += added_dll_directories
-
-        # Restore original function
-        os.add_dll_directory = _orig_add_dll_directory
 
         # Directories set via PATH environment variable.
         # NOTE: PATH might contain empty entries that need to be filtered out.
@@ -771,7 +780,7 @@ class Analysis(Target):
         logger.info('Looking for dynamic libraries')
 
         collected_packages = self.graph.get_collected_packages()
-        self.binaries.extend(isolated.call(find_binary_dependencies, self.binaries, collected_packages))
+        self.binaries.extend(find_binary_dependencies(self.binaries, collected_packages))
 
         # Apply work-around for (potential) binaries collected from `pywin32` package...
         if is_win:

@@ -177,6 +177,10 @@ def _subprocess_env():
     return env
 
 
+class SubprocessDiedError(RuntimeError):
+    pass
+
+
 class Python:
     """
     Start and connect to a separate Python subprocess.
@@ -242,6 +246,12 @@ class Python:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type and issubclass(exc_type, SubprocessDiedError):
+            self._write_handle.close()
+            self._read_handle.close()
+            del self._read_handle, self._write_handle
+            self._child = None
+            return
         # Send the signal (a blank line) to the child to tell it that it's time to stop.
         self._write_handle.write(b"\n")
         self._write_handle.flush()
@@ -290,7 +300,14 @@ class Python:
 
         # Read a single line of output back from the child. This contains if the function worked and either its return
         # value or a traceback. This will block indefinitely until it receives a '\n' byte.
-        ok, output = loads(b64decode(self._read_handle.readline()))
+        try:
+            ok, output = loads(b64decode(self._read_handle.readline()))
+        except (EOFError, BrokenPipeError):
+            # Subprocess appears to have died in an unhandleable way (e.g. SIGSEV). Raise an error.
+            raise SubprocessDiedError(
+                f"Child process died calling {function.__name__}() with args={args} and "
+                f"kwargs={kwargs}. Its exit code was {self._child.wait()}."
+            ) from None
 
         # If all went well, then ``output`` is the return value.
         if ok:
