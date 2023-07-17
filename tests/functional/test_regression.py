@@ -12,8 +12,7 @@
 from pathlib import Path
 from importlib.machinery import EXTENSION_SUFFIXES
 
-from PyInstaller.depend import analysis
-from PyInstaller.building import build_main
+from PyInstaller.depend import analysis, bindepend
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.api import PYZ
 
@@ -54,27 +53,13 @@ def test_issue_5131(monkeypatch, tmpdir):
     PyInstaller.building._utils._load_code() tried to complete the source code for extension module - triggered by
     PYZ.assemble(), which is collecting all source files - caused by this being marked as "PYMODULE" in the TOC.
     """
-    def find_binary_dependencies(*args, **kwargs):
-        # This function from build_main is executed in an isolated sub-process, and also uses get_imports(); due to
-        # isolation, we need to provide local override for get_imports(). Also note that due to being in isolated
-        # sub-process, `PyInstaller.building.build_main.find_binary_dependencies` here was not overridden by the
-        # parent test's monkeypatch.
-        from PyInstaller.building.build_main import find_binary_dependencies as orig_find_binary_dependencies
-        from PyInstaller.depend import bindepend
-
-        orig_get_imports = bindepend.get_imports
-
-        def get_imports(*args, **kwargs):
-            # Our faked binary does not match the expected file-format for all platforms, thus the resp. code might
-            # crash. Simply ignore this.
-            try:
-                return orig_get_imports(*args, **kwargs)
-            except Exception:
-                return []
-
-        bindepend.get_imports = get_imports
-
-        return orig_find_binary_dependencies(*args, **kwargs)
+    def get_imports(*args, **kwargs):
+        # Our faked binary does not match the expected file-format for all platforms, thus the resp. code might crash.
+        # Simply ignore this.
+        try:
+            return orig_get_imports(*args, **kwargs)
+        except Exception:
+            return []
 
     monkeypatch.setattr(
         'PyInstaller.config.CONF', {
@@ -91,7 +76,8 @@ def test_issue_5131(monkeypatch, tmpdir):
     # Speedup: avoid analyzing base_library.zip
     monkeypatch.setattr(analysis, 'PY3_BASE_MODULES', [])
 
-    monkeypatch.setattr(build_main, "find_binary_dependencies", find_binary_dependencies)
+    orig_get_imports = bindepend.get_imports
+    monkeypatch.setattr(bindepend, "get_imports", get_imports)
 
     pkg = (tmpdir / 'mypkg').mkdir()
     init = pkg / ('__init__' + EXTENSION_SUFFIXES[0])
