@@ -17,6 +17,7 @@ import os
 import pathlib
 import re
 import sys
+import sysconfig
 import subprocess
 
 from PyInstaller import compat
@@ -27,17 +28,13 @@ from PyInstaller.utils.win32 import winutils
 if compat.is_darwin:
     import PyInstaller.utils.osx as osxutils
 
-# Import windows specific stuff.
-if compat.is_win:
-    from distutils.sysconfig import get_python_lib
-
-    import pefile
-
 logger = logging.getLogger(__name__)
 
 seen = set()
 
 _exe_machine_type = None
+if compat.is_win:
+    _exe_machine_type = winutils.get_pe_file_machine_type(compat.python_executable)
 
 #- High-level binary dependency analysis
 
@@ -174,17 +171,10 @@ def selectImports(pth, xtrapath=None):
     else:
         assert isinstance(xtrapath, list)
         xtrapath = [os.path.dirname(pth)] + xtrapath  # make a copy
-    dlls = get_imports(pth)
-    for lib in dlls:
+    dlls = get_imports(pth, xtrapath)
+    for lib, npth in dlls:
         if lib.upper() in seen:
             continue
-        if not compat.is_win:
-            # all other platforms
-            npth = lib
-            lib = os.path.basename(lib)
-        else:
-            # plain win case
-            npth = getfullnameof(lib, xtrapath)
 
         # Now npth is a candidate lib if found. Check again for excludes, but with regex. FIXME: split the list.
         if npth:
@@ -214,26 +204,33 @@ def selectImports(pth, xtrapath=None):
 #- Low-level import analysis
 
 
-def get_imports(filename):
+def get_imports(filename, search_paths=None):
     """
     Analyze the given binary file (shared library or executable), and obtain the list of shared libraries it imports
-    (i.e., link-time dependencies). On POSIX platforms (e.g., Linux and macOS), the imports should already be full
-    absolute paths to the libraries. On Windows, the retrieved imports are only library basenames.
+    (i.e., link-time dependencies).
+
+    Returns set of tuples (name, fullpath). The name component is the referenced name, and on macOS, may not be just
+    a base name. If the library's full path cannot be resolved, fullpath element is None.
+
+    Additional list of search paths may be specified via `search_paths`, to be used as a fall-back when the
+    platform-specific resolution mechanism fails to resolve a library fullpath.
     """
     if compat.is_win:
         if filename.lower().endswith(".manifest"):
             return []
-        return _get_imports_pefile(filename)
+        return _get_imports_pefile(filename, search_paths)
     elif compat.is_darwin:
-        return _get_imports_macholib(filename)
+        return _get_imports_macholib(filename, search_paths)
     else:
-        return _get_imports_ldd(filename)
+        return _get_imports_ldd(filename, search_paths)
 
 
-def _get_imports_pefile(filename):
+def _get_imports_pefile(filename, search_paths):
     """
     Windows-specific helper for `get_imports`, which uses the `pefile` library to walk through PE header.
     """
+    import pefile
+
     output = set()
 
     # By default, pefile library parses all PE information. We are only interested in the list of dependent dlls.
@@ -266,10 +263,16 @@ def _get_imports_pefile(filename):
                 output.add(dll + ".dll")
 
     pe.close()
+
+    # Attempt to resolve full paths to referenced DLLs. Always add the input binary's parent directory to the search
+    # paths.
+    search_paths = [os.path.dirname(filename)] + (search_paths or [])
+    output = {(lib, resolve_library_path(lib, search_paths)) for lib in output}
+
     return output
 
 
-def _get_imports_ldd(filename):
+def _get_imports_ldd(filename, search_paths):
     """
     Helper for `get_imports`, which uses `ldd` to analyze shared libraries. Used on Linux and other POSIX-like platforms
     (with exception of macOS).
@@ -321,6 +324,9 @@ def _get_imports_ldd(filename):
         print(line, file=sys.stderr)
 
     for line in p.stdout.splitlines():
+        name = None  # Referenced name
+        lib = None  # Resolved library path
+
         m = LDD_PATTERN.search(line)
         if m:
             if compat.is_aix:
@@ -349,31 +355,45 @@ def _get_imports_ldd(filename):
                 if lib.lower().startswith('/cygdrive/c/windows/system'):
                     continue
 
-            if os.path.exists(lib):
-                # Add lib to the output set
-                output.add(lib)
-            elif dylib.warn_missing_lib(name):
-                logger.warning('Cannot find %s in path %s (needed by %s)', name, lib, filename)
+            # Reset library path if it does not exist
+            if not os.path.exists(lib):
+                lib = None
         elif line.endswith("not found"):
             # On glibc-based linux distributions, missing libraries are marked with name.so => not found
             tokens = line.split('=>')
             if len(tokens) != 2:
                 continue
             name = tokens[0].strip()
-            if dylib.warn_missing_lib(name):
-                logger.warning('Cannot find %s (needed by %s)', name, filename)
+            lib = None
+        else:
+            # TODO: should we warn about unprocessed lines?
+            continue
+
+        # Fall back to searching the supplied search paths, if any.
+        if not lib:
+            lib = _resolve_library_path_in_search_paths(
+                os.path.basename(name),  # Search for basename of the referenced name.
+                search_paths,
+            )
+
+        # Normalize the resolved path, to remove any extraneous "../" elements.
+        if lib:
+            lib = os.path.normpath(lib)
+
+        # Return referenced name as-is instead of computing a basename, to provide additional context when library
+        # cannot be resolved.
+        output.add((name, lib))
 
     return output
 
 
-def _get_imports_macholib(filename):
+def _get_imports_macholib(filename, search_paths):
     """
     macOS-specific helper for `get_imports`, which uses `macholib` to analyze library load commands in Mach-O headers.
     """
     from macholib.dyld import dyld_find
     from macholib.mach_o import LC_RPATH
     from macholib.MachO import MachO
-    from macholib.util import in_system_path
 
     output = set()
     referenced_libs = set()  # Libraries referenced in Mach-O headers.
@@ -481,16 +501,21 @@ def _get_imports_macholib(filename):
             else:
                 resolved_lib = _resolve_using_path(referenced_lib)
 
-        # TODO: fall back to supplied search paths
+        # Fall back to searching the supplied search paths, if any.
+        if not resolved_lib:
+            resolved_lib = _resolve_library_path_in_search_paths(
+                os.path.basename(referenced_lib),  # Search for basename of the referenced name.
+                search_paths,
+            )
 
-        # Log warning if no existing file found. Starting with Big Sur, system libraries are hidden. And we do not
-        # collect system libraries on any macOS version anyway, so suppress the corresponding error messages.
+        # Normalize the resolved path, to remove any extraneous "../" elements.
         if resolved_lib:
-            # Normalize the resolved path, to remove any extraneous "../" elements.
             resolved_lib = os.path.normpath(resolved_lib)
-            output.add(resolved_lib)
-        elif not in_system_path(referenced_lib) and dylib.warn_missing_lib(referenced_lib):
-            logger.warning('Cannot resolve path for library %r (referenced by %r)', referenced_lib, filename)
+
+        # Return referenced library name as-is instead of computing a basename. Full referenced name carries additional
+        # information that might be useful for the caller to determine how to deal with unresolved library (e.g., ignore
+        # unresolved libraries that are supposed to be located in system-wide directories).
+        output.add((referenced_lib, resolved_lib))
 
     return output
 
@@ -498,94 +523,75 @@ def _get_imports_macholib(filename):
 #- Library full path resolution
 
 
-def findSystemLibrary(name):
+def resolve_library_path(name, search_paths=None):
     """
-    Given a library name, try to resolve the path to that library.
-
-    If the path is already an absolute path, return it without searching.
+    Given a library name, attempt to resolve full path to that library. The search for library is done via
+    platform-specific mechanism and fall back to optionally-provided list of search paths. Returns None if library
+    cannot be resolved. If give library name is already an absolute path, the given path is returned without any
+    processing.
     """
-
+    # No-op if path is already absolute.
     if os.path.isabs(name):
         return name
 
     if compat.is_unix:
-        return findLibrary(name)
+        # Use platform-specific helper.
+        fullpath = _resolve_library_path_unix(name)
+        if fullpath:
+            return fullpath
+        # Fall back to searching the supplied search paths, if any
+        return _resolve_library_path_in_search_paths(name, search_paths)
     elif compat.is_win:
-        return getfullnameof(name)
-    else:
-        # This seems to work, and is similar to what we have above..
-        return ctypes.util.find_library(name)
-
-
-def getfullnameof(mod, xtrapath=None):
-    """
-    Return the full path name of MOD.
-
-    * MOD is the basename of a dll or pyd.
-    * XTRAPATH is a path or list of paths to search first.
-
-    Return the full path name of MOD. Will search the full Windows search path, as well as sys.path
-    """
-    pywin32_paths = []
-    if compat.is_win:
-        pywin32_paths = [os.path.join(get_python_lib(), 'pywin32_system32')]
+        # Construct the search paths equivalent to what was used in old `getfullnameof` helper.
+        # TODO: do we really need to search all paths in `sys.path`?
+        # TODO: improve search for pywin32_system32 and other pywin32 paths, and get rid of distutils.sysconfig import.
+        import distutils.sysconfig
+        pywin32_paths = [os.path.join(distutils.sysconfig.get_python_lib(), 'pywin32_system32')]
         if compat.is_venv:
             pywin32_paths.append(os.path.join(compat.base_prefix, 'Lib', 'site-packages', 'pywin32_system32'))
 
-    epath = (
-        sys.path +  # Search sys.path first!
-        pywin32_paths + winutils.get_system_path() + compat.getenv('PATH', '').split(os.pathsep)
-    )
-    if xtrapath is not None:
-        if isinstance(xtrapath, str):
-            epath.insert(0, xtrapath)
-        else:
-            epath = xtrapath + epath
-    for p in epath:
-        npth = os.path.join(p, mod)
-        if os.path.exists(npth) and matchDLLArch(npth):
-            return npth
-    return ''
+        win_search_paths = (
+            sys.path +  # Search sys.path first!
+            pywin32_paths + winutils.get_system_path() + compat.getenv('PATH', '').split(os.pathsep)
+        )
+
+        return _resolve_library_path_in_search_paths(name, (search_paths or []) + win_search_paths)
+    else:
+        return ctypes.util.find_library(name)
+
+    return None
 
 
-def matchDLLArch(filename):
+# Compatibility aliases for hooks from contributed hooks repository. All of these now point to the high-level
+# `resolve_library_path`.
+findLibrary = resolve_library_path
+findSystemLibrary = resolve_library_path
+
+
+def _resolve_library_path_in_search_paths(name, search_paths=None):
     """
-    Return True if the DLL given by filename matches the CPU type/architecture of the Python process running
-    PyInstaller.
-
-    Always returns True on non-Windows platforms.
-
-    :param filename:
-    :type filename:
-    :return:
-    :rtype:
+    Low-level helper for resolving given library name to full path in given list of search paths.
     """
-    # TODO: check machine type on other platforms?
-    if not compat.is_win:
-        return True
+    for search_path in search_paths or []:
+        fullpath = os.path.join(search_path, name)
+        if not os.path.isfile(fullpath):
+            continue
 
-    global _exe_machine_type
-    try:
-        if _exe_machine_type is None:
-            pefilename = compat.python_executable  # for exception handling
-            exe_pe = pefile.PE(pefilename, fast_load=True)
-            _exe_machine_type = exe_pe.FILE_HEADER.Machine
-            exe_pe.close()
+        # On Windows, ensure that architecture matches that of running python interpreter.
+        if compat.is_win:
+            if winutils.get_pe_file_machine_type(fullpath) != _exe_machine_type:
+                continue
 
-        pefilename = filename  # for exception handling
-        pe = pefile.PE(filename, fast_load=True)
-        match_arch = pe.FILE_HEADER.Machine == _exe_machine_type
-        pe.close()
-    except pefile.PEFormatError as exc:
-        raise SystemExit('Cannot get architecture from file: %s\n  Reason: %s' % (pefilename, exc))
-    return match_arch
+        return os.path.normpath(fullpath)
+
+    return None
 
 
-def findLibrary(name):
+def _resolve_library_path_unix(name):
     """
-    Look for a library in the system.
+    UNIX-specific helper for resolving library path.
 
-    Emulate the algorithm used by dlopen. `name` must include the prefix, e.g., ``libpython2.4.so``.
+    Emulates the algorithm used by dlopen. `name` must include the prefix, e.g., ``libpython2.4.so``.
     """
     assert compat.is_unix, "Current implementation for Unix only (Linux, Solaris, AIX, FreeBSD)"
 
@@ -623,20 +629,13 @@ def findLibrary(name):
                 paths.extend(['/usr/lib/x86_64-linux-gnu'])
 
         # On Debian/Ubuntu /usr/bin/python is linked statically with libpython. Newer Debian/Ubuntu with multiarch
-        # support puts the libpythonX.Y.so in paths like /usr/lib/i386-linux-gnu/.
-        try:
-            # Module available only in Python 2.7+
-            import sysconfig
-
-            # 'multiarchsubdir' works on Debian/Ubuntu only in Python 2.7 and 3.3+.
-            arch_subdir = sysconfig.get_config_var('multiarchsubdir')
-            # Ignore if None is returned.
-            if arch_subdir:
-                arch_subdir = os.path.basename(arch_subdir)
-                paths.append(os.path.join('/usr/lib', arch_subdir))
-            else:
-                logger.debug('Multiarch directory not detected.')
-        except ImportError:
+        # support puts the libpythonX.Y.so in paths like /usr/lib/i386-linux-gnu/. Try to query the arch-specific
+        # sub-directory, if available.
+        arch_subdir = sysconfig.get_config_var('multiarchsubdir')
+        if arch_subdir:
+            arch_subdir = os.path.basename(arch_subdir)
+            paths.append(os.path.join('/usr/lib', arch_subdir))
+        else:
             logger.debug('Multiarch directory not detected.')
 
         # Termux (a Ubuntu like subsystem for Android) has an additional libraries directory.
@@ -748,8 +747,7 @@ def get_python_library_path():
         return None
 
     # If this is Microsoft App Store Python, check the compat.base_path first. While compat.python_executable resolves
-    # to actual python.exe file, the latter contains relative library reference that does not get properly resolved by
-    # getfullnameof().
+    # to actual python.exe file, the latter contains a relative library reference that we fail to properly resolve.
     if compat.is_ms_app_store:
         python_libname = _find_lib_in_libdirs(compat.base_prefix)
         if python_libname:
@@ -757,23 +755,21 @@ def get_python_library_path():
 
     # Try to get Python library name from the Python executable. It assumes that Python library is not statically
     # linked.
-    python_exe_dir = os.path.dirname(compat.python_executable)
-    dlls = get_imports(compat.python_executable)
-    for filename in dlls:
+    imported_libraries = get_imports(compat.python_executable)  # (name, fullpath) tuples
+    for _, lib_path in imported_libraries:
+        if lib_path is None:
+            continue  # Skip unresolved imports
         for name in compat.PYDYLIB_NAMES:
-            if os.path.basename(filename) == name:
-                # On Windows filename is just like 'python27.dll'. Resolve it into absolute path.
-                if compat.is_win and not os.path.isabs(filename):
-                    filename = getfullnameof(filename, [python_exe_dir])
+            if os.path.normcase(os.path.basename(lib_path)) == name:
                 # Python library found. Return absolute path to it.
-                return filename
+                return lib_path
 
     # Python library NOT found. Resume searching using alternative methods.
 
     # Work around for python venv having VERSION.dll rather than pythonXY.dll
-    if compat.is_win and 'VERSION.dll' in dlls:
+    if compat.is_win and any([os.path.normcase(lib_name) == 'version.dll' for lib_name, _ in imported_libraries]):
         pydll = 'python%d%d.dll' % sys.version_info[:2]
-        return getfullnameof(pydll, [python_exe_dir])
+        return resolve_library_path(pydll, [os.path.dirname(compat.python_executable)])
 
     # Applies only to non Windows platforms and conda.
 

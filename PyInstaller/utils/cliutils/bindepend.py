@@ -39,8 +39,8 @@ def run():
         for input_filename_or_pattern in args.filenames:
             for filename in glob.glob(input_filename_or_pattern):
                 print(f"{filename}:")
-                for referenced_lib in sorted(PyInstaller.depend.bindepend.get_imports(filename)):
-                    print(f"  {referenced_lib}")
+                for lib_name, lib_path in sorted(PyInstaller.depend.bindepend.get_imports(filename)):
+                    print(f"  {lib_name} => {lib_path}")
                 print("")
     except KeyboardInterrupt:
         raise SystemExit("Aborted by user request.")

@@ -325,28 +325,35 @@ class QtLibraryInfo:
         # Find the actual module extension file.
         module_file = hooks.get_module_file_attribute(module_name)
 
+        # Additional search path for shared library resolution. This is mostly required for library resolution on
+        # Windows (Linux and macOS binaries use run paths to find Qt libs).
+        qtlib_search_paths = [
+            # For PyQt5 and PyQt6 wheels, shared libraries should be in BinariesPath, while for PySide2 and PySide6,
+            # they should be in PrefixPath.
+            self.location['BinariesPath' if self.is_pyqt else 'PrefixPath'],
+        ]
+
         # Walk through all the link-time dependencies of a dynamically-linked library (``.so``/``.dll``/``.dylib``).
-        imported_libraries = set(bindepend.get_imports(module_file))
+        imported_libraries = bindepend.get_imports(module_file, qtlib_search_paths)
         while imported_libraries:
-            imported_library = imported_libraries.pop()
+            imported_lib_name, imported_lib_path = imported_libraries.pop()  # (name, fullpath) tuple
 
-            # On Windows, resolve the shared library's full path; other platforms already provide the full path.
-            if compat.is_win:
-                # First, look for Qt binaries in the local Qt install. For PyQt5 and PyQt6, DLLs should be in
-                # BinariesPath, while for PySide2 and PySide6, they should be in PrefixPath.
-                dll_location = self.location['BinariesPath' if self.is_pyqt else 'PrefixPath']
-                imported_library = bindepend.getfullnameof(imported_library, dll_location)
+            # Skip unresolved libraries
+            if imported_lib_path is None:
+                logger.debug("%s: ignoring unresolved library import %r", self, imported_lib_name)
+                continue
 
-            # Strip off the extension and ``lib`` prefix (Linux/Mac) to give the raw name.
-            # Lowercase (since Windows always normalizes names to lowercase).
-            lib_name = os.path.splitext(os.path.basename(imported_library))[0].lower()
+            # On macOS, ``imported_lib_name`` is the original referenced name and may not be a basename. So, to parse
+            # the library name, obtain the base name of the full library path (``imported_lib_path``). Remove the
+            # suffix and "lib" prefix (Linux/macOS), and lowercase the name for case-normalized comparison.
+            lib_name = os.path.splitext(os.path.basename(imported_lib_path))[0].lower()
             # Linux libraries sometimes have a dotted version number -- ``libfoo.so.3``. It is now ''libfoo.so``,
             # but the ``.so`` must also be removed.
             if compat.is_linux and os.path.splitext(lib_name)[1] == '.so':
                 lib_name = os.path.splitext(lib_name)[0]
             if lib_name.startswith('lib'):
                 lib_name = lib_name[3:]
-            # Mac OS: handle different naming schemes. PyPI wheels ship framework-enabled Qt builds, where shared
+            # macOS: handle different naming schemes. PyPI wheels ship framework-enabled Qt builds, where shared
             # libraries are part of .framework bundles (e.g., ``PyQt5/Qt5/lib/QtCore.framework/Versions/5/QtCore``).
             # In Anaconda (Py)Qt installations, the shared libraries are installed in environment's library directory,
             # and contain versioned extensions, e.g., ``libQt5Core.5.dylib``.
@@ -364,7 +371,10 @@ class QtLibraryInfo:
             if lib_name.endswith('_conda'):
                 lib_name = lib_name[:-6]
 
-            logger.debug('%s: raw imported library name %s -> parsed name %s.', self, imported_library, lib_name)
+            logger.debug(
+                '%s: imported library %r, full path %r -> parsed name %r.', self, imported_lib_name, imported_lib_path,
+                lib_name
+            )
 
             # PySide2 and PySide6 on linux seem to link all extension modules against libQt5Core, libQt5Network, and
             # libQt5Qml (or their libQt6* equivalents). While the first two are reasonable, the libQt5Qml dependency
@@ -378,15 +388,12 @@ class QtLibraryInfo:
             # QtQml* and QtQuick* modules, whose use directly implies the use of QtQml.
             if lib_name in ("qt5qml", "qt6qml"):
                 if not short_module_name.startswith(('QtQml', 'QtQuick')):
-                    logger.debug('%s: ignoring imported library %s.', self, imported_library)
+                    logger.debug('%s: ignoring imported library %r.', self, lib_name)
                     continue
 
             # Use the parsed library name to look up associated Qt module information.
             if lib_name in self.shared_libraries:
-                logger.debug(
-                    '%s: collecting Qt module associated with imported shared library %s (%s).', self, imported_library,
-                    lib_name
-                )
+                logger.debug('%s: collecting Qt module associated with %r.', self, lib_name)
 
                 # Look up associated module info
                 qt_module_info = self.shared_libraries[lib_name]
@@ -401,7 +408,7 @@ class QtLibraryInfo:
                         # that case, avoid adding a hidden import and analyze the library's link-time dependencies. We
                         # do not need to worry about plugins and translations for this particular module, because those
                         # have been handled at the beginning of this function.
-                        imported_libraries.update(bindepend.get_imports(imported_library))
+                        imported_libraries.update(bindepend.get_imports(imported_lib_path, qtlib_search_paths))
                     else:
                         hiddenimports.add(self.namespace + "." + qt_module_info.module)
                     continue
@@ -413,7 +420,7 @@ class QtLibraryInfo:
                 translation_base_names.update(qt_module_info.translations)
 
                 # Analyze the linked shared libraries for its dependencies (recursive analysis).
-                imported_libraries.update(bindepend.get_imports(imported_library))
+                imported_libraries.update(bindepend.get_imports(imported_lib_path, qtlib_search_paths))
 
         # Collect plugin files.
         binaries = []
@@ -811,18 +818,19 @@ class QtLibraryInfo:
         if compat.is_linux:
             # The automatic library detection fails for `NSS <https://packages.ubuntu.com/search?keywords=libnss3>`_,
             # which is used by QtWebEngine. In some distributions, the ``libnss`` supporting libraries are stored in a
-            # subdirectory ``nss``. Since ``libnss`` is not statically linked to these, but dynamically loads them, we
-            # need to search for and add them.
+            # subdirectory ``nss``. Since ``libnss`` is not linked against them but loads them dynamically at run-time,
+            # we need to search for and add them.
 
             # First, get all libraries linked to ``QtWebEngineCore`` extension module.
             module_file = hooks.get_module_file_attribute(self.namespace + '.QtWebEngineCore')
-            module_imports = bindepend.get_imports(module_file)
-            for imp in module_imports:
+            for lib_name, lib_path in bindepend.get_imports(module_file):  # (name, fullpath) tuples
+                if lib_path is None:
+                    continue  # Skip unresolved libraries
                 # Look for ``libnss3.so``.
-                if os.path.basename(imp).startswith('libnss3.so'):
-                    # Find the location of NSS: given a ``/path/to/libnss.so``, add ``/path/to/nss/*.so`` to get the
+                if os.path.basename(lib_path).startswith('libnss3.so'):
+                    # Find the location of NSS: given a ``/path/to/libnss.so``, search ``/path/to/nss/*.so`` to get the
                     # missing NSS libraries.
-                    nss_glob = os.path.join(os.path.dirname(imp), 'nss', '*.so')
+                    nss_glob = os.path.join(os.path.dirname(lib_path), 'nss', '*.so')
                     if glob.glob(nss_glob):
                         binaries.append((nss_glob, 'nss'))
 
