@@ -133,6 +133,16 @@ def import_pywin32_module(module_name):
     return module
 
 
+def get_pe_file_machine_type(filename):
+    """
+    Return the machine type code from the header of the given PE file.
+    """
+    import pefile
+
+    with pefile.PE(filename, fast_load=True) as pe:
+        return pe.FILE_HEADER.Machine
+
+
 def set_exe_build_timestamp(exe_path, timestamp):
     """
     Modifies the executable's build timestamp by updating values in the corresponding PE headers.

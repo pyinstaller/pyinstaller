@@ -137,30 +137,21 @@ def find_tcl_tk_shared_libs(tkinter_ext_file):
     tk_lib = None
     tk_libpath = None
 
-    # Do not use bindepend.selectImports, as it ignores libraries seen during previous invocations.
-    _tkinter_imports = bindepend.get_imports(tkinter_ext_file)
+    for _, lib_path in bindepend.get_imports(tkinter_ext_file):  # (name, fullpath) tuple
+        if lib_path is None:
+            continue  # Skip unresolved entries
 
-    def _get_library_path(lib):
-        if compat.is_win:
-            # On Windows, we need to resolve full path to the library.
-            path = bindepend.getfullnameof(lib)
-        else:
-            # Non-Windows systems (including Cygwin) already return full path to the library.
-            path = lib
-        return path
-
-    for lib in _tkinter_imports:
-        # On some platforms, full path to the shared library is returned. So check only basename to prevent false
-        # positive matches due to words tcl or tk being contained in the path.
-        lib_name = os.path.basename(lib)
+        # For comparison, take basename of lib_path. On macOS, lib_name returned by get_imports is in fact referenced
+        # name, which is not necessarily just a basename.
+        lib_name = os.path.basename(lib_path)
         lib_name_lower = lib_name.lower()  # lower-case for comparisons
 
         if 'tcl' in lib_name_lower:
             tcl_lib = lib_name
-            tcl_libpath = _get_library_path(lib)
+            tcl_libpath = lib_path
         elif 'tk' in lib_name_lower:
             tk_lib = lib_name
-            tk_libpath = _get_library_path(lib)
+            tk_libpath = lib_path
 
     return [(tcl_lib, tcl_libpath), (tk_lib, tk_libpath)]
 
