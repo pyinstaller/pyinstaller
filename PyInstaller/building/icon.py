@@ -63,7 +63,8 @@ def normalize_icon_type(icon_path: str, allowed_types: Tuple[str], convert_type:
         _generated_name = f"generated-{hashlib.sha256(icon_path.encode()).hexdigest()}.{convert_type}"
         generated_icon = os.path.join(workpath, _generated_name)
         with PILImage.open(icon_path) as im:
-            img = img.convert("RGBA")
+            if im.mode == "P" and im.info.get("transparency", None) is not None:
+                im = im.convert("RGBA")
             im.save(generated_icon)
         icon_path = generated_icon
     except PIL.UnidentifiedImageError:
