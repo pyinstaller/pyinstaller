@@ -181,7 +181,7 @@ def find_binary_dependencies(binaries, import_packages):
         extra_libdirs += path_directories
 
     # Search for dependencies of the given binaries
-    return bindepend.Dependencies(binaries, xtrapath=extra_libdirs)
+    return bindepend.binary_dependency_analysis(binaries, search_paths=extra_libdirs)
 
 
 class _ModuleCollectionMode(enum.IntFlag):
@@ -527,12 +527,6 @@ class Analysis(Target):
         self.graph.set_setuptools_nspackages()
 
         logger.info("Running Analysis %s", self.tocbasename)
-
-        # We record "binaries" separately from the modulegraph, as there is no way to record those dependencies in the
-        # graph. These include the python executable and any binaries added by hooks later. "binaries" are not the same
-        # as "extensions" which are .so or .dylib that are found and recorded as extension nodes in the graph. Reset
-        # seen variable before running bindepend. We use bindepend only for the python executable.
-        bindepend.seen.clear()
 
         # Search for python shared library, which we need to collect into frozen application.
         logger.info('Looking for Python shared library...')

@@ -216,7 +216,7 @@ class Splash(Target):
         # Tcl and Tk shared libaries themselves) even if the user's program uses tkinter and they would be collected
         # anyway; let the collection mechanism deal with potential duplicates.
         tcltk_libs = [(dest_name, src_name, 'BINARY') for dest_name, src_name in (self.tcl_lib, self.tk_lib)]
-        self.binaries = bindepend.Dependencies(tcltk_libs)
+        self.binaries = bindepend.binary_dependency_analysis(tcltk_libs)
 
         # Put all shared library dependencies in `splash_requirements`, so they are made available in onefile mode.
         self.splash_requirements.update(entry[0] for entry in self.binaries)

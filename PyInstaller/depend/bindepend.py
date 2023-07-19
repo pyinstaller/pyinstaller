@@ -30,8 +30,6 @@ if compat.is_darwin:
 
 logger = logging.getLogger(__name__)
 
-seen = set()
-
 _exe_machine_type = None
 if compat.is_win:
     _exe_machine_type = winutils.get_pe_file_machine_type(compat.python_executable)
@@ -105,100 +103,92 @@ def _select_destination_directory(src_filename, parent_dir_preservation_paths):
     return src_filename.name
 
 
-def Dependencies(lTOC, xtrapath=None):
+def binary_dependency_analysis(binaries, search_paths=None):
     """
-    Expand LTOC to include all the closure of binary dependencies.
+    Perform binary dependency analysis on the given TOC list of collected binaries, by recursively scanning each binary
+    for linked dependencies (shared library imports). Returns new TOC list that contains both original entries and their
+    binary dependencies.
 
-    `LTOC` is a logical table of contents, ie, a seq of tuples (name, path). Return LTOC expanded by all the binary
-    dependencies of the entries in LTOC, except those listed in the module global EXCLUDES
+    Additional search paths for dependencies' full path resolution may be supplied via optional argument.
     """
 
     # Get all path prefixes for binaries' parent-directory preservation. For binaries collected from packages in (for
     # example) site-packages directory, we should try to preserve the parent directory structure.
     parent_dir_preservation_paths = _get_paths_for_parent_directory_preservation()
 
-    lTOC = lTOC[:]  # Create a copy
+    # Keep track of processed binaries and processed dependencies.
+    processed_binaries = set()
+    processed_dependencies = set()
 
-    for nm, pth, typ in lTOC:
-        if nm.upper() in seen:
+    # Populate output TOC with input binaries - this also serves as TODO list, as we iterate over it while appending
+    # new entries at the end.
+    output_toc = binaries[:]
+    for dest_name, src_name, typecode in output_toc:
+        # Do not process symbolic links (already present in input TOC list, or added during analysis below).
+        if typecode == 'SYMLINK':
             continue
-        if typ == 'SYMLINK':
+
+        # Keep track of processed binaries, to avoid unnecessarily repeating analysis of the same file. Use pathlib.Path
+        # to avoid having to worry about case normalization.
+        src_path = pathlib.Path(src_name)
+        if src_path in processed_binaries:
             continue
-        logger.debug("Analyzing %s", pth)
-        seen.add(nm.upper())
-        for lib, npth in selectImports(pth, xtrapath):
-            if lib.upper() in seen or npth.upper() in seen:
+        processed_binaries.add(src_path)
+
+        logger.debug("Analyzing binary %r", src_name)
+
+        # Analyze imports (linked dependencies)
+        for dep_name, dep_src_path in get_imports(src_name, search_paths):
+            logger.debug("Processing dependency, name: %r, resolved path: %r", dep_name, dep_src_path)
+
+            # Skip unresolved dependencies. Warn only if the dependency was to be collected.
+            if not dep_src_path:
+                # Check against unresolved name...
+                if dylib.include_library(dep_name) and dylib.warn_missing_lib(dep_name):
+                    logger.warning("Library not found: could not resolve %r, dependency of %r.", dep_name, src_name)
                 continue
-            seen.add(npth.upper())
+
+            # Compare resolved dependency against global inclusion/exclusion rules.
+            if not dylib.include_library(dep_src_path):
+                logger.debug("Skipping dependency %r due to global exclusion rules.", dep_src_path)
+                continue
+
+            dep_src_path = pathlib.Path(dep_src_path)  # Turn into pathlib.Path for subsequent processing
+
+            # Avoid processing this dependency if we have already processed it.
+            if dep_src_path in processed_dependencies:
+                logger.debug("Skipping dependency %r due to prior processing.", str(dep_src_path))
+                continue
+            processed_dependencies.add(dep_src_path)
 
             # Try to preserve parent directory structure, if applicable.
             # NOTE: do not resolve the source path, because on macOS and linux, it may be a versioned .so (e.g.,
-            # libsomething.so.1, pointing at libsomething.so.1.2.3), and we need to collect it under original
-            # name!
-            src_path = pathlib.Path(npth)
-            dst_path = _select_destination_directory(src_path, parent_dir_preservation_paths)
-            dst_path = pathlib.PurePath(dst_path)  # Might be a str() if it is just a basename...
+            # libsomething.so.1, pointing at libsomething.so.1.2.3), and we need to collect it under original name!
+            dep_dest_path = _select_destination_directory(dep_src_path, parent_dir_preservation_paths)
+            dep_dest_path = pathlib.PurePath(dep_dest_path)  # Might be a str() if it is just a basename...
 
             # If we are collecting library into top-level directory on macOS, check whether it comes from a
             # .framework bundle. If it does, re-create the .framework bundle in the top-level directory
             # instead.
-            if compat.is_darwin and dst_path.parent == pathlib.PurePath('.'):
-                if osxutils.is_framework_bundle_lib(src_path):
-                    dst_path = pathlib.PurePath(src_path.relative_to(src_path.parent.parent.parent.parent))
+            if compat.is_darwin and dep_dest_path.parent == pathlib.PurePath('.'):
+                if osxutils.is_framework_bundle_lib(dep_src_path):
+                    # dst_src_path is parent_path/Name.framework/Versions/Current/Name
+                    framework_parent_path = dep_src_path.parent.parent.parent.parent
+                    dep_dest_path = pathlib.PurePath(dep_src_path.relative_to(framework_parent_path))
 
-            lTOC.append((str(dst_path), str(src_path), 'BINARY'))
+            logger.debug("Collecting dependency %r as %r.", str(dep_src_path), str(dep_dest_path))
+            output_toc.append((str(dep_dest_path), str(dep_src_path), 'BINARY'))
 
             # On non-Windows, if we are not collecting the binary into application's top-level directory ('.'),
             # add a symbolic link from top-level directory to the actual location. This is to accommodate
             # LD_LIBRARY_PATH being set to the top-level application directory on linux (although library search
             # should be mostly done via rpaths, so this might be redundant) and to accommodate library path
             # rewriting on macOS, which assumes that the library was collected into top-level directory.
-            if not compat.is_win and dst_path.parent != pathlib.PurePath('.'):
-                lTOC.append((str(dst_path.name), str(dst_path), 'SYMLINK'))
+            if not compat.is_win and dep_dest_path.parent != pathlib.PurePath('.'):
+                logger.debug("Adding symbolic link from %r to top-level application directory.", str(dep_dest_path))
+                output_toc.append((str(dep_dest_path.name), str(dep_dest_path), 'SYMLINK'))
 
-    return lTOC
-
-
-def selectImports(pth, xtrapath=None):
-    """
-    Return the dependencies of a binary that should be included.
-
-    Return a list of pairs (name, fullpath)
-    """
-    rv = []
-    if xtrapath is None:
-        xtrapath = [os.path.dirname(pth)]
-    else:
-        assert isinstance(xtrapath, list)
-        xtrapath = [os.path.dirname(pth)] + xtrapath  # make a copy
-    dlls = get_imports(pth, xtrapath)
-    for lib, npth in dlls:
-        if lib.upper() in seen:
-            continue
-
-        # Now npth is a candidate lib if found. Check again for excludes, but with regex. FIXME: split the list.
-        if npth:
-            candidatelib = npth
-        else:
-            candidatelib = lib
-
-        if not dylib.include_library(candidatelib):
-            if candidatelib.find('libpython') < 0 and candidatelib.find('Python.framework') < 0:
-                # skip libs not containing (libpython or Python.framework)
-                if npth.upper() not in seen:
-                    logger.debug("Skipping %s dependency of %s", lib, os.path.basename(pth))
-                continue
-            else:
-                pass
-
-        if npth:
-            if npth.upper() not in seen:
-                logger.debug("Adding %s dependency of %s from %s", lib, os.path.basename(pth), npth)
-                rv.append((lib, npth))
-        elif dylib.warn_missing_lib(lib):
-            logger.warning("lib not found: %s dependency of %s", lib, pth)
-
-    return rv
+    return output_toc
 
 
 #- Low-level import analysis
