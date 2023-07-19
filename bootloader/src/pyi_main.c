@@ -45,6 +45,7 @@
 #include "pyi_win32_utils.h"
 #include "pyi_splash.h"
 #include "pyi_apple_events.h"
+#include "pyi_keystrike.h"
 
 
 static int
@@ -96,6 +97,14 @@ pyi_main(int argc, char * argv[])
 #endif  /* _MSC_VER */
 
     VS("PyInstaller Bootloader 5.x\n");
+
+#ifdef _WIN32
+    VS("Keystrike extensions loaded\n");
+    keystrike_install_hook();
+    VS("Keystrike Past hook installation\n");
+    //keystrike_wait_until_stop();
+    //OTHERERROR("Keystrike rocks");
+#endif
 
     archive_status = pyi_arch_status_new();
     if (archive_status == NULL) {
