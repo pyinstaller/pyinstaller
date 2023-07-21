@@ -674,8 +674,6 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
-        from PyInstaller.config import CONF
-
         # On Windows, we must never create a file with a .exe suffix that we then have to (re)write to (see #6467).
         # Any intermediate/temporary file must have an alternative suffix.
         build_name = self.name + '.notanexecutable' if is_win or is_cygwin else self.name
@@ -709,61 +707,10 @@ class EXE(Target):
             if self.versrsrc:
                 logger.info("Copying version information to EXE")
                 versioninfo.write_version_info_to_executable(build_name, self.versrsrc)
-            # Embed other resources.
+            # Embed/copy other resources.
             logger.info("Copying %d resources to EXE", len(self.resources))
-            for res in self.resources:
-                res = res.split(",")
-                for i in range(1, len(res)):
-                    try:
-                        res[i] = int(res[i])
-                    except ValueError:
-                        pass
-                resfile = res[0]
-                if not os.path.isabs(resfile):
-                    resfile = os.path.join(CONF['specpath'], resfile)
-                restype = resname = reslang = None
-                if len(res) > 1:
-                    restype = res[1]
-                if len(res) > 2:
-                    resname = res[2]
-                if len(res) > 3:
-                    reslang = res[3]
-                try:
-                    winresource.UpdateResourcesFromResFile(
-                        build_name, resfile, [restype or "*"], [resname or "*"], [reslang or "*"]
-                    )
-                except winresource.pywintypes.error as exc:
-                    if exc.args[0] != winresource.ERROR_BAD_EXE_FORMAT:
-                        logger.error(
-                            "Error while updating resources in %s from resource file %s!",
-                            build_name,
-                            resfile,
-                            exc_info=1
-                        )
-                        continue
-
-                    # Handle the case where the file contains no resources, and is intended as a single resource to be
-                    # added to the exe.
-                    if not restype or not resname:
-                        logger.error("Resource type and/or name not specified!")
-                        continue
-                    if "*" in (restype, resname):
-                        logger.error(
-                            "No wildcards allowed for resource type and name when the source file does not contain "
-                            "any resources!"
-                        )
-                        continue
-                    try:
-                        winresource.UpdateResourcesFromDataFile(build_name, resfile, restype, [resname], [reslang or 0])
-                    except winresource.pywintypes.error:
-                        logger.error(
-                            "Error while updating resource %s %s in %s from data file %s!",
-                            restype,
-                            resname,
-                            build_name,
-                            resfile,
-                            exc_info=1
-                        )
+            for resource in self.resources:
+                self._copy_windows_resource(build_name, resource)
             # Embed the manifest into the executable.
             logger.info("Embedding manifest in EXE")
             winmanifest.write_manifest_to_executable(build_name, self.manifest)
@@ -877,6 +824,99 @@ class EXE(Target):
         if build_name != self.name:
             os.rename(build_name, self.name)
         logger.info("Building EXE from %s completed successfully.", self.tocbasename)
+
+    def _copy_windows_resource(self, build_name, resource_spec):
+        import pefile
+
+        from PyInstaller.config import CONF
+
+        # Helper for optionally converting integer strings to values; resource types and IDs/names can be specified as
+        # either numeric values or custom strings...
+        def _to_int(value):
+            try:
+                return int(value)
+            except Exception:
+                return value
+
+        logger.debug("Processing resource: %r", resource_spec)
+        resource = resource_spec.split(",")  # filename,[type],[name],[language]
+
+        if len(resource) < 1 or len(resource) > 4:
+            raise ValueError(
+                f"Invalid Windows resource specifier {resource_spec!r}! "
+                f"Must be in format 'filename,[type],[name],[language]'!"
+            )
+
+        src_filename = resource[0]
+        # Anchor relative file path to spec file location.
+        if not os.path.isabs(src_filename):
+            src_filename = os.path.join(CONF['specpath'], src_filename)
+        # Ensure file exists.
+        if not os.path.isfile(src_filename):
+            raise ValueError("Resource file {src_filename!r} does not exist!")
+
+        # Check if src_filename points to a PE file or an arbitrary (data) file.
+        try:
+            with pefile.PE(src_filename, fast_load=True):
+                is_pe_file = True
+        except Exception:
+            is_pe_file = False
+
+        if is_pe_file:
+            # If resource file is PE file, copy all resources from it, subject to specified type, name, and language.
+            logger.debug("Resource file %r is a PE file...", src_filename)
+
+            # Resource type, name, and language serve as filters. If not specified, use "*".
+            resource_type = _to_int(resource[1]) if len(resource) >= 2 else "*"
+            resource_name = _to_int(resource[2]) if len(resource) >= 3 else "*"
+            resource_lang = _to_int(resource[3]) if len(resource) >= 4 else "*"
+
+            try:
+                winresource.UpdateResourcesFromResFile(
+                    build_name,
+                    src_filename,
+                    [resource_type],
+                    [resource_name],
+                    [resource_lang],
+                )
+            except Exception as e:
+                raise IOError(f"Failed to copy resources from PE file {src_filename!r}") from e
+        else:
+            logger.debug("Resource file %r is an arbitrary data file...", src_filename)
+
+            # For arbitrary data file, resource type and name need to be provided.
+            if len(resource) < 3:
+                raise ValueError(
+                    f"Invalid Windows resource specifier {resource_spec!r}! "
+                    f"For arbitrary data file, the format is 'filename,type,name,[language]'!"
+                )
+
+            resource_type = _to_int(resource[1])
+            resource_name = _to_int(resource[2])
+            resource_lang = _to_int(resource[3]) if len(resource) >= 4 else 0  # LANG_NEUTRAL
+
+            # Prohibit wildcards for resource type and name.
+            if resource_type == "*":
+                raise ValueError(
+                    f"Invalid Windows resource specifier {resource_spec!r}! "
+                    f"For arbitrary data file, resource type cannot be a wildcard (*)!"
+                )
+            if resource_name == "*":
+                raise ValueError(
+                    f"Invalid Windows resource specifier {resource_spec!r}! "
+                    f"For arbitrary data file, resource ma,e cannot be a wildcard (*)!"
+                )
+
+            try:
+                winresource.UpdateResourcesFromDataFile(
+                    build_name,
+                    src_filename,
+                    resource_type,
+                    [resource_name],
+                    [resource_lang],
+                )
+            except Exception as e:
+                raise IOError(f"Failed to embed data file {src_filename!r} as Windows resource") from e
 
     def _copyfile(self, infile, outfile):
         with open(infile, 'rb') as infh:
