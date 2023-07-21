@@ -547,18 +547,14 @@ class EXE(Target):
                 self.icon = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'bootloader', 'images', ico)
 
             # Prepare manifest for the executable by creating minimal manifest or modifying the supplied one.
-            manifest_filename = os.path.join(CONF['workpath'], CONF['specnm'] + ".exe.manifest")
-            if not self.manifest:
-                self.manifest = winmanifest.Manifest(
-                    type_="win32",
-                    name=CONF['specnm'],
-                    processorArchitecture=winmanifest.processor_architecture(),
-                    version=(1, 0, 0, 0)
-                )
-                self.manifest.filename = manifest_filename  # Needs to be set for create_manifest below to work...
-            self.manifest = winmanifest.create_manifest(
-                manifest_filename, self.manifest, self.console, self.uac_admin, self.uac_uiaccess
-            )
+            if self.manifest:
+                # Determine if we were given a filename or an XML string.
+                if "<" in self.manifest:
+                    self.manifest = self.manifest.encode("utf-8")
+                else:
+                    with open(self.manifest, "rb") as fp:
+                        self.manifest = fp.read()
+            self.manifest = winmanifest.create_application_manifest(self.manifest, self.uac_admin, self.uac_uiaccess)
 
             if self.versrsrc:
                 if isinstance(self.versrsrc, versioninfo.VSVersionInfo):
@@ -770,7 +766,7 @@ class EXE(Target):
                         )
             # Embed the manifest into the executable.
             logger.info("Embedding manifest in EXE")
-            self.manifest.update_resources(build_name, [1])
+            winmanifest.write_manifest_to_executable(build_name, self.manifest)
         elif is_darwin:
             # Convert bootloader to the target arch
             logger.info("Converting EXE to target arch (%s)", self.target_arch)
