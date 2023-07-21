@@ -36,7 +36,8 @@ ruff
 # These are required by some of basic tests
 pywin32; sys_platform == 'win32'
 
-lxml; python_version < '3.11'
+lxml
+xmldiff
 
 # Used for strict validation of generated macOS .app bundles
 xattr; sys_platform == 'darwin'

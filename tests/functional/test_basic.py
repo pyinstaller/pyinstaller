@@ -654,16 +654,15 @@ def test_onefile_longpath(pyi_builder, tmpdir):
 
 @pytest.mark.win32
 @pytest.mark.parametrize("icon", ["icon_default", "icon_none", "icon_given"])
-def test_onefile_has_manifest(pyi_builder, icon):
+def test_application_executable_has_manifest(pyi_builder, icon):
     """
-    Verify that onefile builds on Windows end up having manifest embedded. See issue #5624.
+    Verify that builds on Windows end up having manifest embedded. See issue #5624.
+    This test was initially limited only to onefile builds, but as we now always embed manifest into executable, it
+    now covers both builds.
     """
     from PyInstaller.utils.win32 import winmanifest
     from PyInstaller import PACKAGEPATH
 
-    # The test is relevant only for onefile builds
-    if pyi_builder._mode != 'onefile':
-        pytest.skip('The test is relevant only to onefile builds.')
     # Icon type
     if icon == 'icon_default':
         # Default; no --icon argument
@@ -682,8 +681,8 @@ def test_onefile_has_manifest(pyi_builder, icon):
     exes = pyi_builder._find_executables('test_source')
     assert exes
     for exe in exes:
-        res = winmanifest.GetManifestResources(exe)
-        assert res, "No manifest resources found!"
+        manifest = winmanifest.read_manifest_from_executable(exe)
+        assert manifest, "No manifest resources found!"
 
 
 @pytest.mark.parametrize("append_pkg", [True, False], ids=["embedded", "sideload"])
