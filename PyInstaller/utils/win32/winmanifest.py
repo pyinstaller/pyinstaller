@@ -207,7 +207,7 @@ def write_manifest_to_executable(filename, manifest_xml):
     # Ensure LANG_NEUTRAL is updated, and also update any other present languages.
     languages = [LANG_NEUTRAL, "*"]
 
-    winresource.UpdateResources(filename, manifest_xml, RT_MANIFEST, names, languages)
+    winresource.add_or_update_resource(filename, manifest_xml, RT_MANIFEST, names, languages)
 
 
 def read_manifest_from_executable(filename):
@@ -216,7 +216,7 @@ def read_manifest_from_executable(filename):
     """
     from PyInstaller.utils.win32 import winresource
 
-    resources = winresource.GetResources(filename, [RT_MANIFEST])
+    resources = winresource.get_resources(filename, [RT_MANIFEST])
 
     # `resources` is a three-level dictionary:
     #  - level 1: resource type (RT_MANIFEST)

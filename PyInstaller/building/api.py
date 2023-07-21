@@ -703,7 +703,7 @@ class EXE(Target):
         if is_win:
             # First, remove all resources from the file. This ensures that no manifest is embedded, even if bootloader
             # was compiled with a toolchain that forcibly embeds a default manifest (e.g., mingw toolchain from msys2).
-            winresource.RemoveAllResources(build_name)
+            winresource.remove_all_resources(build_name)
             # Embed icon.
             if self.icon != "NONE":
                 logger.info("Copying icon to EXE")
@@ -874,7 +874,7 @@ class EXE(Target):
             resource_lang = _to_int(resource[3]) if len(resource) >= 4 else "*"
 
             try:
-                winresource.UpdateResourcesFromResFile(
+                winresource.copy_resources_from_pe_file(
                     build_name,
                     src_filename,
                     [resource_type],
@@ -910,9 +910,12 @@ class EXE(Target):
                 )
 
             try:
-                winresource.UpdateResourcesFromDataFile(
+                with open(src_filename, 'rb') as fp:
+                    data = fp.read()
+
+                winresource.add_or_update_resource(
                     build_name,
-                    src_filename,
+                    data,
                     resource_type,
                     [resource_name],
                     [resource_lang],
