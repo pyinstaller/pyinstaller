@@ -525,17 +525,11 @@ class EXE(Target):
         self.toc.append(("pyi-contents-directory " + self.contents_directory, "", "OPTION"))
 
         # If the icon path is relative, make it relative to the .spec file.
-        def makeabs(path):
-            if os.path.isabs(path):
-                return path
-            else:
-                return os.path.join(CONF['specpath'], path)
-
         if self.icon and self.icon != "NONE":
             if isinstance(self.icon, list):
-                self.icon = [makeabs(ic) for ic in self.icon]
+                self.icon = [self._makeabs(ic) for ic in self.icon]
             else:
-                self.icon = [makeabs(self.icon)]
+                self.icon = [self._makeabs(self.icon)]
 
         if is_win:
             if not self.icon:
@@ -552,6 +546,7 @@ class EXE(Target):
                 if "<" in self.manifest:
                     self.manifest = self.manifest.encode("utf-8")
                 else:
+                    self.manifest = self._makeabs(self.manifest)
                     with open(self.manifest, "rb") as fp:
                         self.manifest = fp.read()
             self.manifest = winmanifest.create_application_manifest(self.manifest, self.uac_admin, self.uac_uiaccess)
@@ -562,8 +557,7 @@ class EXE(Target):
                     pass
                 elif isinstance(self.versrsrc, (str, bytes, os.PathLike)):
                     # File path; either absolute, or relative to the spec file
-                    if not os.path.isabs(self.versrsrc):
-                        self.versrsrc = os.path.join(CONF['specpath'], self.versrsrc)
+                    self.versrsrc = self._makeabs(self.versrsrc)
                     logger.debug("Loading version info from file: %r", self.versrsrc)
                     self.versrsrc = versioninfo.load_version_info_from_text_file(self.versrsrc)
                 else:
@@ -653,6 +647,17 @@ class EXE(Target):
             return True
 
         return False
+
+    @staticmethod
+    def _makeabs(path):
+        """
+        Helper for anchoring relative paths to spec file location.
+        """
+        from PyInstaller.config import CONF
+        if os.path.isabs(path):
+            return path
+        else:
+            return os.path.join(CONF['specpath'], path)
 
     def _bootloader_file(self, exe, extension=None):
         """
@@ -828,8 +833,6 @@ class EXE(Target):
     def _copy_windows_resource(self, build_name, resource_spec):
         import pefile
 
-        from PyInstaller.config import CONF
-
         # Helper for optionally converting integer strings to values; resource types and IDs/names can be specified as
         # either numeric values or custom strings...
         def _to_int(value):
@@ -847,10 +850,9 @@ class EXE(Target):
                 f"Must be in format 'filename,[type],[name],[language]'!"
             )
 
-        src_filename = resource[0]
-        # Anchor relative file path to spec file location.
-        if not os.path.isabs(src_filename):
-            src_filename = os.path.join(CONF['specpath'], src_filename)
+        # Anchor resource file to spec file location, if necessary.
+        src_filename = self._makeabs(resource[0])
+
         # Ensure file exists.
         if not os.path.isfile(src_filename):
             raise ValueError("Resource file {src_filename!r} does not exist!")
