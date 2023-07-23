@@ -120,6 +120,11 @@ def binary_dependency_analysis(binaries, search_paths=None):
     processed_binaries = set()
     processed_dependencies = set()
 
+    # Keep track of unresolved dependencies, in order to defer the missing-library warnings until after everything has
+    # been processed. This allows us to suppress warnings for dependencies that end up being collected anyway; for
+    # details, see the end of this function.
+    missing_dependencies = []
+
     # Populate output TOC with input binaries - this also serves as TODO list, as we iterate over it while appending
     # new entries at the end.
     output_toc = binaries[:]
@@ -141,11 +146,10 @@ def binary_dependency_analysis(binaries, search_paths=None):
         for dep_name, dep_src_path in get_imports(src_name, search_paths):
             logger.debug("Processing dependency, name: %r, resolved path: %r", dep_name, dep_src_path)
 
-            # Skip unresolved dependencies. Warn only if the dependency was to be collected.
+            # Skip unresolved dependencies. Defer the missing-library warnings until after binary dependency analysis
+            # is complete.
             if not dep_src_path:
-                # Check against unresolved name...
-                if dylib.include_library(dep_name) and dylib.warn_missing_lib(dep_name):
-                    logger.warning("Library not found: could not resolve %r, dependency of %r.", dep_name, src_name)
+                missing_dependencies.append((dep_name, src_name))
                 continue
 
             # Compare resolved dependency against global inclusion/exclusion rules.
@@ -187,6 +191,27 @@ def binary_dependency_analysis(binaries, search_paths=None):
             if not compat.is_win and dep_dest_path.parent != pathlib.PurePath('.'):
                 logger.debug("Adding symbolic link from %r to top-level application directory.", str(dep_dest_path))
                 output_toc.append((str(dep_dest_path.name), str(dep_dest_path), 'SYMLINK'))
+
+    # Display warnings about missing dependencies
+    seen_binaries = set([
+        os.path.normcase(os.path.basename(src_name)) for dest_name, src_name, typecode in output_toc
+        if typecode != 'SYMLINK'
+    ])
+    for dependency_name, referring_binary in missing_dependencies:
+        # Ignore libraries that we would not collect in the first place.
+        if not dylib.include_library(dependency_name):
+            continue
+        # Apply global warning suppression rules.
+        if not dylib.warn_missing_lib(dependency_name):
+            continue
+        # If the binary with a matching basename happens to be among the discovered binaries, suppress the message as
+        # well. This might happen either because the library was collected by some other mechanism (for example, via
+        # hook, or supplied by the user), or because it was discovered during the analysis of another binary (which,
+        # for example, had properly set run-paths on Linux/macOS or was located next to that other analyzed binary on
+        # Windows).
+        if os.path.normcase(os.path.basename(dependency_name)) in seen_binaries:
+            continue
+        logger.warning("Library not found: could not resolve %r, dependency of %r.", dependency_name, referring_binary)
 
     return output_toc
 
