@@ -134,16 +134,39 @@ def find_binary_dependencies(binaries, import_packages):
 
     from PyInstaller.depend import bindepend
     from PyInstaller.building.build_main import logger
+    from PyInstaller.utils.hooks import get_package_paths
     from PyInstaller import compat
 
     # Extra library search paths (used on Windows to resolve DLL paths).
-    #
-    # Always search `sys.base_prefix`, and search it first. This ensures that we resolve the correct version of
-    # `python3X.dll` and `python3.dll` (a PEP-0384 stable ABI stub that forwards symbols to the fully versioned
-    # `python3X.dll`), regardless of other python installations that might be present in the PATH.
     extra_libdirs = []
     if compat.is_win:
+        # Always search `sys.base_prefix`, and search it first. This ensures that we resolve the correct version of
+        # `python3X.dll` and `python3.dll` (a PEP-0384 stable ABI stub that forwards symbols to the fully versioned
+        # `python3X.dll`), regardless of other python installations that might be present in the PATH.
         extra_libdirs.append(compat.base_prefix)
+
+        # If `pywin32` is installed, resolve the path to the `pywin32_system32` directory. Most `pywin32` extensions
+        # reference the `pywintypes3X.dll` in there. Based on resolved `pywin32_system32` directory, also add other
+        # `pywin32` directory, in case extensions in different directories reference each other (the ones in the same
+        # directory should already be resolvable due to binary dependency analysis passing the analyzed binary's
+        # location to the `get_imports` function). This allows us to avoid searching all paths in `sys.path`, which
+        # may lead to other corner-case issues (e.g., #5560).
+        pywin32_system32_dir = None
+        try:
+            # Look up the directory by treating it as a namespace package.
+            _, pywin32_system32_dir = get_package_paths('pywin32_system32')
+        except Exception:
+            pass
+
+        if pywin32_system32_dir:
+            pywin32_base_dir = os.path.dirname(pywin32_system32_dir)
+            extra_libdirs += [
+                pywin32_system32_dir,  # .../pywin32_system32
+                # based on pywin32.pth
+                os.path.join(pywin32_base_dir, 'win32'),  # .../win32
+                os.path.join(pywin32_base_dir, 'win32', 'lib'),  # .../win32/lib
+                os.path.join(pywin32_base_dir, 'Pythonwin'),  # .../Pythonwin
+            ]
 
     # On Windows, packages' initialization code might register additional DLL search paths, either by modifying the
     # `PATH` environment variable, or by calling `os.add_dll_directory`. Therefore, we import

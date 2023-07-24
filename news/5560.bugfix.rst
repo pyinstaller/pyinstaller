@@ -1,0 +1,6 @@
+(Windows) Prevent PyInstaller's binary dependency analysis from looking
+for shared libraries in all ``sys.path`` locations. Instead, search
+only ``sys.base_prefix`` and ``pywin32`` directories, of available.
+This, for example,  prevents PyInstaller from picking up incompatible
+DLLs from system-installed programs that happen to put their installation
+directory into system-wide ``PYTHONPATH``.

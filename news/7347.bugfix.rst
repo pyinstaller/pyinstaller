@@ -1,0 +1,3 @@
+(Windows) Remove the use of deprecated ``distutils.sysconfig`` module.
+The import of this module seems to cause the python process to crash
+when ``tensorflow`` is subsequently imported during import analysis.
