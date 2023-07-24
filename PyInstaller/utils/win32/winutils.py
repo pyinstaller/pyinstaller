@@ -25,8 +25,6 @@ def get_windows_dir():
     """
     Return the Windows directory, e.g., C:\\Windows.
     """
-    # Imported here to avoid circular import.
-    from PyInstaller import compat
     windir = compat.win32api.GetWindowsDirectory()
     if not windir:
         raise SystemExit("Error: Cannot determine Windows directory!")
@@ -37,30 +35,12 @@ def get_system_path():
     """
     Return the required Windows system paths.
     """
-    # Imported here to avoid circular import.
-    from PyInstaller import compat
-    _bpath = []
     sys_dir = compat.win32api.GetSystemDirectory()
     # Ensure C:\Windows\system32  and C:\Windows directories are always present in PATH variable.
     # C:\Windows\system32 is valid even for 64-bit Windows. Access do DLLs are transparently redirected to
     # C:\Windows\syswow64 for 64bit applactions.
     # See http://msdn.microsoft.com/en-us/library/aa384187(v=vs.85).aspx
-    _bpath = [sys_dir, get_windows_dir()]
-    return _bpath
-
-
-def extend_system_path(paths):
-    """
-    Add new paths at the beginning of environment variable PATH.
-
-    Some hooks might extend PATH where PyInstaller should look for dlls.
-    """
-    # imported here to avoid circular import
-    from PyInstaller import compat
-    old_path = compat.getenv('PATH', '')
-    paths.append(old_path)
-    new_path = os.pathsep.join(paths)
-    compat.setenv('PATH', new_path)
+    return [sys_dir, get_windows_dir()]
 
 
 def import_pywin32_module(module_name):
