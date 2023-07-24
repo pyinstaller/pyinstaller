@@ -557,20 +557,15 @@ def resolve_library_path(name, search_paths=None):
         # Fall back to searching the supplied search paths, if any
         return _resolve_library_path_in_search_paths(name, search_paths)
     elif compat.is_win:
-        # Construct the search paths equivalent to what was used in old `getfullnameof` helper.
-        # TODO: do we really need to search all paths in `sys.path`?
-        # TODO: improve search for pywin32_system32 and other pywin32 paths, and get rid of distutils.sysconfig import.
-        import distutils.sysconfig
-        pywin32_paths = [os.path.join(distutils.sysconfig.get_python_lib(), 'pywin32_system32')]
-        if compat.is_venv:
-            pywin32_paths.append(os.path.join(compat.base_prefix, 'Lib', 'site-packages', 'pywin32_system32'))
+        # Try the caller-supplied search paths, if any.
+        fullpath = _resolve_library_path_in_search_paths(name, search_paths)
+        if fullpath:
+            return fullpath
 
-        win_search_paths = (
-            sys.path +  # Search sys.path first!
-            pywin32_paths + winutils.get_system_path() + compat.getenv('PATH', '').split(os.pathsep)
-        )
-
-        return _resolve_library_path_in_search_paths(name, (search_paths or []) + win_search_paths)
+        # Fall back to default Windows search paths, using the PATH environment variable (which should also include
+        # the system paths, such as c:\windows and c:\windows\system32)
+        win_search_paths = [path for path in compat.getenv('PATH', '').split(os.pathsep) if path]
+        return _resolve_library_path_in_search_paths(name, win_search_paths)
     else:
         return ctypes.util.find_library(name)
 
