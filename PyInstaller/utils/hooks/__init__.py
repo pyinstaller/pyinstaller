@@ -26,8 +26,6 @@ from PyInstaller import HOMEPATH, compat
 from PyInstaller import log as logging
 from PyInstaller.depend.imphookapi import PostGraphAPI
 from PyInstaller.exceptions import ExecCommandFailed
-from PyInstaller.utils.hooks.win32 import \
-    get_pywin32_module_file_attribute  # noqa: F401
 from PyInstaller import isolated
 
 logger = logging.getLogger(__name__)
@@ -346,6 +344,25 @@ def get_module_file_attribute(package: str):
         raise ImportError(f"Failed to obtain the __file__ attribute of package/module {package}!") from e
 
     return filename
+
+
+def get_pywin32_module_file_attribute(module_name):
+    """
+    Get the absolute path of the PyWin32 DLL specific to the PyWin32 module with the passed name (`pythoncom`
+    or `pywintypes`).
+
+    On import, each PyWin32 module:
+
+    * Imports a DLL specific to that module.
+    * Overwrites the values of all module attributes with values specific to that DLL. This includes that module's
+      `__file__` attribute, which then provides the absolute path of that DLL.
+
+    This function imports the module in isolated subprocess and retrieves its `__file__` attribute.
+    """
+
+    # NOTE: we cannot use `get_module_file_attribute` as it does not account for the  __file__ rewriting magic
+    # done by the module. Use `get_module_attribute` instead.
+    return get_module_attribute(module_name, '__file__')
 
 
 def is_module_satisfies(
