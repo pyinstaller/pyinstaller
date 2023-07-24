@@ -12,13 +12,7 @@
 Utilities for Windows platform.
 """
 
-import os
-import sys
-
-import PyInstaller.log as logging
 from PyInstaller import compat
-
-logger = logging.getLogger(__name__)
 
 
 def get_windows_dir():
@@ -41,76 +35,6 @@ def get_system_path():
     # C:\Windows\syswow64 for 64bit applactions.
     # See http://msdn.microsoft.com/en-us/library/aa384187(v=vs.85).aspx
     return [sys_dir, get_windows_dir()]
-
-
-def import_pywin32_module(module_name):
-    """
-    Import and return the PyWin32 module with the passed name.
-
-    When imported, the `pywintypes` and `pythoncom` modules both internally import dynamic libraries
-    (e.g., `pywintypes.py` imports `pywintypes34.dll` under Python 3.4). The Anaconda Python distribution for Windows
-    installs these libraries to non-standard directories, resulting in
-    `"ImportError: No system module 'pywintypes' (pywintypes34.dll)"`
-    exceptions. This function catches these exceptions, searches for these libraries, adds their directories to
-    `sys.path`, and retries.
-
-    Parameters
-    ----------
-    module_name : str
-        Fully-qualified name of this module.
-
-    Returns
-    ----------
-    types.ModuleType
-        The desired module.
-    """
-    module = None
-
-    try:
-        module = __import__(module_name, globals={}, locals={}, fromlist=[''])
-    except ImportError as exc:
-        if str(exc).startswith('No system module'):
-            # True if "sys.frozen" is currently set.
-            is_sys_frozen = hasattr(sys, 'frozen')
-
-            # Current value of "sys.frozen" if any.
-            sys_frozen = getattr(sys, 'frozen', None)
-
-            # Force PyWin32 to search "sys.path" for DLLs. By default, PyWin32 only searches "site-packages\win32\lib",
-            # "sys.prefix", and Windows system directories (e.g., "C:\Windows\System32"). This is an ugly hack, but
-            # there is no other way.
-            sys.frozen = '|_|GLYH@CK'
-
-            # If isolated to a venv, the preferred site.getsitepackages() function is unreliable. Fall back to searching
-            # "sys.path" instead.
-            if compat.is_venv:
-                sys_paths = sys.path
-            else:
-                sys_paths = compat.getsitepackages()
-
-            for sys_path in sys_paths:
-                # Absolute path of the directory containing PyWin32 DLLs.
-                pywin32_dll_dir = os.path.join(sys_path, 'pywin32_system32')
-                if os.path.isdir(pywin32_dll_dir):
-                    sys.path.append(pywin32_dll_dir)
-                    try:
-                        module = __import__(name=module_name, globals={}, locals={}, fromlist=[''])
-                        break
-                    except ImportError:
-                        pass
-
-            # If "sys.frozen" was previously set, restore its prior value.
-            if is_sys_frozen:
-                sys.frozen = sys_frozen
-            # Else, undo this hack entirely.
-            else:
-                del sys.frozen
-
-        # If this module remains unimportable, PyWin32 is not installed. Fail.
-        if module is None:
-            raise
-
-    return module
 
 
 def get_pe_file_machine_type(filename):
