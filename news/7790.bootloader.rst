@@ -1,0 +1,4 @@
+Have bootloader call ``Py_GetPath`` before ``Py_SetPath`` on all platforms
+(instead of just on Windows) to work around memory-initialization issues
+in python 3.8 and 3.9, which come to light with ``PYTHONMALLOC=debug``
+or ``PYTHONDEVMODE=1`` being set in the environment.
