@@ -58,7 +58,9 @@ class build_bootloader(Command):
         from PyInstaller import HOMEPATH
 
         src_dir = os.path.join(HOMEPATH, 'bootloader')
+        additional_args = os.getenv('PYINSTALLER_BOOTLOADER_WAF_ARGS', '').strip().split()
         cmd = [sys.executable, './waf', 'configure', 'all']
+        cmd += additional_args
         rc = subprocess.call(cmd, cwd=src_dir)
         if rc:
             raise SystemExit('ERROR: Failed compiling the bootloader. Please compile manually and rerun setup.py')

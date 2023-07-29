@@ -1,0 +1,4 @@
+To enable the passing of extra arguments to the bootloader compiler during installation via pip, 
+you can utilize the environment variable ``PYINSTALLER_BOOTLOADER_WAF_ARGS``. However, 
+it is essential to ensure that the environment variable ``PYINSTALLER_COMPILE_BOOTLOADER``
+is present for this functionality to work correctly.
