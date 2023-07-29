@@ -81,12 +81,3 @@ pyimod03_ctypes.install()
 if sys.platform.startswith('win'):
     import pyimod04_pywin32
     pyimod04_pywin32.install()
-
-# Make .eggs and zipfiles available at runtime
-d = "eggs"
-d = os.path.join(sys._MEIPASS, d)
-# Test if the 'eggs' directory exists. This allows us to opportunistically include this script into the packaged exe,
-# even if no eggs were found when packaging the program. (Which may be a use-case, see issue #653).
-if os.path.isdir(d):
-    for fn in os.listdir(d):
-        sys.path.append(os.path.join(d, fn))
