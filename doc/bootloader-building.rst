@@ -44,11 +44,9 @@ then ask for technical help.
 
 By setting the environment variable ``PYINSTALLER_COMPILE_BOOTLOADER``
 the pip_ setup will attempt to build the bootloader for your platform, even
-if it is already present.
+if it is already present. Doing so would execute the command ``python ./waf configure all`` upon installation.
 
-Doing so would execute the command ``python ./waf configure all`` upon installation.
-
-  You can pass additional arguements to the build process by setting the 
+  You can pass additional arguments to the build process by setting the 
   ``PYINSTALLER_BOOTLOADER_WAF_ARGS`` environment variable.
 
 Supported platforms are
