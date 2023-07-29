@@ -1,0 +1,3 @@
+To select a specific compiler for PyInstaller's bootloader, you have two options through environment variables. 
+If the variable ``PYINSTALLER_BOOTLOADER_COMPILER`` exists and has a value of 'gcc' or 'clang', PyInstaller will use the corresponding compiler. 
+Additionally, the presence of the environment variable ``PYINSTALLER_COMPILER_BOOTLOADER`` is necessary to activate this behavior.
