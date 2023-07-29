@@ -46,10 +46,10 @@ By setting the environment variable ``PYINSTALLER_COMPILE_BOOTLOADER``
 the pip_ setup will attempt to build the bootloader for your platform, even
 if it is already present.
 
-  By default, the pip_ setup process will prioritize searching for the msvc (Microsoft Visual C++) compiler. 
-  If you prefer to use a specific compiler, you have the option to set the environment 
-  variable ``PYINSTALLER_BOOTLOADER_COMPILER`` 
-  to either 'gcc' or 'clang'. Doing so will instruct the setup to use the chosen compiler.
+Doing so would execute the command ``python ./waf configure all`` upon installation.
+
+  You can pass additional arguements to the build process by setting the 
+  ``PYINSTALLER_BOOTLOADER_WAF_ARGS`` environment variable.
 
 Supported platforms are
 
