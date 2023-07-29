@@ -5,8 +5,12 @@ sphinx:
 
 formats: all
 
+build:
+  os: ubuntu-22.04
+  tools:
+    python: '3'
+
 python:
-  version: 3
   install:
     # Needed for autodoc to be able to read PyInstaller docstrings.
     - method: pip
