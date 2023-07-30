@@ -40,7 +40,7 @@ from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.depend.utils import create_py3_base_library, scan_code_for_ctypes
 from PyInstaller import isolated
-from PyInstaller.utils.misc import absnormpath, get_path_to_toplevel_modules, get_unicode_modules, mtime
+from PyInstaller.utils.misc import absnormpath, get_path_to_toplevel_modules, mtime
 from PyInstaller.utils.hooks.gi import compile_glib_schema_files
 
 if is_win:
@@ -365,8 +365,9 @@ class Analysis(Target):
         CONF['binding_redirects'] = []
 
         self.hiddenimports = hiddenimports or []
-        # Include modules detected when parsing options, like 'codecs' and encodings.
-        self.hiddenimports.extend(CONF['hiddenimports'])
+        # Include hidden imports passed via CONF['hiddenimports']; these might be populated if user has a wrapper script
+        # that calls `build_main.main()` with custom `pyi_config` dictionary that contains `hiddenimports`.
+        self.hiddenimports.extend(CONF.get('hiddenimports', []))
 
         self.hookspath = []
         # Append directories in `hookspath` (`--additional-hooks-dir`) to take precedence over those from the entry
@@ -1013,12 +1014,6 @@ def __add_options(parser):
         help="Path to UPX utility (default: search the execution path)",
     )
     parser.add_argument(
-        "-a",
-        "--ascii",
-        action="store_true",
-        help="Do not include unicode encoding support (default: included if available)",
-    )
-    parser.add_argument(
         '--clean',
         dest='clean_build',
         action='store_true',
@@ -1031,7 +1026,6 @@ def main(
     pyi_config,
     specfile,
     noconfirm=False,
-    ascii=False,
     distpath=DEFAULT_DISTPATH,
     workpath=DEFAULT_WORKPATH,
     upx_dir=None,
@@ -1040,14 +1034,6 @@ def main(
 ):
     from PyInstaller.config import CONF
     CONF['noconfirm'] = noconfirm
-
-    # Some modules are included if they are detected at build-time or if a command-line argument is specified
-    # (e.g., --ascii).
-    if CONF.get('hiddenimports') is None:
-        CONF['hiddenimports'] = []
-    # Test unicode support.
-    if not ascii:
-        CONF['hiddenimports'].extend(get_unicode_modules())
 
     # If configuration dict is supplied - skip configuration step.
     if pyi_config is None:

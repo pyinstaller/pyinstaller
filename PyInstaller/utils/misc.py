@@ -57,21 +57,6 @@ def files_in_dir(directory, file_patterns=None):
     return files
 
 
-def get_unicode_modules():
-    """
-    Try importing modules required for unicode support in the frozen application.
-    """
-    modules = []
-    try:
-        # `codecs` depends on `encodings`, so the latter are included automatically.
-        import codecs  # noqa: F401
-        modules.append('codecs')
-    except ImportError:
-        logger.error("Cannot detect modules 'codecs'.")
-
-    return modules
-
-
 def get_path_to_toplevel_modules(filename):
     """
     Return the path to top-level directory that contains Python modules.

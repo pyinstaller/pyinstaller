@@ -1,0 +1,3 @@
+Remove the ``--ascii`` command-line option, which is an effective no-op
+under python 3; the ``codecs`` module is always collected due to being
+listed among the base modules.
