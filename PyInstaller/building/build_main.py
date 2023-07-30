@@ -41,6 +41,7 @@ from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.depend.utils import create_py3_base_library, scan_code_for_ctypes
 from PyInstaller import isolated
 from PyInstaller.utils.misc import absnormpath, get_path_to_toplevel_modules, mtime
+from PyInstaller.utils.hooks import get_package_paths
 from PyInstaller.utils.hooks.gi import compile_glib_schema_files
 
 if is_darwin:
@@ -112,16 +113,15 @@ def discover_hook_directories():
     return hook_directories
 
 
-# NOTE: this helper is called via isolated.call() in Analysis.assemble(). We cannot use @isolated.decorate here, because
-# one of the tests (test_regression::test_issue_5131) needs to be able to monkey-patch it, in order to override the
-# bindepend.get_imports() in the isolated subprocess (!) with its own implementation...
 def find_binary_dependencies(binaries, import_packages):
     """
     Find dynamic dependencies (linked shared libraries) for the provided list of binaries.
 
-    Before scanning the binaries, the function imports the packages from provided list of packages to import, to ensure
-    that library search paths are properly set up (i.e., if a package sets up search paths when imported). Therefore,
-    this function *must* always be called in an isolated subprocess to avoid import leaks!
+    On Windows, this function performs additional pre-processing in an isolated environment in an attempt to handle
+    dynamic library search path modifications made by packages during their import. The packages from the given list
+    of collected packages are imported one by one, while keeping track of modifications made by `os.add_dll_directory`
+    calls and additions to the `PATH`  environment variable. The recorded additional search paths are then passed to
+    the binary dependency analysis step.
 
     binaries
             List of binaries to scan for dynamic dependencies.
@@ -130,12 +130,6 @@ def find_binary_dependencies(binaries, import_packages):
 
     :return: expanded list of binaries and then dependencies.
     """
-    import os
-
-    from PyInstaller.depend import bindepend
-    from PyInstaller.building.build_main import logger
-    from PyInstaller.utils.hooks import get_package_paths
-    from PyInstaller import compat
 
     # Extra library search paths (used on Windows to resolve DLL paths).
     extra_libdirs = []
@@ -169,48 +163,66 @@ def find_binary_dependencies(binaries, import_packages):
             ]
 
     # On Windows, packages' initialization code might register additional DLL search paths, either by modifying the
-    # `PATH` environment variable, or by calling `os.add_dll_directory`. Therefore, we import
-    # all collected packages, and track changes made to the environment.
+    # `PATH` environment variable, or by calling `os.add_dll_directory`. Therefore, we import all collected packages,
+    # and track changes made to the environment.
     if compat.is_win:
-        # Track changes made via `os.add_dll_directory`.
-        added_dll_directories = []
+        # Helper functions to be executed in isolated environment.
+        def setup():
+            """
+            Prepare environment for change tracking
+            """
+            import os
+
+            os._added_dll_directories = []
+            os._original_path_env = os.environ.get('PATH', '')
+
+            _original_add_dll_directory = os.add_dll_directory
+
+            def _pyi_add_dll_directory(path):
+                os._added_dll_directories.append(path)
+                return _original_add_dll_directory(path)
+
+            os.add_dll_directory = _pyi_add_dll_directory
+
+        def import_library(package):
+            """
+            Import collected package to set up environment.
+            """
+            try:
+                __import__(package)
+            except Exception:
+                pass
+
+        def process_search_paths():
+            """
+            Obtain lists of added search paths.
+            """
+            import os
+
+            dll_directories = os._added_dll_directories
+
+            orig_path = set(os._original_path_env.split(os.pathsep))
+            modified_path = os.environ.get('PATH', '').split(os.pathsep)
+            path_additions = [path for path in modified_path if path and path not in orig_path]
+
+            return dll_directories, path_additions
+
+        # Processing in isolated environment.
         with isolated.Python() as child:
-
-            @child.call
-            def setup():
-                import os
-                _original_add_dll_directory = os.add_dll_directory
-                os.added_dll_directories = []
-
-                def _pyi_add_dll_directory(path):
-                    os.added_dll_directories.append(path)
-                    return _original_add_dll_directory(path)
-
-                os.add_dll_directory = _pyi_add_dll_directory
-
-            # Import collected packages to set up environment.
-            def import_library(package):
-                try:
-                    __import__(package)
-                except Exception:
-                    pass
-
+            child.call(setup)
             for package in import_packages:
                 child.call(import_library, package)
-
-            # Retrieve all values passed to out custom os.add_dll_directory()
-            added_dll_directories = child.call(lambda: __import__("os").added_dll_directories)
+            added_dll_directories, added_path_directories = child.call(process_search_paths)
 
         # Process extra search paths...
-        # Directories added via os.add_dll_directory() calls.
         logger.info("Extra DLL search directories (AddDllDirectory): %r", added_dll_directories)
         extra_libdirs += added_dll_directories
 
-        # Directories set via PATH environment variable.
-        # NOTE: PATH might contain empty entries that need to be filtered out.
-        path_directories = [directory for directory in os.environ.get("PATH", '').split(os.pathsep) if directory]
-        logger.info("Extra DLL search directories (PATH): %r", path_directories)
-        extra_libdirs += path_directories
+        logger.info("Extra DLL search directories (PATH): %r", added_path_directories)
+        extra_libdirs += added_path_directories
+
+    # Deduplicate search paths
+    extra_libdirs = list(set(extra_libdirs))
 
     # Search for dependencies of the given binaries
     return bindepend.binary_dependency_analysis(binaries, search_paths=extra_libdirs)
