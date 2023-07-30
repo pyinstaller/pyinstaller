@@ -58,7 +58,6 @@ Only the following command-line options have an effect when building from a spec
 * :option:`--distpath`
 * :option:`--workpath`
 * :option:`--noconfirm`
-* :option:`--ascii`
 * :option:`--clean`
 * :option:`--log-level`
 
