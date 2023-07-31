@@ -89,28 +89,6 @@ Alternatively you may want to use the `linux64` build-guest
 provided by the Vagrantfile (see below).
 
 
-Building Linux Standard Base (LSB) compliant binaries (optional)
------------------------------------------------------------------
-
-By default, the bootloaders on GNU/Linux are ”normal“, non-LSB binaries, which
-should be fine for all GNU/Linux distributions.
-
-If for some reason you want to build Linux Standard Base (LSB) compliant
-binaries [#]_, you can do so by specifying ``--lsb`` on the waf command line,
-as follows::
-
-       python ./waf distclean all --lsb
-
-LSB version 4.0 is required for successfully building of bootloader. Please
-refer to ``python ./waf --help`` for further options related to LSB building.
-
-.. [#] Linux Standard Base (LSB) is a set of open standards that should
-       increase compatibility among GNU/Linux distributions. Unfortunately it is
-       not widely adopted and both Debian and Ubuntu dropped support for LSB
-       in autumn 2015. Thus PyInstaller bootloaders are no longer provided
-       as LSB binary.
-
-
 Cross Building for Different Architectures
 ------------------------------------------
 

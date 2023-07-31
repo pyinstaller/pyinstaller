@@ -178,37 +178,6 @@ def options(ctx):
         dest='enable_tests',
     )
 
-    grp = ctx.add_option_group('Linux Standard Base (LSB) compliance', 'These options have effect only on Linux.')
-    grp.add_option(
-        '--no-lsb',
-        action='store_true',
-        help='Build "normal" (non-LSB-compliant) bootloader (this is the default).',
-        default=True,
-        dest='nolsb',
-    )
-    grp.add_option(
-        '--lsb',
-        action='store_false',
-        help='Build LSB compliant bootloader.',
-        default=True,
-        dest='nolsb',
-    )
-    grp.add_option(
-        '--lsbcc-path',
-        action='store',
-        help='Path where to look for lsbcc. By default PATH is searched for lsbcc otherwise is tried file '
-        '/opt/lsb/bin/lsbcc. [Default: lsbcc]',
-        default=None,
-        dest='lsbcc_path',
-    )
-    grp.add_option(
-        '--lsb-target-version',
-        action='store',
-        help='Specify LSB target version [Default: 4.0]',
-        default='4.0',
-        dest='lsb_version',
-    )
-
     grp = ctx.add_option_group('macOS-specific options', 'These options have effect only on macOS.')
     grp.add_option(
         '--universal2',
@@ -227,51 +196,6 @@ def options(ctx):
         default=None,
         dest='macos_universal2',
     )
-
-
-@conf
-def set_lsb_compiler(ctx):
-    """
-    Build LSB (Linux Standard Base) bootloader.
-
-    LSB bootloader allows to build bootloader binary that is compatible with almost every Linux distribution.
-    'lsbcc' just wraps gcc in a special way.
-    """
-    Logs.pprint('CYAN', 'Building LSB (Linux Standard Base) bootloader.')
-    lsb_paths = ['/opt/lsb/bin']
-    if ctx.options.lsbcc_path:
-        lsb_paths.insert(0, ctx.options.lsbcc_path)
-    try:
-        ctx.find_program('lsbcc', var='LSBCC', path_list=lsb_paths)
-    except ctx.errors.ConfigurationError:
-        # Fail hard and print warning if lsbcc is not available.
-        ctx.fatal(
-            'LSB (Linux Standard Base) tools >= 4.0 are required.\n'
-            'Use the --no-lsb option if you are not interested in building an LSB binary.'
-        )
-
-    # lsbcc as CC compiler
-    ctx.env.append_value('CFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
-    ctx.env.append_value('LINKFLAGS', '--lsb-cc=%s' % ctx.env.CC[0])
-    ctx.env.CC = ctx.env.LSBCC
-    ctx.env.LINK_CC = ctx.env.LSBCC
-    # check LSBCC flags
-    # --lsb-besteffort - binary will work on platforms without LSB stuff
-    # --lsb-besteffort - available in LSB build tools >= 4.0
-    ctx.check_cc(
-        cflags='--lsb-besteffort',
-        msg='Checking for LSB build tools >= 4.0',
-        errmsg='LSB >= 4.0 is required',
-        mandatory=True
-    )
-    ctx.env.append_value('CFLAGS', '--lsb-besteffort')
-    ctx.env.append_value('LINKFLAGS', '--lsb-besteffort')
-    # binary compatibility with a specific LSB version
-    # LSB 4.0 can generate binaries compatible with 3.0, 3.1, 3.2, 4.0; however, because of using function 'mkdtemp',
-    # loader requires using target version 4.0
-    lsb_target_flag = '--lsb-target-version=%s' % ctx.options.lsb_version
-    ctx.env.append_value('CFLAGS', lsb_target_flag)
-    ctx.env.append_value('LINKFLAGS', lsb_target_flag)
 
 
 def check_sizeof_pointer(ctx):
@@ -484,10 +408,6 @@ def configure(ctx):
         ctx.load('gcc')
     else:
         ctx.load('compiler_c')  # Any available C compiler.
-
-    # LSB compatible bootloader only for Linux and without cli option --no-lsb.
-    if ctx.env.DEST_OS == 'linux' and not ctx.options.nolsb:
-        ctx.set_lsb_compiler()
 
     global is_cross
     is_cross = (BUILD_OS != ctx.env.DEST_OS)
