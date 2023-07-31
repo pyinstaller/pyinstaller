@@ -50,7 +50,7 @@ def configure(conf):
 class strip(Task.Task):
     run_str = '${STRIP} ${STRIPFLAGS} ${SRC}'
     color = 'BLUE'
-    after = ['cprogram', 'cxxprogram', 'cshlib', 'cxxshlib', 'fcprogram', 'fcshlib']
+    after = ['cprogram', 'cshlib']
 
 
 @TaskGen.feature('strip')
