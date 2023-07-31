@@ -2,7 +2,7 @@
 Bootloader
 ==========
 
-Bootloader bootstraps Python for the frozen application. It is written in C 
+Bootloader bootstraps Python for the frozen application. It is written in C
 and the code is very platform specific. The bootloader has to be kept
 standalone without any dependencies on 3rd party libraries.
 
@@ -26,10 +26,6 @@ Build instructions
 In short::
 
   ./waf all
-
-or for building a Linux Standard Base (LSB) compliant bootloader::
-
-  ./waf --lsb all
 
 For more details, esp. about building for other target-platforms, please read
 <https://pyinstaller.readthedocs.io/en/latest/bootloader-building.html> (resp.
