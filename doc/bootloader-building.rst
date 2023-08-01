@@ -133,12 +133,12 @@ Build a thin, native executable::
 Build a thin, ``x86_64`` executable (regardless of the build machine's
 architecture)::
 
-    CC='clang -arch=x86_64' python waf --no-universal2  all
+    CC='clang -arch x86_64' python waf --no-universal2  all
 
 Build a thin, ``arm64`` executable (regardless of the build machine's
 architecture)::
 
-    CC='clang -arch=arm64' python waf --no-universal2 all
+    CC='clang -arch arm64' python waf --no-universal2 all
 
 By default, the build script targets macOS 10.13, which can be overridden by
 exporting the MACOSX_DEPLOYMENT_TARGET environment variable.
