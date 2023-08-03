@@ -1,0 +1,3 @@
+(Windows) Fix ``win32com`` run-time hook to fully isolate the ``gen_py``
+cache. This prevents the access to global cache, which results in errors
+when the global cache contains some, but not all, required modules.
