@@ -12,6 +12,6 @@ recursive-include PyInstaller/bootloader/Windows-64bit-intel *
 recursive-include PyInstaller/bootloader/Darwin-64bit *
 include pyproject.toml
 # These files need to be explicitly included
-include PyInstaller/fake-modules/*.py
+recursive-include PyInstaller/fake-modules *.py
 include PyInstaller/hooks/rthooks.dat
 include PyInstaller/lib/README.rst

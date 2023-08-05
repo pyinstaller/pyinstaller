@@ -116,6 +116,7 @@ class Wheel(bdist_wheel):
                 *(f"bootloader/images/*.{suffix}" for suffix in self.ICON_TYPES),
                 # These files need to be explicitly included as well.
                 "fake-modules/*.py",
+                "fake-modules/_pyi_rth_utils/*.py",
                 "hooks/rthooks.dat",
                 "lib/README.rst",
             ],

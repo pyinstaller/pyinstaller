@@ -1,0 +1,5 @@
+(Windows) Ensure that the access to temporary directories created by
+the ``matplotlib`` and ``win32com`` run-time hooks is restricted to
+the user running the frozen application, even if ``TMP`` / ``TEMP``
+environment directory points to a system-wide location that can be
+accessed to all users.
