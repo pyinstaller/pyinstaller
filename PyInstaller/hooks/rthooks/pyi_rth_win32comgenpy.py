@@ -21,13 +21,15 @@ def _pyi_rthook():
     import atexit
     import os
     import shutil
-    import tempfile
 
     import win32com
 
-    # Create temporary directory. The actual cache directory needs to be named `gen_py`, so create a sub-directory.
-    supportdir = tempfile.mkdtemp()
+    import _pyi_rth_utils  # PyInstaller's run-time hook utilities module
 
+    # Create temporary directory.
+    # Use our replacement for `tempfile.mkdtemp` function that properly restricts access to directory on all platforms.
+    supportdir = _pyi_rth_utils.secure_mkdtemp()
+    # The actual cache directory needs to be named `gen_py`, so create a sub-directory.
     genpydir = os.path.join(supportdir, 'gen_py')
     os.makedirs(genpydir, exist_ok=True)
 
