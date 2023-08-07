@@ -349,6 +349,18 @@ class SplashWriter:
         :param str script: The tcl/tk script to execute to create the screen.
         """
 
+        # Ensure forward slashes in dependency names are on Windows converted to back slashes '\\', as on Windows the
+        # bootloader works only with back slashes.
+        def _normalize_filename(filename):
+            filename = os.path.normpath(filename)
+            if is_win and os.path.sep == '/':
+                # When building under MSYS, the above path normalization uses Unix-style separators, so replace them
+                # manually.
+                filename = filename.replace(os.path.sep, '\\')
+            return filename
+
+        name_list = [_normalize_filename(name) for name in name_list]
+
         with open(filename, "wb") as fp:
             # Reserve space for the header.
             fp.write(b'\0' * self._HEADER_LENGTH)
