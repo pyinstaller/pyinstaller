@@ -1,0 +1,2 @@
+(Windows) Fix splash screen not being able to locate collected Tk resources
+in onefile applications created in MSYS2 python environment.
