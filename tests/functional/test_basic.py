@@ -786,3 +786,26 @@ def test_contents_directory(pyi_builder):
 
     with pytest.raises(SystemExit, match='Invalid value "\\." passed'):
         pyi_builder.test_source("", pyi_args=["--contents-directory=.", "--noconfirm"])
+
+
+def test_spec_options(pyi_builder, SPEC_DIR, capsys):
+    if pyi_builder._mode != 'onedir':
+        pytest.skip('spec file is onedir mode only')
+
+    pyi_builder.test_spec(
+        SPEC_DIR / "pyi_spec_options.spec",
+        pyi_args=["--", "--optional-dependency", "email", "--optional-dependency", "gzip"]
+    )
+    exe, = pyi_builder._find_executables("pyi_spec_options")
+    p = subprocess.run([exe], stdout=subprocess.PIPE, text=True)
+    assert p.stdout == "Available dependencies: email gzip\n"
+
+    capsys.readouterr()
+    with pytest.raises(SystemExit) as ex:
+        pyi_builder.test_spec(SPEC_DIR / "pyi_spec_options.spec", pyi_args=["--", "--help"])
+    assert ex.value.code == 0
+    assert "help blah blah blah" in capsys.readouterr().out
+
+    with pytest.raises(SystemExit) as ex:
+        pyi_builder.test_spec(SPEC_DIR / "pyi_spec_options.spec", pyi_args=["--", "--onefile"])
+    assert "pyi_spec_options.spec: error: unrecognized arguments: --onefile" in capsys.readouterr().err

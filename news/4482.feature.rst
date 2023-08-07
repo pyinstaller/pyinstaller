@@ -1,0 +1,2 @@
+Allow spec files to take command line parameters. See :ref:`adding parameters to
+spec files <spec_parameters>`.

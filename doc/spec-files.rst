@@ -762,3 +762,58 @@ Other globals contain information about the build environment:
  mode: rst
  ispell-local-dictionary: "american"
  End:
+
+
+.. _spec_parameters:
+
+Adding parameters to spec files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sometimes, you may wish to have different build modes (e.g. a *debug* build and
+a *production* build) from the same spec file. Any command line arguments to
+``pyinstaller`` given after a ``--`` separator will not be parsed by PyInstaller
+and will instead be forwarded to the spec file where you can implement your own
+argument parsing and handle the options accordingly. For example, the following
+spec file will create a onedir application with console enabled if invoked via
+``pyinstaller example.spec -- --debug`` or a onefile console-less application if
+invoked with just ``pyinstaller example.spec``. If you use an :mod:`argparse`
+based parser rather than rolling your own using :data:`sys.argv` then
+``pyinstaller example.spec -- --help`` will display your spec options.
+
+.. code-block:: python
+
+    # example.spec
+
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true")
+    options = parser.parse_args()
+
+    a = Analysis(
+        ['example.py'],
+    )
+    pyz = PYZ(a.pure)
+
+    if options.debug:
+        exe = EXE(
+            pyz,
+            a.scripts,
+            exclude_binaries=True,
+            name='example',
+        )
+        coll = COLLECT(
+            exe,
+            a.binaries,
+            a.datas,
+            name='example_debug',
+        )
+    else:
+        exe = EXE(
+            pyz,
+            a.scripts,
+            a.binaries,
+            a.datas,
+            name='example',
+            console=False,
+        )

@@ -157,9 +157,17 @@ def run(pyi_args: list | None = None, pyi_config: dict | None = None):
 
     import PyInstaller.log
 
+    old_sys_argv = sys.argv
     try:
         parser = generate_parser()
-        args = parser.parse_args(pyi_args)
+        if pyi_args is None:
+            pyi_args = sys.argv[1:]
+        try:
+            index = pyi_args.index("--")
+        except ValueError:
+            index = len(pyi_args)
+        args = parser.parse_args(pyi_args[:index])
+        spec_args = pyi_args[index + 1:]
         PyInstaller.log.__process_options(parser, args)
 
         # Print PyInstaller version, Python version, and platform as the first line to stdout. This helps us identify
@@ -177,6 +185,7 @@ def run(pyi_args: list | None = None, pyi_config: dict | None = None):
         else:
             spec_file = run_makespec(**vars(args))
 
+        sys.argv = [spec_file, *spec_args]
         run_build(pyi_config, spec_file, **vars(args))
 
     except KeyboardInterrupt:
@@ -184,6 +193,8 @@ def run(pyi_args: list | None = None, pyi_config: dict | None = None):
     except RecursionError:
         from PyInstaller import _recursion_too_deep_message
         _recursion_too_deep_message.raise_with_msg()
+    finally:
+        sys.argv = old_sys_argv
 
 
 def _console_script_run():
