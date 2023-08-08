@@ -286,7 +286,4 @@ void mbvs(const char *fmt, ...);
     #define pyi_be32toh(x) ntohl(x)
 #endif /* ifdef _WIN32 */
 
-/* Saved LC_CTYPE locale */
-extern char *saved_locale;
-
 #endif  /* PYI_GLOBAL_H */

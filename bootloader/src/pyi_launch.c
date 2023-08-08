@@ -25,7 +25,6 @@
     #include <langinfo.h> /* CODESET, nl_langinfo */
     #include <stdlib.h>   /* malloc */
 #endif
-#include <locale.h>  /* setlocale */
 #include <stdarg.h>
 #include <stddef.h>   /* ptrdiff_t */
 #include <stdio.h>    /* vsnprintf */
@@ -207,7 +206,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 
     pyi_path_dirname(dirname, path);
     pyi_path_dirname(homepath_parent, archive_status->homepath);
-    char * contents_directory = pyi_arch_get_option(archive_pool[0], "pyi-contents-directory");
+    const char *contents_directory = pyi_arch_get_option(archive_pool[0], "pyi-contents-directory");
     if (!contents_directory) {
         FATALERROR("pyi-contents-directory option not found in onedir bundle archive!");
         return -1;
@@ -629,8 +628,7 @@ pyi_launch_execute(ARCHIVE_STATUS *status)
     /* Load Python DLL */
     if (pyi_pylib_load(status)) {
         return -1;
-    }
-    else {
+    } else {
         /* With this flag Python cleanup will be called. */
         status->is_pylib_loaded = true;
     }
@@ -645,38 +643,19 @@ pyi_launch_execute(ARCHIVE_STATUS *status)
         return -1;
     }
 
-    /* Install zlibs  - now all hooks in place */
-    if (pyi_pylib_install_zlibs(status)) {
+    /* Install PYZ archive */
+    if (pyi_pylib_install_pyz(status)) {
         return -1;
     }
-
-#ifndef WIN32
-
-    /*
-     * On Linux sys.getfilesystemencoding() returns None but should not.
-     * If it's None(NULL), get the filesystem encoding by using direct
-     * C calls and override it with correct value.
-     *
-     * TODO: This may not be needed any more. Please confirm on Linux.
-     */
-    if (!*PI_Py_FileSystemDefaultEncoding) {
-        char *saved_locale, *loc_codeset;
-        saved_locale = strdup(setlocale(LC_CTYPE, NULL));
-        VS("LOADER: LC_CTYPE was %s but resulted in NULL FileSystemDefaultEncoding\n",
-           saved_locale);
-        setlocale(LC_CTYPE, "");
-        loc_codeset = nl_langinfo(CODESET);
-        setlocale(LC_CTYPE, saved_locale);
-        free(saved_locale);
-        VS("LOADER: Setting FileSystemDefaultEncoding to %s (was NULL)\n", loc_codeset);
-        *PI_Py_FileSystemDefaultEncoding = loc_codeset;
-    }
-#endif     /* WIN32 */
 
     /* Run scripts */
     rc = pyi_launch_run_scripts(status);
 
-    VS("LOADER: OK.\n");
+    if (rc == 0) {
+        VS("LOADER: OK.\n");
+    } else {
+        VS("LOADER: ERROR.\n");
+    }
 
     return rc;
 }

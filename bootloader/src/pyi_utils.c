@@ -241,8 +241,8 @@ pyi_unsetenv(const char *variable)
 #ifdef _WIN32
 
 /* Resolve the runtime tmpdir path and build nested directories */
-wchar_t
-*pyi_build_temp_folder(char *runtime_tmpdir)
+static wchar_t
+*pyi_build_temp_folder(const char *runtime_tmpdir)
 {
     wchar_t *wruntime_tmpdir;
     wchar_t wruntime_tmpdir_expanded[PATH_MAX];
@@ -295,8 +295,8 @@ wchar_t
 }
 
 /* TODO rename function and revisit */
-int
-pyi_get_temp_path(char *buffer, char *runtime_tmpdir)
+static int
+pyi_get_temp_path(char *buffer, const char *runtime_tmpdir)
 {
     int i;
     wchar_t *wchar_ret;
@@ -397,7 +397,7 @@ pyi_test_temp_path(char *buff)
 
 /* TODO merge this function with windows version. */
 static int
-pyi_get_temp_path(char *buff, char *runtime_tmpdir)
+pyi_get_temp_path(char *buff, const char *runtime_tmpdir)
 {
     if (runtime_tmpdir != NULL) {
       strcpy(buff, runtime_tmpdir);
@@ -446,11 +446,11 @@ pyi_get_temp_path(char *buff, char *runtime_tmpdir)
 int
 pyi_create_temp_path(ARCHIVE_STATUS *status)
 {
-    char *runtime_tmpdir = NULL;
+    const char *runtime_tmpdir = NULL;
 
     if (status->has_temp_directory != true) {
         runtime_tmpdir = pyi_arch_get_option(status, "pyi-runtime-tmpdir");
-        if(runtime_tmpdir != NULL) {
+        if (runtime_tmpdir != NULL) {
           VS("LOADER: Found runtime-tmpdir %s\n", runtime_tmpdir);
         }
 

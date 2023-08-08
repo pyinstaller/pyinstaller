@@ -100,9 +100,8 @@ pyi_win32_wcs_to_mbs(const wchar_t *wstr)
     DWORD len, ret;
     char * str;
 
-    /* NOTE: setlocale hysterics are not needed on Windows - this function
-     *  has an explicit codepage parameter. CP_ACP means "current ANSI codepage"
-     *  which is set in the "Language for Non-Unicode Programs" control panel setting. */
+    /* NOTE: CP_ACP means "current ANSI codepage" which is set in the
+     * "Language for Non-Unicode Programs" control panel setting. */
 
     /* Get buffer size by passing NULL and 0 for output arguments */
     len = WideCharToMultiByte(CP_ACP,  /* CodePage */
@@ -183,39 +182,6 @@ err:
     return NULL;
 }
 
-/* Convert elements of wargv back from UTF-8. Used when calling
- *  PySys_SetArgv on Python 3.
- */
-
-wchar_t **
-pyi_win32_wargv_from_utf8(int argc, char **argv)
-{
-    int i, j;
-    wchar_t ** wargv;
-
-    wargv = (wchar_t **)calloc(argc + 1, sizeof(wchar_t *));
-    if (wargv == NULL) {
-        return NULL;
-    };
-
-    for (i = 0; i < argc; i++) {
-        wargv[i] = pyi_win32_utils_from_utf8(NULL, argv[i], 0);
-
-        if (NULL == wargv[i]) {
-            goto err;
-        }
-    }
-    wargv[argc] = NULL;
-
-    return wargv;
-err:
-
-    for (j = 0; j <= i; j++) {
-        free(wargv[j]);
-    }
-    free(wargv);
-    return NULL;
-}
 
 /*
  * Encode wchar_t (UTF16) into char (UTF8).

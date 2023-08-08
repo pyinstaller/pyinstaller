@@ -20,7 +20,6 @@
 char * GetWinErrorString(DWORD error_code);
 
 char ** pyi_win32_argv_to_utf8(int argc, wchar_t **wargv);
-wchar_t ** pyi_win32_wargv_from_utf8(int argc, char **argv);
 
 char * pyi_win32_utils_to_utf8(char *buffer, const wchar_t *str, size_t n);
 wchar_t * pyi_win32_utils_from_utf8(wchar_t *buffer, const char *ostr, size_t n);

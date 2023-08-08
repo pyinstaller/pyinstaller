@@ -35,7 +35,7 @@ int pyvers = 0;
  * Return pointer to next toc entry.
  */
 TOC *
-pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC* ptoc)
+pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC *ptoc)
 {
     TOC *result = (TOC*)((char *)ptoc + ptoc->structlen);
 
@@ -82,7 +82,7 @@ pyi_arch_close_fp(ARCHIVE_STATUS *status)
  * to be valid.
  */
 static int
-_pyi_arch_extract_compressed(ARCHIVE_STATUS *status, TOC *ptoc, FILE *out_fp, unsigned char *out_ptr)
+_pyi_arch_extract_compressed(const ARCHIVE_STATUS *status, const TOC *ptoc, FILE *out_fp, unsigned char *out_ptr)
 {
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer_in = NULL;
@@ -180,7 +180,7 @@ cleanup:
  * the archive into the provided file handle.
  */
 static int
-_pyi_arch_extract2fs_uncompressed(ARCHIVE_STATUS *status, TOC *ptoc, FILE *out)
+_pyi_arch_extract2fs_uncompressed(const ARCHIVE_STATUS *status, const TOC *ptoc, FILE *out)
 {
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer;
@@ -219,7 +219,7 @@ _pyi_arch_extract2fs_uncompressed(ARCHIVE_STATUS *status, TOC *ptoc, FILE *out)
  * the archive into the provided (pre-allocated) buffer.
  */
 static int
-_pyi_arch_extract_uncompressed(ARCHIVE_STATUS *status, TOC *ptoc, unsigned char *out)
+_pyi_arch_extract_uncompressed(const ARCHIVE_STATUS *status, const TOC *ptoc, unsigned char *out)
 {
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer;
@@ -245,7 +245,7 @@ _pyi_arch_extract_uncompressed(ARCHIVE_STATUS *status, TOC *ptoc, unsigned char 
  * Returns pointer to the data (must be freed).
  */
 unsigned char *
-pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc)
+pyi_arch_extract(ARCHIVE_STATUS *status, const TOC *ptoc)
 {
     unsigned char *data = NULL;
     int rc = 0;
@@ -288,7 +288,7 @@ cleanup:
 /*
  * Create/extract symbolic link from the archive.
  */
-int pyi_arch_create_symlink(ARCHIVE_STATUS *status, TOC *ptoc)
+int pyi_arch_create_symlink(ARCHIVE_STATUS *status, const TOC *ptoc)
 {
     char *link_target = NULL;
     char link_name[PATH_MAX];
@@ -322,7 +322,7 @@ cleanup:
  * The path is relative to the directory the archive is in.
  */
 int
-pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc)
+pyi_arch_extract2fs(ARCHIVE_STATUS *status, const TOC *ptoc)
 {
     FILE *out = NULL;
     int rc = 0;
@@ -538,7 +538,7 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * e
         pyi_path_dirname(contents_dir, executable_dir);
         pyi_path_join(status->homepath, contents_dir, "Frameworks");
     } else {
-        char * contents_directory = pyi_arch_get_option(status, "pyi-contents-directory");
+        const char *contents_directory = pyi_arch_get_option(status, "pyi-contents-directory");
         if (!contents_directory) {
             FATALERROR("pyi-contents-directory option not found in onedir bundle archive!");
             return false;
@@ -559,29 +559,10 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * e
 }
 
 /*
- * external API for iterating TOCs
- */
-TOC *
-getFirstTocEntry(ARCHIVE_STATUS *status)
-{
-    return status->tocbuff;
-}
-TOC *
-getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry)
-{
-    TOC *rslt = (TOC*)((char *)entry + entry->structlen);
-
-    if (rslt >= status->tocend) {
-        return NULL;
-    }
-    return rslt;
-}
-
-/*
  * Helpers for embedders.
  */
 int
-pyi_arch_get_pyversion(ARCHIVE_STATUS *status)
+pyi_arch_get_pyversion(const ARCHIVE_STATUS *status)
 {
     return status->cookie.pyvers;
 }
@@ -626,12 +607,12 @@ pyi_arch_status_free(ARCHIVE_STATUS *archive_status)
  * The string returned is owned by the ARCHIVE_STATUS; the caller is NOT responsible
  * for freeing it.
  */
-char *
-pyi_arch_get_option(const ARCHIVE_STATUS * status, char * optname)
+const char *
+pyi_arch_get_option(const ARCHIVE_STATUS *status, const char *optname)
 {
     /* TODO: option-cache? */
     size_t optlen;
-    TOC *ptoc = status->tocbuff;
+    const TOC *ptoc = status->tocbuff;
 
     optlen = strlen(optname);
 
@@ -656,10 +637,10 @@ pyi_arch_get_option(const ARCHIVE_STATUS * status, char * optname)
 /*
  * Find a TOC entry by its name and return it.
  */
-TOC *
-pyi_arch_find_by_name(ARCHIVE_STATUS *status, const char *name)
+const TOC *
+pyi_arch_find_by_name(const ARCHIVE_STATUS *status, const char *name)
 {
-    TOC *ptoc = status->tocbuff;
+    const TOC *ptoc = status->tocbuff;
 
     while (ptoc < status->tocend) {
         if (strcmp(ptoc->name, name) == 0) {

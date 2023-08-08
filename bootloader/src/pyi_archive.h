@@ -108,15 +108,15 @@ typedef struct _archive_status {
                        */
 } ARCHIVE_STATUS;
 
-TOC *pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC* ptoc);
+TOC *pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC *ptoc);
 
-unsigned char *pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc);
-int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc);
+unsigned char *pyi_arch_extract(ARCHIVE_STATUS *status, const TOC *ptoc);
+int pyi_arch_extract2fs(ARCHIVE_STATUS *status, const TOC *ptoc);
 
 /**
  * Helpers for embedders
  */
-int pyi_arch_get_pyversion(ARCHIVE_STATUS *status);
+int pyi_arch_get_pyversion(const ARCHIVE_STATUS *status);
 extern int pyvers;
 
 /**
@@ -138,12 +138,9 @@ void pyi_arch_status_free(ARCHIVE_STATUS *status);
  *
  * @return true on success, false otherwise.
  */
-bool pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * executable_path);
+bool pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *executable_path);
 
-TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
-TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
-
-char * pyi_arch_get_option(const ARCHIVE_STATUS * status, char * optname);
-TOC *pyi_arch_find_by_name(ARCHIVE_STATUS *status, const char *name);
+const char *pyi_arch_get_option(const ARCHIVE_STATUS *status, const char *optname);
+const TOC *pyi_arch_find_by_name(const ARCHIVE_STATUS *status, const char *name);
 
 #endif  /* PYI_ARCHIVE_H */
