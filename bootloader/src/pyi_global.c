@@ -49,10 +49,6 @@
 /* Text length of MessageBox(). */
 #define MBTXTLEN 1024
 
-/* Locale is saved at the start of main(), and restored immediately before running
- * scripts in pyi_launch_run_scripts
- */
-char *saved_locale;
 
 /*
  * On Windows and with windowed mode (no console) show error messages

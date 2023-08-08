@@ -288,7 +288,8 @@ pyi_splash_extract(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splash_status)
      *         system in PyInstaller and the bootloader
      */
     size_t pos;
-    TOC *tmp_toc, *ptoc;
+    const TOC *ptoc;
+    TOC *tmp_toc;
     int rc = 0;
     bool extracted = false;
     char *filename;
@@ -296,7 +297,7 @@ pyi_splash_extract(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splash_status)
     char run_dir[PATH_MAX];
 
     /* The last item in TOC is a path, so limit it is at PATH_MAX */
-    tmp_toc = (TOC*) calloc(1, sizeof(TOC) + PATH_MAX);
+    tmp_toc = (TOC*)calloc(1, sizeof(TOC) + PATH_MAX);
 
     /* Iterate over the requirements array */
     for (pos = 0; pos < splash_status->requirements_len; pos += strlen(filename) + 1) {
