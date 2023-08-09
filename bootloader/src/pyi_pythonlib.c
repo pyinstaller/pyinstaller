@@ -19,8 +19,6 @@
 
 #ifdef _WIN32
     #include <windows.h> /* HMODULE */
-    #include <fcntl.h>   /* O_BINARY */
-    #include <io.h>      /* _setmode */
 #else
     #include <dlfcn.h>  /* dlerror */
     #include <stdlib.h>  /* mbstowcs */
@@ -210,22 +208,16 @@ pyi_pylib_start_python(const ARCHIVE_STATUS *archive_status)
         goto end;
     }
 
-    /* In unbuffered mode, we need to adjust the streams */
-    if (runtime_options->unbuffered) {
-#ifdef _WIN32
-        _setmode(fileno(stdin), _O_BINARY);
-        _setmode(fileno(stdout), _O_BINARY);
-#endif
-        fflush(stdout);
-        fflush(stderr);
-
-        setbuf(stdin, (char *)NULL);
-        setbuf(stdout, (char *)NULL);
-        setbuf(stderr, (char *)NULL);
-    }
-
     /* Start the interpreter */
     VS("LOADER: Starting embedded python interpreter...\n");
+
+    /* In unbuffered mode, flush stdout/stderr before python configuration
+     * removes the buffer (changing the buffer should probably flush the
+     * old buffer, but just in case do it manually...) */
+    if (runtime_options->unbuffered) {
+        fflush(stdout);
+        fflush(stderr);
+    }
 
     /*
      * Py_Initialize() may rudely call abort(), and on Windows this triggers the error

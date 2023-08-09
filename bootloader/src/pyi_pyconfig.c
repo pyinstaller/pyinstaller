@@ -488,6 +488,9 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, const PyiRuntimeOptions *runt
         /* Extend the isolated config, which leaves site_import and write_bytecode on */ \
         config_impl->site_import = 0; \
         config_impl->write_bytecode = 0; \
+        /* Enable configure_c_stdio (disabled in isolated config by default) to let python configure stdout/stderr
+         * streams (set binary mode, disable buffer in unbuffered mode, etc.) */ \
+        config_impl->configure_c_stdio = 1; \
         /* These flags map to our run-time options (O, u, v) */ \
         config_impl->optimization_level = runtime_options->optimize; \
         config_impl->buffered_stdio = !runtime_options->unbuffered; \
