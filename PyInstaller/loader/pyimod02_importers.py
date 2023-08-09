@@ -19,6 +19,7 @@ PEP-302 and PEP-451 importers for frozen applications.
 
 import sys
 import os
+import tokenize
 
 import _frozen_importlib
 
@@ -48,10 +49,9 @@ def _decode_source(source_bytes):
     Based on CPython's implementation of the same functionality:
     https://github.com/python/cpython/blob/3.9/Lib/importlib/_bootstrap_external.py#L679-L688
     """
-    from tokenize import detect_encoding
     from io import BytesIO, IncrementalNewlineDecoder
     source_bytes_readline = BytesIO(source_bytes).readline
-    encoding = detect_encoding(source_bytes_readline)
+    encoding = tokenize.detect_encoding(source_bytes_readline)
     newline_decoder = IncrementalNewlineDecoder(decoder=None, translate=True)
     return newline_decoder.decode(source_bytes.decode(encoding[0]))
 
