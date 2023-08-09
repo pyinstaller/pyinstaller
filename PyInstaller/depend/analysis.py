@@ -557,7 +557,7 @@ class PyiModuleGraph(ModuleGraph):
         #
         # This expression matches the base module name, optionally followed by a period and then any number of
         # characters. This matches the module name and the fully qualified names of any of its submodules.
-        regex_str = '(' + '|'.join(PY3_BASE_MODULES) + r')(\.|$)'
+        regex_str = '(' + '|'.join(x[:-1] if x.endswith(".") else x for x in PY3_BASE_MODULES) + r')(\.|$)'
         module_filter = re.compile(regex_str)
 
         toc = list()
