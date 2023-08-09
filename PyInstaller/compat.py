@@ -621,17 +621,15 @@ PY3_BASE_MODULES = {
     'keyword',
     'linecache',
     'locale',
-    'ntpath',  # dependency of os.path
     'operator',
     'os',
     'pathlib',  # used by loader/pymod02_importers.py
-    'posixpath',  # dependency of os.path
     're',
     'reprlib',
     'sre_compile',
     'sre_constants',
     'sre_parse',
-    'stat',  # dependency of os.path
+    'stat',  # dependency of os
     'token',  # depdendency of tokenize
     'tokenize',  # used by loader/pymod02_importers.py
     'traceback',  # for startup errors
@@ -639,6 +637,8 @@ PY3_BASE_MODULES = {
     'urllib',  # dependency of pathlib
     'weakref',
     'warnings',
+    # dependency of os, exact check as stdlib `os` 
+    'posixpath' if 'posix' in sys.builtin_module_names else 'ntpath',
 }
 
 if not is_py310:
