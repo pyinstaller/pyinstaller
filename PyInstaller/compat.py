@@ -637,7 +637,7 @@ PY3_BASE_MODULES = {
     'urllib',  # dependency of pathlib
     'weakref',
     'warnings',
-    # dependency of os, exact check as stdlib `os` 
+    # dependency of os, exact check as stdlib `os`
     'posixpath' if 'posix' in sys.builtin_module_names else 'ntpath',
 }
 
