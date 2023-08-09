@@ -249,7 +249,9 @@ class PyiModuleGraph(ModuleGraph):
         required_mods = []
         # Collect submodules from required modules in base_library.zip.
         for m in PY3_BASE_MODULES:
-            if is_package(m):
+            if m.endswith('.'):
+                required_mods.append(m[:-1])
+            elif is_package(m):
                 required_mods += collect_submodules(m)
             else:
                 required_mods.append(m)
