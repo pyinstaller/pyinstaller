@@ -45,8 +45,8 @@ def create_py3_base_library(libzip_filename, graph):
 
     # Construct regular expression for matching modules that should be bundled into base_library.zip. Excluded are plain
     # 'modules' or 'submodules.ANY_NAME'. The match has to be exact - start and end of string not substring.
-    regex_modules = '|'.join([rf'(^{x}$)' for x in compat.PY3_BASE_MODULES])
-    regex_submod = '|'.join([rf'(^{x}\..*$)' for x in compat.PY3_BASE_MODULES])
+    regex_modules = '|'.join([rf'(^{x[:-1] if x.endswith(".") else x}$)' for x in compat.PY3_BASE_MODULES])
+    regex_submod = '|'.join([rf'(^{x[:-1] if x.endswith(".") else x}\..*$)' for x in compat.PY3_BASE_MODULES])
     regex_str = regex_modules + '|' + regex_submod
     module_filter = re.compile(regex_str)
 
