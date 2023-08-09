@@ -395,11 +395,17 @@ def compile_glib_schema_files(datas_toc, workdir, collect_source_files=False):
             stderr=subprocess.STDOUT,
             check=True,
             text=True,
+            errors='ignore',
         )
-        logger.debug("Extra output from glib-compile-schemas:\n%s", p.stdout)
+        logger.debug("Output from glib-compile-schemas:\n%s", p.stdout)
+    except subprocess.CalledProcessError as e:
+        # The called glib-compile-schema returned error. Display stdout/stderr, and return original datas TOC to
+        # minimize damage.
+        logger.warning("Failed to recompile GLib schemas! Returning collected files as-is!", exc_info=True)
+        logger.warning("Output from glib-compile-schemas:\n%s", e.stdout)
+        return datas_toc
     except Exception:
         # Compilation failed for whatever reason. Return original datas TOC to minimize damage.
-        logger.warning("Extra output from glib-compile-schemas:\n%s", p.stdout)
         logger.warning("Failed to recompile GLib schemas! Returning collected files as-is!", exc_info=True)
         return datas_toc
 
