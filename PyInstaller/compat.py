@@ -613,10 +613,9 @@ PY3_BASE_MODULES = {
     'copyreg',
     'encodings',
     'enum',
-    'fnmatch',  # dependency of pathlib
     'functools',
     'genericpath',  # dependency of os.path
-    'io',  # used by loader/pymod02_importers.py
+    'io',
     'heapq',
     'keyword',
     'linecache',
@@ -624,7 +623,6 @@ PY3_BASE_MODULES = {
     'ntpath',  # dependency of os.path
     'operator',
     'os',
-    'pathlib',  # used by loader/pymod02_importers.py
     'posixpath',  # dependency of os.path
     're',
     'reprlib',
@@ -632,21 +630,14 @@ PY3_BASE_MODULES = {
     'sre_constants',
     'sre_parse',
     'stat',  # dependency of os.path
-    'token',  # depdendency of tokenize
-    'tokenize',  # used by loader/pymod02_importers.py
     'traceback',  # for startup errors
     'types',
-    'urllib',  # dependency of pathlib
     'weakref',
     'warnings',
 }
 
 if not is_py310:
     PY3_BASE_MODULES.add('_bootlocale')
-
-if sys.version_info >= (3, 11, 4):
-    # required by loader/pymod02_importers.py -> pathlib -> urllib
-    PY3_BASE_MODULES.add('ipaddress')
 
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).

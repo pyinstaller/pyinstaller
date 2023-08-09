@@ -19,7 +19,6 @@ PEP-302 and PEP-451 importers for frozen applications.
 
 import sys
 import os
-import pathlib
 import io
 import tokenize
 
@@ -424,8 +423,9 @@ class PyiFrozenResourceReader:
       https://github.com/python/cpython/blob/839d7893943782ee803536a47f1d4de160314f85/Lib/importlib/abc.py#L312
     """
     def __init__(self, importer, name):
+        from pathlib import Path
         self.importer = importer
-        self.path = pathlib.Path(sys._MEIPASS).joinpath(*name.split('.'))
+        self.path = Path(sys._MEIPASS).joinpath(*name.split('.'))
 
     def open_resource(self, resource):
         return self.files().joinpath(resource).open('rb')
