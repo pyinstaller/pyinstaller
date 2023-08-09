@@ -615,6 +615,7 @@ PY3_BASE_MODULES = {
     'enum',
     'functools',
     'genericpath',  # dependency of os.path
+    'io',
     'heapq',
     'keyword',
     'linecache',
