@@ -1,0 +1,4 @@
+Fix error handling in GLib schema compilation helper function. Ignore
+character encoding errors when reading stdout/stderr from ``glib-schema-compile``
+process; this fixes errors in msys2/mingw64 environment, caused by
+``U+201C`` and ``U+201D`` quotation marks in the output.
