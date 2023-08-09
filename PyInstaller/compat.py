@@ -636,7 +636,7 @@ PY3_BASE_MODULES = {
     'tokenize',  # used by loader/pymod02_importers.py
     'traceback',  # for startup errors
     'types',
-    'urllib',  # dependency of pathlib
+    'urllib.parse',  # dependency of pathlib
     'weakref',
     'warnings',
 }
