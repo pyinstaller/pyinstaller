@@ -174,6 +174,11 @@ class CArchiveWriter:
     def _write_entry(self, fp, entry):
         dest_name, src_name, compress, typecode = entry
 
+        # Write OPTION entries as-is, without normalizing them. This also exempts them from duplication check,
+        # allowing them to be specified multiple times.
+        if typecode == 'o':
+            return self._write_blob(fp, b"", dest_name, typecode)
+
         # Ensure forward slashes in paths are on Windows converted to back slashes '\\', as on Windows the bootloader
         # works only with back slashes.
         dest_name = os.path.normpath(dest_name)
@@ -186,8 +191,8 @@ class CArchiveWriter:
         # (a file with same destination name, subject to OS case normalization rules).
         if strict_collect_mode:
             normalized_dest = None
-            if type in ('o', 's', 'm', 'M'):
-                # Exempt options, python source script, and modules from the check
+            if typecode in ('s', 'm', 'M'):
+                # Exempt python source scripts and modules from the check.
                 pass
             else:
                 # Everything else; normalize the case
@@ -200,9 +205,7 @@ class CArchiveWriter:
                     )
                 self._collected_names.add(normalized_dest)
 
-        if typecode == 'o':
-            return self._write_blob(fp, b"", dest_name, typecode)
-        elif typecode == 'd':
+        if typecode == 'd':
             # Dependency; merge src_name (= reference path prefix) and dest_name (= name) into single-string format that
             # is parsed by bootloader.
             return self._write_blob(fp, b"", f"{src_name}:{dest_name}", typecode)

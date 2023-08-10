@@ -182,6 +182,10 @@ class ArchiveViewer:
 
     def _show_archive_contents(self, archive_name, archive):
         if isinstance(archive, CArchiveReader):
+            if archive.options:
+                print(f"Options in {archive_name!r} (PKG/CArchive):")
+                for option in archive.options:
+                    print(f" {option}")
             print(f"Contents of {archive_name!r} (PKG/CArchive):")
             if self.brief_mode:
                 for name in archive.toc.keys():
