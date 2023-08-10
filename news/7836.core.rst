@@ -1,0 +1,2 @@
+Drop ``pathlib``, ``tokenize`` and their depenedencies (submodules included) in ``base_library.zip``.
+In our test, helloworld-script reduced more than 30% of final size.
