@@ -110,7 +110,7 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
         }
 
         /* W flag */
-        if (ptoc->name[0] == 'W') {
+        if (strncmp(ptoc->name, "W ", 2) == 0) {
             num_wflags++;
             continue;
         }
@@ -126,7 +126,7 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
 
         /* Collect Wflags */
         for (ptoc = archive_status->tocbuff; ptoc < archive_status->tocend; ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc)) {
-            if (ptoc->name[0] != 'W') {
+            if (strncmp(ptoc->name, "W ", 2) != 0) {
                 continue;
             }
 
