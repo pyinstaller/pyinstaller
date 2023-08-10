@@ -57,29 +57,80 @@ pyi_runtime_options_free(PyiRuntimeOptions *options)
     free(options);
 }
 
-
-
 /*
  * Helper to copy X/W flag for pass-through.
  */
 static int
-_pyi_copy_xwflag(const TOC *ptoc, wchar_t **pdest_buf)
+_pyi_copy_xwflag(const char *flag, wchar_t **pdest_buf)
 {
-    wchar_t wflag_tmp[PATH_MAX];
+    wchar_t flag_w[PATH_MAX + 1];
 
     /* Convert multi-byte string to wide-char. The multibyte encoding in PKG is UTF-8,
      * but W and X options should consist only of ASCII characters. */
-    if (mbstowcs(wflag_tmp, &ptoc->name[2], PATH_MAX) < 0) {
+    if (mbstowcs(flag_w, flag, PATH_MAX) < 0) {
         return -1;
     }
 
     /* Copy */
-    *pdest_buf = wcsdup(wflag_tmp);
+    *pdest_buf = wcsdup(flag_w);
     if (*pdest_buf == NULL) {
         return -1;
     }
     return 0;
 }
+
+/*
+ * Helper that matches name of the name=value flag, and if match is
+ * found, returns pointer to the value string. If the given name does
+ * not match flag's name, NULL is returned. If the name matches but
+ * the flag has no value, pointer to empty string (i.e., the end of
+ * the flag string) is returned.
+ **/
+static const char *
+_pyi_match_key_value_flag(const char *flag, const char *name)
+{
+    /* Match the name */
+    size_t name_len = strlen(name);
+    if (strncmp(flag, name, name_len) != 0) {
+        return NULL;
+    }
+
+    /* Check for exact match flag is "name" without a value. */
+    if (flag[name_len] == 0) {
+        return &flag[name_len];
+    }
+
+    /* Check if flag is "name=something"; return pointer to something.
+     * For compatibility reasons, also allow "name something". */
+    if (flag[name_len] == '=' || flag[name_len] == ' ') {
+        return &flag[name_len + 1];
+    }
+
+    /* Name is just the prefix of the flag, so no match */
+    return NULL;
+}
+
+/*
+ * Helper to parse an X flag to its integer value.
+ */
+static void
+_pyi_match_and_parse_xflag(const char *flag, const char *name, int *dest_var)
+{
+    /* Match key/value flag */
+    const char *value_str = _pyi_match_key_value_flag(flag, name);
+    if (value_str == NULL) {
+        return; /* No match; do not modify destination variable */
+    }
+
+    if (value_str[0] == 0)  {
+        /* No value given; implicitly enabled */
+        *dest_var = 1;
+    } else {
+        /* Value given; enabled if different from 0 */
+        *dest_var = strcmp(value_str, "0") != 0;
+    }
+}
+
 
 /*
  * Allocate the PyiRuntimeOptions structure and populate it based on
@@ -93,7 +144,6 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
     int num_wflags = 0;
     int num_xflags = 0;
     int failed = 0;
-    char *env_utf8 = NULL;
 
     /* Allocate the structure */
     options = calloc(1, sizeof(PyiRuntimeOptions));
@@ -101,22 +151,7 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
         return options;
     }
 
-    /* Honor the setting via PYTHONUTF8 environment variable (valid
-     * values are 0 and 1, same as with python interpreter) */
-    /* TODO: replace this with -Xutf8=0 / -Xutf8=1 bootloader option
-     * and ignore the environment */
-    options->utf8_mode = -1; /* Auto-select by default */
-    env_utf8 = pyi_getenv("PYTHONUTF8");
-    if (env_utf8) {
-        if (strcmp(env_utf8, "0") == 0) {
-            options->utf8_mode = 0;
-        } else if (strcmp(env_utf8, "1") == 0) {
-            options->utf8_mode = 1;
-        } else {
-            OTHERERROR("Invalid value for PYTHONUTF8=%s; disabling utf-8 mode!\n", env_utf8);
-            options->utf8_mode = 0;
-        }
-    }
+    options->utf8_mode = -1; /* default: auto-select based on locale */
 
     /* Parse run-time options from PKG archive */
     for (ptoc = archive_status->tocbuff; ptoc < archive_status->tocend; ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc)) {
@@ -158,7 +193,8 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
 
     /* Collect Wflags and Xflags for pass-through */
 
-    /* Allocate - note that calloc is safe to call with num = 0 */
+    /* Allocate - calloc should be safe to call with num = 0 (and returns
+     * a non-NULL address that should be safe to free) */
     options->wflags = calloc(num_wflags, sizeof(wchar_t *));
     options->xflags = calloc(num_xflags, sizeof(wchar_t *));
     if (options->wflags == NULL || options->xflags == NULL) {
@@ -169,17 +205,25 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
     /* Collect */
     for (ptoc = archive_status->tocbuff; ptoc < archive_status->tocend; ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc)) {
         if (strncmp(ptoc->name, "W ", 2) == 0) {
-            if (_pyi_copy_xwflag(ptoc, &options->wflags[options->num_wflags]) < 0) {
+            /* Copy for pass-through */
+            const char *flag = &ptoc->name[2]; /* Skip first two characters */
+            if (_pyi_copy_xwflag(flag, &options->wflags[options->num_wflags]) < 0) {
                 failed = 1;
                 goto end;
             }
             options->num_wflags++;
         } else if (strncmp(ptoc->name, "X ", 2) == 0) {
-            if (_pyi_copy_xwflag(ptoc, &options->xflags[options->num_xflags]) < 0) {
+            /* Copy for pass-through */
+            const char *flag = &ptoc->name[2]; /* Skip first two characters */
+            if (_pyi_copy_xwflag(flag, &options->xflags[options->num_xflags]) < 0) {
                 failed = 1;
                 goto end;
             }
             options->num_xflags++;
+
+            /* Try matching the utf8 and dev X-flag */
+            _pyi_match_and_parse_xflag(flag, "utf8", &options->utf8_mode);
+            _pyi_match_and_parse_xflag(flag, "dev", &options->dev_mode);
         } else {
             continue;
         }
@@ -531,6 +575,8 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, const PyiRuntimeOptions *runt
         config_impl->optimization_level = runtime_options->optimize; \
         config_impl->buffered_stdio = !runtime_options->unbuffered; \
         config_impl->verbose = runtime_options->verbose; \
+        /* We enable dev_mode in pre-init config, but it seems we need to do it here again. */ \
+        config_impl->dev_mode = runtime_options->dev_mode; \
         /* Set W-flags, if available */ \
         if (runtime_options->num_wflags) { \
             status = PI_PyConfig_SetWideStringList(config, &config_impl->warnoptions, runtime_options->num_wflags, runtime_options->wflags); \
@@ -577,6 +623,7 @@ pyi_pyconfig_preinit_python(const PyiRuntimeOptions *runtime_options)
 
     PI_PyPreConfig_InitIsolatedConfig((PyPreConfig *)&config);
     config.utf8_mode = runtime_options->utf8_mode;
+    config.dev_mode = runtime_options->dev_mode;
 
     /* Pre-initialize */
     PyStatus status = PI_Py_PreInitialize((const PyPreConfig *)&config);

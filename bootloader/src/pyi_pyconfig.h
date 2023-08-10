@@ -33,6 +33,7 @@ typedef struct
     int optimize;
 
     int utf8_mode;
+    int dev_mode;
 
     int num_wflags;
     wchar_t **wflags;
