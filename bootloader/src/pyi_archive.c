@@ -32,18 +32,12 @@
 int pyvers = 0;
 
 /*
- * Return pointer to next toc entry.
+ * Return pointer to the next TOC entry.
  */
-TOC *
+const TOC *
 pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC *ptoc)
 {
-    TOC *result = (TOC*)((char *)ptoc + ptoc->structlen);
-
-    if (result < status->tocbuff) {
-        FATALERROR("Cannot read Table of Contents.\n");
-        return status->tocend;
-    }
-    return result;
+    return (const TOC *)((const char *)ptoc + ptoc->structlen);
 }
 
 /*
@@ -413,8 +407,8 @@ _pyi_arch_fix_toc_endianess(ARCHIVE_STATUS *status)
         ptoc->len = pyi_be32toh(ptoc->len);
         ptoc->ulen = pyi_be32toh(ptoc->ulen);
         /* Jump to next entry; with the current entry fixed up, we can
-         * use pyi_arch_increment_toc_ptr() */
-        ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
+         * use non-const equivalent of pyi_arch_increment_toc_ptr() */
+        ptoc = (TOC *)((const char *)ptoc + ptoc->structlen);
     }
 }
 
@@ -627,7 +621,6 @@ pyi_arch_get_option(const ARCHIVE_STATUS *status, const char *optname)
                     /* No option value, just return the empty string. */
                     return ptoc->name + optlen;
                 }
-
             }
         }
     }

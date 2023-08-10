@@ -169,7 +169,7 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
 static int
 _extract_dependency_from_archive(ARCHIVE_STATUS *status, const char *filename)
 {
-    TOC *ptoc = status->tocbuff;
+    const TOC *ptoc = status->tocbuff;
 
     VS("LOADER: Extracting dependency %s from archive\n", filename);
 
@@ -272,7 +272,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 int
 pyi_launch_need_to_extract_binaries(ARCHIVE_STATUS *archive_status)
 {
-    TOC * ptoc = archive_status->tocbuff;
+    const TOC *ptoc = archive_status->tocbuff;
 
     while (ptoc < archive_status->tocend) {
         if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
@@ -312,7 +312,7 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splas
      * archive_pool[0] is reserved for the main process, the others for dependencies.
      */
     ARCHIVE_STATUS *archive_pool[_MAX_ARCHIVE_POOL_LEN];
-    TOC * ptoc = archive_status->tocbuff;
+    const TOC *ptoc = archive_status->tocbuff;
 
     /* Clean memory for archive_pool list. */
     memset(archive_pool, 0, _MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
@@ -475,7 +475,7 @@ pyi_launch_run_scripts(ARCHIVE_STATUS *status)
 {
     unsigned char *data;
     char buf[PATH_MAX];
-    TOC * ptoc = status->tocbuff;
+    const TOC *ptoc = status->tocbuff;
     PyObject *__main__;
     PyObject *__file__;
     PyObject *main_dict;

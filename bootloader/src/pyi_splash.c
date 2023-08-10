@@ -82,29 +82,16 @@ typedef struct Splash_Event Splash_Event;
  * Initialize the SPLASH_STATUS by defining the necessary paths
  * and resources. Those paths and resources are copied from the
  * SPLASH_DATA_HEADER struct.
- *
- * The field data_header may be NULL, in this case the setup routine
- * will call pyi_splash_find() to receive a data header. If none was
- * found NULL is returned and the function stops, not initializing
- * the splash screen.
- * If data_header is supplied the called is responsible for freeing
- * it, if data_header is NULL this function takes care of free the
- * SPLASH_DATA_HEADER.
  */
 int
-pyi_splash_setup(SPLASH_STATUS *splash_status,
-                 ARCHIVE_STATUS *archive_status,
-                 SPLASH_DATA_HEADER *data_header)
+pyi_splash_setup(SPLASH_STATUS *splash_status, ARCHIVE_STATUS *archive_status)
 {
-    int _delete_header = 0;
-
-    if (data_header == NULL) {
-        if ((data_header = pyi_splash_find(archive_status)) == NULL) {
-            /* No splash resources in this application. Close it */
-            return -1;
-        }
-        _delete_header = 1;
+    SPLASH_DATA_HEADER *data_header = pyi_splash_find(archive_status);
+    if (data_header== NULL) {
+        /* No splash resources in this application. Close it */
+        return -1;
     }
+
     /*
      * We assume first that we run in onedir mode, therefore the tcl and tk
      * libraries are relative to the executable. Only if pyi_splash_extract
@@ -123,37 +110,40 @@ pyi_splash_setup(SPLASH_STATUS *splash_status,
 
     /* Copy the script into a buffer owned by SPLASH_STATUS */
     splash_status->script_len = pyi_be32toh(data_header->script_len);
-    splash_status->script = (char *) calloc(1, splash_status->script_len + 1);
+    splash_status->script = (char *)calloc(1, splash_status->script_len + 1);
 
     /* Copy the image into a buffer owned by SPLASH_STATUS */
     splash_status->image_len = pyi_be32toh(data_header->image_len);
-    splash_status->image = (char *) malloc(splash_status->image_len);
+    splash_status->image = (char *)malloc(splash_status->image_len);
 
     /* Copy the requirements array into a buffer owned by SPLASH_STATUS */
     splash_status->requirements_len = pyi_be32toh(data_header->requirements_len);
-    splash_status->requirements = (char *) malloc(splash_status->requirements_len);
+    splash_status->requirements = (char *)malloc(splash_status->requirements_len);
 
-    if (splash_status->script == NULL || splash_status->image == NULL ||
-        splash_status->requirements == NULL) {
+    if (splash_status->script == NULL || splash_status->image == NULL || splash_status->requirements == NULL) {
         FATALERROR("Cannot allocate memory for necessary files.\n");
         return -1;
     }
 
     /* Copy the data into their respective fields */
-    memcpy(splash_status->script,
-           ((char *) data_header) + pyi_be32toh(data_header->script_offset),
-           splash_status->script_len);
-    memcpy(splash_status->image,
-           ((char *) data_header) + pyi_be32toh(data_header->image_offset),
-           splash_status->image_len);
-    memcpy(splash_status->requirements,
-           ((char *) data_header) + pyi_be32toh(data_header->requirements_offset),
-           splash_status->requirements_len);
+    memcpy(
+        splash_status->script,
+        ((char *)data_header) + pyi_be32toh(data_header->script_offset),
+        splash_status->script_len
+    );
+    memcpy(
+        splash_status->image,
+        ((char *)data_header) + pyi_be32toh(data_header->image_offset),
+        splash_status->image_len
+    );
+    memcpy(
+        splash_status->requirements,
+        ((char *)data_header) + pyi_be32toh(data_header->requirements_offset),
+        splash_status->requirements_len
+    );
 
     /* If data_header was NULL, we allocated it, so we should free it too */
-    if (_delete_header) {
-        free(data_header);
-    }
+    free(data_header);
 
     return 0;
 }
@@ -195,11 +185,13 @@ pyi_splash_start(SPLASH_STATUS *status, const char *executable)
      * a methods provided by tcl. This function will return TCL_ERROR if it is
      * either not implemented (tcl is not threaded) or an error occurs.
      * Since we only support threaded tcl we return on error */
-    if (PI_Tcl_CreateThread(&status->thread_id,   /* Where to store the thread id */
-                            _splash_init,         /* Proc to run in new thread */
-                            status,               /* Parameter to proc */
-                            0,                    /* Use default stack size */
-                            0) != TCL_OK) {       /* no flags */
+    if (PI_Tcl_CreateThread(
+        &status->thread_id,   /* Where to store the thread id */
+        _splash_init,         /* Proc to run in new thread */
+        status,               /* Parameter to proc */
+        0,                    /* Use default stack size */
+        0                     /* No flags */
+    ) != TCL_OK) {
         FATALERROR("SPLASH: Tcl is not threaded. Only threaded tcl is supported.\n");
         PI_Tcl_MutexUnlock(&status_mutex);
         pyi_splash_finalize(status);
@@ -241,11 +233,11 @@ SPLASH_DATA_HEADER *
 pyi_splash_find(ARCHIVE_STATUS *status)
 {
     SPLASH_DATA_HEADER *header = NULL;
-    TOC *ptoc = status->tocbuff;
+    const TOC *ptoc = status->tocbuff;
 
     while (ptoc < status->tocend) {
         if (ptoc->typcd == ARCHIVE_ITEM_SPLASH) {
-            header = (SPLASH_DATA_HEADER *) pyi_arch_extract(status, ptoc);
+            header = (SPLASH_DATA_HEADER *)pyi_arch_extract(status, ptoc);
             VS("SPLASH: Found splash screen resources.\n");
             break;
         }
@@ -325,8 +317,7 @@ pyi_splash_extract(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splash_status)
                 rc = -2;
                 goto cleanup;
             }
-        }
-        else if (extracted) {
+        } else if (extracted) {
             /* We extracted previously some files but we didn't find this one, so
              * the dependency is not available */
             FATALERROR("SPLASH: Cannot find requirement %s in archive.\n", filename);
@@ -435,8 +426,7 @@ pyi_splash_finalize(SPLASH_STATUS *status)
             /* prevent dangling pointers */
             status->interp = NULL;
         }
-    }
-    else {
+    } else {
         /* We run in the bootloader thread */
         if (status->interp != NULL) {
             /* We notify the tcl thread, if it still exists
@@ -485,7 +475,7 @@ pyi_splash_status_new()
 {
     SPLASH_STATUS *splash_status;
 
-    splash_status = (SPLASH_STATUS *) calloc(1, sizeof(SPLASH_STATUS));
+    splash_status = (SPLASH_STATUS *)calloc(1, sizeof(SPLASH_STATUS));
 
     if (splash_status == NULL) {
         FATAL_PERROR("calloc", "Cannot allocate memory for SPLASH_STATUS.\n");
@@ -501,7 +491,7 @@ pyi_splash_status_new()
 void
 pyi_splash_status_free(SPLASH_STATUS **splash_status)
 {
-    SPLASH_STATUS *_status = (SPLASH_STATUS*) *splash_status;
+    SPLASH_STATUS *_status = *splash_status;
 
     if (_status != NULL) {
         if (_status->script != NULL) {
@@ -526,19 +516,19 @@ pyi_splash_status_free(SPLASH_STATUS **splash_status)
 /* Through implementing a custom tcl event we can pass data to the
  * interpreter thread or execute functions in it */
 struct Splash_Event {
-    Tcl_Event      ev;          /* Must be first */
+    Tcl_Event ev;          /* Must be first */
     SPLASH_STATUS *status;
     /* We may wait for the interpreter thread to complete to get
      * a result. For this we use the done condition. The behavior
      * of result and the condition are only defined, if async is false */
-    bool           async;
+    bool async;
     Tcl_Condition *done;
-    int *          result;
+    int *result;
     /* We let the caller decide which function to execute in the interpreter
      * thread, so we pass an function to the interpreter to execute.
      * The function receives the current SPLASH_STATUS and user_data */
     pyi_splash_event_proc *proc;
-    void *                 user_data;
+    const void *user_data;
 };
 
 /*
@@ -616,14 +606,10 @@ _splash_event_proc(Tcl_Event *ev, int flags)
  * Note: This function is executed inside the tcl interpreter thread
  */
 int
-_pyi_splash_progress_update(SPLASH_STATUS *status, void *user_data)
+_pyi_splash_progress_update(SPLASH_STATUS *status, const void *user_data)
 {
-    TOC *ptoc;
-
-    ptoc = (TOC *) user_data;
-
+    const TOC *ptoc = (const TOC *)user_data;
     PI_Tcl_SetVar2(status->interp, "status_text", NULL, ptoc->name, TCL_GLOBAL_ONLY);
-
     return 0;
 }
 
@@ -637,7 +623,7 @@ _pyi_splash_progress_update(SPLASH_STATUS *status, void *user_data)
  * unpacked.
  */
 int
-pyi_splash_update_prg(SPLASH_STATUS *status, TOC *ptoc)
+pyi_splash_update_prg(SPLASH_STATUS *status, const TOC *ptoc)
 {
     /* We enqueue the _pyi_splash_progress_update function into the tcl
      * interpreter event queue in async mode, ignoring the return value. */
@@ -664,8 +650,7 @@ pyi_splash_update_prg(SPLASH_STATUS *status, TOC *ptoc)
  * safely.
  */
 int
-pyi_splash_send(SPLASH_STATUS *status, bool async, void *user_data,
-                pyi_splash_event_proc proc)
+pyi_splash_send(SPLASH_STATUS *status, bool async, const void *user_data, pyi_splash_event_proc proc)
 {
     int rc = 0;
     Splash_Event *ev;
@@ -674,7 +659,7 @@ pyi_splash_send(SPLASH_STATUS *status, bool async, void *user_data,
     /* Tcl will free this event once it was serviced */
     ev = (Splash_Event *) PI_Tcl_Alloc(sizeof(Splash_Event));
 
-    ev->ev.proc = (Tcl_EventProc *) _splash_event_proc;
+    ev->ev.proc = (Tcl_EventProc *)_splash_event_proc;
     ev->status = status;
 
     /* Needed for synchronous return values */
@@ -686,7 +671,7 @@ pyi_splash_send(SPLASH_STATUS *status, bool async, void *user_data,
     ev->proc = proc;
     ev->user_data = user_data;
 
-    _splash_event_send(status, (Tcl_Event *) ev, &cond, &call_mutex, async);
+    _splash_event_send(status, (Tcl_Event *)ev, &cond, &call_mutex, async);
 
     if (!async) {
         PI_Tcl_ConditionFinalize(&cond);
@@ -707,8 +692,7 @@ pyi_splash_send(SPLASH_STATUS *status, bool async, void *user_data,
  * minimal environment and dont want to initialize the standard library.
  */
 int
-_tclInit_Command(ClientData clientData, Tcl_Interp *interp,
-                 int objc, Tcl_Obj *const objv[])
+_tclInit_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     /**
      * This function would normally do a search in some common and
@@ -723,8 +707,7 @@ _tclInit_Command(ClientData clientData, Tcl_Interp *interp,
 }
 
 int
-_tcl_findLibrary_Command(ClientData clientData, Tcl_Interp *interp,
-                         int objc, Tcl_Obj *const objv[])
+_tcl_findLibrary_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     /**
      * To find a module tcl provides this function via it's standard
@@ -760,7 +743,7 @@ _tcl_findLibrary_Command(ClientData clientData, Tcl_Interp *interp,
     SPLASH_STATUS *status;
     char initScriptPath[PATH_MAX];
 
-    status = (SPLASH_STATUS *) clientData;
+    status = (SPLASH_STATUS *)clientData;
 
     /*
      * In our environment this function is only called once and that is
@@ -794,8 +777,7 @@ _tcl_findLibrary_Command(ClientData clientData, Tcl_Interp *interp,
  * that we first check if the file exists and if it does we execute it.
  */
 int
-_tcl_source_Command(ClientData clientData, Tcl_Interp *interp,
-                    int objc, Tcl_Obj *const objv[])
+_tcl_source_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     /*
      * In _splash_init we renamed the original source command to _source
@@ -837,8 +819,7 @@ _tcl_source_Command(ClientData clientData, Tcl_Interp *interp,
  * can continue to run.
  */
 int
-_tcl_exit_Command(ClientData clientData, Tcl_Interp *interp,
-                  int objc, Tcl_Obj *const objv[])
+_tcl_exit_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     exitMainLoop = true;
     return TCL_OK;
@@ -870,7 +851,7 @@ _splash_init(ClientData client_data)
 
     PI_Tcl_MutexLock(&status_mutex);
 
-    status = (SPLASH_STATUS *) client_data;
+    status = (SPLASH_STATUS *)client_data;
     exitMainLoop = false;
 
     status->interp = PI_Tcl_CreateInterp();
@@ -884,41 +865,48 @@ _splash_init(ClientData client_data)
     /* In order to run a minimal tcl interpreter we override
      * the tclInit command, which is called by Tcl_Init().
      * This is a supported way of modifying tcl's startup behavior */
-    err |= PI_Tcl_CreateObjCommand(status->interp,
-                                   "tclInit",
-                                   _tclInit_Command,
-                                   status,
-                                   NULL) == NULL;
+    err |= PI_Tcl_CreateObjCommand(
+        status->interp,
+        "tclInit",
+        _tclInit_Command,
+        status,
+        NULL
+    ) == NULL;
 
     /* Tk_Init calls the tcl standard library function 'tcl_findLibrary' */
-    err |= PI_Tcl_CreateObjCommand(status->interp,
-                                   "tcl_findLibrary",
-                                   _tcl_findLibrary_Command,
-                                   status,
-                                   NULL) == NULL;
+    err |= PI_Tcl_CreateObjCommand(
+        status->interp,
+        "tcl_findLibrary",
+        _tcl_findLibrary_Command,
+        status,
+        NULL
+    ) == NULL;
 
     /* We override the exit command to terminate only this thread and not
      * the whole application */
-    err |= PI_Tcl_CreateObjCommand(status->interp,
-                                   "exit",
-                                   _tcl_exit_Command,
-                                   status,
-                                   NULL) == NULL;
+    err |= PI_Tcl_CreateObjCommand(
+        status->interp,
+        "exit",
+        _tcl_exit_Command,
+        status,
+        NULL
+    ) == NULL;
 
     /* replace source command for usage in minimal environment */
     PI_Tcl_EvalEx(status->interp, "rename ::source ::_source", -1, 0);
-    err |= PI_Tcl_CreateObjCommand(status->interp,
-                                   "source",
-                                   _tcl_source_Command,
-                                   status,
-                                   NULL) == NULL;
+    err |= PI_Tcl_CreateObjCommand(
+        status->interp,
+        "source",
+        _tcl_source_Command,
+        status,
+        NULL
+    ) == NULL;
 
     /* We OR every return value of the Tcl_CreateObjCommand function because
      * if one of them fails (if one fails every other should fail to) the
      * splash screen should be aborted. */
     if (err) {
-        VS("TCL: Cannot create setup commands. Error: %s\n",
-           PI_Tcl_GetString(PI_Tcl_GetObjResult(status->interp)));
+        VS("TCL: Cannot create setup commands. Error: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(status->interp)));
         goto cleanup;
     }
 
@@ -926,42 +914,38 @@ _splash_init(ClientData client_data)
     err |= PI_Tcl_Init(status->interp);
 
     if (err) {
-        VS("SPLASH: Error initializing Tcl. %s\n",
-           PI_Tcl_GetString(PI_Tcl_GetObjResult(status->interp)));
+        VS("SPLASH: Error initializing Tcl. %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(status->interp)));
     }
 
     err |= PI_Tk_Init(status->interp);
 
     if (err) {
-        VS("SPLASH: Error initializing Tk. %s\n",
-           PI_Tcl_GetString(PI_Tcl_GetObjResult(status->interp)));
+        VS("SPLASH: Error initializing Tk. %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(status->interp)));
     }
 
     if (err) {
         goto cleanup;      /* If an error occurred exit */
-
     }
 
     /* Print version if tcl and tk for debugging */
-    VS("SPLASH: Running tcl version %s and tk version %s.\n",
-       PI_Tcl_GetVar2(status->interp, "tcl_patchLevel", NULL, TCL_GLOBAL_ONLY),
-       PI_Tcl_GetVar2(status->interp, "tk_patchLevel", NULL, TCL_GLOBAL_ONLY));
+    VS(
+        "SPLASH: Running tcl version %s and tk version %s.\n",
+        PI_Tcl_GetVar2(status->interp, "tcl_patchLevel", NULL, TCL_GLOBAL_ONLY),
+        PI_Tcl_GetVar2(status->interp, "tk_patchLevel", NULL, TCL_GLOBAL_ONLY)
+    );
 
     /* Extract the image from the splash resources and
      * pass them to tcl/tk in the variable _image_data */
     image_data_obj = PI_Tcl_NewByteArrayObj(status->image, status->image_len);
-    PI_Tcl_SetVar2Ex(status->interp, "_image_data", NULL, image_data_obj,
-                     TCL_GLOBAL_ONLY);
+    PI_Tcl_SetVar2Ex(status->interp, "_image_data", NULL, image_data_obj, TCL_GLOBAL_ONLY);
     /* Tcl/Tk creates a copy of the image, so we can free our buffer */
     free(status->image);
     status->image = NULL;
 
-    err = PI_Tcl_EvalEx(status->interp, status->script, status->script_len,
-                        TCL_GLOBAL_ONLY);
+    err = PI_Tcl_EvalEx(status->interp, status->script, status->script_len, TCL_GLOBAL_ONLY);
 
     if (err) {
-        VS("TCL Error: %s\n",
-           PI_Tcl_GetString(PI_Tcl_GetObjResult(status->interp)));
+        VS("TCL Error: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(status->interp)));
     }
 
     /* We need to notify the bootloader main thread that the splash screen

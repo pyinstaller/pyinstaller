@@ -257,7 +257,7 @@ end:
 int
 pyi_pylib_import_modules(ARCHIVE_STATUS *archive_status)
 {
-    TOC *ptoc;
+    const TOC *ptoc;
     PyObject *co;
     PyObject *mod;
     PyObject *meipass_obj;
@@ -379,7 +379,7 @@ _pyi_pylib_install_pyz_entry(const ARCHIVE_STATUS *archive_status, const TOC *pt
 int
 pyi_pylib_install_pyz(const ARCHIVE_STATUS *archive_status)
 {
-    TOC *ptoc;
+    const TOC *ptoc;
 
     VS("LOADER: Installing PYZ archive with Python modules.\n");
 
