@@ -1583,6 +1583,63 @@ terminated. The child process keeps running. Since the parent process
 was terminated before it could perform clean-up, the temporary directory
 is left behind.
 
+
+Automatic hiding and minimization of console window under Windows
+=================================================================
+
+For console-enabled Windows applications, PyInstaller offers an option
+to automatically hide or minimize the console window *when the console
+window is owned by the program's process* (i.e., the program was not
+launched from an existing console window).
+
+Automatic minimization of console window allows a GUI application to
+put the console out of the user's way, while allowing it to be brought
+back if required. Automatic hiding of console window might be used to
+create an illusion of a hybrid application that has no console when
+launched by double-clicking on the executable, but shows console
+output when launched from existing console window.
+
+Note that the programmatic hiding/minimization of console can be easily
+implemented by application itself using win32 API via ``ctypes``.
+The advantage of having it in PyInstaller's bootloader is that:
+
+* it can be performed very early in the program's life cycle (especially
+  in case of ``onefile`` builds).
+
+* in ``onefile`` builds, the bootloader can easily determine the
+  ownership of console, regardless of parent and child process being
+  used (as the check is executed in the parent process).
+
+Also note that console hiding is different from ``windowed``/``noconsole``
+builds, which have no console at all. This option works only with
+console-enabled builds, and involves PyInstaller's bootloader
+programmatically hiding or minimizing the console.
+
+To enable this functionality, use the :option:`--hide-console` command-line
+option, or corresponding ``hide_console`` argument to ``EXE`` in the .spec
+file. Currently, four modes are supported: ``hide-early``, ``minimize-early``,
+``hide-late``, and ``minimize-late``.
+
+Depending on the setting, the console is hidden/mininized either early
+in the bootloader execution or late in the bootloader execution. The
+early option takes place as soon as the PKG archive is found. In ``onefile``
+builds, the late option takes place after application has unpacked itself
+and before it launches the child process. In ``onedir`` builds, the late
+option takes place before starting the embedded python interpreter.
+
+.. note::
+
+   Even with hiding/minimizing console early in the bootloader's execution,
+   the user might see console being opened for an instant before it is
+   hidden or minimized.
+
+   In fact, hiding console before the application's UI is brought up
+   might give the user an impression that the application has crashed.
+   Therefore, it might be preferable to have the application code to
+   implement its own programmatic hiding/minimization of the console
+   window, and have it performed only after the UI becomes visible.
+
+
 .. include:: _common_definitions.txt
 
 .. Emacs config:

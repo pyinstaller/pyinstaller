@@ -47,6 +47,17 @@
 #include "pyi_apple_events.h"
 
 
+/* Console hiding/minimization options. Windows only. */
+#if defined(_WIN32) && !defined(WINDOWED)
+
+#define HIDE_CONSOLE_OPTION_HIDE_EARLY "hide-early"
+#define HIDE_CONSOLE_OPTION_HIDE_LATE "hide-late"
+#define HIDE_CONSOLE_OPTION_MINIMIZE_EARLY "minimize-early"
+#define HIDE_CONSOLE_OPTION_MINIMIZE_LATE "minimize-late"
+
+#endif
+
+
 static int
 _pyi_allow_pkg_sideload(const char *executable)
 {
@@ -166,6 +177,18 @@ pyi_main(int argc, char * argv[])
             }
         }
     }
+
+#if defined(_WIN32) && !defined(WINDOWED)
+    /* Early console hiding/minimization */
+    const char *hide_console_option = pyi_arch_get_option(archive_status, "pyi-hide-console");
+    if (hide_console_option != NULL) {
+        if (strcmp(hide_console_option, HIDE_CONSOLE_OPTION_HIDE_EARLY) == 0) {
+            pyi_win32_hide_console();
+        } else if (strcmp(hide_console_option, HIDE_CONSOLE_OPTION_MINIMIZE_EARLY) == 0) {
+            pyi_win32_minimize_console();
+        }
+    }
+#endif
 
 #if defined(__linux__)
     char *processname = NULL;
@@ -341,6 +364,21 @@ pyi_main(int argc, char * argv[])
         }
 #endif
 
+#if defined(_WIN32) && !defined(WINDOWED)
+        /* Late console hiding/minimization; this should turn out to be a
+         * no-op in child processes of onefile programs or in spawned
+         * additional subprocesses using the executable, because the
+         * process does not own the console.
+         */
+        if (hide_console_option != NULL) {
+            if (strcmp(hide_console_option, HIDE_CONSOLE_OPTION_HIDE_LATE) == 0) {
+                pyi_win32_hide_console();
+            } else if (strcmp(hide_console_option, HIDE_CONSOLE_OPTION_MINIMIZE_LATE) == 0) {
+                pyi_win32_minimize_console();
+            }
+        }
+#endif
+
         /* Main code to initialize Python and run user's code. */
         pyi_launch_initialize(archive_status);
         rc = pyi_launch_execute(archive_status);
@@ -391,6 +429,17 @@ pyi_main(int argc, char * argv[])
 
         /* Transform parent to background process on OSX only. */
         pyi_parent_to_background();
+
+#if defined(_WIN32) && !defined(WINDOWED)
+        /* Late console hiding/minimization */
+        if (hide_console_option != NULL) {
+            if (strcmp(hide_console_option, HIDE_CONSOLE_OPTION_HIDE_LATE) == 0) {
+                pyi_win32_hide_console();
+            } else if (strcmp(hide_console_option, HIDE_CONSOLE_OPTION_MINIMIZE_LATE) == 0) {
+                pyi_win32_minimize_console();
+            }
+        }
+#endif
 
         /* Run user's code in a subprocess and pass command line arguments to it. */
         rc = pyi_utils_create_child(executable, archive_status, argc, argv);

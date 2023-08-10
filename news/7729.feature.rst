@@ -1,0 +1,4 @@
+(Windows) Add an option to hide or minimize the console window in
+console-enabled applications, but only if the program's process owns
+the console window (i.e., the program was not launched from an existing
+console window).

@@ -520,5 +520,41 @@ int pyi_win32_is_drive_root(const wchar_t *path)
     return 0;
 }
 
+#if !defined(WINDOWED)
+
+/* Helper that hides or minimizes the console window
+ * if it is owned by the process. The show_cmd argument
+ * is passed to the ShowWindow call, and should be
+ * either SW_HIDE or SW_SHOWMINNOACTIVE.
+ */
+static void pyi_win32_adjust_console(int show_cmd)
+{
+    HWND hConsole = GetConsoleWindow();
+    if (hConsole != NULL) {
+        DWORD dwProcessId = GetCurrentProcessId();
+        DWORD dwConsoleProcessId;
+
+        if (GetWindowThreadProcessId(hConsole, &dwConsoleProcessId) == 0) {
+            return;  /* Window handle is invalid */
+        }
+
+        if (dwProcessId == dwConsoleProcessId) {
+            ShowWindow(hConsole, show_cmd);
+        }
+    }
+}
+
+void pyi_win32_hide_console()
+{
+    pyi_win32_adjust_console(SW_HIDE);
+}
+
+void pyi_win32_minimize_console()
+{
+    pyi_win32_adjust_console(SW_SHOWMINNOACTIVE);
+}
+
+#endif
+
 
 #endif  /* _WIN32 */
