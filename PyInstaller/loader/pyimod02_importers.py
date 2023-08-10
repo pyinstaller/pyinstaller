@@ -49,6 +49,7 @@ def _decode_source(source_bytes):
     Based on CPython's implementation of the same functionality:
     https://github.com/python/cpython/blob/3.9/Lib/importlib/_bootstrap_external.py#L679-L688
     """
+    # Local import to avoid including `tokenize` and its dependencies in `base_library.zip`
     from tokenize import detect_encoding
     source_bytes_readline = io.BytesIO(source_bytes).readline
     encoding = detect_encoding(source_bytes_readline)
@@ -423,6 +424,7 @@ class PyiFrozenResourceReader:
       https://github.com/python/cpython/blob/839d7893943782ee803536a47f1d4de160314f85/Lib/importlib/abc.py#L312
     """
     def __init__(self, importer, name):
+        # Local import to avoid including `pathlib` and its dependencies in `base_library.zip`
         from pathlib import Path
         self.importer = importer
         self.path = Path(sys._MEIPASS).joinpath(*name.split('.'))
