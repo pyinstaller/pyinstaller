@@ -1,0 +1,3 @@
+Implement a work-around for un-initialized ``sys._stdlib_dir`` and ensure
+that python-frozen stdlib modules in Python >= 3.11 have ``__file__``
+attribute set.
