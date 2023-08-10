@@ -104,6 +104,18 @@ def test_dev_mode_xflag(xflag, enabled, pyi_builder):
     )
 
 
+# Test that setting hash seed to zero via --python-option disables hash randomization.
+def test_disable_hash_randomization(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import sys
+        print("sys.flags:", sys.flags)
+        assert sys.flags.hash_randomization == 0
+        """,
+        pyi_args=["--python-option", "hash_seed=0"]
+    )
+
+
 # Test that onefile cleanup does not remove contents of a directory that user symlinks into sys._MEIPASS (see #6074).
 def test_onefile_cleanup_symlinked_dir(pyi_builder, tmpdir):
     if pyi_builder._mode != 'onefile':

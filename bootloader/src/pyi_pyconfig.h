@@ -32,6 +32,9 @@ typedef struct
     int unbuffered;
     int optimize;
 
+    int use_hash_seed;
+    unsigned long hash_seed;
+
     int utf8_mode;
     int dev_mode;
 

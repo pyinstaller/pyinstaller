@@ -155,6 +155,8 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
 
     /* Parse run-time options from PKG archive */
     for (ptoc = archive_status->tocbuff; ptoc < archive_status->tocend; ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc)) {
+        const char *value_str;
+
         /* Skip bootloader options; these start with "pyi-" */
         if (strncmp(ptoc->name, "pyi-", 4) == 0) {
             continue;
@@ -178,16 +180,23 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
             continue;
         }
 
-        /* W flag */
+        /* W flag: W <warning_rule> */
         if (strncmp(ptoc->name, "W ", 2) == 0) {
             num_wflags++;
             continue;
         }
 
-        /* X flag */
+        /* X flag: X <key=value> */
         if (strncmp(ptoc->name, "X ", 2) == 0) {
             num_xflags++;
             continue;
+        }
+
+        /* Hash seed flag: hash_seed=value */
+        value_str = _pyi_match_key_value_flag(ptoc->name, "hash_seed");
+        if (value_str && value_str[0]) {
+            options->use_hash_seed = 1;
+            options->hash_seed = strtoul(value_str, NULL, 10);
         }
     }
 
@@ -575,6 +584,9 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, const PyiRuntimeOptions *runt
         config_impl->optimization_level = runtime_options->optimize; \
         config_impl->buffered_stdio = !runtime_options->unbuffered; \
         config_impl->verbose = runtime_options->verbose; \
+        /* Hash seed */ \
+        config_impl->use_hash_seed = runtime_options->use_hash_seed; \
+        config_impl->hash_seed = runtime_options->hash_seed; \
         /* We enable dev_mode in pre-init config, but it seems we need to do it here again. */ \
         config_impl->dev_mode = runtime_options->dev_mode; \
         /* Set W-flags, if available */ \
