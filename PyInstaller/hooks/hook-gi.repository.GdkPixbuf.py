@@ -52,7 +52,7 @@ def _collect_loaders(libdir):
 
     # Sometimes the loaders are stored in a different directory from the library (msys2)
     if not loader_libs:
-        pattern = os.path.join(libdir, '..', 'lib', LOADERS_PATH, lib_ext)
+        pattern = os.path.abspath(os.path.join(libdir, '..', 'lib', LOADERS_PATH, lib_ext))
         for f in glob.glob(pattern):
             loader_libs.append(f)
 
@@ -89,6 +89,9 @@ def _generate_loader_cache(gdk_pixbuf_query_loaders, libdir, loader_libs):
     win_prefix = '"' + '\\\\'.join(['lib', 'gdk-pixbuf-2.0', '2.10.0'])
     win_plen = len(win_prefix)
 
+    msys2_prefix = '"' + os.path.abspath(os.path.join(libdir, '..', 'lib', 'gdk-pixbuf-2.0', '2.10.0'))
+    msys2_plen = len(msys2_prefix)
+
     # For each line in the updated loader cache...
     for line in cachedata.splitlines():
         if line.startswith('#'):
@@ -97,6 +100,8 @@ def _generate_loader_cache(gdk_pixbuf_query_loaders, libdir, loader_libs):
             line = '"@executable_path/' + LOADER_CACHE_DEST_PATH + line[plen:]
         elif line.startswith(win_prefix):
             line = '"' + LOADER_CACHE_DEST_PATH.replace('/', '\\\\') + line[win_plen:]
+        elif line.startswith(msys2_prefix):
+            line = ('"' + LOADER_CACHE_DEST_PATH + line[msys2_plen:]).replace('/', '\\\\')
         output_lines.append(line)
 
     return '\n'.join(output_lines)
