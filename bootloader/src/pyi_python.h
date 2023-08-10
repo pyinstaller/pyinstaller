@@ -182,9 +182,9 @@ EXTDECLPROC(void, PyErr_Restore, (PyObject *, PyObject *, PyObject *));
 EXTDECLPROC(PyObject *, PyEval_EvalCode, (PyObject *, PyObject *, PyObject *));
 
 /* PyImport_ */
-EXTDECLPROC(PyObject *, PyImport_AddModule, (char *));
-EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (char *, PyObject *));
-EXTDECLPROC(PyObject *, PyImport_ImportModule, (char *));
+EXTDECLPROC(PyObject *, PyImport_AddModule, (const char *));
+EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (const char *, PyObject *));
+EXTDECLPROC(PyObject *, PyImport_ImportModule, (const char *));
 
 /* PyList_ */
 EXTDECLPROC(int, PyList_Append, (PyObject *, PyObject *));

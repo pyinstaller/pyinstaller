@@ -287,7 +287,7 @@ pyi_main(int argc, char * argv[])
      */
     splash_status = pyi_splash_status_new();
 
-    if (!in_child && pyi_splash_setup(splash_status, archive_status, NULL) == 0) {
+    if (!in_child && pyi_splash_setup(splash_status, archive_status) == 0) {
         /*
          * Splash resources found, start splash screen
          * If in onefile mode extract the required binaries

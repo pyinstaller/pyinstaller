@@ -136,13 +136,15 @@ typedef struct _splash_status {
 
 } SPLASH_STATUS;
 
-typedef int (pyi_splash_event_proc)(SPLASH_STATUS *, void *);
+typedef int (pyi_splash_event_proc)(SPLASH_STATUS *, const void *);
 
 /**
  * Public API functions for pyi_splash
  */
-int pyi_splash_setup(SPLASH_STATUS *splash_status, ARCHIVE_STATUS *archive_status,
-                     SPLASH_DATA_HEADER *data_header);
+int pyi_splash_setup(
+    SPLASH_STATUS *splash_status,
+    ARCHIVE_STATUS *archive_status
+);
 int pyi_splash_attach(SPLASH_STATUS *status);
 int pyi_splash_finalize(SPLASH_STATUS *status);
 int pyi_splash_start(SPLASH_STATUS *status, const char *executable);
@@ -151,9 +153,13 @@ int pyi_splash_start(SPLASH_STATUS *status, const char *executable);
 SPLASH_DATA_HEADER *pyi_splash_find(ARCHIVE_STATUS *status);
 int pyi_splash_extract(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splash_status);
 
-int pyi_splash_send(SPLASH_STATUS *status, bool async, void *user_data,
-                    pyi_splash_event_proc proc);
-int pyi_splash_update_prg(SPLASH_STATUS *status, TOC *ptoc);
+int pyi_splash_send(
+    SPLASH_STATUS *status,
+    bool async,
+    const void *user_data,
+    pyi_splash_event_proc proc
+);
+int pyi_splash_update_prg(SPLASH_STATUS *status, const TOC *ptoc);
 
 /* Memory allocation functions */
 SPLASH_STATUS *pyi_splash_status_new();

@@ -140,7 +140,7 @@ PyiRuntimeOptions *
 pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
 {
     PyiRuntimeOptions *options;
-    TOC *ptoc;
+    const TOC *ptoc;
     int num_wflags = 0;
     int num_xflags = 0;
     int failed = 0;
