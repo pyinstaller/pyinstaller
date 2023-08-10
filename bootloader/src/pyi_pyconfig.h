@@ -36,6 +36,9 @@ typedef struct
 
     int num_wflags;
     wchar_t **wflags;
+
+    int num_xflags;
+    wchar_t **xflags;
 }  PyiRuntimeOptions;
 
 PyiRuntimeOptions *pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status);

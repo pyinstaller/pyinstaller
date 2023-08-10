@@ -31,21 +31,54 @@
 void
 pyi_runtime_options_free(PyiRuntimeOptions *options)
 {
+    int i;
+
     if (options == NULL) {
         return;
     }
 
     /* Free the wflags array */
     if (options->num_wflags) {
-        int i;
         for (i = 0; i < options->num_wflags; i++) {
             free(options->wflags[i]);
         }
     }
     free(options->wflags);
 
+    /* Free the Xflags array */
+    if (options->num_xflags) {
+        for (i = 0; i < options->num_xflags; i++) {
+            free(options->xflags[i]);
+        }
+    }
+    free(options->xflags);
+
     /* Free options structure itself */
     free(options);
+}
+
+
+
+/*
+ * Helper to copy X/W flag for pass-through.
+ */
+static int
+_pyi_copy_xwflag(const TOC *ptoc, wchar_t **pdest_buf)
+{
+    wchar_t wflag_tmp[PATH_MAX];
+
+    /* Convert multi-byte string to wide-char. The multibyte encoding in PKG is UTF-8,
+     * but W and X options should consist only of ASCII characters. */
+    if (mbstowcs(wflag_tmp, &ptoc->name[2], PATH_MAX) < 0) {
+        return -1;
+    }
+
+    /* Copy */
+    *pdest_buf = wcsdup(wflag_tmp);
+    if (*pdest_buf == NULL) {
+        return -1;
+    }
+    return 0;
 }
 
 /*
@@ -58,6 +91,7 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
     PyiRuntimeOptions *options;
     TOC *ptoc;
     int num_wflags = 0;
+    int num_xflags = 0;
     int failed = 0;
     char *env_utf8 = NULL;
 
@@ -114,38 +148,40 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
             num_wflags++;
             continue;
         }
+
+        /* X flag */
+        if (strncmp(ptoc->name, "X ", 2) == 0) {
+            num_xflags++;
+            continue;
+        }
     }
 
-    if (num_wflags) {
-        /* Allocate Wflags array */
-        options->wflags = calloc(num_wflags, sizeof(wchar_t *));
-        if (options->wflags == NULL) {
-            failed = 1;
-            goto end;
-        }
+    /* Collect Wflags and Xflags for pass-through */
 
-        /* Collect Wflags */
-        for (ptoc = archive_status->tocbuff; ptoc < archive_status->tocend; ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc)) {
-            if (strncmp(ptoc->name, "W ", 2) != 0) {
-                continue;
-            }
+    /* Allocate - note that calloc is safe to call with num = 0 */
+    options->wflags = calloc(num_wflags, sizeof(wchar_t *));
+    options->xflags = calloc(num_xflags, sizeof(wchar_t *));
+    if (options->wflags == NULL || options->xflags == NULL) {
+        failed = 1;
+        goto end;
+    }
 
-            /* Convert multi-byte string to wide-char. The multibyte
-             * encoding should be UTF-8, although W-options should
-             * consist only of ASCII characters. */
-            wchar_t wflag_tmp[PATH_MAX];
-            if (mbstowcs(wflag_tmp, &ptoc->name[2], PATH_MAX) == -1) {
-                failed = 1;
-                goto end;
-            }
-
-            /* Copy */
-            options->wflags[options->num_wflags] = wcsdup(wflag_tmp);
-            if (options->wflags[options->num_wflags] == NULL) {
+    /* Collect */
+    for (ptoc = archive_status->tocbuff; ptoc < archive_status->tocend; ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc)) {
+        if (strncmp(ptoc->name, "W ", 2) == 0) {
+            if (_pyi_copy_xwflag(ptoc, &options->wflags[options->num_wflags]) < 0) {
                 failed = 1;
                 goto end;
             }
             options->num_wflags++;
+        } else if (strncmp(ptoc->name, "X ", 2) == 0) {
+            if (_pyi_copy_xwflag(ptoc, &options->xflags[options->num_xflags]) < 0) {
+                failed = 1;
+                goto end;
+            }
+            options->num_xflags++;
+        } else {
+            continue;
         }
     }
 
@@ -498,6 +534,14 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, const PyiRuntimeOptions *runt
         /* Set W-flags, if available */ \
         if (runtime_options->num_wflags) { \
             status = PI_PyConfig_SetWideStringList(config, &config_impl->warnoptions, runtime_options->num_wflags, runtime_options->wflags); \
+            if (PI_PyStatus_Exception(status)) { \
+                return -1; \
+            } \
+        } \
+        /* Set X-flags, if available. Note that this is just pass-through that allows options to show up in sys._xoptions;
+         * for example, for -Xutf8 or -Xdev to take effect, we need to explicitly parse them and modify PyConfig fields. */ \
+        if (runtime_options->num_xflags) { \
+            status = PI_PyConfig_SetWideStringList(config, &config_impl->xoptions, runtime_options->num_xflags, runtime_options->xflags); \
             if (PI_PyStatus_Exception(status)) { \
                 return -1; \
             } \
