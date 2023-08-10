@@ -81,6 +81,7 @@ class CArchiveReader:
         self._toc_length = 0
 
         self.toc = {}
+        self.options = []
 
         # Load TOC
         with open(self._filename, "rb") as fp:
@@ -107,7 +108,7 @@ class CArchiveReader:
             fp.seek(self._start_offset + toc_offset)
             toc_data = fp.read(toc_length)
 
-            self.toc = self._parse_toc(toc_data)
+            self.toc, self.options = self._parse_toc(toc_data)
 
     @staticmethod
     def _find_magic_pattern(fp, magic_pattern):
@@ -138,6 +139,7 @@ class CArchiveReader:
 
     @classmethod
     def _parse_toc(cls, data):
+        options = []
         toc = {}
         cur_pos = 0
         while cur_pos < len(data):
@@ -154,10 +156,14 @@ class CArchiveReader:
 
             typecode = chr(typecode)
 
-            # TODO: handle duplicates
-            toc[name] = (entry_offset, data_length, uncompressed_length, compression_flag, typecode)
+            # The TOC should not contain duplicates, except for OPTION entries. Therefore, keep those
+            # in a separate list. With options, the rest of the entries do not make sense, anyway.
+            if typecode == 'o':
+                options.append(name)
+            else:
+                toc[name] = (entry_offset, data_length, uncompressed_length, compression_flag, typecode)
 
-        return toc
+        return toc, options
 
     def extract(self, name):
         """

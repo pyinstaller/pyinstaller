@@ -338,8 +338,14 @@ def normalize_pyz_toc(toc):
 
 
 def _normalize_toc(toc, toc_type_priorities, type_case_normalization_fcn=lambda typecode: False):
+    options_toc = []
     tmp_toc = dict()
     for dest_name, src_name, typecode in toc:
+        # Exempt OPTION entries from de-duplication processing. Some options might allow being specified multiple times.
+        if typecode == 'OPTION':
+            options_toc.append(((dest_name, src_name, typecode)))
+            continue
+
         # Always sanitize the dest_name with `os.path.normpath` to remove any local loops with parent directory path
         # components. `pathlib` does not seem to offer equivalent functionality.
         dest_name = os.path.normpath(dest_name)
@@ -362,7 +368,8 @@ def _normalize_toc(toc, toc_type_priorities, type_case_normalization_fcn=lambda 
                 tmp_toc[entry_key] = (dest_name, src_name, typecode)
 
     # Return the items as list. The order matches the original order due to python dict maintaining the insertion order.
-    return list(tmp_toc.values())
+    # The exception are OPTION entries, which are now placed at the beginning of the TOC.
+    return options_toc + list(tmp_toc.values())
 
 
 def toc_process_symbolic_links(toc):
