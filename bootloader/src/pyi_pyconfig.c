@@ -91,21 +91,21 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
             continue;
         }
 
-        /* Verbose flag: v */
-        if (strcmp(ptoc->name, "v") == 0) {
-            options->verbose = 1;
+        /* Verbose flag: v, verbose */
+        if (strcmp(ptoc->name, "v") == 0 || strcmp(ptoc->name, "verbose") == 0) {
+            options->verbose++;
             continue;
         }
 
-        /* Unbuffered flag: u */
-        if (strcmp(ptoc->name, "u") == 0) {
+        /* Unbuffered flag: u, unbuffered */
+        if (strcmp(ptoc->name, "u") == 0 || strcmp(ptoc->name, "unbuffered") == 0) {
             options->unbuffered = 1;
             continue;
         }
 
-        /* Optimize flag: O */
-        if (strcmp(ptoc->name, "O") == 0) {
-            options->optimize = 1;
+        /* Optimize flag: O, optimize */
+        if (strcmp(ptoc->name, "O") == 0 || strcmp(ptoc->name, "optimize") == 0) {
+            options->optimize++;
             continue;
         }
 
