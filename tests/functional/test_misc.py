@@ -13,8 +13,66 @@ import os
 
 import pytest
 
+from PyInstaller import compat
+
 # Directory with testing modules used in some tests.
 _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+
+
+# Test that in python 3.11 and later, sys._stdlib_dir is set and that python-frozen modules have __file__ attribute.
+@pytest.mark.skipif(not compat.is_py311, reason="applicable only to python >= 3.11")
+def test_frozen_stdlib_modules(pyi_builder, script_dir, tmpdir):
+    test_script = 'pyi_frozen_stdlib_modules.py'
+    ref_result_file = os.path.join(tmpdir, 'ref_results.txt')
+    result_file = os.path.join(tmpdir, 'results.txt')
+
+    # Run the test script unfrozen, to obtain reference results
+    ret = compat.exec_python_rc(
+        os.path.join(script_dir, test_script),
+        ref_result_file,
+    )
+    assert ret == 0, "Unfrozen test script failed!"
+
+    # Freeze and run the test script
+    pyi_builder.test_script(
+        test_script,
+        app_args=[result_file],
+    )
+
+    # Process the results
+    def _normalize_module_path(module_path, stdlib_dir):
+        if not module_path:
+            return module_path
+        module_path, ext = os.path.splitext(os.path.relpath(module_path, stdlib_dir))
+        assert ext in ('.pyc', '.py')
+        return module_path
+
+    def _load_results(filename):
+        # Read pprint-ed results
+        with open(filename, 'r') as fp:
+            data = fp.read()
+        data = eval(data)
+
+        # First entry is sys._stdlib_dir
+        stdlib_dir = data[0]
+
+        results = []
+        for name, file_attr, state_filename, state_origname in data[1:]:
+            # Remove sys._stdlib_dir prefix from __file__ attribute and filename from __spec__.loader_state, and remove
+            # the .py/.pyc suffix for easier comparison.
+            results.append((
+                name,
+                _normalize_module_path(file_attr, stdlib_dir),
+                _normalize_module_path(state_filename, stdlib_dir),
+                state_origname,
+            ))
+
+        return results
+
+    ref_results = _load_results(ref_result_file)
+    results = _load_results(result_file)
+
+    assert results == ref_results
 
 
 # Test inspect.getmodule() on stack-frames obtained by inspect.stack(). Reproduces the issue reported by #5963 while
