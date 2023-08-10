@@ -817,8 +817,8 @@ class EXE(Target):
             # (but honor SOURCE_DATE_EPOCH environment variable for reproducible builds).
             logger.info("Fixing EXE headers")
             build_timestamp = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
-            winutils.set_exe_build_timestamp(build_name, build_timestamp)
-            winutils.update_exe_pe_checksum(build_name)
+            self._retry_operation(winutils.set_exe_build_timestamp, build_name, build_timestamp)
+            self._retry_operation(winutils.update_exe_pe_checksum, build_name)
         elif is_darwin:
             # If the version of macOS SDK used to build bootloader exceeds that of macOS SDK used to built Python
             # library (and, by extension, bundled Tcl/Tk libraries), force the version declared by the frozen executable
@@ -949,6 +949,21 @@ class EXE(Target):
         with open(infile, 'rb') as infh:
             with open(outfile, 'wb') as outfh:
                 shutil.copyfileobj(infh, outfh, length=64 * 1024)
+
+    @staticmethod
+    def _retry_operation(func, *args, retries=20):
+        """
+        This function attempts to execute the given function `retries` amount of times
+        while catching OSError exceptions.
+        """
+        for retry in range(retries):
+            try:
+                func(*args)
+                return
+            except OSError:
+                logger.debug(f"Failed execution of {func}, retry {retry + 1} of {retries}")
+                time.sleep(1 / (retries - retry))
+        raise OSError(f"No retries left, execution of {func} failed!")
 
 
 class COLLECT(Target):
