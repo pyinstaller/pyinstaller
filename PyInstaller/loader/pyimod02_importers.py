@@ -488,3 +488,54 @@ def install():
         sys.modules['__main__'].__loader__ = importer
     except Exception:
         pass
+
+    # Apply hack for python >= 3.11 and its frozen stdlib modules.
+    if sys.version_info >= (3, 11):
+        _fixup_frozen_stdlib()
+
+
+# A hack for python >= 3.11 and its frozen stdlib modules. Unless `sys._stdlib_dir` is set, these modules end up
+# missing __file__ attribute, which causes problems with 3rd party code. At the time of writing, python interpreter
+# configuration API does not allow us to influence `sys._stdlib_dir` - it always resets it to `None`. Therefore,
+# we manually set the path, and fix __file__ attribute on modules.
+def _fixup_frozen_stdlib():
+    import _imp  # built-in
+
+    # If sys._stdlib_dir is None or empty, override it with sys._MEIPASS
+    if not sys._stdlib_dir:
+        try:
+            sys._stdlib_dir = sys._MEIPASS
+        except AttributeError:
+            pass
+
+    # The sys._stdlib_dir set above should affect newly-imported python-frozen modules. However, most of them have
+    # been already imported during python initialization and our bootstrap, so we need to retroactively fix their
+    # __file__ attribute.
+    for module_name, module in sys.modules.items():
+        if not _imp.is_frozen(module_name):
+            continue
+
+        is_pkg = _imp.is_frozen_package(module_name)
+
+        # Determine "real" name from __spec__.loader_state.
+        loader_state = module.__spec__.loader_state
+
+        orig_name = loader_state.origname
+        if is_pkg:
+            orig_name += '.__init__'
+
+        # We set suffix to .pyc to be consistent with out PyiFrozenImporter.
+        filename = os.path.join(sys._MEIPASS, *orig_name.split('.')) + '.pyc'
+
+        # Fixup the __file__ attribute
+        if not hasattr(module, '__file__'):
+            try:
+                module.__file__ = filename
+            except AttributeError:
+                pass
+
+        # Fixup the loader_state.filename
+        # Except for _frozen_importlib (importlib._bootstrap), whose loader_state.filename appears to be left at
+        # None in python.
+        if loader_state.filename is None and orig_name != 'importlib._bootstrap':
+            loader_state.filename = filename
