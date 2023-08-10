@@ -62,15 +62,16 @@ def test_dis_main(pyi_builder):
     )
 
 
-# Test that setting PYTHONUTF8 controls the PEP540 UTF-8 mode on all OSes, regardless of current locale setting.
-@pytest.mark.parametrize('python_utf8', [True, False])
-def test_utf8_mode_envvar(python_utf8, pyi_builder, monkeypatch):
-    monkeypatch.setenv('PYTHONUTF8', str(int(python_utf8)))
+# Test that setting utf8 X-flag controls the PEP540 UTF-8 mode on all OSes, regardless of current locale setting.
+@pytest.mark.parametrize('xflag,enabled', [("X utf8", True), ("X utf8=1", True), ("X utf8=0", False)])
+def test_utf8_mode_xflag(xflag, enabled, pyi_builder):
     pyi_builder.test_source(
         """
         import sys
+        print("sys.flags:", sys.flags)
         assert sys.flags.utf8_mode == {}
-        """.format(python_utf8)
+        """.format(enabled),
+        pyi_args=["--python-option", xflag]
     )
 
 
@@ -81,10 +82,26 @@ def test_utf8_mode_envvar(python_utf8, pyi_builder, monkeypatch):
 def test_utf8_mode_locale(locale, pyi_builder, monkeypatch):
     monkeypatch.setenv('LC_CTYPE', locale)
     monkeypatch.setenv('LC_ALL', locale)  # Required by macOS CI; setting just LC_CTYPE is not enough.
-    pyi_builder.test_source("""
+    pyi_builder.test_source(
+        """
         import sys
+        print("sys.flags:", sys.flags)
         assert sys.flags.utf8_mode == 1
-        """)
+        """
+    )
+
+
+# Test that setting dev X-flag controls dev mode.
+@pytest.mark.parametrize('xflag,enabled', [("X dev", True), ("X dev=1", True), ("X dev=0", False)])
+def test_dev_mode_xflag(xflag, enabled, pyi_builder):
+    pyi_builder.test_source(
+        """
+        import sys
+        print("sys.flags:", sys.flags)
+        assert sys.flags.dev_mode == {}
+        """.format(enabled),
+        pyi_args=["--python-option", xflag]
+    )
 
 
 # Test that onefile cleanup does not remove contents of a directory that user symlinks into sys._MEIPASS (see #6074).
