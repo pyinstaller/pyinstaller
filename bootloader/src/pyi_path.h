@@ -38,9 +38,8 @@ bool pyi_path_is_symlink(const char *path);
 #ifdef _WIN32
 FILE *pyi_path_fopen(const char *filename, const char *mode);
 #else
-    #define pyi_path_fopen(x, y)    fopen(x, y)
+#define pyi_path_fopen(x, y) fopen(x, y)
 #endif
-#define pyi_path_fclose(x)    fclose(x)
 
 int pyi_path_mkdir(const char *path);
 int pyi_path_mksymlink(const char *link_target, const char *link_name);
