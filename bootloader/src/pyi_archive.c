@@ -287,18 +287,20 @@ cleanup:
 }
 
 /*
- * Extract an archive entry into file on the filesystem.
- * The path is relative to the directory the archive is in.
+ * Extract an archive entry into file in the temporary directory.
+ * The temporary directory must be initialized via `pyi_arch_create_tempdir`
+ * before this function is called.
  */
 int
-pyi_arch_extract2fs(ARCHIVE_STATUS *status, const TOC *ptoc)
+pyi_arch_extract2fs(const ARCHIVE_STATUS *status, const TOC *ptoc)
 {
     FILE *archive_fp = NULL;
     FILE *out_fp = NULL;
     int rc = 0;
 
-    /* Ensure that tmp dir _MEIPASSxxx exists */
-    if (pyi_create_temp_path(status) == -1) {
+    /* Temporary directory must be initialized before calling this function */
+    if (status->has_temp_directory != true) {
+        FATALERROR("pyi_arch_extract2fs was called before temporary directory was initialized!\n");
         return -1;
     }
 
@@ -625,4 +627,35 @@ pyi_arch_find_by_name(const ARCHIVE_STATUS *status, const char *name)
         ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
     }
     return NULL;
+}
+
+
+/*
+ * Creates a temporary directory for the ARCHIVE_STATUS.
+ */
+int
+pyi_arch_create_tempdir(ARCHIVE_STATUS *status)
+{
+    const char *runtime_tmpdir = NULL;
+
+    /* No-op if already initialized */
+    if (status->has_temp_directory == true) {
+        return 0;
+    }
+
+    /* Check for custom run-time temporary directory options */
+    runtime_tmpdir = pyi_arch_get_option(status, "pyi-runtime-tmpdir");
+    if (runtime_tmpdir != NULL) {
+        VS("LOADER: Found runtime-tmpdir %s\n", runtime_tmpdir);
+    }
+
+    if (!pyi_create_tempdir(status->temppath, runtime_tmpdir)) {
+        FATALERROR("Cannot create temporary directory!\n");
+        return -1;
+    }
+
+    /* Set flag that temp directory is created and available. */
+    status->has_temp_directory = true;
+
+    return 0;
 }

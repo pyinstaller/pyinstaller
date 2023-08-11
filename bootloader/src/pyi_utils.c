@@ -295,8 +295,8 @@ static wchar_t
 }
 
 /* TODO rename function and revisit */
-static int
-pyi_get_temp_path(char *buffer, const char *runtime_tmpdir)
+int
+pyi_create_tempdir(char *buffer, const char *runtime_tmpdir)
 {
     int i;
     wchar_t *wchar_ret;
@@ -396,8 +396,8 @@ pyi_test_temp_path(char *buff)
 }
 
 /* TODO merge this function with windows version. */
-static int
-pyi_get_temp_path(char *buff, const char *runtime_tmpdir)
+int
+pyi_create_tempdir(char *buff, const char *runtime_tmpdir)
 {
     if (runtime_tmpdir != NULL) {
       strcpy(buff, runtime_tmpdir);
@@ -439,30 +439,6 @@ pyi_get_temp_path(char *buff, const char *runtime_tmpdir)
 
 #endif /* ifdef _WIN32 */
 
-/*
- * Creates a temporany directory if it doesn't exists
- * and properly sets the ARCHIVE_STATUS members.
- */
-int
-pyi_create_temp_path(ARCHIVE_STATUS *status)
-{
-    const char *runtime_tmpdir = NULL;
-
-    if (status->has_temp_directory != true) {
-        runtime_tmpdir = pyi_arch_get_option(status, "pyi-runtime-tmpdir");
-        if (runtime_tmpdir != NULL) {
-          VS("LOADER: Found runtime-tmpdir %s\n", runtime_tmpdir);
-        }
-
-        if (!pyi_get_temp_path(status->temppath, runtime_tmpdir)) {
-            FATALERROR("INTERNAL ERROR: cannot create temporary directory!\n");
-            return -1;
-        }
-        /* Set flag that temp directory is created and available. */
-        status->has_temp_directory = true;
-    }
-    return 0;
-}
 
 /* TODO merge unix/win versions of remove_one() and pyi_remove_temp_path() */
 #ifdef _WIN32
@@ -481,7 +457,7 @@ remove_one(wchar_t *wfnm, size_t pos, struct _wfinddata_t wfinfo)
         if (!pyi_win32_is_symlink(wfnm)) {
             /* Use recursion to remove subdirectories. */
             pyi_win32_utils_to_utf8(fnm, wfnm, PATH_MAX);
-            pyi_remove_temp_path(fnm);
+            pyi_recursive_rmdir(fnm);
         } else {
             /* Remove only directory link */
             _wrmdir(wfnm);
@@ -494,10 +470,9 @@ remove_one(wchar_t *wfnm, size_t pos, struct _wfinddata_t wfinfo)
     }
 }
 
-/* TODO Find easier and more portable implementation of removing directory recursively. */
-/*     e.g. */
+/* TODO: find easier and more portable implementation of removing directory recursively. */
 void
-pyi_remove_temp_path(const char *dir)
+pyi_recursive_rmdir(const char *dir)
 {
     wchar_t wfnm[PATH_MAX + 1];
     wchar_t wdir[PATH_MAX + 1];
@@ -543,7 +518,7 @@ remove_one(char *pnm, int pos, const char *fnm)
     if (lstat(pnm, &sbuf) == 0) {
         if (S_ISDIR(sbuf.st_mode) ) {
             /* Use recursion to remove subdirectories. */
-            pyi_remove_temp_path(pnm);
+            pyi_recursive_rmdir(pnm);
         }
         else {
             unlink(pnm);
@@ -552,7 +527,7 @@ remove_one(char *pnm, int pos, const char *fnm)
 }
 
 void
-pyi_remove_temp_path(const char *dir)
+pyi_recursive_rmdir(const char *dir)
 {
     char fnm[PATH_MAX + 1];
     DIR *ds;

@@ -96,13 +96,9 @@ _split_dependency_name(char *path, char *filename, const char *item)
 
 /* Copy the dependencies file from a directory to the tempdir */
 static int
-_copy_dependency_from_dir(ARCHIVE_STATUS *status, const char *srcpath, const char *filename)
+_copy_dependency_from_dir(const ARCHIVE_STATUS *status, const char *srcpath, const char *filename)
 {
-    if (pyi_create_temp_path(status) == -1) {
-        return -1;
-    }
-
-    VS("LOADER: Coping file %s to %s\n", srcpath, status->temppath);
+    VS("LOADER: Copying file %s to %s\n", srcpath, status->temppath);
     return pyi_copy_file(srcpath, status->temppath, filename);
 }
 
@@ -123,10 +119,6 @@ _get_archive(ARCHIVE_STATUS *archive_pool[], const char *path)
     int SELF = 0;
 
     VS("LOADER: Getting file from archive.\n");
-
-    if (pyi_create_temp_path(archive_pool[SELF]) == -1) {
-        return NULL;
-    }
 
     for (index = 1; archive_pool[index] != NULL; index++) {
         if (strcmp(archive_pool[index]->archivename, path) == 0) {
@@ -270,7 +262,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
  * and a child process will not be required on windows.
  */
 int
-pyi_launch_need_to_extract_binaries(ARCHIVE_STATUS *archive_status)
+pyi_launch_need_to_extract_binaries(const ARCHIVE_STATUS *archive_status)
 {
     const TOC *ptoc = archive_status->tocbuff;
 
@@ -471,7 +463,7 @@ _pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
  * Return non zero on failure
  */
 int
-pyi_launch_run_scripts(ARCHIVE_STATUS *status)
+pyi_launch_run_scripts(const ARCHIVE_STATUS *status)
 {
     unsigned char *data;
     char buf[PATH_MAX];
