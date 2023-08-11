@@ -36,15 +36,15 @@ char *strndup(const char * str, size_t n);
 #endif
 
 /* Environment variables. */
-
 char *pyi_getenv(const char *variable);
 int pyi_setenv(const char *variable, const char *value);
 int pyi_unsetenv(const char *variable);
 
-/* Temporary files. */
+/* Temporary directory. */
+int pyi_create_tempdir(char *buff, const char *runtime_tmpdir);
 
-int pyi_create_temp_path(ARCHIVE_STATUS *status);
-void pyi_remove_temp_path(const char *dir);
+/* Recursive directory deletion. */
+void pyi_recursive_rmdir(const char *dir);
 
 /* File manipulation. */
 int pyi_create_parent_directory(const char *path, const char *name_);

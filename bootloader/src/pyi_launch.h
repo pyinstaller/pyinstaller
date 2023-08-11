@@ -44,7 +44,7 @@ int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status,
  * Check if binaries need to be extracted. If not, this is probably a onedir
  * solution, and a child process will not be required on windows.
  */
-int pyi_launch_need_to_extract_binaries(ARCHIVE_STATUS *archive_status);
+int pyi_launch_need_to_extract_binaries(const ARCHIVE_STATUS *archive_status);
 
 /*
  * Wrapped platform specific initialization before loading Python and executing

@@ -98,6 +98,7 @@ pyi_main(int argc, char * argv[])
     char archivefile[PATH_MAX];
     int rc = 0;
     int in_child = 0;
+    int needs_to_extract = 0;
     char *extractionpath = NULL;
 
 #ifdef _MSC_VER
@@ -156,7 +157,7 @@ pyi_main(int argc, char * argv[])
 
     pyi_unsetenv("_MEIPASS2");
 
-    VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "NULL"));
+    VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "not set"));
 
     /* Try opening the archive; first attempt to read it from executable
      * itself (embedded mode), then from a stand-alone pkg file (sideload mode)
@@ -208,14 +209,25 @@ pyi_main(int argc, char * argv[])
 
 #endif  /* defined(__linux__) */
 
-    /* These are used only in pyi_pylib_set_sys_argv, which converts to wchar_t */
+    /* These are passed on to python interpreter, so they show up in sys.argv */
     archive_status->argc = argc;
     archive_status->argv = argv;
+
+    /* Check if we need to unpack the embedded archive (onefile build, or onedir
+     * build in MERGE mode). If we do, create the temporary directory. */
+    needs_to_extract = pyi_launch_need_to_extract_binaries(archive_status);
+    if (!in_child && needs_to_extract) {
+        VS("LOADER: creating temporary directory...\n");
+        if (pyi_arch_create_tempdir(archive_status) == -1) {
+            return -1;
+        }
+        VS("LOADER: created temporary directory: %s\n", archive_status->temppath);
+    }
 
 #if defined(_WIN32) || defined(__APPLE__)
 
     /* On Windows and Mac use single-process for --onedir mode. */
-    if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
+    if (!extractionpath && !needs_to_extract) {
         VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = archive_status->homepath;
     }
@@ -227,7 +239,7 @@ pyi_main(int argc, char * argv[])
      * set environment (i.e., LD_LIBRARY_PATH) and then restart/replace the
      * process via exec() without fork() for the environment changes (library
      * search path) to take effect. */
-     if (!extractionpath && !pyi_launch_need_to_extract_binaries(archive_status)) {
+     if (!extractionpath && !needs_to_extract) {
         VS("LOADER: No need to extract files to run; setting up environment and restarting bootloader...\n");
 
         /* Set _MEIPASS2, so that the restarted bootloader process will enter
@@ -455,7 +467,7 @@ pyi_main(int argc, char * argv[])
         pyi_splash_status_free(&splash_status);
 
         if (archive_status->has_temp_directory == true) {
-            pyi_remove_temp_path(archive_status->temppath);
+            pyi_recursive_rmdir(archive_status->temppath);
         }
         pyi_arch_status_free(archive_status);
 
