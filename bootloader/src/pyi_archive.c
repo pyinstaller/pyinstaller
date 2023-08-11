@@ -40,34 +40,6 @@ pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC *ptoc)
     return (const TOC *)((const char *)ptoc + ptoc->structlen);
 }
 
-/*
- * Open archive file if needed
- */
-static int
-pyi_arch_open_fp(ARCHIVE_STATUS *status)
-{
-    if (status->fp == NULL) {
-        status->fp = pyi_path_fopen(status->archivename, "rb");
-
-        if (status->fp == NULL) {
-            return -1;
-        }
-    }
-    return 0;
-}
-
-/*
- * Close archive file
- * File should close after unused to avoid locking
- */
-static void
-pyi_arch_close_fp(ARCHIVE_STATUS *status)
-{
-    if (status->fp != NULL) {
-        pyi_path_fclose(status->fp);
-        status->fp = NULL;
-    }
-}
 
 /*
  * Helper for pyi_arch_extract/pyi_arch_extract2fs that extracts a
@@ -76,7 +48,7 @@ pyi_arch_close_fp(ARCHIVE_STATUS *status)
  * to be valid.
  */
 static int
-_pyi_arch_extract_compressed(const ARCHIVE_STATUS *status, const TOC *ptoc, FILE *out_fp, unsigned char *out_ptr)
+_pyi_arch_extract_compressed(FILE *archive_fp, const TOC *ptoc, FILE *out_fp, unsigned char *out_ptr)
 {
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer_in = NULL;
@@ -114,7 +86,7 @@ _pyi_arch_extract_compressed(const ARCHIVE_STATUS *status, const TOC *ptoc, FILE
     do {
         /* Read chunk to input buffer */
         size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : (size_t)remaining_size;
-        if (fread(buffer_in, 1, chunk_size, status->fp) != chunk_size || ferror(status->fp)) {
+        if (fread(buffer_in, 1, chunk_size, archive_fp) != chunk_size || ferror(archive_fp)) {
             rc = -1;
             goto cleanup;
         }
@@ -174,7 +146,7 @@ cleanup:
  * the archive into the provided file handle.
  */
 static int
-_pyi_arch_extract2fs_uncompressed(const ARCHIVE_STATUS *status, const TOC *ptoc, FILE *out)
+_pyi_arch_extract2fs_uncompressed(FILE *archive_fp, const TOC *ptoc, FILE *out_fp)
 {
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer;
@@ -192,12 +164,12 @@ _pyi_arch_extract2fs_uncompressed(const ARCHIVE_STATUS *status, const TOC *ptoc,
     remaining_size = ptoc->ulen;
     while (remaining_size > 0) {
         size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : (size_t)remaining_size;
-        if (fread(buffer, chunk_size, 1, status->fp) < 1) {
+        if (fread(buffer, chunk_size, 1, archive_fp) < 1) {
             FATAL_PERROR("fread", "Failed to extract %s: failed to read data chunk!\n", ptoc->name);
             rc = -1;
             break;
         }
-        if (fwrite(buffer, chunk_size, 1, out) < 1) {
+        if (fwrite(buffer, chunk_size, 1, out_fp) < 1) {
             FATAL_PERROR("fwrite", "Failed to extract %s: failed to write data chunk!\n", ptoc->name);
             rc = -1;
             break;
@@ -213,18 +185,18 @@ _pyi_arch_extract2fs_uncompressed(const ARCHIVE_STATUS *status, const TOC *ptoc,
  * the archive into the provided (pre-allocated) buffer.
  */
 static int
-_pyi_arch_extract_uncompressed(const ARCHIVE_STATUS *status, const TOC *ptoc, unsigned char *out)
+_pyi_arch_extract_uncompressed(FILE *archive_fp, const TOC *ptoc, unsigned char *out_buf)
 {
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer;
     uint64_t remaining_size;
 
     /* Read the file into buffer, chunk by chunk */
-    buffer = out;
+    buffer = out_buf;
     remaining_size = ptoc->ulen;
     while (remaining_size > 0) {
         size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : (size_t)remaining_size;
-        if (fread(buffer, chunk_size, 1, status->fp) < 1) {
+        if (fread(buffer, chunk_size, 1, archive_fp) < 1) {
             FATAL_PERROR("fread", "Failed to extract %s: failed to read data chunk!\n", ptoc->name);
             return -1;
         }
@@ -239,20 +211,22 @@ _pyi_arch_extract_uncompressed(const ARCHIVE_STATUS *status, const TOC *ptoc, un
  * Returns pointer to the data (must be freed).
  */
 unsigned char *
-pyi_arch_extract(ARCHIVE_STATUS *status, const TOC *ptoc)
+pyi_arch_extract(const ARCHIVE_STATUS *status, const TOC *ptoc)
 {
+    FILE *archive_fp = NULL;
     unsigned char *data = NULL;
     int rc = 0;
 
     /* Open archive (source) file... */
-    if (pyi_arch_open_fp(status) != 0) {
+    archive_fp = pyi_path_fopen(status->archivename, "rb");
+    if (archive_fp == NULL) {
         FATALERROR("Failed to extract %s: failed to open archive file!\n", ptoc->name);
         return NULL;
     }
     /* ... and seek to the beginning of entry's data */
-    if (pyi_fseek(status->fp, status->pkgstart + ptoc->pos, SEEK_SET) < 0) {
+    if (pyi_fseek(archive_fp, status->pkgstart + ptoc->pos, SEEK_SET) < 0) {
         FATAL_PERROR("fseek", "Failed to extract %s: failed to seek to the entry's data!\n", ptoc->name);
-        return NULL;
+        goto cleanup;
     }
 
     /* Allocate the data buffer */
@@ -264,9 +238,9 @@ pyi_arch_extract(ARCHIVE_STATUS *status, const TOC *ptoc)
 
     /* Extract */
     if (ptoc->cflag == '\1') {
-        rc = _pyi_arch_extract_compressed(status, ptoc, NULL, data);
+        rc = _pyi_arch_extract_compressed(archive_fp, ptoc, NULL, data);
     } else {
-        rc = _pyi_arch_extract_uncompressed(status, ptoc, data);
+        rc = _pyi_arch_extract_uncompressed(archive_fp, ptoc, data);
     }
     if (rc != 0) {
         free(data);
@@ -274,7 +248,7 @@ pyi_arch_extract(ARCHIVE_STATUS *status, const TOC *ptoc)
     }
 
 cleanup:
-    pyi_arch_close_fp(status);
+    fclose(archive_fp);
 
     return data;
 }
@@ -282,7 +256,8 @@ cleanup:
 /*
  * Create/extract symbolic link from the archive.
  */
-int pyi_arch_create_symlink(ARCHIVE_STATUS *status, const TOC *ptoc)
+static int
+pyi_arch_create_symlink(const ARCHIVE_STATUS *status, const TOC *ptoc)
 {
     char *link_target = NULL;
     char link_name[PATH_MAX];
@@ -318,7 +293,8 @@ cleanup:
 int
 pyi_arch_extract2fs(ARCHIVE_STATUS *status, const TOC *ptoc)
 {
-    FILE *out = NULL;
+    FILE *archive_fp = NULL;
+    FILE *out_fp = NULL;
     int rc = 0;
 
     /* Ensure that tmp dir _MEIPASSxxx exists */
@@ -336,20 +312,21 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, const TOC *ptoc)
     }
 
     /* Open target file */
-    out = pyi_open_target_file(status->temppath, ptoc->name);
-    if (out == NULL) {
+    out_fp = pyi_open_target_file(status->temppath, ptoc->name);
+    if (out_fp == NULL) {
         FATAL_PERROR("fopen", "Failed to extract %s: failed to open target file!\n", ptoc->name);
         return -1;
     }
 
     /* Open archive (source) file... */
-    if (pyi_arch_open_fp(status) != 0) {
+    archive_fp = pyi_path_fopen(status->archivename, "rb");
+    if (archive_fp == NULL) {
         FATALERROR("Failed to extract %s: failed to open archive file!\n", ptoc->name);
         rc = -1;
         goto cleanup;
     }
     /* ... and seek to the beginning of entry's data */
-    if (pyi_fseek(status->fp, status->pkgstart + ptoc->pos, SEEK_SET) < 0) {
+    if (pyi_fseek(archive_fp, status->pkgstart + ptoc->pos, SEEK_SET) < 0) {
         FATAL_PERROR("fseek", "Failed to extract %s: failed to seek to the entry's data!\n", ptoc->name);
         rc = -1;
         goto cleanup;
@@ -357,17 +334,20 @@ pyi_arch_extract2fs(ARCHIVE_STATUS *status, const TOC *ptoc)
 
     /* Extract */
     if (ptoc->cflag == '\1') {
-        rc = _pyi_arch_extract_compressed(status, ptoc, out, NULL);
+        rc = _pyi_arch_extract_compressed(archive_fp, ptoc, out_fp, NULL);
     } else {
-        rc = _pyi_arch_extract2fs_uncompressed(status, ptoc, out);
+        rc = _pyi_arch_extract2fs_uncompressed(archive_fp, ptoc, out_fp);
     }
 #ifndef WIN32
-    fchmod(fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
+    fchmod(fileno(out_fp), S_IRUSR | S_IWUSR | S_IXUSR);
 #endif
 
 cleanup:
-    pyi_arch_close_fp(status);
-    fclose(out);
+    /* Might be NULL if we jumped here due to fopen() failure */
+    if (archive_fp) {
+        fclose(archive_fp);
+    }
+    fclose(out_fp);
 
     return rc;
 }
@@ -419,31 +399,35 @@ _pyi_arch_fix_toc_endianess(ARCHIVE_STATUS *status)
 int
 pyi_arch_open(ARCHIVE_STATUS *status)
 {
+    FILE *archive_fp = NULL;
     uint64_t cookie_pos = 0;
+    int rc = -1;
+
     VS("LOADER: archivename is %s\n", status->archivename);
 
-    /* Physically open the file */
-    if (pyi_arch_open_fp(status) != 0) {
+    /* Open the archive file */
+    archive_fp = pyi_path_fopen(status->archivename, "rb");
+    if (archive_fp == NULL) {
         VS("LOADER: Cannot open archive: %s\n", status->archivename);
         return -1;
     }
 
     /* Search for the embedded archive's cookie */
-    cookie_pos = _pyi_find_pkg_cookie_offset(status->fp);
+    cookie_pos = _pyi_find_pkg_cookie_offset(archive_fp);
     if (cookie_pos == 0) {
         VS("LOADER: Cannot find cookie!\n");
-        return -1;
+        goto cleanup;
     }
     VS("LOADER: Cookie found at offset 0x%" PRIX64 "\n", cookie_pos);
 
     /* Read the cookie */
-    if (pyi_fseek(status->fp, cookie_pos, SEEK_SET) < 0) {
+    if (pyi_fseek(archive_fp, cookie_pos, SEEK_SET) < 0) {
         FATAL_PERROR("fseek", "Failed to seek to cookie position!\n");
-        return -1;
+        goto cleanup;
     }
-    if (fread(&status->cookie, sizeof(COOKIE), 1, status->fp) < 1) {
+    if (fread(&status->cookie, sizeof(COOKIE), 1, archive_fp) < 1) {
         FATAL_PERROR("fread", "Failed to read cookie!\n");
-        return -1;
+        goto cleanup;
     }
     /* Fix endianness of COOKIE fields */
     status->cookie.len = pyi_be32toh(status->cookie.len);
@@ -462,33 +446,35 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     pyvers = pyi_arch_get_pyversion(status);
 
     /* Read in in the table of contents */
-    pyi_fseek(status->fp, status->pkgstart + status->cookie.TOC, SEEK_SET);
-    status->tocbuff = (TOC *) malloc(status->cookie.TOClen);
+    pyi_fseek(archive_fp, status->pkgstart + status->cookie.TOC, SEEK_SET);
+    status->tocbuff = (TOC *)malloc(status->cookie.TOClen);
 
     if (status->tocbuff == NULL) {
         FATAL_PERROR("malloc", "Could not allocate buffer for TOC!\n");
-        return -1;
+        goto cleanup;
     }
 
-    if (fread(status->tocbuff, status->cookie.TOClen, 1, status->fp) < 1) {
+    if (fread(status->tocbuff, status->cookie.TOClen, 1, archive_fp) < 1) {
         FATAL_PERROR("fread", "Could not read full TOC!\n");
-        return -1;
+        goto cleanup;
     }
-    status->tocend = (TOC *) (((char *)status->tocbuff) + status->cookie.TOClen);
+    status->tocend = (const TOC *)(((const char *)status->tocbuff) + status->cookie.TOClen);
 
     /* Check input file is still ok (should be). */
-    if (ferror(status->fp)) {
+    if (ferror(archive_fp)) {
         FATALERROR("Error on file.\n");
-        return -1;
+        goto cleanup;
     }
 
     /* Fix the endianness of the fields in the TOC entries */
     _pyi_arch_fix_toc_endianess(status);
 
-    /* Close file handler
-     * if file not close here it will be close in pyi_arch_status_free */
-    pyi_arch_close_fp(status);
-    return 0;
+    rc = 0; /* Succeeded */
+
+cleanup:
+    fclose(archive_fp);
+
+    return rc;
 }
 
 /* Setup the archive with python modules and the paths required by rest of
@@ -496,7 +482,7 @@ pyi_arch_open(ARCHIVE_STATUS *status)
  * Sets f_archivename, f_homepath, f_mainpath
  */
 bool
-pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * executable_path)
+pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *executable_path)
 {
     /* Copy archive path and executable path */
     if (snprintf(status->archivename, PATH_MAX, "%s", archive_path) >= PATH_MAX) {
@@ -506,12 +492,8 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const * archive_path, char const * e
         return false;
     }
 
-    /* Open the archive */
+    /* Try to open the archive with given archive and executable path */
     if (pyi_arch_open(status)) {
-        /* If this is not an archive, we MUST close the file, */
-        /* otherwise the open file-handle will be reused when */
-        /* testing the next file. */
-        pyi_arch_close_fp(status);
         return false;
     }
 
@@ -565,9 +547,10 @@ pyi_arch_get_pyversion(const ARCHIVE_STATUS *status)
  * Allocate memory for archive status.
  */
 ARCHIVE_STATUS *
-pyi_arch_status_new() {
+pyi_arch_status_new()
+{
     ARCHIVE_STATUS *archive_status;
-    archive_status = (ARCHIVE_STATUS *) calloc(1, sizeof(ARCHIVE_STATUS));
+    archive_status = (ARCHIVE_STATUS *)calloc(1, sizeof(ARCHIVE_STATUS));
     if (archive_status == NULL) {
         FATAL_PERROR("calloc", "Cannot allocate memory for ARCHIVE_STATUS\n");
     }
@@ -580,17 +563,17 @@ pyi_arch_status_new() {
 void
 pyi_arch_status_free(ARCHIVE_STATUS *archive_status)
 {
-    if (archive_status != NULL) {
-        VS("LOADER: Freeing archive status for %s\n", archive_status->archivename);
-
-        /* Free the TOC memory from the archive status first. */
-        if (archive_status->tocbuff != NULL) {
-            free(archive_status->tocbuff);
-        }
-        /* Close file handler */
-        pyi_arch_close_fp(archive_status);
-        free(archive_status);
+    if (archive_status == NULL) {
+        return;
     }
+
+    VS("LOADER: Freeing archive status for %s\n", archive_status->archivename);
+
+    /* Free the TOC buffer */
+    free(archive_status->tocbuff);
+
+    /* Free the structure itself */
+    free(archive_status);
 }
 
 /*

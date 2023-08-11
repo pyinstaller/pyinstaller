@@ -59,10 +59,9 @@ typedef struct _cookie {
 } COOKIE;
 
 typedef struct _archive_status {
-    FILE * fp;
     uint64_t pkgstart;
-    TOC *  tocbuff;
-    TOC *  tocend;
+    TOC *tocbuff;
+    const TOC *tocend;
     COOKIE cookie;
     /*
      * On Windows:
@@ -100,17 +99,16 @@ typedef struct _archive_status {
     bool is_pylib_loaded;
     /*
      * Cached command-line arguments.
+     * On Windows, argv contains UTF-8 encoded version of __wargv. On
+     * Linux and macOS, it contains argv as received by main(),
      */
-    int    argc;      /* Count of command-line arguments. */
-    char **argv;      /*
-                       * On Windows, UTF-8 encoded form of __wargv.
-                       * On OS X/Linux, as received in main()
-                       */
+    int argc;
+    char **argv;
 } ARCHIVE_STATUS;
 
 const TOC *pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC *ptoc);
 
-unsigned char *pyi_arch_extract(ARCHIVE_STATUS *status, const TOC *ptoc);
+unsigned char *pyi_arch_extract(const ARCHIVE_STATUS *status, const TOC *ptoc);
 int pyi_arch_extract2fs(ARCHIVE_STATUS *status, const TOC *ptoc);
 
 /**
