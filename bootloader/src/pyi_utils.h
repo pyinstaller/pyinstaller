@@ -30,11 +30,6 @@
 size_t strnlen(const char *str, size_t n);
 #endif
 
-// some platforms do not provide strndup
-#ifndef HAVE_STRNDUP
-char *strndup(const char * str, size_t n);
-#endif
-
 /* Environment variables. */
 char *pyi_getenv(const char *variable);
 int pyi_setenv(const char *variable, const char *value);
