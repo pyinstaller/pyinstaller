@@ -97,20 +97,6 @@ strnlen(const char *str, size_t n)
 }
 #endif
 
-// some platforms do not provide strndup
-#ifndef HAVE_STRNDUP
-char *
-strndup(const char * str, size_t n)
-{
-    char *ret = NULL;
-    size_t len = strnlen(str, n);
-    ret = (char *)malloc(len + 1);
-    if (ret == NULL) return NULL;
-    ret[len] = '\0';
-    return (char *)memcpy(ret, str, len);
-}
-#endif
-
 
 char *
 pyi_strjoin(const char *first, const char *sep, const char *second){

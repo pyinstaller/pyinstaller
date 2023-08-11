@@ -640,7 +640,6 @@ def configure(ctx):
         ('stdlib.h', 'mkdtemp'),
         ('libgen.h', 'dirname'),
         ('libgen.h', 'basename'),
-        ('string.h', 'strndup'),
         ('string.h', 'strnlen'),
     ):
         ctx.check(
