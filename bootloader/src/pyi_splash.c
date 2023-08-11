@@ -292,7 +292,7 @@ pyi_splash_extract(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splash_status)
     tmp_toc = (TOC*)calloc(1, sizeof(TOC) + PATH_MAX);
 
     /* Iterate over the requirements array */
-    for (pos = 0; pos < splash_status->requirements_len; pos += strlen(filename) + 1) {
+    for (pos = 0; pos < (size_t)splash_status->requirements_len; pos += strlen(filename) + 1) {
         filename = splash_status->requirements + pos;
 
         if ((ptoc = pyi_arch_find_by_name(archive_status, filename)) != NULL) {

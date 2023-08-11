@@ -775,6 +775,11 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
 static BOOL WINAPI
 _pyi_win32_console_ctrl(DWORD dwCtrlType)
 {
+    /* Due to different handling of VS() macro in MSVC and mingw gcc, the former requires the name variable
+     * below to be available even in non-debug builds (where VS() is no-op), while the latter complains about
+     * the unused variable. So put everything under ifdef guard to appease both.
+     */
+#if defined(LAUNCH_DEBUG)
     /* https://docs.microsoft.com/en-us/windows/console/handlerroutine */
     static const char *name_map[] = {
         "CTRL_C_EVENT", // 0
@@ -793,6 +798,7 @@ _pyi_win32_console_ctrl(DWORD dwCtrlType)
      * See Remarks section at: https://docs.microsoft.com/en-us/windows/console/setconsolectrlhandler
      */
     VS("LOADER: received console control signal %d (%s)!\n", dwCtrlType, name ? name : "unknown");
+#endif
 
     /* Handle Ctrl+C and Ctrl+Break signals immediately. By returning TRUE, their default handlers
      * (which would call ExitProcess()) are not called, so we are effectively suppressing the signal
