@@ -1,0 +1,6 @@
+(Windows) Fixed bug where GdkPixbuf loaders.cache dll paths are absolute
+paths (eg. ``C:/tools/msys64/mingw64/lib/gdk-pixbuf-2.0/2.10.0/loaders/*.dll``) 
+and not relative paths (eg. ``lib\\gdk-pixbuf\\loaders\\libpixbufloader-png.dll``)
+when the file is generated in the msys2/mingw64 environment. This results in 
+the program crashing when run on another Windows machine because it cannot find the
+GdkPixbuf loader dlls.
