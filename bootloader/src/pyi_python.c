@@ -26,6 +26,7 @@
 /* Python functions to bind */
 DECLPROC(Py_DecRef);
 DECLPROC(Py_DecodeLocale);
+DECLPROC(Py_ExitStatusException);
 DECLPROC(Py_Finalize);
 DECLPROC(Py_InitializeFromConfig);
 DECLPROC(Py_IsInitialized);
@@ -91,6 +92,7 @@ pyi_python_bind_functions(HMODULE dll, int pyvers)
 {
     GETPROC(dll, Py_DecRef);
     GETPROC(dll, Py_DecodeLocale);
+    GETPROC(dll, Py_ExitStatusException);
     GETPROC(dll, Py_Finalize);
     GETPROC(dll, Py_InitializeFromConfig);
     GETPROC(dll, Py_IsInitialized);
