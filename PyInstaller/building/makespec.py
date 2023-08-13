@@ -469,7 +469,15 @@ def __add_options(parser):
         "binaries during compression. FILE is the filename of the binary without path. This option can be used "
         "multiple times.",
     )
-
+    g.add_argument(
+        "--compress-exclude",
+        dest="compress_exclude",
+        metavar="FILE",
+        action="append",
+        help="Prevent a binary from being compressed during PKG creation."
+        "This is used when you want to include the binary image as is."
+        "FILE is the binary filename without path. This option can be used multiple times.",
+    )
     g = parser.add_argument_group('Windows and Mac OS X specific options')
     g.add_argument(
         "-c",
@@ -651,6 +659,7 @@ def main(
     strip=False,
     noupx=False,
     upx_exclude=None,
+    compress_exclude=None,
     runtime_tmpdir=None,
     contents_directory=None,
     pathex=[],
@@ -752,6 +761,7 @@ def main(
 
     hiddenimports = hiddenimports or []
     upx_exclude = upx_exclude or []
+    compress_exclude = compress_exclude or []
 
     # If file extension of the first script is '.pyw', force --windowed option.
     if is_win and os.path.splitext(scripts[0])[-1] == '.pyw':
@@ -802,6 +812,7 @@ def main(
         'strip': strip,
         'upx': not noupx,
         'upx_exclude': upx_exclude,
+        'compress_exclude': compress_exclude,
         'runtime_tmpdir': runtime_tmpdir,
         'exe_options': exe_options,
         # Directory with additional custom import hooks.

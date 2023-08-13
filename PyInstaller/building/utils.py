@@ -109,6 +109,7 @@ def process_collected_binary(
     use_strip=False,
     use_upx=False,
     upx_exclude=None,
+    compress_exclude=None,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,

@@ -41,6 +41,7 @@ exe = EXE(
     strip=%(strip)s,
     upx=%(upx)s,
     upx_exclude=%(upx_exclude)s,
+    compress_exclude=%(compress_exclude)s,
     runtime_tmpdir=%(runtime_tmpdir)r,
     console=%(console)s,
     disable_windowed_traceback=%(disable_windowed_traceback)s,
@@ -92,6 +93,7 @@ coll = COLLECT(
     strip=%(strip)s,
     upx=%(upx)s,
     upx_exclude=%(upx_exclude)s,
+    compress_exclude=%(compress_exclude)s,
     name='%(name)s',
 )
 """

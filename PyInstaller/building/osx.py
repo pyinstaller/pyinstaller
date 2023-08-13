@@ -85,6 +85,7 @@ class BUNDLE(Target):
                 self.strip = arg.strip
                 self.upx = arg.upx
                 self.upx_exclude = arg.upx_exclude
+                self.compress_exclude = arg.compress_exclude
                 self.console = arg.console
                 self.target_arch = arg.target_arch
                 self.codesign_identity = arg.codesign_identity
@@ -96,6 +97,7 @@ class BUNDLE(Target):
                 self.strip = arg.strip_binaries
                 self.upx = arg.upx_binaries
                 self.upx_exclude = arg.upx_exclude
+                self.compress_exclude = arg.compress_exclude
                 self.console = arg.console
                 self.target_arch = arg.target_arch
                 self.codesign_identity = arg.codesign_identity
@@ -625,6 +627,7 @@ class BUNDLE(Target):
                     use_strip=self.strip,
                     use_upx=self.upx,
                     upx_exclude=self.upx_exclude,
+                    compress_exclude=self.compress_exclude,
                     target_arch=self.target_arch,
                     codesign_identity=self.codesign_identity,
                     entitlements_file=self.entitlements_file,

@@ -16,6 +16,7 @@ is a way how PyInstaller does the dependency analysis and creates executable.
 """
 
 import os
+import pathlib
 import subprocess
 import time
 import shutil
@@ -184,6 +185,7 @@ class PKG(Target):
         strip_binaries=False,
         upx_binaries=False,
         upx_exclude=None,
+        compress_exclude=None,
         target_arch=None,
         codesign_identity=None,
         entitlements_file=None
@@ -218,6 +220,7 @@ class PKG(Target):
         self.strip_binaries = strip_binaries
         self.upx_binaries = upx_binaries
         self.upx_exclude = upx_exclude or []
+        self.compress_exclude = compress_exclude or []
         self.target_arch = target_arch
         self.codesign_identity = codesign_identity
         self.entitlements_file = entitlements_file
@@ -249,6 +252,7 @@ class PKG(Target):
         ('strip_binaries', _check_guts_eq),
         ('upx_binaries', _check_guts_eq),
         ('upx_exclude', _check_guts_eq),
+        ('compress_exclude', _check_guts_eq),
         ('target_arch', _check_guts_eq),
         ('codesign_identity', _check_guts_eq),
         ('entitlements_file', _check_guts_eq),
@@ -261,6 +265,15 @@ class PKG(Target):
         bootstrap_toc = []  # TOC containing bootstrap scripts and modules, which must not be sorted.
         archive_toc = []  # TOC containing all other elements. Sorted to enable reproducible builds.
 
+        def decide_compression(src_name, typecode):
+            fnm_path = pathlib.PurePath(src_name)
+            for compress_exclude_entry in self.compress_exclude:
+                # pathlib.PurePath.match() matches from right to left, and supports * wildcard, but does not support the
+                # "**" syntax for directory recursion. Case sensitivity follows the OS default.
+                if fnm_path.match(compress_exclude_entry):
+                    return UNCOMPRESSED
+            return self.cdict.get(typecode, False)
+    
         for dest_name, src_name, typecode in self.toc:
             # Ensure that the source file exists, if necessary. Skip the check for OPTION entries, where 'src_name' is
             # None. Also skip DEPENDENCY entries due to special contents of 'dest_name' and/or 'src_name'. Same for the
@@ -295,12 +308,13 @@ class PKG(Target):
                         use_strip=self.strip_binaries,
                         use_upx=self.upx_binaries,
                         upx_exclude=self.upx_exclude,
+                        compress_exclude=self.compress_exclude,
                         target_arch=self.target_arch,
                         codesign_identity=self.codesign_identity,
                         entitlements_file=self.entitlements_file,
                         strict_arch_validation=(typecode == 'EXTENSION'),
                     )
-                    archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
+                    archive_toc.append((dest_name, src_name, decide_compression(src_name, typecode), self.xformdict[typecode]))
             elif typecode in ('DATA', 'ZIPFILE'):
                 # Same logic as above for BINARY and EXTENSION; if `exclude_binaries` is set, we are in onedir mode;
                 # we should exclude DATA (and ZIPFILE) entries and instead pass them on via PKG's `dependencies`. This
@@ -309,15 +323,15 @@ class PKG(Target):
                 if self.exclude_binaries:
                     self.dependencies.append((dest_name, src_name, typecode))
                 else:
-                    archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
+                    archive_toc.append((dest_name, src_name, decide_compression(src_name, typecode), self.xformdict[typecode]))
             elif typecode == 'OPTION':
                 archive_toc.append((dest_name, '', False, 'o'))
             elif typecode in ('PYSOURCE', 'PYMODULE'):
                 # Collect python script and modules in a TOC that will not be sorted.
-                bootstrap_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
+                bootstrap_toc.append((dest_name, src_name, decide_compression(src_name, typecode), self.xformdict[typecode]))
             else:
                 # PYZ, PKG, DEPENDENCY, SPLASH, SYMLINK
-                archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
+                archive_toc.append((dest_name, src_name, decide_compression(src_name, typecode), self.xformdict[typecode]))
 
         # Sort content alphabetically by type and name to enable reproducible builds.
         archive_toc.sort(key=itemgetter(3, 0))
@@ -411,6 +425,7 @@ class EXE(Target):
         self.resources = kwargs.get('resources', [])
         self.strip = kwargs.get('strip', False)
         self.upx_exclude = kwargs.get("upx_exclude", [])
+        self.compress_exclude = kwargs.get("compress_exclude", [])
         self.runtime_tmpdir = kwargs.get('runtime_tmpdir', None)
         self.contents_directory = kwargs.get("contents_directory", "_internal")
         # If ``append_pkg`` is false, the archive will not be appended to the exe, but copied beside it.
@@ -609,6 +624,7 @@ class EXE(Target):
             strip_binaries=self.strip,
             upx_binaries=self.upx,
             upx_exclude=self.upx_exclude,
+            compress_exclude=self.compress_exclude,
             target_arch=self.target_arch,
             codesign_identity=self.codesign_identity,
             entitlements_file=self.entitlements_file
@@ -971,6 +987,7 @@ class COLLECT(Target):
 
         self.strip_binaries = kwargs.get('strip', False)
         self.upx_exclude = kwargs.get("upx_exclude", [])
+        self.compress_exclude = kwargs.get("compress_exclude", [])
         self.console = True
         self.target_arch = None
         self.codesign_identity = None
@@ -1070,6 +1087,7 @@ class COLLECT(Target):
                     use_strip=self.strip_binaries,
                     use_upx=self.upx_binaries,
                     upx_exclude=self.upx_exclude,
+                    compress_exclude=self.compress_exclude,
                     target_arch=self.target_arch,
                     codesign_identity=self.codesign_identity,
                     entitlements_file=self.entitlements_file,
