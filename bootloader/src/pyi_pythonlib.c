@@ -241,6 +241,8 @@ pyi_pylib_start_python(const ARCHIVE_STATUS *archive_status)
 
     if (PI_PyStatus_Exception(status)) {
         FATALERROR("Failed to start embedded python interpreter!\n");
+        /* Dump exception information to stderr and exit the process with error code. */
+        PI_Py_ExitStatusException(status);
     } else {
         ret = 0; /* Succeeded */
     }

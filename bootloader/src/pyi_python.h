@@ -157,6 +157,7 @@ typedef struct _PyConfig PyConfig;
 /* Py_ */
 EXTDECLPROC(void, Py_DecRef, (PyObject *));
 EXTDECLPROC(wchar_t *, Py_DecodeLocale, (const char *, size_t *));
+EXTDECLPROC(void, Py_ExitStatusException, (PyStatus));
 EXTDECLPROC(int, Py_Finalize, (void));
 EXTDECLPROC(PyStatus, Py_InitializeFromConfig, (PyConfig *));
 EXTDECLPROC(int, Py_IsInitialized, (void));
