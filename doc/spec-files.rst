@@ -316,44 +316,102 @@ files to the bundle that may be useful for special cases.
 See :ref:`The TOC and Tree Classes` below.
 
 
-.. _giving run-time python options:
+.. _specifying python interpreter options:
 
-Giving Run-time Python Options
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Specifying Python Interpreter Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can pass command-line options to the Python interpreter.
-The interpreter takes a number of command-line options but only the
-following are supported for a bundled app:
+PyInstaller-frozen application runs the application code in isolated,
+embedded Python interpreter. Therefore, **the typical means of passing
+options to Python interpreter do not apply**, including:
 
-* ``v`` to write a message to stdout each time a module is initialized.
+* `environment variables <https://docs.python.org/3/using/cmdline.html#environment-variables>`_
+  (such as `PYTHONUTF8` and `PYTHONHASHSEED`) - because the frozen
+  application is supposed to be isolated from python environment that
+  might be present on the target system
 
-* ``u`` for unbuffered stdio.
+* `command-line arguments <https://docs.python.org/3/using/cmdline.html#miscellaneous-options>`_
+  (such as `-v` and `-O`) -  because command-line arguments are reserved
+  for application.
 
-* ``W`` and an option to change warning behavior: ``W ignore`` or
-  ``W once`` or ``W error``.
+Instead, PyInstaller offers an option to specify permanent run-time
+options for the application's Python interpreter via its own ``OPTIONS``
+mechanism. To pass run-time options, create a list of three-element
+tuples: `('option string', None, 'OPTION')`, and pass it as an additional
+argument to `EXE` before the keyword arguments. The first element of the
+option tuple is the option string (see below for valid options), the
+second is always `None`, and the third is always `'OPTION'`.
 
-To pass one or more of these options,
-create a list of tuples, one for each option, and pass the list as
-an additional argument to the EXE call.
-Each tuple has three elements:
+An example spec file, modified to specify two run-time options::
 
-* The option as a string, for example ``v`` or ``W ignore``.
+    options = [
+        ('v', None, 'OPTION'),
+        ('W ignore', None, 'OPTION'),
+    ]
 
-* None
-
-* The string ``OPTION``
-
-For example modify the spec file this way::
-
-    options = [ ('v', None, 'OPTION'), ('W ignore', None, 'OPTION') ]
-    a = Analysis( ...
-                )
+    a = Analysis(
+        ...
+    )
     ...
-    exe = EXE(pyz,
-          a.scripts,
-          options,   <--- added line
-          exclude_binaries=...
-          )
+    exe = EXE(
+        pyz,
+        a.scripts,
+        options,  # <-- the options list, passed to EXE
+        exclude_binaries=...
+        ...
+    )
+
+The following options are supported by this mechanism:
+
+* ``'v'`` or ``'verbose'``: increment the value of ``sys.flags.verbose``,
+  which causes messages to be written to stdout each time a module is
+  initialized. This option is equivalent to Python's ``-v`` command-line
+  option. It is automatically enabled when :ref:`verbose imports
+  <getting python's verbose imports>` are enabled via PyInstaller's own
+  ˙˙--debug imports`` option.
+
+* ``'u'`` or ``'unbuffered'``: enable unbuffered stdout and stderr. Equivalent
+  to Python's ``-u`` command-line option.
+
+* ``'O'`` or ``'optimize'``: increment the value of ``sys.flags.optimize``.
+  Equivalent to Python's ``-O`` command-line option.
+
+* ``'W <arg>'``: a pass-through for `Python's W-options
+  <https://docs.python.org/3/using/cmdline.html#cmdoption-W>`_ that
+  control warning messages.
+
+* ``'X <arg>'``: a pass-through for `Python's X-options
+  <https://docs.python.org/3/using/cmdline.html#cmdoption-X>`_. The
+  ``utf8`` and ``dev`` X-options, which control UTF-8 mode and developer
+  mode, are explicitly parsed by PyInstaller's bootloader and used during
+  interpreter pre-initialization; the rest of X-options are just passed
+  on to the interpreter configuration.
+
+* ``'hash_seed=<value>'``: an option to set Python's hash seed within the
+  frozen application to a fixed value. Equivalent to ``PYTHONHASHSEED``
+  environment variable. At the time of writing, this does not exist as
+  an X-option, so it is implemented as a custom option.
+
+Further examples to illustrate the syntax::
+
+    options = [
+        # Warning control
+        ('W ignore', None, 'OPTION'),  # disable all warnings
+        ('W ignore::DeprecationWarning', None, 'OPTION')  # disable deprecation warnings
+
+        # UTF-8 mode; unless explicitly enabled/disabled, it is auto enabled based on locale
+        ('X utf8_mode', None, 'OPTION),  # force UTF-8 mode on
+        ('X utf8_mode=1', None, 'OPTION),  # force UTF-8 mode on
+        ('X utf8_mode=0', None, 'OPTION),  # force UTF-8 mode off
+
+        # Developer mode; disabled by default
+        ('X dev_mode', None, 'OPTION),  # enable dev mode
+        ('X dev_mode=1', None, 'OPTION),  # enable dev mode
+
+        # Hash seed
+        ('hash_seed=0', None, 'OPTION'),  # disable hash randomization; sys.flags.hash_randomization=0
+        ('hash_seed=123', None, 'OPTION'),  # hash randomization with fixed seed value
+    ]
 
 
 .. _spec file options for a macOS bundle:

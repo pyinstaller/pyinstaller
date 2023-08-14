@@ -1,3 +1,3 @@
 Implement pass-through for `Python's X-options
 <https://docs.python.org/3/using/cmdline.html#cmdoption-X>`_ via
-PyInstaller's :ref:`run-time options mechanism <giving run-time python options>`.
+PyInstaller's :ref:`run-time options mechanism <specifying python interpreter options>`.
