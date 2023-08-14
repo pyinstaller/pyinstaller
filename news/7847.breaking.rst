@@ -1,4 +1,4 @@
 PyInstaller-frozen applications are not affected by the ``PYTHONUTF8``
 environment variable anymore. To permanently enable or disable the
 UTF8 mode, use the ``X utf8_mode=1`` or ``X utf_mode=0`` :ref:`run-time
-option <giving run-time python options>` when building the application.
+option <specifying python interpreter options>` when building the application.
