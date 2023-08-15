@@ -993,7 +993,7 @@ Features
   caching when user renames the executable and attempts to run it before
   also renaming the manifest file). The old behavior of generating the
   external manifest file in ``onedir`` mode can be re-enabled using the
-  :option:`--no-embed-manifest` command-line switch, or via the
+  ``--no-embed-manifest`` command-line switch, or via the
   ``embed_manifest=False`` argument to ``EXE()`` in the .spec file.
   (:issue:`6223`)
 * (Wine) Prevent collection of Wine built-in DLLs (in either PE-converted or
@@ -1051,7 +1051,7 @@ Incompatible Changes
   or via :option:`--argv-emulation` command-line flag. (:issue:`6089`)
 * (Windows) By default, manifest is now embedded into the executable in
   ``onedir`` mode. The old behavior of generating the external manifest
-  file can be re-enabled using the :option:`--no-embed-manifest`
+  file can be re-enabled using the ``--no-embed-manifest``
   command-line switch, or via the ``embed_manifest=False`` argument to
   ``EXE()`` in the .spec file. (:issue:`6223`)
 * Issue an error report if a `.spec` file will not be generated, but
@@ -1358,7 +1358,7 @@ Features
   caching when user renames the executable and attempts to run it before
   also renaming the manifest file). The old behavior of generating the
   external manifest file in ``onedir`` mode can be re-enabled using the
-  :option:`--no-embed-manifest` command-line switch, or via the
+  ``--no-embed-manifest`` command-line switch, or via the
   ``embed_manifest=False`` argument to ``EXE()`` in the .spec file.
   (:issue:`6248`)
 * (Windows) Respect :pep:`239` encoding specifiers in Window's VSVersionInfo
@@ -1432,7 +1432,7 @@ Incompatible Changes
 
 * (Windows) By default, manifest is now embedded into the executable in
   ``onedir`` mode. The old behavior of generating the external manifest
-  file can be re-enabled using the :option:`--no-embed-manifest`
+  file can be re-enabled using the ``--no-embed-manifest``
   command-line switch, or via the ``embed_manifest=False`` argument to
   ``EXE()`` in the .spec file. (:issue:`6248`)
 
