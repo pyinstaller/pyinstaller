@@ -106,7 +106,7 @@ pyi_main(int argc, char * argv[])
     setbuf(stderr, (char *)NULL);
 #endif  /* _MSC_VER */
 
-    VS("PyInstaller Bootloader 5.x\n");
+    VS("PyInstaller Bootloader 6.x\n");
 
     archive_status = pyi_arch_status_new();
     if (archive_status == NULL) {
