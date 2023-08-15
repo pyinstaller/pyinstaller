@@ -724,7 +724,7 @@ PY_DYLIB_PATTERNS = [
 ]
 
 
-def collect_dynamic_libs(package: str, destdir: str | None = None, search_patterns: [str] = PY_DYLIB_PATTERNS):
+def collect_dynamic_libs(package: str, destdir: str | None = None, search_patterns: list = PY_DYLIB_PATTERNS):
     """
     This function produces a list of (source, dest) of dynamic library files that reside in package. Its output can be
     directly assigned to ``binaries`` in a hook script. The package parameter must be a string which names the package.
