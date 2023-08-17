@@ -27,6 +27,7 @@ from PyInstaller import compat
 from PyInstaller import log as logging
 from PyInstaller.compat import (EXTENSION_SUFFIXES, is_darwin, is_win)
 from PyInstaller.config import CONF
+from PyInstaller.exceptions import InvalidSrcDestTupleError
 from PyInstaller.utils import misc
 
 if is_win:
@@ -427,15 +428,27 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
         # Disallow empty source path. Those are typically result of errors, and result in implicit collection of the
         # whole current working directory, which is never a good idea.
         if not src_root_path_or_glob:
-            raise SystemExit(
+            raise InvalidSrcDestTupleError(
+                (src_root_path_or_glob, trg_root_dir),
                 "Empty SRC is not allowed when adding binary and data files, as it would result in collection of the "
                 "whole current working directory."
             )
         if not trg_root_dir:
-            raise SystemExit(
-                "Empty DEST not allowed when adding binary and data files. Maybe you want to used %r.\nCaused by %r." %
-                (os.curdir, src_root_path_or_glob)
+            raise InvalidSrcDestTupleError(
+                (src_root_path_or_glob, trg_root_dir),
+                "Empty DEST_DIR is not allowed - to collect files into application's top-level directory, use "
+                f"{os.curdir!r}."
             )
+        # Disallow absolute target paths, as well as target paths that would end up pointing outside of the
+        # application's top-level directory.
+        if os.path.isabs(trg_root_dir):
+            raise InvalidSrcDestTupleError((src_root_path_or_glob, trg_root_dir), "DEST_DIR must be a relative path!")
+        if os.path.normpath(trg_root_dir).startswith('..'):
+            raise InvalidSrcDestTupleError(
+                (src_root_path_or_glob, trg_root_dir),
+                "DEST_DIR must not point outside of application's top-level directory!",
+            )
+
         # Convert relative to absolute paths if required.
         if workingdir and not os.path.isabs(src_root_path_or_glob):
             src_root_path_or_glob = os.path.join(workingdir, src_root_path_or_glob)
