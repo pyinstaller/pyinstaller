@@ -67,3 +67,8 @@ _MISSING_PYTHON_LIB_MSG = \
 class PythonLibraryNotFoundError(IOError):
     def __init__(self):
         super().__init__(_MISSING_PYTHON_LIB_MSG.format(", ".join(compat.PYDYLIB_NAMES),))
+
+
+class InvalidSrcDestTupleError(SystemExit):
+    def __init__(self, src_dest, message):
+        super().__init__(f"Invalid (SRC, DEST_DIR) tuple: {src_dest!r}. {message}")
