@@ -1,0 +1,4 @@
+(Windows) The temporary/intermediate executable files are not generated
+with ``.notanexecutable`` suffix anymore, as the retry mechanism from
+:issue:`7840` and :issue:`7871` is now the preferred way of dealing with
+anti-virus program interference during the build.
