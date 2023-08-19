@@ -797,9 +797,7 @@ class EXE(Target):
 
             # Append the data
             logger.info("Appending %s to EXE", append_type)
-            with open(build_name, 'ab') as outf:
-                with open(append_file, 'rb') as inf:
-                    shutil.copyfileobj(inf, outf, length=64 * 1024)
+            self._append_data_to_exe(build_name, append_file)
 
             # Fix Mach-O headers
             logger.info("Fixing EXE headers for code signing")
@@ -807,9 +805,7 @@ class EXE(Target):
         else:
             # Fall back to just appending data at the end of the file
             logger.info("Appending %s to EXE", append_type)
-            with open(build_name, 'ab') as outf:
-                with open(append_file, 'rb') as inf:
-                    shutil.copyfileobj(inf, outf, length=64 * 1024)
+            self._append_data_to_exe(build_name, append_file)
 
         # Step 3: post-processing
         if is_win:
@@ -944,6 +940,11 @@ class EXE(Target):
                 )
             except Exception as e:
                 raise IOError(f"Failed to embed data file {src_filename!r} as Windows resource") from e
+
+    def _append_data_to_exe(self, build_name, append_file):
+        with open(build_name, 'ab') as outf:
+            with open(append_file, 'rb') as inf:
+                shutil.copyfileobj(inf, outf, length=64 * 1024)
 
     def _copyfile(self, infile, outfile):
         with open(infile, 'rb') as infh:
