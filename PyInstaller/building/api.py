@@ -713,13 +713,13 @@ class EXE(Target):
                 os.remove(self.name)
         if not os.path.exists(os.path.dirname(self.name)):
             os.makedirs(os.path.dirname(self.name))
-        exe = self.exefiles[0][1]  # pathname of bootloader
-        if not os.path.exists(exe):
+        bootloader_exe = self.exefiles[0][1]  # pathname of bootloader
+        if not os.path.exists(bootloader_exe):
             raise SystemExit(_MISSING_BOOTLOADER_ERRORMSG)
 
         # Step 1: copy the bootloader file, and perform any operations that need to be done prior to appending the PKG.
         logger.info("Copying bootloader EXE to %s", build_name)
-        self._copyfile(exe, build_name)
+        shutil.copyfile(bootloader_exe, build_name)
         os.chmod(build_name, 0o755)
 
         if is_win:
@@ -756,7 +756,7 @@ class EXE(Target):
             if not self.exclude_binaries:
                 pkg_dst = os.path.join(os.path.dirname(build_name), os.path.basename(self.pkgname))
                 logger.info("Copying stand-alone PKG archive from %s to %s", self.pkg.name, pkg_dst)
-                self._copyfile(self.pkg.name, pkg_dst)
+                shutil.copyfile(self.pkg.name, pkg_dst)
             else:
                 logger.info("Stand-alone PKG archive will be handled by COLLECT")
 
@@ -945,11 +945,6 @@ class EXE(Target):
         with open(build_name, 'ab') as outf:
             with open(append_file, 'rb') as inf:
                 shutil.copyfileobj(inf, outf, length=64 * 1024)
-
-    def _copyfile(self, infile, outfile):
-        with open(infile, 'rb') as infh:
-            with open(outfile, 'wb') as outfh:
-                shutil.copyfileobj(infh, outfh, length=64 * 1024)
 
     @staticmethod
     def _retry_operation(func, *args, retries=20):
