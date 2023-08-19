@@ -701,9 +701,12 @@ class EXE(Target):
         return bootloader_file
 
     def assemble(self):
-        # On Windows, we must never create a file with a .exe suffix that we then have to (re)write to (see #6467).
-        # Any intermediate/temporary file must have an alternative suffix.
-        build_name = self.name + '.notanexecutable' if is_win or is_cygwin else self.name
+        # On Windows, we used to append .notanexecutable to the intermediate/temporary file name to (attempt to)
+        # prevent interference from anti-virus programs with the build process (see #6467). This is now disabled
+        # as we wrap all processing steps that modify the executable in the `_retry_operation` helper; however,
+        # we keep around the `build_name` variable instead of directly using `self.name`, just in case we need
+        # to re-enable it...
+        build_name = self.name
 
         logger.info("Building EXE from %s", self.tocbasename)
         if os.path.exists(self.name):
