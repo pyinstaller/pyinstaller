@@ -138,7 +138,7 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
     :param str srcpath: list of 1 or more .ico file paths
     """
     icons = map(IconFile, srcpath)
-    logger.info("Copying icons from %s", srcpath)
+    logger.debug("Copying icons from %s", srcpath)
 
     hdst = win32api.BeginUpdateResource(dstpath, 0)
 
@@ -149,10 +149,10 @@ def CopyIcons_FromIco(dstpath, srcpath, id=1):
         data = f.grp_icon_dir()
         data = data + f.grp_icondir_entries(iconid)
         win32api.UpdateResource(hdst, RT_GROUP_ICON, i + 1, data)
-        logger.info("Writing RT_GROUP_ICON %d resource with %d bytes", i + 1, len(data))
+        logger.debug("Writing RT_GROUP_ICON %d resource with %d bytes", i + 1, len(data))
         for data in f.images:
             win32api.UpdateResource(hdst, RT_ICON, iconid, data)
-            logger.info("Writing RT_ICON %d resource with %d bytes", iconid, len(data))
+            logger.debug("Writing RT_ICON %d resource with %d bytes", iconid, len(data))
             iconid = iconid + 1
 
     win32api.EndUpdateResource(hdst, 0)
@@ -210,9 +210,9 @@ def CopyIcons(dstpath, srcpath):
 
     # Single source is not .ico, presumably it is .exe (and if not, some error will occur).
     if index is not None:
-        logger.info("Copying icon from %s, %d", srcpath, index)
+        logger.debug("Copying icon from %s, %d", srcpath, index)
     else:
-        logger.info("Copying icons from %s", srcpath)
+        logger.debug("Copying icons from %s", srcpath)
 
     try:
         # Attempt to load the .ico or .exe containing the icon into memory using the same mechanism as if it were a DLL.
