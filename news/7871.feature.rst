@@ -1,0 +1,6 @@
+Extend the operation retry mechanism that was initially introduced by
+:issue:`7840` to cover all processing steps that are performed during
+assembly of a Windows executable. This attempts to mitigate the
+interference from anti-virus programs and other security tools, which
+may temporarily block write access to the executable for a scan between
+individual processing steps.

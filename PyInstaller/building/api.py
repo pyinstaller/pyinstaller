@@ -719,28 +719,28 @@ class EXE(Target):
 
         # Step 1: copy the bootloader file, and perform any operations that need to be done prior to appending the PKG.
         logger.info("Copying bootloader EXE to %s", build_name)
-        shutil.copyfile(bootloader_exe, build_name)
-        os.chmod(build_name, 0o755)
+        self._retry_operation(shutil.copyfile, bootloader_exe, build_name)
+        self._retry_operation(os.chmod, build_name, 0o755)
 
         if is_win:
             # First, remove all resources from the file. This ensures that no manifest is embedded, even if bootloader
             # was compiled with a toolchain that forcibly embeds a default manifest (e.g., mingw toolchain from msys2).
-            winresource.remove_all_resources(build_name)
+            self._retry_operation(winresource.remove_all_resources, build_name)
             # Embed icon.
             if self.icon != "NONE":
                 logger.info("Copying icon to EXE")
-                icon.CopyIcons(build_name, self.icon)
+                self._retry_operation(icon.CopyIcons, build_name, self.icon)
             # Embed version info.
             if self.versrsrc:
                 logger.info("Copying version information to EXE")
-                versioninfo.write_version_info_to_executable(build_name, self.versrsrc)
+                self._retry_operation(versioninfo.write_version_info_to_executable, build_name, self.versrsrc)
             # Embed/copy other resources.
             logger.info("Copying %d resources to EXE", len(self.resources))
             for resource in self.resources:
-                self._copy_windows_resource(build_name, resource)
+                self._retry_operation(self._copy_windows_resource, build_name, resource)
             # Embed the manifest into the executable.
             logger.info("Embedding manifest in EXE")
-            winmanifest.write_manifest_to_executable(build_name, self.manifest)
+            self._retry_operation(winmanifest.write_manifest_to_executable, build_name, self.manifest)
         elif is_darwin:
             # Convert bootloader to the target arch
             logger.info("Converting EXE to target arch (%s)", self.target_arch)
@@ -805,7 +805,7 @@ class EXE(Target):
         else:
             # Fall back to just appending data at the end of the file
             logger.info("Appending %s to EXE", append_type)
-            self._append_data_to_exe(build_name, append_file)
+            self._retry_operation(self._append_data_to_exe, build_name, append_file)
 
         # Step 3: post-processing
         if is_win:
@@ -841,11 +841,11 @@ class EXE(Target):
             osxutils.sign_binary(build_name, self.codesign_identity, self.entitlements_file)
 
         # Ensure executable flag is set
-        os.chmod(build_name, 0o755)
+        self._retry_operation(os.chmod, build_name, 0o755)
         # Get mtime for storing into the guts
-        self.mtm = miscutils.mtime(build_name)
+        self.mtm = self._retry_operation(miscutils.mtime, build_name)
         if build_name != self.name:
-            os.rename(build_name, self.name)
+            self._retry_operation(os.rename, build_name, self.name)
         logger.info("Building EXE from %s completed successfully.", self.tocbasename)
 
     def _copy_windows_resource(self, build_name, resource_spec):
@@ -947,19 +947,62 @@ class EXE(Target):
                 shutil.copyfileobj(inf, outf, length=64 * 1024)
 
     @staticmethod
-    def _retry_operation(func, *args, retries=20):
+    def _retry_operation(func, *args, max_attempts=20):
         """
-        This function attempts to execute the given function `retries` amount of times
-        while catching OSError exceptions.
+        Attempt to execute the given function `max_attempts` number of times while catching exceptions that are usually
+        associated with Windows anti-virus programs temporarily locking the access to the executable.
         """
-        for retry in range(retries):
+        def _is_allowed_exception(e):
+            """
+            Helper to determine whether the given exception is eligible for retry or not.
+            """
+            if is_win:
+                from PyInstaller.compat import pywintypes
+
+            if isinstance(e, PermissionError):
+                # Always retry on all instances of PermissionError
+                return True
+            elif is_win and isinstance(e, OSError):
+                # For other types of OSError, validate errno (the values below are specific to Windows)
+                _ALLOWED_ERRNO = {
+                    13,  # EACCES (would typically be a PermissionError instead)
+                    22,  # EINVAL (reported to be caused by Crowdstrike; see #7840)
+                }
+                if e.errno in _ALLOWED_ERRNO:
+                    return True
+            elif is_win and isinstance(e, pywintypes.error):
+                # pywintypes.error is raised by helper functions that use win32 C API bound via pywin32-ctypes.
+                _ALLOWED_WINERROR = {
+                    5,  # ERROR_ACCESS_DENIED (reported in #7825)
+                    32,  # ERROR_SHARING_VIOLATION (exclusive lock via `CreateFileW` flags, or via `_locked`).
+                }
+                if e.winerror in _ALLOWED_WINERROR:
+                    return True
+            return False
+
+        func_name = func.__name__
+        for attempt in range(max_attempts):
             try:
-                func(*args)
-                return
-            except OSError:
-                logger.debug(f"Failed execution of {func}, retry {retry + 1} of {retries}")
-                time.sleep(1 / (retries - retry))
-        raise OSError(f"No retries left, execution of {func} failed!")
+                return func(*args)
+            except Exception as e:
+                # Check if exception is eligible for retry; if not, also check its immediate cause (in case the
+                # exception was thrown from an eligible exception).
+                if not _is_allowed_exception(e) and not _is_allowed_exception(e.__context__):
+                    raise
+
+                # Retry after sleep (unless this was our last attempt)
+                if attempt < max_attempts - 1:
+                    sleep_duration = 1 / (max_attempts - 1 - attempt)
+                    logger.warning(
+                        f"Execution of {func_name!r} failed on attempt #{attempt + 1} / {max_attempts}: {e!r}. "
+                        f"Retrying in {sleep_duration:.2f} second(s)..."
+                    )
+                    time.sleep(sleep_duration)
+                else:
+                    logger.warning(
+                        f"Execution of {func_name!r} failed on attempt #{attempt + 1} / {max_attempts}: {e!r}."
+                    )
+                    raise RuntimeError(f"Execution of {func_name!r} failed - no more attempts left!") from e
 
 
 class COLLECT(Target):
