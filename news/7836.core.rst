@@ -1,2 +1,5 @@
-Drop ``pathlib``, ``tokenize`` and their depenedencies (submodules included) in ``base_library.zip``.
-In our test, helloworld-script reduced more than 30% of final size.
+Avoid collecting ``pathlib`` and ``tokenize`` (and their dependencies,
+such as ``urllib``) into ``base_library.zip``. By collecting them into
+PYZ archive, only submodules that the application really requires can
+be collected, which helps reducing the size of applications that, for
+example, do not require the full ``urllib`` package.
