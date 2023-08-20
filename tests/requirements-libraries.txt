@@ -55,7 +55,7 @@ requests==2.31.0
 scipy==1.11.2; python_version >= '3.9'
 # simplejson is used for text_c_extension
 simplejson==3.19.1
-sphinx==7.2.2
+sphinx==7.2.2; python_version >= '3.9'
 # Required for test_namespace_package
 sqlalchemy==2.0.20
 zope.interface==6.0
@@ -70,3 +70,5 @@ scipy==1.10.1; python_version == '3.8'  # pyup: ignore
 
 # ipython dropped support for python 3.8 in v8.13.0
 ipython==8.12.1; python_version == '3.8'  # pyup: ignore
+
+sphinx==7.1.2; python_version == '3.8'  # pyup: ignore
