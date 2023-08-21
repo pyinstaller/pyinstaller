@@ -590,7 +590,12 @@ def _resolve_library_path_in_search_paths(name, search_paths=None):
 
         # On Windows, ensure that architecture matches that of running python interpreter.
         if compat.is_win:
-            if winutils.get_pe_file_machine_type(fullpath) != _exe_machine_type:
+            try:
+                dll_machine_type = winutils.get_pe_file_machine_type(fullpath)
+            except Exception:
+                # A search path might contain a DLL that we cannot analyze; for example, a stub file. Skip over.
+                continue
+            if dll_machine_type != _exe_machine_type:
                 continue
 
         return os.path.normpath(fullpath)
