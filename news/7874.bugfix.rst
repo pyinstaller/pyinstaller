@@ -1,0 +1,4 @@
+(Windows) Avoid aborting the build process if machine type (architecture)
+cannot be determined for a DLL in a candidate search path; instead, skip
+over such files, and search in other candidate paths. Fixes build errors
+when a search path contains an invalid DLL file (for example, a stub file).
