@@ -47,39 +47,39 @@ def _pyi_rthook():
         if path is None:
             # Search for all top-level packages/modules. These will have no dots in their entry names.
             for entry in importer.toc:
-                if entry.count('.') != 0:
+                if "." in entry:
                     continue
                 is_pkg = importer.is_package(entry)
                 yield pkgutil.ModuleInfo(importer, prefix + entry, is_pkg)
         else:
-            # Declare SYS_PREFIX locally, to avoid clash with eponymous global symbol from pyi_rth_pkgutil hook.
-            #
             # Use os.path.realpath() to fully resolve any symbolic links in sys._MEIPASS, in order to avoid path
             # mis-matches when the given search paths also contain symbolic links and are already fully resolved.
             # See #6537 for an example of such a problem with onefile build on macOS, where the temporary directory
             # is placed under /var, which is actually a symbolic link to /private/var.
-            SYS_PREFIX = os.path.realpath(sys._MEIPASS) + os.path.sep
-            SYS_PREFIXLEN = len(SYS_PREFIX)
+            MEIPASS = os.path.realpath(sys._MEIPASS)
 
             for pkg_path in path:
                 # Fully resolve the given path, in case it contains symbolic links.
                 pkg_path = os.path.realpath(pkg_path)
-                if not pkg_path.startswith(SYS_PREFIX):
-                    # If the path does not start with sys._MEIPASS, it cannot be a bundled package.
-                    continue
-                # Construct package prefix from path...
-                pkg_prefix = pkg_path[SYS_PREFIXLEN:]
-                pkg_prefix = pkg_prefix.replace(os.path.sep, '.')
-                # ... and ensure it ends with a dot (so we can directly filter out the package itself).
-                if not pkg_prefix.endswith('.'):
-                    pkg_prefix += '.'
-                pkg_prefix_len = len(pkg_prefix)
+                # Ensure it ends with os.path.sep (so we can directly filter out the package itself).
+                if not pkg_path.endswith(os.path.sep):
+                    pkg_path += os.path.sep
 
                 for entry in importer.toc:
-                    if not entry.startswith(pkg_prefix):
+                    # Get the path to the module, and resolve symbolic links. This implicitly solves the problem with
+                    # macOS .app bundles and packages that contain data files, where package directory is fully
+                    # collected into Contents/Resources, and symbolic link to directory is created in sys._MEIPASS
+                    # (Contents/Frameworks). See #7884.
+                    module_path = os.path.realpath(os.path.join(MEIPASS, entry.replace(".", os.path.sep)))
+
+                    # If the module is not in the requested path, skip it.
+                    if not module_path.startswith(pkg_path):
                         continue
-                    name = entry[pkg_prefix_len:]
-                    if name.count('.') != 0:
+
+                    name = module_path[len(pkg_path):]
+
+                    if os.path.sep in name:
+                        # Not a direct child
                         continue
                     is_pkg = importer.is_package(entry)
                     yield pkgutil.ModuleInfo(importer, prefix + name, is_pkg)
