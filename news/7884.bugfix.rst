@@ -1,0 +1,2 @@
+(macOS) Fix ``pkgutil.iter_modules`` failing to find submodules of a
+package that contains data files when running as a .macOS app bundle.
