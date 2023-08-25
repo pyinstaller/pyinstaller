@@ -28,6 +28,9 @@ import pytest
 from PyInstaller.compat import exec_python_rc
 from PyInstaller.utils.tests import importable
 
+# Directory with testing modules used in some tests.
+_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+
 
 # Read the output file produced by test script. Each line consists of two elements separated by semi-colon:
 # name;ispackage
@@ -100,3 +103,71 @@ def test_pkgutil_iter_modules_resolve_pkg_path(script_dir, tmpdir, pyi_builder):
         pytest.skip('The test is applicable only to onefile mode.')
     # A single combination (altgraph package, archive mode) is enough to check for proper symlink handling.
     test_pkgutil_iter_modules('json', script_dir, tmpdir, pyi_builder, archive=True, resolve_pkg_path=True)
+
+
+# Additional test for macOS .app bundles and packages that contain data files. See #7884. In generated .app bundles,
+# _MEIPASS points to `Contents/Frameworks`, while the data files are collected into `Contents/Resources` directory. If
+# a package contains only data files, the whole package directory is collected into `Contents/Resources`, and a symbolic
+# link to package's directory is made in `Contents/Frameworks`. Our `pkgutil.iter_modules` implementation needs to
+# account for this when validating the package path prefix; i.e., that attempting to resolve
+# `Contents/Frameworks/mypackage` will result in `Contents/Resource/mypackage` due to symbolic link, and thus the prefix
+# will not directly match _MEIPASS anymore.
+#
+# This issue affects packages with only data files; if the package has no data or binary files, then the package
+# directory does not exist on filesystem and the resolution attempt leaves it unchanged. If the package contains both
+# data and binary files, the directory is created in both Contents/Frameworks and Contents/Resources, and the contents
+# are cross-linked between them on file level.
+@pytest.mark.darwin
+def test_pkgutil_iter_modules_macos_app_bundle(script_dir, tmpdir, pyi_builder, monkeypatch):
+    if pyi_builder._mode != 'onedir':
+        pytest.skip('The test is applicable only to onedir mode.')
+
+    pathex = os.path.join(_MODULES_DIR, 'pyi_pkgutil_itermodules', 'package')
+    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_pkgutil_itermodules', 'hooks')
+    package = 'mypackage'
+
+    # Full path to test script
+    test_script = 'pyi_pkgutil_iter_modules.py'
+    test_script = os.path.join(script_dir, test_script)
+
+    # Run unfrozen test script
+    env = os.environ.copy()
+    if 'PYTHONPATH' in env:
+        pathex = os.pathsep.join([pathex, env['PYTHONPATH']])
+    env['PYTHONPATH'] = pathex
+    out_unfrozen = os.path.join(tmpdir, 'output-unfrozen.txt')
+    rc = exec_python_rc(test_script, package, '--output-file', out_unfrozen, env=env)
+    assert rc == 0
+    # Read results
+    results_unfrozen = _read_results_file(out_unfrozen)
+
+    # Freeze the test program
+    # This also runs both executables (POSIX build and .app bundle) with same arguments, so we have no way of separating
+    # the output file. Therefore, we will manually re-run the executables ourselves.
+    pyi_builder.test_script(
+        test_script,
+        pyi_args=[
+            '--paths', pathex,
+            '--hiddenimport', package,
+            '--additional-hooks-dir', hooks_dir,
+            '--windowed',  # enable .app bundle
+        ],
+        app_args=[package],
+    )  # yapf: disable
+
+    # Run each executable and verify its output
+    executables = pyi_builder._find_executables('pyi_pkgutil_iter_modules')
+    assert executables
+    for idx, exe in enumerate(executables):
+        out_frozen = os.path.join(tmpdir, f"output-frozen-{idx}.txt")
+        rc = pyi_builder._run_executable(
+            exe,
+            args=[package, '--output-file', out_frozen],
+            run_from_path=False,
+            runtime=None,
+        )
+        assert rc == 0
+        results_frozen = _read_results_file(out_frozen)
+        print("RESULTS", results_frozen, "\n\n")
+
+        assert results_unfrozen == results_frozen
