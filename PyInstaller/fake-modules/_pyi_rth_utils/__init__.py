@@ -37,7 +37,8 @@ if os.name == 'nt':
         for seq in range(tempfile.TMP_MAX):
             name = next(names)
             file = os.path.join(dir, prefix + name + suffix)
-            sys.audit("tempfile.mkdtemp", file)
+            if sys.version_info >= (3, 8):
+                sys.audit("tempfile.mkdtemp", file)
             try:
                 _win32.secure_mkdir(file)
             except FileExistsError:
