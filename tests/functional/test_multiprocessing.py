@@ -63,8 +63,12 @@ def test_multiprocessing_process_start_in_threads(pyi_builder, start_method):
 
 
 # Test that we can start a nested `multiprocessing.Process` from within a `multiprocessing.Process`. See #7494.
+# Nested multi-processing is broken in Python 3.11.5 because SemLock.is_fork_ctx attribute (added in
+# https://github.com/python/cpython/commit/34ef75d3ef559288900fad008f05b29155eb8b59) is not properly
+# serialized/deserialized.
 @pytest.mark.timeout(timeout=60)
 @pytest.mark.parametrize("start_method", START_METHODS)
+@pytest.mark.xfail(sys.version_info[:3] == (3, 11, 5), reason="Python 3.11.5 broke nested multiprocessing.")
 def test_multiprocessing_nested_process(pyi_builder, start_method):
     pyi_builder.test_script("pyi_multiprocessing_nested_process.py", app_args=[start_method])
 
