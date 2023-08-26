@@ -15,6 +15,92 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.13.2 (2023-08-29)
+-------------------
+
+Bugfix
+~~~~~~
+
+* (Windows) Fix ``OSError: exception: access violation reading 0x00000010``
+  raised by ``matplotlib`` and ``win32com`` run-time hooks when ran in 32-bit
+  frozen application (regression introduced in ``v5.13.1``). (:issue:`7893`)
+
+
+Hooks
+~~~~~
+
+* Fix the license of the new ``_pyi_rth_utils`` run-time package; it is
+  now licensed under permissive Apache license, which matches the license
+  of the run-time hooks that use this run-time package. (:issue:`7894`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* Fix the license of the ``pyi_splash`` run-time module; it is now licensed
+  under permissive Apache license to avoid unintentionally imposing
+  additional license restrictions on the frozen applications that make
+  use of this module. (:issue:`7896`)
+
+
+5.13.1 (2023-08-26)
+-------------------
+
+Security
+~~~~~~~~
+
+* (Windows) Ensure that the access to temporary directories created by the
+  ``matplotlib`` and ``win32com`` run-time hooks is restricted to the user
+  running the frozen application, even if the directory in the ``TMP`` or
+  ``TEMP`` variables points to a system-wide *world writable* location that can
+  be accessed by all users. (:issue:`7827`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) Fix :func:`pkgutil.iter_modules` failing to find submodules of a
+  package that contains data files when running as a macOS .app bundle.
+  (:issue:`7884`)
+* (Windows) Fix ``win32com`` run-time hook to fully isolate the ``gen_py``
+  cache. This prevents access to the global cache, which results in errors when
+  the global cache contains some, but not all, required modules. (:issue:`6257`)
+* (Windows) Fix splash screen not being able to locate collected Tk resources in
+  onefile applications created in MSYS2 python environment. (:issue:`7828`)
+* (Windows) Fixed bug where GdkPixbuf loaders.cache dll paths are absolute paths
+  (e.g. ``C:/tools/msys64/mingw64/lib/gdk-pixbuf-2.0/2.10.0/loaders/*.dll``) and
+  not relative paths (e.g.
+  ``lib\\gdk-pixbuf\\loaders\\libpixbufloader-png.dll``) when the file is
+  generated in the MSYS2/mingw64 environment. This results in the program
+  crashing when run on another Windows machine because it cannot find the
+  GdkPixbuf loader DLLs. (:issue:`7842`)
+* Exclude NVIDIA graphics driver libraries from vendoring. (:issue:`7746`)
+* Fix error handling in Glib schema compilation helper function. Ignore
+  character encoding errors when reading stdout/stderr from
+  ``glib-schema-compile`` process; this fixes errors in MSYS2/mingw64
+  environment, caused by ``U+201C`` and ``U+201D`` quotation marks in the
+  output. (:issue:`7833`)
+* Implement a work-around for un-initialized ``sys._stdlib_dir`` and ensure that
+  python-frozen stdlib modules in Python >= 3.11 have ``__file__`` attribute
+  set. (:issue:`7847`)
+
+
+Hooks
+~~~~~
+
+* Add support for commercial PyQt5 and PyQt6 wheels. (:issue:`7770`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* Have bootloader call :c:func:`Py_GetPath` before :c:func:`Py_SetPath` on all
+  platforms (instead of just on Windows) to work around memory-initialization
+  issues in python 3.8 and 3.9, which come to light with
+  :envvar:`PYTHONMALLOC=debug <PYTHONMALLOC>` or :envvar:`PYTHONDEVMODE=1
+  <PYTHONDEVMODE>` being set in the environment. (:issue:`7790`)
+
+
 5.13.0 (2023-06-24)
 -------------------
 
