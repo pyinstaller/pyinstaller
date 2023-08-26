@@ -85,20 +85,22 @@ IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
 @isolated.decorate
 def discover_hook_directories():
     """
-    Discover hook directories via pkg_resources and pyinstaller40 entry points. Perform the discovery in a subprocess
+    Discover hook directories via pyinstaller40 entry points. Perform the discovery in an isolated subprocess
     to avoid importing the package(s) in the main process.
 
     :return: list of discovered hook directories.
     """
 
-    import sys  # noqa: F401
     from traceback import format_exception_only
-    import pkg_resources
     from PyInstaller.log import logger
+    from PyInstaller.compat import importlib_metadata
 
-    entry_points = pkg_resources.iter_entry_points('pyinstaller40', 'hook-dirs')
+    # The “selectable” entry points (via group and name keyword args) were introduced in importlib_metadata 4.6 and
+    # Python 3.10. The compat module ensures we are using a compatible version.
+    entry_points = importlib_metadata.entry_points(group='pyinstaller40', name='hook-dirs')
+
     # Ensure that pyinstaller_hooks_contrib comes last so that hooks from packages providing their own take priority.
-    entry_points = sorted(entry_points, key=lambda x: x.module_name == "_pyinstaller_hooks_contrib.hooks")
+    entry_points = sorted(entry_points, key=lambda x: x.module == "_pyinstaller_hooks_contrib.hooks")
 
     hook_directories = []
     for entry_point in entry_points:
