@@ -1,0 +1,3 @@
+Fix the license of the new ``_pyi_rth_utils`` run-time package; it is
+now licensed under permissive Apache license, which matches the license
+of the run-time hooks that use this run-time package.
