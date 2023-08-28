@@ -1,0 +1,4 @@
+Fix the license of the ``pyi_splash`` run-time module; it is now licensed
+under permissive Apache license to avoid unintentionally imposing
+additional license restrictions on the frozen applications that make
+use of this module.
