@@ -1,12 +1,12 @@
 # -----------------------------------------------------------------------------
 # Copyright (c) 2005-2023, PyInstaller Development Team.
 #
-# Distributed under the terms of the GNU General Public License (version 2
-# or later) with exception for distributing the bootloader.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #
-# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
+# SPDX-License-Identifier: Apache-2.0
 # -----------------------------------------------------------------------------
 
 # This module is not a "fake module" in the classical sense, but a real module that can be imported. It acts as an RPC
