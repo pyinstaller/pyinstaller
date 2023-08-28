@@ -60,36 +60,70 @@ class SECURITY_ATTRIBUTES(ctypes.Structure):
 # win32 API functions, bound via ctypes.
 # NOTE: we do not use ctypes.windll.<dll_name> to avoid modifying its (global) function prototypes, which might affect
 # user's code.
-kernel32 = ctypes.WinDLL("kernel32")
 advapi32 = ctypes.WinDLL("advapi32")
-
-kernel32.CloseHandle.restype = ctypes.wintypes.BOOL
-kernel32.CloseHandle.argtypes = (ctypes.wintypes.HANDLE,)
-
-kernel32.LocalFree.restype = ctypes.wintypes.BOOL
-kernel32.LocalFree.argtypes = (ctypes.wintypes.HLOCAL,)
-
-kernel32.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
-
-kernel32.OpenProcessToken.restype = ctypes.wintypes.BOOL
-kernel32.OpenProcessToken.argtypes = (
-    ctypes.wintypes.HANDLE,
-    ctypes.wintypes.DWORD,
-    ctypes.wintypes.PHANDLE,
-)
+kernel32 = ctypes.WinDLL("kernel32")
 
 advapi32.ConvertSidToStringSidW.restype = ctypes.wintypes.BOOL
 advapi32.ConvertSidToStringSidW.argtypes = (
-    PSID,
-    ctypes.POINTER(ctypes.wintypes.LPWSTR),
+    PSID,  # [in] PSID Sid
+    ctypes.POINTER(ctypes.wintypes.LPWSTR),  # [out] LPWSTR *StringSid
 )
 
 advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = ctypes.wintypes.BOOL
 advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = (
-    ctypes.wintypes.LPCWSTR,
-    ctypes.wintypes.DWORD,
-    ctypes.POINTER(PSECURITY_DESCRIPTOR),
-    ctypes.wintypes.PULONG,
+    ctypes.wintypes.LPCWSTR,  # [in] LPCWSTR StringSecurityDescriptor
+    ctypes.wintypes.DWORD,  # [in] DWORD StringSDRevision
+    ctypes.POINTER(PSECURITY_DESCRIPTOR),  # [out] PSECURITY_DESCRIPTOR *SecurityDescriptor
+    ctypes.wintypes.PULONG,  # [out] PULONG SecurityDescriptorSize
+)
+
+advapi32.GetTokenInformation.restype = ctypes.wintypes.BOOL
+advapi32.GetTokenInformation.argtypes = (
+    ctypes.wintypes.HANDLE,  # [in] HANDLE TokenHandle
+    ctypes.c_int,  # [in] TOKEN_INFORMATION_CLASS TokenInformationClass
+    ctypes.wintypes.LPVOID,  # [out, optional] LPVOID TokenInformation
+    ctypes.wintypes.DWORD,  # [in] DWORD TokenInformationLength
+    ctypes.wintypes.PDWORD,  # [out] PDWORD ReturnLength
+)
+
+kernel32.CloseHandle.restype = ctypes.wintypes.BOOL
+kernel32.CloseHandle.argtypes = (
+    ctypes.wintypes.HANDLE,  # [in] HANDLE hObject
+)
+
+kernel32.CreateDirectoryW.restype = ctypes.wintypes.BOOL
+kernel32.CreateDirectoryW.argtypes = (
+    ctypes.wintypes.LPCWSTR,  # [in] LPCWSTR lpPathName
+    ctypes.POINTER(SECURITY_ATTRIBUTES),  # [in, optional] LPSECURITY_ATTRIBUTES lpSecurityAttributes
+)
+
+kernel32.FormatMessageW.restype = ctypes.wintypes.DWORD
+kernel32.FormatMessageW.argtypes = (
+    ctypes.wintypes.DWORD,  # [in] DWORD dwFlags
+    ctypes.wintypes.LPCVOID,  # [in, optional] LPCVOID lpSource
+    ctypes.wintypes.DWORD,  # [in] DWORD dwMessageId
+    ctypes.wintypes.DWORD,  # [in] DWORD dwLanguageId
+    ctypes.wintypes.LPWSTR,  # [out] LPWSTR lpBuffer
+    ctypes.wintypes.DWORD,  # [in] DWORD nSize
+    ctypes.wintypes.LPVOID,  # [in, optional] va_list *Arguments
+)
+
+kernel32.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
+# kernel32.GetCurrentProcess has no arguments
+
+kernel32.GetLastError.restype = ctypes.wintypes.DWORD
+# kernel32.GetLastError has no arguments
+
+kernel32.LocalFree.restype = ctypes.wintypes.BOOL
+kernel32.LocalFree.argtypes = (
+    ctypes.wintypes.HLOCAL,  # [in] _Frees_ptr_opt_ HLOCAL hMem
+)
+
+kernel32.OpenProcessToken.restype = ctypes.wintypes.BOOL
+kernel32.OpenProcessToken.argtypes = (
+    ctypes.wintypes.HANDLE,  # [in] HANDLE ProcessHandle
+    ctypes.wintypes.DWORD,  # [in] DWORD DesiredAccess
+    ctypes.wintypes.PHANDLE,  # [out] PHANDLE TokenHandle
 )
 
 
@@ -103,8 +137,12 @@ def _win_error_to_message(error_code):
         None,  # lpSource
         error_code,  # dwMessageId
         0x400,  # dwLanguageId = MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
-        ctypes.byref(message_wstr),  # pointer to LPWSTR due to FORMAT_MESSAGE_ALLOCATE_BUFFER
+        ctypes.cast(
+            ctypes.byref(message_wstr),
+            ctypes.wintypes.LPWSTR,
+        ),  # pointer to LPWSTR due to FORMAT_MESSAGE_ALLOCATE_BUFFER; needs to be cast to LPWSTR
         64,  # due to FORMAT_MESSAGE_ALLOCATE_BUFFER, this is minimum number of characters to allocate
+        None,
     )
     if ret == 0:
         return None
