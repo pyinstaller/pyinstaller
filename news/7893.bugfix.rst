@@ -1,3 +1,0 @@
-(Windows) Fix ``OSError: exception: access violation reading 0x00000010``
-raised by ``matplotlib`` and ``win32com`` run-time hooks when ran in
-32-bit frozen application.

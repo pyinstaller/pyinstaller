@@ -15,6 +15,34 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+5.13.2 (2023-08-29)
+-------------------
+
+Bugfix
+~~~~~~
+
+* (Windows) Fix ``OSError: exception: access violation reading 0x00000010``
+  raised by ``matplotlib`` and ``win32com`` run-time hooks when ran in 32-bit
+  frozen application (regression introduced in ``v5.13.1``). (:issue:`7893`)
+
+
+Hooks
+~~~~~
+
+* Fix the license of the new ``_pyi_rth_utils`` run-time package; it is
+  now licensed under permissive Apache license, which matches the license
+  of the run-time hooks that use this run-time package. (:issue:`7894`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* Fix the license of the ``pyi_splash`` run-time module; it is now licensed
+  under permissive Apache license to avoid unintentionally imposing
+  additional license restrictions on the frozen applications that make
+  use of this module. (:issue:`7896`)
+
+
 5.13.1 (2023-08-26)
 -------------------
 
