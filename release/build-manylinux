@@ -13,6 +13,6 @@ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
 for platform in "${platforms[@]}"
 do
-    docker build -t pyi-$platform --build-arg BASE=quay.io/pypa/$platform ./bootloader
+    docker build -t pyi-$platform --build-arg BASE=quay.io/pypa/$platform:2023-08-27-bd7ad21 ./bootloader
     docker run -v "$PWD:/io" -t pyi-$platform
 done
