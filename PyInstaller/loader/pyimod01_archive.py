@@ -25,13 +25,10 @@ import _frozen_importlib
 
 PYTHON_MAGIC_NUMBER = _frozen_importlib._bootstrap_external.MAGIC_NUMBER
 
-# For decrypting Python modules.
-CRYPT_BLOCK_SIZE = 16
-
 # Type codes for PYZ PYZ entries
 PYZ_ITEM_MODULE = 0
 PYZ_ITEM_PKG = 1
-PYZ_ITEM_DATA = 2
+PYZ_ITEM_DATA = 2  # deprecated; PYZ does not contain any data entries anymore
 PYZ_ITEM_NSPKG = 3  # PEP-420 namespace package
 
 
