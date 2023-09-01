@@ -21,7 +21,7 @@ import zlib
 
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code
 from PyInstaller.compat import BYTECODE_MAGIC, is_win, strict_collect_mode
-from PyInstaller.loader.pyimod01_archive import PYZ_ITEM_DATA, PYZ_ITEM_MODULE, PYZ_ITEM_NSPKG, PYZ_ITEM_PKG
+from PyInstaller.loader.pyimod01_archive import PYZ_ITEM_MODULE, PYZ_ITEM_NSPKG, PYZ_ITEM_PKG
 
 
 class ZlibArchiveWriter:
@@ -40,8 +40,7 @@ class ZlibArchiveWriter:
         entries
             An iterable containing entries in the form of tuples: (name, src_path, typecode), where `name` is the name
             under which the resource is stored (e.g., python module name, without suffix), `src_path` is name of the
-            file from which the resource is read, and `typecode` is the Analysis-level TOC typecode (`PYMODULE` or
-            `DATA`).
+            file from which the resource is read, and `typecode` is the Analysis-level TOC typecode (`PYMODULE`).
         code_dict
             Optional code dictionary containing code objects for analyzed/collected python modules.
         """
@@ -76,25 +75,18 @@ class ZlibArchiveWriter:
     @classmethod
     def _write_entry(cls, fp, entry, code_dict):
         name, src_path, typecode = entry
+        assert typecode == 'PYMODULE'
 
-        if typecode == 'PYMODULE':
-            typecode = PYZ_ITEM_MODULE
-            if src_path in ('-', None):
-                # This is a NamespacePackage, modulegraph marks them by using the filename '-'. (But wants to use None,
-                # so check for None, too, to be forward-compatible.)
-                typecode = PYZ_ITEM_NSPKG
-            else:
-                src_basename, _ = os.path.splitext(os.path.basename(src_path))
-                if src_basename == '__init__':
-                    typecode = PYZ_ITEM_PKG
-            data = marshal.dumps(code_dict[name])
+        typecode = PYZ_ITEM_MODULE
+        if src_path in ('-', None):
+            # This is a NamespacePackage, modulegraph marks them by using the filename '-'. (But wants to use None,
+            # so check for None, too, to be forward-compatible.)
+            typecode = PYZ_ITEM_NSPKG
         else:
-            # Any data files, that might be required by pkg_resources.
-            typecode = PYZ_ITEM_DATA
-            with open(src_path, 'rb') as fh:
-                data = fh.read()
-            # No need to use forward slash as path-separator here since pkg_resources on Windows uses back slash as
-            # path-separator.
+            src_basename, _ = os.path.splitext(os.path.basename(src_path))
+            if src_basename == '__init__':
+                typecode = PYZ_ITEM_PKG
+        data = marshal.dumps(code_dict[name])
 
         # First compress, then encrypt.
         obj = zlib.compress(data, cls._COMPRESSION_LEVEL)

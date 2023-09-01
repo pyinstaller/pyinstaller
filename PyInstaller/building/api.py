@@ -46,15 +46,12 @@ if is_darwin:
 
 class PYZ(Target):
     """
-    Creates a ZlibArchive that contains all pure Python modules.
+    Creates a zlib-based PYZ archive that contains byte-compiled pure Python modules.
     """
     def __init__(self, *tocs, **kwargs):
         """
         tocs
             One or more TOC (Table of Contents) lists, usually an `Analysis.pure`.
-
-            If the passed TOC has an attribute `_code_cache`, it is expected to be a dictionary of module code objects
-            from ModuleGraph.
 
         kwargs
             Possible keyword arguments:
@@ -82,7 +79,7 @@ class PYZ(Target):
         bootstrap_dependencies = get_bootstrap_modules()
 
         # Compile the python modules that are part of bootstrap dependencies, so that they can be collected into the
-        # CArchive and imported by the bootstrap script.
+        # CArchive/PKG and imported by the bootstrap script.
         self.dependencies = []
         workpath = os.path.join(CONF['workpath'], 'localpycs')
         for name, src_path, typecode in bootstrap_dependencies:
@@ -95,7 +92,7 @@ class PYZ(Target):
                 self.dependencies.append((name, src_path, typecode))
 
         # Merge input TOC(s) and their code object dictionaries (if available). Skip the bootstrap modules, which will
-        # be passed on to CArchive.
+        # be passed on to CArchive/PKG.
         bootstrap_module_names = set(name for name, _, typecode in self.dependencies if typecode == 'PYMODULE')
         self.toc = []
         self.code_dict = {}
@@ -107,10 +104,10 @@ class PYZ(Target):
 
             for entry in toc:
                 name, _, typecode = entry
-                # PYZ expects PYMODULE entries (python code objects) and DATA entries (data collected from zipped eggs).
-                assert typecode in ('PYMODULE', 'DATA'), f"Invalid entry passed to PYZ: {entry}!"
+                # PYZ expects only PYMODULE entries (python code objects).
+                assert typecode == 'PYMODULE', f"Invalid entry passed to PYZ: {entry}!"
                 # Module required during bootstrap; skip to avoid collecting a duplicate.
-                if typecode == 'PYMODULE' and name in bootstrap_module_names:
+                if name in bootstrap_module_names:
                     continue
                 self.toc.append(entry)
 
@@ -137,7 +134,7 @@ class PYZ(Target):
         archive_toc = []
         for entry in self.toc:
             name, src_path, typecode = entry
-            if typecode == 'PYMODULE' and name not in self.code_dict:
+            if name not in self.code_dict:
                 # The code object is not available from the ModuleGraph's cache; re-create it.
                 try:
                     self.code_dict[name] = get_code_object(name, src_path)

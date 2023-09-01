@@ -186,24 +186,19 @@ class PyiFrozenImporter:
 
     def get_data(self, path):
         """
-        Returns the data as a string, or raises IOError if the "file" was not found. The data is always returned as if
+        Returns the data as a string, or raises IOError if the file was not found. The data is always returned as if
         "binary" mode was used.
 
-        This method is useful for getting resources with 'pkg_resources' that are bundled with Python modules in the
-        PYZ archive.
-
         The 'path' argument is a path that can be constructed by munging module.__file__ (or pkg.__path__ items).
+
+        This assumes that the file in question was collected into frozen application bundle as a file, and is available
+        on the filesystem. Older versions of PyInstaller also supported data embedded in the PYZ archive, but that has
+        been deprecated in v6.
         """
-        assert path.startswith(SYS_PREFIX)
-        fullname = path[SYS_PREFIXLEN:]
-        if fullname in self.toc:
-            # If the file is in the archive, return this
-            return self._pyz_archive.extract(fullname)
-        else:
-            # Otherwise try to fetch it from the filesystem. Since __file__ attribute works properly, just try to open
-            # and read it.
-            with open(path, 'rb') as fp:
-                return fp.read()
+        # Try to fetch the data from the filesystem. Since __file__ attribute works properly, just try to open the file
+        # and read it.
+        with open(path, 'rb') as fp:
+            return fp.read()
 
     def get_filename(self, fullname):
         """
