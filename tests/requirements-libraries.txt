@@ -19,7 +19,7 @@ babel==2.12.1
 Django==4.2.4
 future==0.18.3
 gevent==23.9.0.post1
-ipython==8.14.0; python_version >= '3.9'
+ipython==8.15.0; python_version >= '3.9'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==24.2.0; sys_platform != 'darwin' or python_version >= '3.8.7'
