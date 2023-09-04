@@ -391,6 +391,12 @@ def _msvc_target(ctx):
         target = 'arm64'
     else:
         return []
+    # If we are not cross-compiling, we need to return single-architecture target string.
+    if host == target:
+        if host == 'amd64':
+            return 'x64'  # Native amd64 compiler is actually called 'x64'. See `waflib/Tools/msvc.py`.
+        return host  # x86, arm64
+    # Cross-compiling; set host_target combination: amd64_x86, amd64_arm64, x86_amd64, arm64_amd64, ...
     return [host + "_" + target]
 
 
