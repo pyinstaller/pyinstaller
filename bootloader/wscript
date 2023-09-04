@@ -154,6 +154,7 @@ def options(ctx):
         help='Target architecture format (32bit, 64bit). This option allows to build 32-bit bootloader with a 64-bit '
         'compiler and a 64-bit Python.',
         default=None,
+        choices=('32bit', '64bit', '64bit-arm'),
         dest='target_arch',
     )
     ctx.add_option(
