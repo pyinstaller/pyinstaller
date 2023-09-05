@@ -81,3 +81,15 @@ pyimod03_ctypes.install()
 if sys.platform.startswith('win'):
     import pyimod04_pywin32
     pyimod04_pywin32.install()
+
+# Apply a hack for metadata that was collected from (unzipped) python eggs; the EGG-INFO directories are collected into
+# their parent directories (my_package-version.egg/EGG-INFO), and for metadata to be discoverable by
+# `importlib.metadata`, the .egg directory needs to be in `sys.path`. The deprecated `pkg_resources` does not have this
+# limitation, and seems to work as long as the .egg directory's parent directory (in our case `sys._MEIPASS` is in
+# `sys.path`.
+for entry in os.listdir(sys._MEIPASS):
+    entry = os.path.join(sys._MEIPASS, entry)
+    if not os.path.isdir(entry):
+        continue
+    if entry.endswith('.egg'):
+        sys.path.append(entry)
