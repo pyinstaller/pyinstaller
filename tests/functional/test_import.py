@@ -451,6 +451,59 @@ def test_egg_unzipped(pyi_builder):
     )
 
 
+def test_egg_unzipped_metadata_pkg_resources(pyi_builder):
+    pathex = os.path.join(_MODULES_DIR, 'pyi_test_egg', 'pyi_egg_unzipped.egg')
+    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_test_egg', 'hooks')
+    pyi_builder.test_source(
+        """
+        import pkg_resources
+
+        # Metadata should be automatically collected due to pkg_resources.get_distribution() call with literal argument
+        # (which is picked up by PyInstaller's bytecode analysis).
+        dist = pkg_resources.get_distribution('pyi_egg_unzipped')
+        print(f"dist: {dist!r}")
+
+        # Version is taken from metadata
+        assert dist.version == '0.1', f"Unexpected version {dist.version!r}"
+        # Project name is taken from egg name
+        assert dist.project_name == 'pyi-egg-unzipped', f"Unexpected project name {dist.project_name!r}"
+        """,
+        pyi_args=['--paths', pathex, '--additional-hooks-dir', hooks_dir],
+    )
+
+
+def test_egg_unzipped_metadata_importlib_metadata(pyi_builder):
+    pathex = os.path.join(_MODULES_DIR, 'pyi_test_egg', 'pyi_egg_unzipped.egg')
+    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_test_egg', 'hooks')
+    pyi_builder.test_source(
+        """
+        try:
+            import importlib_metadata
+        except ModuleNotFoundError:
+            import importlib.metadata as importlib_metadata
+
+        # Metadata should be automatically collected due to importlib_metadata.version() call with literal argument
+        # (which is picked up by PyInstaller's bytecode analysis).
+        version = importlib_metadata.version('pyi_egg_unzipped')
+        print(f"version: {version!r}")
+        assert version == '0.1', f"Unexpected version {version!r}"
+
+        # NOTE: in contrast to pkg_resources, importlib_metadata seems to read the name from metadata instead of
+        # deriving it from egg directory name.
+        metadata = importlib_metadata.metadata('pyi_egg_unzipped')
+        print(f"metadata: {metadata!r}")
+        assert metadata['Name'] == 'unzipped-egg', f"Unexpected Name {metadata['Name']!r}"
+        assert metadata['Version'] == '0.1', f"Unexpected Version {metadata['Version']!r}"
+
+        dist = importlib_metadata.distribution('pyi_egg_unzipped')
+        print(f"dist: {dist!r}")
+        assert dist.name == 'unzipped-egg', f"Unexpected name {dist.name!r}"
+        assert dist.version == '0.1', f"Unexpected version {dist.version!r}"
+        """,
+        pyi_args=['--paths', pathex, '--additional-hooks-dir', hooks_dir],
+    )
+
+
 #--- namespaces ---
 
 
