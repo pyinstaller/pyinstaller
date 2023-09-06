@@ -804,9 +804,8 @@ class PyiModuleGraph(ModuleGraph):
         require metadata for some distribution (which may not be its own) at runtime. In the case of a match,
         collect the required metadata.
         """
-        from pkg_resources import DistributionNotFound
-
         from PyInstaller.utils.hooks import copy_metadata
+        from PyInstaller.compat import importlib_metadata
 
         # Generate sets of possible function names to search for.
         need_metadata = set()
@@ -831,7 +830,7 @@ class PyiModuleGraph(ModuleGraph):
                         elif function_name in need_recursive_metadata:
                             out.update(copy_metadata(package, recursive=True))
 
-                    except DistributionNotFound:
+                    except importlib_metadata.PackageNotFoundError:
                         # Currently, we opt to silently skip over missing metadata.
                         continue
 
