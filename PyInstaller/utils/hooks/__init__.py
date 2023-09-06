@@ -1016,44 +1016,40 @@ def get_installer(module: str):
     :param module: Module to check
     :return: Package manager or None
     """
-    import pkg_resources
-    file_name = get_module_file_attribute(module)
-    site_dir = file_name[:file_name.index('site-packages') + len('site-packages')]
-    # This is necessary for situations where the project name and module name do not match, e.g.,
-    # pyenchant (project name) vs. enchant (module name).
-    pkgs = pkg_resources.find_distributions(site_dir)
-    package = None
-    for pkg in pkgs:
-        if module.lower() in pkg.key:
-            package = pkg
-            break
-    metadata_dir, dest_dir = copy_metadata(package)[0]
-    # Check for an INSTALLER file in the metedata_dir and return the first line which should be the program that
-    # installed the module.
-    installer_file = os.path.join(metadata_dir, 'INSTALLER')
-    if os.path.isdir(metadata_dir) and os.path.exists(installer_file):
-        with open(installer_file, 'r') as installer_file_object:
-            lines = installer_file_object.readlines()
-            if lines[0] != '':
-                installer = lines[0].rstrip('\r\n')
-                logger.debug(
-                    "Found installer: '{0}' for module: '{1}' from package: '{2}'".format(installer, module, package)
-                )
-                return installer
+    # Resolve distribution for given module/package name (e.g., enchant -> pyenchant).
+    pkg_to_dist = importlib_metadata.packages_distributions()
+    dist_names = pkg_to_dist.get(module)
+    if dist_names is not None:
+        # A namespace package might result in multiple dists; take the first one...
+        try:
+            dist = importlib_metadata.distribution(dist_names[0])
+            installer_text = dist.read_text('INSTALLER')
+            if installer_text is not None:
+                return installer_text.strip()
+        except importlib_metadata.PackageNotFoundError:
+            # This might happen with eggs if the egg directory name does not match the dist name declared in the
+            # metadata.
+            pass
+
     if compat.is_darwin:
+        try:
+            file_name = get_module_file_attribute(module)
+        except ImportError:
+            return None
+
+        # Attempt to resolve the module file via macports' port command
         try:
             output = compat.exec_command_stdout('port', 'provides', file_name)
             if 'is provided by' in output:
-                logger.debug(
-                    "Found installer: 'macports' for module: '{0}' from package: '{1}'".format(module, package)
-                )
                 return 'macports'
         except ExecCommandFailed:
             pass
-        real_path = os.path.realpath(file_name)
-        if 'Cellar' in real_path:
-            logger.debug("Found installer: 'homebrew' for module: '{0}' from package: '{1}'".format(module, package))
+
+        # Check if the file is located in homebrew's Cellar directory
+        file_name = os.path.realpath(file_name)
+        if 'Cellar' in file_name:
             return 'homebrew'
+
     return None
 
 
