@@ -407,14 +407,6 @@ class Analysis(Target):
         logger.info('Extending PYTHONPATH with paths\n' + pprint.pformat(self.pathex))
         sys.path.extend(self.pathex)
 
-        # If pkg_resources has already been imported, force update of its working set to account for changes made to
-        # sys.path. Otherwise, distribution data in the added path(s) may not be discovered.
-        if 'pkg_resources' in sys.modules:
-            # See https://github.com/pypa/setuptools/issues/373
-            import pkg_resources
-            if hasattr(pkg_resources, '_initialize_master_working_set'):
-                pkg_resources._initialize_master_working_set()
-
         self.hiddenimports = hiddenimports or []
         # Include hidden imports passed via CONF['hiddenimports']; these might be populated if user has a wrapper script
         # that calls `build_main.main()` with custom `pyi_config` dictionary that contains `hiddenimports`.

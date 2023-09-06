@@ -20,13 +20,14 @@ from pathlib import Path
 from collections import deque
 from typing import Callable
 
-import pkg_resources
+import packaging.requirements
 
 from PyInstaller import HOMEPATH, compat
 from PyInstaller import log as logging
 from PyInstaller.depend.imphookapi import PostGraphAPI
 from PyInstaller.exceptions import ExecCommandFailed
 from PyInstaller import isolated
+from PyInstaller.compat import importlib_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -366,8 +367,8 @@ def get_pywin32_module_file_attribute(module_name):
 
 
 def is_module_satisfies(
-    requirements: list | pkg_resources.Requirement,
-    version: str | pkg_resources.Distribution | None = None,
+    requirements: list,
+    version: str | None = None,
     version_attr: str = "__version__",
 ):
     """
@@ -435,6 +436,8 @@ def is_module_satisfies(
     .. _`pkg_resources.Requirements`:
             https://pythonhosted.org/setuptools/pkg_resources.html#id12
     """
+    import pkg_resources
+
     # If no version was explicitly passed...
     if version is None:
         # If a setuptools distribution exists for this module, this validation is a simple one-liner. This approach
@@ -904,7 +907,8 @@ def collect_system_data_files(path: str, destdir: str | os.PathLike | None = Non
 
 def copy_metadata(package_name: str, recursive: bool = False):
     """
-    Collect distribution metadata so that ``pkg_resources.get_distribution()`` can find it.
+    Collect distribution metadata so that ``importlib.metadata.distribution()`` or ``pkg_resources.get_distribution()``
+    can find it.
 
     This function returns a list to be assigned to the ``datas`` global variable. This list instructs PyInstaller to
     copy the metadata for the given package to the frozen application's data directory.
@@ -915,7 +919,8 @@ def copy_metadata(package_name: str, recursive: bool = False):
         Specifies the name of the package for which metadata should be copied.
     recursive : bool
         If true, collect metadata for the package's dependencies too. This enables use of
-        ``pkg_resources.require('package')`` inside the frozen application.
+        ``importlib.metadata.requires('package')`` or ``pkg_resources.require('package')`` inside the frozen
+        application.
 
     Returns
     -------
@@ -930,11 +935,14 @@ def copy_metadata(package_name: str, recursive: bool = False):
           'Sphinx-1.3.2.dist-info')]
 
 
-    Some packages rely on metadata files accessed through the ``pkg_resources`` module. Normally PyInstaller does not
-    include these metadata files. If a package fails without them, you can use this function in a hook file to easily
-    add them to the frozen bundle. The tuples in the returned list have two strings. The first is the full pathname to a
-    folder in this system. The second is the folder name only. When these tuples are added to ``datas``\\ , the folder
-    will be bundled at the top level.
+    Some packages rely on metadata files accessed through the ``importlib.metadata`` (or the now-deprecated
+    ``pkg_resources``) module. PyInstaller does not collect these metadata files by default.
+    If a package fails without the metadata (either its own, or of another package that it depends on), you can use this
+    function in a hook to collect the corresponding metadata files into the frozen application. The tuples in the
+    returned list contain two strings. The first is the full path to the package's metadata directory on the system. The
+    second is the destination name, which typically corresponds to the basename of the metadata directory. Adding these
+    tuples the the ``datas`` hook global variable, the metadata is collected into top-level application directory (where
+    it is usually searched for).
 
     .. versionchanged:: 4.3.1
 
@@ -956,116 +964,49 @@ def copy_metadata(package_name: str, recursive: bool = False):
         if package_name in done:
             continue
 
-        dist = pkg_resources.get_distribution(package_name)
-        if dist.egg_info is not None:
-            # If available, dist.egg_info points to the source .egg-info or .dist-info directory.
-            dest = _copy_metadata_dest(dist.egg_info, dist.project_name)
-            out.append((dist.egg_info, dest))
+        dist = importlib_metadata.distribution(package_name)
+
+        # We support only `importlib_metadata.PathDistribution`, since we need to rely on its private `_path` attribute
+        # to obtain the path to metadata file/directory. But we need to account for possible sub-classes and vendored
+        # variants (`setuptools._vendor.importlib_metadata.PathDistribution˙), so just check that `_path` is available.
+        if not hasattr(dist, '_path'):
+            raise RuntimeError(
+                f"Unsupported distribution type {type(dist)} for {package_name} - does not have _path attribute"
+            )
+        src_path = dist._path
+
+        if src_path.is_dir():
+            # The metadata is stored in a directory (.egg-info, .dist-info), so collect the whole directory. If the
+            # package is installed as an egg, the metadata directory is ([...]/package_name-version.egg/EGG-INFO),
+            # and requires special handling (as of PyInstaller v6, we support only non-zipped eggs).
+            if src_path.name == 'EGG-INFO' and src_path.parent.name.endswith('.egg'):
+                dest_path = os.path.join(*src_path.parts[-2:])
+            else:
+                dest_path = src_path.name
+        elif src_path.is_file():
+            # The metadata is stored in a single file. Collect it into top-level application directory.
+            # The .egg-info file is commonly used by Debian/Ubuntu when packaging python packages.
+            dest_path = '.'
         else:
-            # When .egg-info is not a directory but a single file, dist.egg_info is None, and we need to resolve the
-            # path ourselves. This format is common on Ubuntu/Debian with their deb-packaged python packages.
-            dist_src = _resolve_legacy_metadata_path(dist)
-            if dist_src is None:
-                raise RuntimeError(
-                    f"No metadata path found for distribution '{dist.project_name}' (legacy fallback search failed)."
-                )
-            out.append((dist_src, '.'))  # It is a file, so dest path needs to be '.'
+            raise RuntimeError(
+                f"Distribution metadata path {src_path!r} for {package_name} is neither file nor directory!"
+            )
+
+        out.append((str(src_path), str(dest_path)))
 
         if not recursive:
             return out
         done.add(package_name)
-        todo.extend(i.project_name for i in dist.requires())
+
+        # Process requirements; `importlib.metadata` has no API for parsing requirements, so we need to use
+        # `packaging.requirements`. This is necessary to discard requirements with markers that do not match the
+        # environment (e.g., `python_version`, `sys_platform`).
+        requirements = [packaging.requirements.Requirement(req) for req in dist.requires or []]
+        requirements = [req.name for req in requirements if req.marker is None or req.marker.evaluate()]
+
+        todo += requirements
 
     return out
-
-
-def _normalise_dist(name: str) -> str:
-    return name.lower().replace("_", "-")
-
-
-def _resolve_legacy_metadata_path(dist):
-    """
-    Attempt to resolve the legacy metadata file for the given distribution.
-    The .egg-info file is commonly used by Debian/Ubuntu when packaging python packages.
-
-    Args:
-        dist:
-            The distribution information as returned by ``pkg_resources.get_distribution("xyz")``.
-    Returns:
-        The path to the distribution's metadata file.
-    """
-
-    candidates = [
-        # This fallback was in place in pre-#5774 times. However, it is insufficient, because dist.egg_name() may be
-        # greenlet-0.4.15-py3.8 (Ubuntu 20.04 package) while the file we are searching for is greenlet-0.4.15.egg-info.
-        f"{dist.egg_name()}.egg-info",
-        # The extra name-version.egg-info path format
-        f"{dist.project_name}-{dist.version}.egg-info",
-        # And the name_with_underscores-version.egg-info.format
-        f"{dist.project_name.replace('-', '_')}-{dist.version}.egg-info",
-    ]
-
-    # As an additional attempt, try to remove the-pyX.Y suffix from egg name.
-    pyxx_suffix = f"-py{sys.version_info[0]}.{sys.version_info[1]}"
-    if dist.egg_name().endswith(pyxx_suffix):
-        candidates.append(dist.egg_name()[:-len(pyxx_suffix)] + ".egg-info")
-
-    for candidate in candidates:
-        candidate_path = os.path.join(dist.location, candidate)
-        if os.path.isfile(candidate_path):
-            return candidate_path
-
-    return None
-
-
-def _copy_metadata_dest(egg_path: str, project_name: str) -> str:
-    """
-    Choose an appropriate destination path for a distribution's metadata.
-
-    Args:
-        egg_path:
-            The output of ``pkg_resources.get_distribution("xyz").egg_info``: a full path to the source
-            ``xyz-version.dist-info`` or ``xyz-version.egg-info`` folder containing package metadata.
-        project_name:
-            The distribution name given.
-    Returns:
-        The *dest* parameter: where in the bundle should this folder go.
-    Raises:
-        RuntimeError:
-            If **egg_path** is None, i.e., no metadata is found.
-    """
-    if egg_path is None:
-        # According to older implementations of this function, packages may have no metadata. I have no idea how this
-        # can happen...
-        raise RuntimeError(f"No metadata path found for distribution '{project_name}'.")
-
-    egg_path = Path(egg_path)
-    _project_name = _normalise_dist(project_name)
-
-    # There has been a fair amount of whack-a-mole fixing to this step. If new cases appear which this function cannot
-    # handle, add them to the corresponding test:
-    #   tests/unit/test_hookutils.py::test_copy_metadata_dest()
-    # See there also for example input/outputs.
-
-    # The most obvious answer is that the metadata folder should have the same name in a PyInstaller build as it does
-    # normally::
-    if _normalise_dist(egg_path.name).startswith(_project_name):
-        # e.g., .../lib/site-packages/xyz-1.2.3.dist-info
-        return egg_path.name
-
-    # Using just the base-name breaks for an egg_path of the form:
-    #   '.../site-packages/xyz-version.win32.egg/EGG-INFO'
-    # because multiple collected metadata folders will be written to the same name 'EGG-INFO' and clobber each other
-    # (see #1888). In this case, the correct behaviour appears to be to use the last two parts of the path:
-    if len(egg_path.parts) >= 2:
-        if _normalise_dist(egg_path.parts[-2]).startswith(_project_name):
-            return os.path.join(*egg_path.parts[-2:])
-
-    # This is something unheard of.
-    raise RuntimeError(
-        f"Unknown metadata type '{egg_path}' from the '{project_name}' distribution. Please report this at "
-        f"https://github/pyinstaller/pyinstaller/issues."
-    )
 
 
 def get_installer(module: str):
@@ -1075,6 +1016,7 @@ def get_installer(module: str):
     :param module: Module to check
     :return: Package manager or None
     """
+    import pkg_resources
     file_name = get_module_file_attribute(module)
     site_dir = file_name[:file_name.index('site-packages') + len('site-packages')]
     # This is necessary for situations where the project name and module name do not match, e.g.,
@@ -1131,6 +1073,7 @@ def _memoize(f):
 # Walk through every package, determining to which distribution it belongs.
 @_memoize
 def _map_distribution_to_packages():
+    import pkg_resources
     logger.info('Determining a mapping of distributions to packages...')
     dist_to_packages = {}
     for p in sys.path:
@@ -1158,6 +1101,7 @@ def _map_distribution_to_packages():
 # Given a ``package_name`` as a string, this function returns a list of packages needed to satisfy the requirements.
 # This output can be assigned directly to ``hiddenimports``.
 def requirements_for_package(package_name: str):
+    import pkg_resources
     hiddenimports = []
 
     dist_to_packages = _map_distribution_to_packages()
