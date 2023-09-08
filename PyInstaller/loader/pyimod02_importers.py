@@ -272,11 +272,20 @@ class PyiFrozenImporter:
             return None
 
         if self._is_pep420_namespace_package(entry_name):
+            from importlib._bootstrap_external import _NamespacePath
             # PEP-420 namespace package; as per PEP 451, we need to return a spec with "loader" set to None
             # (a.k.a. not set)
             spec = _frozen_importlib.ModuleSpec(fullname, None, is_package=True)
             # Set submodule_search_locations, which seems to fill the __path__ attribute.
-            spec.submodule_search_locations = [os.path.dirname(self.get_filename(entry_name))]
+            # This needs to be an instance of `importlib._bootstrap_external._NamespacePath` for `importlib.resources`
+            # to work correctly with the namespace package; otherwise `importlib.resources.files()` throws an
+            # `ValueError('Invalid path')` due to this check:
+            # https://github.com/python/cpython/blob/v3.11.5/Lib/importlib/resources/readers.py#L109-L110
+            spec.submodule_search_locations = _NamespacePath(
+                entry_name,
+                [os.path.dirname(self.get_filename(entry_name))],
+                self,
+            )
             return spec
 
         # origin has to be the filename

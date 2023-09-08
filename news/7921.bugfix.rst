@@ -1,0 +1,4 @@
+Fix incompatibility between PyInstaller's frozen importer
+(``PyiFrozenImporter``) and ``importlib.resources`` when trying
+to look up the resources of a collected namespace package via
+``importlib.resources.files()``.
