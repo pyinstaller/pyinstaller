@@ -98,3 +98,47 @@ def test_importlib_resources_frozen(pyi_builder, package_type, tmpdir, script_di
         test_script,
         pyi_args=['--paths', pathex, '--hidden-import', 'pyi_pkgres_testpkg', '--additional-hooks-dir', hooks_dir]
     )
+
+
+# A separate test for verifying that `importlib.resources.files()` works with PEP-420 namespace packages. See #7921.
+# The sub-directory containing the data files is also a PEP-410 namespace (sub)package. However, in the context of
+# PyInstaller, there are actually two slightly different possibilities:
+#  - if we collect only the data files, and the namespace package itself is not collected into PYZ, the situation is
+#    the same as in unfrozen python - python's built-in import machinery takes care of the namespace package and the
+#    associated resource reader.
+#  - if the namespace package is collected into PYZ (in addition to resources being collected as data files), the
+#    namespace package ends up being handled by PyInstaller's `PyiFrozenImporter`, which requires extra care to ensure
+#    compatibility with `importlib` resource reader.
+# The test covers both scenarios via `as_package` parameter.
+@skipif(
+    not is_py39 and not is_module_satisfies('importlib_resources'),
+    reason="Python prior to 3.9 requires importlib_resources."
+)
+@pytest.mark.parametrize('as_package', [True, False])
+def test_importlib_resources_namespace_package_data_files(pyi_builder, as_package):
+    pathex = os.path.join(_MODULES_DIR, 'pyi_namespace_package_with_data', 'package')
+    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_namespace_package_with_data', 'hooks')
+    if as_package:
+        hidden_imports = ['--hidden-import', 'pyi_test_nspkg', '--hidden-import', 'pyi_test_nspkg.data']
+    else:
+        hidden_imports = ['--hidden-import', 'pyi_test_nspkg']
+    pyi_builder.test_source(
+        """
+        try:
+            import importlib_resources
+        except ModuleNotFoundError:
+            import importlib.resources as importlib_resources
+
+        # Get the package's directory (= our data directory)
+        data_dir = importlib_resources.files("pyi_test_nspkg.data")
+
+        # Sanity check; verify the directory's base name
+        assert data_dir.name == "data"
+
+        # Check that data files exist
+        assert (data_dir / "data_file1.txt").is_file()
+        assert (data_dir / "data_file2.txt").is_file()
+        assert (data_dir / "data_file3.txt").is_file()
+        """,
+        pyi_args=['--paths', pathex, *hidden_imports, '--additional-hooks-dir', hooks_dir]
+    )
