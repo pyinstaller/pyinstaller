@@ -21,8 +21,8 @@ def test_collect_entry_point(pyi_builder_spec, script_dir, tmpdir):
     On adding ``collect_entry_point('pytest11')`` to the spec file, the list of modules exporting the 'pytest11' entry
     point should be same after freezing.
     """
-    import pkg_resources
-    plugins = sorted(i.module_name for i in pkg_resources.iter_entry_points("pytest11"))
+    from PyInstaller.compat import importlib_metadata
+    plugins = sorted(i.module for i in importlib_metadata.entry_points(group="pytest11"))
 
     assert len(plugins), "The pytest11 entry point appears to have moved."
 

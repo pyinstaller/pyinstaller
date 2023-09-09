@@ -1193,13 +1193,11 @@ def collect_entry_point(name: str):
 
     .. versionadded:: 4.3
     """
-    import pkg_resources
     datas = []
     imports = []
-    for dist in pkg_resources.iter_entry_points(name):
-        project_name = '' if dist.dist is None else dist.dist.project_name
-        datas += copy_metadata(project_name)
-        imports.append(dist.module_name)
+    for entry_point in importlib_metadata.entry_points(group=name):
+        datas += copy_metadata(entry_point.dist.name)
+        imports.append(entry_point.value)
     return datas, imports
 
 
