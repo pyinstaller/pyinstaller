@@ -183,7 +183,7 @@ class Splash(Target):
             self._tkinter_file = self._tkinter_module.__file__
         except ModuleNotFoundError:
             raise SystemExit(
-                "You platform does not support the splash screen feature, since tkinter is not installed. Please "
+                "Your platform does not support the splash screen feature, since tkinter is not installed. Please "
                 "install tkinter and try again."
             )
 
