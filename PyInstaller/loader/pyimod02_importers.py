@@ -284,7 +284,9 @@ class PyiFrozenImporter:
             spec.submodule_search_locations = _NamespacePath(
                 entry_name,
                 [os.path.dirname(self.get_filename(entry_name))],
-                self,
+                # The `path_finder` argument must be a callable with two arguments (`name` and `path`) that
+                # returns the spec - so we need to bind our `find_spec` via lambda.
+                lambda name, path: self.find_spec(name, path),
             )
             return spec
 

@@ -124,6 +124,7 @@ def test_importlib_resources_namespace_package_data_files(pyi_builder, as_packag
         hidden_imports = ['--hidden-import', 'pyi_test_nspkg']
     pyi_builder.test_source(
         """
+        import importlib
         try:
             import importlib_resources
         except ModuleNotFoundError:
@@ -139,6 +140,15 @@ def test_importlib_resources_namespace_package_data_files(pyi_builder, as_packag
         assert (data_dir / "data_file1.txt").is_file()
         assert (data_dir / "data_file2.txt").is_file()
         assert (data_dir / "data_file3.txt").is_file()
+
+        # Force cache invalidation and check again.
+        # This verifies that our `PyiFrozenImporter` correctly sets the `path_finder` argument when constructing
+        # the `importlib._bootstrap_external._NamespacePath` for the namespace package. The `path_finder` is used
+        # during refresh triggered by cache invalidation.
+        importlib.invalidate_caches()
+
+        data_dir = importlib_resources.files("pyi_test_nspkg.data")
+        assert (data_dir / "data_file1.txt").is_file()
         """,
         pyi_args=['--paths', pathex, *hidden_imports, '--additional-hooks-dir', hooks_dir]
     )
