@@ -50,7 +50,7 @@ PyQt6-NetworkAuth==6.5.0
 PyQt6-QScintilla==2.14.1
 PyQt6-WebEngine==6.5.0
 python-dateutil==2.8.2
-pytz==2023.3
+pytz==2023.3.post1
 requests==2.31.0
 scipy==1.11.2; python_version >= '3.9'
 # simplejson is used for text_c_extension
