@@ -24,6 +24,23 @@ import subprocess
 import sys
 import shutil
 
+# PyInstaller requires importlib.metadata from python >= 3.10 stdlib, or equivalent importlib_metadata >= 4.6.
+if sys.version_info >= (3, 10):
+    import importlib.metadata as importlib_metadata
+else:
+    try:
+        import importlib_metadata
+    except ModuleNotFoundError as e:
+        from PyInstaller.exceptions import ImportlibMetadataError
+        raise ImportlibMetadataError() from e
+
+    import packaging.version  # For importlib_metadata version check
+
+    # Validate the version
+    if packaging.version.parse(importlib_metadata.version("importlib-metadata")) < packaging.version.parse("4.6"):
+        from PyInstaller.exceptions import ImportlibMetadataError
+        raise ImportlibMetadataError()
+
 from PyInstaller._shared_with_waf import _pyi_machine
 from PyInstaller.exceptions import ExecCommandFailed
 
