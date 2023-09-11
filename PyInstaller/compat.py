@@ -24,25 +24,34 @@ import subprocess
 import sys
 import shutil
 
-# PyInstaller requires importlib.metadata from python >= 3.10 stdlib, or equivalent importlib_metadata >= 4.6.
-if sys.version_info >= (3, 10):
-    import importlib.metadata as importlib_metadata
-else:
-    try:
-        import importlib_metadata
-    except ModuleNotFoundError as e:
-        from PyInstaller.exceptions import ImportlibMetadataError
-        raise ImportlibMetadataError() from e
-
-    import packaging.version  # For importlib_metadata version check
-
-    # Validate the version
-    if packaging.version.parse(importlib_metadata.version("importlib-metadata")) < packaging.version.parse("4.6"):
-        from PyInstaller.exceptions import ImportlibMetadataError
-        raise ImportlibMetadataError()
-
 from PyInstaller._shared_with_waf import _pyi_machine
 from PyInstaller.exceptions import ExecCommandFailed
+
+# setup.py sets this environment variable to avoid errors due to unmet run-time dependencies. The PyInstaller.compat
+# module is imported by setup.py to build wheels, and some dependencies that are otherwise required at run-time
+# (importlib-metadata on python < 3.10, pywin32-ctypes on Windows) might not be present while building wheels,
+# nor are they required during that phase.
+_setup_py_mode = os.environ.get('_PYINSTALLER_SETUP_PY', '0') != '0'
+
+# PyInstaller requires importlib.metadata from python >= 3.10 stdlib, or equivalent importlib-metadata >= 4.6.
+if _setup_py_mode:
+    importlib_metadata = None
+else:
+    if sys.version_info >= (3, 10):
+        import importlib.metadata as importlib_metadata
+    else:
+        try:
+            import importlib_metadata
+        except ImportError as e:
+            from PyInstaller.exceptions import ImportlibMetadataError
+            raise ImportlibMetadataError() from e
+
+        import packaging.version  # For importlib_metadata version check
+
+        # Validate the version
+        if packaging.version.parse(importlib_metadata.version("importlib-metadata")) < packaging.version.parse("4.6"):
+            from PyInstaller.exceptions import ImportlibMetadataError
+            raise ImportlibMetadataError()
 
 # Strict collect mode, which raises error when trying to collect duplicate files into PKG/CArchive or COLLECT.
 strict_collect_mode = os.environ.get("PYINSTALLER_STRICT_COLLECT_MODE", "0") != "0"
@@ -187,26 +196,27 @@ ALL_SUFFIXES = importlib.machinery.all_suffixes()
 # -> all pyinstaller modules should use win32api from PyInstaller.compat to
 #    ensure that it can work on MSYS2 (which requires pywin32-ctypes)
 if is_win:
-    try:
-        from win32ctypes.pywin32 import pywintypes  # noqa: F401, E402
-        from win32ctypes.pywin32 import win32api  # noqa: F401, E402
-    except ImportError:
-        # This environment variable is set by setup.py
-        # - It's not an error for pywin32 to not be installed at that point
-        if not os.environ.get('PYINSTALLER_NO_PYWIN32_FAILURE'):
+    if _setup_py_mode:
+        pywintypes = None
+        win32api = None
+    else:
+        try:
+            from win32ctypes.pywin32 import pywintypes  # noqa: F401, E402
+            from win32ctypes.pywin32 import win32api  # noqa: F401, E402
+        except ImportError as e:
             raise SystemExit(
                 'PyInstaller cannot check for assembly dependencies.\n'
                 'Please install pywin32-ctypes.\n\n'
                 'pip install pywin32-ctypes\n'
-            )
-    except Exception:
-        if sys.flags.optimize == 2:
-            raise SystemExit(
-                "pycparser, a Windows only indirect dependency of PyInstaller, is incompatible with "
-                "Python's \"discard docstrings\" (-OO) flag mode. For more information see:\n"
-                "    https://github.com/pyinstaller/pyinstaller/issues/6345"
-            )
-        raise
+            ) from e
+        except Exception as e:
+            if sys.flags.optimize == 2:
+                raise SystemExit(
+                    "pycparser, a Windows only indirect dependency of PyInstaller, is incompatible with "
+                    "Python's \"discard docstrings\" (-OO) flag mode. For more information see:\n"
+                    "    https://github.com/pyinstaller/pyinstaller/issues/6345"
+                ) from e
+            raise
 
 # macOS's platform.architecture() can be buggy, so we do this manually here. Based off the python documentation:
 # https://docs.python.org/3/library/platform.html#platform.architecture
