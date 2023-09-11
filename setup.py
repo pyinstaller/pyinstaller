@@ -21,8 +21,10 @@ from setuptools import setup
 from distutils.core import Command
 from distutils.command.build import build
 
-# Hack required to allow compat to not fail when pypiwin32 isn't found
-os.environ["PYINSTALLER_NO_PYWIN32_FAILURE"] = "1"
+# Hack that prevents PyInstaller.compat from failing due to unmet run-time dependencies (importlib-metadata on
+# python < 3.10, pywin32-ctypes on Windows). These dependencies are not required for the subset of functionality that is
+# used here in the `setup.py`.
+os.environ["_PYINSTALLER_SETUP_PY"] = "1"
 
 try:
     from wheel.bdist_wheel import bdist_wheel
