@@ -1064,7 +1064,7 @@ def requirements_for_package(package_name: str):
 def collect_all(
     package_name: str,
     include_py_files: bool = True,
-    filter_submodules: Callable | None = None,
+    filter_submodules: Callable = lambda name: True,
     exclude_datas: list | None = None,
     include_datas: list | None = None,
     on_error: str = "warn once",
@@ -1089,29 +1089,35 @@ def collect_all(
     Returns:
         tuple: A ``(datas, binaries, hiddenimports)`` triplet containing:
 
-        - All data files, raw Python files (if **include_py_files**), and package metadata folders.
+        - All data files, raw Python files (if **include_py_files**), and distribution metadata directories (if
+          applicable).
         - All dynamic libraries as returned by :func:`collect_dynamic_libs`.
-        - All submodules of **packagename** and its dependencies.
+        - All submodules of **package_name** and top-level imports of dependencies declared in the metadata
+          (if applicable).
 
     Typical use::
 
-        datas, binaries, hiddenimports = collect_all('my_module_name')
+        datas, binaries, hiddenimports = collect_all('my_package_name')
     """
-    datas = []
-    try:
-        datas += copy_metadata(package_name)
-    except Exception as e:
-        logger.warning('Unable to copy metadata for %s: %s', package_name, e)
-    datas += collect_data_files(package_name, include_py_files, excludes=exclude_datas, includes=include_datas)
+    datas = collect_data_files(package_name, include_py_files, excludes=exclude_datas, includes=include_datas)
     binaries = collect_dynamic_libs(package_name)
-    if filter_submodules:
-        hiddenimports = collect_submodules(package_name, on_error=on_error, filter=filter_submodules)
-    else:
-        hiddenimports = collect_submodules(package_name)
-    try:
-        hiddenimports += requirements_for_package(package_name)
-    except Exception as e:
-        logger.warning('Unable to determine requirements for %s: %s', package_name, e)
+    hiddenimports = collect_submodules(package_name, on_error=on_error, filter=filter_submodules)
+
+    # `copy_metadata` and `requirements_for_package` require a dist name instead of importable/package name.
+    # A namespace package might belong to multiple distributions, so process all of them.
+    pkg_to_dist = importlib_metadata.packages_distributions()
+    dist_names = set(pkg_to_dist.get(package_name, []))
+    for dist_name in dist_names:
+        # Copy metadata
+        try:
+            datas += copy_metadata(dist_name)
+        except Exception:
+            pass
+        # Find top-level imports from distribution's requirements
+        try:
+            hiddenimports += requirements_for_package(dist_name)
+        except Exception:
+            pass
 
     return datas, binaries, hiddenimports
 
