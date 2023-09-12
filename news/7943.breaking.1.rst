@@ -1,0 +1,7 @@
+The collection of "py files", enabled by the ``include_py_files=True``
+argument to the :func:`PyInstaller.utils.hooks.collect_data_files` hook
+utility function, is now restricted to only ``.py`` and ``.pyc`` files.
+Previously, all suffices from ``importlib.machinery.all_suffices``were
+enabled, which resulted in spurious collection of dynamic libraries and
+extensions (due to ``.so``, ``.abi3.so``, ``.pyd``, etc. being among
+those suffices).

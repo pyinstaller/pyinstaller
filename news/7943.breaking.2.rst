@@ -1,0 +1,3 @@
+The :func:`PyInstaller.utils.hooks.collect_data_files` hook utility
+helper does not collect ``.pyc`` files from ``__pycache__`` directories
+anymore, even with ``include_py_files=True`` argument.
