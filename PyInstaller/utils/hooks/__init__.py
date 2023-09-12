@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import copy
 import os
-import sys
 import textwrap
 import fnmatch
 from pathlib import Path
@@ -1053,65 +1052,35 @@ def get_installer(module: str):
     return None
 
 
-# ``_map_distribution_to_packages`` is expensive. Compute it when used, then return the memoized value. This is a simple
-# alternative to ``functools.lru_cache``.
-def _memoize(f):
-    memo = []
-
-    def helper():
-        if not memo:
-            memo.append(f())
-        return memo[0]
-
-    return helper
-
-
-# Walk through every package, determining to which distribution it belongs.
-@_memoize
-def _map_distribution_to_packages():
-    import pkg_resources
-    logger.info('Determining a mapping of distributions to packages...')
-    dist_to_packages = {}
-    for p in sys.path:
-        # The path entry ``''`` refers to the current directory.
-        if not p:
-            p = '.'
-        # Ignore any entries in ``sys.path`` that do not exist.
-        try:
-            lds = os.listdir(p)
-        except Exception:
-            pass
-        else:
-            for ld in lds:
-                # Not all packages belong to a distribution. Skip these.
-                try:
-                    dist = pkg_resources.get_distribution(ld)
-                except Exception:
-                    pass
-                else:
-                    dist_to_packages.setdefault(dist.key, []).append(ld)
-
-    return dist_to_packages
-
-
-# Given a ``package_name`` as a string, this function returns a list of packages needed to satisfy the requirements.
-# This output can be assigned directly to ``hiddenimports``.
 def requirements_for_package(package_name: str):
-    import pkg_resources
     hiddenimports = []
 
-    dist_to_packages = _map_distribution_to_packages()
-    for requirement in pkg_resources.get_distribution(package_name).requires():
-        if requirement.key in dist_to_packages:
-            required_packages = dist_to_packages[requirement.key]
-            hiddenimports.extend(required_packages)
-        else:
-            logger.warning(
-                'Unable to find package for requirement %s from package %s.', requirement.project_name, package_name
-            )
+    # Helpers for retrieving top-level imports for a dist, based on `importlib.metadata` code.
+    def _top_level_declared(dist):
+        return (dist.read_text('top_level.txt') or '').split()
 
-    logger.info('Packages required by %s:\n%s', package_name, hiddenimports)
-    return hiddenimports
+    def _top_level_inferred(dist):
+        return [
+            f.parts[0] if len(f.parts) > 1 else f.with_suffix('').name for f in (dist.files or []) if f.suffix == ".py"
+        ]
+
+    # Filter requirements for the given dist based on their markers
+    requirements = [packaging.requirements.Requirement(req) for req in importlib_metadata.requires(package_name) or []]
+    requirements = [req.name for req in requirements if req.marker is None or req.marker.evaluate()]
+
+    for requirement in requirements:
+        # Obtain distribution for the requirement
+        try:
+            requirement_dist = importlib_metadata.distribution(requirement)
+        except importlib_metadata.PackageNotFoundError:
+            continue
+
+        # Obtain top-level imports for the distribution - either declared (top_level.txt in metadata) or inferred.
+        top_level_imports = _top_level_declared(requirement_dist) or _top_level_inferred(requirement_dist)
+        hiddenimports += top_level_imports
+
+    # Return de-duplicated list
+    return list(set(hiddenimports))
 
 
 def collect_all(
