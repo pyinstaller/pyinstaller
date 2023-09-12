@@ -1,0 +1,5 @@
+The :func:`PyInstaller.utils.hooks.collect_all` hook utility function
+now attempts to translate the given importable package name into
+distribution name before attempting to collect metadata. This allows
+the function to handle cases when the distribution name does not match
+the importable package name.
