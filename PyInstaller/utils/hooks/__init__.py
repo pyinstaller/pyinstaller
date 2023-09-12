@@ -754,15 +754,22 @@ def collect_data_files(
     includes: list | None = None,
 ):
     r"""
-    This function produces a list of ``(source, dest)`` non-Python (i.e., data) files that reside in ``package``.
+    This function produces a list of ``(source, dest)`` entries for data files that reside in ``package``.
     Its output can be directly assigned to ``datas`` in a hook script; for example, see ``hook-sphinx.py``.
+    The data files are all files that are not shared libraries / binary python extensions (based on extension
+    check) and are not python source (.py) files or byte-compiled modules (.pyc). Collection of the .py and .pyc
+    files can be toggled via the ``include_py_files`` flag.
     Parameters:
 
     -   The ``package`` parameter is a string which names the package.
-    -   By default, all Python executable files (those ending in ``.py``, ``.pyc``, and so on) will NOT be collected;
-        setting the ``include_py_files`` argument to ``True`` collects these files as well. This is typically used with
-        Python functions (such as those in ``pkgutil``) that search a given directory for Python executable files and
-        load them as extensions or plugins.
+    -   By default, python source files and byte-compiled modules (files with ``.py`` and ``.pyc`` suffix) are not
+        collected; setting the ``include_py_files`` argument to ``True`` collects these files as well. This is typically
+        used when a package requires source .py files to be available; for example, JIT compilation used in
+        deep-learning frameworks, code that requires access to .py files (for example, to check their date), or code
+        that tries to extend `sys.path` with subpackage paths in a way that is incompatible with PyInstaller's frozen
+        importer.. However, in contemporary PyInstaller versions, the preferred way of collecting source .py files is by
+        using the **module collection mode** setting (which enables collection of source .py files in addition to or
+        in lieu of collecting byte-compiled modules into PYZ archive).
     -   The ``subdir`` argument gives a subdirectory relative to ``package`` to search, which is helpful when submodules
         are imported at run-time from a directory lacking ``__init__.py``.
     -   The ``excludes`` argument contains a sequence of strings or Paths. These provide a list of
@@ -800,10 +807,12 @@ def collect_data_files(
     # do not modify ``excludes_len``.
     if not include_py_files:
         excludes += ['**/*' + s for s in compat.ALL_SUFFIXES]
+    else:
+        # include_py_files should collect only .py and .pyc files, and not the extensions / shared libs.
+        excludes += ['**/*' + s for s in compat.ALL_SUFFIXES if s not in {'.py', '.pyc'}]
 
-    # Exclude .pyo files if include_py_files is False.
-    if not include_py_files and ".pyo" not in compat.ALL_SUFFIXES:
-        excludes.append('**/*.pyo')
+    # Never, ever, collect .pyc files from __pycache__.
+    excludes.append('**/__pycache__/*.pyc')
 
     # If not specified, include all files. Follow the same process as the excludes.
     includes = list(includes) if includes else ["**/*"]
