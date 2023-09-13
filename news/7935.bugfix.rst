@@ -1,0 +1,2 @@
+(Windows) Fix ``vcruntime140.dll`` not being properly extracted as a splash
+screen dependency in onefile builds (regression caused by issue:`7679`).
