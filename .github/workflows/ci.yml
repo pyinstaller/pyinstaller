@@ -49,6 +49,7 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           sudo apt-get update -qq
+          sudo apt-get upgrade -qq
           sudo apt-get install -qq --no-install-recommends \
             libcmocka-dev \
             libxml2-dev libxslt1-dev gfortran libatlas-base-dev \
