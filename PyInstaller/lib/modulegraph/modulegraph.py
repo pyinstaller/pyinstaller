@@ -13,8 +13,6 @@ imports are done in the right way.
 #PyInstaller.building.build_main.build() function). For details, see:
 #    https://github.com/pyinstaller/pyinstaller/issues/1919#issuecomment-216016176
 
-import pkg_resources
-
 import ast
 import codecs
 import marshal
@@ -22,10 +20,17 @@ import os
 import pkgutil
 import sys
 import re
-from collections import deque, namedtuple
+from collections import deque, namedtuple, defaultdict
 import warnings
 import importlib.util
 import importlib.machinery
+
+# The logic in PyInstaller.compat ensures that these are available and
+# of correct version.
+if sys.version_info >= (3, 10):
+    import importlib.metadata as importlib_metadata
+else:
+    import importlib_metadata
 
 from altgraph.ObjectGraph import ObjectGraph
 from altgraph import GraphError
@@ -97,28 +102,6 @@ _packagePathMap = {}
 class InvalidRelativeImportError (ImportError):
     pass
 
-
-def _namespace_package_path(fqname, pathnames, path=None):
-    """
-    Return the __path__ for the python package in *fqname*.
-
-    This function uses setuptools metadata to extract information
-    about namespace packages from installed eggs.
-    """
-    working_set = pkg_resources.WorkingSet(path)
-
-    path = list(pathnames)
-
-    for dist in working_set:
-        if dist.has_metadata('namespace_packages.txt'):
-            namespaces = dist.get_metadata(
-                    'namespace_packages.txt').splitlines()
-            if fqname in namespaces:
-                nspath = os.path.join(dist.location, *fqname.split('.'))
-                if nspath not in path:
-                    path.append(nspath)
-
-    return path
 
 _strs = re.compile(r'''^\s*["']([A-Za-z0-9_]+)["'],?\s*''')  # "<- emacs happy
 
@@ -1021,6 +1004,39 @@ class ModuleGraph(ObjectGraph):
         # object.
         self._package_path_map = _packagePathMap
 
+        # Legacy namespace-package paths. Initialized by scan_legacy_namespace_packages.
+        self._legacy_ns_packages = {}
+
+    def scan_legacy_namespace_packages(self):
+        """
+        Resolve extra package `__path__` entries for legacy setuptools-based
+        namespace packages, by reading `namespace_packages.txt` from dist
+        metadata.
+        """
+        legacy_ns_packages = defaultdict(lambda: set())
+
+        for dist in importlib_metadata.distributions():
+            ns_packages = dist.read_text("namespace_packages.txt")
+            if ns_packages is None:
+                continue
+            ns_packages = ns_packages.splitlines()
+            # Obtain path to dist metadata directory
+            dist_path = getattr(dist, '_path')
+            if dist_path is None:
+                continue
+            for package_name in ns_packages:
+                path = os.path.join(
+                    str(dist_path.parent),  # might be zipfile.Path if in zipped .egg
+                    *package_name.split('.'),
+                )
+                legacy_ns_packages[package_name].add(path)
+
+        # Convert into dictionary of lists
+        self._legacy_ns_packages = {
+            package_name: list(paths)
+            for package_name, paths in legacy_ns_packages.items()
+        }
+
     def implyNodeReference(self, node, other, edge_data=None):
         """
         Create a reference from the passed source node to the passed other node,
@@ -1913,30 +1929,31 @@ class ModuleGraph(ObjectGraph):
         partname = fqname.rpartition(".")[-1]
 
         if loader.is_package(partname):
-            is_nspkg = isinstance(loader, NAMESPACE_PACKAGE)
-            if is_nspkg:
-                pkgpath = loader.namespace_dirs[:]  # copy for safety
-            else:
-                pkgpath = []
-
-            ns_pkgpath = _namespace_package_path(
-                fqname, pkgpath or [], self.path)
-
-            if (ns_pkgpath or pkgpath) and is_nspkg:
-                # this is a PEP-420 namespace package
+            if isinstance(loader, NAMESPACE_PACKAGE):
+                # This is a PEP-420 namespace package.
                 m = self.createNode(NamespacePackage, fqname)
                 m.filename = '-'
-                m.packagepath = ns_pkgpath
+                m.packagepath = loader.namespace_dirs[:]  # copy for safety
             else:
+                # Regular package.
+                #
+                # NOTE: this might be a legacy setuptools (pkg_resources)
+                # based namespace package (with __init__.py, but calling
+                # `pkg_resources.declare_namespace(__name__)`). To properly
+                # handle the case when such a package is split across
+                # multiple locations, we need to resolve the package
+                # paths via metadata.
+                ns_pkgpaths = self._legacy_ns_packages.get(fqname, [])
+
                 if isinstance(loader, ExtensionFileLoader):
                     m = self.createNode(ExtensionPackage, fqname)
                 else:
                     m = self.createNode(Package, fqname)
                 m.filename = pathname
                 # PEP-302-compliant loaders return the pathname of the
-                # `__init__`-file, not the packge directory.
+                # `__init__`-file, not the package directory.
                 assert os.path.basename(pathname).startswith('__init__.')
-                m.packagepath = [os.path.dirname(pathname)] + ns_pkgpath
+                m.packagepath = [os.path.dirname(pathname)] + ns_pkgpaths
 
             # As per comment at top of file, simulate runtime packagepath
             # additions

@@ -564,6 +564,9 @@ class Analysis(Target):
         # loader, plus other paths from e.g. --path option).
         self.graph.path = self.pathex + self.graph.path
 
+        # Scan for legacy namespace packages.
+        self.graph.scan_legacy_namespace_packages()
+
         logger.info("Running Analysis %s", self.tocbasename)
 
         # Search for python shared library, which we need to collect into frozen application.
