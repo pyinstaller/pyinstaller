@@ -93,29 +93,6 @@ _IMPORTABLE_FILETYPE_EXTS = sorted(importlib.machinery.all_suffixes(),
 # Note this is a mapping is lists of paths.
 _packagePathMap = {}
 
-# Prefix used in magic .pth files used by setuptools to create namespace
-# packages without an __init__.py file.
-#
-# The value is a list of such prefixes as the prefix varies with versions of
-# setuptools.
-_SETUPTOOLS_NAMESPACEPKG_PTHs=(
-    # setuptools 31.0.0
-    ("import sys, types, os;has_mfs = sys.version_info > (3, 5);"
-         "p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('"),
-    # distribute 0.6.10
-    ("import sys,types,os; p = os.path.join("
-         "sys._getframe(1).f_locals['sitedir'], *('"),
-    # setuptools 0.6c9, distribute 0.6.12
-    ("import sys,new,os; p = os.path.join(sys._getframe("
-         "1).f_locals['sitedir'], *('"),
-    # setuptools 28.1.0
-    ("import sys, types, os;p = os.path.join("
-         "sys._getframe(1).f_locals['sitedir'], *('"),
-    # setuptools 28.7.0
-    ("import sys, types, os;pep420 = sys.version_info > (3, 3);"
-         "p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('"),
-)
-
 
 class InvalidRelativeImportError (ImportError):
     pass
@@ -1040,65 +1017,9 @@ class ModuleGraph(ObjectGraph):
             self.lazynodes[m] = None
         self.replace_paths = replace_paths
 
-        self.set_setuptools_nspackages()
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
         self._package_path_map = _packagePathMap
-
-    def set_setuptools_nspackages(self):
-        # This is used when running in the test-suite
-        self.nspackages = self._calc_setuptools_nspackages()
-
-    def _calc_setuptools_nspackages(self):
-        # Setuptools has some magic handling for namespace
-        # packages when using 'install --single-version-externally-managed'
-        # (used by system packagers and also by pip)
-        #
-        # When this option is used namespace packages are writting to
-        # disk *without* an __init__.py file, which means the regular
-        # import machinery will not find them.
-        #
-        # We therefore explicitly look for the hack used by
-        # setuptools to get this kind of namespace packages to work.
-
-        pkgmap = {}
-
-        for entry in self.path:
-            importer = pkg_resources.get_importer(entry)
-
-            if isinstance(importer, importlib.machinery.FileFinder):
-                try:
-                    ldir = os.listdir(entry)
-                except os.error:
-                    continue
-
-                for fn in ldir:
-                    if fn.endswith('-nspkg.pth'):
-                        with open(os.path.join(entry, fn), _READ_MODE) as fp:
-                            for ln in fp:
-                                for pfx in _SETUPTOOLS_NAMESPACEPKG_PTHs:
-                                    if ln.startswith(pfx):
-                                        try:
-                                            start = len(pfx)-2
-                                            stop = ln.index(')', start)+1
-                                        except ValueError:
-                                            continue
-
-                                        pkg = _eval_str_tuple(ln[start:stop])
-                                        identifier = ".".join(pkg)
-                                        subdir = os.path.join(entry, *pkg)
-                                        if os.path.exists(os.path.join(subdir, '__init__.py')):
-                                            # There is a real __init__.py,
-                                            # ignore the setuptools hack
-                                            continue
-
-                                        if identifier in pkgmap:
-                                            pkgmap[identifier].append(subdir)
-                                        else:
-                                            pkgmap[identifier] = [subdir]
-                                        break
-
-        return pkgmap
 
     def implyNodeReference(self, node, other, edge_data=None):
         """
@@ -1253,10 +1174,7 @@ class ModuleGraph(ObjectGraph):
         name : str
             Fully-qualified name of the module whose graph node is to be found.
         create_nspkg : bool
-            Whether or not to implicitly instantiate namespace packages. If
-            `True` _and_ this name is that of a previously registered namespace
-            package (i.e., in `self.nspackages`) not already added to the
-            graph, this package will be added to the graph. Defaults to `True`.
+            Ignored.
 
         Returns
         ----------
@@ -1285,22 +1203,6 @@ class ModuleGraph(ObjectGraph):
                 for dep in deps:
                     self.implyNodeReference(m, dep)
 
-            return m
-
-        if name in self.nspackages and create_nspkg:
-            # name is a --single-version-externally-managed
-            # namespace package (setuptools/distribute)
-            pathnames = self.nspackages.pop(name)
-            m = self.createNode(NamespacePackage, name)
-
-            # FIXME: The filename must be set to a string to ensure that py2app
-            # works, it is not clear yet why that is. Setting to None would be
-            # cleaner.
-            m.filename = '-'
-            m.packagepath = _namespace_package_path(name, pathnames, self.path)
-
-            # As per comment at top of file, simulate runtime packagepath additions.
-            m.packagepath = m.packagepath + self._package_path_map.get(name, [])
             return m
 
         return None
