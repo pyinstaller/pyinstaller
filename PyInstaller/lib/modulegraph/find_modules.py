@@ -11,7 +11,6 @@ import sys
 import os
 import pkgutil
 
-from . import modulegraph
 from .modulegraph import Alias
 
 _PLATFORM_MODULES = {'posix', 'nt', 'os2', 'mac', 'ce', 'riscos'}
@@ -101,14 +100,3 @@ def get_implies():
     result['os.path'] = Alias(os.path.__name__)
 
     return result
-
-
-def _replacePackages():
-    REPLACEPACKAGES = {
-        '_xmlplus':     'xml',
-    }
-    for k, v in REPLACEPACKAGES.items():
-        modulegraph.replacePackage(k, v)
-
-
-_replacePackages()
