@@ -15,7 +15,7 @@ import os
 import pytest
 
 from PyInstaller import isolated
-from PyInstaller.compat import is_win, is_darwin
+from PyInstaller.compat import is_win, is_darwin, is_linux
 from PyInstaller.utils.hooks import is_module_satisfies, can_import_module
 from PyInstaller.utils.hooks.qt import get_qt_library_info
 from PyInstaller.utils.tests import importorskip, requires, skipif
@@ -282,10 +282,50 @@ def test_PyQt5_Qt(pyi_builder):
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo', **USE_WINDOWED_KWARG)
 
 
+# QtWebEngine tests
+
+
+# On linux systems with glibc >= 2.34, QtWebEngine helper process crashes with SIGSEGV due to use of `clone3` syscall,
+# which is incompatible with chromium sandbox (see QTBUG-96214). The issue was fixed in Qt5 5.15.7, however even the
+# latest PyPI wheels of PySide2 (5.15.2.1) and PyQt5/PyQtWebEngine (5.15.6) still seem to ship Qt5 5.15.2 (which was
+# probably last publicly available linux build from the Qt itself). If we encounter incompatible combination of
+# glibc and Qt5 (for example, using PyPI wheels under Ubuntu 22.04), we disable the sandbox, which allows us to perform
+# basic functionality test.
+def _disable_qtwebengine_sandbox(qt_flavor):
+    if is_linux:
+        import platform
+
+        # Check glibc version
+        libc_name, libc_version = platform.libc_ver()
+        if libc_name != 'glibc':
+            return False
+        try:
+            libc_version = [int(v) for v in libc_version.split('.')]
+        except Exception:
+            return False
+        if libc_version < [2, 34]:
+            return False
+
+        # Check Qt version
+        qt_info = get_qt_library_info(qt_flavor)
+        if qt_info.version and qt_info.version >= [5, 15, 7]:
+            return False
+
+        # Incompatible glibc and Qt5 version
+        return True
+
+    return False
+
+
 # Run the the QtWebEngineWidgets test for chosen Qt-based package flavor.
 def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
     source = """
         import sys
+
+        # Disable QtWebEngine/chromium sanbox, if necessary
+        if {1}:
+            import os
+            os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
 
         from {0}.QtWidgets import QApplication
         from {0}.QtWebEngineWidgets import QWebEngineView
@@ -351,7 +391,7 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
         else:
             res = app.exec_()
         sys.exit(res)
-        """.format(qt_flavor)
+        """.format(qt_flavor, _disable_qtwebengine_sandbox(qt_flavor))
 
     pyi_builder.test_source(source, **USE_WINDOWED_KWARG)
 
@@ -360,6 +400,11 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
 def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
     source = """
         import sys
+
+        # Disable QtWebEngine/chromium sanbox, if necessary
+        if {1}:
+            import os
+            os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
 
         from {0}.QtGui import QGuiApplication
         from {0}.QtQml import QQmlApplicationEngine
@@ -418,7 +463,7 @@ def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
             res = app.exec_()
         del engine
         sys.exit(res)
-        """.format(qt_flavor)
+        """.format(qt_flavor, _disable_qtwebengine_sandbox(qt_flavor))
 
     pyi_builder.test_source(source, **USE_WINDOWED_KWARG)
 
