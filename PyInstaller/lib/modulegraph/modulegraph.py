@@ -216,23 +216,6 @@ def addPackagePath(packagename, path):
     _packagePathMap[packagename] = paths
 
 
-_replacePackageMap = {}
-
-
-# This ReplacePackage mechanism allows modulefinder to work around the
-# way the _xmlplus package injects itself under the name "xml" into
-# sys.modules at runtime by calling ReplacePackage("_xmlplus", "xml")
-# before running ModuleGraph.
-def ReplacePackage(oldname, newname):
-    warnings.warn("use replacePackage instead of ReplacePackage",
-            DeprecationWarning)
-    replacePackage(oldname, newname)
-
-
-def replacePackage(oldname, newname):
-    _replacePackageMap[oldname] = newname
-
-
 #FIXME: What is this? Do we actually need this? This appears to provide
 #significantly more fine-grained metadata than PyInstaller will ever require.
 #It consumes a great deal of space (slots or no slots), since we store an
@@ -2034,9 +2017,6 @@ class ModuleGraph(ObjectGraph):
             else:
                 pkgpath = []
 
-            newname = _replacePackageMap.get(fqname)
-            if newname:
-                fqname = newname
             ns_pkgpath = _namespace_package_path(
                 fqname, pkgpath or [], self.path)
 
@@ -2585,13 +2565,7 @@ class ModuleGraph(ObjectGraph):
         """
 
         # For safety, guard against multiple scans of the same module by
-        # resetting this module's list of deferred target imports. While
-        # uncommon, this edge case can occur due to:
-        #
-        # * Dynamic package replacement via the replacePackage() function. For
-        #   example, the real "_xmlplus" package dynamically replaces itself
-        #   with the fake "xml" package into the "sys.modules" cache of all
-        #   currently loaded modules at runtime.
+        # resetting this module's list of deferred target imports.
         module._deferred_imports = []
 
         # Parse all imports from this module *BEFORE* adding these imports to

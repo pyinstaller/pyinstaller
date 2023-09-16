@@ -297,22 +297,6 @@ class TestFunctions (unittest.TestCase):
             modulegraph._packagePathMap = saved
 
 
-    def test_replacePackage(self):
-        saved = modulegraph._replacePackageMap
-        self.assertIsInstance(saved, dict)
-        try:
-            modulegraph._replacePackageMap = {}
-
-            modulegraph.replacePackage("a", "b")
-            self.assertEqual(modulegraph._replacePackageMap, {"a": "b"})
-            modulegraph.replacePackage("a", "c")
-            self.assertEqual(modulegraph._replacePackageMap, {"a": "c"})
-            modulegraph.replacePackage("b", "c")
-            self.assertEqual(modulegraph._replacePackageMap, {"a": "c", 'b': 'c'})
-
-        finally:
-            modulegraph._replacePackageMap = saved
-
 class TestNode (unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
         def assertIsInstance(self, obj, types):
