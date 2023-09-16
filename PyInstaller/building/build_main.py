@@ -563,7 +563,6 @@ class Analysis(Target):
         # Expand sys.path of module graph. The attribute is the set of paths to use for imports: sys.path, plus our
         # loader, plus other paths from e.g. --path option).
         self.graph.path = self.pathex + self.graph.path
-        self.graph.set_setuptools_nspackages()
 
         logger.info("Running Analysis %s", self.tocbasename)
 

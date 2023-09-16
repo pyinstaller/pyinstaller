@@ -489,7 +489,6 @@ class TestModuleGraph (unittest.TestCase):
 
         # Stricter tests would be nice, but that requires
         # better control over what's on sys.path
-        self.assertIsInstance(o.nspackages, dict)
 
         g = Graph.Graph()
         o = modulegraph.ModuleGraph(['a', 'b', 'c'], ['modA'], [
@@ -504,27 +503,8 @@ class TestModuleGraph (unittest.TestCase):
             'modC': ['modE', 'modF'],
         })
         self.assertEqual(o.replace_paths, [('fromA', 'toB'), ('fromC', 'toD')])
-        self.assertEqual(o.nspackages, {})
         self.assertTrue(o.graph is g)
         self.assertEqual(o.debug, 1)
-
-    def test_calc_setuptools_nspackages(self):
-        stdlib = [ fn for fn in sys.path if fn.startswith(sys.prefix) and 'site-packages' not in fn ]
-        for subdir in [ nm for nm in os.listdir(TESTDATA) if nm != 'src' ]:
-            graph = modulegraph.ModuleGraph(path=[
-                    os.path.join(TESTDATA, subdir, "parent"),
-                    os.path.join(TESTDATA, subdir, "child"),
-                ] + stdlib)
-
-            pkgs = graph.nspackages
-            self.assertTrue('namedpkg' in pkgs)
-            self.assertEqual(set(pkgs['namedpkg']),
-                    set([
-                        os.path.join(TESTDATA, subdir, "parent", "namedpkg"),
-                        os.path.join(TESTDATA, subdir, "child", "namedpkg"),
-                    ]))
-            self.assertFalse(os.path.exists(os.path.join(TESTDATA, subdir, "parent", "namedpkg", "__init__.py")))
-            self.assertFalse(os.path.exists(os.path.join(TESTDATA, subdir, "child", "namedpkg", "__init__.py")))
 
     def testImpliedReference(self):
         graph = modulegraph.ModuleGraph()
