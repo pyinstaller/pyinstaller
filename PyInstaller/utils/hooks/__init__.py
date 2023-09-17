@@ -365,112 +365,90 @@ def get_pywin32_module_file_attribute(module_name):
     return get_module_attribute(module_name, '__file__')
 
 
-def is_module_satisfies(
-    requirements: list,
-    version: str | None = None,
-    version_attr: str = "__version__",
-):
+def check_requirement(requirement: str):
     """
-    Test if a :pep:`0440` requirement is installed.
+    Check if a :pep:`0508` requirement is satisfied. Usually used to check if a package distribution is installed,
+    or if it is installed and satisfies the specified version requirement.
 
     Parameters
     ----------
-    requirements : str
-        Requirements in `pkg_resources.Requirements.parse()` format.
-    version : str
-        Optional PEP 0440-compliant version (e.g., `3.14-rc5`) to be used _instead_ of the current version of this
-        module. If non-`None`, this function ignores all `setuptools` distributions for this module and instead
-        compares this version against the version embedded in the passed requirements. This ignores the module name
-        embedded in the passed requirements, permitting arbitrary versions to be compared in a robust manner.
-        See examples below.
-    version_attr : str
-        Optional name of the version attribute defined by this module, defaulting to `__version__`. If a
-        `setuptools` distribution exists for this module (it usually does) _and_ the `version` parameter is `None`
-        (it usually is), this parameter is ignored.
+    requirement : str
+        Requirement string in :pep:`0508` format.
 
     Returns
     ----------
     bool
-        Boolean result of the desired validation.
-
-    Raises
-    ----------
-    AttributeError
-        If no `setuptools` distribution exists for this module _and_ this module defines no attribute whose name is the
-        passed `version_attr` parameter.
-    ValueError
-        If the passed specification does _not_ comply with `pkg_resources.Requirements`_ syntax.
+        Boolean indicating whether the requirement is satisfied or not.
 
     Examples
     --------
 
     ::
 
-        # Assume PIL 2.9.0, Sphinx 1.3.1, and SQLAlchemy 0.6 are all installed.
-        >>> from PyInstaller.utils.hooks import is_module_satisfies
-        >>> is_module_satisfies('sphinx >= 1.3.1')
+        # Assume Pillow 10.0.0 is installed.
+        >>> from PyInstaller.utils.hooks import check_requirement
+        >>> check_requirement('Pillow')
         True
-        >>> is_module_satisfies('sqlalchemy != 0.6')
+        >>> check_requirement('Pillow < 9.0')
         False
-
-        >>> is_module_satisfies('sphinx >= 1.3.1; sqlalchemy != 0.6')
-        False
-
-
-        # Compare two arbitrary versions. In this case, the module name "sqlalchemy" is simply ignored.
-        >>> is_module_satisfies('sqlalchemy != 0.6', version='0.5')
+        >>> check_requirement('Pillow >= 9.0, < 11.0')
         True
-
-        # Since the "pillow" project providing PIL publishes its version via the custom "PILLOW_VERSION" attribute
-        # (rather than the standard "__version__" attribute), an attribute name is passed as a fallback to validate PIL
-        # when not installed by setuptools. As PIL is usually installed by setuptools, this optional parameter is
-        # usually ignored.
-        >>> is_module_satisfies('PIL == 2.9.0', version_attr='PILLOW_VERSION')
-        True
-
-    .. seealso::
-
-        `pkg_resources.Requirements`_ for the syntax details.
-
-    .. _`pkg_resources.Requirements`:
-            https://pythonhosted.org/setuptools/pkg_resources.html#id12
     """
-    import pkg_resources
+    parsed_requirement = packaging.requirements.Requirement(requirement)
 
-    # If no version was explicitly passed...
-    if version is None:
-        # If a setuptools distribution exists for this module, this validation is a simple one-liner. This approach
-        # supports non-version validation (e.g., of "["- and "]"-delimited extras) and is hence preferable.
-        try:
-            pkg_resources.get_distribution(requirements)
-        # If no such distribution exists, fall back to the logic below.
-        except pkg_resources.DistributionNotFound:
-            pass
-        # If all existing distributions violate these requirements, fail.
-        except (pkg_resources.UnknownExtra, pkg_resources.VersionConflict):
-            return False
-        # Else, an existing distribution satisfies these requirements. Win!
-        else:
-            return True
+    # Fetch the actual version of the specified dist
+    try:
+        version = importlib_metadata.version(parsed_requirement.name)
+    except importlib_metadata.PackageNotFoundError:
+        return False  # Not available at all
 
-    # Either a module version was explicitly passed or no setuptools distribution exists for this module. First, parse a
-    # setuptools "Requirements" object from this requirements string.
-    requirements_parsed = pkg_resources.Requirement.parse(requirements)
+    # If specifier is not given, the only requirement is that dist is available
+    if not parsed_requirement.specifier:
+        return True
 
-    # If no version was explicitly passed, query this module for it.
-    if version is None:
-        module_name = requirements_parsed.project_name
-        if can_import_module(module_name):
-            version = get_module_attribute(module_name, version_attr)
-        else:
-            version = None
+    # Parse specifier, and compare version
+    return version in parsed_requirement.specifier
 
-    if not version:
-        # Module does not exist in the system.
-        return False
-    else:
-        # Compare this version against the one parsed from the requirements.
-        return version in requirements_parsed
+
+# Keep the `is_module_satisfies` as an alias for backwards compatibility with existing hooks. The old fallback
+# to module version check does not work any more, though.
+def is_module_satisfies(
+    requirements: str,
+    version: None = None,
+    version_attr: None = None,
+):
+    """
+    A compatibility wrapper for :func:`check_requirement`, intended for backwards compatibility with existing hooks.
+
+    In contrast to original implementation from PyInstaller < 6, this implementation only checks the specified
+    :pep:`0508` requirement string; i.e., it tries to retrieve the distribution metadata, and compare its version
+    against optional version specifier(s). It does not attempt to fall back to checking the module's version attribute,
+    nor does it support ``version`` and ``version_attr`` arguments.
+
+    Parameters
+    ----------
+    requirements : str
+        Requirements string passed to the :func:`check_requirement`.
+    version : None
+        Deprecated and unsupported. Must be ``None``.
+    version_attr : None
+        Deprecated and unsupported. Must be ``None``.
+
+    Returns
+    ----------
+    bool
+        Boolean indicating whether the requirement is satisfied or not.
+
+    Raises
+    ----------
+    ValueError
+        If either ``version`` or ``version_attr`` are specified and are not None.
+    """
+    if version is not None:
+        raise ValueError("Calling is_module_satisfies with version argument is not supported anymore.")
+    if version_attr is not None:
+        raise ValueError("Calling is_module_satisfies with version argument_attr is not supported anymore.")
+    return check_requirement(requirements)
 
 
 def is_package(module_name: str):

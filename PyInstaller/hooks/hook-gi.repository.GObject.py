@@ -8,12 +8,12 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-from PyInstaller.utils.hooks import is_module_satisfies
+from PyInstaller.utils.hooks import check_requirement
 from PyInstaller.utils.hooks.gi import GiModuleInfo
 
 module_info = GiModuleInfo('GObject', '2.0')
 if module_info.available:
     binaries, datas, hiddenimports = module_info.collect_typelib_data()
     # gi._gobject removed from PyGObject in version 3.25.1
-    if is_module_satisfies('PyGObject < 3.25.1'):
+    if check_requirement('PyGObject < 3.25.1'):
         hiddenimports += ['gi._gobject']

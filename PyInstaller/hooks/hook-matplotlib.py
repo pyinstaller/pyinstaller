@@ -31,7 +31,7 @@ binaries = []
 # in contemporary PyInstaller versions, we also need to collect the load-order file. This used to be required for
 # python <= 3.7 (that lacked `os.add_dll_directory`), but is also needed for Anaconda python 3.8 and 3.9, where
 # `delvewheel` falls back to load-order file codepath due to Anaconda breaking `os.add_dll_directory` implementation.
-if compat.is_win and hookutils.is_module_satisfies('matplotlib >= 3.7.0'):
+if compat.is_win and hookutils.check_requirement('matplotlib >= 3.7.0'):
     delvewheel_datas, delvewheel_binaries = hookutils.collect_delvewheel_libs_directory('matplotlib')
 
     datas += delvewheel_datas

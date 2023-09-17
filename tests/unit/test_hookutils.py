@@ -18,7 +18,7 @@ import re
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, \
     get_module_file_attribute, remove_prefix, remove_suffix, \
     remove_file_extension, is_module_or_submodule, \
-    is_module_satisfies
+    check_requirement
 from PyInstaller.compat import exec_python, is_win
 from PyInstaller import log as logging
 
@@ -247,9 +247,9 @@ def test_is_module_or_submodule():
     assert not is_module_or_submodule('foo', 'foo.bar')
 
 
-def test_is_module_satisfies_package_not_installed():
-    assert is_module_satisfies('pytest')
-    assert not is_module_satisfies('magnumopus-no-package-test-case')
+def test_check_requirement_package_not_installed():
+    assert check_requirement('pytest')
+    assert not check_requirement('magnumopus-no-package-test-case')
 
 
 # An error should be raised if a module, not a package, was passed.

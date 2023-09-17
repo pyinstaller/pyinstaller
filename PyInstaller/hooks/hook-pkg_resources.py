@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import collect_submodules, is_module_satisfies, can_import_module
+from PyInstaller.utils.hooks import collect_submodules, check_requirement, can_import_module
 
 # pkg_resources keeps vendored modules in its _vendor subpackage, and does sys.meta_path based import magic to expose
 # them as pkg_resources.extern.*
@@ -25,7 +25,7 @@ else:
 
 # pkg_resources v45.0 dropped support for Python 2 and added this module printing a warning. We could save some bytes if
 # we would replace this by a fake module.
-if is_module_satisfies('setuptools >= 45.0.0, < 49.1.1'):
+if check_requirement('setuptools >= 45.0.0, < 49.1.1'):
     hiddenimports.append('pkg_resources.py2_warn')
 
 excludedimports = ['__main__']
@@ -42,14 +42,14 @@ hiddenimports += collect_submodules('packaging')
 # In setuptools 60.7.0, the vendored jaraco.text package included "Lorem Ipsum.txt" data file, which also has to be
 # collected. However, the presence of the data file (and the resulting directory hierarchy) confuses the importer's
 # redirection logic; instead of trying to work-around that, tell user to upgrade or downgrade their setuptools.
-if is_module_satisfies("setuptools == 60.7.0"):
+if check_requirement("setuptools == 60.7.0"):
     raise SystemExit(
         "ERROR: Setuptools 60.7.0 is incompatible with PyInstaller. "
         "Downgrade to an earlier version or upgrade to a later version."
     )
 # In setuptools 60.7.1, the "Lorem Ipsum.txt" data file was dropped from the vendored jaraco.text package, so we can
 # accommodate it with couple of hidden imports.
-elif is_module_satisfies("setuptools >= 60.7.1"):
+elif check_requirement("setuptools >= 60.7.1"):
     hiddenimports += [
         'pkg_resources._vendor.jaraco.functools',
         'pkg_resources._vendor.jaraco.context',

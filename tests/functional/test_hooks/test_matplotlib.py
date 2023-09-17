@@ -14,7 +14,7 @@ Functional tests for Matplotlib.
 
 import pytest
 from PyInstaller.utils.tests import importorskip
-from PyInstaller.utils.hooks import is_module_satisfies
+from PyInstaller.utils.hooks import check_requirement
 
 # List of 3-tuples "(backend_name, package_name, binding)", where:
 #
@@ -22,7 +22,7 @@ from PyInstaller.utils.hooks import is_module_satisfies
 # * "package_name" is the name of the external package required by this backend.
 # * "binding" is the binding to use (and to set environment-variable QT_API to).
 #
-if is_module_satisfies("matplotlib >= 3.5.0"):
+if check_requirement("matplotlib >= 3.5.0"):
     # Matplotlib 3.5.0 introduced a unified Qt backend that supports PySide2, PyQt5, PySide6, and PyQt6.
     backend_rcParams_key_values = [
         ('QtAgg', 'PyQt5', 'pyqt5'),

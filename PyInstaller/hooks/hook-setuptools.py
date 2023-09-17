@@ -10,7 +10,7 @@
 #-----------------------------------------------------------------------------
 
 from PyInstaller.compat import is_darwin, is_unix
-from PyInstaller.utils.hooks import collect_submodules, is_module_satisfies
+from PyInstaller.utils.hooks import collect_submodules, check_requirement
 
 hiddenimports = [
     # Test case import/test_zipimport2 fails during importing pkg_resources or setuptools when module not present.
@@ -36,6 +36,6 @@ hiddenimports.extend(collect_submodules('setuptools._vendor', filter=lambda name
 # As of setuptools >= 60.0, we need to collect the vendored version of distutils via hiddenimports. The corresponding
 # pyi_rth_setuptools runtime hook ensures that the _distutils_hack is installed at the program startup, which allows
 # setuptools to override the stdlib distutils with its vendored version, if necessary.
-if is_module_satisfies("setuptools >= 60.0"):
+if check_requirement("setuptools >= 60.0"):
     hiddenimports += ["_distutils_hack"]
     hiddenimports += collect_submodules("setuptools._distutils")

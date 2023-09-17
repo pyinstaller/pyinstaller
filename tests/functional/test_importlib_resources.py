@@ -27,7 +27,7 @@ import pytest
 
 from PyInstaller.utils.tests import skipif
 from PyInstaller.compat import is_py39, exec_python, exec_python_rc
-from PyInstaller.utils.hooks import is_module_satisfies
+from PyInstaller.utils.hooks import check_requirement
 
 # Directory with testing modules used in some tests.
 _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
@@ -67,7 +67,7 @@ def __get_test_package_path(package_type, tmpdir, monkeypatch):
 
 
 @skipif(
-    not is_py39 and not is_module_satisfies('importlib_resources'),
+    not is_py39 and not check_requirement('importlib_resources'),
     reason="Python prior to 3.9 requires importlib_resources."
 )
 @pytest.mark.parametrize('package_type', ['pkg'])  # Zipped egg ('egg') is not supported.
@@ -85,7 +85,7 @@ def test_importlib_resources_source(package_type, tmpdir, script_dir, monkeypatc
 
 
 @skipif(
-    not is_py39 and not is_module_satisfies('importlib_resources'),
+    not is_py39 and not check_requirement('importlib_resources'),
     reason="Python prior to 3.9 requires importlib_resources."
 )
 @pytest.mark.parametrize('package_type', ['pkg'])  # Zipped egg ('egg') is not supported.
@@ -111,7 +111,7 @@ def test_importlib_resources_frozen(pyi_builder, package_type, tmpdir, script_di
 #    compatibility with `importlib` resource reader.
 # The test covers both scenarios via `as_package` parameter.
 @skipif(
-    not is_py39 and not is_module_satisfies('importlib_resources'),
+    not is_py39 and not check_requirement('importlib_resources'),
     reason="Python prior to 3.9 requires importlib_resources."
 )
 @pytest.mark.parametrize('as_package', [True, False])

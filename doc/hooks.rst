@@ -421,6 +421,7 @@ hooks.
 
 .. autofunction:: exec_statement
 .. autofunction:: eval_statement
+.. autofunction:: check_requirement
 .. autofunction:: is_module_satisfies
 .. autofunction:: collect_all
 .. autofunction:: collect_submodules
