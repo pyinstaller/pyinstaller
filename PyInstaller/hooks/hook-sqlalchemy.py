@@ -14,7 +14,7 @@ import re
 from PyInstaller import isolated
 from PyInstaller.lib.modulegraph.modulegraph import SourceModule
 from PyInstaller.lib.modulegraph.util import guess_encoding
-from PyInstaller.utils.hooks import is_module_satisfies, logger
+from PyInstaller.utils.hooks import check_requirement, logger
 
 # 'sqlalchemy.testing' causes bundling a lot of unnecessary modules.
 excludedimports = ['sqlalchemy.testing']
@@ -23,7 +23,7 @@ excludedimports = ['sqlalchemy.testing']
 # explicitly include database backends.
 hiddenimports = ['pysqlite2', 'MySQLdb', 'psycopg2', 'sqlalchemy.ext.baked']
 
-if is_module_satisfies('sqlalchemy >= 1.4'):
+if check_requirement('sqlalchemy >= 1.4'):
     hiddenimports.append("sqlalchemy.sql.default_comparator")
 
 
@@ -36,7 +36,7 @@ def _get_dialect_modules(module_name):
 
 # In SQLAlchemy >= 0.6, the "sqlalchemy.dialects" package provides dialects.
 # In SQLAlchemy <= 0.5, the "sqlalchemy.databases" package provides dialects.
-if is_module_satisfies('sqlalchemy >= 0.6'):
+if check_requirement('sqlalchemy >= 0.6'):
     hiddenimports += _get_dialect_modules("sqlalchemy.dialects")
 else:
     hiddenimports += _get_dialect_modules("sqlalchemy.databases")
@@ -52,7 +52,7 @@ def hook(hook_api):
     those modules as hidden imports.
     """
 
-    if not is_module_satisfies('sqlalchemy >= 0.9'):
+    if not check_requirement('sqlalchemy >= 0.9'):
         return
 
     # this parser is very simplistic but seems to catch all cases as of V1.1

@@ -16,12 +16,12 @@ import pytest
 
 from PyInstaller import isolated
 from PyInstaller.compat import is_win, is_darwin, is_linux
-from PyInstaller.utils.hooks import is_module_satisfies, can_import_module
+from PyInstaller.utils.hooks import check_requirement, can_import_module
 from PyInstaller.utils.hooks.qt import get_qt_library_info
 from PyInstaller.utils.tests import importorskip, requires, skipif
 
 PYQT5_NEED_OPENGL = pytest.mark.skipif(
-    is_module_satisfies('PyQt5 <= 5.10.1'),
+    check_requirement('PyQt5 <= 5.10.1'),
     reason='PyQt5 v5.10.1 and older does not package ``opengl32sw.dll``, '
     'the OpenGL software renderer, which this test requires.'
 )
@@ -275,7 +275,7 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, QtPyLib):
 @skipif(os.environ.get('APPVEYOR') == 'True', reason='The Appveyor OS is incompatible with PyQt.Qt.')
 @requires('PyQt5')
 @pytest.mark.skipif(
-    is_module_satisfies('PyQt5 == 5.11.3') and is_darwin,
+    check_requirement('PyQt5 == 5.11.3') and is_darwin,
     reason='This version of the OS X wheel does not include QWebEngine.'
 )
 def test_PyQt5_Qt(pyi_builder):
@@ -504,7 +504,7 @@ def test_Qt_QtWebEngineQuick_PyQt6(pyi_builder):
 
 @requires('PySide6 >= 6.2.2')
 @pytest.mark.skipif(
-    is_module_satisfies('PySide6 == 6.5.0') and is_win,
+    check_requirement('PySide6 == 6.5.0') and is_win,
     reason='PySide6 6.5.0 PyPI wheels for Windows are missing opengl32sw.dll.'
 )
 def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
@@ -513,7 +513,7 @@ def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
 
 @requires('PySide6 >= 6.2.2')
 @pytest.mark.skipif(
-    is_module_satisfies('PySide6 == 6.5.0') and is_win,
+    check_requirement('PySide6 == 6.5.0') and is_win,
     reason='PySide6 6.5.0 PyPI wheels for Windows are missing opengl32sw.dll.'
 )
 def test_Qt_QtWebEngineQuick_PySide6(pyi_builder):

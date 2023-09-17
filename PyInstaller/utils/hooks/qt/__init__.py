@@ -164,26 +164,13 @@ class QtLibraryInfo:
     # PyQt6/Qt).
     @staticmethod
     def _use_new_layout(package_basename: str, version: str, fallback_value: bool) -> bool:
-        # The call to is_module_satisfies might fail with AttributeError in case of a partial installation, or when dist
-        # information is missing, in which case a fallback codepath tries to check for a __version__ attribute that does
-        # not exist.
-        #
-        # This may happen for the following (not exhaustive) reasons:
-        #
-        # - PyQt 5.9.2 installed from conda's main channel.
-        # - User installs PyQt6 via pip, which also installs PyQt6-Qt6 and PyQt6-sip. Then they naively uninstall PyQt6
-        #   package, which leaves the other two behind. PyQt6 now becomes a namespace package and there is no dist
-        #   metadata.
-        # - The PyQt5 commercial wheel is installed. It creates the PyQt5 namespace package but dist information is
-        #   available under PyQt5_commercial. Since we first check for the non-commercial wheel, we trip the fallback
-        #   codepath inside is_module_satisfies.
-        try:
-            return hooks.is_module_satisfies(f"{package_basename} >= {version}")
-        except AttributeError:
-            try:
-                return hooks.is_module_satisfies(f"{package_basename}_commercial >= {version}")
-            except AttributeError:
-                return fallback_value
+        # The PyQt wheels come in both non-commercial and commercial variants. So we need to check if a particular
+        # variant is installed before testing its version.
+        if hooks.check_requirement(package_basename):
+            return hooks.check_requirement(f"{package_basename} >= {version}")
+        if hooks.check_requirement(f"{package_basename}_commercial"):
+            return hooks.check_requirement(f"{package_basename}_commercial >= {version}")
+        return fallback_value
 
     # Load Qt information (called on first access to related fields)
     def _load_qt_info(self):

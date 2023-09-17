@@ -9,12 +9,12 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import collect_submodules, is_module_satisfies
+from PyInstaller.utils.hooks import collect_submodules, check_requirement
 
 # Pandas keeps Python extensions loaded with dynamic imports here.
 hiddenimports = collect_submodules('pandas._libs')
 
 # Pandas 1.2.0 and later require cmath hidden import on linux and macOS. On Windows, this is not strictly required, but
 # we add it anyway to keep things simple (and future-proof).
-if is_module_satisfies('pandas >= 1.2.0'):
+if check_requirement('pandas >= 1.2.0'):
     hiddenimports += ['cmath']

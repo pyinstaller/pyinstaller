@@ -22,7 +22,7 @@ Feel free to @mention either bwoodsend or Legorooj on Github for help keeping it
 """
 
 from PyInstaller.compat import is_conda, is_pure_conda
-from PyInstaller.utils.hooks import collect_dynamic_libs, is_module_satisfies
+from PyInstaller.utils.hooks import collect_dynamic_libs, check_requirement
 
 # Collect all DLLs inside numpy's installation folder, dump them into built app's root.
 binaries = collect_dynamic_libs("numpy", ".")
@@ -52,7 +52,7 @@ excludedimports = [
 
 # As of version 1.22, numpy.testing (imported for example by some scipy modules) requires numpy.distutils and distutils.
 # So exclude them only for earlier versions.
-if is_module_satisfies("numpy < 1.22"):
+if check_requirement("numpy < 1.22"):
     excludedimports += [
         "distutils",
         "numpy.distutils",

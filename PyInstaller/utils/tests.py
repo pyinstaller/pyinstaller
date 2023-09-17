@@ -22,6 +22,7 @@ import pytest
 import sys
 
 from PyInstaller.compat import is_win
+from PyInstaller.utils.hooks import check_requirement
 
 # Wrap some pytest decorators to be consistent in tests.
 parametrize = pytest.mark.parametrize
@@ -106,20 +107,17 @@ def requires(requirement: str):
 
     Args:
         requirement:
-            A distribution name and optionally a version. See :func:`pkg_resources.require` which this argument is
-            forwarded to.
+            A distribution name and optional version specifier(s). See :func:`PyInstaller.utils.hooks.check_requirement`
+            which this argument is forwarded to.
     Returns:
         Either a skip marker or a dummy marker.
 
-    This function intentionally does not import the module. Doing so can lead to `sys.path` and `PATH` being
-    polluted, which then breaks later builds.
+    This function operates on distribution metadata, and does not import any modules.
     """
-    import pkg_resources
-    try:
-        pkg_resources.require(requirement)
+    if check_requirement(requirement):
         return pytest.mark.skipif(False, reason=f"Don't skip: '{requirement}' is satisfied.")
-    except pkg_resources.ResolutionError:
-        return pytest.mark.skip("Requires " + requirement)
+    else:
+        return pytest.mark.skip(f"Requires {requirement}.")
 
 
 def gen_sourcefile(tmpdir, source, test_id=None):

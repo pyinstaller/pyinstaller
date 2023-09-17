@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import is_module_satisfies
+from PyInstaller.utils.hooks import check_requirement
 
-if is_module_satisfies("scipy >= 1.5.0"):
+if check_requirement("scipy >= 1.5.0"):
     hiddenimports = ['scipy.special.cython_special']

@@ -13,7 +13,7 @@ import glob
 import os
 
 from PyInstaller.compat import is_win
-from PyInstaller.utils.hooks import get_module_file_attribute, is_module_satisfies, collect_delvewheel_libs_directory
+from PyInstaller.utils.hooks import get_module_file_attribute, check_requirement, collect_delvewheel_libs_directory
 
 binaries = []
 datas = []
@@ -28,7 +28,7 @@ if is_win:
             binaries.append((dll_glob, "."))
 
 # Handle delvewheel-enabled win32 wheels, which have external scipy.libs directory (scipy >= 0.9.2)
-if is_module_satisfies("scipy >= 1.9.2") and is_win:
+if check_requirement("scipy >= 1.9.2") and is_win:
     datas, binaries = collect_delvewheel_libs_directory('scipy', datas=datas, binaries=binaries)
 
 # collect library-wide utility extension modules
