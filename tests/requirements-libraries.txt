@@ -18,13 +18,13 @@ importlib_resources==6.0.1; python_version < '3.9'
 babel==2.12.1
 Django==4.2.5
 future==0.18.3
-gevent==23.9.0.post1
+gevent==23.9.1
 ipython==8.15.0; python_version >= '3.9'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==24.2.0; sys_platform != 'darwin' or python_version >= '3.8.7'
-matplotlib==3.7.2
-numpy==1.25.2; python_version >= '3.9'
+matplotlib==3.8.0; python_version >= '3.9'
+numpy==1.26.0; python_version >= '3.9'
 pandas==2.1.0; python_version >= '3.9'
 pygments==2.16.1
 PyGObject==3.46.0; sys_platform == 'linux'
@@ -55,11 +55,11 @@ requests==2.31.0
 scipy==1.11.2; python_version >= '3.9'
 # simplejson is used for text_c_extension
 simplejson==3.19.1
-sphinx==7.2.5; python_version >= '3.9'
+sphinx==7.2.6; python_version >= '3.9'
 # Required for test_namespace_package
 sqlalchemy==2.0.20
 zope.interface==6.0
-Pillow==10.0.0
+Pillow==10.0.1
 
 
 # Python versions not supported / supported for older package versions
@@ -68,6 +68,7 @@ Pillow==10.0.0
 numpy==1.24.3; python_version == '3.8'  # pyup: ignore
 pandas==2.0.3; python_version == '3.8'  # pyup: ignore
 scipy==1.10.1; python_version == '3.8'  # pyup: ignore
+matplotlib==3.7.3; python_version == '3.8'  # pyup: ignore
 
 # ipython dropped support for python 3.8 in v8.13.0
 ipython==8.12.1; python_version == '3.8'  # pyup: ignore
