@@ -12,8 +12,9 @@
 import argparse
 import sys
 
-import pkg_resources
 import pytest
+
+from PyInstaller.compat import importlib_metadata
 
 
 def paths_to_test(include_only=None):
@@ -28,12 +29,12 @@ def paths_to_test(include_only=None):
 
     # Walk through all entry points.
     test_path_list = []
-    for entry_point in pkg_resources.iter_entry_points("pyinstaller40", "tests"):
+    for entry_point in importlib_metadata.entry_points(group="pyinstaller40", name="tests"):
         # Implement ``include_only``.
         if (
             not include_only  # If falsey, include everything,
             # Otherwise, include only the specified modules.
-            or any(entry_point.module_name.startswith(name) for name in include_only)
+            or any(entry_point.module.startswith(name) for name in include_only)
         ):
             test_path_list += list(entry_point.load()())
     return test_path_list
