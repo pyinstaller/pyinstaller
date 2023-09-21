@@ -1039,37 +1039,6 @@ def get_installer(module: str):
     return None
 
 
-def requirements_for_package(package_name: str):
-    hiddenimports = []
-
-    # Helpers for retrieving top-level imports for a dist, based on `importlib.metadata` code.
-    def _top_level_declared(dist):
-        return (dist.read_text('top_level.txt') or '').split()
-
-    def _top_level_inferred(dist):
-        return [
-            f.parts[0] if len(f.parts) > 1 else f.with_suffix('').name for f in (dist.files or []) if f.suffix == ".py"
-        ]
-
-    # Filter requirements for the given dist based on their markers
-    requirements = [packaging.requirements.Requirement(req) for req in importlib_metadata.requires(package_name) or []]
-    requirements = [req.name for req in requirements if req.marker is None or req.marker.evaluate()]
-
-    for requirement in requirements:
-        # Obtain distribution for the requirement
-        try:
-            requirement_dist = importlib_metadata.distribution(requirement)
-        except importlib_metadata.PackageNotFoundError:
-            continue
-
-        # Obtain top-level imports for the distribution - either declared (top_level.txt in metadata) or inferred.
-        top_level_imports = _top_level_declared(requirement_dist) or _top_level_inferred(requirement_dist)
-        hiddenimports += top_level_imports
-
-    # Return de-duplicated list
-    return list(set(hiddenimports))
-
-
 def collect_all(
     package_name: str,
     include_py_files: bool = True,
@@ -1101,8 +1070,7 @@ def collect_all(
         - All data files, raw Python files (if **include_py_files**), and distribution metadata directories (if
           applicable).
         - All dynamic libraries as returned by :func:`collect_dynamic_libs`.
-        - All submodules of **package_name** and top-level imports of dependencies declared in the metadata
-          (if applicable).
+        - All submodules of **package_name**.
 
     Typical use::
 
@@ -1112,7 +1080,7 @@ def collect_all(
     binaries = collect_dynamic_libs(package_name)
     hiddenimports = collect_submodules(package_name, on_error=on_error, filter=filter_submodules)
 
-    # `copy_metadata` and `requirements_for_package` require a dist name instead of importable/package name.
+    # `copy_metadata` requires a dist name instead of importable/package name.
     # A namespace package might belong to multiple distributions, so process all of them.
     pkg_to_dist = importlib_metadata.packages_distributions()
     dist_names = set(pkg_to_dist.get(package_name, []))
@@ -1120,11 +1088,6 @@ def collect_all(
         # Copy metadata
         try:
             datas += copy_metadata(dist_name)
-        except Exception:
-            pass
-        # Find top-level imports from distribution's requirements
-        try:
-            hiddenimports += requirements_for_package(dist_name)
         except Exception:
             pass
 
