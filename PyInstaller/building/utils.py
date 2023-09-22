@@ -249,17 +249,10 @@ def process_collected_binary(
     # Ensure parent path exists
     os.makedirs(os.path.dirname(cached_name), exist_ok=True)
 
-    # There are known some issues with 'shutil.copy2' on Mac OS 10.11 with copying st_flags. Issue #1650.
-    # 'shutil.copy' copies also permission bits and it should be sufficient for PyInstaller's purposes.
-    shutil.copy(src_name, cached_name)
-    # TODO: find out if this is still necessary when no longer using shutil.copy2()
-    if hasattr(os, 'chflags'):
-        # Some libraries on FreeBSD have immunable flag (libthr.so.3, for example). If this flag is preserved,
-        # os.chmod() fails with: OSError: [Errno 1] Operation not permitted.
-        try:
-            os.chflags(cached_name, 0)
-        except OSError:
-            pass
+    # Use `shutil.copyfile` to copy the file with default permissions bits, then manually set executable
+    # bits. This way, we avoid copying permission bits and metadata from the original file, which might be too
+    # restrictive for further processing (read-only permissions, immutable flag on FreeBSD, and so on).
+    shutil.copyfile(src_name, cached_name)
     os.chmod(cached_name, 0o755)
 
     if cmd:
