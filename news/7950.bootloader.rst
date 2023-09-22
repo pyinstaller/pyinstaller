@@ -1,0 +1,5 @@
+(Linux, macOS) When extracting files from ``onefile`` archive, the
+executable bit is now set only on binaries (files whose TOC type code
+was either ``BINARY``, ``EXECUTABLE``, or ``EXTENSION``). Therefore,
+binaries are now extracted with permissions bits set to ``0700``, while
+all other files have permissions bits set to ``0600``.

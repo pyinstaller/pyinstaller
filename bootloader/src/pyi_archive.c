@@ -341,7 +341,11 @@ pyi_arch_extract2fs(const ARCHIVE_STATUS *status, const TOC *ptoc)
         rc = _pyi_arch_extract2fs_uncompressed(archive_fp, ptoc, out_fp);
     }
 #ifndef WIN32
-    fchmod(fileno(out_fp), S_IRUSR | S_IWUSR | S_IXUSR);
+    if (ptoc->typcd == ARCHIVE_ITEM_BINARY) {
+        fchmod(fileno(out_fp), S_IRUSR | S_IWUSR | S_IXUSR);
+    } else {
+        fchmod(fileno(out_fp), S_IRUSR | S_IWUSR);
+    }
 #endif
 
 cleanup:
