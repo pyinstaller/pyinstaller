@@ -309,3 +309,29 @@ def test_inspect_rthook_robustness(pyi_builder):
         some_interactive_debugger_function()
         """
     )
+
+
+# Test that collection of an executable shell script (essentially a data file with executable bit) preserves its
+# executable bit.
+@pytest.mark.linux
+@pytest.mark.darwin
+def test_bundled_shell_script(pyi_builder, tmpdir):
+    script_file = tmpdir / "test_script.sh"
+    with open(script_file, "w") as fp:
+        print('#!/bin/sh', file=fp)
+        print('echo "Hello world!"', file=fp)
+    os.chmod(script_file, 0o755)
+
+    pyi_builder.test_source(
+        """
+        import os
+        import subprocess
+
+        script = os.path.join(os.path.dirname(__file__), 'test_script.sh')
+        output = subprocess.check_output(script, text=True)
+
+        print(output)
+        assert output.strip() == "Hello world!"
+        """,
+        pyi_args=['--add-data', str(script_file) + os.pathsep + '.']
+    )
