@@ -1140,8 +1140,12 @@ class COLLECT(Target):
                     raise ValueError(
                         f"Attempting to collect a duplicated file into COLLECT: {dest_name} (type: {typecode})"
                     )
-                shutil.copy2(src_name, dest_path)  # Use copy2 to (attempt to) preserve metadata
-            if typecode in ('EXTENSION', 'BINARY'):
+                # Use `shutil.copyfile` to copy file with default permissions. We do not attempt to preserve original
+                # permissions nor metadata, as they might be too restrictive and cause issues either during subsequent
+                # re-build attempts or when trying to move the application bundle. For binaries, we manually set the
+                # executable bits after copying the file.
+                shutil.copyfile(src_name, dest_path)
+            if typecode in ('EXTENSION', 'BINARY', 'EXECUTABLE'):
                 os.chmod(dest_path, 0o755)
         logger.info("Building COLLECT %s completed successfully.", self.tocbasename)
 

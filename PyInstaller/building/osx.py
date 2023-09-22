@@ -555,7 +555,7 @@ class BUNDLE(Target):
         self.icon = os.path.abspath(self.icon)
 
         # Copy icns icon to Resources directory.
-        shutil.copy(self.icon, os.path.join(self.name, 'Contents', 'Resources'))
+        shutil.copyfile(self.icon, os.path.join(self.name, 'Contents', 'Resources', os.path.basename(self.icon)))
 
         # Key/values for a minimal Info.plist file
         info_plist_dict = {
@@ -644,7 +644,11 @@ class BUNDLE(Target):
                     raise ValueError(
                         f"Attempting to collect a duplicated file into BUNDLE: {dest_name} (type: {typecode})"
                     )
-                shutil.copy2(src_name, dest_path)  # Use copy2 to (attempt to) preserve metadata
+                # Use `shutil.copyfile` to copy file with default permissions. We do not attempt to preserve original
+                # permissions nor metadata, as they might be too restrictive and cause issues either during subsequent
+                # re-build attempts or when trying to move the application bundle. For binaries, we manually set the
+                # executable bits after copying the file.
+                shutil.copyfile(src_name, dest_path)
             if typecode in ('EXTENSION', 'BINARY', 'EXECUTABLE'):
                 os.chmod(dest_path, 0o755)
 
