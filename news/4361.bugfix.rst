@@ -1,2 +1,0 @@
-(macOS) ``QtWebEngine`` now works in ``onefile`` builds (previously
-available only in ``onedir`` builds).

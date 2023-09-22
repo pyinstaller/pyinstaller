@@ -15,6 +15,305 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.0.0 (2023-09-22)
+------------------
+
+Features
+~~~~~~~~
+
+* (macOS) PyInstaller now attempts to preserve the ``.framework`` bundles when
+  collecting shared libraries from them. If a shared library is to be collected
+  from a ``.framework`` bundle, the ``Info.plist`` is also automatically
+  collected. The ``.framework`` bundle collection code also attempts to fix the
+  bundles' structure to conform to code-signing requirements (i.e., creation of
+  the ``Current`` symbolic link in the ``Versions`` directory, and top-level
+  contents being symbolic links that point to counterparts in the
+  ``Versions/Current`` directory). Note that other resources (for example from
+  ``Resources`` or ``Helpers`` directories) still need to be explicitly
+  collected by hooks. (:issue:`7619`)
+* (macOS) The file relocation mechanism in ``BUNDLE`` that generates macOS .app
+  bundles has been completely redesigned. All data files are now placed into
+  directory structure rooted in ``Contents/Resources``, all shared libraries (as
+  well as nested .framework bundles) are placed into directory structure rooted
+  in ``Contents/Frameworks``, and only the the program executable is placed into
+  the ``Contents/MacOS`` directory. The contents of ``Contents/Resources`` and
+  ``Contents/Frameworks`` directories are cross-linked via symlinks between the
+  two directory trees in order to maintain illusion of mixed-content directories
+  (in both directory trees). The cross-linking is done at either file level or
+  (sub)directory level, depending on the content type of a (sub)directory. For
+  directories in ``Contents/Frameworks`` that contain a dot in the name, a
+  work-around is automatically applied: the directory is created with a modified
+  name that does not include the dot, and next to it, a symbolic link is created
+  under the original name and pointing to the directory with modified name.
+  (:issue:`7619`)
+* (non-Windows) PyInstaller now attempts to preserve the parent directory
+  structure for shared libraries discovered and collected by the binary
+  dependency analysis, instead of automatically collecting them into the
+  top-level application directory. Due to library search path assumptions
+  made in various places, symbolic links to collected libraries are created
+  in the top-level application directory. This complements earlier work
+  (:issue:`7028`) that implemented DLL parent directory structure
+  preservation on Windows. (:issue:`7619`)
+* (Windows) Add an option to hide or minimize the console window in
+  console-enabled applications, but only if the program's process owns
+  the console window (i.e., the program was not launched from an existing
+  console window). (:issue:`7729`)
+* (Windows) The :option:`--add-data` and :option:`--add-binary` options accept
+  the POSIX syntax of ``--add-data=source:dest`` rather than
+  ``--add-data=source;dest``. The latter will continue to work on Windows to
+  avoid breaking backwards compatibility but is discouraged in favour of the now
+  cross platform format. (:issue:`6724`)
+* Add automatic binary vs. data file (re)classification step to the analysis
+  process. PyInstaller now inspects all files passed to ``Analysis`` via
+  ``datas`` and ``binaries`` arguments, as well as all files returned by hooks
+  via ``datas`` and ``binaries`` hook global variables. The inspection mechanism
+  is platform-specific, and currently implemented for Windows, Linux, and macOS.
+  Proper file classification ensures that all collected binary files undergo
+  binary dependency analysis and any other platform-specific binary processing.
+  On macOS, it also helps ensuring that the collected files are placed in the
+  proper directory in the generated .app bundles. (:issue:`7619`)
+* Add support for specifying hash randomization seed via ``hash_seed=<value>``
+  :ref:`run-time option <specifying python interpreter options>` when building
+  the application. This allows the application to use a fixed seed value or
+  disable hash randomization altogether by using seed value of 0.
+  (:issue:`7847`)
+* Allow spec files to take custom command line parameters. See :ref:`adding
+  parameters to spec files <spec_parameters>`. (:issue:`4482`)
+* Extend the operation retry mechanism that was initially introduced by
+  :issue:`7840` to cover all processing steps that are performed during
+  assembly of a Windows executable. This attempts to mitigate the interference
+  from anti-virus programs and other security tools, which may temporarily block
+  write access to the executable for a scan between individual processing steps.
+  (:issue:`7871`)
+* Implement pass-through for `Python's X-options
+  <https://docs.python.org/3/using/cmdline.html#cmdoption-X>`_ via PyInstaller's
+  :ref:`run-time options mechanism <specifying python interpreter options>`.
+  (:issue:`7847`)
+* Implement support for creating symbolic links from special ``'SYMLINK'``
+  TOC entries, either at build-time (``onedir`` mode) or at run-time
+  (``onefile`` mode). Implement symbolic link preservation support in the
+  analysis process; if a file and a symbolic link pointing to it are both to be
+  collected, and if their relative relationship is preserved in the frozen
+  application, the symbolic link is collected as a ``'SYMLINK'`` entry.
+  (:issue:`7619`)
+* Implement :func:`PyInstaller.utils.hooks.check_requirement` hook utility
+  function as an :mod:`importlib.metadata`-based replacement for
+  :func:`PyInstaller.utils.hooks.is_module_satisfies`; the latter is now
+  just an alias for the former, kept for compatibility with existing hooks.
+  (:issue:`7943`)
+* Restructure onedir mode builds so that everything except the executable (and
+  ``.pkg`` if you're using external PYZ archive mode) are hidden inside a
+  sub-directory. This sub-directory's name defaults to ``_internal`` but may be
+  configured with a new :option:`--contents-directory` option. Onefile
+  applications and macOS ``.app`` bundles are unaffected. (:issue:`7713`)
+* The :func:`PyInstaller.utils.hooks.collect_all` hook utility function now
+  attempts to translate the given importable package name into distribution name
+  before attempting to collect metadata. This allows the function to handle
+  cases when the distribution name does not match the importable package name.
+  (:issue:`7943`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) ``QtWebEngine`` now works in ``onefile`` builds (previously available
+  only in ``onedir`` builds). (:issue:`4361`)
+* (macOS) Fix the shared library duplication problem where a shared library that
+  is also referred to via its symbolic links (e.g., a shared library
+  ``libwx_baseu-3.1.5.0.0.dylib`` with symbolic links
+  ``libwx_baseu-3.1.5.dylib`` and ``libwx_baseu-3.0.dylib``) ends up collected
+  as duplicates and consequently crashes the program. The symbolic links should
+  now be preserved, thus avoiding the problem. (:issue:`5710`)
+* (macOS) In generated .app bundles, the data files from ``PySide2``,
+  ``PySide6``, ``PyQt5``, or ``PyQt6`` directory are now relocated to the
+  directory structure rooted in ``Contents/Resources`` to ensure compliance with
+  code-signing requirements. The content cross-linking between
+  ``Contents/Resources`` and ``Contents/Frameworks`` should ensure that ``QML``
+  components in the ``qml`` sub-directory continue to work in spite of plugins
+  (shared libraries) being technically separated from their corresponding
+  metadata files. The automatic work-around for directories with dots in names
+  should prevent code-signing issues due to some ``QML`` components in Qt5
+  having dot in their names (e.g. ``QtQuick.2`` and ``QtQuick/Controls.2``.
+  (:issue:`7619`)
+* (macOS) In generated .app bundles, the source .py files are now again
+  relocated to ``Contents/Resources`` directory (and cross-linked into
+  ``Contents/Frameworks``), which ensures that code-signing does not store
+  signatures into the files' extended attributes. This reverts the exemption
+  made in :issue:`7180` to accommodate the ``cv2`` loader script; the problem is
+  now solved by cross-linking binaries from ``Contents/Frameworks`` to
+  ``Contents/Resources``, which allows the loader to find the extension binary
+  (or rather, a symbolic link to it) next to the .py file. (:issue:`7619`)
+* (macOS) Sandboxing for ``QtWebEngine`` in ``PySide6`` and ``PyQt6`` is not
+  disabled anymore by the corresponding run-time hooks (see :issue:`6903`), as
+  it should work out-of-the-box thanks to PyInstaller now preserving the
+  structure of the ``QtWebEngineCore.framework`` bundle. (:issue:`7619`)
+* (macOS) The main process in a program that uses ``QtWebEngine`` is not
+  mis-identified as ``QtWebEngineCore`` anymore in the application's menu bar.
+  This applies to ``onedir`` POSIX program builds (i.e. the .app bundles were
+  not affected by this). (:issue:`5409`)
+* (Windows) Avoid aborting the build process if machine type (architecture)
+  cannot be determined for a DLL in a candidate search path; instead, skip over
+  such files, and search in other candidate paths. Fixes build errors when a
+  search path contains an invalid DLL file (for example, a stub file).
+  (:issue:`7874`)
+* (Windows) Prevent PyInstaller's binary dependency analysis from looking for
+  shared libraries in all :data:`sys.path` locations. Instead, search only
+  :data:`sys.base_prefix` and ``pywin32`` directories, of available. This, for
+  example, prevents PyInstaller from picking up incompatible DLLs from
+  system-installed programs that happen to put their installation directory into
+  system-wide :envvar:`PYTHONPATH`. (:issue:`5560`)
+* (Windows) Remove the use of deprecated ``distutils.sysconfig`` module. The
+  import of this module seems to cause the python process to crash when
+  ``tensorflow`` is subsequently imported during import analysis.
+  (:issue:`7347`)
+* Fix file duplication when collecting a file and symbolic links pointing at it;
+  with new symbolic link support, the symbolic links are now properly preserved.
+  This should help reducing the size of builds made on Linux and macOS with
+  Anaconda, which provides versioned symbolic links for packaged shared
+  libraries, and PyInstaller tends to collect them all due to hook helper based
+  on the packages' metadata. (:issue:`7619`)
+* Fix incompatibility between PyInstaller's frozen importer
+  (``PyiFrozenImporter``) and :mod:`importlib.resources` when trying to look up
+  the resources of a collected namespace package via
+  :func:`importlib.resources.files()`. (:issue:`7921`)
+* When copying files into ``onedir`` application bundles, use
+  :func:`shutil.copyfile` instead of :func:`shutil.copy2` to avoid issues
+  with original permissions/metadata being too restrictive. (:issue:`7938`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* (Linux) Removed support for building LSB-compliant bootloader, due to
+  lack of support for LSB (Linux Standard Base) in contemporary linux
+  distributions. (:issue:`7807`)
+* (macOS) Due to relocation of all dynamic libraries into directory
+  structure rooted in the ``Contents/Frameworks`` directory, the
+  ``sys._MEIPASS`` variable as well as the ``os.path.dirname(__file__)``
+  in the entry-point script now point to ``Contents/Frameworks`` instead of
+  ``Contents/MacOS``, while ``os.path.dirname(sys.executable)`` continues
+  to point to the ``Contents/MacOS`` directory. The behavior change applies
+  only to ``onedir`` .app bundles (in ``onefile`` ones, ``sys._MEIPASS``
+  and ``__file__`` of the entry-point script have always pointed to the
+  temporary extraction directory and continue to do so). (:issue:`7619`)
+* (macOS) The changes made to the macOS .app bundle generation code and the
+  resulting .app bundle structure (strict relocation of binaries to
+  ``Contents/Frameworks`` and data files to ``Contents/Resources``,
+  bi-directional cross-linking between ``Contents/Frameworks`` and
+  ``Contents/Resources``, preservation of nested .framework bundles,
+  automatic work-around for dots in directory names) are likely
+  incompatible with existing (external) post-processing scripts.
+  (:issue:`7619`)
+* (Windows) Removed command-line options related to processing of the
+  WinSxS assemblies: ``--win-private-assemblies`` and
+  ``--win-no-prefer-redirects``.
+  The corresponding arguments to ``Analysis`` are deprecated and raise and
+  error if set to ``True``. (:issue:`7784`)
+* (Windows) Removed support for analyzing and collection of dependencies
+  referenced via WinSxS (side-by-side) assemblies. This affects binaries
+  compiled with Visual Studio 2008 and earlier, as VC9 run-time was the
+  last version to make use of WinSxS. If you require support for such
+  binaries and you need referenced WinSxS binaries collected with your
+  application, use older version of PyInstaller. (:issue:`7784`)
+* (Windows) Removed support for external application manifest in onedir
+  builds. Removed the ``--no-embed-manifest`` command-line option and
+  deprecated the corresponding ``embed_manifest`` argument to ``EXE``
+  to raise an error if set to ``False``. (:issue:`7784`)
+* All of onedir build's contents except for the executable are now moved into a
+  sub-directory (called ``_internal`` by default). ``sys._MEIPASS`` is adjusted
+  to
+  point to this ``_internal`` directory. The breaking implications for this
+  are:
+
+  * Assumptions that ``os.path.dirname(sys.executable) == sys._MEIPASS`` will
+    break. Code locating application resources using
+    ``os.path.dirname(sys.executable)`` should be adjusted to use ``__file__``
+    or ``sys._MEIPASS`` and any code locating the original executable using
+    ``sys._MEIPASS`` should use :data:`sys.executable` directly.
+
+  * Any custom post processing steps (either in the ``.spec`` file or
+    externally) which modify the bundle will likely need adjusting to
+    accommodate the new directory. (:issue:`7713`)
+* PyInstaller-frozen applications are not affected by the :envvar:`PYTHONUTF8`
+  environment variable anymore. To permanently enable or disable the UTF8 mode,
+  use the ``X utf8_mode=1`` or ``X utf_mode=0`` :ref:`run-time option
+  <specifying python interpreter options>` when building the application.
+  (:issue:`7847`)
+* Remove bytecode encryption (``--key`` and ``cipher`` options).
+  (:issue:`6999`)
+* Remove the ``--ascii`` command-line option, which is an effective no-op under
+  python 3; the :mod:`codecs` module is always collected due to being listed
+  among the base modules. (:issue:`7801`)
+* Remove the built-in attempt at collection of data files from packages
+  that are installed as python eggs. Collection of all non-python resources
+  from packages should be handled in the standardized way via hooks,
+  regardless of how a package is installed. (:issue:`7784`)
+* Remove support for zipped eggs. PyInstaller will not collect python code nor
+  resources from zipped eggs, nor will it collect zipped eggs as a whole.
+  (:issue:`7784`)
+* Remove the ``requirements_for_package`` hook utility function, which was
+  primarily used by :func:`~PyInstaller.utils.hooks.collect_all`; the latter
+  does not include the top-level modules of metadata-declared requirements among
+  the returned hidden imports anymore. (:issue:`7943`)
+* The :func:`PyInstaller.utils.hooks.collect_data_files` hook utility helper
+  does not collect ``.pyc`` files from ``__pycache__`` directories anymore, even
+  with ``include_py_files=True`` argument. (:issue:`7943`)
+* The :func:`PyInstaller.utils.hooks.is_module_satisfies` helper does not
+  support the ``version`` and ``version_attribute`` arguments anymore; the
+  function will raise an error if they are specified. If the distribution
+  specified in the ``requirements`` string is not found, the function will not
+  attempt to import the eponymous module and read its version attribute anymore.
+  (:issue:`7943`)
+* The collection of "py files", enabled by the ``include_py_files=True``
+  argument to the :func:`PyInstaller.utils.hooks.collect_data_files` hook
+  utility function, is now restricted to only ``.py`` and ``.pyc`` files.
+  Previously, all suffices from :func:`importlib.machinery.all_suffixes` were
+  enabled, which resulted in spurious collection of dynamic libraries and
+  extensions (due to ``.so``, ``.abi3.so``, ``.pyd``, etc. being among those
+  suffices). (:issue:`7943`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Linux, macOS) When extracting files from ``onefile`` archive, the
+  executable bit is now set only on binaries (files whose TOC type code
+  was either ``BINARY``, ``EXECUTABLE``, or ``EXTENSION``) or data files
+  that originally had the executable bit set. Therefore, binaries are now
+  extracted with permissions bits set to ``0700``, while all other files
+  have permissions bits set to ``0600``. (:issue:`7950`)
+* Use `PEP 587 Python Initialization Configuration API
+  <https://peps.python.org/pep-0587>`_ to configure the embedded Python
+  interpreter. (:issue:`7847`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* (Windows) The temporary/intermediate executable files are not generated
+  with ``.notanexecutable`` suffix anymore, as the retry mechanism from
+  :issue:`7840` and :issue:`7871` is now the preferred way of dealing with
+  anti-virus program interference during the build. (:issue:`7871`)
+* Avoid collecting ``pathlib`` and ``tokenize`` (and their dependencies,
+  such as ``urllib``) into ``base_library.zip``. By collecting them into
+  PYZ archive, only submodules that the application really requires can
+  be collected, which helps reducing the size of applications that, for
+  example, do not require the full ``urllib`` package. (:issue:`7836`)
+* Drop support for end of life Python 3.7. (:issue:`7733`)
+
+
+Bootloader build
+~~~~~~~~~~~~~~~~
+
+* To enable the passing of extra arguments to the bootloader compiler during
+  installation via pip,
+  you can utilize the environment variable ``PYINSTALLER_BOOTLOADER_WAF_ARGS``.
+  However,
+  it is essential to ensure that the environment variable
+  ``PYINSTALLER_COMPILE_BOOTLOADER``
+  is present for this functionality to work correctly. (:issue:`7796`)
+
+
 5.13.2 (2023-08-29)
 -------------------
 
@@ -151,7 +450,7 @@ Bugfix
   ``PySide6`` run-time hooks. These paths, set via ``QT_PLUGIN_PATH`` and
   ``QML2_IMPORT_PATH`` environment variables, are used with ``PySide2``
   and ``PySide6`` builds that that use system-wide Qt installation and
-  are not portable by default (e.g., Homebrew). (:issue:`7649`)
+  are not portable by default (e.g. Homebrew). (:issue:`7649`)
 * (macOS) When rewriting the dylib identifier and paths to linked
   libraries in a collected binary, instead of directly using
   ``@loader_path``-based path, use ``@rpath``-based path and replace

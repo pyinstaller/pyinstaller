@@ -1,3 +1,0 @@
-(Linux) Removed support for building LSB-compliant bootloader, due to
-lack of support for LSB (Linux Standard Base) in contemporary linux
-distributions.

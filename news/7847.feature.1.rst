@@ -1,4 +1,0 @@
-Add support for specifying hash randomization seed via ``hash_seed=<value>``
-:ref:`run-time option <specifying python interpreter options>` when building the
-application. This allows the application to use a fixed seed value or disable
-hash randomization altogether by using seed value of 0.

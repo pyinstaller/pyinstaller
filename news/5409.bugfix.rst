@@ -1,4 +1,0 @@
-(macOS) The main process in a program that uses ``QtWebEngine`` is
-not mis-identified as ``QtWebEngineCore`` anymore in the application's
-menu bar. This applies to ``onedir`` POSIX program builds (i.e., the
-.app bundles were not affected by this).

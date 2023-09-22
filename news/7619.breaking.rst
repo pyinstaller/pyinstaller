@@ -1,7 +1,0 @@
-(macOS) The changes made to the macOS .app bundle generation code and the
-resulting .app bundle structure (strict relocation of binaries to
-``Contents/Frameworks`` and data files to ``Contents/Resources``,
-bi-directional cross-linking between ``Contents/Frameworks`` and
-``Contents/Resources``, preservation of nested .framework bundles,
-automatic work-around for dots in directory names) are likely
-incompatible with existing (external) post-processing scripts.

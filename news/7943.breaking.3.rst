@@ -1,4 +1,0 @@
-Removed the ``requirements_for_package`` hook utility function, which
-was primarily used by :func:`collect_all`; the latter does not include
-the top-level modules of metadata-declared requirements among the
-returned hidden imports anymore.

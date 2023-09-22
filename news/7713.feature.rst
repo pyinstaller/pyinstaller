@@ -1,5 +1,0 @@
-Restructure onedir mode builds so that everything except the executable (and
-``.pkg`` if you're using external PYZ archive mode) are hidden inside a
-sub-directory. This sub-directory's name defaults to ``_internal`` but may be
-configured with the new :option:`--contents-directory` option. Onefile
-applications and macOS ``.app`` bundles are unaffected.

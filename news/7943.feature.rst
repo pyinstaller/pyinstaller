@@ -1,4 +1,0 @@
-Implemented :func:`PyInstaller.utils.hooks.check_requirement` hook
-utility function as an ``importlib.metadata``-based replacement for
-:func:`PyInstaller.utils.hooksis_module_satisfies`; the latter is now
-just an alias for the former, kept for compatibility with existing hooks.

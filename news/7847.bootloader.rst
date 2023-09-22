@@ -1,3 +1,0 @@
-Use `PEP 587 Python Initialization Configuration API
-<https://peps.python.org/pep-0587>`_ to configure the embedded Python
-interpreter.

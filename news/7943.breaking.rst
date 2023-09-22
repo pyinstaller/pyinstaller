@@ -1,6 +1,0 @@
-The :func:`PyInstaller.utils.hooks.is_module_satisfies` helper does not
-support the ``version`` and ``version_attribute`` arguments anymore; the
-function will raise an error if they are specified. If the distribution
-specified in the ``requirements`` string is not found, the function will
-not attempt to import the eponymous module and read its version attribute
-anymore.

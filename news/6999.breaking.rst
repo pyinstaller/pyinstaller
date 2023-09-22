@@ -1,1 +1,0 @@
-Remove bytecode encryption (``--key`` and ``cipher`` options).

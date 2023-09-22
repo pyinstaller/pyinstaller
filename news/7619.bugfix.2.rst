@@ -1,9 +1,0 @@
-(macOS) In generated .app bundles, the source .py files are now again
-relocated to ``Contents/Resources`` directory (and cross-linked into
-``Contents/Frameworks``), which ensures that code-signing does not
-store signatures into the files' extended attributes. This reverts the
-exemption made in :issue:`7180` to accommodate the ``cv2`` loader script;
-the problem is now solved by cross-linking binaries from
-``Contents/Frameworks`` to ``Contents/Resources``, which allows the
-loader to find the extension binary (or rather, a symbolic link to it)
-next to the .py file.

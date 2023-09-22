@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYI-MAKESPEC" "1" "2023-08-29" "5.13.2" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2023-09-22" "6.0.0" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -90,20 +90,36 @@ Folder to store the generated spec file (default: current directory)
 .BI \-n \ NAME\fR,\fB \ \-\-name \ NAME
 Name to assign to the bundled app and spec file (default: first script\(aqs
 basename)
+.TP
+.BI \-\-contents\-directory \ CONTENTS_DIRECTORY
+For onedir builds only, specify the name of the directory in which all
+supporting files (i.e. everything except the executable itself) will be
+placed in.
 .UNINDENT
 .SS What To Bundle, Where To Search
+.sp
+\-\-add\-data SOURCE:DEST
 .INDENT 0.0
-.TP
-.BI \-\-add\-data \ <SRC;DEST or SRC:DEST>
-Additional non\-binary files or folders to be added to the executable. The
-path separator is platform specific, \fBos.pathsep\fP (which is \fB;\fP on
-Windows and \fB:\fP on most unix systems) is used. This option can be used
-multiple times.
-.TP
-.BI \-\-add\-binary \ <SRC;DEST or SRC:DEST>
+.INDENT 3.5
+Additional data files or directories containing data files to be added to
+the application. The argument value should be in form of "source:dest_dir",
+where source is the path to file (or directory) to be collected, dest_dir
+is the destination directory relative to the top\-level application
+directory, and both paths are separated by a colon (:). To put a file in
+the top\-level application directory, use . as a dest_dir. This option can
+be used multiple times.
+.UNINDENT
+.UNINDENT
+.sp
+\-\-add\-binary SOURCE:DEST
+.INDENT 0.0
+.INDENT 3.5
 Additional binary files to be added to the executable. See the
-\fB\-\-add\-data\fP option for more details. This option can be used multiple
+\fB\-\-add\-data\fP option for the format. This option can be used multiple
 times.
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
 .TP
 .BI \-p \ DIR\fR,\fB \ \-\-paths \ DIR
 A path to search for imports (like using PYTHONPATH). Multiple paths are
@@ -210,6 +226,17 @@ Windows and Mac OS X: do not provide a console window for standard i/o. On
 Mac OS this also triggers building a Mac OS .app bundle. On Windows this
 option is automatically set if the first script is a \(aq.pyw\(aq file. This
 option is ignored on *NIX systems.
+.UNINDENT
+.sp
+\-\-hide\-console {hide\-early,minimize\-early,hide\-late,minimize\-late}
+.INDENT 0.0
+.INDENT 3.5
+Windows only: in console\-enabled executable, have bootloader automatically
+hide or minimize the console window if the program owns the console window
+(i.e., was not launched from an existing console window).
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
 .TP
 .BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or "NONE">\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or "NONE">
 FILE.ico: apply the icon to a Windows executable. FILE.exe,ID: extract the
@@ -234,11 +261,6 @@ Add a version resource from FILE to the exe.
 .BI \-m \ <FILE or XML>\fR,\fB \ \-\-manifest \ <FILE or XML>
 Add manifest FILE or XML to the exe.
 .TP
-.B \-\-no\-embed\-manifest
-Generate an external .exe.manifest file instead of embedding the manifest
-into the exe. Applicable only to onedir mode; in onefile mode, the manifest
-is always embedded, regardless of this option.
-.TP
 .BI \-r \ RESOURCE\fR,\fB \ \-\-resource \ RESOURCE
 Add or update a resource to a Windows executable. The RESOURCE is one to
 four items, FILE[,TYPE[,NAME[,LANGUAGE]]]. FILE can be a data file or an
@@ -256,21 +278,6 @@ application start.
 .B \-\-uac\-uiaccess
 Using this option allows an elevated application to work with Remote
 Desktop.
-.UNINDENT
-.SS Windows Side\-By\-Side Assembly Searching Options (Advanced)
-.INDENT 0.0
-.TP
-.B \-\-win\-private\-assemblies
-Any Shared Assemblies bundled into the application will be changed into
-Private Assemblies. This means the exact versions of these assemblies will
-always be used, and any newer versions installed on user machines at the
-system level will be ignored.
-.TP
-.B \-\-win\-no\-prefer\-redirects
-While searching for Shared or Private Assemblies to bundle into the
-application, PyInstaller will prefer not to follow policies that redirect
-to newer versions, and will try to bundle the exact versions of the
-assembly.
 .UNINDENT
 .SS Mac Os Specific Options
 .INDENT 0.0

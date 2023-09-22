@@ -1,3 +1,0 @@
-When copying files into ``onedir`` application bundles, use
-:func:`shutil.copyfile` instead of :func:`shutil.copy2` to avoid issues
-with original permissions/metadata being too restrictive.
