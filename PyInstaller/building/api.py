@@ -306,7 +306,13 @@ class PKG(Target):
                 if self.exclude_binaries:
                     self.dependencies.append((dest_name, src_name, typecode))
                 else:
-                    archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
+                    if typecode == 'DATA' and os.access(src_name, os.X_OK):
+                        # DATA with executable bit set (e.g., shell script); turn into binary so that executable bit is
+                        # restored on the extracted file.
+                        carchive_typecode = 'b'
+                    else:
+                        carchive_typecode = self.xformdict[typecode]
+                    archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), carchive_typecode))
             elif typecode == 'OPTION':
                 archive_toc.append((dest_name, '', False, 'o'))
             elif typecode in ('PYSOURCE', 'PYMODULE'):
@@ -1142,10 +1148,13 @@ class COLLECT(Target):
                     )
                 # Use `shutil.copyfile` to copy file with default permissions. We do not attempt to preserve original
                 # permissions nor metadata, as they might be too restrictive and cause issues either during subsequent
-                # re-build attempts or when trying to move the application bundle. For binaries, we manually set the
-                # executable bits after copying the file.
+                # re-build attempts or when trying to move the application bundle. For binaries (and data files with
+                # executable bit set), we manually set the executable bits after copying the file.
                 shutil.copyfile(src_name, dest_path)
-            if typecode in ('EXTENSION', 'BINARY', 'EXECUTABLE'):
+            if (
+                typecode in ('EXTENSION', 'BINARY', 'EXECUTABLE')
+                or (typecode == 'DATA' and os.access(src_name, os.X_OK))
+            ):
                 os.chmod(dest_path, 0o755)
         logger.info("Building COLLECT %s completed successfully.", self.tocbasename)
 

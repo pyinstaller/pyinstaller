@@ -646,10 +646,13 @@ class BUNDLE(Target):
                     )
                 # Use `shutil.copyfile` to copy file with default permissions. We do not attempt to preserve original
                 # permissions nor metadata, as they might be too restrictive and cause issues either during subsequent
-                # re-build attempts or when trying to move the application bundle. For binaries, we manually set the
-                # executable bits after copying the file.
+                # re-build attempts or when trying to move the application bundle. For binaries (and data files with
+                # executable bit set), we manually set the executable bits after copying the file.
                 shutil.copyfile(src_name, dest_path)
-            if typecode in ('EXTENSION', 'BINARY', 'EXECUTABLE'):
+            if (
+                typecode in ('EXTENSION', 'BINARY', 'EXECUTABLE')
+                or (typecode == 'DATA' and os.access(src_name, os.X_OK))
+            ):
                 os.chmod(dest_path, 0o755)
 
         # Sign the bundle
