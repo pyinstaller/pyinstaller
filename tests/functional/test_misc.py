@@ -335,3 +335,36 @@ def test_bundled_shell_script(pyi_builder, tmpdir):
         """,
         pyi_args=['--add-data', str(script_file) + os.pathsep + '.']
     )
+
+
+# Test that a program importing `__main__` module does not pull in `PyInstaller` (or in the case of the test, the
+# `pytest`). The problem is that the `__main__` has different meaning during analysis vs. during program's run;
+# during analysis, it resolves to the entry-point module that is running the analysis, whereas during program run, it
+# refers to the program's entry-point. Currently, this seems to be a problem only on Windows, where modulegraph manages
+# to resolve `__main__` into `.../PyInstaller.exe/__main__.py` (or `.../pytest.exe/__main__.py`). On Linux and macOS,
+# modulegraph does not seem to be able to resolve `__main__`.
+def test_import_main_should_not_collect_pyinstaller1(pyi_builder):
+    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_import_main', 'hooks')
+    pyi_builder.test_source(
+        """
+        # Plain import.
+        import __main__
+        print(__main__)
+        """,
+        pyi_args=['--additional-hooks-dir', hooks_dir]
+    )
+
+
+def test_import_main_should_not_collect_pyinstaller2(pyi_builder):
+    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_import_main', 'hooks')
+    pyi_builder.test_source(
+        """
+        # Import __main__ in the same way as `pkg_resources` and its vendored variants
+        # (e.g., `pip._vendor.pkg_resources`) do.
+        try:
+            from __main__ import __requires__
+        except ImportError:
+            pass
+        """,
+        pyi_args=['--additional-hooks-dir', hooks_dir]
+    )
