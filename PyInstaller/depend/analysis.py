@@ -898,6 +898,14 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
     user_hook_dirs = user_hook_dirs or ()
     excludes = excludes or ()
 
+    # Ensure that __main__ is always excluded from the modulegraph, to prevent accidentally pulling PyInstaller itself
+    # into the modulegraph. This seems to happen on Windows, because modulegraph is able to resolve `__main__` as
+    # `.../PyInstaller.exe/__main__.py` and analyze it. The `__main__` has a different meaning during analysis compared
+    # to the program run-time, when it refers to the program's entry-point (which would always be part of the
+    # modulegraph anyway, by virtue of being the starting point of the analysis).
+    if "__main__" not in excludes:
+        excludes += ("__main__",)
+
     # If there is a graph cached with the same excludes, reuse it. See ``PyiModulegraph._reset()`` for what is
     # reset. This cache is used primarily to speed up the test-suite. Fixture `pyi_modgraph` calls this function with
     # empty excludes, creating a graph suitable for the huge majority of tests.
