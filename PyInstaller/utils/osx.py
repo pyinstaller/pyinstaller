@@ -37,7 +37,7 @@ from macholib.MachO import MachO
 import macholib.util
 
 import PyInstaller.log as logging
-from PyInstaller.compat import base_prefix
+from PyInstaller import compat
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ def is_homebrew_env():
     """
     # Python path prefix should start with Homebrew prefix.
     env_prefix = get_homebrew_prefix()
-    if env_prefix and base_prefix.startswith(env_prefix):
+    if env_prefix and compat.base_prefix.startswith(env_prefix):
         return True
     return False
 
@@ -63,7 +63,7 @@ def is_macports_env():
     """
     # Python path prefix should start with Macports prefix.
     env_prefix = get_macports_prefix()
-    if env_prefix and base_prefix.startswith(env_prefix):
+    if env_prefix and compat.base_prefix.startswith(env_prefix):
         return True
     return False
 
@@ -571,6 +571,8 @@ def collect_files_from_framework_bundles(collected_files):
     Returns TOC list for the discovered Info.plist files and generated symbolic links. The list does not contain
     duplicated entries.
     """
+    invalid_framework_found = False
+
     framework_files = set()  # Additional entries for collected files. Use set for de-duplication.
     framework_paths = set()  # Registered framework paths for 2nd pass.
 
@@ -602,9 +604,18 @@ def collect_files_from_framework_bundles(collected_files):
             # versioned directory to appease the code-signing gods...
             info_plist_src_top = src_path.parent.parent.parent / "Resources" / "Info.plist"
             if not info_plist_src_top.is_file():
-                raise SystemError(
-                    f"Could not find Info.plist file for .framework bundle in {info_plist_src} or {info_plist_src_top}!"
-                )
+                # Strictly speaking, a .framework bundle without Info.plist is invalid. However, that did not prevent
+                # PyQt from shipping such Qt .framework bundles up until v5.14.1. So by default, we just complain via
+                # a warning message; if such binaries work in unfrozen python, they should also work in frozen
+                # application. The codesign will refuse to sign the .app bundle (if we are generating one), but there
+                # is nothing we can do about that.
+                invalid_framework_found = True
+                framework_dir = src_path.parent.parent.parent
+                if compat.strict_collect_mode:
+                    raise SystemError(f"Could not find Info.plist in {framework_dir}!")
+                else:
+                    logger.warning("Could not find Info.plist in %s!", framework_dir)
+                    continue
             info_plist_src = info_plist_src_top
         info_plist_dest = dest_path.parent / "Resources" / "Info.plist"
         framework_files.add((str(info_plist_dest), str(info_plist_src), "DATA"))
@@ -664,5 +675,13 @@ def collect_files_from_framework_bundles(collected_files):
                 str(pathlib.PurePath("Versions/Current") / dir_name),
                 "SYMLINK",
             ))
+
+    # If we encountered an invalid .framework bundle without Info.plist, warn the user that code-signing will most
+    # likely fail.
+    if invalid_framework_found:
+        logger.warning(
+            "One or more collected .framework bundles have missing Info.plist file. If you are building an .app "
+            "bundle, you will most likely not be able to code-sign it."
+        )
 
     return sorted(framework_files)
