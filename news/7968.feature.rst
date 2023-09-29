@@ -1,0 +1,3 @@
+Allow users to re-enable the old onedir layout (without contents directory)
+by settings the :option:`--contents-directory` option (or the equivalent
+``contents_directory`` argument to ``EXE`` in the .spec file) to ``.``.

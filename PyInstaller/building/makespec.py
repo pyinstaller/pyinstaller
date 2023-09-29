@@ -269,7 +269,8 @@ def __add_options(parser):
     g.add_argument(
         "--contents-directory",
         help="For onedir builds only, specify the name of the directory in which all supporting files (i.e. everything "
-        "except the executable itself) will be placed in.",
+        "except the executable itself) will be placed in. Use \".\" to re-enable old onedir layout without contents "
+        "directory.",
     )
 
     g = parser.add_argument_group('What to bundle, where to search')
