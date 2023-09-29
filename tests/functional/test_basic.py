@@ -784,8 +784,8 @@ def test_contents_directory(pyi_builder):
     assert not (bundle / "foo").exists()
     assert (bundle / "é³þ³źć🚀").is_dir()
 
-    with pytest.raises(SystemExit, match='Invalid value "\\." passed'):
-        pyi_builder.test_source("", pyi_args=["--contents-directory=.", "--noconfirm"])
+    with pytest.raises(SystemExit, match='Invalid value "\\.\\." passed'):
+        pyi_builder.test_source("", pyi_args=["--contents-directory=..", "--noconfirm"])
 
 
 def test_spec_options(pyi_builder, SPEC_DIR, capsys):
