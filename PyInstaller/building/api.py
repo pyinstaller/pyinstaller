@@ -395,6 +395,7 @@ class EXE(Target):
                 (--entitlements option to codesign utility).
             contents_directory
                 Onedir mode only. Specifies the name of the directory where all files par the executable will be placed.
+                Setting the name to '.' (or '' or None) re-enables old onedir layout without contents directory.
         """
         from PyInstaller.config import CONF
 
@@ -468,11 +469,12 @@ class EXE(Target):
             logger.warning('Ignoring hide_console; supported only on Windows!')
             self.hide_console = None
 
-        if self.contents_directory in ("", ".", "..") \
-                or "/" in self.contents_directory or "\\" in self.contents_directory:
+        if self.contents_directory in ("", "."):
+            self.contents_directory = None  # Re-enable old onedir layout without contents directory.
+        elif self.contents_directory == ".." or "/" in self.contents_directory or "\\" in self.contents_directory:
             raise SystemExit(
                 f'Invalid value "{self.contents_directory}" passed to `--contents-directory` or `contents_directory`. '
-                'Exactly one directory level is required.'
+                'Exactly one directory level is required (or just "." to disable the contents directory).'
             )
 
         if not kwargs.get('embed_manifest', True):
@@ -537,7 +539,8 @@ class EXE(Target):
             # no value; presence means "true"
             self.toc.append(("pyi-macos-argv-emulation", "", "OPTION"))
 
-        self.toc.append(("pyi-contents-directory " + self.contents_directory, "", "OPTION"))
+        if self.contents_directory:
+            self.toc.append(("pyi-contents-directory " + self.contents_directory, "", "OPTION"))
 
         if self.hide_console:
             # Validate the value
@@ -1114,7 +1117,7 @@ class COLLECT(Target):
             if typecode in ("EXECUTABLE", "PKG"):
                 dest_path = os.path.join(self.name, dest_name)
             else:
-                dest_path = os.path.join(self.name, self.contents_directory, dest_name)
+                dest_path = os.path.join(self.name, self.contents_directory or "", dest_name)
             dest_dir = os.path.dirname(dest_path)
             try:
                 os.makedirs(dest_dir, exist_ok=True)
