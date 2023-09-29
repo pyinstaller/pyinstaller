@@ -85,6 +85,10 @@ typedef struct _archive_status {
      * is used for example to set sys.path, sys.prefix, and sys._MEIPASS.
      */
     char mainpath[PATH_MAX];
+    /* Flag indicating that contents of the archive need to be extracted
+     * to the temporary directory (onefile mode).
+     */
+    bool needs_to_extract;
     /*
      * Flag if temporary directory is available. This usually means running
      * executable in onefile mode. Bootloader has to behave differently

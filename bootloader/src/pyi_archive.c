@@ -490,6 +490,8 @@ cleanup:
 bool
 pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *executable_path)
 {
+    const TOC *ptoc;
+
     /* Copy archive path and executable path */
     if (snprintf(status->archivename, PATH_MAX, "%s", archive_path) >= PATH_MAX) {
         return false;
@@ -501,6 +503,24 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *exe
     /* Try to open the archive with given archive and executable path */
     if (pyi_arch_open(status)) {
         return false;
+    }
+
+    /* Check if contents need to be extracted */
+    status->needs_to_extract = false;
+
+    ptoc = status->tocbuff;
+    while (ptoc < status->tocend) {
+        if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
+            ptoc->typcd == ARCHIVE_ITEM_ZIPFILE || ptoc->typcd == ARCHIVE_ITEM_SYMLINK) {
+            status->needs_to_extract = true; /* onefile mode */
+            break;
+        }
+
+        if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
+            status->needs_to_extract = true; /* MERGE mode */
+            break;
+        }
+        ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
     }
 
     /* Set homepath (a.k.a. sys._MEIPASS) */
@@ -521,12 +541,7 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *exe
         pyi_path_join(status->homepath, contents_dir, "Frameworks");
     } else {
         const char *contents_directory = pyi_arch_get_option(status, "pyi-contents-directory");
-        if (contents_directory) {
-            /* NOTE: this also applies contents-directory to status->homepath
-             * in onefile mode, which is, strictly speaking, incorrect. But
-             * it does not seem to cause any issues, because corresponding
-             * codepaths use status->temppath
-             */
+        if (contents_directory && status->needs_to_extract == false) {
             char root_path[PATH_MAX];
             pyi_path_dirname(root_path, archive_path);
             pyi_path_join(status->homepath, root_path, contents_directory);
