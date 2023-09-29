@@ -188,6 +188,9 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
     char this_executable_dir[PATH_MAX];
     char full_srcpath[PATH_MAX];
 
+    const char *contents_directory;
+    int ret;
+
     VS("LOADER: Processing dependency reference: %s\n", item);
 
     /* Dependency reference consists of two parts, separated by a colon, for example
@@ -216,11 +219,7 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
      * the same across all multi-package executables. In practice, this should matter
      * only if multi-package involves onedir builds.
      */
-    const char *contents_directory = pyi_arch_get_option(this_archive_status, "pyi-contents-directory");
-    if (!contents_directory) {
-        FATALERROR("pyi-contents-directory option not found in onedir bundle archive!");
-        return -1;
-    }
+    contents_directory = pyi_arch_get_option(this_archive_status, "pyi-contents-directory");
 
     /* If dependency is located in a onedir build, we should be able to find
      * it on the filesystem (accounting for contents sub-directory settings).
@@ -241,7 +240,12 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
      *  - for a onedir program referencing a dependency in a onedir program,
      *    it is "../other_program"
      */
-    if (_format_and_check_path(full_srcpath, "%s%c%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, contents_directory, PYI_SEP, filename) == 0) {
+    if (contents_directory) {
+        ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, contents_directory, PYI_SEP, filename);
+    } else {
+        ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, filename);
+    }
+    if (ret == 0) {
         VS("LOADER: File %s found on filesystem (%s), assuming onedir reference.\n", filename, full_srcpath);
 
         if (_copy_dependency_from_dir(this_archive_status, full_srcpath, filename) == -1) {

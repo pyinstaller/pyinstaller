@@ -521,13 +521,18 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *exe
         pyi_path_join(status->homepath, contents_dir, "Frameworks");
     } else {
         const char *contents_directory = pyi_arch_get_option(status, "pyi-contents-directory");
-        if (!contents_directory) {
-            FATALERROR("pyi-contents-directory option not found in onedir bundle archive!");
-            return false;
+        if (contents_directory) {
+            /* NOTE: this also applies contents-directory to status->homepath
+             * in onefile mode, which is, strictly speaking, incorrect. But
+             * it does not seem to cause any issues, because corresponding
+             * codepaths use status->temppath
+             */
+            char root_path[PATH_MAX];
+            pyi_path_dirname(root_path, archive_path);
+            pyi_path_join(status->homepath, root_path, contents_directory);
+        } else {
+            pyi_path_dirname(status->homepath, archive_path);
         }
-        char root_path[PATH_MAX];
-        pyi_path_dirname(root_path, archive_path);
-        pyi_path_join(status->homepath, root_path, contents_directory);
     }
 
     /*
