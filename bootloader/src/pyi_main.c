@@ -98,7 +98,6 @@ pyi_main(int argc, char * argv[])
     char archivefile[PATH_MAX];
     int rc = 0;
     int in_child = 0;
-    int needs_to_extract = 0;
     char *extractionpath = NULL;
 
 #ifdef _MSC_VER
@@ -215,8 +214,7 @@ pyi_main(int argc, char * argv[])
 
     /* Check if we need to unpack the embedded archive (onefile build, or onedir
      * build in MERGE mode). If we do, create the temporary directory. */
-    needs_to_extract = pyi_launch_need_to_extract_binaries(archive_status);
-    if (!in_child && needs_to_extract) {
+    if (!in_child && archive_status->needs_to_extract) {
         VS("LOADER: creating temporary directory...\n");
         if (pyi_arch_create_tempdir(archive_status) == -1) {
             return -1;
@@ -227,7 +225,7 @@ pyi_main(int argc, char * argv[])
 #if defined(_WIN32) || defined(__APPLE__)
 
     /* On Windows and Mac use single-process for --onedir mode. */
-    if (!extractionpath && !needs_to_extract) {
+    if (!extractionpath && !archive_status->needs_to_extract) {
         VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");
         extractionpath = archive_status->homepath;
     }
@@ -239,7 +237,7 @@ pyi_main(int argc, char * argv[])
      * set environment (i.e., LD_LIBRARY_PATH) and then restart/replace the
      * process via exec() without fork() for the environment changes (library
      * search path) to take effect. */
-     if (!extractionpath && !needs_to_extract) {
+     if (!extractionpath && !archive_status->needs_to_extract) {
         VS("LOADER: No need to extract files to run; setting up environment and restarting bootloader...\n");
 
         /* Set _MEIPASS2, so that the restarted bootloader process will enter

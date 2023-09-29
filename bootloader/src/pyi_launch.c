@@ -287,29 +287,6 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 }
 
 /*
- * Check if binaries need to be extracted. If not, this is probably a onedir solution,
- * and a child process will not be required on windows.
- */
-int
-pyi_launch_need_to_extract_binaries(const ARCHIVE_STATUS *archive_status)
-{
-    const TOC *ptoc = archive_status->tocbuff;
-
-    while (ptoc < archive_status->tocend) {
-        if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
-            ptoc->typcd == ARCHIVE_ITEM_ZIPFILE || ptoc->typcd == ARCHIVE_ITEM_SYMLINK) {
-            return true;
-        }
-
-        if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-            return true;
-        }
-        ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc);
-    }
-    return false;
-}
-
-/*
  * Extract all binaries (type 'b') and all data files (type 'x') to the filesystem
  * and checks for dependencies (type 'd'). If dependencies are found, extract them.
  *
