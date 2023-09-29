@@ -65,18 +65,19 @@ _format_and_check_path(char *buf, const char *fmt, ...)
     };
     va_end(args);
 
-    VS("Checking for file %s\n", buf);
     return stat(buf, &tmp);
 }
 
-/* Splits the item in the form path:filename */
+/* Splits the item in the form path:filename. The first part is the path
+ * to the other executable (which contains the dependency); the path is
+ * relative to the current executable. The second part is the filename of
+ * dependency, relative to the top-level application directory. */
 /* NOTE: must be visible outside of this unit (i.e., non-static) due to tests! */
 int
 _split_dependency_name(char *path, char *filename, const char *item)
 {
     char *p;
 
-    VS("LOADER: Splitting dependency name into path and filename\n");
     // copy directly into destination buffer and manipulate there
     if (snprintf(path, PATH_MAX, "%s", item) >= PATH_MAX) {
         return -1;
@@ -180,72 +181,96 @@ _extract_dependency_from_archive(ARCHIVE_STATUS *status, const char *filename)
 static int
 _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
 {
-    ARCHIVE_STATUS *status = NULL;
-    ARCHIVE_STATUS *archive_status = archive_pool[0];
-    char path[PATH_MAX];
+    const ARCHIVE_STATUS *this_archive_status = archive_pool[0];
+    char other_executable[PATH_MAX];
+    char other_executable_dir[PATH_MAX];
     char filename[PATH_MAX];
-    char srcpath[PATH_MAX];
-    char archive_path[PATH_MAX];
+    char this_executable_dir[PATH_MAX];
+    char full_srcpath[PATH_MAX];
 
-    char dirname[PATH_MAX];
-    char homepath_parent[PATH_MAX];
+    VS("LOADER: Processing dependency reference: %s\n", item);
 
-    VS("LOADER: Extracting dependency/reference %s\n", item);
-
-    if (_split_dependency_name(path, filename, item) == -1) {
+    /* Dependency reference consists of two parts, separated by a colon, for example
+     *   (../)other_program:path/to/file
+     * if other_program is a onefile executable, or
+     *   (../)other_program/other_program:path/to/file
+     * if other_program is a onefile executable.
+     *
+     * The first part is path to the other executable (which contains the dependency),
+     * relative to the current executable. On Windows, the executable name does NOT
+     * contain .exe suffix. The second part is the filename of dependency, relative to
+     * the top-level application directory.
+     */
+    if (_split_dependency_name(other_executable, filename, item) == -1) {
         return -1;
     }
 
-    pyi_path_dirname(dirname, path);
-    pyi_path_dirname(homepath_parent, archive_status->homepath);
-    const char *contents_directory = pyi_arch_get_option(archive_pool[0], "pyi-contents-directory");
+    /* Determine parent directories of this executable (absolute path) and the other
+     * executable (relative to this executable). If executables are co-located
+     * (e.g., two onefile builds), the other executable's parent directory will be ".".
+     */
+    pyi_path_dirname(this_executable_dir, this_archive_status->executablename);
+    pyi_path_dirname(other_executable_dir, other_executable);
+
+    /* Retrieve contents-directory setting, from THIS executable, assuming it is
+     * the same across all multi-package executables. In practice, this should matter
+     * only if multi-package involves onedir builds.
+     */
+    const char *contents_directory = pyi_arch_get_option(this_archive_status, "pyi-contents-directory");
     if (!contents_directory) {
         FATALERROR("pyi-contents-directory option not found in onedir bundle archive!");
         return -1;
     }
 
-    /* We need to identify and handle three situations:
-     *  1) dependencies are in a onedir archive next to the current onefile archive,
-     *  2) dependencies are in a onedir/onefile archive next to the current onedir archive,
-     *  3) dependencies are in a onefile archive next to the current onefile archive.
+    /* If dependency is located in a onedir build, we should be able to find
+     * it on the filesystem (accounting for contents sub-directory settings).
+     * If dependency is located in a onefile build, we need to look up the
+     * executable (or external PKG archive in case of side-loading). As the
+     * executable (with embedded or external PKG archive) is also available
+     * in onedir builds, we need to first check for the onedir option.
+     *
+     * Note that the path relations between different programs in a multipackage
+     * should already be handled by the path encoded in the reference, and thus
+     * reflected in the `other_executable_dir`:
+     *  - for a onefile program referencing a dependency in a onefile program,
+     *    it is "."
+     *  - for a onedir program referencing a dependency in a onefile program,
+     *    it is ".."
+     *  - for a onefile program referencing a dependency in a onedir program,
+     *    it is "other_program"
+     *  - for a onedir program referencing a dependency in a onedir program,
+     *    it is "../other_program"
      */
-    VS("LOADER: homepath is %s\n", archive_status->homepath);
-    /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-    if (_format_and_check_path(srcpath, "%s%c%s%c%s%c%s", homepath_parent, PYI_SEP, dirname, PYI_SEP, contents_directory, PYI_SEP, filename) == 0) {
-        VS("LOADER: File %s found, assuming onedir reference\n", srcpath);
+    if (_format_and_check_path(full_srcpath, "%s%c%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, contents_directory, PYI_SEP, filename) == 0) {
+        VS("LOADER: File %s found on filesystem (%s), assuming onedir reference.\n", filename, full_srcpath);
 
-        if (_copy_dependency_from_dir(archive_status, srcpath, filename) == -1) {
-            FATALERROR("Failed to copy %s\n", filename);
+        if (_copy_dependency_from_dir(this_archive_status, full_srcpath, filename) == -1) {
+            FATALERROR("Failed to copy file %s from %s!\n", filename, full_srcpath);
             return -1;
         }
-        /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-    }
-    else if (_format_and_check_path(srcpath, "%s%c%s%c%s%c%s", homepath_parent, PYI_SEP, dirname, PYI_SEP, contents_directory, PYI_SEP, filename) == 0) {
-        VS("LOADER: File %s found, assuming onedir reference\n", srcpath);
+    } else {
+        ARCHIVE_STATUS *other_archive_status = NULL;
+        char other_archive_path[PATH_MAX];
 
-        if (_copy_dependency_from_dir(archive_status, srcpath, filename) == -1) {
-            FATALERROR("Failed to copy %s\n", filename);
-            return -1;
-        }
-    }
-    else {
-        VS("LOADER: File %s not found, assuming onefile reference.\n", srcpath);
+        VS("LOADER: File %s not found on filesystem, assuming onefile reference.\n", filename);
 
-        /* TODO implement pyi_path_join to accept variable length of arguments for this case. */
-        if ((_format_and_check_path(archive_path, "%s%c%s%c%s.pkg", homepath_parent, PYI_SEP, contents_directory, PYI_SEP, path) != 0) &&
-            (_format_and_check_path(archive_path, "%s%c%s.exe", homepath_parent, PYI_SEP, path) != 0) &&
-            (_format_and_check_path(archive_path, "%s%c%s", homepath_parent, PYI_SEP, path) != 0)) {
-            FATALERROR("Archive not found: %s\n", archive_path);
+        /* First check for the presence of external .pkg archive, located
+         * next to the executable, to account for side-loading mode.
+         */
+        if ((_format_and_check_path(other_archive_path, "%s%c%s.pkg", this_executable_dir, PYI_SEP, other_executable) != 0) &&
+            (_format_and_check_path(other_archive_path, "%s%c%s.exe", this_executable_dir, PYI_SEP, other_executable) != 0) &&
+            (_format_and_check_path(other_archive_path, "%s%c%s", this_executable_dir, PYI_SEP, other_executable) != 0)) {
+            FATALERROR("Referenced dependency archive %s not found.\n", other_executable);
             return -1;
         }
 
-        if ((status = _get_archive(archive_pool, archive_path)) == NULL) {
-            FATALERROR("Archive not found: %s\n", archive_path);
+        if ((other_archive_status = _get_archive(archive_pool, other_archive_path)) == NULL) {
+            FATALERROR("Failed to open referenced dependency archive %s.\n", other_archive_path);
             return -1;
         }
 
-        if (_extract_dependency_from_archive(status, filename) == -1) {
-            FATALERROR("Failed to extract %s\n", filename);
+        if (_extract_dependency_from_archive(other_archive_status, filename) == -1) {
+            FATALERROR("Failed to extract %s from referenced dependency archive %s.\n", filename, other_archive_path);
             /* Do not free the archive ("status") here, because its
              * pointer is stored in the archive pool that is cleaned up
              * by the caller.
