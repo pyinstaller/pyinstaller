@@ -788,6 +788,24 @@ def test_contents_directory(pyi_builder):
         pyi_builder.test_source("", pyi_args=["--contents-directory=..", "--noconfirm"])
 
 
+def test_legacy_onedir_layout(pyi_builder):
+    """
+    Test the --contents-directory=., which re-enables the legacy onedir layout.
+    """
+    if pyi_builder._mode != 'onedir':
+        pytest.skip('--contents-directory does not affect onefile builds.')
+
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+        assert sys._MEIPASS == os.path.dirname(sys.executable)
+        assert os.path.dirname(__file__) == os.path.dirname(sys.executable)
+        """,
+        pyi_args=["--contents-directory", "."]
+    )
+
+
 def test_spec_options(pyi_builder, SPEC_DIR, capsys):
     if pyi_builder._mode != 'onedir':
         pytest.skip('spec file is onedir mode only')
