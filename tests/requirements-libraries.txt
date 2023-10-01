@@ -19,7 +19,7 @@ babel==2.12.1
 Django==4.2.5
 future==0.18.3
 gevent==23.9.1
-ipython==8.15.0; python_version >= '3.9'
+ipython==8.16.0; python_version >= '3.9'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==24.2.0; sys_platform != 'darwin' or python_version >= '3.8.7'
@@ -52,7 +52,7 @@ PyQt6-WebEngine==6.5.0
 python-dateutil==2.8.2
 pytz==2023.3.post1
 requests==2.31.0
-scipy==1.11.2; python_version >= '3.9'
+scipy==1.11.3; python_version >= '3.9'
 # simplejson is used for text_c_extension
 simplejson==3.19.1
 sphinx==7.2.6; python_version >= '3.9'
