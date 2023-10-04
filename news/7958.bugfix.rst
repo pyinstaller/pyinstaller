@@ -1,0 +1,4 @@
+Fix :func:`PyInstaller.utils.hooks.collect_entry_point` so that it
+returns module names (without class names). This matches the behavior
+of previous PyInstaller versions that regressed during transition
+from ``pkg_resources`` to ``importlib.metadata``.
