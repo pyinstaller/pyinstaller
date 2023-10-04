@@ -1,0 +1,9 @@
+(Windows) Fix unintentional randomization of library search path order
+in the binary dependency analysis step. The incorrect order of search
+paths would result in defunct builds when using both ``pywin32``
+and ``PyQt5``, ``PyQt6``, ``PySide2``, or ``PySide6``, as it would prevent
+the python's copy of ``VCRUNTIME140_1.dll`` from being collected into
+the top-level application directory due to it being shadowed by the
+Qt-provided copy. Consequently, the application would fail with
+``ImportError: DLL load failed while importing pywintypes: The specified
+module could not be found.``
