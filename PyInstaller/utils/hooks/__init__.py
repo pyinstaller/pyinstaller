@@ -1122,7 +1122,7 @@ def collect_entry_point(name: str):
     imports = []
     for entry_point in importlib_metadata.entry_points(group=name):
         datas += copy_metadata(entry_point.dist.name)
-        imports.append(entry_point.value)
+        imports.append(entry_point.module)
     return datas, imports
 
 
