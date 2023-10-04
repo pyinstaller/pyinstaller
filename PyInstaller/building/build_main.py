@@ -224,7 +224,9 @@ def find_binary_dependencies(binaries, import_packages):
         extra_libdirs += added_path_directories
 
     # Deduplicate search paths
-    extra_libdirs = list(set(extra_libdirs))
+    # NOTE: `list(set(extra_libdirs))` does not preserve the order of search paths (which matters here), so we need to
+    # de-duplicate using `list(dict.fromkeys(extra_libdirs).keys())` instead.
+    extra_libdirs = list(dict.fromkeys(extra_libdirs).keys())
 
     # Search for dependencies of the given binaries
     return bindepend.binary_dependency_analysis(binaries, search_paths=extra_libdirs)
