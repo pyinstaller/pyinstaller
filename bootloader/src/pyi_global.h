@@ -245,9 +245,6 @@ void mbvs(const char *fmt, ...);
     #define PYI_CURDIRSTR  "."
 #endif
 
-/* Strings are usually terminated by this character. */
-#define PYI_NULLCHAR       '\0'
-
 /* File seek and tell with large (64-bit) offsets */
 #if defined(_WIN32) && defined(_MSC_VER)
     #define pyi_fseek _fseeki64

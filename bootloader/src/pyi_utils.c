@@ -436,7 +436,7 @@ remove_one(wchar_t *wfnm, size_t pos, struct _wfinddata_t wfinfo)
     if (wcscmp(wfinfo.name, L".") == 0  || wcscmp(wfinfo.name, L"..") == 0) {
         return;
     }
-    wfnm[pos] = PYI_NULLCHAR;
+    wfnm[pos] = 0;
     wcscat(wfnm, wfinfo.name);
 
     if ((wfinfo.attrib & _A_SUBDIR)) {
@@ -496,7 +496,7 @@ remove_one(char *pnm, int pos, const char *fnm)
     if (strcmp(fnm, ".") == 0  || strcmp(fnm, "..") == 0) {
         return;
     }
-    pnm[pos] = PYI_NULLCHAR;
+    pnm[pos] = 0;
     strcat(pnm, fnm);
 
     /* Use lstat() instead of stat() to prevent recursion into

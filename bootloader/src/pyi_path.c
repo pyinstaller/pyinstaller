@@ -62,18 +62,18 @@ pyi_path_dirname(char *result, const char *path)
     /* Remove separator from the end. */
     len = strlen(result)-1;
     if (len >= 0 && result[len] == PYI_SEP) {
-        result[len] = PYI_NULLCHAR;
+        result[len] = 0;
     }
 
     /* Remove the rest of the string. */
     match = strrchr(result, PYI_SEP);
     if (match != NULL) {
-        *match = PYI_NULLCHAR;
+        *match = 0;
     }
     else {
         /* No dir separator found, so no dir-part, so use current dir */
         *result = PYI_CURDIR;
-        result[1] = PYI_NULLCHAR;
+        result[1] = 0;
     }
 #else /* ifndef HAVE_DIRNAME */
       /* Use dirname() for other platforms. */
@@ -141,7 +141,7 @@ pyi_path_join(char *result, const char *path1, const char *path2)
     /* Append trailing slash if missing. */
     if (result[len-1] != PYI_SEP) {
         result[len++] = PYI_SEP;
-        result[len++] = PYI_NULLCHAR;
+        result[len++] = 0;
     }
     len = PATH_MAX - len;
     len2 = strlen(path2);
@@ -152,7 +152,7 @@ pyi_path_join(char *result, const char *path1, const char *path2)
     if (path2[len2 - 1] == PYI_SEP) {
         /* Append path2 without slash. */
         strncat(result, path2, len);
-        result[strlen(result) - 1] = PYI_NULLCHAR;
+        result[strlen(result) - 1] = 0;
     }
     else {
         /* path2 does not end with slash. */
