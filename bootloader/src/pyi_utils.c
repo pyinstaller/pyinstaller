@@ -927,33 +927,7 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
 {
     int rc = 0;
 
-    #ifdef __APPLE__
-    /* On Mac OS X we do not use environment variables DYLD_LIBRARY_PATH
-     * or others to tell OS where to look for dynamic libraries.
-     * There were some issues with this approach. In some cases some
-     * system libraries were trying to load incompatible libraries from
-     * the dist directory. For instance this was experienced with macprots
-     * and PyQt applications.
-     *
-     * To tell the OS where to look for dynamic libraries we modify
-     * .so/.dylib files to use relative paths to other dependent
-     * libraries starting with @executable_path.
-     *
-     * For more information see:
-     * http://blogs.oracle.com/dipol/entry/dynamic_libraries_rpath_and_mac
-     * http://developer.apple.com/library/mac/#documentation/DeveloperTools/  \
-     *     Conceptual/DynamicLibraries/100-Articles/DynamicLibraryUsageGuidelines.html
-     */
-    /* For environment variable details see 'man dyld'. */
-    pyi_unsetenv("DYLD_FRAMEWORK_PATH");
-    pyi_unsetenv("DYLD_FALLBACK_FRAMEWORK_PATH");
-    pyi_unsetenv("DYLD_VERSIONED_FRAMEWORK_PATH");
-    pyi_unsetenv("DYLD_LIBRARY_PATH");
-    pyi_unsetenv("DYLD_FALLBACK_LIBRARY_PATH");
-    pyi_unsetenv("DYLD_VERSIONED_LIBRARY_PATH");
-    pyi_unsetenv("DYLD_ROOT_PATH");
-
-    #else
+    #if !defined(__APPLE__)
 
     /* Set library path to temppath. This is only for onefile mode.*/
     if (status->temppath[0] != PYI_NULLCHAR) {
@@ -963,7 +937,7 @@ pyi_utils_set_environment(const ARCHIVE_STATUS *status)
     else {
         rc = set_dynamic_library_path(status->homepath);
     }
-    #endif /* ifdef __APPLE__ */
+    #endif /* !defined(__APPLE__) */
 
     return rc;
 }
