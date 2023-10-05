@@ -934,7 +934,7 @@ pyi_utils_set_library_search_path(const char *path)
  * So the application can detect it and use the LISTEN_FDS created
  * by systemd.
  */
-int
+static int
 set_systemd_env()
 {
     const char * env_var = "LISTEN_PID";
