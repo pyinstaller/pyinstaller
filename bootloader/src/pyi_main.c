@@ -250,10 +250,12 @@ pyi_main(int argc, char * argv[])
          * be shown. */
         pyi_setenv("_PYI_ONEDIR_MODE", "1");
 
-        /* Set up the environment, especially LD_LIBRARY_PATH. This is the
-         * main reason we are going to restart the bootloader in the first
-         * place. */
-        if (pyi_utils_set_environment(archive_status) == -1) {
+        /* Set up the library search path (by modifying LD_LIBRARY_PATH or
+         * equivalent), so that the restarted process will be able to find
+         * the collected libraries in the top-level application directory
+         * (i.e., archive_status->homepath).
+         */
+        if (pyi_utils_set_library_search_path(archive_status->homepath) == -1) {
             return -1;
         }
 
@@ -416,9 +418,7 @@ pyi_main(int argc, char * argv[])
         /* Run the 'child' process, then clean up. */
 
         VS("LOADER: Executing self as child\n");
-        pyi_setenv("_MEIPASS2",
-                   archive_status->temppath[0] !=
-                   0 ? archive_status->temppath : archive_status->homepath);
+        pyi_setenv("_MEIPASS2", archive_status->temppath);
 
         VS("LOADER: set _MEIPASS2 to %s\n", pyi_getenv("_MEIPASS2"));
 
@@ -433,9 +433,13 @@ pyi_main(int argc, char * argv[])
 
 #endif  /* defined(__linux__) */
 
-        if (pyi_utils_set_environment(archive_status) == -1) {
+        /* On OSes other than Windows and macOS, we need to set library
+         * search path (via LD_LIBRARY_PATH or equivalent). */
+#if !defined(_WIN32) && !defined(__APPLE__)
+        if (pyi_utils_set_library_search_path(archive_status->temppath) == -1) {
             return -1;
         }
+#endif /* !defined(_WIN32) && !defined(__APPLE__) */
 
         /* Transform parent to background process on OSX only. */
         pyi_parent_to_background();

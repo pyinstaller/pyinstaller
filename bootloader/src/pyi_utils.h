@@ -55,9 +55,9 @@ int pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS *status,
 pid_t pyi_utils_get_child_pid();
 void pyi_utils_reraise_child_signal();
 #endif
-int pyi_utils_set_environment(const ARCHIVE_STATUS *status);
 
 #if !defined(_WIN32) && !defined(__APPLE__)
+int pyi_utils_set_library_search_path(const char *path);
 int pyi_utils_replace_process(const char *thisfile, const int argc, char *const argv[]);
 #endif
 

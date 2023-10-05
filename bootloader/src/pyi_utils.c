@@ -752,12 +752,6 @@ pyi_utils_dlclose(dylib_t dll)
 
 #ifdef _WIN32
 
-int
-pyi_utils_set_environment(const ARCHIVE_STATUS *status)
-{
-    return 0;
-}
-
 static BOOL WINAPI
 _pyi_win32_console_ctrl(DWORD dwCtrlType)
 {
@@ -886,22 +880,24 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
 
 #else /* ifdef _WIN32 */
 
-static int
-set_dynamic_library_path(const char* path)
+#if !defined(__APPLE__)
+
+int
+pyi_utils_set_library_search_path(const char *path)
 {
     int rc = 0;
     char *env_var, *env_var_orig;
     char *new_path, *orig_path;
 
-    #ifdef AIX
+#ifdef AIX
     /* LIBPATH is used to look up dynamic libraries on AIX. */
     env_var = "LIBPATH";
     env_var_orig = "LIBPATH_ORIG";
-    #else
+#else
     /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
     env_var = "LD_LIBRARY_PATH";
     env_var_orig = "LD_LIBRARY_PATH_ORIG";
-    #endif /* AIX */
+#endif /* AIX */
 
     /* keep original value in a new env var so the application can restore it
      * before forking subprocesses. This is important so that e.g. a forked
@@ -922,25 +918,7 @@ set_dynamic_library_path(const char* path)
     return rc;
 }
 
-int
-pyi_utils_set_environment(const ARCHIVE_STATUS *status)
-{
-    int rc = 0;
-
-    #if !defined(__APPLE__)
-
-    /* Set library path to temppath. This is only for onefile mode.*/
-    if (status->temppath[0] != PYI_NULLCHAR) {
-        rc = set_dynamic_library_path(status->temppath);
-    }
-    /* Set library path to homepath. This is for default onedir mode.*/
-    else {
-        rc = set_dynamic_library_path(status->homepath);
-    }
-    #endif /* !defined(__APPLE__) */
-
-    return rc;
-}
+#endif /* !defined(__APPLE__) */
 
 /*
  * If the program is activated by a systemd socket, systemd will set
