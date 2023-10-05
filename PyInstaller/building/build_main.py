@@ -661,10 +661,17 @@ class Analysis(Target):
 
         for name, co in ctypes_code_objs.items():
             # Get dlls that might be needed by ctypes.
-            logger.debug('Scanning %s for shared libraries or dlls', name)
+            logger.debug('Scanning %s for ctypes-based references to shared libraries', name)
             try:
                 ctypes_binaries = scan_code_for_ctypes(co)
-                self.binaries.extend(set(ctypes_binaries))
+                # As this scan happens after automatic binary-vs-data classification, we need to validate the binaries
+                # ourselves, just in case.
+                for dest_name, src_name, typecode in set(ctypes_binaries):
+                    # Allow for `None` in case re-classification is not supported on the given platform.
+                    if bindepend.classify_binary_vs_data(src_name) not in (None, 'BINARY'):
+                        logger.warning("Ignoring %s found via ctypes - not a valid binary!", src_name)
+                        continue
+                    self.binaries.append((dest_name, src_name, typecode))
             except Exception as ex:
                 raise RuntimeError(f"Failed to scan the module '{name}'. This is a bug. Please report it.") from ex
 
