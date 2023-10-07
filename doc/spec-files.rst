@@ -400,13 +400,13 @@ Further examples to illustrate the syntax::
         ('W ignore::DeprecationWarning', None, 'OPTION')  # disable deprecation warnings
 
         # UTF-8 mode; unless explicitly enabled/disabled, it is auto enabled based on locale
-        ('X utf8_mode', None, 'OPTION),  # force UTF-8 mode on
-        ('X utf8_mode=1', None, 'OPTION),  # force UTF-8 mode on
-        ('X utf8_mode=0', None, 'OPTION),  # force UTF-8 mode off
+        ('X utf8', None, 'OPTION),  # force UTF-8 mode on
+        ('X utf8=1', None, 'OPTION),  # force UTF-8 mode on
+        ('X utf8=0', None, 'OPTION),  # force UTF-8 mode off
 
         # Developer mode; disabled by default
-        ('X dev_mode', None, 'OPTION),  # enable dev mode
-        ('X dev_mode=1', None, 'OPTION),  # enable dev mode
+        ('X dev', None, 'OPTION),  # enable dev mode
+        ('X dev=1', None, 'OPTION),  # enable dev mode
 
         # Hash seed
         ('hash_seed=0', None, 'OPTION'),  # disable hash randomization; sys.flags.hash_randomization=0

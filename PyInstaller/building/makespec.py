@@ -447,7 +447,8 @@ def __add_options(parser):
         action='append',
         default=[],
         help='Specify a command-line option to pass to the Python interpreter at runtime. Currently supports '
-        '"v" (equivalent to "--debug imports"), "u", and "W <warning control>".',
+        '"v" (equivalent to "--debug imports"), "u", "W <warning control>", "X <xoption>", and "hash_seed=<value>". '
+        'For details, see the section "Specifying Python Interpreter Options" in PyInstaller manual.',
     )
     g.add_argument(
         "-s",
