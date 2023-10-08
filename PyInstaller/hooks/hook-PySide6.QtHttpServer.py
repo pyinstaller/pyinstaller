@@ -12,3 +12,7 @@
 from PyInstaller.utils.hooks.qt import add_qt6_dependencies
 
 hiddenimports, binaries, datas = add_qt6_dependencies(__file__)
+
+# This seems to be necessary on Windows; on other OSes, it is inferred automatically because the extension is linked
+# against the Qt6Concurrent shared library.
+hiddenimports += ['PySide6.QtConcurrent']
