@@ -15,11 +15,11 @@ importlib_resources==6.1.0; python_version < '3.9'
 # Working
 # -------
 # These packages work with no (known) issues.
-babel==2.12.1
-Django==4.2.5
+babel==2.13.0
+Django==4.2.6
 future==0.18.3
 gevent==23.9.1
-ipython==8.16.0; python_version >= '3.9'
+ipython==8.16.1; python_version >= '3.9'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==24.2.0; sys_platform != 'darwin' or python_version >= '3.8.7'
@@ -54,11 +54,11 @@ pytz==2023.3.post1
 requests==2.31.0
 scipy==1.11.3; python_version >= '3.9'
 # simplejson is used for text_c_extension
-simplejson==3.19.1
+simplejson==3.19.2
 sphinx==7.2.6; python_version >= '3.9'
 # Required for test_namespace_package
 sqlalchemy==2.0.21
-zope.interface==6.0
+zope.interface==6.1
 Pillow==10.0.1
 
 
