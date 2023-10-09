@@ -208,8 +208,8 @@ def process_collected_binary(
             src_name = process_collected_binary(
                 src_name,
                 dest_name,
-                strip=True,
-                upx=False,
+                use_strip=True,
+                use_upx=False,
                 target_arch=target_arch,
                 codesign_identity=codesign_identity,
                 entitlements_file=entitlements_file,
