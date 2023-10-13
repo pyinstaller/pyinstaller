@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYI-MAKESPEC" "1" "2023-09-22" "6.0.0" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2023-10-13" "6.1.0" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -94,7 +94,8 @@ basename)
 .BI \-\-contents\-directory \ CONTENTS_DIRECTORY
 For onedir builds only, specify the name of the directory in which all
 supporting files (i.e. everything except the executable itself) will be
-placed in.
+placed in. Use "." to re\-enable old onedir layout without contents
+directory.
 .UNINDENT
 .SS What To Bundle, Where To Search
 .sp
@@ -197,8 +198,9 @@ directory.
 .TP
 .BI \-\-python\-option \ PYTHON_OPTION
 Specify a command\-line option to pass to the Python interpreter at runtime.
-Currently supports "v" (equivalent to "\-\-debug imports"), "u", and "W
-<warning control>".
+Currently supports "v" (equivalent to "\-\-debug imports"), "u", "W <warning
+control>", "X <xoption>", and "hash_seed=<value>". For details, see the
+section "Specifying Python Interpreter Options" in PyInstaller manual.
 .TP
 .B \-s\fP,\fB  \-\-strip
 Apply a symbol\-table strip to the executable and shared libs (not
@@ -228,7 +230,7 @@ option is automatically set if the first script is a \(aq.pyw\(aq file. This
 option is ignored on *NIX systems.
 .UNINDENT
 .sp
-\-\-hide\-console {hide\-early,minimize\-early,hide\-late,minimize\-late}
+\-\-hide\-console {hide\-late,minimize\-early,hide\-early,minimize\-late}
 .INDENT 0.0
 .INDENT 3.5
 Windows only: in console\-enabled executable, have bootloader automatically

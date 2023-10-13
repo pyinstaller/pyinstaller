@@ -15,6 +15,71 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.1.0 (2023-10-13)
+------------------
+
+Features
+~~~~~~~~
+
+* Allow users to re-enable the old onedir layout (without contents directory) by
+  settings the :option:`--contents-directory` option (or the equivalent
+  ``contents_directory`` argument to ``EXE`` in the .spec file) to ``'.'``.
+  (:issue:`7968`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) Prevent bootloader from clearing ``DYLD_*`` environment variables
+  when running in ``onefile`` mode, in order to make behavior consistent
+  with ``onedir`` mode. (:issue:`7973`)
+* (Windows) Fix unintentional randomization of library search path order
+  in the binary dependency analysis step. The incorrect order of search
+  paths would result in defunct builds when using both ``pywin32``
+  and ``PyQt5``, ``PyQt6``, ``PySide2``, or ``PySide6``, as it would prevent
+  the python's copy of ``VCRUNTIME140_1.dll`` from being collected into
+  the top-level application directory due to it being shadowed by the
+  Qt-provided copy. Consequently, the application would fail with
+  ``ImportError: DLL load failed while importing pywintypes: The specified
+  module could not be found.`` (:issue:`7978`)
+* Ensure that ``__main__`` is always in the list of modules to exclude,
+  to prevent a program or a library that attempts to import ``__main__``
+  from pulling PyInstaller itself into frozen application bundle.
+  (:issue:`7956`)
+* Fix :func:`PyInstaller.utils.hooks.collect_entry_point` so that it returns
+  module names (without class names). This matches the behavior of previous
+  PyInstaller versions that regressed in PyInstaller ``v6.0.0`` during
+  transition from ``pkg_resources`` to ``importlib.metadata``. (:issue:`7958`)
+* Fix ``TypeError: process_collected_binary() got an unexpected keyword
+  argument 'strip'`` error when UPX compression is enabled. (:issue:`7998`)
+* Validate binaries returned by analysis of ``ctypes`` calls in collected
+  modules; the analysis might return files that are in ``PATH`` but are
+  not binaries, which then cause errors during binary dependency analysis.
+  An example of such problematic case is the ``gmsh`` package on Windows,
+  where ``ctypes.util.find_library('gmsh')`` ends up resolving the python
+  script called ``gmsh`` in the environment's Scripts directory.
+  (:issue:`7984`)
+
+
+Hooks
+~~~~~
+
+* Update ``PySide6.QtHttpServer`` hook for compatibility with ``PySide6``
+  6.5.3 on Windows. (:issue:`7994`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* (macOS) Lower the severity of a missing ``Info.plist`` file in a
+  collected macOS .framework bundle from an error to a warning (unless
+  strict collection mode is enabled). While missing ``Info.plist`` in a
+  collected .framework bundle will cause ``codesign`` to refuse to sign
+  the generated .app bundle, the user might be interested in building
+  just the POSIX application or may not plan to sign their .app bundle.
+  Fixes building with old ``PyQt5`` PyPI wheels (< 5.14.1). (:issue:`7959`)
+
+
 6.0.0 (2023-09-22)
 ------------------
 

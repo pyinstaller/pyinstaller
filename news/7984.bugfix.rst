@@ -1,6 +1,0 @@
-Validate binaries returned by analysis of ``ctypes`` calls in collected
-modules; the analysis might return files that are in ``PATH`` but are
-not binaries, which then cause errors during binary dependency analysis.
-An example of such problematic case is the ``gmsh`` package on Windows,
-where ``ctypes.util.find_library('gmsh')`` ends up resolving the python
-script called ``gmsh`` in the environment's Scripts directory.

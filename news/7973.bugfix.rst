@@ -1,3 +1,0 @@
-(macOS) Prevent bootloader from clearing ``DYLD_*`` environment variables
-when running in ``onefile`` mode, in order to make behavior consistent
-with ``onedir`` mode.

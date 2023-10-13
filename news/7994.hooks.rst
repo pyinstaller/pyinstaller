@@ -1,2 +1,0 @@
-Update ``PySide6.QtHttpServer`` hook for compatibility with ``PySide6``
-6.5.3 on Windows.

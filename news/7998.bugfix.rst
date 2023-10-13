@@ -1,2 +1,0 @@
-Fix ``TypeError: process_collected_binary() got an unexpected keyword
-argument 'strip'`` error when UPX compression is enabled.

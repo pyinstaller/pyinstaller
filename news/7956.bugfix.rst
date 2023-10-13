@@ -1,3 +1,0 @@
-Ensure that ``__main__`` is always in the list of modules to exclude,
-to prevent a program or a library that attempts to import ``__main__``
-from pulling PyInstaller itself into frozen application bundle.

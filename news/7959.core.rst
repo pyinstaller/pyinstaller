@@ -1,7 +1,0 @@
-(macOS) Lower the severity of a missing ``Info.plist`` file in a
-collected macOS .framework bundle from an error to a warning (unless
-strict collection mode is enabled). While missing ``Info.plist`` in a
-collected .framework bundle will cause ``codesign`` to refuse to sign
-the generated .app bundle, the user might be interested in building
-just the POSIX application or may not plan to sign their .app bundle.
-Fixes building with old ``PyQt5`` PyPI wheels (< 5.14.1).
