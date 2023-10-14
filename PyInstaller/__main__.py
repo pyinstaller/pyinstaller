@@ -24,6 +24,14 @@ from PyInstaller import log as logging
 # Note: do not import anything else until compat.check_requirements function is run!
 from PyInstaller import compat
 
+try:
+    from argcomplete import autocomplete
+except ImportError:
+
+    def autocomplete(parser):
+        return None
+
+
 logger = logging.getLogger(__name__)
 
 # Taken from https://stackoverflow.com/a/22157136 to format args more flexibly: any help text which beings with ``R|``
@@ -160,6 +168,7 @@ def run(pyi_args: list | None = None, pyi_config: dict | None = None):
     old_sys_argv = sys.argv
     try:
         parser = generate_parser()
+        autocomplete(parser)
         if pyi_args is None:
             pyi_args = sys.argv[1:]
         try:

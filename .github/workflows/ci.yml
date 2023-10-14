@@ -36,6 +36,14 @@ jobs:
       matrix:
         python-version: [3.8, 3.9, '3.10', '3.11', '3.12-dev']
         os: ['windows-latest', 'ubuntu-22.04', 'macos-11']
+        extra: [null]
+        include:
+          - python-version: '3.12-dev'
+            os: ubuntu-22.04
+            extra: null
+          - python-version: '3.12-dev'
+            os: ubuntu-22.04
+            extra: completion
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -115,6 +123,10 @@ jobs:
 
           # Make sure the help options print.
           python -m PyInstaller -h
+
+      - name: Install PyInstaller extra dependencies
+        if: ${{ matrix.extra }}
+        run: pip install --progress-bar=off .[${{ matrix.extra }}]
 
       - name: Install test dependencies (tools)
         run: |

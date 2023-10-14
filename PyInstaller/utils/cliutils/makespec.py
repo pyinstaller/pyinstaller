@@ -18,6 +18,13 @@ import os
 import PyInstaller.building.makespec
 import PyInstaller.log
 
+try:
+    from argcomplete import autocomplete
+except ImportError:
+
+    def autocomplete(parser):
+        return None
+
 
 def generate_parser():
     p = argparse.ArgumentParser()
@@ -32,6 +39,7 @@ def generate_parser():
 
 def run():
     p = generate_parser()
+    autocomplete(p)
     args = p.parse_args()
     PyInstaller.log.__process_options(p, args)
 
