@@ -24,7 +24,7 @@ ipython==8.16.1; python_version >= '3.9'
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==24.2.0; sys_platform != 'darwin' or python_version >= '3.8.7'
 matplotlib==3.8.0; python_version >= '3.9'
-numpy==1.26.0; python_version >= '3.9'
+numpy==1.26.1; python_version >= '3.9'
 pandas==2.1.1; python_version >= '3.9'
 pygments==2.16.1
 PyGObject==3.46.0; sys_platform == 'linux'
@@ -32,7 +32,7 @@ PyGObject==3.46.0; sys_platform == 'linux'
 PySide2==5.15.2.1; python_version < '3.11'
 PySide6==6.5.3
 # PyQt5 and add-on packages
-PyQt5==5.15.9
+PyQt5==5.15.10
 PyQt3D==5.15.6
 PyQtChart==5.15.6
 PyQtDataVisualization==5.15.5
@@ -42,7 +42,7 @@ QScintilla==2.14.1
 PyQtWebEngine==5.15.6
 # PyQt6 and add-on packages
 # NOTE: PyQt6 >= 6.5.1 is broken on macOS due to Qt .framework bundles not being preserved
-PyQt6==6.5.2
+PyQt6==6.5.3
 PyQt6-3D==6.5.0
 PyQt6-Charts==6.5.0
 PyQt6-DataVisualization==6.5.0
@@ -57,7 +57,7 @@ scipy==1.11.3; python_version >= '3.9'
 simplejson==3.19.2
 sphinx==7.2.6; python_version >= '3.9'
 # Required for test_namespace_package
-sqlalchemy==2.0.21
+sqlalchemy==2.0.22
 zope.interface==6.1
 Pillow==10.0.1
 
