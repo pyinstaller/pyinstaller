@@ -12,6 +12,13 @@
 import argparse
 import os
 
+try:
+    from argcomplete import autocomplete
+except ImportError:
+
+    def autocomplete(parser):
+        return None
+
 
 def run():
     parser = argparse.ArgumentParser()
@@ -25,6 +32,7 @@ def run():
         metavar='exe-file',
         help="full pathname of a Windows executable",
     )
+    autocomplete(parser)
     args = parser.parse_args()
 
     info_file = os.path.abspath(args.info_file)

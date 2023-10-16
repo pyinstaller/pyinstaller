@@ -18,6 +18,13 @@ import glob
 import PyInstaller.depend.bindepend
 import PyInstaller.log
 
+try:
+    from argcomplete import autocomplete
+except ImportError:
+
+    def autocomplete(parser):
+        return None
+
 
 def run():
     parser = argparse.ArgumentParser()
@@ -29,6 +36,7 @@ def run():
         help="executables or dynamic libraries for which the dependencies should be shown",
     )
 
+    autocomplete(parser)
     args = parser.parse_args()
     PyInstaller.log.__process_options(parser, args)
 

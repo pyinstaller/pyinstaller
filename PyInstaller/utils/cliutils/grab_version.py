@@ -12,6 +12,13 @@
 import argparse
 import codecs
 
+try:
+    from argcomplete import autocomplete
+except ImportError:
+
+    def autocomplete(parser):
+        return None
+
 
 def run():
     parser = argparse.ArgumentParser(
@@ -33,6 +40,7 @@ def run():
         help="filename where the grabbed version info will be saved",
     )
 
+    autocomplete(parser)
     args = parser.parse_args()
 
     try:

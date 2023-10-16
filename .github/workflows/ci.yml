@@ -111,7 +111,7 @@ jobs:
           cd ..
 
           # Install PyInstaller.
-          pip install --progress-bar=off .
+          pip install --progress-bar=off .[completion]
 
           # Make sure the help options print.
           python -m PyInstaller -h

@@ -1,0 +1,6 @@
+- If the ``argcomplete`` Python module is installed,
+  PyInstaller will use it enable tab completion for its CLI tools.
+  PyInstaller CLIs can still be used without this optional dependency.
+  To install ``argcomplete`` with PyInstaller, you can put
+  ``pyinstaller[completion]`` in your dependencies.
+  `See also the argcomplete documentation. <https://kislyuk.github.io/argcomplete/>`_
