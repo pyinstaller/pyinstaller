@@ -71,7 +71,14 @@ def main():
         # Did not break from loop, so we ran out of retries
         assert False, "Could not bind server port: all ports in use."
 
-    httpd.socket = ssl.wrap_socket(httpd.socket, certfile=SERVER_CERT, server_side=True)
+    # Wrap the server socket using SSL context. The old `ssl.wrap_socket` was deprecated in python 3.7 and removed
+    # in python 3.12.
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ssl_context.load_cert_chain(certfile=SERVER_CERT, keyfile=None)
+    httpd.socket = ssl_context.wrap_socket(
+        httpd.socket,
+        server_side=True,
+    )
 
     def ssl_server():
         httpd.serve_forever()
