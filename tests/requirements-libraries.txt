@@ -30,7 +30,8 @@ pygments==2.16.1
 PyGObject==3.46.0; sys_platform == 'linux'
 # Current PySide2 wheels explicitly require python < 3.11
 PySide2==5.15.2.1; python_version < '3.11'
-PySide6==6.5.3
+# Current PySide6 wheels explicitly require python < 3.12
+PySide6==6.5.3; python_version < '3.12'
 # PyQt5 and add-on packages
 PyQt5==5.15.10
 PyQt3D==5.15.6
@@ -41,7 +42,6 @@ PyQtPurchasing==5.15.5
 QScintilla==2.14.1
 PyQtWebEngine==5.15.6
 # PyQt6 and add-on packages
-# NOTE: PyQt6 >= 6.5.1 is broken on macOS due to Qt .framework bundles not being preserved
 PyQt6==6.5.3
 PyQt6-3D==6.5.0
 PyQt6-Charts==6.5.0
