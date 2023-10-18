@@ -33,7 +33,7 @@ jobs:
       run: yapf --recursive --parallel --diff .
 
     - name: Run Lint
-      run: ruff --format=github .
+      run: ruff --output-format=github .
 
     - name: Test Packaging
       run: |
