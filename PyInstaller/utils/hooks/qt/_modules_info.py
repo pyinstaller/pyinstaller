@@ -246,6 +246,10 @@ QT_MODULES_INFO = (
     # No python module; shared library -> plugins association entry.
     _QtModuleDef(None, shared_lib="Gamepad", plugins=["gamepads"]),
 
+    # *** qt/qtgraphs ***
+    # Qt6 >= 6.6.0; python module is available only in PySide6.
+    _QtModuleDef("QtGraphs", shared_lib="Graphs", bindings=["PySide6"]),
+
     # *** qt/qthttpserver ***
     # Qt6 >= 6.4.0; python module is available only in PySide6.
     _QtModuleDef("QtHttpServer", shared_lib="HttpServer", bindings=["PySide6"]),
