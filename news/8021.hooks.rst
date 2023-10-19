@@ -1,0 +1,2 @@
+Update ``PySide6`` hooks for compatibility with ``PySide6`` 6.6.0 and
+python 3.12.
