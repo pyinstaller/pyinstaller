@@ -61,9 +61,12 @@ def _get_paths_for_parent_directory_preservation():
     orig_paths.append(site.getusersitepackages())
 
     # Explicitly excluded paths. `site.getsitepackages` seems to include `sys.prefix`, which we need to exclude, to
-    # avoid issue swith DLLs in its sub-directories.
+    # avoid issue swith DLLs in its sub-directories. We need both resolved and unresolved variant to handle cases
+    # where `base_prefix` itself is a symbolic link (e.g., `scoop`-installed python on Windows, see #8023).
     excluded_paths = {
+        pathlib.Path(sys.base_prefix),
         pathlib.Path(sys.base_prefix).resolve(),
+        pathlib.Path(sys.prefix),
         pathlib.Path(sys.prefix).resolve(),
     }
 

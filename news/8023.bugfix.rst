@@ -1,0 +1,9 @@
+Fix erroneous DLL parent path preservation when ``sys.base_prefix``
+itself is a symbolic link. In such case, we need to exclude both
+resolved and unresolved path variant for ``sys.base_prefix``, in order to
+prevent either from ending up in the list of directories for which DLL
+parent paths are preserved. Failing to do so, for example, caused
+``_ctypes`` failing to load in an application build on Windows with
+python installed via ``scoop``, due to ``libffi-8.dll`` having spuriously
+preserved the parent directory path instead of being collected to top-level
+application directory.
