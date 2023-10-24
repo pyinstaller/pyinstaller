@@ -1511,16 +1511,15 @@ class ModuleGraph(ObjectGraph):
         target_package = self._safe_import_module(
             target_module_headname, target_package_name, source_package)
 
-        #FIXME: Why exactly is this necessary again? This doesn't quite seem
-        #right but maybe it is. Shouldn't absolute imports only be performed if
-        #the passed "level" is either "ABSOLUTE_IMPORT_LEVEL" or
-        #"ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL" -- or, more succinctly:
-        #
-        #    if level < 1:
-
         # If this target package is *NOT* importable and a source package was
         # passed, attempt to import this target package as an absolute import.
-        if target_package is None and source_package is not None:
+        #
+        # ADDENDUM: but do this only if the passed "level" is either
+        # ABSOLUTE_IMPORT_LEVEL (0) or ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL (-1).
+        # Otherwise, an attempt at relative import of a missing sub-module
+        # (from .module import something) might pull in an unrelated
+        # but eponymous top-level module, which should not happen.
+        if target_package is None and source_package is not None and level <= ABSOLUTE_IMPORT_LEVEL:
             target_package_name = target_module_headname
             source_package = None
 

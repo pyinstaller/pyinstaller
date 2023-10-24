@@ -368,3 +368,29 @@ def test_import_main_should_not_collect_pyinstaller2(pyi_builder):
         """,
         pyi_args=['--additional-hooks-dir', hooks_dir]
     )
+
+
+# Test that a relative import attempt of a missing optional sub-module in a package does not trigger collection of an
+# unrelated but eponymous top-level module. Simulates the scenario from #8010, where the following block in
+# `openpyxl.reader.excel`:
+#
+# ```
+# try:
+#    from ..tests import KEEP_VBA
+# except ImportError:
+#    KEEP_VBA = False
+# ```
+#
+# (https://foss.heptapod.net/openpyxl/openpyxl/-/blob/branch/3.1/openpyxl/reader/excel.py#L16)
+#
+# triggers collection of top-level `tests` package that is provided by the `LaoNLP` distribution. And importing
+# the said `tests` package during analysis triggers LaoNLP's unit tests...
+def test_missing_relative_import_collects_unrelated_top_level_module(pyi_builder):
+    extra_path = os.path.join(_MODULES_DIR, "pyi_missing_relative_import")
+    hooks_dir = os.path.join(extra_path, 'hooks')
+
+    pyi_builder.test_source(
+        """
+        import mypackage
+        """, pyi_args=['--additional-hooks-dir', hooks_dir, '--paths', extra_path]
+    )
