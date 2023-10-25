@@ -492,11 +492,8 @@ def test_swig_import_from_top_level_missing(tmpdir):
     mg.add_script(str(script))
     assert isinstance(mg.find_node('pyi_test_osgeo'), modulegraph.Package)
     assert isinstance(mg.find_node('pyi_test_osgeo.pyi_gdal'), modulegraph.SourceModule)
-    # BUG: Again, this is unecpected behaviour in modulegraph: While MissingModule('_pyi_gdal') is (arguably) removed
-    # when trying to import the SWIG C module, there is no MissingModule('pyi_test_osgeo.pyi_gdal') added, but again
-    # MissingModule('_pyi_gdal'). I still need to understand why.
-    assert mg.find_node('pyi_test_osgeo._pyi_gdal') is None
-    assert isinstance(mg.find_node('_pyi_gdal'), modulegraph.MissingModule)
+    assert isinstance(mg.find_node('pyi_test_osgeo._pyi_gdal'), modulegraph.MissingModule)
+    assert mg.find_node('_pyi_gdal') is None
 
 
 def test_swig_import_from_top_level_but_nested(tmpdir):
