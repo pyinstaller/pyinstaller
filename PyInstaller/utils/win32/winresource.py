@@ -148,7 +148,7 @@ def add_or_update_resource(filename, data, res_type, names=None, languages=None)
     module_handle = win32api.BeginUpdateResource(filename, 0)
     for res_name in resources.keys():
         for res_lang in resources[res_name].keys():
-            win32api.UpdateResource(module_handle, res_type, res_name, data, language=res_lang)
+            win32api.UpdateResource(module_handle, res_type, res_name, data, res_lang)
     win32api.EndUpdateResource(module_handle, 0)
 
 
