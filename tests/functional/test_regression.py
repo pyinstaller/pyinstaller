@@ -12,6 +12,7 @@
 from pathlib import Path
 from importlib.machinery import EXTENSION_SUFFIXES
 
+from PyInstaller import compat
 from PyInstaller.depend import analysis, bindepend
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.api import PYZ
@@ -61,6 +62,23 @@ def test_issue_5131(monkeypatch, tmpdir):
         except Exception:
             return []
 
+    orig_get_imports = bindepend.get_imports
+    monkeypatch.setattr(bindepend, "get_imports", get_imports)
+
+    # On macOS, we need to similarly override `osxutils.get_macos_sdk_version`.
+    if compat.is_darwin:
+        from PyInstaller.utils import osx as osxutils
+
+        def get_macos_sdk_version(*args, **kwargs):
+            try:
+                return orig_get_macos_sdk_version(*args, **kwargs)
+            except Exception:
+                return (10, 9, 0)  # Minimum version expected by check in Analysis.
+
+        orig_get_macos_sdk_version = osxutils.get_macos_sdk_version
+        monkeypatch.setattr(osxutils, "get_macos_sdk_version", get_macos_sdk_version)
+
+    # Set up fake CONF for Analysis
     monkeypatch.setattr(
         'PyInstaller.config.CONF', {
             'workpath': str(tmpdir),
@@ -73,11 +91,9 @@ def test_issue_5131(monkeypatch, tmpdir):
             'code_cache': dict(),
         }
     )
+
     # Speedup: avoid analyzing base_library.zip
     monkeypatch.setattr(analysis, 'PY3_BASE_MODULES', [])
-
-    orig_get_imports = bindepend.get_imports
-    monkeypatch.setattr(bindepend, "get_imports", get_imports)
 
     pkg = (tmpdir / 'mypkg').mkdir()
     init = pkg / ('__init__' + EXTENSION_SUFFIXES[0])
