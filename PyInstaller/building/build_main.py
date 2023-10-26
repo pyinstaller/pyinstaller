@@ -831,6 +831,22 @@ class Analysis(Target):
         # Write debug information about the graph
         self._write_graph_debug()
 
+        # On macOS, check the SDK version of the binaries to be collected, and warn when the SDK version is either
+        # invalid or too low. Such binaries will likely refuse to be loaded when hardened runtime is enabledm and
+        # while we cannot do anything about it, we can at least warn the user about it.
+        # See: https://developer.apple.com/forums/thread/132526
+        if is_darwin:
+            binaries_with_invalid_sdk = []
+            for dest_name, src_name, typecode in self.binaries:
+                sdk_version = osxutils.get_macos_sdk_version(src_name)
+                if sdk_version < (10, 9, 0):
+                    binaries_with_invalid_sdk.append((dest_name, src_name, sdk_version))
+            if binaries_with_invalid_sdk:
+                logger.warning("Found one or more binaries with invalid or incompatible macOS SDK version:")
+                for dest_name, src_name, sdk_version in binaries_with_invalid_sdk:
+                    logger.warning(" * %r, collected as %r; version: %r", src_name, dest_name, sdk_version)
+                logger.warning("These binaries will likely cause issues with code-signing and hardened runtime!")
+
     def _write_warnings(self):
         """
         Write warnings about missing modules. Get them from the graph and use the graph to figure out who tried to
