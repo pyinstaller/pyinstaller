@@ -826,6 +826,15 @@ class Analysis(Target):
             else:
                 self.datas.append(entry)
 
+        # On macOS, the Finder app seems to litter visited directories with `.DS_Store` files. These cause issues with
+        # codesigning when placed in mixed-content directories, where our .app bundle generator cross-links data files
+        # from `Resources` to `Frameworks` tree, and the `codesign` utility explicitly forbids a `.DS_Store` file to be
+        # a symbolic link.
+        # But there is no reason for `.DS_Store` files to be collected in the first place, so filter them out.
+        if is_darwin:
+            self.datas = [(dest_name, src_name, typecode) for dest_name, src_name, typecode in self.datas
+                          if os.path.basename(src_name) != '.DS_Store']
+
         # Write warnings about missing modules.
         self._write_warnings()
         # Write debug information about the graph

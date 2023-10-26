@@ -1,0 +1,3 @@
+(macOS) Prevent collection of ``.DS_Store`` files, which might be present
+in build environment's package directories after user navigated them using
+the Finder app.
