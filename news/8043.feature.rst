@@ -1,0 +1,4 @@
+(macOS) At the end of analysis, verify the macOS SDK version reported
+by binaries to be collected, and warn when the version is either invalid
+(0.0.0) or too low (< 10.9.0). Such binaries will likely cause issues
+with code-signing and hardened runtime.
