@@ -523,6 +523,15 @@ def get_code_object(modname, filename):
             with open(filename, 'rb') as f:
                 source = f.read()
 
+            # If entry-point script has no suffix, append .py when compiling the source. In POSIX builds, the executable
+            # has no suffix either; this causes issues with `traceback` module, as it tries to read the executable file
+            # when trying to look up the code for the entry-point script (when current working directory contains the
+            # executable).
+            _, ext = os.path.splitext(filename)
+            if not ext:
+                logger.debug("Appending .py to compiled entry-point name...")
+                filename += '.py'
+
             try:
                 code_object = compile(source, filename, 'exec')
             except SyntaxError:
