@@ -1,0 +1,4 @@
+Add hooks for ``distutils.command.check`` and
+``setuptools._distutils.command.check`` that prevent unnecessary
+collection of ``docutils`` (which in turn triggers collection of
+``pygments``, ``PIL``, etc.).
