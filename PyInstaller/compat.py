@@ -23,6 +23,7 @@ import site
 import subprocess
 import sys
 import shutil
+import types
 
 from PyInstaller._shared_with_waf import _pyi_machine
 from PyInstaller.exceptions import ExecCommandFailed
@@ -623,7 +624,10 @@ getsitepackages = getattr(site, 'getsitepackages', getsitepackages)
 def importlib_load_source(name: str, pathname: str):
     # Import module from a file.
     mod_loader = importlib.machinery.SourceFileLoader(name, pathname)
-    return mod_loader.load_module()
+    mod = types.ModuleType(mod_loader.name)
+    mod.__file__ = mod_loader.get_filename()  # Some hooks require __file__ attribute in their namespace
+    mod_loader.exec_module(mod)
+    return mod
 
 
 # Patterns of module names that should be bundled into the base_library.zip to be available during bootstrap.
