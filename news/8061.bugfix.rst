@@ -1,0 +1,2 @@
+Bump the required ``packaging`` version to 22.0, which is required for
+proper handling of metadata that contains markers with ``extra``s.
