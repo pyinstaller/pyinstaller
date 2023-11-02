@@ -56,33 +56,70 @@ def _pyi_rthook():
             # mis-matches when the given search paths also contain symbolic links and are already fully resolved.
             # See #6537 for an example of such a problem with onefile build on macOS, where the temporary directory
             # is placed under /var, which is actually a symbolic link to /private/var.
-            MEIPASS = os.path.realpath(sys._MEIPASS)
+            MEIPASS_PREFIX = os.path.realpath(sys._MEIPASS) + os.path.sep
+            MEIPASS_PREFIX_LEN = len(MEIPASS_PREFIX)
 
+            # For macOS .app bundles, the "true" sys._MEIPASS is `name.app/Contents/Frameworks`, but due to
+            # cross-linking, we must also consider `name.app/Contents/Resources`. See #7884.
+            is_macos_app_bundle = False
+            if sys.platform == 'darwin' and sys._MEIPASS.endswith("Contents/Frameworks"):
+                ALT_MEIPASS_PREFIX = os.path.realpath(os.path.join(sys._MEIPASS, '..', 'Resources')) + os.path.sep
+                ALT_MEIPASS_PREFIX_LEN = len(ALT_MEIPASS_PREFIX)
+                is_macos_app_bundle = True
+
+            # Process all given paths
+            seen_pkg_prefices = set()
             for pkg_path in path:
                 # Fully resolve the given path, in case it contains symbolic links.
                 pkg_path = os.path.realpath(pkg_path)
-                # Ensure it ends with os.path.sep (so we can directly filter out the package itself).
+
+                # Ensure the path ends with os.path.sep; this ensures correct match when the given path is sys._MEIPASS
+                # itself (note that we also appended os.path.sep to MEIPASS_PREFIX!). In cases when the given path is
+                # a package directory within sys._MEIPASS, the trailing os.path.sep ends up being changed into trailing
+                # dot, which allows us to filter the package itself from the results.
                 if not pkg_path.endswith(os.path.sep):
                     pkg_path += os.path.sep
 
-                for entry in importer.toc:
-                    # Get the path to the module, and resolve symbolic links. This implicitly solves the problem with
-                    # macOS .app bundles and packages that contain data files, where package directory is fully
-                    # collected into Contents/Resources, and symbolic link to directory is created in sys._MEIPASS
-                    # (Contents/Frameworks). See #7884.
-                    module_path = os.path.realpath(os.path.join(MEIPASS, entry.replace(".", os.path.sep)))
+                # If the path does not start with sys._MEIPASS, then it cannot be a bundled package.
+                # In case of macOS .app bundles, we also need to check the alternative path prefix.
+                pkg_prefix = None
+                if pkg_path.startswith(MEIPASS_PREFIX):
+                    pkg_prefix = pkg_path[MEIPASS_PREFIX_LEN:]
+                elif is_macos_app_bundle and pkg_path.startswith(ALT_MEIPASS_PREFIX):
+                    pkg_prefix = pkg_path[ALT_MEIPASS_PREFIX_LEN:]
+                else:
+                    # Given path is outside of sys._MEIPASS.
+                    continue
 
-                    # If the module is not in the requested path, skip it.
-                    if not module_path.startswith(pkg_path):
-                        continue
+                # Construct package prefix from path remainder. Because we explicitly added os.path.sep to pkg_path
+                # earlier, pkg_prefix now contains a trailing dot if necessary.
+                pkg_prefix = pkg_prefix.replace(os.path.sep, '.')
+                pkg_prefix_len = len(pkg_prefix)
 
-                    name = module_path[len(pkg_path):]
+                # If we are given multiple paths and they are either duplicated or resolve to the same package
+                # prefix, prevent duplication.
+                if pkg_prefix in seen_pkg_prefices:
+                    continue
+                seen_pkg_prefices.add(pkg_prefix)
 
-                    if os.path.sep in name:
-                        # Not a direct child
-                        continue
-                    is_pkg = importer.is_package(entry)
-                    yield pkgutil.ModuleInfo(importer, prefix + name, is_pkg)
+                # Check the TOC entries
+                if not pkg_prefix:
+                    # We are enumerating sys._MEIPASS; return all top-level packages/modules.
+                    for entry in importer.toc:
+                        if "." in entry:
+                            continue
+                        is_pkg = importer.is_package(entry)
+                        yield pkgutil.ModuleInfo(importer, prefix + entry, is_pkg)
+                else:
+                    # We are enumerating contents of a package.
+                    for entry in importer.toc:
+                        if not entry.startswith(pkg_prefix):
+                            continue
+                        name = entry[pkg_prefix_len:]
+                        if "." in name:
+                            continue
+                        is_pkg = importer.is_package(entry)
+                        yield pkgutil.ModuleInfo(importer, prefix + name, is_pkg)
 
     pkgutil.iter_modules = _pyi_pkgutil_iter_modules
 
