@@ -1,0 +1,9 @@
+(macOS) Fix the bug in binary processing and caching that would update
+the binary cache index before performing macOS-specific processing
+(architecture validation, path rewriting). If, for example, architecture
+validation failed during a build, subsequent build attempts with
+enabled binary cache (i.e., without the :option:`--clean` option) would
+pick up the partially-processed binary file from the cache, bypassing the
+architecture validation. NOTE: the existing binary caches need to be
+purged manually (using :option:`--clean` option once) for the fix to take
+effect!
