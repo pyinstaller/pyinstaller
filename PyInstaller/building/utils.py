@@ -259,10 +259,6 @@ def process_collected_binary(
         logger.info("Executing: %s", " ".join(cmd))
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    # Update cache index
-    cache_index[cached_id] = src_digest
-    misc.save_py_data_struct(cache_index_file, cache_index)
-
     # On macOS, we need to modify the given binary's paths to the dependent libraries, in order to ensure they are
     # relocatable and always refer to location within the frozen application. Specifically, we make all dependent
     # library paths relative to @rpath, and set @rpath to point to the top-level application directory, relative to
@@ -299,6 +295,10 @@ def process_collected_binary(
             logger.debug("File %s failed optional architecture validation - collecting as-is!", src_name)
         except Exception as e:
             raise SystemError(f"Failed to process binary {cached_name!r}!") from e
+
+    # Update cache index
+    cache_index[cached_id] = src_digest
+    misc.save_py_data_struct(cache_index_file, cache_index)
 
     return cached_name
 
