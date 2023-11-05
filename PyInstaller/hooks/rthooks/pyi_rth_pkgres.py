@@ -41,26 +41,13 @@ def _pyi_rthook():
     class _TocFilesystem:
         """
         A prefix tree implementation for embedded filesystem reconstruction.
+
+        NOTE: as of PyInstaller 6.0, the embedded PYZ archive cannot contain data files anymore. Instead, it contains
+        only .pyc modules - which are by design not returned by `PyiFrozenProvider`. So this implementation has been
+        reduced to supporting only directories implied by collected packages.
         """
-        def __init__(self, toc_files, toc_dirs=None):
-            toc_dirs = toc_dirs or []
-            # Reconstruct the filesystem hierarchy by building a prefix tree from the given file and directory paths.
-            self._tree = dict()
-
-            # Data files
-            for path in toc_files:
-                path = pathlib.PurePath(path)
-                current = self._tree
-                for component in path.parts[:-1]:
-                    current = current.setdefault(component, {})
-                current[path.parts[-1]] = ''
-
-            # Extra directories
-            for path in toc_dirs:
-                path = pathlib.PurePath(path)
-                current = self._tree
-                for component in path.parts:
-                    current = current.setdefault(component, {})
+        def __init__(self, tree_node):
+            self._tree = tree_node
 
         def _get_tree_node(self, path):
             path = pathlib.PurePath(path)
@@ -73,24 +60,18 @@ def _pyi_rthook():
 
         def path_exists(self, path):
             node = self._get_tree_node(path)
-            return node is not None  # File or directory
+            return isinstance(node, dict)  # Directory only
 
         def path_isdir(self, path):
             node = self._get_tree_node(path)
-            if node is None:
-                return False  # Non-existent
-            if isinstance(node, str):
-                return False  # File
-            return True
+            return isinstance(node, dict)  # Directory only
 
         def path_listdir(self, path):
             node = self._get_tree_node(path)
             if not isinstance(node, dict):
                 return []  # Non-existent or file
-            return list(node.keys())
-
-    # Cache for reconstructed embedded trees
-    _toc_tree_cache = {}
+            # Return only sub-directories
+            return [entry_name for entry_name, entry_data in node.items() if isinstance(entry_data, dict)]
 
     class PyiFrozenProvider(pkg_resources.NullProvider):
         """
@@ -103,42 +84,8 @@ def _pyi_rthook():
             # If "module" is a submodule in a package, we need the path to the parent package.
             self._pkg_path = pathlib.PurePath(module.__file__).parent
 
-            # Defer initialization of PYZ-embedded resources tree to the first access.
-            self._embedded_tree = None
-
-        def _init_embedded_tree(self, rel_pkg_path, pkg_name):
-            # Collect relevant entries from TOC. We are interested in either files that are located in the
-            # package/module's directory (data files) or in packages that are prefixed with package/module's name
-            # (to reconstruct subpackage directories).
-            data_files = []
-            package_dirs = []
-            for entry in self.loader.toc:
-                entry_path = pathlib.PurePath(entry)
-                if rel_pkg_path in entry_path.parents:
-                    # Data file path
-                    data_files.append(entry_path)
-                elif entry.startswith(pkg_name) and self.loader.is_package(entry):
-                    # Package or subpackage; convert the name to directory path
-                    package_dir = pathlib.PurePath(*entry.split('.'))
-                    package_dirs.append(package_dir)
-
-            # Reconstruct the filesystem
-            return _TocFilesystem(data_files, package_dirs)
-
-        @property
-        def embedded_tree(self):
-            if self._embedded_tree is None:
-                # Construct a path relative to _MEIPASS directory for searching the TOC.
-                rel_pkg_path = self._pkg_path.relative_to(SYS_PREFIX)
-
-                # Reconstruct package name prefix (use package path to obtain correct prefix in case of a module).
-                pkg_name = '.'.join(rel_pkg_path.parts)
-
-                # Initialize and cache the tree, if necessary.
-                if pkg_name not in _toc_tree_cache:
-                    _toc_tree_cache[pkg_name] = self._init_embedded_tree(rel_pkg_path, pkg_name)
-                self._embedded_tree = _toc_tree_cache[pkg_name]
-            return self._embedded_tree
+            # Construct _TocFilesystem on top of pre-computed prefix tree provided by PyiFrozenImporter.
+            self.embedded_tree = _TocFilesystem(self.loader.toc_tree)
 
         def _normalize_path(self, path):
             # Avoid using Path.resolve(), because it resolves symlinks. This is undesirable, because the pure path in
