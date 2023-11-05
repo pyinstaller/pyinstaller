@@ -99,27 +99,47 @@ class PyiFrozenImporter:
             try:
                 # Unzip zip archive bundled with the executable.
                 self._pyz_archive = ZlibArchiveReader(pyz_filepath, check_pymagic=True)
-                # Verify the integrity of the zip archive with Python modules.
-                # This is already done when creating the ZlibArchiveReader instance.
-                #self._pyz_archive.checkmagic()
 
-                # As no Exception was raised, we can assume that ZlibArchiveReader was successfully loaded.
+                # As no exception was raised, we can assume that ZlibArchiveReader was successfully loaded.
                 # Let's remove 'pyz_filepath' from sys.path.
-                sys.path.remove(pyz_filepath)
-                # Some runtime hook might need access to the list of available frozen modules. Let's make them
-                # accessible as a set().
-                self.toc = set(self._pyz_archive.toc.keys())
-                # Return - no error was raised.
                 trace("# PyInstaller: PyiFrozenImporter(%s)", pyz_filepath)
-                return
+                sys.path.remove(pyz_filepath)
+                break
             except IOError:
                 # Item from sys.path is not ZlibArchiveReader; let's try next one.
                 continue
             except ArchiveReadError:
                 # Item from sys.path is not ZlibArchiveReader; let's try next one.
                 continue
-        # sys.path does not contain the filename of the executable with the bundled zip archive. Raise import error.
-        raise ImportError("Cannot load frozen modules.")
+        else:
+            # sys.path does not contain the filename of the executable with the bundled zip archive. Raise import error.
+            raise ImportError("Cannot load frozen modules.")
+
+        # Some runtime hooks might need access to the list of available frozen modules. Make them accessible as a set().
+        self.toc = set(self._pyz_archive.toc.keys())
+
+        # Some runtime hooks might need to traverse available frozen package/module hierarchy to simulate filesystem.
+        # Such traversals can be efficiently implemented using a prefix tree (trie). For now, pre-compute the trie
+        # automatically. If this proves to be too costly, we can turn it into on-demand property (but then we need to
+        # make initialization thread-safe using a lock!).
+        self.toc_tree = self._build_pyz_prefix_tree()
+
+    # Helper for computing PYZ prefix tree
+    def _build_pyz_prefix_tree(self):
+        tree = dict()
+        for entry_name in self.toc:
+            name_components = entry_name.split('.')
+            current = tree
+            if self._pyz_archive.is_package(entry_name):  # self.is_package() without unnecessary checks
+                # Package; create new dictionary node for its modules
+                for name_component in name_components:
+                    current = current.setdefault(name_component, {})
+            else:
+                # Module; create the leaf node (empty string)
+                for name_component in name_components[:-1]:
+                    current = current.setdefault(name_component, {})
+                current[name_components[-1]] = ''
+        return tree
 
     # Private helper
     def _is_pep420_namespace_package(self, fullname):
