@@ -28,11 +28,11 @@ def _pyi_rthook():
     import os
     import shutil
 
-    import _pyi_rth_utils  # PyInstaller's run-time hook utilities module
+    import _pyi_rth_utils.tempfile  # PyInstaller's run-time hook utilities module
 
     # Isolate matplotlib's config dir into temporary directory.
     # Use our replacement for `tempfile.mkdtemp` function that properly restricts access to directory on all platforms.
-    configdir = _pyi_rth_utils.secure_mkdtemp()
+    configdir = _pyi_rth_utils.tempfile.secure_mkdtemp()
     os.environ['MPLCONFIGDIR'] = configdir
 
     try:
