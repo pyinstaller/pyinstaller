@@ -429,10 +429,9 @@ class PyiFrozenResourceReader:
     """
     Resource reader for importlib.resources / importlib_resources support.
 
-    Currently supports only on-disk resources (support for resources from the embedded archive is missing).
-    However, this should cover the typical use cases (access to data files), as PyInstaller collects data files onto
-    filesystem, and only .pyc modules are collected into embedded archive. One exception are resources collected from
-    zipped eggs (which end up collected into embedded archive), but those should be rare anyway.
+    Supports only on-disk resources, which should cover the typical use cases, i.e., the access to data files;
+    PyInstaller collects data files onto filesystem, and as of v6.0.0, the embedded PYZ archive is guaranteed
+    to contain only .pyc modules.
 
     When listing resources, source .py files will not be listed as they are not collected by default. Similarly,
     sub-directories that contained only .py files are not reconstructed on filesystem, so they will not be listed,
