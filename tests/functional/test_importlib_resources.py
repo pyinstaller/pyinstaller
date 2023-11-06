@@ -26,7 +26,7 @@ import shutil
 import pytest
 
 from PyInstaller.utils.tests import skipif
-from PyInstaller.compat import is_py39, exec_python, exec_python_rc
+from PyInstaller.compat import is_darwin, is_py39, exec_python, exec_python_rc
 from PyInstaller.utils.hooks import check_requirement
 
 # Directory with testing modules used in some tests.
@@ -94,9 +94,12 @@ def test_importlib_resources_frozen(pyi_builder, package_type, tmpdir, script_di
     pathex = __get_test_package_path(package_type, tmpdir, monkeypatch)
     test_script = 'pyi_importlib_resources.py'
     hooks_dir = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'hooks')
+    pyi_args = ['--paths', pathex, '--hidden-import', 'pyi_pkgres_testpkg', '--additional-hooks-dir', hooks_dir]
+    if is_darwin:
+        pyi_args += ['--windowed']  # Also build and test .app bundle executable
     pyi_builder.test_script(
         test_script,
-        pyi_args=['--paths', pathex, '--hidden-import', 'pyi_pkgres_testpkg', '--additional-hooks-dir', hooks_dir]
+        pyi_args=pyi_args,
     )
 
 
@@ -122,6 +125,9 @@ def test_importlib_resources_namespace_package_data_files(pyi_builder, as_packag
         hidden_imports = ['--hidden-import', 'pyi_test_nspkg', '--hidden-import', 'pyi_test_nspkg.data']
     else:
         hidden_imports = ['--hidden-import', 'pyi_test_nspkg']
+    pyi_args = ['--paths', pathex, *hidden_imports, '--additional-hooks-dir', hooks_dir]
+    if is_darwin:
+        pyi_args += ['--windowed']  # Also build and test .app bundle executable
     pyi_builder.test_source(
         """
         import importlib
@@ -150,5 +156,5 @@ def test_importlib_resources_namespace_package_data_files(pyi_builder, as_packag
         data_dir = importlib_resources.files("pyi_test_nspkg.data")
         assert (data_dir / "data_file1.txt").is_file()
         """,
-        pyi_args=['--paths', pathex, *hidden_imports, '--additional-hooks-dir', hooks_dir]
+        pyi_args=pyi_args,
     )
