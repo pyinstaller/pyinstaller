@@ -82,16 +82,27 @@ def _pyi_rthook():
 
             # Get top-level path; if "module" corresponds to a package, we need the path to the package itself.
             # If "module" is a submodule in a package, we need the path to the parent package.
+            #
+            # This is equivalent to `pkg_resources.NullProvider.module_path`, except we construct a `pathlib.PurePath`
+            # for easier manipulation.
+            #
+            # NOTE: the path is NOT resolved for symbolic links, as neither are paths that are passed by `pkg_resources`
+            # to `_has`, `_isdir`, `_listdir` (they are all anchored to `module_path`, which in turn is just
+            # `os.path.dirname(module.__file__)`. As `__file__` returned by `PyiFrozenImporter` is always anchored to
+            # `sys._MEIPASS`, we do not have to worry about cross-linked directories in macOS .app bundles, where the
+            # resolved `__file__` could be either in the `Contents/Frameworks` directory (the "true" `sys._MEIPASS`), or
+            # in the `Contents/Resources` directory due to cross-linking.
             self._pkg_path = pathlib.PurePath(module.__file__).parent
 
             # Construct _TocFilesystem on top of pre-computed prefix tree provided by PyiFrozenImporter.
             self.embedded_tree = _TocFilesystem(self.loader.toc_tree)
 
         def _normalize_path(self, path):
-            # Avoid using Path.resolve(), because it resolves symlinks. This is undesirable, because the pure path in
-            # self._pkg_path does not have symlinks resolved, so comparison between the two would be faulty. So use
-            # os.path.abspath() instead to normalize the path.
-            return pathlib.Path(os.path.abspath(path))
+            # Avoid using `Path.resolve`, because it resolves symlinks. This is undesirable, because the pure path in
+            # `self._pkg_path` does not have symlinks resolved, so comparison between the two would be faulty. Instead,
+            # use `os.path.normpath` to normalize the path and get rid of any '..' elements (the path itself should
+            # already be absolute).
+            return pathlib.Path(os.path.normpath(path))
 
         def _is_relative_to_package(self, path):
             return path == self._pkg_path or self._pkg_path in path.parents
