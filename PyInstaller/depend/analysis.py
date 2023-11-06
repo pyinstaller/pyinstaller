@@ -52,7 +52,7 @@ from PyInstaller.depend import bytecode
 from PyInstaller.depend.imphook import AdditionalFilesCache, ModuleHookCache
 from PyInstaller.depend.imphookapi import (PreFindModulePathAPI, PreSafeImportModuleAPI)
 from PyInstaller.lib.modulegraph.find_modules import get_implies
-from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph, DEFAULT_IMPORT_LEVEL, ABSOLUTE_IMPORT_LEVEL
+from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph, DEFAULT_IMPORT_LEVEL, ABSOLUTE_IMPORT_LEVEL, Package
 from PyInstaller.log import DEBUG, INFO, TRACE
 from PyInstaller.utils.hooks import collect_submodules, is_package
 
@@ -373,10 +373,15 @@ class PyiModuleGraph(ModuleGraph):
                 # integer indicating the relative level. We do not use equality comparison just in case we ever happen
                 # to get ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL (-1), which is a remnant of python2 days.
                 if level > ABSOLUTE_IMPORT_LEVEL:
-                    if target_module_partname:
-                        base_module_name = source_module.identifier + '.' + target_module_partname
-                    else:
+                    if isinstance(source_module, Package):
+                        # Package
                         base_module_name = source_module.identifier
+                    else:
+                        # Module in a package; base name must be the parent package name!
+                        base_module_name = '.'.join(source_module.identifier.split('.')[:-1])
+
+                    if target_module_partname:
+                        base_module_name += '.' + target_module_partname
 
                     # Adjust the base module name based on level
                     if level > 1:
