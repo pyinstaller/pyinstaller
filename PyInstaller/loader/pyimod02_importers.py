@@ -22,6 +22,7 @@ import os
 import io
 
 import _frozen_importlib
+import _thread
 
 from pyimod01_archive import ArchiveReadError, ZlibArchiveReader
 
@@ -119,10 +120,17 @@ class PyiFrozenImporter:
         self.toc = set(self._pyz_archive.toc.keys())
 
         # Some runtime hooks might need to traverse available frozen package/module hierarchy to simulate filesystem.
-        # Such traversals can be efficiently implemented using a prefix tree (trie). For now, pre-compute the trie
-        # automatically. If this proves to be too costly, we can turn it into on-demand property (but then we need to
-        # make initialization thread-safe using a lock!).
-        self.toc_tree = self._build_pyz_prefix_tree()
+        # Such traversals can be efficiently implemented using a prefix tree (trie), whose computation we defer
+        # until first access.
+        self._lock = _thread.RLock()
+        self._toc_tree = None
+
+    @property
+    def toc_tree(self):
+        with self._lock:
+            if self._toc_tree is None:
+                self._toc_tree = self._build_pyz_prefix_tree()
+            return self._toc_tree
 
     # Helper for computing PYZ prefix tree
     def _build_pyz_prefix_tree(self):
