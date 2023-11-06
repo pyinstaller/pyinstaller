@@ -394,3 +394,24 @@ def test_missing_relative_import_collects_unrelated_top_level_module(pyi_builder
         import mypackage
         """, pyi_args=['--additional-hooks-dir', hooks_dir, '--paths', extra_path]
     )
+
+
+# Test that various forms of relative imports are properly caught by the module exclusion.
+@pytest.mark.parametrize('exclude', [False, True], ids=["baseline", "exclude"])
+def test_excluded_relative_imports(pyi_builder, exclude):
+    extra_path = os.path.join(_MODULES_DIR, "pyi_excluded_relative_imports")
+    hooks_dir = os.path.join(extra_path, 'hooks')
+
+    pyi_args = ['--paths', extra_path]
+    if exclude:
+        pyi_args += ['--additional-hooks-dir', hooks_dir]
+
+    pyi_builder.test_source(
+        """
+        import os
+        os.environ['_FORBIDDEN_MODULES_ENABLED'] = '{0}'  # '0' or '1'
+
+        import mypackage
+        """.format(str(int(not exclude))),
+        pyi_args=pyi_args,
+    )
