@@ -20,8 +20,7 @@ import tempfile
 # that restricts the access by passing appropriate security attributes to the `CreateDirectory` function.
 
 if os.name == 'nt':
-    # FIXME: work-around for `from . import _win32` not working with our exclusion mechanism...
-    import _pyi_rth_utils._win32 as _win32
+    from . import _win32
 
     def secure_mkdtemp(suffix=None, prefix=None, dir=None):
         """
