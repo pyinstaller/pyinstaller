@@ -21,7 +21,7 @@
 import os
 
 from PyInstaller.utils.tests import importorskip
-from PyInstaller.compat import exec_python_rc
+from PyInstaller.compat import is_darwin, exec_python_rc
 
 # Directory with testing modules used in some tests.
 _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
@@ -54,7 +54,10 @@ def test_pkg_resources_provider_frozen(pyi_builder, tmpdir, script_dir, monkeypa
     pathex = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'package')
     test_script = 'pyi_pkg_resources_provider.py'
     hooks_dir = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'hooks')
+    pyi_args = ['--paths', pathex, '--hidden-import', 'pyi_pkgres_testpkg', '--additional-hooks-dir', hooks_dir]
+    if is_darwin:
+        pyi_args += ['--windowed']  # Also build and test .app bundle executable
     pyi_builder.test_script(
         test_script,
-        pyi_args=['--paths', pathex, '--hidden-import', 'pyi_pkgres_testpkg', '--additional-hooks-dir', hooks_dir]
+        pyi_args=pyi_args,
     )
