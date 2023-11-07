@@ -8,3 +8,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # -----------------------------------------------------------------------------
+
+import sys
+
+# A boolean indicating whether the frozen application is a macOS .app bundle.
+is_macos_app_bundle = sys.platform == 'darwin' and sys._MEIPASS.endswith("Contents/Frameworks")

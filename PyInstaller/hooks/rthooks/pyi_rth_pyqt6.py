@@ -17,6 +17,8 @@ def _pyi_rthook():
     import os
     import sys
 
+    from _pyi_rth_utils import is_macos_app_bundle
+
     # Try PyQt6 6.0.3-style path first...
     pyqt_path = os.path.join(sys._MEIPASS, 'PyQt6', 'Qt6')
     if not os.path.isdir(pyqt_path):
@@ -25,7 +27,7 @@ def _pyi_rthook():
 
     os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
 
-    if sys.platform == 'darwin' and sys._MEIPASS.endswith("Contents/Frameworks"):
+    if is_macos_app_bundle:
         # Special handling for macOS .app bundles. To satisfy codesign requirements, we are forced to split `qml`
         # directory into two parts; one that keeps only binaries (rooted in `Contents/Frameworks`) and one that keeps
         # only data files (rooted in `Contents/Resources), with files from one directory tree being symlinked to the
