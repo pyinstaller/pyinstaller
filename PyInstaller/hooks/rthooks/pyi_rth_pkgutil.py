@@ -29,6 +29,7 @@ def _pyi_rthook():
     import sys
 
     from pyimod02_importers import PyiFrozenImporter
+    from _pyi_rth_utils import is_macos_app_bundle
 
     _orig_pkgutil_iter_modules = pkgutil.iter_modules
 
@@ -59,10 +60,8 @@ def _pyi_rthook():
 
             # For macOS .app bundles, the "true" sys._MEIPASS is `name.app/Contents/Frameworks`, but due to
             # cross-linking, we must also consider `name.app/Contents/Resources`. See #7884.
-            is_macos_app_bundle = False
-            if sys.platform == 'darwin' and sys._MEIPASS.endswith("Contents/Frameworks"):
+            if is_macos_app_bundle:
                 ALT_MEIPASS = (pathlib.Path(sys._MEIPASS).parent / "Resources").resolve()
-                is_macos_app_bundle = True
 
             # Process all given paths
             seen_pkg_prefices = set()
