@@ -1,0 +1,3 @@
+(Windows) Fix marshal error at the start of binary dependency analysis,
+caused by inferred DLL search path ending up an instance of
+``pathlib.Path`` instead of ``str``.

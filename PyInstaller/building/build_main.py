@@ -201,7 +201,9 @@ def find_binary_dependencies(binaries, import_packages):
             """
             import os
 
-            dll_directories = os._added_dll_directories
+            # `os.add_dll_directory` might be called with a `pathlib.Path`, which cannot be marhsalled out of the helper
+            # process. So explicitly convert all entries to strings.
+            dll_directories = [str(path) for path in os._added_dll_directories]
 
             orig_path = set(os._original_path_env.split(os.pathsep))
             modified_path = os.environ.get('PATH', '').split(os.pathsep)
