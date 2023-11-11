@@ -1,3 +1,0 @@
-Deduplicate and sort the list of discovered/selected ``matplotlib``
-backends before displaying it in log messages, to avoid giving
-impression that they are collected multiple times.

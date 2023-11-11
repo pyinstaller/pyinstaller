@@ -1,2 +1,0 @@
-Load PyInstaller hooks using PEP451 ``importlib.abc.Loader.exec_module``
-instead of deprecated PEP302 ``importlib.abc.Loader.load_module``.

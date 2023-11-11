@@ -15,6 +15,97 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.2.0 (2023-11-11)
+------------------
+
+Features
+~~~~~~~~
+
+* (macOS) At the end of analysis, verify the macOS SDK version reported
+  by binaries to be collected, and warn when the version is either invalid
+  (0.0.0) or too low (< 10.9.0). Such binaries will likely cause issues
+  with code-signing and hardened runtime. (:issue:`8043`)
+* If the ``argcomplete`` Python module is installed, PyInstaller will use it
+  enable tab completion for its CLI tools. PyInstaller CLIs can still be used
+  without this optional dependency. To install ``argcomplete`` with
+  PyInstaller, you can put ``pyinstaller[completion]`` in your dependencies.
+  See also `the argcomplete documentation
+  <https://kislyuk.github.io/argcomplete/>`_. (:issue:`8008`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) Fix the bug in binary processing and caching that would update
+  the binary cache index before performing macOS-specific processing
+  (architecture validation, path rewriting). If, for example, architecture
+  validation failed during a build, subsequent build attempts with
+  enabled binary cache (i.e., without the :option:`--clean` option) would
+  pick up the partially-processed binary file from the cache, bypassing the
+  architecture validation. NOTE: the existing binary caches need to be
+  purged manually (using :option:`--clean` option once) for the fix to take
+  effect! (:issue:`8068`)
+* (macOS) Prevent collection of ``.DS_Store`` files, which might be present
+  in build environment's package directories after user navigated them using
+  the Finder app. (:issue:`8042`)
+* (Windows) Fix marshal error at the start of binary dependency analysis,
+  caused by inferred DLL search path ending up an instance of
+  :class:`pathlib.Path` instead of :class:`str`. (:issue:`8081`)
+* Bump the required ``packaging`` version to 22.0, which is required for
+  proper handling of metadata that contains markers with ``extra``\ s.
+  (:issue:`8061`)
+* Fix erroneous DLL parent path preservation when :data:`sys.base_prefix`
+  itself is a symbolic link. In such case, we need to exclude both
+  resolved and unresolved path variant for ``sys.base_prefix``, in order to
+  prevent either from ending up in the list of directories for which DLL
+  parent paths are preserved. Failing to do so, for example, caused
+  ``_ctypes`` failing to load in an application build on Windows with
+  Python installed via ``scoop``, due to ``libffi-8.dll`` having spuriously
+  preserved the parent directory path instead of being collected to top-level
+  application directory. (:issue:`8023`)
+* Fix matching of pre-release versions in
+  :func:`PyInstaller.utils.hooks.check_requirement` and
+  :func:`PyInstaller.utils.hooks.is_module_satisfies`. Both functions now
+  match pre-release versions, which restores the behavior of the old
+  ``pkg_resources``-based implementation from PyInstaller < 6.0
+  that is implicitly expected by existing hooks. (:issue:`8093`)
+* If the entry-point script has no suffix, append the ``.py`` suffix
+  to the filename passed to the ``compile`` function when byte-compiling
+  the script for collection. This ensures that the entry-point script
+  filename never coincides with executable filename, especially in POSIX
+  builds, where executables have no suffix either (and their name is based
+  on the entry-point script basename by default). Entry-point script having
+  the same filename as the executable causes issues when ``traceback``
+  (and ``linecache``) try to access source code for it, an in the process
+  end up reading the executable file if it happens to be in the current
+  working directory. (:issue:`8046`)
+* Improve speed of :func:`pkgutil.iter_modules` override, especially in cases
+  when the function is called multiple times. (:issue:`8058`)
+* Load PyInstaller hooks using :pep:`451` ``importlib.abc.Loader.exec_module``
+  instead of deprecated :pep:`302` ``importlib.abc.Loader.load_module``.
+  (:issue:`8031`)
+* Prevent an attempt at relative import of a missing (optional) sub-module
+  within a package (e.g., ``from .module import something``) from tricking
+  the modulegraph/analysis into collecting an unrelated but eponymous
+  top-level module. (:issue:`8010`)
+
+
+Hooks
+~~~~~
+
+* Add hook for ``PySide6.QtGraphs`` that was introduced in ``PySide6`` 6.6.0.
+  (:issue:`8021`)
+* Add hooks for ``distutils.command.check`` and
+  ``setuptools._distutils.command.check`` that prevent unnecessary
+  collection of ``docutils`` (which in turn triggers collection of
+  ``pygments``, ``PIL``, etc.). (:issue:`8053`)
+* Deduplicate and sort the list of discovered/selected ``matplotlib``
+  backends before displaying it in log messages, to avoid giving
+  impression that they are collected multiple times. (:issue:`8009`)
+* Update ``PySide6`` hooks for compatibility with ``PySide6`` 6.6.0 and
+  python 3.12. (:issue:`8021`)
+
+
 6.1.0 (2023-10-13)
 ------------------
 

@@ -1,4 +1,0 @@
-Prevent an attempt at relative import of a missing (optional) sub-module
-within a package (e.g., ``from .module import something``) from tricking
-the modulegraph/analysis into collecting an unrelated but eponymous
-top-level module.

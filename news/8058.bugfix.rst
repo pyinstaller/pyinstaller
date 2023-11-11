@@ -1,2 +1,0 @@
-Improve speed of ``pkgutil.iter_modules`` override, especially in cases
-when the function is called multiple times.

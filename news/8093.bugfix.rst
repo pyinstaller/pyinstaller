@@ -1,6 +1,0 @@
-Fix matching of pre-release versions in
-:func:`PyInstaller.utils.hooks.check_requirement` and
-:func:`PyInstaller.utils.hooks.is_module_satisfies`. Both functions now
-match pre-release versions, which restores the behavior of the old
-``pkg_resources``-based implementation from PyInstaller < 6.0
-that is implicitly expected by existing hooks.
