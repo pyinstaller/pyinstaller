@@ -406,8 +406,9 @@ def check_requirement(requirement: str):
     if not parsed_requirement.specifier:
         return True
 
-    # Parse specifier, and compare version
-    return version in parsed_requirement.specifier
+    # Parse specifier, and compare version. Enable pre-release matching,
+    # because we need "package >= 2.0.0" to match "2.5.0b1".
+    return parsed_requirement.specifier.contains(version, prereleases=True)
 
 
 # Keep the `is_module_satisfies` as an alias for backwards compatibility with existing hooks. The old fallback
