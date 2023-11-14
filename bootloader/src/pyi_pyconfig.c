@@ -604,6 +604,14 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, const PyiRuntimeOptions *runt
                 return -1; \
             } \
         } \
+        /* Set install_signal_handlers to match behavior of bootloader from PyInstaller 5.x and earlier.
+         * There, interpreter was initialized via Py_Initialize(), which in turn calls Py_InitializeEx(1),
+         * i.e., with initsigs=1). Failing to install signal handlers leads to problems with `time.sleep()`
+         * on Python <= 3.8.6 and Python 3.9.0 under Windows; see:
+         * https://github.com/pyinstaller/pyinstaller/issues/8104
+         * https://bugs.python.org/issue41686
+         */ \
+        config_impl->install_signal_handlers = 1; \
         return 0; \
     }
     /* Macro end */
