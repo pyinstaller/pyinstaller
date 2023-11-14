@@ -663,9 +663,9 @@ pyi_arch_find_by_name(const ARCHIVE_STATUS *status, const char *name)
     const TOC *ptoc = status->tocbuff;
 
     while (ptoc < status->tocend) {
-#ifdef WIN32
-        /* On Windows, we must perform case-insensitive comparison for
-         * extractable entries. */
+#if defined(_WIN32) || defined(__APPLE__)
+        /* On Windows and macOS, use case-insensitive comparison to
+         * simulate case-insensitive filesystem for extractable entries. */
         if (_pyi_arch_is_extractable(ptoc)) {
             if (strcasecmp(ptoc->name, name) == 0) {
                 return ptoc;
