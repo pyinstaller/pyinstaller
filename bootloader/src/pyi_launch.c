@@ -167,8 +167,9 @@ _extract_dependency_from_archive(ARCHIVE_STATUS *status, const char *filename)
     VS("LOADER: Extracting dependency %s from archive\n", filename);
 
     while (ptoc < status->tocend) {
-#ifdef WIN32
-        /* On Windows, use case-insensitive comparison, just in case... */
+#if defined(_WIN32) || defined(__APPLE__)
+        /* On Windows and macOS, use case-insensitive comparison to
+         * simulate case-insensitive filesystem... */
         if (strcasecmp(ptoc->name, filename) == 0) {
 #else
         if (strcmp(ptoc->name, filename) == 0) {
