@@ -167,7 +167,12 @@ _extract_dependency_from_archive(ARCHIVE_STATUS *status, const char *filename)
     VS("LOADER: Extracting dependency %s from archive\n", filename);
 
     while (ptoc < status->tocend) {
+#ifdef WIN32
+        /* On Windows, use case-insensitive comparison, just in case... */
+        if (strcasecmp(ptoc->name, filename) == 0) {
+#else
         if (strcmp(ptoc->name, filename) == 0) {
+#endif
             return pyi_arch_extract2fs(status, ptoc);
         }
         ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
