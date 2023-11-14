@@ -1,0 +1,4 @@
+(Windows) Fix issue with splash screen in ``onefile`` mode failing to
+extract ``VCRUNTIME140.dll`` from the archive due to character-case
+mismatch. We now perform case-insensitive comparison between the name
+listed in splash dependency list and the names in archive TOC.

@@ -483,6 +483,30 @@ cleanup:
     return rc;
 }
 
+/* Check if the TOC entry corresponds to extractable file */
+static bool
+_pyi_arch_is_extractable(const TOC *ptoc)
+{
+    switch (ptoc->typcd) {
+        /* onefile mode */
+        case ARCHIVE_ITEM_BINARY:
+        case ARCHIVE_ITEM_DATA:
+        case ARCHIVE_ITEM_ZIPFILE:
+        case ARCHIVE_ITEM_SYMLINK: {
+            return true;
+        }
+        /* MERGE mode */
+        case ARCHIVE_ITEM_DEPENDENCY: {
+            return true;
+        }
+        default: {
+            break;
+        }
+    }
+
+    return false;
+}
+
 /* Setup the archive with python modules and the paths required by rest of
  * this module (this always needs to be done).
  * Sets f_archivename, f_homepath, f_mainpath
@@ -510,14 +534,8 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *exe
 
     ptoc = status->tocbuff;
     while (ptoc < status->tocend) {
-        if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
-            ptoc->typcd == ARCHIVE_ITEM_ZIPFILE || ptoc->typcd == ARCHIVE_ITEM_SYMLINK) {
-            status->needs_to_extract = true; /* onefile mode */
-            break;
-        }
-
-        if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-            status->needs_to_extract = true; /* MERGE mode */
+        if (_pyi_arch_is_extractable(ptoc)) {
+            status->needs_to_extract = true;
             break;
         }
         ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
@@ -645,9 +663,23 @@ pyi_arch_find_by_name(const ARCHIVE_STATUS *status, const char *name)
     const TOC *ptoc = status->tocbuff;
 
     while (ptoc < status->tocend) {
+#ifdef WIN32
+        /* On Windows, we must perform case-insensitive comparison for
+         * extractable entries. */
+        if (_pyi_arch_is_extractable(ptoc)) {
+            if (strcasecmp(ptoc->name, name) == 0) {
+                return ptoc;
+            }
+        } else {
+            if (strcmp(ptoc->name, name) == 0) {
+                return ptoc;
+            }
+        }
+#else
         if (strcmp(ptoc->name, name) == 0) {
             return ptoc;
         }
+#endif
         ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
     }
     return NULL;

@@ -254,6 +254,11 @@ void mbvs(const char *fmt, ...);
     #define pyi_ftell ftello
 #endif
 
+/* MSVC provides _stricmp() in-lieu of POSIX strcasecmp() */
+#if defined(_WIN32) && defined(_MSC_VER)
+    #define strcasecmp(string1, string2) _stricmp(string1, string2)
+#endif
+
 /* Byte-order conversion macros */
 #ifdef _WIN32
     /* On Windows, use compiler specific functions/macros to avoid
