@@ -296,6 +296,41 @@ class QtLibraryInfo:
             if info_entry.shared_lib is not None:
                 self.shared_libraries[info_entry.shared_lib.lower()] = info_entry
 
+    def _normalize_shared_library_name(self, filename):
+        """
+        Normalize a shared library name into common form that we can use for look-ups and comparisons.
+        Primarily intended for Qt shared library names.
+        """
+
+        # Take base name, remove suffix, and lower case it.
+        lib_name = os.path.splitext(os.path.basename(filename))[0].lower()
+        # Linux libraries sometimes have a dotted version number -- ``libfoo.so.3``. It is now ''libfoo.so``,
+        # but the ``.so`` must also be removed.
+        if compat.is_linux and os.path.splitext(lib_name)[1] == '.so':
+            lib_name = os.path.splitext(lib_name)[0]
+        # Remove the "lib" prefix (Linux, macOS).
+        if lib_name.startswith('lib'):
+            lib_name = lib_name[3:]
+        # macOS: handle different naming schemes. PyPI wheels ship framework-enabled Qt builds, where shared
+        # libraries are part of .framework bundles (e.g., ``PyQt5/Qt5/lib/QtCore.framework/Versions/5/QtCore``).
+        # In Anaconda (Py)Qt installations, the shared libraries are installed in environment's library directory,
+        # and contain versioned extensions, e.g., ``libQt5Core.5.dylib``.
+        if compat.is_darwin:
+            if lib_name.startswith('qt') and not lib_name.startswith('qt' + str(self.qt_major)):
+                # Qt library from a framework bundle (e.g., ``QtCore``); change prefix from ``qt`` to ``qt5`` or
+                # ``qt6`` to match names in Windows/Linux.
+                lib_name = 'qt' + str(self.qt_major) + lib_name[2:]
+            if lib_name.endswith('.' + str(self.qt_major)):
+                # Qt library from Anaconda, which originally had versioned extension, e.g., ``libfoo.5.dynlib``.
+                # The above processing turned it into ``foo.5``, so we need to remove the last two characters.
+                lib_name = lib_name[:-2]
+
+        # Handle cases with QT_LIBINFIX set to '_conda', i.e. conda-forge builds.
+        if lib_name.endswith('_conda'):
+            lib_name = lib_name[:-6]
+
+        return lib_name
+
     # Collection
     def collect_module(self, module_name):
         """
@@ -354,34 +389,8 @@ class QtLibraryInfo:
                 logger.debug("%s: ignoring unresolved library import %r", self, imported_lib_name)
                 continue
 
-            # On macOS, ``imported_lib_name`` is the original referenced name and may not be a basename. So, to parse
-            # the library name, obtain the base name of the full library path (``imported_lib_path``). Remove the
-            # suffix and "lib" prefix (Linux/macOS), and lowercase the name for case-normalized comparison.
-            lib_name = os.path.splitext(os.path.basename(imported_lib_path))[0].lower()
-            # Linux libraries sometimes have a dotted version number -- ``libfoo.so.3``. It is now ''libfoo.so``,
-            # but the ``.so`` must also be removed.
-            if compat.is_linux and os.path.splitext(lib_name)[1] == '.so':
-                lib_name = os.path.splitext(lib_name)[0]
-            if lib_name.startswith('lib'):
-                lib_name = lib_name[3:]
-            # macOS: handle different naming schemes. PyPI wheels ship framework-enabled Qt builds, where shared
-            # libraries are part of .framework bundles (e.g., ``PyQt5/Qt5/lib/QtCore.framework/Versions/5/QtCore``).
-            # In Anaconda (Py)Qt installations, the shared libraries are installed in environment's library directory,
-            # and contain versioned extensions, e.g., ``libQt5Core.5.dylib``.
-            if compat.is_darwin:
-                if lib_name.startswith('qt') and not lib_name.startswith('qt' + str(self.qt_major)):
-                    # Qt library from a framework bundle (e.g., ``QtCore``); change prefix from ``qt`` to ``qt5`` or
-                    # ``qt6`` to match names in Windows/Linux.
-                    lib_name = 'qt' + str(self.qt_major) + lib_name[2:]
-                if lib_name.endswith('.' + str(self.qt_major)):
-                    # Qt library from Anaconda, which originally had versioned extension, e.g., ``libfoo.5.dynlib``.
-                    # The above processing turned it into ``foo.5``, so we need to remove the last two characters.
-                    lib_name = lib_name[:-2]
-
-            # Match libs with QT_LIBINFIX set to '_conda', i.e. conda-forge builds.
-            if lib_name.endswith('_conda'):
-                lib_name = lib_name[:-6]
-
+            # Normalize the shared library name
+            lib_name = self._normalize_shared_library_name(imported_lib_path)
             logger.debug(
                 '%s: imported library %r, full path %r -> parsed name %r.', self, imported_lib_name, imported_lib_path,
                 lib_name
