@@ -233,10 +233,34 @@ class QtLibraryInfo:
             qt_info = _read_qt_library_info(self.namespace)
         except Exception as e:
             logger.warning("%s: failed to obtain Qt library info: %s", self, e)
-            qt_info = {}
+            return
 
         for k, v in qt_info.items():
             setattr(self, k, v)
+
+        # Turn package_location into pathlib.Path(), and fully resolve it.
+        self.package_location = pathlib.Path(self.package_location).resolve()
+
+        # Determine if the Qt is bundled with python package itself; this usually means we are dealing with with PyPI
+        # wheels.
+        resolved_qt_prefix_path = pathlib.Path(self.location['PrefixPath']).resolve()
+        self.qt_inside_package = (
+            self.package_location == resolved_qt_prefix_path or  # PySide2 and PySide6 Windows PyPI wheels
+            self.package_location in resolved_qt_prefix_path.parents
+        )
+
+        # Determine directory that contains Qt shared libraries. On non-Windows, this is typically location given by
+        # `LibrariesPath`. On Windows, it is usually `BinariesPath`, except for PySide PyPI wheels, where DLLs are
+        # placed in top-level `PrefixPath`.
+        if compat.is_win:
+            if self.qt_inside_package and not self.is_pyqt:
+                # Windows PyPI wheel
+                qt_lib_dir = self.location['PrefixPath']
+            else:
+                qt_lib_dir = self.location['BinariesPath']
+        else:
+            qt_lib_dir = self.location['LibrariesPath']
+        self.qt_lib_dir = pathlib.Path(qt_lib_dir).resolve()
 
     # Module information list loading/processing
     def _load_module_info(self):
@@ -504,14 +528,14 @@ class QtLibraryInfo:
         """
         optional_dll_patterns = optional_dll_patterns or []
 
-        # Resolve path to the the corresponding python package (actually, its parent directory). Used to preserve the
-        # directory structure when DLLs are collected from the python package (e.g., PyPI wheels).
-        package_parent_path = pathlib.Path(self.package_location).resolve().parent
+        # Package parent path; used to preserve the directory structure when DLLs are collected from the python
+        # package (e.g., PyPI wheels).
+        package_parent_path = self.package_location.parent
 
-        # In PyQt5 and PyQt6, the DLLs we are looking for are located in location['BinariesPath'], whereas in PySide2
-        # and PySide6, they are located in location['PrefixPath'].
-        dll_path = self.location['BinariesPath' if self.is_pyqt else 'PrefixPath']
-        dll_path = pathlib.Path(dll_path).resolve()
+        # On Windows, DLLs are typically placed in `location['BinariesPath']`, except for PySide PyPI wheels, where
+        # `location['PrefixPath']` is used. This difference is already handled by `qt_lib_dir`, which is also fully
+        # resolved.
+        dll_path = self.qt_lib_dir
 
         # Helper for processing single DLL pattern
         def _process_dll_pattern(dll_pattern):
@@ -561,7 +585,7 @@ class QtLibraryInfo:
         binaries += self._collect_all_or_none(['opengl32sw.dll'])
 
         # Include ICU files, if they exist.
-        # See the "Deployment approach" section in ``PyInstaller/utils/hooks/qt.py``.
+        # See the "Deployment approach" section at the top of this file.
         binaries += self._collect_all_or_none(['icudt??.dll', 'icuin??.dll', 'icuuc??.dll'])
 
         return binaries
@@ -604,29 +628,29 @@ class QtLibraryInfo:
         if not _ssl_enabled(self.namespace):
             return []
 
-        # Resolve path to the the corresponding python package (actually, its parent directory). Used to preserve the
-        # directory structure when DLLs are collected from the python package (e.g., PyPI wheels).
-        package_parent_path = pathlib.Path(self.package_location).resolve().parent
+        # Package parent path; used to preserve the directory structure when DLLs are collected from the python
+        # package (e.g., PyPI wheels).
+        package_parent_path = self.package_location.parent
 
-        # PyPI version of PySide2 requires user to manually install SSL libraries into the PrefixPath. Other versions
-        # (e.g., the one provided by Conda) put the libraries into the BinariesPath. PyQt5 also uses BinariesPath.
-        # Accommodate both options by searching both locations...
-        locations = (self.location['BinariesPath'], self.location['PrefixPath'])
+        # On Windows, DLLs are typically placed in `location['BinariesPath']`, except for PySide PyPI wheels, where
+        # `location['PrefixPath']` is used. This difference is already handled by `qt_lib_dir`, which is also fully
+        # resolved.
+        dll_path = self.qt_lib_dir
+
         dll_names = ('libeay32.dll', 'ssleay32.dll', 'libssl-1_1-x64.dll', 'libcrypto-1_1-x64.dll')
         binaries = []
-        for location in locations:
-            location = pathlib.Path(location).resolve()
-            for dll in dll_names:
-                dll_file_path = location / dll
-                if not dll_file_path.exists():
-                    continue
-                if package_parent_path in dll_file_path.parents:
-                    # The DLL is located within python package; preserve the layout
-                    dst_dll_path = dll_file_path.parent.relative_to(package_parent_path)
-                else:
-                    # The DLL is not located within python package; collect into top-level directory
-                    dst_dll_path = '.'
-                binaries.append((str(dll_file_path), str(dst_dll_path)))
+        for dll in dll_names:
+            dll_file_path = dll_path / dll
+            if not dll_file_path.exists():
+                continue
+            if package_parent_path in dll_file_path.parents:
+                # The DLL is located within python package; preserve the layout
+                dst_dll_path = dll_file_path.parent.relative_to(package_parent_path)
+            else:
+                # The DLL is not located within python package; collect into top-level directory
+                dst_dll_path = '.'
+            binaries.append((str(dll_file_path), str(dst_dll_path)))
+
         return binaries
 
     def collect_qtqml_files(self):
