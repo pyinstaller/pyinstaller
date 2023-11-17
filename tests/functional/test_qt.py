@@ -147,26 +147,53 @@ def test_Qt_QtQml(pyi_builder, QtPyLib):
 @QtPyLibs
 def test_Qt_QtNetwork_SSL_support(pyi_builder, QtPyLib):
     # Skip the test if QtNetwork does not support SSL (e.g., due to lack of compatible OpenSSL shared library on the
-    # test system).
+    # test system). Starting with Qt 6.1, different backends provide TLS functionality, so explicitly check if
+    # 'openssl' backend is available.
     @isolated.decorate
-    def check_ssl_support(package):
+    def check_openssl_support(package):
         import sys
         import importlib
+
         QtCore = importlib.import_module('.QtCore', package)
         QtNetwork = importlib.import_module('.QtNetwork', package)
-        app = QtCore.QCoreApplication(sys.argv)  # noqa: F841
-        return QtNetwork.QSslSocket.supportsSsl()
 
-    if not check_ssl_support(QtPyLib):
-        pytest.skip('QtNetwork does not support SSL on this platform.')
+        # We must initialize QCoreApplication before using QtNetwork
+        app = QtCore.QCoreApplication(sys.argv)  # noqa: F841
+
+        if not QtNetwork.QSslSocket.supportsSsl():
+            return False
+
+        # For Qt >= 6.1, check if `openssl` TLS backend is available
+        try:
+            qt_version = QtCore.QLibraryInfo.version().segments()
+        except AttributeError:
+            qt_version = []  # Qt <= 5.8
+
+        if qt_version < [6, 1]:
+            return True  # TLS backends not implemented yet
+
+        return 'openssl' in QtNetwork.QSslSocket.availableBackends()
+
+    if not check_openssl_support(QtPyLib):
+        pytest.skip('QtNetwork does not use OpenSSL.')
 
     pyi_builder.test_source(
         """
         import sys
-        from {0}.QtCore import QCoreApplication
+        from {0}.QtCore import QCoreApplication, QLibraryInfo
         from {0}.QtNetwork import QSslSocket
+
         app = QCoreApplication(sys.argv)
+
         assert QSslSocket.supportsSsl()
+
+        try:
+            qt_version = QLibraryInfo.version().segments()
+        except AttributeError:
+            qt_version = []  # Qt <= 5.8
+
+        if qt_version >= [6, 1]:
+            assert 'openssl' in QSslSocket.availableBackends()
         """.format(QtPyLib), **USE_WINDOWED_KWARG
     )
 
