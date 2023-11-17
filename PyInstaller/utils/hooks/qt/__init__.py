@@ -606,9 +606,9 @@ class QtLibraryInfo:
         if not compat.is_win:
             return []
 
-        # Check if QtNetwork supports SSL
+        # Check if QtNetwork supports SSL and has OpenSSL backend available (Qt >= 6.1).
         @isolated.decorate
-        def _ssl_enabled(package):
+        def _openssl_enabled(package):
             import sys
             import importlib
 
@@ -616,6 +616,7 @@ class QtLibraryInfo:
             # equivalent to: from package.QtCore import QCoreApplication
             QtCore = importlib.import_module('.QtCore', package)
             QCoreApplication = QtCore.QCoreApplication
+            QLibraryInfo = QtCore.QLibraryInfo
             # equivalent to: from package.QtNetwork import QSslSocket
             QtNetwork = importlib.import_module('.QtNetwork', package)
             QSslSocket = QtNetwork.QSslSocket
@@ -623,26 +624,69 @@ class QtLibraryInfo:
             # Instantiate QCoreApplication to suppress warnings
             app = QCoreApplication(sys.argv)  # noqa: F841
 
-            return QSslSocket.supportsSsl()
+            if not QSslSocket.supportsSsl():
+                return False
 
-        if not _ssl_enabled(self.namespace):
+            # For Qt >= 6.1, check if `openssl` TLS backend is available
+            try:
+                qt_version = QLibraryInfo.version().segments()
+            except AttributeError:
+                qt_version = []  # Qt <= 5.8
+
+            if qt_version < [6, 1]:
+                return True  # TLS backends not implemented yet
+
+            return 'openssl' in QSslSocket.availableBackends()
+
+        if not _openssl_enabled(self.namespace):
             return []
 
         # Package parent path; used to preserve the directory structure when DLLs are collected from the python
         # package (e.g., PyPI wheels).
         package_parent_path = self.package_location.parent
 
-        # On Windows, DLLs are typically placed in `location['BinariesPath']`, except for PySide PyPI wheels, where
-        # `location['PrefixPath']` is used. This difference is already handled by `qt_lib_dir`, which is also fully
-        # resolved.
-        dll_path = self.qt_lib_dir
+        # The OpenSSL DLLs might be shipped with PyPI wheel (PyQt5), might be available in the environment (msys2,
+        # anaconda), or might be expected to be available in the environment (PySide2, PySide6, PyQt6 PyPI wheels).
+        #
+        # The OpenSSL DLL naming scheme depends on the version:
+        #  - OpenSSL 1.0.x: libeay32.dll, ssleay32
+        #  - OpenSSL 1.1.x 32-bit: libssl-1_1.dll, libcrypto-1_1.dll
+        #  - OpenSSL 1.1.x 64-bit: libssl-1_1-x64.dll, libcrypto-1_1-x64.dll
+        #  - OpenSSL 3.0.x 32-bit: libssl-1.dll, libcrypto-3.dll
+        #  - OpenSSL 3.0.x 64-bit: libssl-3-x64.dll, libcrypto-3-x64.dll
+        #
+        # The official Qt builds (which are used by PySide and PyQt PyPI wheels) seem to be build against:
+        #  - OpenSSL 1.1x starting with Qt5 5.14.2:
+        #    https://www.qt.io/blog/2019/06/17/qt-5-12-4-released-support-openssl-1-1-1
+        #  - OpenSSL 3.x starting with Qt6 6.5.0:
+        #    https://www.qt.io/blog/moving-to-openssl-3-in-binary-builds-starting-from-qt-6.5-beta-2
+        #
+        # However, the above does nothing to help us narrow down which version we need to collect, because packages
+        # might be built against a version of their choice. For example, at the time of writing, both
+        # mingw-w64-x86_64-qt5-base 5.15.11+kde+r138-1 and mingw-w64-x86_64-qt6-base 6.6.0-2 packages depend on
+        # mingw-w64-x86_64-openssl 3.1.4-1 (so OpenSSL 3).
+        #
+        # Therefore, we search for all possible versions, in default Qt shared library location and all other
+        # locations that are available in PATH (implicitly done by the binary dependency analysis helper).
+        dll_names = (
+            # OpenSSL 1.0.x
+            'libeay32.dll',
+            'ssleay32.dll',
+            # OpenSSL 1.1.x
+            'libssl-1_1-x64.dll' if compat.is_64bits else 'libssl-1_1.dll',
+            'libcrypto-1_1-x64.dll' if compat.is_64bits else 'libcrypto-1_1.dll',
+            # OpenSSL 3.0.x
+            'libssl-3-x64.dll' if compat.is_64bits else 'libssl-3.dll',
+            'libcrypto-3-x64.dll' if compat.is_64bits else 'libcrypto-3.dll',
+        )
 
-        dll_names = ('libeay32.dll', 'ssleay32.dll', 'libssl-1_1-x64.dll', 'libcrypto-1_1-x64.dll')
         binaries = []
         for dll in dll_names:
-            dll_file_path = dll_path / dll
-            if not dll_file_path.exists():
+            # Attempt to resolve the DLL path
+            dll_file_path = bindepend.resolve_library_path(dll, search_paths=[self.qt_lib_dir])
+            if dll_file_path is None:
                 continue
+            dll_file_path = pathlib.Path(dll_file_path).resolve()
             if package_parent_path in dll_file_path.parents:
                 # The DLL is located within python package; preserve the layout
                 dst_dll_path = dll_file_path.parent.relative_to(package_parent_path)
