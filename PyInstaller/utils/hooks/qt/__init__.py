@@ -681,6 +681,7 @@ class QtLibraryInfo:
         )
 
         binaries = []
+        found_in_package = False
         for dll in dll_names:
             # Attempt to resolve the DLL path
             dll_file_path = bindepend.resolve_library_path(dll, search_paths=[self.qt_lib_dir])
@@ -690,10 +691,17 @@ class QtLibraryInfo:
             if package_parent_path in dll_file_path.parents:
                 # The DLL is located within python package; preserve the layout
                 dst_dll_path = dll_file_path.parent.relative_to(package_parent_path)
+                found_in_package = True
             else:
                 # The DLL is not located within python package; collect into top-level directory
                 dst_dll_path = '.'
             binaries.append((str(dll_file_path), str(dst_dll_path)))
+
+        # If we found at least one OpenSSL DLL in the bindings' python package directory, discard all external
+        # OpenSSL DLLs.
+        if found_in_package:
+            binaries = [(dll_src_path, dll_dest_path) for dll_src_path, dll_dest_path in binaries
+                        if package_parent_path in pathlib.Path(dll_src_path).parents]
 
         return binaries
 
