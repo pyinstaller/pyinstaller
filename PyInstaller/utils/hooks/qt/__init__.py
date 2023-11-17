@@ -525,7 +525,44 @@ class QtLibraryInfo:
         logger.debug("%s: found plugin files for plugin type %r: %r", self, plugin_type, plugin_files)
 
         plugin_dst_dir = os.path.join(self.qt_rel_dir, 'plugins', plugin_type)
-        return [(plugin_file, plugin_dst_dir) for plugin_file in plugin_files]
+
+        # Exclude plugins with invalid Qt dependencies.
+        binaries = []
+        for plugin_file in plugin_files:
+            valid, reason = self._validate_plugin_dependencies(plugin_file)
+            if valid:
+                binaries.append((plugin_file, plugin_dst_dir))
+            else:
+                logger.warning("%s: excluding plugin %r (%r)! Reason: %s", self, plugin_file, plugin_type, reason)
+        return binaries
+
+    def _validate_plugin_dependencies(self, plugin_file):
+        """
+        Validate Qt dependencies of the given Qt plugin file. For the plugin to pass validation, all its Qt dependencies
+        must be available (resolvable), and must be resolvable from the default Qt shared library directory (to avoid
+        pulling in libraries from unrelated Qt installations that happen to be in search path).
+        """
+
+        imported_libraries = bindepend.get_imports(plugin_file, search_paths=[self.qt_lib_dir])
+        for imported_lib_name, imported_lib_path in imported_libraries:
+            # Parse/normalize the (unresolved) library name, to determine if dependency is a Qt shared library. If not,
+            # skip the validation.
+            lib_name = self._normalize_shared_library_name(imported_lib_name)
+            if not lib_name.startswith(f"qt{self.qt_major}"):
+                continue
+
+            if imported_lib_path is None:
+                return False, f"Missing Qt dependency {imported_lib_name!r}."
+
+            imported_lib_path = pathlib.Path(imported_lib_path).resolve()
+            if self.qt_lib_dir not in imported_lib_path.parents:
+                return (
+                    False,
+                    f"Qt dependency {imported_lib_name!r} ({str(imported_lib_path)!r}) has been resolved outside of "
+                    f"the Qt shared library directory ({str(self.qt_lib_dir)!r})."
+                )
+
+        return True, None
 
     def _collect_all_or_none(self, mandatory_dll_patterns, optional_dll_patterns=None):
         """
