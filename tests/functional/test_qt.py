@@ -185,15 +185,30 @@ def test_Qt_QtNetwork_SSL_support(pyi_builder, QtPyLib):
 
         app = QCoreApplication(sys.argv)
 
-        assert QSslSocket.supportsSsl()
+        # Make sure SSL is supported
+        assert QSslSocket.supportsSsl(), "SSL not supported!"
 
+        # Display OpenSSL info
+        print(
+            f"OpenSSL build version: {{QSslSocket.sslLibraryBuildVersionNumber():X}} "
+            f"({{QSslSocket.sslLibraryBuildVersionString()}})"
+        )
+        print(
+            f"OpenSSL run-time version: {{QSslSocket.sslLibraryVersionNumber():X}} "
+            f"({{QSslSocket.sslLibraryVersionString()}})"
+        )
+
+        # Obtain Qt version
         try:
             qt_version = QLibraryInfo.version().segments()
         except AttributeError:
             qt_version = []  # Qt <= 5.8
 
+        # If Qt supports TLS backends (>= 6.1), make sure OpenSSL backend is available.
         if qt_version >= [6, 1]:
-            assert 'openssl' in QSslSocket.availableBackends()
+            print(f"Active TLS backend: {{QSslSocket.activeBackend()}}")
+            print(f"Available TLS backends: {{QSslSocket.availableBackends()}}")
+            assert 'openssl' in QSslSocket.availableBackends(), "OpenSSL TLS backend not available!"
         """.format(QtPyLib), **USE_WINDOWED_KWARG
     )
 
