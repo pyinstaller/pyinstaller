@@ -591,24 +591,20 @@ class QtLibraryInfo:
         return binaries
 
     # Collect additional shared libraries required for SSL support in QtNetwork, if they are available.
-    # Applicable only to Windows. See issue #3520, #4048.
+    # Primarily applicable to Windows (see issue #3520, #4048).
     def collect_qtnetwork_files(self):
         """
-        Collect extra binaries/DLLs required by the QtNetwork module. These include OpenSSL DLLs. Applicable only
-        on Windows (on other OSes, empty list is returned).
+        Collect extra binaries/shared libraries required by the QtNetwork module, such as OpenSSL shared libraries.
         """
 
         # No-op if requested Qt-based package is not available.
         if self.version is None:
             return []
 
-        # Applicable only to Windows.
-        if not compat.is_win:
-            return []
-
         # Check if QtNetwork supports SSL and has OpenSSL backend available (Qt >= 6.1).
+        # Also query the run-time OpenSSL version, so we know what dynamic libraries we need to search for.
         @isolated.decorate
-        def _openssl_enabled(package):
+        def _check_if_openssl_enabled(package):
             import sys
             import importlib
 
@@ -625,7 +621,10 @@ class QtLibraryInfo:
             app = QCoreApplication(sys.argv)  # noqa: F841
 
             if not QSslSocket.supportsSsl():
-                return False
+                return False, None
+
+            # Query the run-time OpenSSL version
+            openssl_version = QSslSocket.sslLibraryVersionNumber()
 
             # For Qt >= 6.1, check if `openssl` TLS backend is available
             try:
@@ -634,12 +633,25 @@ class QtLibraryInfo:
                 qt_version = []  # Qt <= 5.8
 
             if qt_version < [6, 1]:
-                return True  # TLS backends not implemented yet
+                return True, openssl_version  # TLS backends not implemented yet
 
-            return 'openssl' in QSslSocket.availableBackends()
+            return ('openssl' in QSslSocket.availableBackends(), openssl_version)
 
-        if not _openssl_enabled(self.namespace):
+        openssl_enabled, openssl_version = _check_if_openssl_enabled(self.namespace)
+        if not openssl_enabled or openssl_version == 0:
+            logger.debug("%s: QtNetwork: does not support SSL or does not use OpenSSL.", self)
             return []
+
+        # The actual search is handled in OS-specific ways.
+        if compat.is_win:
+            return self._collect_qtnetwork_openssl_windows(openssl_version)
+        else:
+            return []
+
+    def _collect_qtnetwork_openssl_windows(self, openssl_version):
+        """
+        Windows-specific collection of OpenSSL DLLs required by QtNetwork module.
+        """
 
         # Package parent path; used to preserve the directory structure when DLLs are collected from the python
         # package (e.g., PyPI wheels).
@@ -649,7 +661,7 @@ class QtLibraryInfo:
         # anaconda), or might be expected to be available in the environment (PySide2, PySide6, PyQt6 PyPI wheels).
         #
         # The OpenSSL DLL naming scheme depends on the version:
-        #  - OpenSSL 1.0.x: libeay32.dll, ssleay32
+        #  - OpenSSL 1.0.x: libeay32.dll, ssleay32.dll
         #  - OpenSSL 1.1.x 32-bit: libssl-1_1.dll, libcrypto-1_1.dll
         #  - OpenSSL 1.1.x 64-bit: libssl-1_1-x64.dll, libcrypto-1_1-x64.dll
         #  - OpenSSL 3.0.x 32-bit: libssl-1.dll, libcrypto-3.dll
@@ -661,24 +673,36 @@ class QtLibraryInfo:
         #  - OpenSSL 3.x starting with Qt6 6.5.0:
         #    https://www.qt.io/blog/moving-to-openssl-3-in-binary-builds-starting-from-qt-6.5-beta-2
         #
-        # However, the above does nothing to help us narrow down which version we need to collect, because packages
-        # might be built against a version of their choice. For example, at the time of writing, both
-        # mingw-w64-x86_64-qt5-base 5.15.11+kde+r138-1 and mingw-w64-x86_64-qt6-base 6.6.0-2 packages depend on
-        # mingw-w64-x86_64-openssl 3.1.4-1 (so OpenSSL 3).
+        # However, a package can build Qt against OpenSSL version of their own choice. For example, at the time of
+        # writing, both mingw-w64-x86_64-qt5-base 5.15.11+kde+r138-1 and mingw-w64-x86_64-qt6-base 6.6.0-2 packages
+        # depend on mingw-w64-x86_64-openssl 3.1.4-1 (so OpenSSL 3).
         #
-        # Therefore, we search for all possible versions, in default Qt shared library location and all other
-        # locations that are available in PATH (implicitly done by the binary dependency analysis helper).
-        dll_names = (
-            # OpenSSL 1.0.x
-            'libeay32.dll',
-            'ssleay32.dll',
+        # Luckily, we can query the run-time version of OpenSSL by calling `QSslSocket.sslLibraryVersionNumber()`,
+        # and narrow down the search for specific version.
+        if openssl_version >= 0x10000000 and openssl_version < 0x10100000:
+            # OpenSSL 1.0.x - used by old Qt5 builds
+            dll_names = (
+                'libeay32.dll',
+                'ssleay32.dll',
+            )
+            logger.debug("%s: QtNetwork: looking for OpenSSL 1.0.x DLLs: %r", self, dll_names)
+        elif openssl_version >= 0x10100000 and openssl_version < 0x30000000:
             # OpenSSL 1.1.x
-            'libssl-1_1-x64.dll' if compat.is_64bits else 'libssl-1_1.dll',
-            'libcrypto-1_1-x64.dll' if compat.is_64bits else 'libcrypto-1_1.dll',
+            dll_names = (
+                'libssl-1_1-x64.dll' if compat.is_64bits else 'libssl-1_1.dll',
+                'libcrypto-1_1-x64.dll' if compat.is_64bits else 'libcrypto-1_1.dll',
+            )
+            logger.debug("%s: QtNetwork: looking for OpenSSL 1.1.x DLLs: %r", self, dll_names)
+        elif openssl_version >= 0x30000000 and openssl_version < 0x30100000:
             # OpenSSL 3.0.x
-            'libssl-3-x64.dll' if compat.is_64bits else 'libssl-3.dll',
-            'libcrypto-3-x64.dll' if compat.is_64bits else 'libcrypto-3.dll',
-        )
+            dll_names = (
+                'libssl-3-x64.dll' if compat.is_64bits else 'libssl-3.dll',
+                'libcrypto-3-x64.dll' if compat.is_64bits else 'libcrypto-3.dll',
+            )
+            logger.debug("%s: QtNetwork: looking for OpenSSL 3.0.x DLLs: %r", self, dll_names)
+        else:
+            dll_names = []  # Nothing to search for
+            logger.warning("%s: QtNetwork: unsupported OpenSSL version: %X", self, openssl_version)
 
         binaries = []
         found_in_package = False
