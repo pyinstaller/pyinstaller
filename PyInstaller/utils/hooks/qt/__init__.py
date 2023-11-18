@@ -645,6 +645,8 @@ class QtLibraryInfo:
         # The actual search is handled in OS-specific ways.
         if compat.is_win:
             return self._collect_qtnetwork_openssl_windows(openssl_version)
+        elif compat.is_darwin:
+            return self._collect_qtnetwork_openssl_macos(openssl_version)
         else:
             return []
 
@@ -726,6 +728,84 @@ class QtLibraryInfo:
         if found_in_package:
             binaries = [(dll_src_path, dll_dest_path) for dll_src_path, dll_dest_path in binaries
                         if package_parent_path in pathlib.Path(dll_src_path).parents]
+
+        return binaries
+
+    def _collect_qtnetwork_openssl_macos(self, openssl_version):
+        """
+        macOS-specific collection of OpenSSL dylibs required by QtNetwork module.
+        """
+
+        # The official Qt5 builds on macOS (shipped by PyPI wheels) appear to be built with Apple's SecureTransport API
+        # instead of OpenSSL; for example, `QSslSocket.sslLibraryVersionNumber` returns 0, while
+        # `sslLibraryVersionString()` returns "Secure Transport, macOS 12.6". So with PySide2 and PyQt5, we do not need
+        # to worry about collection of OpenSSL shared libraries.
+        #
+        # Support for OpenSSL was introduced in Qt 6.1 with `openssl` TLS backend; the official Qt6 builds prior to 6.5
+        # seem to be built with OpenSSL 1.1.x, and later versions with 3.0.x. However, PySide6 and PyQt6 PyPI wheels do
+        # not ship OpenSSL dynamic libraries at all , so whether `openssl` TLS backend is used or not depends on the
+        # presence of externally provided OpenSSL dynamic libraries (for example, provided by Homebrew). It is worth
+        # noting that python.org python installers *do* provide OpenSSL shared libraries (1.1.x for python <= 3.10,
+        # 3.0.x for python >= 3.12, and both for python 3.11) for its `_ssl` extension - however, these are NOT visible
+        # to Qt and its QtNetwork module.
+        #
+        # When the frozen application is built and we collect python's `_ssl` extension, we also collect the OpenSSL
+        # shared libraries shipped by python. So at least in theory, those should be available to QtNetwork module as
+        # well (assuming they are of compatible version). However, this is not exactly the case - QtNetwork looks for
+        # the libraries in locations given by `DYLD_LIBRARY_PATH` environment variable and in .app/Contents/Frameworks
+        # (if the program is an .app bundle):
+        #
+        # https://github.com/qt/qtbase/blob/6.6.0/src/plugins/tls/openssl/qsslsocket_openssl_symbols.cpp#L590-L599
+        #
+        # So it works out-of-the box for our .app bundles, because starting with PyInstaller 6.0, `sys._MEIPASS` is in
+        # .app/Contents/Frameworks. But it does not with POSIX builds, because bootloader does not modify the
+        # `DYLD_LIBRARY_PATH` environment variable to include `sys._MEIPASS` (since we usually do not need that;
+        # regular linked library resolution in our macOS builds is done via path rewriting and rpaths). So either we
+        # need a run-time hook to add `sys._MEIPASS` to `DYLD_LIBRARY_PATH`, or modify the bootloader to always do that.
+        #
+        # Collecting the OpenSSL library and making it discoverable by adding `sys._MEIPASS` to `DYLD_LIBRARY_PATH`
+        # should also prevent QtNetwork from "accidentally" pulling in Homebrew version at run-time (if Homebrew is
+        # installed on the target system and provides compatible OpenSSL version).
+        #
+        # Therefore, try to resolve OpenSSL library via the version indicated by `QSslSocket.sslLibraryVersionNumber`;
+        # however, we first explicitly search only {sys.base_prefix}/lib (which is where python.org builds put their
+        # dynamic libs), and only if that fails, perform regular dylib path resolution. This way we ensure that if the
+        # OpenSSL dylibs are provided by python itself, we always prefer those over the Homebrew version (since we are
+        # very likely going to collect them for python's `_ssl` extension anyway).
+
+        # As per above text, we need to worry only about Qt6, and thus OpenSSL 1.1.x or 3.0.x
+        if openssl_version >= 0x10100000 and openssl_version < 0x30000000:
+            # OpenSSL 1.1.x
+            dylib_names = (
+                'libcrypto.1.1.dylib',
+                'libssl.1.1.dylib',
+            )
+            logger.debug("%s: QtNetwork: looking for OpenSSL 1.1.x dylibs: %r", self, dylib_names)
+        elif openssl_version >= 0x30000000 and openssl_version < 0x30100000:
+            # OpenSSL 3.0.x
+            dylib_names = (
+                'libcrypto.3.dylib',
+                'libssl.3.dylib',
+            )
+            logger.debug("%s: QtNetwork: looking for OpenSSL 3.0.x dylibs: %r", self, dylib_names)
+        else:
+            dylib_names = []  # Nothing to search for
+            logger.warning("%s: QtNetwork: unsupported OpenSSL version: %X", self, openssl_version)
+
+        # Compared to Windows, we do not have to worry about dylib's path preservation, as these are never part of
+        # the package, and are therefore always collected to the top-level application directory.
+        binaries = []
+        base_prefix_lib_dir = os.path.join(compat.base_prefix, 'lib')
+        for dylib in dylib_names:
+            # First, attempt to resolve using only {sys.base_prefix}/lib - `bindepend.resolve_library_path` uses
+            # standard dyld search semantics and uses the given search paths as fallback (and would therefore
+            # favor Homebrew-provided version of the library).
+            dylib_path = bindepend._resolve_library_path_in_search_paths(dylib, search_paths=[base_prefix_lib_dir])
+            if dylib_path is None:
+                dylib_path = bindepend.resolve_library_path(dylib, search_paths=[base_prefix_lib_dir, self.qt_lib_dir])
+            if dylib_path is None:
+                continue
+            binaries.append((str(dylib_path), '.'))
 
         return binaries
 
