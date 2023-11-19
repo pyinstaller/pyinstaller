@@ -1,0 +1,4 @@
+(macOS) Have ``PySide6`` and ``PyQt6`` run-time hooks prepend
+``sys._MEIPASS`` to ``DYLD_LIBRARY_PATH`` in POSIX builds, in order
+to ensure that ``QtNetwork`` discovers the bundled copy of the OpenSSL
+shared library.
