@@ -698,7 +698,7 @@ class QtLibraryInfo:
                 'libcrypto-1_1-x64.dll' if compat.is_64bits else 'libcrypto-1_1.dll',
             )
             logger.debug("%s: QtNetwork: looking for OpenSSL 1.1.x DLLs: %r", self, dll_names)
-        elif openssl_version >= 0x30000000 and openssl_version < 0x30100000:
+        elif openssl_version >= 0x30000000 and openssl_version < 0x40000000:
             # OpenSSL 3.0.x
             dll_names = (
                 'libssl-3-x64.dll' if compat.is_64bits else 'libssl-3.dll',
@@ -784,7 +784,7 @@ class QtLibraryInfo:
                 'libssl.1.1.dylib',
             )
             logger.debug("%s: QtNetwork: looking for OpenSSL 1.1.x dylibs: %r", self, dylib_names)
-        elif openssl_version >= 0x30000000 and openssl_version < 0x30100000:
+        elif openssl_version >= 0x30000000 and openssl_version < 0x40000000:
             # OpenSSL 3.0.x
             dylib_names = (
                 'libcrypto.3.dylib',
@@ -836,7 +836,7 @@ class QtLibraryInfo:
                 'libssl.so.1.1',
             )
             logger.debug("%s: QtNetwork: looking for OpenSSL 1.1.x shared libraries: %r", self, shlib_names)
-        elif openssl_version >= 0x30000000 and openssl_version < 0x30100000:
+        elif openssl_version >= 0x30000000 and openssl_version < 0x40000000:
             # OpenSSL 3.0.x
             shlib_names = (
                 'libcrypto.so.3',
