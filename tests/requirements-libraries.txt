@@ -26,7 +26,7 @@ keyring==24.3.0; sys_platform != 'darwin' or python_version >= '3.8.7'
 matplotlib==3.8.2; python_version >= '3.9'
 numpy==1.26.2; python_version >= '3.9'
 pandas==2.1.3; python_version >= '3.9'
-pygments==2.16.1
+pygments==2.17.1
 PyGObject==3.46.0; sys_platform == 'linux'
 # Current PySide2 wheels explicitly require python < 3.11
 PySide2==5.15.2.1; python_version < '3.11'
