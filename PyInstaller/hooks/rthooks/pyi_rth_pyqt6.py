@@ -49,6 +49,18 @@ def _pyi_rthook():
     if sys.platform.startswith('win') and 'PATH' in os.environ:
         os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
 
+    # For macOS POSIX builds, we need to add `sys._MEIPASS` to `DYLD_LIBRARY_PATH` so that QtNetwork can discover
+    # OpenSSL dynamic libraries for its `openssl` TLS backend. This also prevents fallback to external locations, such
+    # as Homebrew. For .app bundles, this is unnecessary because QtNetwork explicitly searches `Contents/Frameworks`.
+    if sys.platform == 'darwin' and not is_macos_app_bundle:
+        search_paths = os.environ.get('DYLD_LIBRARY_PATH')
+        if search_paths:
+            if sys._MEIPASS not in search_paths:
+                search_paths = os.pathsep.join([sys._MEIPASS, *search_paths.split(os.pathsep)])
+        else:
+            search_paths = sys._MEIPASS
+        os.environ['DYLD_LIBRARY_PATH'] = search_paths
+
 
 _pyi_rthook()
 del _pyi_rthook
