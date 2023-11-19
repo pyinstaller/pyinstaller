@@ -1,0 +1,5 @@
+Extend the OpenSSL shared library collection in the ``QtNetwork`` hook
+helper for ``PySide2``, ``PyQt5``, ``PySide6``, and ``PyQt6`` to
+cover all applicable versions of OpenSSL (1.0.2, 1.1.x, 3.x). In
+addition to Windows, the OpenSSL shared libary is now also collected
+on Linux and macOS.
