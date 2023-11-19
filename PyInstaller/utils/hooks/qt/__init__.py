@@ -647,7 +647,10 @@ class QtLibraryInfo:
             return self._collect_qtnetwork_openssl_windows(openssl_version)
         elif compat.is_darwin:
             return self._collect_qtnetwork_openssl_macos(openssl_version)
+        elif compat.is_linux:
+            return self._collect_qtnetwork_openssl_linux(openssl_version)
         else:
+            logger.warning("%s: QtNetwork: collection of OpenSSL not implemented for this platform!")
             return []
 
     def _collect_qtnetwork_openssl_windows(self, openssl_version):
@@ -670,7 +673,7 @@ class QtLibraryInfo:
         #  - OpenSSL 3.0.x 64-bit: libssl-3-x64.dll, libcrypto-3-x64.dll
         #
         # The official Qt builds (which are used by PySide and PyQt PyPI wheels) seem to be build against:
-        #  - OpenSSL 1.1x starting with Qt5 5.14.2:
+        #  - OpenSSL 1.1.x starting with Qt5 5.14.2:
         #    https://www.qt.io/blog/2019/06/17/qt-5-12-4-released-support-openssl-1-1-1
         #  - OpenSSL 3.x starting with Qt6 6.5.0:
         #    https://www.qt.io/blog/moving-to-openssl-3-in-binary-builds-starting-from-qt-6.5-beta-2
@@ -806,6 +809,50 @@ class QtLibraryInfo:
             if dylib_path is None:
                 continue
             binaries.append((str(dylib_path), '.'))
+
+        return binaries
+
+    def _collect_qtnetwork_openssl_linux(self, openssl_version):
+        """
+        Linux-specific collection of OpenSSL dylibs required by QtNetwork module.
+        """
+
+        # Out of the supported OSes, Linux is by far the most straight-forward, because OpenSSL shared libraries are
+        # expected to be provided by the system. So we can just use standard library path resolution with library names
+        # inferred from the run-time OpenSSL version. At run-time, QtNetwork searches paths from `LD_LIBRARY_PATH`, and
+        # on Linux, our bootloader already adds `sys._MEIPASS` to that environment variable.
+
+        if openssl_version >= 0x10000000 and openssl_version < 0x10100000:
+            # OpenSSL 1.0.x - used by old Qt5 builds
+            shlib_names = (
+                'libcrypto.so.10',
+                'libssl.so.10',
+            )
+            logger.debug("%s: QtNetwork: looking for OpenSSL 1.0.x shared libraries: %r", self, shlib_names)
+        elif openssl_version >= 0x10100000 and openssl_version < 0x30000000:
+            # OpenSSL 1.1.x
+            shlib_names = (
+                'libcrypto.so.1.1',
+                'libssl.so.1.1',
+            )
+            logger.debug("%s: QtNetwork: looking for OpenSSL 1.1.x shared libraries: %r", self, shlib_names)
+        elif openssl_version >= 0x30000000 and openssl_version < 0x30100000:
+            # OpenSSL 3.0.x
+            shlib_names = (
+                'libcrypto.so.3',
+                'libssl.so.3',
+            )
+            logger.debug("%s: QtNetwork: looking for OpenSSL 3.0.x shared libraries: %r", self, shlib_names)
+        else:
+            shlib_names = []  # Nothing to search for
+            logger.warning("%s: QtNetwork: unsupported OpenSSL version: %X", self, openssl_version)
+
+        binaries = []
+        for shlib in shlib_names:
+            shlib_path = bindepend.resolve_library_path(shlib)
+            if shlib_path is None:
+                continue
+            binaries.append((str(shlib_path), '.'))
 
         return binaries
 
