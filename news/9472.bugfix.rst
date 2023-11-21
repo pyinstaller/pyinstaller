@@ -1,0 +1,2 @@
+Fix backslash mishandling of some CLI options (``--contents-directory``,
+``--resource``).

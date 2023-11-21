@@ -36,7 +36,7 @@ exe = EXE(
     a.binaries,
     a.datas,%(splash_target)s%(splash_binaries)s
     %(options)s,
-    name='%(name)s',
+    name=%(name)r,
     debug=%(debug_bootloader)s,
     bootloader_ignore_signals=%(bootloader_ignore_signals)s,
     strip=%(strip)s,
@@ -75,7 +75,7 @@ exe = EXE(
     a.scripts,%(splash_target)s
     %(options)s,
     exclude_binaries=True,
-    name='%(name)s',
+    name=%(name)r,
     debug=%(debug_bootloader)s,
     bootloader_ignore_signals=%(bootloader_ignore_signals)s,
     strip=%(strip)s,
@@ -94,23 +94,23 @@ coll = COLLECT(
     strip=%(strip)s,
     upx=%(upx)s,
     upx_exclude=%(upx_exclude)s,
-    name='%(name)s',
+    name=%(name)r,
 )
 """
 
 bundleexetmplt = """app = BUNDLE(
     exe,
-    name='%(name)s.app',
-    icon=%(icon)s,
-    bundle_identifier=%(bundle_identifier)s,
+    name=%(app_bundle_name)r,
+    icon=%(icon)r,
+    bundle_identifier=%(bundle_identifier)r,
 )
 """
 
 bundletmplt = """app = BUNDLE(
     coll,
-    name='%(name)s.app',
-    icon=%(icon)s,
-    bundle_identifier=%(bundle_identifier)s,
+    name=%(app_bundle_name)r,
+    icon=%(icon)r,
+    bundle_identifier=%(bundle_identifier)r,
 )
 """
 
