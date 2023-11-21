@@ -23,7 +23,7 @@ import PyInstaller.utils.misc as miscutils
 def _create_test_data_file(filename):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     # Create a text file
-    with open(filename, 'w') as fp:
+    with open(filename, 'w', encoding='utf-8') as fp:
         fp.write("Test file")
 
 

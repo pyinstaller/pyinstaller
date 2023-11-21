@@ -9,8 +9,7 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
-
-from subprocess import run, PIPE
+import subprocess
 from os.path import join
 
 
@@ -29,7 +28,7 @@ def test_collect_entry_point(pyi_builder_spec, script_dir, tmpdir):
     pyi_builder_spec.test_spec('list_pytest11_entry_point.spec')
     exe = join(tmpdir, "dist", "list_pytest11_entry_point", "list_pytest11_entry_point")
 
-    p = run([exe], stdout=PIPE, check=True, universal_newlines=True)
+    p = subprocess.run([exe], stdout=subprocess.PIPE, check=True, encoding="utf-8")
     collected_plugins = p.stdout.strip("\n").split("\n")
 
     assert collected_plugins == plugins

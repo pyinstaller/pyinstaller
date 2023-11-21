@@ -433,7 +433,7 @@ class Splash(Target):
             script = re.sub(' +', ' ', script)
 
         # Write script to disk, so that it is transparent to the user what script is executed.
-        with open(self.script_name, "w") as script_file:
+        with open(self.script_name, "w", encoding="utf-8") as script_file:
             script_file.write(script)
         return script
 

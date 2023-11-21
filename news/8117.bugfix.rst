@@ -1,0 +1,1 @@
+Fix PEP 597 EncodingWarnings when `PYTHONWARNDEFAULTENCODING=true`.

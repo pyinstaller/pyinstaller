@@ -796,7 +796,7 @@ class QtLibraryInfo:
                     rel_prefix = rel_prefix.replace(os.sep, '/')
                 # Create temporary file in workpath
                 qt_conf_file = os.path.join(CONF['workpath'], "qt.conf")
-                with open(qt_conf_file, 'w') as fp:
+                with open(qt_conf_file, 'w', encoding='utf-8') as fp:
                     print("[Paths]", file=fp)
                     print("Prefix = {}".format(rel_prefix), file=fp)
             datas.append((qt_conf_file, dest))

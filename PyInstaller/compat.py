@@ -91,7 +91,7 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
 
 # Linux distributions such as Alpine or OpenWRT use musl as their libc implementation and resultantly need specially
 # compiled bootloaders. On musl systems, ldd with no arguments prints 'musl' and its version.
-is_musl = is_linux and "musl" in subprocess.getoutput(["ldd"])
+is_musl = is_linux and "musl" in subprocess.run(["ldd"], capture_output=True, encoding="utf-8").stderr
 
 # macOS version
 _macos_ver = tuple(int(x) for x in platform.mac_ver()[0].split('.')) if is_darwin else None
@@ -408,54 +408,6 @@ def exec_command_rc(*cmdargs: str, **kwargs: float | bool | list | None):
     if 'encoding' in kwargs:
         kwargs.pop('encoding')
     return subprocess.call(cmdargs, **kwargs)
-
-
-def exec_command_stdout(
-    *command_args: str, encoding: str | None = None, **kwargs: float | str | bytes | bool | list | None
-):
-    """
-    Capture and return the standard output of the command specified by the passed positional arguments, optionally
-    configured by the passed keyword arguments.
-
-    Unlike the legacy `exec_command()` and `exec_command_all()` functions, this modern function is explicitly designed
-    for cross-platform portability. The return value may be safely used for any purpose, including string manipulation
-    and parsing.
-
-    .. NOTE::
-       If this command's standard output contains _only_ pathnames, this function does _not_ return the correct
-       filesystem-encoded string expected by PyInstaller. If this is the case, consider calling the filesystem-specific
-       `exec_command()` function instead.
-
-    Parameters
-    ----------
-    command_args : List[str]
-        Variadic list whose:
-        1. Mandatory first element is the absolute path, relative path, or basename in the current `${PATH}` of the
-           command to run.
-        2. Optional remaining elements are arguments to pass to this command.
-    encoding : str, optional
-        Optional name of the encoding with which to decode this command's standard output (e.g., `utf8`), passed as a
-        keyword argument. If unpassed , this output will be decoded in a portable manner specific to to the current
-        platform, shell environment, and system settings with Python's built-in `universal_newlines` functionality.
-
-    All remaining keyword arguments are passed as is to the `subprocess.check_output()` function.
-
-    Returns
-    ----------
-    str
-        Unicode string of this command's standard output decoded according to the "encoding" keyword argument.
-    """
-
-    # If no encoding was specified, the current locale is defaulted to. Else, an encoding was specified. To ensure this
-    # encoding is respected, the "universal_newlines" option is disabled if also passed. Nice, eh?
-    kwargs['universal_newlines'] = encoding is None
-
-    # Standard output captured from this command as a decoded Unicode string if "universal_newlines" is enabled or an
-    # encoded byte array otherwise.
-    stdout = subprocess.check_output(command_args, **kwargs)
-
-    # Return a Unicode string, decoded from this encoded byte array if needed.
-    return stdout if encoding is None else stdout.decode(encoding)
 
 
 def exec_command_all(*cmdargs: str, encoding: str | None = None, **kwargs: int | bool | list | None):

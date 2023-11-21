@@ -49,7 +49,7 @@ def test_frozen_stdlib_modules(pyi_builder, script_dir, tmpdir):
 
     def _load_results(filename):
         # Read pprint-ed results
-        with open(filename, 'r') as fp:
+        with open(filename, 'r', encoding='utf-8') as fp:
             data = fp.read()
         data = eval(data)
 
@@ -184,7 +184,7 @@ def test_onefile_cleanup_symlinked_dir(pyi_builder, tmpdir):
     os.mkdir(output_dir)
     for idx in range(5):
         output_file = os.path.join(output_dir, f'preexisting-{idx}.txt')
-        with open(output_file, 'w') as fp:
+        with open(output_file, 'w', encoding='utf-8') as fp:
             fp.write(f'Pre-existing file #{idx}')
 
     # Check if OS supports creation of symbolic links
@@ -206,7 +206,7 @@ def test_onefile_cleanup_symlinked_dir(pyi_builder, tmpdir):
         # Create five files
         for idx in range(5):
             output_file = os.path.join(output_dir, f'output-{idx}.txt')
-            with open(output_file, 'w') as fp:
+            with open(output_file, 'w', encoding='utf-8') as fp:
                 fp.write(f'Output file #{idx}')
         """,
         app_args=[output_dir]
@@ -317,7 +317,7 @@ def test_inspect_rthook_robustness(pyi_builder):
 @pytest.mark.darwin
 def test_bundled_shell_script(pyi_builder, tmpdir):
     script_file = tmpdir / "test_script.sh"
-    with open(script_file, "w") as fp:
+    with open(script_file, "w", encoding="utf-8") as fp:
         print('#!/bin/sh', file=fp)
         print('echo "Hello world!"', file=fp)
     os.chmod(script_file, 0o755)

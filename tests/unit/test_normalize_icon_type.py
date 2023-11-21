@@ -72,7 +72,7 @@ def test_normalize_icon_pillow(tmp_path):
     # Some random non-image file: Raises an image conversion error
 
     icon = os.path.join(tmp_path, 'pyi_icon.notanicon')
-    with open(icon, "w") as f:
+    with open(icon, "w", encoding="utf-8") as f:
         f.write("this is in fact, not an icon")
 
     with pytest.raises(ValueError):

@@ -34,7 +34,7 @@ def _create_data(tmpdir, orig_filename, link_filename):
     # Create original file
     abs_orig_filename = os.path.join(data_path, orig_filename)
     os.makedirs(os.path.dirname(abs_orig_filename), exist_ok=True)
-    with open(abs_orig_filename, 'w') as fp:
+    with open(abs_orig_filename, 'w', encoding='utf-8') as fp:
         fp.write("secret")
 
     # Create symbolic link
@@ -243,7 +243,7 @@ def _prepare_chained_links_example(tmpdir):
     os.makedirs(data_path)
 
     # Create original file: file_a
-    with open(os.path.join(data_path, "file_a"), 'w') as fp:
+    with open(os.path.join(data_path, "file_a"), 'w', encoding='utf-8') as fp:
         fp.write("secret")
 
     # Create symbolic link: file_b -> file_a
@@ -443,7 +443,7 @@ def _prepare_parent_directory_link_example(tmpdir):
     os.makedirs(original_dir)
 
     # Create original file: file_a
-    with open(os.path.join(original_dir, "file_a"), 'w') as fp:
+    with open(os.path.join(original_dir, "file_a"), 'w', encoding='utf-8') as fp:
         fp.write("secret")
 
     # Create symbolic link: file_b -> file_a
