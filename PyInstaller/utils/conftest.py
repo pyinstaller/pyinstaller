@@ -443,7 +443,7 @@ class AppBuilder:
         """
         print('EXECUTING MATCHING:', toc_log)
         fname_list = pkg_archive_contents(exe)
-        with open(toc_log, 'r') as f:
+        with open(toc_log, 'r', encoding='utf-8') as f:
             pattern_list = eval(f.read())
         # Alphabetical order of patterns.
         pattern_list.sort()

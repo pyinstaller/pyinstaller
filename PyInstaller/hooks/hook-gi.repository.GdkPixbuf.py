@@ -12,6 +12,7 @@
 import glob
 import os
 import shutil
+import subprocess
 
 from PyInstaller import compat
 from PyInstaller.config import CONF  # workpath
@@ -80,7 +81,10 @@ def _generate_loader_cache(gdk_pixbuf_query_loaders, libdir, loader_libs):
     #
     # On Windows, the loaders lib directory is relative, starts with 'lib', and uses \\ as path separators
     # (escaped \).
-    cachedata = compat.exec_command_stdout(gdk_pixbuf_query_loaders, *loader_libs)
+    cachedata = subprocess.run([gdk_pixbuf_query_loaders, *loader_libs],
+                               check=True,
+                               stdout=subprocess.PIPE,
+                               encoding='utf-8').stdout
 
     output_lines = []
     prefix = '"' + os.path.join(libdir, 'gdk-pixbuf-2.0', '2.10.0')
@@ -132,7 +136,7 @@ def hook(hook_api):
         # Generate loader cache; we need to store it to CONF['workpath'] so we can collect it as a data file.
         cachedata = _generate_loader_cache(gdk_pixbuf_query_loaders, libdir, loader_libs)
         cachefile = os.path.join(CONF['workpath'], 'loaders.cache')
-        with open(cachefile, 'w') as fp:
+        with open(cachefile, 'w', encoding='utf-8') as fp:
             fp.write(cachedata)
         datas.append((cachefile, LOADER_CACHE_DEST_PATH))
 

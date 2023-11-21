@@ -34,7 +34,7 @@ def _check_upx_availability(upx_dir):
             [upx_exe, '-V'],
             stdin=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            universal_newlines=True,
+            encoding='utf-8',
         )
     except Exception:
         logger.debug('UPX is not available.')

@@ -787,7 +787,7 @@ class EXE(Target):
             # Linux: append data into custom ELF section using objcopy.
             logger.info("Appending %s to custom ELF section in EXE", append_type)
             cmd = ['objcopy', '--add-section', f'pydata={append_file}', build_name]
-            p = subprocess.run(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+            p = subprocess.run(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, encoding='utf-8')
             if p.returncode:
                 raise SystemError(f"objcopy Failure: {p.returncode} {p.stdout}")
 

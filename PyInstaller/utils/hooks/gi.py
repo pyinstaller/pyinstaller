@@ -394,8 +394,8 @@ def compile_glib_schema_files(datas_toc, workdir, collect_source_files=False):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             check=True,
-            text=True,
             errors='ignore',
+            encoding='utf-8',
         )
         logger.debug("Output from glib-compile-schemas:\n%s", p.stdout)
     except subprocess.CalledProcessError as e:

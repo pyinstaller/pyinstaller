@@ -36,7 +36,7 @@ _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules
 # name;ispackage
 def _read_results_file(filename):
     output = []
-    with open(filename, 'r') as fp:
+    with open(filename, 'r', encoding='utf-8') as fp:
         for line in fp:
             tokens = line.split(';')
             assert len(tokens) == 2

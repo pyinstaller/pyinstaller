@@ -327,7 +327,7 @@ def _get_imports_ldd(filename, search_paths):
         stdin=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        universal_newlines=True,
+        encoding='utf-8',
     )
 
     for line in p.stderr.splitlines():

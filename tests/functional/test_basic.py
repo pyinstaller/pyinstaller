@@ -369,7 +369,7 @@ def test_stderr_encoding(tmpdir, pyi_builder):
     #             py.test has stdout encoding 'cp1252', which is an ANSI codepage. test fails as they do not match.
     # with -s:    py.test process has stdout encoding from windows terminal, which is an OEM codepage. spawned
     #             subprocess has the same encoding. test passes.
-    with open(os.path.join(tmpdir.strpath, 'stderr_encoding.build'), 'w') as f:
+    with open(os.path.join(tmpdir.strpath, 'stderr_encoding.build'), 'w', encoding='utf-8') as f:
         if sys.stderr.isatty():
             enc = str(sys.stderr.encoding)
         else:
@@ -381,7 +381,7 @@ def test_stderr_encoding(tmpdir, pyi_builder):
 
 
 def test_stdout_encoding(tmpdir, pyi_builder):
-    with open(os.path.join(tmpdir.strpath, 'stdout_encoding.build'), 'w') as f:
+    with open(os.path.join(tmpdir.strpath, 'stdout_encoding.build'), 'w', encoding='utf-8') as f:
         if sys.stdout.isatty():
             enc = str(sys.stdout.encoding)
         else:
@@ -630,7 +630,7 @@ def test_onefile_longpath(pyi_builder, tmpdir):
     # Create data file with secret
     _SECRET = 'LongDataPath'
     src_filename = tmpdir / 'data.txt'
-    with open(src_filename, 'w') as fp:
+    with open(src_filename, 'w', encoding='utf-8') as fp:
         fp.write(_SECRET)
     # Generate long target filename/path; eight equivalents of SHA256 strings plus data.txt should push just the
     # _MEIPASS-relative path beyond 260 characters...
@@ -759,12 +759,12 @@ def test_package_entry_point_name_collision(pyi_builder):
     ]
 
     # Include a verification that unfrozen Python does still work.
-    p = subprocess.run([sys.executable, str(script)], stdout=subprocess.PIPE, universal_newlines=True)
+    p = subprocess.run([sys.executable, str(script)], stdout=subprocess.PIPE, encoding="utf-8")
     assert re.findall("Running (.*) as (.*)", p.stdout) == expected
 
     pyi_builder.test_script(str(script))
     exe, = pyi_builder._find_executables("matching_name")
-    p = subprocess.run([exe], stdout=subprocess.PIPE, universal_newlines=True)
+    p = subprocess.run([exe], stdout=subprocess.PIPE, encoding="utf-8")
     assert re.findall("Running (.*) as (.*)", p.stdout) == expected
 
 
@@ -815,7 +815,7 @@ def test_spec_options(pyi_builder, SPEC_DIR, capsys):
         pyi_args=["--", "--optional-dependency", "email", "--optional-dependency", "gzip"]
     )
     exe, = pyi_builder._find_executables("pyi_spec_options")
-    p = subprocess.run([exe], stdout=subprocess.PIPE, text=True)
+    p = subprocess.run([exe], stdout=subprocess.PIPE, encoding="utf-8")
     assert p.stdout == "Available dependencies: email gzip\n"
 
     capsys.readouterr()

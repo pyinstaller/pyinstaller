@@ -310,7 +310,7 @@ def convert_binary_to_thin_arch(filename, thin_arch, output_filename=None):
     """
     output_filename = output_filename or filename
     cmd_args = ['lipo', '-thin', thin_arch, filename, '-output', output_filename]
-    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8')
     if p.returncode:
         raise SystemError(f"lipo command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}")
 
@@ -320,7 +320,7 @@ def merge_into_fat_binary(output_filename, *slice_filenames):
     Merge the given single-arch thin binary files into a fat binary.
     """
     cmd_args = ['lipo', '-create', '-output', output_filename, *slice_filenames]
-    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8')
     if p.returncode:
         raise SystemError(f"lipo command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}")
 
@@ -359,7 +359,7 @@ def remove_signature_from_binary(filename):
     """
     logger.debug("Removing signature from file %r", filename)
     cmd_args = ['codesign', '--remove', '--all-architectures', filename]
-    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8')
     if p.returncode:
         raise SystemError(f"codesign command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}")
 
@@ -381,7 +381,7 @@ def sign_binary(filename, identity=None, entitlements_file=None, deep=False):
 
     logger.debug("Signing file %r", filename)
     cmd_args = ['codesign', '-s', identity, '--force', '--all-architectures', '--timestamp', *extra_args, filename]
-    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8')
     if p.returncode:
         raise SystemError(f"codesign command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}")
 
@@ -535,7 +535,7 @@ def _set_dylib_dependency_paths(filename, target_rpath):
 
     # Run `install_name_tool`
     cmd_args = ["install_name_tool", *install_name_tool_args, filename]
-    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8')
     if p.returncode:
         raise SystemError(
             f"install_name_tool command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}"

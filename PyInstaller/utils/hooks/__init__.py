@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import copy
 import os
+import subprocess
 import textwrap
 import fnmatch
 from pathlib import Path
@@ -1026,7 +1027,10 @@ def get_installer(module: str):
 
         # Attempt to resolve the module file via macports' port command
         try:
-            output = compat.exec_command_stdout('port', 'provides', file_name)
+            output = subprocess.run(['port', 'provides', file_name],
+                                    check=True,
+                                    stdout=subprocess.PIPE,
+                                    encoding='utf-8').stdout
             if 'is provided by' in output:
                 return 'macports'
         except ExecCommandFailed:
