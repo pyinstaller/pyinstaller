@@ -15,6 +15,7 @@ Automatically build spec files containing a description of the project.
 import argparse
 import os
 import re
+import pathlib
 
 from PyInstaller import DEFAULT_SPECPATH, HOMEPATH
 from PyInstaller import log as logging
@@ -29,9 +30,8 @@ DEBUG_ARGUMENT_CHOICES = ['imports', 'bootloader', 'noarchive']
 DEBUG_ALL_CHOICE = ['all']
 
 
-def escape_win_filepath(path):
-    # escape all \ with another \ after using normpath to clean up the path
-    return os.path.normpath(path).replace('\\', '\\\\')
+def portable_filepath(path):
+    return pathlib.Path(path).as_posix()
 
 
 def make_path_spec_relative(filename, spec_dir):
@@ -78,7 +78,7 @@ class SourceDestAction(argparse.Action):
         # replace it before modifying it to avoid changing the default.
         if getattr(namespace, self.dest) is self.default:
             setattr(namespace, self.dest, [])
-        getattr(namespace, self.dest).append((src, dest))
+        getattr(namespace, self.dest).append((portable_filepath(src), portable_filepath(dest)))
 
 
 def make_variable_path(filename, conversions=path_conversions):
@@ -143,8 +143,8 @@ class Path:
         if self.filename_suffix is None:
             self.variable_prefix, self.filename_suffix = make_variable_path(self.path)
         if self.variable_prefix is None:
-            return repr(self.path)
-        return "os.path.join(" + self.variable_prefix + "," + repr(self.filename_suffix) + ")"
+            return repr(portable_filepath(self.path))
+        return "os.path.join(%s, %r)" % (self.variable_prefix, portable_filepath(self.filename_suffix))
 
 
 # An object used to construct extra preamble for the spec file, in order to accommodate extra collect_*() calls from the
@@ -713,7 +713,7 @@ def main(
     # Handle additional EXE options.
     exe_options = ''
     if version_file:
-        exe_options += "\n    version='%s'," % escape_win_filepath(version_file)
+        exe_options += "\n    version=%r," % portable_filepath(version_file)
     if uac_admin:
         exe_options += "\n    uac_admin=True,"
     if uac_uiaccess:
@@ -724,33 +724,31 @@ def main(
         if icon_file[0] == 'NONE':
             exe_options += "\n    icon='NONE',"
         else:
-            exe_options += "\n    icon=[%s]," % ','.join("'%s'" % escape_win_filepath(ic) for ic in icon_file)
+            exe_options += "\n    icon=%r," % [portable_filepath(ic) for ic in icon_file]
         # Icon file for Mac OS.
-        # We need to encapsulate it into apostrofes.
-        icon_file = "'%s'" % icon_file[0]
+        icon_file = repr(portable_filepath(icon_file[0]))
     else:
         # On Mac OS, the default icon has to be copied into the .app bundle.
         # The the text value 'None' means - use default icon.
         icon_file = 'None'
     if contents_directory:
-        exe_options += "\n    contents_directory='%s'," % (contents_directory or "_internal")
+        exe_options += "\n    contents_directory=%r," % (contents_directory or "_internal")
     if hide_console:
-        exe_options += "\n    hide_console='%s'," % hide_console
+        exe_options += "\n    hide_console=%r," % hide_console
 
     if bundle_identifier:
-        # We need to encapsulate it into apostrofes.
-        bundle_identifier = "'%s'" % bundle_identifier
+        bundle_identifier = repr(bundle_identifier)
 
     if manifest:
         if "<" in manifest:
             # Assume XML string
-            exe_options += "\n    manifest='%s'," % manifest.replace("'", "\\'")
+            exe_options += "\n    manifest=%r," % manifest
         else:
             # Assume filename
-            exe_options += "\n    manifest='%s'," % escape_win_filepath(manifest)
+            exe_options += "\n    manifest=%r," % portable_filepath(manifest)
     if resources:
-        resources = list(map(escape_win_filepath, resources))
-        exe_options += "\n    resources=%s," % repr(resources)
+        resources = [portable_filepath(r) for r in resources]
+        exe_options += "\n    resources=%r," % repr(resources)
 
     hiddenimports = hiddenimports or []
     upx_exclude = upx_exclude or []
@@ -778,7 +776,7 @@ def main(
     )
 
     if splash:
-        splash_init = splashtmpl % {'splash_image': splash}
+        splash_init = splashtmpl % {'splash_image': portable_filepath(splash)}
         splash_binaries = "\n    splash.binaries,"
         splash_target = "\n    splash,"
     else:
@@ -791,7 +789,7 @@ def main(
 
     d = {
         'scripts': scripts,
-        'pathex': pathex or [],
+        'pathex': [portable_filepath(i) for i in pathex or []],
         'binaries': preamble.binaries,
         'datas': preamble.datas,
         'hiddenimports': preamble.hiddenimports,
@@ -803,13 +801,13 @@ def main(
         'bootloader_ignore_signals': bootloader_ignore_signals,
         'strip': strip,
         'upx': not noupx,
-        'upx_exclude': upx_exclude,
-        'runtime_tmpdir': runtime_tmpdir,
+        'upx_exclude': [portable_filepath(i) for i in upx_exclude],
+        'runtime_tmpdir': portable_filepath(runtime_tmpdir) if runtime_tmpdir else None,
         'exe_options': exe_options,
         # Directory with additional custom import hooks.
-        'hookspath': hookspath,
+        'hookspath': [portable_filepath(i) for i in hookspath],
         # List with custom runtime hook files.
-        'runtime_hooks': runtime_hooks or [],
+        'runtime_hooks': [portable_filepath(i) for i in runtime_hooks or []],
         # List of modules/packages to ignore.
         'excludes': excludes or [],
         # only Windows and Mac OS distinguish windowed and console apps
