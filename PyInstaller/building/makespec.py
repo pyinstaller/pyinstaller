@@ -48,12 +48,6 @@ def make_path_spec_relative(filename, spec_dir):
         return filename
 
 
-# Support for trying to avoid hard-coded paths in the .spec files. Eg, all files rooted in the Installer directory tree
-# will be written using "HOMEPATH", thus allowing this spec file to be used with any Installer installation. Same thing
-# could be done for other paths too.
-path_conversions = ((HOMEPATH, "HOMEPATH"),)
-
-
 class SourceDestAction(argparse.Action):
     """
     A command line option which takes multiple source:dest pairs.
@@ -79,27 +73,6 @@ class SourceDestAction(argparse.Action):
         if getattr(namespace, self.dest) is self.default:
             setattr(namespace, self.dest, [])
         getattr(namespace, self.dest).append((portable_filepath(src), portable_filepath(dest)))
-
-
-def make_variable_path(filename, conversions=path_conversions):
-    if not os.path.isabs(filename):
-        # os.path.commonpath can not compare relative and absolute paths, and if filename is not absolute, none of the
-        # paths in conversions will match anyway.
-        return None, filename
-    for (from_path, to_name) in conversions:
-        assert os.path.abspath(from_path) == from_path, ("path '%s' should already be absolute" % from_path)
-        try:
-            common_path = os.path.commonpath([filename, from_path])
-        except ValueError:
-            # Per https://docs.python.org/3/library/os.path.html#os.path.commonpath, this raises ValueError in several
-            # cases which prevent computing a common path.
-            common_path = None
-        if common_path == from_path:
-            rest = filename[len(from_path):]
-            if rest.startswith(('\\', '/')):
-                rest = rest[1:]
-            return to_name, rest
-    return None, filename
 
 
 def removed_key_option(x):
@@ -130,21 +103,6 @@ class _RemovedWinNoPreferRedirectsAction(_RemovedFlagAction):
     def __call__(self, *args, **kwargs):
         from PyInstaller.exceptions import RemovedWinSideBySideSupportError
         raise RemovedWinSideBySideSupportError("Please remove your --win-no-prefer-redirects argument.")
-
-
-# An object used in place of a "path string", which knows how to repr() itself using variable names instead of
-# hard-coded paths.
-class Path:
-    def __init__(self, *parts):
-        self.path = os.path.join(*parts)
-        self.variable_prefix = self.filename_suffix = None
-
-    def __repr__(self):
-        if self.filename_suffix is None:
-            self.variable_prefix, self.filename_suffix = make_variable_path(self.path)
-        if self.variable_prefix is None:
-            return repr(portable_filepath(self.path))
-        return "os.path.join(%s, %r)" % (self.variable_prefix, portable_filepath(self.filename_suffix))
 
 
 # An object used to construct extra preamble for the spec file, in order to accommodate extra collect_*() calls from the
@@ -759,8 +717,7 @@ def main(
 
     # If script paths are relative, make them relative to the directory containing .spec file.
     scripts = [make_path_spec_relative(x, specpath) for x in scripts]
-    # With absolute paths replace prefix with variable HOMEPATH.
-    scripts = list(map(Path, scripts))
+    scripts = list(map(portable_filepath, scripts))
 
     # Translate the default of ``debug=None`` to an empty list.
     if debug is None:

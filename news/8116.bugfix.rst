@@ -1,0 +1,2 @@
+Fix :class:`ValueError` build error on Windows if :option:`--specpath` is set to
+a different drive.
