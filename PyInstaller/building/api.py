@@ -1181,6 +1181,7 @@ class MERGE:
             directory name and executable name (e.g., `myapp/myexecutable`).
         """
         self._dependencies = {}
+        self._symlinks = set()
 
         # Process all given (analysis, identifier, path_to_exe) tuples
         for analysis, identifier, path_to_exe in args:
@@ -1208,19 +1209,31 @@ class MERGE:
         toc_refs = []
         for entry in toc:
             dest_name, src_name, typecode = entry
+
+            # Special handling and bookkeeping for symbolic links. We need to account both for dest_name and src_name,
+            # because src_name might be the same in different contexts. For example, when collecting Qt .framework
+            # bundles on macOS, there are multiple relative symbolic links `Current -> A` (one in each .framework).
+            if typecode == 'SYMLINK':
+                key = dest_name, src_name
+                if key not in self._symlinks:
+                    # First occurrence; keep the entry in "for-keep" TOC, same as we would for binaries and datas.
+                    logger.debug("Keeping symbolic link %r entry in original TOC.", entry)
+                    self._symlinks.add(key)
+                    toc_keep.append(entry)
+                else:
+                    # Subsequent occurrence; keep the SYMLINK entry intact, but add it to the references TOC instead of
+                    # "for-keep" TOC, so it ends up in `a.dependencies`.
+                    logger.debug("Moving symbolic link %r entry to references TOC.", entry)
+                    toc_refs.append(entry)
+                del key  # Block-local variable
+                continue
+
             if src_name not in self._dependencies:
                 logger.debug("Adding dependency %s located in %s", src_name, path_to_exe)
                 self._dependencies[src_name] = path_to_exe
                 # Add entry to list of kept TOC entries
                 toc_keep.append(entry)
             else:
-                # Keep SYMLINK entries intact (but add them to the references TOC instead of "for-keep" TOC, so they
-                # end up in `a.dependencies`).
-                if typecode == 'SYMLINK':
-                    logger.debug("Referenced dependency %s is symbolic link; keeping it intact!", src_name)
-                    toc_refs.append(entry)
-                    continue
-
                 # Construct relative dependency path; i.e., the relative path from this executable (or rather, its
                 # parent directory) to the executable that contains the dependency.
                 dep_path = os.path.relpath(self._dependencies[src_name], os.path.dirname(path_to_exe))
