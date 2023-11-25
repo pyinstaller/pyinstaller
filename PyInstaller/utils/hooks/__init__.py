@@ -302,35 +302,37 @@ def get_module_file_attribute(package: str):
     str
         Absolute path of this module.
     """
-    # First, try to use 'pkgutil'. It is the fastest way, but does not work on certain modules in pywin32 that replace
-    # all module attributes with those of the .dll. In addition, we need to avoid it for submodules/subpackages,
-    # because it ends up importing their parent package, which would cause an import leak during the analysis.
+    # First, try to use 'importlib.util.find_spec' and obtain loader from the spec (and filename from the loader).
+    # It is the fastest way, but does not work on certain modules in pywin32 that replace all module attributes with
+    # those of the .dll. In addition, we need to avoid it for submodules/subpackages, because it ends up importing
+    # their parent package, which would cause an import leak during the analysis.
     filename: str | None = None
     if '.' not in package:
         try:
-            import pkgutil
-            loader = pkgutil.find_loader(package)
+            import importlib.util
+            loader = importlib.util.find_spec(package).loader
             filename = loader.get_filename(package)
             # Apparently in the past, ``None`` could be returned for built-in ``datetime`` module. Just in case this
             # is still possible, return only if filename is valid.
             if filename:
                 return filename
-        except (AttributeError, ImportError):
+        except (ImportError, AttributeError, TypeError, ValueError):
             pass
 
     # Second attempt: try to obtain module/package's __file__ attribute in an isolated subprocess.
     @isolated.decorate
     def _get_module_file_attribute(package):
-        # First try to use 'pkgutil'; it returns the filename even if the module or package cannot be imported
-        # (e.g., C-extension module with missing dependencies).
+        # First, try to use 'importlib.util.find_spec' and obtain loader from the spec (and filename from the loader).
+        # This should return the filename even if the module or package cannot be imported (e.g., a C-extension module
+        # with missing dependencies).
         try:
-            import pkgutil
-            loader = pkgutil.find_loader(package)
+            import importlib.util
+            loader = importlib.util.find_spec(package).loader
             filename = loader.get_filename(package)
             # Safe-guard against ``None`` being returned (see comment in the non-isolated codepath).
             if filename:
                 return filename
-        except (AttributeError, ImportError):
+        except (ImportError, AttributeError, TypeError, ValueError):
             pass
 
         # Fall back to import attempt
