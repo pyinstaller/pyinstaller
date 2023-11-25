@@ -10,10 +10,10 @@
 #-----------------------------------------------------------------------------
 
 import re
+import importlib.util
 
 from PyInstaller import isolated
 from PyInstaller.lib.modulegraph.modulegraph import SourceModule
-from PyInstaller.lib.modulegraph.util import guess_encoding
 from PyInstaller.utils.hooks import check_requirement, logger
 
 # 'sqlalchemy.testing' causes bundling a lot of unnecessary modules.
@@ -63,13 +63,15 @@ def hook(hook_api):
     for node in hook_api.module_graph.iter_graph(start=hook_api.module):
         if isinstance(node, SourceModule) and node.identifier.startswith('sqlalchemy.'):
             known_imports.add(node.identifier)
-            # Determine the encoding of the source file.
+
+            # Read the source...
             with open(node.filename, 'rb') as f:
-                encoding = guess_encoding(f)
-            # Use that to open the file.
-            with open(node.filename, 'r', encoding=encoding) as f:
-                for match in depend_regex.findall(f.read()):
-                    hidden_imports_set.add(match)
+                source_code = f.read()
+            source_code = importlib.util.decode_source(source_code)
+
+            # ... and scan it
+            for match in depend_regex.findall(source_code):
+                hidden_imports_set.add(match)
 
     hidden_imports_set -= known_imports
     if len(hidden_imports_set):
