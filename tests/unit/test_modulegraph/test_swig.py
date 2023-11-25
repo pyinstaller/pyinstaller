@@ -3,12 +3,10 @@ Test importability of SWIG-generated C extensions.
 """
 import os
 import sys
+import unittest
+
 from PyInstaller.lib.modulegraph import modulegraph
 
-if sys.version_info[:2] <= (2,6):
-    import unittest2 as unittest
-else:
-    import unittest
 
 class TestSWIGImportability(unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):

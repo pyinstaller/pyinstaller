@@ -65,9 +65,8 @@ class TestPythonBehaviour(object):
             cwd=os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
                 'testpkg-relimport'),
+            encoding='utf8',
         )
-        if sys.version_info[0] != 2:
-            data = data.decode('UTF-8')
         data = data.strip()
         if data.endswith(' refs]'):
             data = data.rsplit('\n', 1)[0].strip()
