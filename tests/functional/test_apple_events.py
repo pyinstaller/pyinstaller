@@ -62,7 +62,7 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
             if elapsed > timeout:
                 return False
             if os.path.exists(logfile_path):
-                with open(logfile_path) as fh:
+                with open(logfile_path, 'r', encoding='utf8') as fh:
                     log_lines = fh.readlines()
                     if log_lines:
                         if event == 'started':
@@ -133,7 +133,7 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     assoc_files = []
     for ii in range(n_files):
         assoc_path = os.path.join(tmpdir, 'AFile{}.{}'.format(ii, custom_file_ext))
-        with open(assoc_path, 'wt') as fh:
+        with open(assoc_path, 'wt', encoding='utf8') as fh:
             fh.write("File contents #{}\n".format(ii))
         assoc_files.append(assoc_path)
 
@@ -204,7 +204,7 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     time.sleep(2)  # wait for app to fully exit
 
     # *** Analyze the contents of the log file ***
-    with open(logfile_path, 'r') as fh:
+    with open(logfile_path, 'r', encoding='utf8') as fh:
         log_lines = fh.readlines()
 
     assert log_lines[0].startswith('started '), "Unexpected first line in log!"

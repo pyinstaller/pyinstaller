@@ -108,7 +108,7 @@ def _create_app_bundle(pyi_builder, monkeypatch, tmpdir, datas=None, binaries=No
 def _create_test_data_file(filename):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     # Create a text file
-    with open(filename, 'w') as fp:
+    with open(filename, 'w', encoding='utf8') as fp:
         fp.write("Test file")
 
 
