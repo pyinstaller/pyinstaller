@@ -37,7 +37,6 @@ from altgraph.ObjectGraph import ObjectGraph
 from altgraph import GraphError
 
 from . import util
-from . import zipio
 
 
 class BUILTIN_MODULE:
@@ -135,16 +134,6 @@ def _path_from_importerror(exc, default):
         return m.group(1)
 
     return default
-
-
-def os_listdir(path):
-    """
-    Deprecated name
-    """
-    warnings.warn(
-        "Use zipio.listdir instead of os_listdir",
-        DeprecationWarning)
-    return zipio.listdir(path)
 
 
 def _code_to_file(co):
@@ -1679,7 +1668,7 @@ class ModuleGraph(ObjectGraph):
         # we cannot separate normal dlls from Python extensions.
         for path in m.packagepath:
             try:
-                names = zipio.listdir(path)
+                names = os.listdir(path)
             except (os.error, IOError):
                 self.msg(2, "can't list directory", path)
                 continue
