@@ -14,8 +14,6 @@ imports are done in the right way.
 #    https://github.com/pyinstaller/pyinstaller/issues/1919#issuecomment-216016176
 
 import ast
-import io
-import marshal
 import os
 import pkgutil
 import sys
@@ -80,50 +78,9 @@ Specifically, under:
 * Python 3, this defaults to attempting only absolute imports.
 """
 
-# Reverse sort by length so when comparing filenames the longest match first
-_IMPORTABLE_FILETYPE_EXTS = sorted(importlib.machinery.all_suffixes(),
-                                   key=lambda p: len(p), reverse=True)
-
-# Modulegraph does a good job at simulating Python's, but it can not
-# handle packagepath modifications packages make at runtime.  Therefore there
-# is a mechanism whereby you can register extra paths in this map for a
-# package, and it will be honored.
-#
-# Note this is a mapping is lists of paths.
-_packagePathMap = {}
-
 
 class InvalidRelativeImportError (ImportError):
     pass
-
-
-_strs = re.compile(r'''^\s*["']([A-Za-z0-9_]+)["'],?\s*''')  # "<- emacs happy
-
-
-def _eval_str_tuple(value):
-    """
-    Input is the repr of a tuple of strings, output
-    is that tuple.
-
-    This only works with a tuple where the members are
-    python identifiers.
-    """
-    if not (value.startswith('(') and value.endswith(')')):
-        raise ValueError(value)
-
-    orig_value = value
-    value = value[1:-1]
-
-    result = []
-    while value:
-        m = _strs.match(value)
-        if m is None:
-            raise ValueError(orig_value)
-
-        result.append(m.group(1))
-        value = value[len(m.group(0)):]
-
-    return tuple(result)
 
 
 def _path_from_importerror(exc, default):
@@ -134,25 +91,6 @@ def _path_from_importerror(exc, default):
         return m.group(1)
 
     return default
-
-
-def _code_to_file(co):
-    """ Convert code object to a .pyc pseudo-file """
-    header = importlib.util.MAGIC_NUMBER + (b'\0' * 12)
-    return io.BytesIO(header + marshal.dumps(co))
-
-
-def AddPackagePath(packagename, path):
-    warnings.warn(
-        "Use addPackagePath instead of AddPackagePath",
-        DeprecationWarning)
-    addPackagePath(packagename, path)
-
-
-def addPackagePath(packagename, path):
-    paths = _packagePathMap.get(packagename, [])
-    paths.append(path)
-    _packagePathMap[packagename] = paths
 
 
 #FIXME: What is this? Do we actually need this? This appears to provide
@@ -974,7 +912,7 @@ class ModuleGraph(ObjectGraph):
 
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
-        self._package_path_map = _packagePathMap
+        self._package_path_map = {}
 
         # Legacy namespace-package paths. Initialized by scan_legacy_namespace_packages.
         self._legacy_ns_packages = {}
@@ -3100,7 +3038,4 @@ class ModuleGraph(ObjectGraph):
             if isinstance(consts[i], type(co)):
                 consts[i] = self._replace_paths_in_code(consts[i])
 
-        code_func = type(co)
-
-        return co.replace(co_consts=tuple(consts),
-                          co_filename=new_filename)
+        return co.replace(co_consts=tuple(consts), co_filename=new_filename)

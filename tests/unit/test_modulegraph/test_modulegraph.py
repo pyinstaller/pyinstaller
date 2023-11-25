@@ -72,37 +72,6 @@ class TestFunctions (unittest.TestCase):
         def assertIsInstance(self, obj, types):
             self.assertTrue(isinstance(obj, types), '%r is not instance of %r'%(obj, types))
 
-    def test_eval_str_tuple(self):
-        for v in [
-            '()',
-            '("hello",)',
-            '("hello", "world")',
-            "('hello',)",
-            "('hello', 'world')",
-            "('hello', \"world\")",
-            ]:
-
-            self.assertEqual(modulegraph._eval_str_tuple(v), eval(v))
-
-        self.assertRaises(ValueError, modulegraph._eval_str_tuple, "")
-        self.assertRaises(ValueError, modulegraph._eval_str_tuple, "'a'")
-        self.assertRaises(ValueError, modulegraph._eval_str_tuple, "'a', 'b'")
-        self.assertRaises(ValueError, modulegraph._eval_str_tuple, "('a', ('b', 'c'))")
-        self.assertRaises(ValueError, modulegraph._eval_str_tuple, "('a', ('b\", 'c'))")
-
-    def test_code_to_file(self):
-        try:
-            code = modulegraph._code_to_file.__code__
-        except AttributeError:
-            code = modulegraph._code_to_file.func_code
-
-        data = modulegraph._code_to_file(code)
-        self.assertTrue(hasattr(data, 'read'))
-
-        content = data.read()
-        self.assertIsInstance(content, bytes)
-        data.close()
-
     def test_find_module(self):
         for path in ('syspath', 'syspath.zip', 'syspath.egg'):
             path = os.path.join(os.path.dirname(TESTDATA), path)
@@ -200,24 +169,6 @@ class TestFunctions (unittest.TestCase):
 
                 self.assertEqual(filename, os.path.join(path, 'myext' + ext))
                 self.assertIsInstance(loader, ExtensionFileLoader)
-
-    def test_addPackage(self):
-        saved = modulegraph._packagePathMap
-        self.assertIsInstance(saved, dict)
-        try:
-            modulegraph._packagePathMap = {}
-
-            modulegraph.addPackagePath('foo', 'a')
-            self.assertEqual(modulegraph._packagePathMap, { 'foo': ['a'] })
-
-            modulegraph.addPackagePath('foo', 'b')
-            self.assertEqual(modulegraph._packagePathMap, { 'foo': ['a', 'b'] })
-
-            modulegraph.addPackagePath('bar', 'b')
-            self.assertEqual(modulegraph._packagePathMap, { 'foo': ['a', 'b'], 'bar': ['b'] })
-
-        finally:
-            modulegraph._packagePathMap = saved
 
 
 class TestNode (unittest.TestCase):
