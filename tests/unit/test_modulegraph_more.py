@@ -393,7 +393,7 @@ def test_scan_code__basic(monkeypatch, use_ast):
 #-- SWIG packages - pyinstaller specific tests
 
 
-def test_swig_import_simple_BUGGY(tmpdir):
+def _test_swig_import_simple_common(tmpdir):
     libdir = tmpdir.join('lib')
     path = [str(libdir)]
     osgeo = libdir.join('pyi_test_osgeo')
@@ -420,13 +420,18 @@ def test_swig_import_simple_BUGGY(tmpdir):
     assert mg.find_node('pyi_test_osgeo._pyi_gdal').identifier == '_pyi_gdal'
     # Due the the buggy implementation, this node does not exist.
     assert mg.find_node('_pyi_gdal') is None
-    return mg  # for use in test_swig_import_simple_BUG
+    return mg  # for use in test_swig_import_simple
+
+
+def test_swig_import_simple_BUGGY(tmpdir):
+    # Test the currently implemented behavior of SWIG support.
+    _test_swig_import_simple_common(tmpdir)
 
 
 @xfail
 def test_swig_import_simple(tmpdir):
-    # Test the expected (but not implemented) behavior if SWIG support.
-    mg = test_swig_import_simple_BUGGY(tmpdir)
+    # Test the expected (but not implemented) behavior of SWIG support.
+    mg = _test_swig_import_simple_common(tmpdir)
     # Given the bug in modulegraph (see test_swig_import_simple_BUGGY) this is what would be the expected behavior.
     # TODO: When modulegraph is fixed, merge the two test-cases and correct test_swig_import_from_top_level
     # and siblings.
