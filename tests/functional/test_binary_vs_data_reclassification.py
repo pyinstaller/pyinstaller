@@ -47,7 +47,7 @@ def _create_test_build(pyi_builder, tmpdir, datas=None, binaries=None):
         """, pyi_args=extra_args)
 
     # Return path to the generated Analysis-XX.toc in the build directory
-    analysis_toc_file = list((pathlib.Path(tmpdir) / "build/test_source").glob("Analysis-??.toc"))
+    analysis_toc_file = list((pathlib.Path(tmpdir) / "build/test_source").glob("Analysis-*.toc"))
     assert len(analysis_toc_file) == 1
     analysis_toc_file = analysis_toc_file[0]
 
