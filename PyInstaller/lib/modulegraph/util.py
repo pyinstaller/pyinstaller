@@ -1,9 +1,8 @@
+import dis
 import sys
 import re
 import inspect
 import importlib.util
-
-from ._compat import get_instructions
 
 
 cookie_re = re.compile(br"coding[:=]\s*([-\w.]+)")
@@ -33,7 +32,7 @@ def iterate_instructions(code_object):
     """
     # The arg extension the EXTENDED_ARG opcode represents is automatically handled by get_instructions() but the
     # instruction is left in. Get rid of it to make subsequent parsing easier/safer.
-    yield from (i for i in get_instructions(code_object) if i.opname != "EXTENDED_ARG")
+    yield from (i for i in dis.get_instructions(code_object) if i.opname != "EXTENDED_ARG")
 
     yield None
 
