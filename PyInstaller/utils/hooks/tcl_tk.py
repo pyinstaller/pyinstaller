@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import locale
 import os
 
 from PyInstaller import compat
@@ -96,7 +95,8 @@ def _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree):
     mentions_teapot = False
     # TCL/TK reads files using the system encoding:
     # https://www.tcl.tk/doc/howto/i18n.html#system_encoding
-    with open(init_resource, 'r', encoding=locale.getpreferredencoding()) as init_file:
+    # On macOS, system encoding is UTF-8
+    with open(init_resource, 'r', encoding='utf8') as init_file:
         for line in init_file.readlines():
             line = line.strip().lower()
             if line.startswith('#'):
