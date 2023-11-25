@@ -176,7 +176,7 @@ def test_module__file__attribute(pyi_builder):
 def test_module_attributes(tmpdir, pyi_builder):
     # Create file in tmpdir with path to python executable and if it is running in debug mode.
     # Test script uses python interpreter to compare module attributes.
-    with open(os.path.join(tmpdir.strpath, 'python_exe.build'), 'w') as f:
+    with open(os.path.join(tmpdir.strpath, 'python_exe.build'), 'w', encoding='utf8') as f:
         f.write(sys.executable + "\n")
         f.write('debug=%s' % __debug__ + '\n')
         # On Windows we need to preserve system PATH for subprocesses in tests.
