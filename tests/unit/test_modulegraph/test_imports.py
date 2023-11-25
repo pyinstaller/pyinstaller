@@ -27,16 +27,16 @@ class TestNativeImport (unittest.TestCase):
                 print (%s.__name__)
             """) %(name, name)
 
-        p = subprocess.Popen([sys.executable, '-c', script],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    'testpkg-relimport'),
+        p = subprocess.Popen(
+            [sys.executable, '-c', script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'testpkg-relimport'),
+            encoding='utf8',
         )
         data = p.communicate()[0]
-        if sys.version_info[0] != 2:
-            data = data.decode('UTF-8')
         data = data.strip()
 
         if data.endswith(' refs]'):
@@ -63,15 +63,10 @@ class TestNativeImport (unittest.TestCase):
         m = self.importModule('pkg.mod')
         self.assertEqual(m, 'pkg.mod')
 
-    if sys.version_info[0] == 2:
-        def testOldStyle(self):
-            m = self.importModule('pkg.oldstyle.mod')
-            self.assertEqual(m, 'pkg.mod')
-    else:
-        # python3 always has __future__.absolute_import
-        def testOldStyle(self):
-            m = self.importModule('pkg.oldstyle.mod')
-            self.assertEqual(m, 'mod')
+    # python3 always has __future__.absolute_import
+    def testOldStyle(self):
+        m = self.importModule('pkg.oldstyle.mod')
+        self.assertEqual(m, 'mod')
 
     def testNewStyle(self):
         m = self.importModule('pkg.toplevel.mod')
@@ -166,10 +161,7 @@ class TestModuleGraphImport (unittest.TestCase):
         n = self.mf.find_node('pkg.oldstyle')
         self.assertIsInstance(n, modulegraph.SourceModule)
         refs = set(self.mf.outgoing(n))
-        if sys.version_info[0] == 2:
-            n2 = self.mf.find_node('pkg.mod')
-        else:
-            n2 = self.mf.find_node('mod')
+        n2 = self.mf.find_node('mod')
         self.assertEqual(refs, set([self.mf.find_node('pkg'), n2]))
         ed = self.mf.edgeData(n, n2)
         self.assertIsInstance(ed, modulegraph.DependencyInfo)
@@ -279,21 +271,12 @@ class TestModuleGraphImport (unittest.TestCase):
         self.assertIsInstance(node, modulegraph.SourceModule)
         self.assertEqual(node.identifier, 'pkg.mod')
 
-    if sys.version_info[0] == 2:
-        def testOldStyle(self):
-            node = self.mf.find_node('pkg.oldstyle')
-            self.assertIsInstance(node, modulegraph.SourceModule)
-            self.assertEqual(node.identifier, 'pkg.oldstyle')
-            sub = [ n for n in self.mf.get_edges(node)[0] if n.identifier != '__future__' ][0]
-            self.assertEqual(sub.identifier, 'pkg.mod')
-    else:
-        # python3 always has __future__.absolute_import
-        def testOldStyle(self):
-            node = self.mf.find_node('pkg.oldstyle')
-            self.assertIsInstance(node, modulegraph.SourceModule)
-            self.assertEqual(node.identifier, 'pkg.oldstyle')
-            sub = [ n for n in self.mf.get_edges(node)[0] if n.identifier != '__future__' ][0]
-            self.assertEqual(sub.identifier, 'mod')
+    def testOldStyle(self):
+        node = self.mf.find_node('pkg.oldstyle')
+        self.assertIsInstance(node, modulegraph.SourceModule)
+        self.assertEqual(node.identifier, 'pkg.oldstyle')
+        sub = [ n for n in self.mf.get_edges(node)[0] if n.identifier != '__future__' ][0]
+        self.assertEqual(sub.identifier, 'mod')
 
     def testNewStyle(self):
         node = self.mf.find_node('pkg.toplevel')

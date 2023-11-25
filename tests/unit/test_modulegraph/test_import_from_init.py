@@ -1,8 +1,5 @@
 import sys
-if sys.version_info[:2] <= (2,6):
-    import unittest2 as unittest
-else:
-    import unittest
+import unittest
 import textwrap
 import subprocess
 import os
@@ -28,15 +25,14 @@ class TestNativeImport (unittest.TestCase):
             """) %(name, name)
 
         p = subprocess.Popen([sys.executable, '-c', script],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    'testpkg-import-from-init'),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'testpkg-import-from-init'),
+            encoding='utf8',
         )
         data = p.communicate()[0]
-        if sys.version_info[0] != 2:
-            data = data.decode('UTF-8')
         data = data.strip()
 
         if data.endswith(' refs]'):
@@ -49,17 +45,6 @@ class TestNativeImport (unittest.TestCase):
             print (data)
         self.assertEqual(sts, 0)
         return data
-
-
-    @unittest.skipUnless(sys.version_info[0] == 2, "Python 2.x test")
-    def testRootPkg(self):
-        m = self.importModule('pkg')
-        self.assertEqual(m, 'pkg')
-
-    @unittest.skipUnless(sys.version_info[0] == 2, "Python 2.x test")
-    def testSubPackage(self):
-        m = self.importModule('pkg.subpkg')
-        self.assertEqual(m, 'pkg.subpkg')
 
     def testRootPkgRelImport(self):
         m = self.importModule('pkg2')
@@ -83,27 +68,6 @@ class TestModuleGraphImport (unittest.TestCase):
         self.mf = modulegraph.ModuleGraph(path=[ root ] + sys.path)
         #self.mf.debug = 999
         self.mf.add_script(os.path.join(root, 'script.py'))
-
-
-    @unittest.skipUnless(sys.version_info[0] == 2, "Python 2.x test")
-    def testRootPkg(self):
-        node = self.mf.find_node('pkg')
-        self.assertIsInstance(node, modulegraph.Package)
-        self.assertEqual(node.identifier, 'pkg')
-
-    @unittest.skipUnless(sys.version_info[0] == 2, "Python 2.x test")
-    def testSubPackage(self):
-        node = self.mf.find_node('pkg.subpkg')
-        self.assertIsInstance(node, modulegraph.Package)
-        self.assertEqual(node.identifier, 'pkg.subpkg')
-
-        node = self.mf.find_node('pkg.subpkg.compat')
-        self.assertIsInstance(node, modulegraph.SourceModule)
-        self.assertEqual(node.identifier, 'pkg.subpkg.compat')
-
-        node = self.mf.find_node('pkg.subpkg._collections')
-        self.assertIsInstance(node, modulegraph.SourceModule)
-        self.assertEqual(node.identifier, 'pkg.subpkg._collections')
 
     def testRootPkgRelImport(self):
         node = self.mf.find_node('pkg2')
