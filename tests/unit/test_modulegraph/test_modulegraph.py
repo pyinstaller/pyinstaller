@@ -9,25 +9,15 @@ from PyInstaller.compat import is_win
 from PyInstaller.utils.tests import importorskip
 import textwrap
 import pickle
+from io import StringIO
 
 from importlib._bootstrap_external import SourceFileLoader, ExtensionFileLoader
 from zipimport import zipimporter
 
-try:
-    bytes
-except NameError:
-    bytes = str
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 TESTDATA = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "testdata", "nspkg")
-
-READ_MODE = "U" if sys.version_info[:2] < (3,4) else "r"
 
 try:
     expectedFailure = unittest.expectedFailure
@@ -99,24 +89,6 @@ class TestFunctions (unittest.TestCase):
         self.assertRaises(ValueError, modulegraph._eval_str_tuple, "'a', 'b'")
         self.assertRaises(ValueError, modulegraph._eval_str_tuple, "('a', ('b', 'c'))")
         self.assertRaises(ValueError, modulegraph._eval_str_tuple, "('a', ('b\", 'c'))")
-
-    def test_os_listdir(self):
-        root = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), 'testdata')
-
-        if is_win:
-            dirname = 'C:\\Windows\\'
-            filename = 'C:\\Windows\\user32.dll\\foobar'
-        else:
-            dirname = '/etc/'
-            filename = '/etc/hosts/foobar'
-
-        self.assertEqual(modulegraph.os_listdir(dirname), os.listdir(dirname))
-        self.assertRaises(IOError, modulegraph.os_listdir, filename)
-        self.assertRaises(IOError, modulegraph.os_listdir, os.path.join(root, 'test.egg', 'bar'))
-
-        self.assertEqual(list(sorted(modulegraph.os_listdir(os.path.join(root, 'test.egg', 'foo')))),
-            [ 'bar', 'bar.txt', 'baz.txt' ])
 
     def test_code_to_file(self):
         try:
