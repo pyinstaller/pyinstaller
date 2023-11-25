@@ -854,7 +854,7 @@ if compat.is_linux:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 stdin=subprocess.DEVNULL,
-                universal_newlines=True,
+                encoding='utf8',
             )
         except Exception:
             return None  # Failed to run `objdump` or `objdump` unavailable.
