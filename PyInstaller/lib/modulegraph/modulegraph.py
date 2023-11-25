@@ -15,12 +15,14 @@ imports are done in the right way.
 
 import ast
 import codecs
+import io
 import marshal
 import os
 import pkgutil
 import sys
 import re
 from collections import deque, namedtuple, defaultdict
+import urllib.request
 import warnings
 import importlib.util
 import importlib.machinery
@@ -37,7 +39,6 @@ from altgraph import GraphError
 
 from . import util
 from . import zipio
-from ._compat import BytesIO, pathname2url, _READ_MODE
 
 
 BOM = codecs.BOM_UTF8.decode('utf-8')
@@ -73,9 +74,7 @@ absolute imports.
 
 
 #FIXME: Leverage this rather than magic numbers below.
-DEFAULT_IMPORT_LEVEL = (
-    ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL if sys.version_info[0] == 2 else
-    ABSOLUTE_IMPORT_LEVEL)
+DEFAULT_IMPORT_LEVEL = ABSOLUTE_IMPORT_LEVEL
 """
 Constant instructing the builtin `__import__()` function to attempt the default
 import style specific to the active Python interpreter.
@@ -154,13 +153,8 @@ def os_listdir(path):
 
 def _code_to_file(co):
     """ Convert code object to a .pyc pseudo-file """
-    if sys.version_info >= (3, 7):
-        header = importlib.util.MAGIC_NUMBER + (b'\0' * 12)
-    elif sys.version_info >= (3, 4):
-        header = importlib.util.MAGIC_NUMBER + (b'\0' * 8)
-    else:
-        header = importlib.util.MAGIC_NUMBER + (b'\0' * 4)
-    return BytesIO(header + marshal.dumps(co))
+    header = importlib.util.MAGIC_NUMBER + (b'\0' * 12)
+    return io.BytesIO(header + marshal.dumps(co))
 
 
 def AddPackagePath(packagename, path):
@@ -863,10 +857,7 @@ def uniq(seq):
     return [x for x in seq if not (x in seen or seen_add(x))]
 
 
-if sys.version_info[0] == 2:
-    DEFAULT_IMPORT_LEVEL = -1
-else:
-    DEFAULT_IMPORT_LEVEL = 0
+DEFAULT_IMPORT_LEVEL = 0
 
 
 class _Visitor(ast.NodeVisitor):
@@ -892,10 +883,6 @@ class _Visitor(ast.NodeVisitor):
 
 
     def _collect_import(self, name, fromlist, level):
-        if sys.version_info[0] == 2:
-            if name == '__future__' and 'absolute_import' in (fromlist or ()):
-                self._level = 0
-
         have_star = False
         if fromlist is not None:
             fromlist = uniq(fromlist)
@@ -1238,19 +1225,15 @@ class ModuleGraph(ObjectGraph):
         if m is not None:
             return m
 
-        if sys.version_info[0] != 2:
-            with open(pathname, 'rb') as fp:
-                encoding = util.guess_encoding(fp)
-
-            with open(pathname, _READ_MODE, encoding=encoding) as fp:
-                contents = fp.read() + '\n'
-            if contents.startswith(BOM):
-                # Ignore BOM at start of input
-                contents = contents[1:]
-
-        else:
-            with open(pathname, _READ_MODE) as fp:
-                contents = fp.read() + '\n'
+        # Attempt to auto-detect encoding
+        with open(pathname, 'rb') as fp:
+            encoding = util.guess_encoding(fp)
+        # Read contents
+        with open(pathname, "r", encoding=encoding) as fp:
+            contents = fp.read() + '\n'
+        if contents.startswith(BOM):
+            # Ignore BOM at start of input
+            contents = contents[1:]
 
         co_ast = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
         co = compile(co_ast, pathname, 'exec', 0, True)
@@ -2002,14 +1985,8 @@ class ModuleGraph(ObjectGraph):
 
             if src is not None:
                 try:
-                    co = compile(src, pathname, 'exec', ast.PyCF_ONLY_AST,
-                                 True)
+                    co = compile(src, pathname, 'exec', ast.PyCF_ONLY_AST, True)
                     cls = SourceModule
-                    if sys.version_info[:2] == (3, 5):
-                        # In Python 3.5 some syntax problems with async
-                        # functions are only reported when compiling to
-                        # bytecode
-                        compile(co, '-', 'exec', 0, True)
                 except SyntaxError:
                     co = None
                     cls = InvalidSourceModule
@@ -2124,8 +2101,7 @@ class ModuleGraph(ObjectGraph):
                     level == ABSOLUTE_IMPORT_LEVEL and
                     type(source_module) is SourceModule and
                     target_module_partname ==
-                      '_' + source_module.identifier.rpartition('.')[2] and
-                    sys.version_info[0] == 3)
+                      '_' + source_module.identifier.rpartition('.')[2])
 
         def is_swig_wrapper(source_module):
             # TODO Define a new function util.open_text_file() performing
@@ -2134,8 +2110,7 @@ class ModuleGraph(ObjectGraph):
             # function to reliably open text files in a portable manner?
             with open(source_module.filename, 'rb') as source_module_file:
                 encoding = util.guess_encoding(source_module_file)
-            with open(source_module.filename, _READ_MODE, encoding=encoding) \
-                    as source_module_file:
+            with open(source_module.filename, "r", encoding=encoding) as source_module_file:
                 first_line = source_module_file.readline()
             self.msg(5, 'SWIG wrapper candidate first line: %r' % (first_line))
             return "automatically generated by SWIG" in first_line
@@ -2966,7 +2941,7 @@ class ModuleGraph(ObjectGraph):
                 content = contpl % {"NAME": name,
                                     "TYPE": "<tt>%s</tt>" % m.filename}
             else:
-                url = pathname2url(m.filename or "")
+                url = urllib.request.pathname2url(m.filename or "")
                 content = contpl_linked % {"NAME": name, "URL": url,
                                            'TYPE': m.__class__.__name__}
             oute, ince = map(sorted_namelist, self.get_edges(m))
