@@ -1,27 +1,5 @@
 import dis
-import sys
-import re
 import inspect
-import importlib.util
-
-
-cookie_re = re.compile(br"coding[:=]\s*([-\w.]+)")
-if sys.version_info[0] == 2:
-    default_encoding = 'ascii'
-else:
-    default_encoding = 'utf-8'
-
-
-def guess_encoding(fp):
-
-    for i in range(2):
-        ln = fp.readline()
-
-        m = cookie_re.search(ln)
-        if m is not None:
-            return m.group(1).decode('ascii')
-
-    return default_encoding
 
 
 def iterate_instructions(code_object):
