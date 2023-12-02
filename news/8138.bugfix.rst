@@ -1,0 +1,3 @@
+(Windows) Add Windows error code 110 (``ERROR_OPEN_FAILED``) to the
+list of error codes eligible for the retry mechanism that attempts to
+mitigate build failures due to anti-virus program interference.
