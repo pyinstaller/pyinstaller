@@ -965,28 +965,36 @@ class EXE(Target):
             """
             Helper to determine whether the given exception is eligible for retry or not.
             """
-            if is_win:
-                from PyInstaller.compat import pywintypes
-
             if isinstance(e, PermissionError):
                 # Always retry on all instances of PermissionError
                 return True
-            elif is_win and isinstance(e, OSError):
-                # For other types of OSError, validate errno (the values below are specific to Windows)
+            elif is_win:
+                from PyInstaller.compat import pywintypes
+
+                # Windows-specific errno and winerror codes.
+                # https://learn.microsoft.com/en-us/cpp/c-runtime-library/errno-constants
                 _ALLOWED_ERRNO = {
                     13,  # EACCES (would typically be a PermissionError instead)
                     22,  # EINVAL (reported to be caused by Crowdstrike; see #7840)
                 }
-                if e.errno in _ALLOWED_ERRNO:
-                    return True
-            elif is_win and isinstance(e, pywintypes.error):
-                # pywintypes.error is raised by helper functions that use win32 C API bound via pywin32-ctypes.
+                # https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
                 _ALLOWED_WINERROR = {
                     5,  # ERROR_ACCESS_DENIED (reported in #7825)
                     32,  # ERROR_SHARING_VIOLATION (exclusive lock via `CreateFileW` flags, or via `_locked`).
+                    110,  # ERROR_OPEN_FAILED (reported in #8138)
                 }
-                if e.winerror in _ALLOWED_WINERROR:
-                    return True
+                if isinstance(e, OSError):
+                    # For OSError exceptions other than PermissionError, validate errno.
+                    if e.errno in _ALLOWED_ERRNO:
+                        return True
+                    # OSError typically translates `winerror` into `errno` equivalent; but try to match the original
+                    # values as a fall back, just in case. `OSError.winerror` attribute exists only on Windows.
+                    if e.winerror in _ALLOWED_WINERROR:
+                        return True
+                elif isinstance(e, pywintypes.error):
+                    # pywintypes.error is raised by helper functions that use win32 C API bound via pywin32-ctypes.
+                    if e.winerror in _ALLOWED_WINERROR:
+                        return True
             return False
 
         func_name = func.__name__
