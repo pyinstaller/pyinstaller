@@ -28,10 +28,17 @@ numpy==1.26.2; python_version >= '3.9'
 pandas==2.1.3; python_version >= '3.9'
 pygments==2.17.2
 PyGObject==3.46.0; sys_platform == 'linux'
-# Current PySide2 wheels explicitly require python < 3.11
+# Official PySide2 wheels do not support python 3.11 or newer
 PySide2==5.15.2.1; python_version < '3.11'
+# PySide6 is a metapackage that depends on PySide6-Essentials and PySide6-Addons. Their versions are
+# usually kept in sync.
 PySide6==6.6.0
+PySide6-Addons==6.6.0
+PySide6-Essentials==6.6.0
 # PyQt5 and add-on packages
+# We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
+# anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
+# all platforms, while 5.15.11 are available only for macOS (and some of them only for arm64).
 PyQt5==5.15.10
 PyQt3D==5.15.6
 PyQtChart==5.15.6
@@ -41,13 +48,23 @@ PyQtPurchasing==5.15.5
 QScintilla==2.14.1
 PyQtWebEngine==5.15.6
 # PyQt6 and add-on packages
+# The *-Qt6 packages contain Qt shared libraries; their version is therefore the version of Qt release,
+# but in contrast to Qt5 and PyQt5 bindings, the versions here must usually be kept in sync with the
+# version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
+# thus the ABI is still changing.
 PyQt6==6.6.0
+PyQt6-Qt6==6.6.0
 PyQt6-3D==6.6.0
+PyQt6-3D-Qt6==6.6.0
 PyQt6-Charts==6.6.0
+PyQt6-Charts-Qt6==6.6.0
 PyQt6-DataVisualization==6.6.0
+PyQt6-DataVisualization-Qt6==6.6.0
 PyQt6-NetworkAuth==6.6.0
-PyQt6-QScintilla==2.14.1
+PyQt6-NetworkAuth-Qt6==6.6.0
+PyQt6-QScintilla==2.14.1  # Does not have a corresponding -Qt6 package
 PyQt6-WebEngine==6.6.0
+PyQt6-WebEngine-Qt6==6.6.0
 python-dateutil==2.8.2
 pytz==2023.3.post1
 requests==2.31.0
