@@ -26,13 +26,14 @@ def pre_safe_import_module(api):
             try:
                 import setuptools.extern.six as six
             except ImportError:
-                return {}  # unavailable
+                return None  # unavailable
 
         return {
             moved.mod: 'setuptools.extern.six.moves.' + moved.name
             for moved in six._moved_attributes if isinstance(moved, (six.MovedModule, six.MovedAttribute))
         }
 
-    api.add_runtime_package(api.module_name)
-    for real_module_name, six_module_name in real_to_six_module_name.items():
-        api.add_alias_module(real_module_name, six_module_name)
+    if real_to_six_module_name is not None:
+        api.add_runtime_package(api.module_name)
+        for real_module_name, six_module_name in real_to_six_module_name.items():
+            api.add_alias_module(real_module_name, six_module_name)

@@ -36,7 +36,7 @@ def pre_safe_import_module(api):
         try:
             import six
         except ImportError:
-            return {}  # unavailable
+            return None  # unavailable
 
         # Iterate over the "six._moved_attributes" list rather than the "six._importer.known_modules" dictionary, as
         # "urllib"-specific moved modules are overwritten in the latter with unhelpful "LazyModule" objects. If this is
@@ -56,6 +56,7 @@ def pre_safe_import_module(api):
     # * Attributes imported from packages could be submodules. To disambiguate non-ignorable submodules from ignorable
     #   non-submodules (e.g., classes, variables), ModuleGraph first attempts to import these attributes as submodules.
     #   This is exactly what we want.
-    api.add_runtime_package(api.module_name)
-    for real_module_name, six_module_name in real_to_six_module_name.items():
-        api.add_alias_module(real_module_name, six_module_name)
+    if real_to_six_module_name is not None:
+        api.add_runtime_package(api.module_name)
+        for real_module_name, six_module_name in real_to_six_module_name.items():
+            api.add_alias_module(real_module_name, six_module_name)
