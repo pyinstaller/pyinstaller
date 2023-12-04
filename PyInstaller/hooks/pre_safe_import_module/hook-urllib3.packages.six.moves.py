@@ -18,7 +18,10 @@ from PyInstaller import isolated
 def pre_safe_import_module(api):
     @isolated.call
     def real_to_six_module_name():
-        import urllib3.packages.six as six
+        try:
+            import urllib3.packages.six as six
+        except ImportError:
+            return {}  # unavailable
 
         return {
             moved.mod: 'urllib3.packages.six.moves.' + moved.name

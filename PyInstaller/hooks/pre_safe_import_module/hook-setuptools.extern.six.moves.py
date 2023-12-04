@@ -23,7 +23,10 @@ def pre_safe_import_module(api):
         try:
             import setuptools._vendor.six as six
         except ImportError:
-            import setuptools.extern.six as six
+            try:
+                import setuptools.extern.six as six
+            except ImportError:
+                return {}  # unavailable
 
         return {
             moved.mod: 'setuptools.extern.six.moves.' + moved.name
