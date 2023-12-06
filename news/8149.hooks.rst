@@ -1,0 +1,2 @@
+Add hooks for ``gi.repository.AppIndicator3`` and
+``gi.repository.AyatanaAppIndicator3``.
