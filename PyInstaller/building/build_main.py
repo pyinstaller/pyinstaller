@@ -636,6 +636,8 @@ class Analysis(Target):
         # their origin.
         combined_toc = normalize_toc(self.datas + self.binaries)
 
+        logger.info('Performing binary vs. data reclassification (%d entries)', len(combined_toc))
+
         self.datas = []
         self.binaries = []
 
