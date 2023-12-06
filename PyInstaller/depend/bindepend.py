@@ -845,8 +845,19 @@ def classify_binary_vs_data(filename):
 if compat.is_linux:
 
     def _classify_binary_vs_data(filename):
-        # See if `objdump` recognizes the file. Strictly speaking, we should probably also check that it recognizes it
-        # as an ELF file, or even as an ELF file for the running platform.
+        # First check for ELF signature, in order to avoid calling `objdump` on every data file, which can be costly.
+        try:
+            with open(filename, 'rb') as fp:
+                sig = fp.read(4)
+        except Exception:
+            return None
+
+        if sig != b"\x7FELF":
+            return "DATA"
+
+        # Verify the binary by checking if `objdump` recognizes the file. The preceding ELF signature check should
+        # ensure that this is an ELF file, while this check should ensure that it is a valid ELF file. In the future,
+        # we could try checking that the architecture matches the running platform.
         cmd_args = ['objdump', '-a', filename]
         try:
             p = subprocess.run(
