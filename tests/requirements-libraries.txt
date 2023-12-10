@@ -16,7 +16,7 @@ importlib_resources==6.1.1; python_version < '3.9'
 # -------
 # These packages work with no (known) issues.
 babel==2.13.1
-Django==4.2.7
+Django==5.0; python_version >= '3.10'
 future==0.18.3
 gevent==23.9.1
 ipython==8.18.1; python_version >= '3.9'
@@ -25,16 +25,16 @@ keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: 
 keyring==24.3.0; sys_platform != 'darwin' or python_version >= '3.8.7'
 matplotlib==3.8.2; python_version >= '3.9'
 numpy==1.26.2; python_version >= '3.9'
-pandas==2.1.3; python_version >= '3.9'
+pandas==2.1.4; python_version >= '3.9'
 pygments==2.17.2
 PyGObject==3.46.0; sys_platform == 'linux'
 # Official PySide2 wheels do not support python 3.11 or newer
 PySide2==5.15.2.1; python_version < '3.11'
 # PySide6 is a metapackage that depends on PySide6-Essentials and PySide6-Addons. Their versions are
 # usually kept in sync.
-PySide6==6.6.0
-PySide6-Addons==6.6.0
-PySide6-Essentials==6.6.0
+PySide6==6.6.1
+PySide6-Addons==6.6.1
+PySide6-Essentials==6.6.1
 # PyQt5 and add-on packages
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
@@ -52,19 +52,19 @@ PyQtWebEngine==5.15.6
 # but in contrast to Qt5 and PyQt5 bindings, the versions here must usually be kept in sync with the
 # version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
 # thus the ABI is still changing.
-PyQt6==6.6.0
-PyQt6-Qt6==6.6.0
+PyQt6==6.6.1
+PyQt6-Qt6==6.6.1
 PyQt6-3D==6.6.0
-PyQt6-3D-Qt6==6.6.0
+PyQt6-3D-Qt6==6.6.1
 PyQt6-Charts==6.6.0
-PyQt6-Charts-Qt6==6.6.0
+PyQt6-Charts-Qt6==6.6.1
 PyQt6-DataVisualization==6.6.0
-PyQt6-DataVisualization-Qt6==6.6.0
+PyQt6-DataVisualization-Qt6==6.6.1
 PyQt6-NetworkAuth==6.6.0
-PyQt6-NetworkAuth-Qt6==6.6.0
+PyQt6-NetworkAuth-Qt6==6.6.1
 PyQt6-QScintilla==2.14.1  # Does not have a corresponding -Qt6 package
 PyQt6-WebEngine==6.6.0
-PyQt6-WebEngine-Qt6==6.6.0
+PyQt6-WebEngine-Qt6==6.6.1
 python-dateutil==2.8.2
 pytz==2023.3.post1
 requests==2.31.0
@@ -90,3 +90,6 @@ matplotlib==3.7.3; python_version == '3.8'  # pyup: ignore
 ipython==8.12.1; python_version == '3.8'  # pyup: ignore
 
 sphinx==7.1.2; python_version == '3.8'  # pyup: ignore
+
+# Django dropped support for python < 3.10 in v5.0
+Django==4.2.8; python_version < '3.10'  # pyup: ignore
