@@ -32,7 +32,7 @@ PyGObject==3.46.0; sys_platform == 'linux'
 PySide2==5.15.2.1; python_version < '3.11'
 # PySide6 is a metapackage that depends on PySide6-Essentials and PySide6-Addons. Their versions are
 # usually kept in sync.
-PySide6==6.6.0
+PySide6==6.6.1
 PySide6-Addons==6.6.0
 PySide6-Essentials==6.6.0
 # PyQt5 and add-on packages
