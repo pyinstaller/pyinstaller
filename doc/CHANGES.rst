@@ -15,6 +15,55 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.3.0 (2023-12-10)
+------------------
+
+Bugfix
+~~~~~~
+
+* (Linux) Optimize the automatic binary-vs-data classification by avoiding
+  ``objdump`` based check on files that do not have ELF signature. This
+  mitigates noticeably longer analysis times for projects with large number of
+  (data) files. (:issue:`8148`)
+* (Windows) Add Windows error code 110 (``ERROR_OPEN_FAILED``) to the list of
+  error codes eligible for the retry mechanism that attempts to mitigate build
+  failures due to anti-virus program interference. (:issue:`8138`)
+* (Windows) Fix issue with non-functional :func:`time.sleep()` when building
+  program with Python <= 3.8.6 or Python 3.9.0. (:issue:`8104`)
+* (Windows) Fix issue with splash screen in ``onefile`` mode failing to extract
+  ``VCRUNTIME140.dll`` from the archive due to character-case mismatch. We now
+  perform case-insensitive comparison between the name listed in splash
+  dependency list and the names in archive TOC. (:issue:`8103`)
+* Fix PEP 597 EncodingWarnings when :envvar:`PYTHONWARNDEFAULTENCODING` is set
+  to true. (:issue:`8117`)
+* Fix pre-safe-import hooks for ``six.moves``, ``urllib3.packages.six.moves``,
+  and ``setuptools.extern.six.moves`` to gracefully handle cases when the
+  corresponding ``six`` package is unavailable, as the hook may end up being
+  executed even in that case. (:issue:`8145`)
+* Fix symbolic link tracking in ``MERGE`` processing, so that distinct symbolic
+  links with same relative target (e.g. ``Current -> A`` symbolic links in Qt
+  .framework bundles collected on macOS) are properly processed, and kept in the
+  original TOC upon their first occurrence. (:issue:`8124`)
+
+
+Hooks
+~~~~~
+
+* Add hook for ``gi.repository.DBus``. (:issue:`8149`)
+* Add hooks for ``gi.repository.AppIndicator3`` and
+  ``gi.repository.AyatanaAppIndicator3``. (:issue:`8149`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* When setting up embedded Python interpreter configuration, set
+  ``PyConfig.install_signal_handlers=1`` to install signal handlers.
+  This matches the behavior of PyInstaller 5.x bootloaders, where interpreter
+  was initialized via ``Py_Initialize()``, which in turn calls
+  ``Py_InitializeEx(1)``, i.e., with ``install_sigs=1``. (:issue:`8105`)
+
+
 6.2.0 (2023-11-11)
 ------------------
 

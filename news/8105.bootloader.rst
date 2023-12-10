@@ -1,5 +1,0 @@
-When setting up embedded Python interpreter configuration, set
-``PyConfig.install_signal_handlers=1`` to install signal handlers.
-This matches the behavior of PyInstaller 5.x bootloaders, where interpreter
-was initialized via ``Py_Initialize()``, which in turn calls
-``Py_InitializeEx(1)``, i.e., with ``install_sigs=1``.

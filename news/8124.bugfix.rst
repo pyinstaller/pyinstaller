@@ -1,4 +1,0 @@
-Fix symbolic link tracking in ``MERGE`` processing, so that distinct
-symbolic links with same relative target (e.g. ``Current -> A``
-symbolic links in Qt .framework bundles collected on macOS) are properly
-processed, and kept in the original TOC upon their first occurrence.

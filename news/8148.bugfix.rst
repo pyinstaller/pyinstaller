@@ -1,4 +1,0 @@
-(Linux) Optimize the automatic binary-vs-data classification by
-avoiding `objdump` based check on files that do not have ELF signature.
-This mitigates noticeably longer analysis times for projects with large
-number of (data) files.

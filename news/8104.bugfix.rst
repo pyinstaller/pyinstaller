@@ -1,2 +1,0 @@
-(Windows) Fix issue with non-functional ``time.sleep()`` when building
-program with Python <= 3.8.6 or Python 3.9.0.

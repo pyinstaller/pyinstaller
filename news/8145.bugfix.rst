@@ -1,4 +1,0 @@
-Fix pre-safe-import hooks for ``six.moves``, ``urllib3.packages.six.moves``,
-and ``setuptools.extern.six.moves`` to gracefully handle cases when the
-corresponding ``six`` package is unavailable, as the hook may end up
-being executed even in that case.
