@@ -338,6 +338,11 @@ def _get_imports_ldd(filename, search_paths):
         # telling us that those symbols are unfindable. These should be suppressed.
         elif line.startswith("Error relocating ") and line.endswith(" symbol not found"):
             continue
+        # Shared libraries should have the executable bits set; however, this is not the case for shared libraries
+        # shipped in PyPI wheels, which cause ldd to emit `ldd: warning: you do not have execution permission for ...`
+        # warnings. Suppress these.
+        elif line.startswith("ldd: warning: you do not have execution permission for "):
+            continue
         # Propagate any other warnings it might have.
         print(line, file=sys.stderr)
 
