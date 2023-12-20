@@ -1,0 +1,1 @@
+Cleanup docstrings to remove mention of ``exec_command_stdout``.
