@@ -310,15 +310,11 @@ def exec_command(
     .. DANGER::
        **Ignore this function's return value** -- unless this command's standard output contains _only_ pathnames, in
        which case this function returns the correct filesystem-encoded string expected by PyInstaller. In all other
-       cases, this function's return value is _not_ safely usable. Consider calling the general-purpose
-       `exec_command_stdout()` function instead.
+       cases, this function's return value is _not_ safely usable.
 
        For backward compatibility, this function's return value non-portably depends on the current Python version and
        passed keyword arguments:
 
-       * Under Python 2.7, this value is an **encoded `str` string** rather than a decoded `unicode` string. This value
-         _cannot_ be safely used for any purpose (e.g., string manipulation or parsing), except to be passed directly to
-         another non-Python command.
        * Under Python 3.x, this value is a **decoded `str` string**. However, even this value is _not_ necessarily
          safely usable:
          * If the `encoding` parameter is passed, this value is guaranteed to be safely usable.
@@ -416,7 +412,7 @@ def exec_command_all(*cmdargs: str, encoding: str | None = None, **kwargs: int |
 
     .. DANGER::
        **Ignore this function's return value.** If this command's standard output consists solely of pathnames, consider
-       calling `exec_command()`; otherwise, consider calling `exec_command_stdout()`.
+       calling `exec_command()`
 
     Parameters
     ----------
