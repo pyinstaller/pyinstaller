@@ -305,6 +305,7 @@ pyi_pyconfig_create(int python_version)
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
@@ -356,6 +357,7 @@ pyi_pyconfig_set_program_name(PyConfig *config, const struct PYI_CONTEXT *pyi_ct
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
@@ -386,6 +388,7 @@ pyi_pyconfig_set_python_home(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
@@ -425,6 +428,7 @@ _pyi_pyconfig_set_module_search_paths(PyConfig *config, int python_version, int 
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
@@ -524,6 +528,7 @@ _pyi_pyconfig_set_argv(PyConfig *config, int python_version, int argc, wchar_t *
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
@@ -676,6 +681,7 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, int python_version, const str
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
