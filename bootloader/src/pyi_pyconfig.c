@@ -316,11 +316,15 @@ pyi_pyconfig_create(int python_version)
 }
 
 /*
- * Clean up and free the PyConfig structure.
+ * Clean up and free the PyConfig structure. No-op if passed a NULL pointer.
  */
 void
 pyi_pyconfig_free(PyConfig *config)
 {
+    if (config == NULL) {
+        return;
+    }
+
     /* Clear the fields that PyConfig API allocated */
     PI_PyConfig_Clear(config);
 
