@@ -121,7 +121,6 @@ elif not compat.is_py312:
 
     def _cleanup_bytecode_string(bytecode):
         return _cache_instruction_filter.sub(rb"\2", bytecode)
-
 else:
     # Python 3.12 merged EXTENDED_ARG_QUICK back in to EXTENDED_ARG, and LOAD_METHOD in to LOAD_ATTR
     # PRECALL is no longer a valid key
@@ -132,10 +131,21 @@ else:
     _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`"
     _OPCODES_FUNCTION_CALL = rb"`CALL`|`CALL_FUNCTION_EX`"
 
-    _cache_instruction_filter = bytecode_regex(rb"(`CACHE`.)|(..)")
+    # In Python 3.13, PUSH_NULL opcode is emitted after the LOAD_NAME (and after LOAD_ATTR opcode(s), if applicable).
+    # In python 3.11 and 3.12, it was emitted before the LOAD_NAME, and thus fell outside of our regex matching; now,
+    # we have to deal with it. But, instead of trying to add it to matching rules and adjusting the post-processing
+    # to deal with it, we opt to filter them out (at the same time as we filter out CACHE opcodes), and leave the rest
+    # of processing untouched.
+    if compat.is_py313:
+        _cache_instruction_filter = bytecode_regex(rb"(`CACHE`.)|(`PUSH_NULL`.)|(..)")
 
-    def _cleanup_bytecode_string(bytecode):
-        return _cache_instruction_filter.sub(rb"\2", bytecode)
+        def _cleanup_bytecode_string(bytecode):
+            return _cache_instruction_filter.sub(rb"\3", bytecode)
+    else:
+        _cache_instruction_filter = bytecode_regex(rb"(`CACHE`.)|(..)")
+
+        def _cleanup_bytecode_string(bytecode):
+            return _cache_instruction_filter.sub(rb"\2", bytecode)
 
 
 # language=PythonVerboseRegExp
