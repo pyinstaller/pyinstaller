@@ -783,6 +783,7 @@ class TestModuleGraph (unittest.TestCase):
         # Verify no `errors <https://lxml.de/parsing.html#error-log>`_ occurred.
         assert len(parser.error_log) == 0
 
+    @importorskip('lib2to3')  # lib2to3 was removed in python 3.13
     def test_itergraphreport(self):
         # XXX: This test is far from optimal, it just ensures
         # that all code is exercised to catch small bugs and
