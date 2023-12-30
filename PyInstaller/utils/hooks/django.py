@@ -89,7 +89,7 @@ def django_dottedstring_imports(django_root_dir):
     if hasattr(settings, 'TEMPLATES'):
         for templ in settings.TEMPLATES:
             backend = _remove_class(templ['BACKEND'])
-            hiddenimports += backend
+            hiddenimports.append(backend)
             # Include context_processors.
             if hasattr(templ, 'OPTIONS'):
                 if hasattr(templ['OPTIONS'], 'context_processors'):
