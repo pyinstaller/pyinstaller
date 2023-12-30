@@ -171,3 +171,45 @@ def test_pkgutil_iter_modules_macos_app_bundle(script_dir, tmpdir, pyi_builder, 
         print("RESULTS", results_frozen, "\n\n")
 
         assert results_unfrozen == results_frozen
+
+
+# Two tests that reproduce the situation from #8191. In the first test, `pkgutil.iter_modules()` is called on a path
+# that corresponds to a module instead of the package. In the second test, we add a sub-directory component to the path
+# that corresponds to a module. Both cases should be handled gracefully by our `iter_modules` override.
+def test_pkgutil_iter_modules_with_module_path(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import os
+        import pkgutil
+        import json.encoder  # Our test module
+
+        # Path to iterate over; sys._MEIPASS/json/encoder
+        search_path, _ = os.path.splitext(json.encoder.__file__)
+
+        # pkgutil.iter_modules()
+        print("Search path:", search_path)
+        entries = list(pkgutil.iter_modules([search_path]))
+        print("Entries:", entries)
+        assert len(entries) == 0, "Expected no entries!"
+        """
+    )
+
+
+def test_pkgutil_iter_modules_with_module_path_subdir(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import os
+        import pkgutil
+        import json.encoder  # Our test module
+
+        # Path to iterate over; sys._MEIPASS/json/encoder/nonexistent
+        search_path, _ = os.path.splitext(json.encoder.__file__)
+        search_path = os.path.join(search_path, 'nonexistent')
+
+        # pkgutil.iter_modules()
+        print("Search path:", search_path)
+        entries = list(pkgutil.iter_modules([search_path]))
+        print("Entries:", entries)
+        assert len(entries) == 0, "Expected no entries!"
+        """
+    )
