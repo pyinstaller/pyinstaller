@@ -99,7 +99,10 @@ def _pyi_rthook():
                 tree_node = importer.toc_tree
                 for pkg_name_part in pkg_prefix.parts:
                     tree_node = tree_node.get(pkg_name_part)
-                    if tree_node is None:
+                    if not isinstance(tree_node, dict):
+                        # This check handles two cases:
+                        #  a) path does not exist (`tree_node` is `None`)
+                        #  b) path corresponds to a module instead of a package (`tree_node` is a leaf node (`str`)).
                         tree_node = {}
                         break
 

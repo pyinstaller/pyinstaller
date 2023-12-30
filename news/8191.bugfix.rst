@@ -1,0 +1,2 @@
+Fix ``pkgutil.iter_modules`` override to gracefully handle cases when
+the given path corresponds to a module instead of a package.
