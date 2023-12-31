@@ -37,7 +37,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.8, 3.9, '3.10', '3.11', '3.12']
-        os: ['windows-latest', 'ubuntu-22.04', 'macos-11']
+        os: ['windows-latest', 'ubuntu-22.04', 'macos-12']
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -140,11 +140,11 @@ jobs:
           Xvfb :99 &
           echo "DISPLAY=:99" >> $GITHUB_ENV
 
-      # Required on macOS 11 by tests that register custom URL schema. This could also be achieved by passing
+      # Required on macOS >= 11 by tests that register custom URL schema. This could also be achieved by passing
       # --basetemp to pytest, but using environment variable allows us to have a unified "Run test" step for
       # all OSes.
       - name: Relocate temporary dir
-        if: matrix.os == 'macos-11' || matrix.os == 'macos-latest'
+        if: startsWith(matrix.os, 'macos')
         run: |
           echo "PYTEST_DEBUG_TEMPROOT=$RUNNER_TEMP" >> $GITHUB_ENV
 
