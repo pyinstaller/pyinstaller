@@ -29,6 +29,7 @@ RUN apk add linux-headers
 # Build/download wheels for all test requirements.
 RUN mkdir -p /io/tests
 WORKDIR /io
+COPY tests/requirements-base.txt tests/
 COPY tests/requirements-tools.txt tests/
 RUN pip wheel -r tests/requirements-tools.txt -w wheels
 

@@ -9,31 +9,16 @@
 #   python -m pip install -r tests/requirements-tools.txt
 #   python -m pip install -r tests/requirements-libraries.txt  # extensive
 
-# Work-around for a bug in execnet 1.4.1
-execnet >= 1.5.0
-
-# Testing framework.
-pytest >= 2.7.3
-
-# Plugin allowing running tests in parallel.
-pytest-xdist
-
-# Plugin to abort hanging tests.
-pytest-timeout >= 2.0.0
-
-# Allows specifying order without duplicates
-pytest-drop-dup-tests
-
-# Ability to retry a failed test
-flaky
-
-# Better subprocess alternative with implemented timeout.
-psutil
+# Base test requirements
+-r requirements-base.txt
 
 # Check new linter violations on pull requests
 ruff
 
-# These are required by some of basic tests
+# The following libraries are required by some basic tests, but their
+# binary PyPI wheels may be available only for released python versions
+# (i.e., they might be unavailable for pre-release versions).
+
 pywin32; sys_platform == 'win32'
 
 lxml

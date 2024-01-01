@@ -118,11 +118,11 @@ jobs:
           # Make sure the help options print.
           python -m PyInstaller -h
 
-      - name: Install test dependencies (tools)
+      - name: Install test dependencies (base tools)
         run: |
-          pip install --progress-bar=off --upgrade --requirement tests/requirements-tools.txt
+          pip install --progress-bar=off --upgrade --requirement tests/requirements-base.txt
 
-      - name: Install test dependencies (libraries)
+      - name: Install test dependencies (tools and libraries)
         if: ${{ !endsWith(matrix.python-version, '-dev') }}
         run: |
           pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
