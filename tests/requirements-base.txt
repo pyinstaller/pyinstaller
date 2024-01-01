@@ -1,0 +1,27 @@
+# This is the pip requirements file for running the
+# PyInstaller test-suite. It includes the base test tools, which should
+# be available also for pre-release python version.
+#
+# For the full set of requirements to run the test suite, see
+# requirements-tools.txt and requirements-libraries.txt.
+
+# Work-around for a bug in execnet 1.4.1
+execnet >= 1.5.0
+
+# Testing framework.
+pytest >= 2.7.3
+
+# Plugin allowing running tests in parallel.
+pytest-xdist
+
+# Plugin to abort hanging tests.
+pytest-timeout >= 2.0.0
+
+# Allows specifying order without duplicates
+pytest-drop-dup-tests
+
+# Ability to retry a failed test
+flaky
+
+# Better subprocess alternative with implemented timeout.
+psutil
