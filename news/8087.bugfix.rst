@@ -1,0 +1,6 @@
+Prevent Qt and QML plugins with missing Qt dependencies in the
+``PySide2``, ``PyQt5``, ``PySide6``, and ``PyQt6`` PyPI wheels from
+pulling in Qt shared libraries from alternative locations (for example,
+system-installed Qt on Linux, Homebrew-installed Qt on macOS, or
+a custom Windows Qt build that happens to be in ``PATH``), and resulting
+in a frozen application that contains an incompatible mix of Qt libraries.

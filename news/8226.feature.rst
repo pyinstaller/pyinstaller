@@ -1,0 +1,12 @@
+Implement strict Qt dependency validation for collection of Qt plugins
+and QML components/plugins. We now perform preliminary binary dependency
+analysis of the plugins, and automatically exclude plugins that
+have at least one missing Qt dependency. This prevents collection of
+plugins that cannot be used anyway because of a missing Qt shared library
+(that is, for example, omitted from a PyPI wheel). Furthermore, we disallow
+Qt dependencies of a plugin to be resolved outside of the primary location
+of Qt shared libraries, in order to prevent missing dependencies from
+pulling in Qt libraries from alternative locations that happen to be in
+the search path (for example, when using ``PyQt5`` PyPI wheels while also
+having a system-installed Qt5 on Linux, a Homebrew-installed Qt5 on macOS,
+or a custom Windows Qt5 build that happens to be in ``PATH``).
