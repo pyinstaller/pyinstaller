@@ -12,6 +12,7 @@
 import glob
 import os
 import pathlib
+import re
 
 from PyInstaller import compat
 from PyInstaller import isolated
@@ -927,15 +928,114 @@ class QtLibraryInfo:
             logger.warning('%s: QML directory %r does not exist. QML files not packaged.', self, qml_src_dir)
             return [], []
 
-        qml_dst_dir = os.path.join(self.qt_rel_dir, 'qml')
-        datas = [(qml_src_dir, qml_dst_dir)]
-        binaries = [
-            # Produce ``/path/to/Qt/Qml/path_to_qml_binary/qml_binary, PyQt5/Qt/Qml/path_to_qml_binary``.
-            (
-                qml_plugin_file,
-                os.path.join(qml_dst_dir, os.path.dirname(os.path.relpath(qml_plugin_file, qml_src_dir)))
-            ) for qml_plugin_file in misc.dlls_in_subdirs(qml_src_dir)
-        ]
+        qml_src_path = pathlib.Path(qml_src_dir).resolve()
+        qml_dest_path = pathlib.PurePath(self.qt_rel_dir) / 'qml'
+
+        binaries = []
+        datas = []
+
+        # Helper that computes the destination directory for the given file or directory from a QML plugin directory.
+        def _compute_dest_dir(src_filename):
+            if src_filename.is_dir():
+                rel_path = src_filename.relative_to(qml_src_path)
+            else:
+                rel_path = src_filename.relative_to(qml_src_path).parent
+            return qml_dest_path / rel_path
+
+        # Discover all QML plugin sub-directories by searching for `qmldir` files.
+        qmldir_files = qml_src_path.rglob('**/qmldir')
+        for qmldir_file in sorted(qmldir_files):
+            plugin_dir = qmldir_file.parent
+            logger.debug("%s: processing QML plugin directory %s", self, plugin_dir)
+
+            try:
+                # Obtain lists of source files (separated into binaries and data files).
+                plugin_binaries, plugin_datas = self._process_qml_plugin(qmldir_file)
+                # Convert into (src, dest) tuples.
+                binaries += [(str(src_file), str(_compute_dest_dir(src_file))) for src_file in plugin_binaries]
+                datas += [(str(src_file), str(_compute_dest_dir(src_file))) for src_file in plugin_datas]
+            except Exception:
+                logger.warning("%s: failed to process QML plugin directory %s", self, plugin_dir, exc_info=True)
+
+        return binaries, datas
+
+    # https://doc.qt.io/qt-6/qtqml-modules-qmldir.html#plugin-declaration
+    # [optional] plugin <name> [<path]>
+    _qml_plugin_def = re.compile(r"^(?:(?:optional)\s+)?(?:plugin)\s+(?P<name>\w+)(?:\s+(?P<path>\.+))?$")
+
+    def _process_qml_plugin(self, qmldir_file):
+        """
+        Processes the QML directory corresponding to the given `qmldir` file.
+
+        Returns lists of binaries and data files, but only the source file names. It is up to caller to turn these into
+        lists of (src, dest) tuples.
+        """
+        plugin_dir = qmldir_file.parent
+
+        plugin_binaries = set()
+
+        # Read the `qmldir` file to determine the names of plugin binaries, if any.
+        contents = qmldir_file.read_text()
+        for line in contents.splitlines():
+            m = self._qml_plugin_def.match(line)
+            if m is None:
+                continue
+
+            plugin_name = m.group("name")
+            plugin_path = m.group("path")
+
+            # We currently do not support custom plugin path - neither relative nor absolute (the latter will never
+            # be supported, because to make it relocatable, we would need to modify the `qmpldir file`).
+            if plugin_path is not None:
+                raise Exception(f"Non-empty plugin path ({plugin_path!r} is not supported yet!")
+
+            # Turn the plugin base name into actual shared lib name.
+            if compat.is_linux:
+                plugin_file = plugin_dir / f"lib{plugin_name}.so"
+            elif compat.is_win:
+                plugin_file = plugin_dir / f"{plugin_name}.dll"
+            elif compat.is_darwin:
+                plugin_file = plugin_dir / f"lib{plugin_name}.dylib"
+            else:
+                continue  # This implicitly disables subsequent validation on unhandled platforms.
+
+            # Warn if plugin file does not exist
+            if not plugin_file.is_file():
+                logger.warn("%s: QML plugin binary %r does not exist!", str(plugin_file))
+                continue
+
+            plugin_binaries.add(plugin_file)
+
+        # Exclude plugins with invalid Qt dependencies.
+        invalid_binaries = False
+        for plugin_binary in plugin_binaries:
+            valid, reason = self._validate_plugin_dependencies(plugin_binary)
+            if not valid:
+                logger.warning("%s: excluding QML plugin binary %r! Reason: %s", self, str(plugin_binary), reason)
+                invalid_binaries = True
+
+        # If there was an invalid binary, discard the plugin.
+        if invalid_binaries:
+            logger.warning(
+                "%s: excluding QML plugin directory %r due to invalid plugin binaries!", self, str(plugin_dir)
+            )
+            return [], []
+
+        # Generate binaries list.
+        binaries = sorted(plugin_binaries)
+
+        # Generate list of data files - all content of this directory, except for the plugin binaries. Sub-directories
+        # are included if they do not contain a `qmldir` file (we do not recurse into the directory, but instead pass
+        # only its name, leaving the recursion to PyInstaller's built-in expansion of paths returned by hooks).
+        datas = []
+        for entry in plugin_dir.iterdir():
+            if entry.is_file():
+                if entry in plugin_binaries:
+                    continue
+            else:
+                if (entry / "qmldir").is_file():
+                    continue
+            datas.append(entry)
 
         return binaries, datas
 
