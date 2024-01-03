@@ -1,0 +1,3 @@
+Update the :ref:`macOS app bundles` section to reflect the layout of
+macOS app bundles as produced by PyInstaller 6.0 and later. Add a note
+to discourage use of onefile .app bundles.
