@@ -33,39 +33,50 @@ These helpers are documented below.
 
 The name of a hook file is :file:`hook-{full.import.name}.py`,
 where *full.import.name* is
-the fully-qualified name of an imported script or module.
+the fully-qualified name of an imported module.
+For example, ``hook-PyQt5.QtCore.py`` is a hook file corresponding to
+the module ``PyQt5.QtCore``. When your script (or one of its dependencies)
+contains ``import PyQt5.QtCore`` (or ``from PyQt5 import QtCore``),
+Analysis notes that ``hook-PyQt5.QtCore.py`` exists, and will call it.
+
 You can browse through the existing hooks in the
 ``hooks`` folder of the PyInstaller distribution folder
 and see the names of the packages for which hooks have been written.
-For example ``hook-PyQt5.QtCore.py`` is a hook file telling
-about hidden imports needed by the module ``PyQt5.QtCore``.
-When your script contains ``import PyQt5.QtCore``
-(or ``from PyQt5 import QtCore``),
-Analysis notes that ``hook-PyQt5.QtCore.py`` exists, and will call it.
+Additional hooks are provided by the ``pyinstaller-hooks-contrib``
+package, which is typically installed as part of PyInstaller dependencies.
+See `here <https://github.com/pyinstaller/pyinstaller/tree/develop/PyInstaller/hooks>`__
+to browse PyInstaller-provided hooks in the online repository,
+and `here <https://github.com/pyinstaller/pyinstaller-hooks-contrib/tree/master/src/_pyinstaller_hooks_contrib/hooks/stdhooks>`__
+for hooks provided by the ``pyinstaller-hooks-contrib``.
 
 Many hooks consist of only one statement, an assignment to ``hiddenimports``.
-For example, the hook for the `dnspython`_ package, called
-``hook-dns.rdata.py``, has only this statement::
+For example, the ``xml.dom`` module from Python standard library imports
+a module called ``xml.dom.domreg``, which in turn indirectly imports
+``xml.dom.minidom`` as one of registered XML DOM implementations.
+Therefore, to ensure that this implementation module
+is collected, PyInstaller provides a hook called
+``hook-xml.dom.domreg.py``, which contains only the following statement::
 
-    hiddenimports = [
-        "dns.rdtypes.*",
-        "dns.rdtypes.ANY.*"
-    ]
+    hiddenimports = ["xml.dom.minidom"]
 
-When Analysis sees ``import dns.rdata`` or ``from dns import rdata``
-it calls ``hook-dns.rdata.py`` and examines its value
-of ``hiddenimports``.
-As a result, it is as if your source script also contained::
+When Analysis sees an ``import xml.dom`` statement in the user code (or
+one of its dependencies), and subsequently sees that ``xml.dom`` module
+imports the ``xml.dom.domreg`` module (via the
+``from .domreg import getDOMImplementation, registerDOMImplementation``
+statement), it calls ``hook-xml.dom.domreg.py``, and examines the value
+of ``hiddenimports`` hook global variable set by the hook.
+As a result, the ``xml.dom.minidom`` module is collected into the frozen
+application, as if the ``xml.dom.domreg`` module (or your source script)
+contained a direct ``import xml.dom.minidom`` statement.
 
-    import dns.rdtypes.*
-    import dsn.rdtypes.ANY.*
-
-A hook can also cause the addition of data files,
-and it can cause certain files to *not* be imported.
+A hook can also cause the collection of data files or binaries (shared
+libraries) from a package, collection of metadata for a package, and it
+can also prevent collection of packages/modules that are imported only
+from the hooked module or a package.
 Examples of these actions are shown below.
 
-When the module that needs these hidden imports is useful only to your project,
-store the hook file(s) somewhere near your source file.
+When the module that needs a hook is useful only to your project,
+you can store the hook file(s) somewhere near your source file.
 Then specify their location to the ``pyinstaller`` or ``pyi-makespec``
 command with the :option:`--additional-hooks-dir` option.
 If the hook file(s) are at the same level as the script,
@@ -76,7 +87,8 @@ the command could be simply::
 If you write a hook for a module used by others,
 please ask the package developer to
 :ref:`include the hook with her/his package <provide hooks with package>`
-or send us the hook file so we can make it available.
+or send us the hook file so we can include it in `the contributed
+hooks repository <https://github.com/pyinstaller/pyinstaller-hooks-contrib>`__.
 
 
 How a Hook Is Loaded
