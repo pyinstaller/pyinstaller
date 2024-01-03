@@ -450,17 +450,37 @@ Either executable can be started from a Terminal command line.
 Standard input and output work as normal through that Terminal window.
 
 If you specify :option:`--windowed` with either option, the ``dist`` folder
-also contains a macOS application named :file:`myscript.app`.
+also contains a macOS app bundle named :file:`myscript.app`.
 
-As you probably know, an application is a special type of folder.
-The one built by PyInstaller contains a folder always named
-:file:`Contents` which contains:
+.. note::
+    Generating app bundles with onefile executables (i.e., using the
+    combination of :option:`--onefile` and :option:`--windowed` options),
+    while possible, is not recommended. Such app bundles are inefficient,
+    because they require unpacking on each run (and the unpacked content
+    might be scanned by the OS each time). Furthermore, onefile executables
+    will not work when signed/notarized with sandbox enabled (which
+    is a requirement for distribution of apps through Mac App Store).
 
-  + A folder :file:`Frameworks` which is empty.
-  + A folder :file:`Resources` that contains an icon file.
-  + A file :file:`Info.plist` that describes the app.
-  + A folder :file:`MacOS` that contains the the executable and
-    supporting files, just as in the :option:`--onedir` folder.
+As you are likely aware, an app bundle is a special type of folder.
+The one built by PyInstaller always contains a folder named
+:file:`Contents`, which contains:
+
+  + A file named :file:`Info.plist` that describes the app.
+  + A folder named :file:`MacOS` that contains the program executable.
+  + A folder named :file:`Frameworks` that contains the collected binaries
+    (shared libraries, python extensions) and nested .framework bundles.
+    It also contains symbolic links to data files and directories from
+    the :file:`Resources` directory.
+  + A folder named :file:`Resources` that contains the icon file and all
+    collected data files. It also contains symbolic links to binaries
+    and directories from the :file:`Resources` directory.
+
+.. note::
+    The contents of the :file:`Frameworks` and :file:`Resources` directories
+    are cross-linked between the two directories in an effort to
+    maintain an illusion of a single content directory (which is required
+    by some packages), while also trying to satisfy the Apple's file
+    placement requirements for codesigning.
 
 Use the :option:`--icon` argument to specify a custom icon for the application.
 It will be copied into the :file:`Resources` folder.
