@@ -234,7 +234,7 @@ def get_imports(filename, search_paths=None):
     platform-specific resolution mechanism fails to resolve a library fullpath.
     """
     if compat.is_win:
-        if filename.lower().endswith(".manifest"):
+        if str(filename).lower().endswith(".manifest"):
             return []
         return _get_imports_pefile(filename, search_paths)
     elif compat.is_darwin:
