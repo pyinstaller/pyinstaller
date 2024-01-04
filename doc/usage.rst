@@ -437,6 +437,8 @@ Or you can apply the ``unicode()`` function to the object
 to reproduce the version text file.
 
 
+.. _macOS app bundles:
+
 Building macOS App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

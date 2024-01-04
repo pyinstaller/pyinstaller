@@ -1,0 +1,8 @@
+Add a new documentation chapter, called :ref:`common issues`, to cover
+topics such as launching external programs from frozen applications,
+multi-processing via :mod:`multiprocessing` (specifically, the requirement
+to call :func:`multiprocessing.freeze_support`), use of symbolic links in
+POSIX builds in PyInstaller >= 6.0 and its implications for distribution
+(e.g., when copying frozen application, or creating ``zip`` archives),
+``sys.stdout`` and ``sys.stderr`` being ``None`` in Windows no-console
+builds.
