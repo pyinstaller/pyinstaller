@@ -55,6 +55,7 @@ _________
    installation
    operating-mode
    usage
+   common-issues-and-pitfalls
    runtime-information
    spec-files
    feature-notes

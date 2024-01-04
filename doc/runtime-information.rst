@@ -187,6 +187,7 @@ symbolic link::
     print( 'os.getcwd is', os.getcwd() )
 
 
+.. _library path considerations:
 
 LD_LIBRARY_PATH / LIBPATH considerations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -219,6 +220,8 @@ with the system program.
         # Remove the env var as a last resort:
         env.pop(lp_key, None)
     p = Popen(system_cmd, ..., env=env)  # create the process
+
+See also: :ref:`launching external programs`
 
 
 .. include:: _common_definitions.txt
