@@ -17,7 +17,7 @@ def _pyi_rthook():
     import os
     import sys
 
-    from _pyi_rth_utils import is_macos_app_bundle
+    from _pyi_rth_utils import is_macos_app_bundle, prepend_path_to_environment_variable
 
     if sys.platform.startswith('win'):
         pyqt_path = os.path.join(sys._MEIPASS, 'PySide2')
@@ -43,10 +43,10 @@ def _pyi_rthook():
     else:
         os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')
 
-    # Modelled after similar PATH modification in PyQt5 rthook. With PySide2, this modification seems necessary for SSL
-    # DLLs to be found in onefile builds (provided they were available during collection).
-    if sys.platform.startswith('win') and 'PATH' in os.environ:
-        os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
+    # Add `sys._MEIPASS` to `PATH` in order to ensure that `QtNetwork` can discover OpenSSL DLLs that might have been
+    # collected there (i.e., when they were not shipped with the package, and were collected from an external location).
+    if sys.platform.startswith('win'):
+        prepend_path_to_environment_variable(sys._MEIPASS, 'PATH')
 
 
 _pyi_rthook()

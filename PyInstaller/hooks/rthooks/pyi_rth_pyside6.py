@@ -17,7 +17,7 @@ def _pyi_rthook():
     import os
     import sys
 
-    from _pyi_rth_utils import is_macos_app_bundle
+    from _pyi_rth_utils import is_macos_app_bundle, prepend_path_to_environment_variable
 
     if sys.platform.startswith('win'):
         pyqt_path = os.path.join(sys._MEIPASS, 'PySide6')
@@ -43,22 +43,16 @@ def _pyi_rthook():
     else:
         os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')
 
-    # Modelled after similar PATH modification in PyQt5 rthook. With PySide6, this modification seems necessary for SSL
-    # DLLs to be found in onefile builds (provided they were available during collection).
-    if sys.platform.startswith('win') and 'PATH' in os.environ:
-        os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
+    # Add `sys._MEIPASS` to `PATH` in order to ensure that `QtNetwork` can discover OpenSSL DLLs that might have been
+    # collected there (i.e., when they were not shipped with the package, and were collected from an external location).
+    if sys.platform.startswith('win'):
+        prepend_path_to_environment_variable(sys._MEIPASS, 'PATH')
 
     # For macOS POSIX builds, we need to add `sys._MEIPASS` to `DYLD_LIBRARY_PATH` so that QtNetwork can discover
     # OpenSSL dynamic libraries for its `openssl` TLS backend. This also prevents fallback to external locations, such
-    # as Homebrew. For .app bundles, this is unnecessary because QtNetwork explicitly searches `Contents/Frameworks`.
+    # as Homebrew. For .app bundles, this is unnecessary because `QtNetwork` explicitly searches `Contents/Frameworks`.
     if sys.platform == 'darwin' and not is_macos_app_bundle:
-        search_paths = os.environ.get('DYLD_LIBRARY_PATH')
-        if search_paths:
-            if sys._MEIPASS not in search_paths:
-                search_paths = os.pathsep.join([sys._MEIPASS, *search_paths.split(os.pathsep)])
-        else:
-            search_paths = sys._MEIPASS
-        os.environ['DYLD_LIBRARY_PATH'] = search_paths
+        prepend_path_to_environment_variable(sys._MEIPASS, 'DYLD_LIBRARY_PATH')
 
 
 _pyi_rthook()

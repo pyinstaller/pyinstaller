@@ -17,7 +17,7 @@ def _pyi_rthook():
     import os
     import sys
 
-    from _pyi_rth_utils import is_macos_app_bundle
+    from _pyi_rth_utils import is_macos_app_bundle, prepend_path_to_environment_variable
 
     # Try PyQt5 5.15.4-style path first...
     pyqt_path = os.path.join(sys._MEIPASS, 'PyQt5', 'Qt5')
@@ -44,9 +44,14 @@ def _pyi_rthook():
     else:
         os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')
 
-    # This is required starting in PyQt5 5.12.3. See discussion in #4293.
-    if sys.platform.startswith('win') and 'PATH' in os.environ:
-        os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
+    # Back in the day, this was required because PyQt5 5.12.3 explicitly checked that `Qt5Core.dll` was in `PATH`
+    # (see #4293), and contemporary PyInstaller versions collected that DLL to `sys._MEIPASS`.
+    #
+    # Nowadays, we add `sys._MEIPASS` to `PATH` in order to ensure that `QtNetwork` can discover OpenSSL DLLs that might
+    # have been collected there (i.e., when they were not shipped with the package, and were collected from an external
+    # location).
+    if sys.platform.startswith('win'):
+        prepend_path_to_environment_variable(sys._MEIPASS, 'PATH')
 
 
 _pyi_rthook()
