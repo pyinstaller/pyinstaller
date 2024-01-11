@@ -845,13 +845,19 @@ class Analysis(Target):
         self._write_graph_debug()
 
         # On macOS, check the SDK version of the binaries to be collected, and warn when the SDK version is either
-        # invalid or too low. Such binaries will likely refuse to be loaded when hardened runtime is enabledm and
+        # invalid or too low. Such binaries will likely refuse to be loaded when hardened runtime is enabled and
         # while we cannot do anything about it, we can at least warn the user about it.
         # See: https://developer.apple.com/forums/thread/132526
         if is_darwin:
             binaries_with_invalid_sdk = []
             for dest_name, src_name, typecode in self.binaries:
-                sdk_version = osxutils.get_macos_sdk_version(src_name)
+                try:
+                    sdk_version = osxutils.get_macos_sdk_version(src_name)
+                except Exception:
+                    logger.warning("Failed to query macOS SDK version of %r!", src_name, exc_info=True)
+                    binaries_with_invalid_sdk.append((dest_name, src_name, "unavailable"))
+                    continue
+
                 if sdk_version < (10, 9, 0):
                     binaries_with_invalid_sdk.append((dest_name, src_name, sdk_version))
             if binaries_with_invalid_sdk:
