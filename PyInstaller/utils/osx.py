@@ -95,7 +95,8 @@ def _find_version_cmd(header):
     # The SDK version is stored in LC_BUILD_VERSION command (used when targeting the latest versions of macOS) or in
     # older LC_VERSION_MIN_MACOSX command. Check for presence of either.
     version_cmd = [cmd for cmd in header.commands if cmd[0].cmd in {LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX}]
-    assert len(version_cmd) == 1, "Expected exactly one LC_BUILD_VERSION or LC_VERSION_MIN_MACOSX command!"
+    assert len(version_cmd) == 1, \
+        f"Expected exactly one LC_BUILD_VERSION or LC_VERSION_MIN_MACOSX command, found {len(version_cmd)}!"
     return version_cmd[0]
 
 
