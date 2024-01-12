@@ -330,6 +330,7 @@ def _get_imports_ldd(filename, search_paths):
         encoding='utf-8',
     )
 
+    ldd_warnings = []
     for line in p.stderr.splitlines():
         if not line:
             continue
@@ -344,7 +345,9 @@ def _get_imports_ldd(filename, search_paths):
         elif line.startswith("ldd: warning: you do not have execution permission for "):
             continue
         # Propagate any other warnings it might have.
-        print(line, file=sys.stderr)
+        ldd_warnings.append(line)
+    if ldd_warnings:
+        logger.warning("ldd warnings for %r:\n%s", filename, "\n".join(ldd_warnings))
 
     for line in p.stdout.splitlines():
         name = None  # Referenced name
