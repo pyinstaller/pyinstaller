@@ -344,6 +344,10 @@ def _get_imports_ldd(filename, search_paths):
         # warnings. Suppress these.
         elif line.startswith("ldd: warning: you do not have execution permission for "):
             continue
+        # When `ldd` is ran against a file that is not a dynamic binary (i.e., is not a binary at all, or is a static
+        # binary), it emits a "not a dynamic executable" warning. Suppress it.
+        elif "not a dynamic executable" in line:
+            continue
         # Propagate any other warnings it might have.
         ldd_warnings.append(line)
     if ldd_warnings:
