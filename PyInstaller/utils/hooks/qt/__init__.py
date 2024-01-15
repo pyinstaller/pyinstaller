@@ -534,7 +534,7 @@ class QtLibraryInfo:
             if valid:
                 binaries.append((plugin_file, plugin_dst_dir))
             else:
-                logger.warning("%s: excluding plugin %r (%r)! Reason: %s", self, plugin_file, plugin_type, reason)
+                logger.debug("%s: excluding plugin %r (%r)! Reason: %s", self, plugin_file, plugin_type, reason)
         return binaries
 
     def _validate_plugin_dependencies(self, plugin_file):
@@ -1011,14 +1011,12 @@ class QtLibraryInfo:
         for plugin_binary in plugin_binaries:
             valid, reason = self._validate_plugin_dependencies(plugin_binary)
             if not valid:
-                logger.warning("%s: excluding QML plugin binary %r! Reason: %s", self, str(plugin_binary), reason)
+                logger.debug("%s: excluding QML plugin binary %r! Reason: %s", self, str(plugin_binary), reason)
                 invalid_binaries = True
 
         # If there was an invalid binary, discard the plugin.
         if invalid_binaries:
-            logger.warning(
-                "%s: excluding QML plugin directory %r due to invalid plugin binaries!", self, str(plugin_dir)
-            )
+            logger.debug("%s: excluding QML plugin directory %r due to invalid plugin binaries!", self, str(plugin_dir))
             return [], []
 
         # Generate binaries list.
