@@ -25,7 +25,7 @@ keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: 
 keyring==24.3.0; sys_platform != 'darwin' or python_version >= '3.8.7'
 matplotlib==3.8.2; python_version >= '3.9'
 numpy==1.26.3; python_version >= '3.9'
-pandas==2.1.4; python_version >= '3.9'
+pandas==2.2.0; python_version >= '3.9'
 pygments==2.17.2
 PyGObject==3.46.0; sys_platform == 'linux'
 # Official PySide2 wheels do not support python 3.11 or newer
@@ -68,7 +68,7 @@ PyQt6-WebEngine-Qt6==6.6.1
 python-dateutil==2.8.2
 pytz==2023.3.post1
 requests==2.31.0
-scipy==1.11.4; python_version >= '3.9'
+scipy==1.12.0; python_version >= '3.9'
 # simplejson is used for text_c_extension
 simplejson==3.19.2
 sphinx==7.2.6; python_version >= '3.9'
