@@ -16,7 +16,7 @@ Contrary to popular expectation, there is no magic `--i-am-not-malware` option <
 
 ### Reporting false positives to AV vendors
 
-Instead of randomly changing your code or PyInstaller configuration in the hope that AV likes it better that way, most, if not all, antiviral software vendors should have a false positives submission portal where you can upload either your compiled binaries. For convenience, a quick list of shame for the more error-prone vendors is given below. For a more extensive list, see [this page](https://www.techsupportalert.com/content/how-report-malware-or-false-positives-multiple-antivirus-vendors.htm#Easily_Submit_Malware_To_All_Vendors).
+Instead of randomly changing your code or PyInstaller configuration in the hope that AV likes it better that way, most, if not all, antiviral software vendors should have a false positives submission portal where you can upload either your compiled binaries. For convenience, a quick list of shame for the more error-prone vendors is given below. For a more extensive list, see [this page](https://www.techsupportalert.com/how-to-report-malware-or-false-positives-to-multiple-antivirus-vendors/).
 
 * [Microsoft Defender](https://www.microsoft.com/wdsi/filesubmission) (previously called *Windows Defender*)
 * [MacAfee](https://www.microsoft.com/en-us/wdsi/filesubmission) (requires a paid *corporate* account to submit files)
