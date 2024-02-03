@@ -216,6 +216,10 @@ _unix_excludes = {
     r'libnvidia-egl-(gbm|wayland)\.so(\..*)?',
     r'libnvidia-(cfg|compiler|e?glcore|glsi|glvkspirv|rtcore|allocator|tls|ml)\.so(\..*)?',
     r'lib(EGL|GLX)_nvidia\.so(\..*)?',
+    # libcuda.so, libcuda.so.1, and libcuda.so.{version} are run-time part of NVIDIA driver, and should not be
+    # collected, as they need to match the rest of driver components on the target system.
+    r'libcuda\.so(\..*)?',
+    r'libcudadebugger\.so(\..*)?',
     # libxcb-dri changes ABI frequently (e.g.: between Ubuntu LTS releases) and is usually installed as dependency of
     # the graphics stack anyway. No need to bundle it.
     r'libxcb\.so(\..*)?',
