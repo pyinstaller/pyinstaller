@@ -1,0 +1,5 @@
+When trying to run ``pyinstaller`` (or equivalent ``python -m PyInstaller``)
+against non-existing script file(s), exit immediately - without trying
+to write the .spec file and building it. This prevents us from overwriting
+an existing (and customized) .spec file if user makes a typo in the .spec
+file's suffix when trying to build it, for example, ``pyinstaller program.cpes``.
