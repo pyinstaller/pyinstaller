@@ -15,12 +15,12 @@ exclude = [
    "tests/functional/modules/pyi_module_with_invalid_encoding/mymodule2.py",
 ]
 line-length=120
-select = [
+lint.select = [
   "E",       # pycodestyle errors
   "F",       # pyflakes
   "W",       # pycodestyle warnings
 ]
-show-source = true
+output-format = "full"
 
 [tool.towncrier]
 	filename = "doc/CHANGES.rst"
