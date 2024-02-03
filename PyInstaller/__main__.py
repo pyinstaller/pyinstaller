@@ -197,6 +197,15 @@ def run(pyi_args: list | None = None, pyi_config: dict | None = None):
             )
             spec_file = args.filenames[0]
         else:
+            # Ensure that the given script files exist, before trying to generate the .spec file.
+            # This prevents us from overwriting an existing (and customized) .spec file if user makes a typo in the
+            # .spec file's suffix when trying to  build it, for example, `pyinstaller program.cpes` (see #8276).
+            # It also prevents creation of a .spec file when `pyinstaller program.py` is accidentally ran from a
+            # directory that does not contain the script (for example, due to failing to change the directory prior
+            # to running the command).
+            for filename in args.filenames:
+                if not os.path.isfile(filename):
+                    raise SystemExit(f"Script file {filename!r} does not exist.")
             spec_file = run_makespec(**vars(args))
 
         sys.argv = [spec_file, *spec_args]
