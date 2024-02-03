@@ -181,9 +181,14 @@ def run(pyi_args: list | None = None, pyi_config: dict | None = None):
 
         # Print PyInstaller version, Python version, and platform as the first line to stdout. This helps us identify
         # PyInstaller, Python, and platform version when users report issues.
-        logger.info('PyInstaller: %s' % __version__)
+        try:
+            from _pyinstaller_hooks_contrib import __version__ as contrib_hooks_version
+        except Exception:
+            contrib_hooks_version = 'unknown'
+
+        logger.info('PyInstaller: %s, contrib hooks: %s', __version__, contrib_hooks_version)
         logger.info('Python: %s%s', platform.python_version(), " (conda)" if compat.is_conda else "")
-        logger.info('Platform: %s' % platform.platform())
+        logger.info('Platform: %s', platform.platform())
 
         # Skip creating .spec when .spec file is supplied.
         if args.filenames[0].endswith('.spec'):
