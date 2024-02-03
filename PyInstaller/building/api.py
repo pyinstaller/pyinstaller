@@ -882,7 +882,7 @@ class EXE(Target):
 
         # Ensure file exists.
         if not os.path.isfile(src_filename):
-            raise ValueError("Resource file {src_filename!r} does not exist!")
+            raise ValueError(f"Resource file {src_filename!r} does not exist!")
 
         # Check if src_filename points to a PE file or an arbitrary (data) file.
         try:
