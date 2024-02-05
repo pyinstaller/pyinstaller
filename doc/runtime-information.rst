@@ -114,8 +114,6 @@ meaning that if you put ``file.dat`` in the root of your package, using::
 
 It will be found correctly at runtime without changing ``my_script.py``.
 
-.. note:: Windows users should use ``;`` instead of ``:`` in the above line.
-
 If ``__file__`` is checked from inside a package or library (say
 ``my_library.data``) then ``__file__`` will be
 ``[app root]/my_library/data.pyc`` and :option:`--add-data` should mirror that::
