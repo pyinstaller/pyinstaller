@@ -304,7 +304,7 @@ def process_collected_binary(
 
 
 def _compute_file_digest(filename):
-    hasher = hashlib.md5()
+    hasher = hashlib.sha1()
     with open(filename, "rb") as fp:
         for chunk in iter(lambda: fp.read(16 * 1024), b""):
             hasher.update(chunk)
