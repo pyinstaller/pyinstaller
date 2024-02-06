@@ -1,0 +1,4 @@
+(Linux) Collect ``.hmac`` files accompanying shared libraries, if such
+files are available. This allows frozen application to run on FIPS-enabled
+Red Hat Enterprise systems, where HMAC is required by self-check
+implemented by the OpenSSL crypto library.
