@@ -35,7 +35,7 @@ from PyInstaller.building.utils import (
     _check_guts_toc, _check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas, compile_pymodule,
     add_suffix_to_extension, postprocess_binaries_toc_pywin32, postprocess_binaries_toc_pywin32_anaconda
 )
-from PyInstaller.compat import is_win, is_conda, is_darwin
+from PyInstaller.compat import is_win, is_conda, is_darwin, is_linux
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import initialize_modgraph
 from PyInstaller.depend.utils import create_py3_base_library, scan_code_for_ctypes
@@ -809,6 +809,20 @@ class Analysis(Target):
             # With anaconda, we need additional work-around...
             if is_conda:
                 self.binaries = postprocess_binaries_toc_pywin32_anaconda(self.binaries)
+
+        # On linux, check for HMAC files accompanying shared library files and, if available, collect them.
+        # These are present on Fedora and RHEL, and are used in FIPS-enabled configurations to ensure shared
+        # library's file integrity.
+        if is_linux:
+            for dest_name, src_name, typecode in self.binaries:
+                if typecode not in {'BINARY', 'EXTENSION'}:
+                    continue  # Skip symbolic links
+                src_lib_path = pathlib.Path(src_name)
+                src_hmac_path = src_lib_path.with_name(f".{src_lib_path.name}.hmac")
+                if not src_hmac_path.is_file():
+                    continue
+                dest_hmac_path = pathlib.PurePath(dest_name).with_name(src_hmac_path.name)
+                self.datas.append((str(dest_hmac_path), str(src_hmac_path), 'DATA'))
 
         # Final normalization of `datas` and `binaries`:
         #  - normalize both TOCs together (to avoid having duplicates across the lists)
