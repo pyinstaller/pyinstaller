@@ -142,6 +142,22 @@ def process_collected_binary(
                 use_upx = False
                 break
 
+    # Additional automatic disablement rules for UPX and strip.
+
+    # On Windows, avoid using UPX with binaries that have control flow guard (CFG) enabled.
+    if use_upx and is_win and versioninfo.pefile_check_control_flow_guard(src_name):
+        logger.info('Disabling UPX for %s due to CFG!', src_name)
+        use_upx = False
+
+    # Avoid using UPX with Qt plugins, as it strips the data required by the Qt plugin loader.
+    if use_upx and misc.is_file_qt_plugin(src_name):
+        logger.info('Disabling UPX for %s due to it being a Qt plugin!', src_name)
+        use_upx = False
+
+    # Exit early if no processing is required after above rules are applied.
+    if not use_strip and not use_upx and not is_darwin:
+        return src_name
+
     # Prepare cache directory path. Cache is tied to python major/minor version, but also to various processing options.
     pyver = f'py{sys.version_info[0]}{sys.version_info[1]}'
     arch = platform.architecture()[0]
@@ -194,52 +210,6 @@ def process_collected_binary(
         # ... otherwise remove it.
         os.remove(cached_name)
 
-    cmd = None
-
-    if use_upx:
-        # If we are to apply both strip and UPX, apply strip first.
-        if use_strip:
-            src_name = process_collected_binary(
-                src_name,
-                dest_name,
-                use_strip=True,
-                use_upx=False,
-                target_arch=target_arch,
-                codesign_identity=codesign_identity,
-                entitlements_file=entitlements_file,
-                strict_arch_validation=strict_arch_validation,
-            )
-        # We need to avoid using UPX with Windows DLLs that have Control Flow Guard enabled, as it breaks them.
-        if is_win and versioninfo.pefile_check_control_flow_guard(src_name):
-            logger.info('Disabling UPX for %s due to CFG!', src_name)
-        elif misc.is_file_qt_plugin(src_name):
-            logger.info('Disabling UPX for %s due to it being a Qt plugin!', src_name)
-        else:
-            upx_exe = 'upx'
-            upx_dir = CONF['upx_dir']
-            if upx_dir:
-                upx_exe = os.path.join(upx_dir, upx_exe)
-
-            upx_options = [
-                # Do not compress icons, so that they can still be accessed externally.
-                '--compress-icons=0',
-                # Use LZMA compression.
-                '--lzma',
-                # Quiet mode.
-                '-q',
-            ]
-            if is_win:
-                # Binaries built with Visual Studio 7.1 require --strip-loadconf or they will not compress.
-                upx_options.append('--strip-loadconf')
-
-            cmd = [upx_exe, *upx_options, cached_name]
-    elif use_strip:
-        strip_options = []
-        if is_darwin:
-            # The default strip behavior breaks some shared libraries under macOS.
-            strip_options = ["-S"]  # -S = strip only debug symbols.
-        cmd = ["strip", *strip_options, cached_name]
-
     # Ensure parent path exists
     os.makedirs(os.path.dirname(cached_name), exist_ok=True)
 
@@ -249,7 +219,37 @@ def process_collected_binary(
     shutil.copyfile(src_name, cached_name)
     os.chmod(cached_name, 0o755)
 
-    if cmd:
+    # Apply strip
+    if use_strip:
+        strip_options = []
+        if is_darwin:
+            # The default strip behavior breaks some shared libraries under macOS.
+            strip_options = ["-S"]  # -S = strip only debug symbols.
+
+        cmd = ["strip", *strip_options, cached_name]
+        logger.info("Executing: %s", " ".join(cmd))
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # Apply UPX
+    if use_upx:
+        upx_exe = 'upx'
+        upx_dir = CONF['upx_dir']
+        if upx_dir:
+            upx_exe = os.path.join(upx_dir, upx_exe)
+
+        upx_options = [
+            # Do not compress icons, so that they can still be accessed externally.
+            '--compress-icons=0',
+            # Use LZMA compression.
+            '--lzma',
+            # Quiet mode.
+            '-q',
+        ]
+        if is_win:
+            # Binaries built with Visual Studio 7.1 require --strip-loadconf or they will not compress.
+            upx_options.append('--strip-loadconf')
+
+        cmd = [upx_exe, *upx_options, cached_name]
         logger.info("Executing: %s", " ".join(cmd))
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
