@@ -130,12 +130,6 @@ def process_collected_binary(
     if not use_strip and not use_upx and not is_darwin:
         return src_name
 
-    # Skip processing if this is Windows .manifest file. We used to process these as part of support for collecting
-    # WinSxS assemblies, but that was removed in PyInstaller 6.0. So in case we happen to get a .manifest file here,
-    # return it as-is.
-    if is_win and src_name.lower().endswith(".manifest"):
-        return src_name
-
     # Match against provided UPX exclude patterns.
     upx_exclude = upx_exclude or []
     if use_upx:
