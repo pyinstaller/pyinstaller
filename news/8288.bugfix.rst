@@ -1,0 +1,3 @@
+Switch the hashing function in PyInstaller's binary cache from MD5 to
+SHA1, as the former cannot be used on FIPS-enabled Red Hat Enterprise
+Linux systems.
