@@ -25,7 +25,7 @@ import zipfile
 
 from PyInstaller import compat
 from PyInstaller import log as logging
-from PyInstaller.compat import (EXTENSION_SUFFIXES, is_darwin, is_win)
+from PyInstaller.compat import EXTENSION_SUFFIXES, is_darwin, is_win, is_linux
 from PyInstaller.config import CONF
 from PyInstaller.exceptions import InvalidSrcDestTupleError
 from PyInstaller.utils import misc
@@ -153,6 +153,15 @@ def process_collected_binary(
     if use_upx and misc.is_file_qt_plugin(src_name):
         logger.info('Disabling UPX for %s due to it being a Qt plugin!', src_name)
         use_upx = False
+
+    # On linux, if a binary has an accompanying HMAC file, avoid modifying it in any way.
+    if (use_upx or use_strip) and is_linux:
+        src_path = pathlib.Path(src_name)
+        hmac_path = src_path.with_name(f".{src_path.name}.hmac")
+        if hmac_path.is_file():
+            logger.info('Disabling UPX and/or strip for %s due to accompanying .hmac file!', src_name)
+            use_upx = use_strip = False
+        del src_path, hmac_path
 
     # Exit early if no processing is required after above rules are applied.
     if not use_strip and not use_upx and not is_darwin:
