@@ -52,8 +52,8 @@ class TOKEN_APPCONTAINER_INFORMATION(ctypes.Structure):
         ("TokenAppContainer", PSID),
     ]
 
-PTOKEN_APPCONTAINER_INFORMATION = ctypes.POINTER(TOKEN_APPCONTAINER_INFORMATION)
 
+PTOKEN_APPCONTAINER_INFORMATION = ctypes.POINTER(TOKEN_APPCONTAINER_INFORMATION)
 
 # SECURITY_ATTRIBUTES structure for CreateDirectoryW
 PSECURITY_DESCRIPTOR = ctypes.wintypes.LPVOID
@@ -252,7 +252,6 @@ def _get_process_sid(token_information_class):
 # Get and cache current user's SID
 _user_sid = _get_process_sid(TokenUser)
 
-
 # Get and cache current app container's SID (if any)
 _app_container_sid = _get_process_sid(TokenAppContainerSid)
 
@@ -273,12 +272,13 @@ def secure_mkdir(dir_name):
     # - rights = SDDL_FILE_ALL (FA)
     # - account_sid = current user (queried SID)
     security_desc_str = f"D:(A;;FA;;;{user_sid})"
-    # If the app is running within an AppContainer app container SID has to be added to the DACL.
-    # Otherwise our process won't have access to the temp dir.
+
+    # If the app is running within an AppContainer, the app container SID has to be added to the DACL.
+    # Otherwise our process will not have access to the temp dir.
     #
     # Quoting https://learn.microsoft.com/en-us/windows/win32/secauthz/implementing-an-appcontainer:
     # "The AppContainer SID is a persistent unique identifier for the appcontainer. ...
-    #  To allow a single AppContainer to access a resource, add its AppContainerSID to the ACL for that resource."""
+    #  To allow a single AppContainer to access a resource, add its AppContainerSID to the ACL for that resource."
     if _app_container_sid:
         security_desc_str += f"(A;;FA;;;{_app_container_sid})"
     security_desc = ctypes.wintypes.LPVOID(None)
