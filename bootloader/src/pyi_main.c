@@ -215,6 +215,17 @@ pyi_main(int argc, char * argv[])
     /* Check if we need to unpack the embedded archive (onefile build, or onedir
      * build in MERGE mode). If we do, create the temporary directory. */
     if (!in_child && archive_status->needs_to_extract) {
+        /* On Windows, initialize security descriptor for temporary directory.
+         * This is required by `pyi_win32_mkdir()` calls made when creating application's
+         * temporary directory and its sub-directories during file extration. */
+#if defined(_WIN32)
+        VS("LOADER: initializing security descriptor for temporary directory...\n");
+        if (pyi_win32_initialize_security_descriptor() == -1) {
+            FATALERROR("Failed to initialize security descriptor for temporary directory!\n");
+            return -1;
+        }
+#endif
+
         VS("LOADER: creating temporary directory...\n");
         if (pyi_arch_create_tempdir(archive_status) == -1) {
             return -1;
@@ -414,6 +425,13 @@ pyi_main(int argc, char * argv[])
             VS("LOADER: Error extracting binaries\n");
             return -1;
         }
+
+        /* At this point, extraction to temporary directory is complete,
+         * and we can free the Windows security descriptor that was used
+         * during creation of temporary directory and its sub-directories. */
+#if defined(_WIN32)
+        pyi_win32_free_security_descriptor();
+#endif
 
         /* Run the 'child' process, then clean up. */
 
