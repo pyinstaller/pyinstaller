@@ -16,6 +16,7 @@ import ctypes.wintypes
 TOKEN_QUERY = 0x0008
 
 TokenUser = 1  # from TOKEN_INFORMATION_CLASS enum
+TokenAppContainerSid = 31  # from TOKEN_INFORMATION_CLASS enum
 
 ERROR_INSUFFICIENT_BUFFER = 122
 
@@ -44,6 +45,15 @@ class TOKEN_USER(ctypes.Structure):
 
 
 PTOKEN_USER = ctypes.POINTER(TOKEN_USER)
+
+
+class TOKEN_APPCONTAINER_INFORMATION(ctypes.Structure):
+    _fields_ = [
+        ("TokenAppContainer", PSID),
+    ]
+
+
+PTOKEN_APPCONTAINER_INFORMATION = ctypes.POINTER(TOKEN_APPCONTAINER_INFORMATION)
 
 # SECURITY_ATTRIBUTES structure for CreateDirectoryW
 PSECURITY_DESCRIPTOR = ctypes.wintypes.LPVOID
@@ -156,9 +166,15 @@ def _win_error_to_message(error_code):
     return message
 
 
-def _get_user_sid():
+def _get_process_sid(token_information_class):
     """
-    Obtain the SID for the current user.
+    Obtain the SID from the current process by the given token information class.
+
+    Args:
+      token_information_class: Token information class identifying the SID that we're
+          interested in. Only TokenUser and TokenAppContainerSid are supported.
+
+    Returns: SID (if it could be fetched) or None if not available or on error.
     """
     process_token = ctypes.wintypes.HANDLE(INVALID_HANDLE)
 
@@ -173,15 +189,15 @@ def _get_user_sid():
             error_code = kernel32.GetLastError()
             raise RuntimeError(f"Failed to open process token! Error code: 0x{error_code:X}")
 
-        # Query buffer size for user info structure
-        user_info_size = ctypes.wintypes.DWORD(0)
+        # Query buffer size for sid
+        token_info_size = ctypes.wintypes.DWORD(0)
 
         ret = advapi32.GetTokenInformation(
             process_token,
-            TokenUser,
+            token_information_class,
             None,
             0,
-            ctypes.byref(user_info_size),
+            ctypes.byref(token_info_size),
         )
 
         # We expect this call to fail with ERROR_INSUFFICIENT_BUFFER
@@ -193,26 +209,31 @@ def _get_user_sid():
             raise RuntimeError("Unexpected return value from GetTokenInformation!")
 
         # Allocate buffer
-        user_info = ctypes.create_string_buffer(user_info_size.value)
+        token_info = ctypes.create_string_buffer(token_info_size.value)
         ret = advapi32.GetTokenInformation(
             process_token,
-            TokenUser,
-            user_info,
-            user_info_size,
-            ctypes.byref(user_info_size),
+            token_information_class,
+            token_info,
+            token_info_size,
+            ctypes.byref(token_info_size),
         )
         if ret == 0:
             error_code = kernel32.GetLastError()
             raise RuntimeError(f"Failed to query token information! Error code: 0x{error_code:X}")
 
         # Convert SID to string
-        # Technically, we need to pass user_info->User.Sid, but as they are at the beginning of the
-        # buffer, just pass the buffer instead...
+        # Technically, when UserToken is used, we need to pass user_info->User.Sid,
+        # but as they are at the beginning of the buffer, just pass the buffer instead...
         sid_wstr = ctypes.wintypes.LPWSTR(None)
-        ret = advapi32.ConvertSidToStringSidW(
-            ctypes.cast(user_info, PTOKEN_USER).contents.User.Sid,
-            ctypes.pointer(sid_wstr),
-        )
+
+        if token_information_class == TokenUser:
+            sid = ctypes.cast(token_info, PTOKEN_USER).contents.User.Sid
+        elif token_information_class == TokenAppContainerSid:
+            sid = ctypes.cast(token_info, PTOKEN_APPCONTAINER_INFORMATION).contents.TokenAppContainer
+        else:
+            raise ValueError(f"Unexpected token information class: {token_information_class}")
+
+        ret = advapi32.ConvertSidToStringSidW(sid, ctypes.pointer(sid_wstr))
         if ret == 0:
             error_code = kernel32.GetLastError()
             raise RuntimeError(f"Failed to convert SID to string! Error code: 0x{error_code:X}")
@@ -229,7 +250,10 @@ def _get_user_sid():
 
 
 # Get and cache current user's SID
-_user_sid = _get_user_sid()
+_user_sid = _get_process_sid(TokenUser)
+
+# Get and cache current app container's SID (if any)
+_app_container_sid = _get_process_sid(TokenAppContainerSid)
 
 
 def secure_mkdir(dir_name):
@@ -240,14 +264,23 @@ def secure_mkdir(dir_name):
     # Create security descriptor
     # Prefer actual user SID over SID S-1-3-4 (current owner), because at the time of writing, Wine does not properly
     # support the latter.
-    sid = _user_sid or "S-1-3-4"
+    user_sid = _user_sid or "S-1-3-4"
 
     # DACL descriptor (D):
     # ace_type;ace_flags;rights;object_guid;inherit_object_guid;account_sid;(resource_attribute)
     # - ace_type = SDDL_ACCESS_ALLOWED (A)
     # - rights = SDDL_FILE_ALL (FA)
     # - account_sid = current user (queried SID)
-    security_desc_str = f"D:(A;;FA;;;{sid})"
+    security_desc_str = f"D:(A;;FA;;;{user_sid})"
+
+    # If the app is running within an AppContainer, the app container SID has to be added to the DACL.
+    # Otherwise our process will not have access to the temp dir.
+    #
+    # Quoting https://learn.microsoft.com/en-us/windows/win32/secauthz/implementing-an-appcontainer:
+    # "The AppContainer SID is a persistent unique identifier for the appcontainer. ...
+    #  To allow a single AppContainer to access a resource, add its AppContainerSID to the ACL for that resource."
+    if _app_container_sid:
+        security_desc_str += f"(A;;FA;;;{_app_container_sid})"
     security_desc = ctypes.wintypes.LPVOID(None)
 
     ret = advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW(
