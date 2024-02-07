@@ -1,4 +1,4 @@
-This directory contains (a subset of) source code files from zlib 1.2.13.
+This directory contains (a subset of) source code files from zlib 1.3.1.
 
 It is the minimum set of files neccessary for supporting the inflate
 decompression scheme in the bootloader, and is used on platforms that
