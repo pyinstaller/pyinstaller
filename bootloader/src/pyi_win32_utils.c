@@ -392,44 +392,102 @@ cleanup:
     return sid;
 }
 
+/* Security descriptor applied to application's temporary directory and its
+ * sub-directories, which are created by `pyi_win32_mkdir`. Must be explicitly
+ * initialized via `pyi_win32_initialize_security_descriptor`, and freed via
+ * `pyi_win32_free_security_descriptor`.
+ */
+static PSECURITY_DESCRIPTOR security_descriptor = NULL;
+
+/* Initialize security descriptor applied to application's temporary directory and its
+ * sub-directories.
+ */
+int
+pyi_win32_initialize_security_descriptor()
+{
+    wchar_t *user_sid = NULL;
+    wchar_t security_descriptor_str[PATH_MAX];
+    int ret;
+
+    user_sid = _pyi_win32_get_user_sid(); /* Resolve user's SID for compatibility with wine */
+
+    /* DACL descriptor D:dacl_flags(string_ace1)(string_ace2)
+     * with ACE string:
+     * ace_type;ace_flags;rights;object_guid;inherit_object_guid;account_sid;(resource_attribute)
+     * - ace_type = SDDL_ACCESS_ALLOWED (A)
+     * - rights = SDDL_FILE_ALL (FA)
+     * - account_sid = current user (queried SID)
+     */
+    ret = _snwprintf(
+        security_descriptor_str,
+        PATH_MAX,
+        L"D:(A;;FA;;;%s)",
+        user_sid ? user_sid : L"S-1-3-4");
+
+    LocalFree(user_sid); /* Must be freed using LocalFree() */
+
+    if (ret >= PATH_MAX) {
+        OTHERERROR("Security descriptor string length exceeds PATH_MAX!\n");
+        return -1;
+    }
+
+    /* Convert security descriptor string to security descriptor */
+    VS("LOADER: initializing security descriptor from string: %S\n", security_descriptor_str);
+    ret = ConvertStringSecurityDescriptorToSecurityDescriptorW(
+        security_descriptor_str,
+        SDDL_REVISION_1,
+        &security_descriptor,
+        NULL);
+    if (ret == 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+/* Free security descriptor applied to application's temporary directory and its
+ * sub-directories.
+ */
+void
+pyi_win32_free_security_descriptor()
+{
+    LocalFree(security_descriptor);
+    security_descriptor = NULL;
+}
+
+
 /* Create a directory at path with restricted permissions.
- *  The directory owner will be the only one with permissions on the created
- *  dir. Calling this function is equivalent to callin chmod(path, 0700) on
- *  Posix.
- *  Returns 0 on success, -1 on error.
+ *
+ * The directory owner will be the only one with permissions on the created
+ * dir. Calling this function is equivalent to calling chmod(path, 0700) on
+ * POSIX systems.
+ *
+ * Requires initialization of security descriptor by calling
+ * `pyi_win32_initialize_security_descriptor` prior to first attempt at
+ * creating directory with this function.
+ *
+ * Returns 0 on success, -1 on error.
  */
 int
 pyi_win32_mkdir(const wchar_t *path)
 {
-    wchar_t *sid = NULL;
-    wchar_t stringSecurityDesc[PATH_MAX];
+    /* Set up security attributes with pre-initialized security descriptor.
+     * `pyi_win32_initialize_security_descriptor()` must have been called
+     * prior to calling this function.
+     */
+    SECURITY_ATTRIBUTES security_attr;
 
-    // ACE String :
-    sid = _pyi_win32_get_user_sid(); // Resolve user's SID for compatibility with wine
-    _snwprintf(stringSecurityDesc, PATH_MAX,
-        L"D:" // DACL (D) :
-        L"(A;" // Authorize (A)
-        L";FA;" // FILE_ALL_ACCESS (FA)
-        L";;%s)", // For the current user (retrieved SID) or current directory owner (SID: S-1-3-4)
-        // no other permissions are granted
-        sid ? sid : L"S-1-3-4");
-    LocalFree(sid); // Must be freed using LocalFree()
-    VS("LOADER: creating directory %S with security string: %S\n", path, stringSecurityDesc);
-
-    SECURITY_ATTRIBUTES securityAttr;
-    PSECURITY_DESCRIPTOR *lpSecurityDesc;
-    securityAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    securityAttr.bInheritHandle = FALSE;
-    lpSecurityDesc = &securityAttr.lpSecurityDescriptor;
-
-    if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(
-             stringSecurityDesc,
-             SDDL_REVISION_1,
-             lpSecurityDesc,
-             NULL)) {
+    if (!security_descriptor) {
+        OTHERERROR("Security descriptor is not initialized!\n");
         return -1;
     }
-    if (!CreateDirectoryW(path, &securityAttr)) {
+
+    security_attr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    security_attr.bInheritHandle = FALSE;
+    security_attr.lpSecurityDescriptor = security_descriptor;
+
+    /* Create directory */
+    if (!CreateDirectoryW(path, &security_attr)) {
         return -1;
     };
     return 0;
