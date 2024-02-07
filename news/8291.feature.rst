@@ -1,0 +1,5 @@
+(Windows) Make bootloader codepaths involved in creation of temporary
+directories for ``onefile`` builds AppContainer-aware. If the process
+runs inside an AppContainer, the temporary directory's DACL needs to
+explicitly include the AppContainerSID, otherwise the directory becomes
+inaccessible to the process.

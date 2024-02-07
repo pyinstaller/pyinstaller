@@ -345,46 +345,74 @@ pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max)
 }
 
 
-/* Retrieve the SID of the current user.
- *  Used in a compatibility work-around for wine, which at the time of writing
- *  (version 5.0.2) does not properly support SID S-1-3-4 (directory owner),
- *  and therefore user's actual SID must be used instead.
+/* Retrieve the SID for the specified token information class from the current process.
  *
- *  Returns SID string on success, NULL on failure. The returned string must
- *  be freed using LocalFree().
+ * At the moment, TokenUser and TokenAppContainerSid are supported.
+ *
+ * Used in a compatibility work-around for wine, which at the time of writing
+ * (version 5.0.2) does not properly support SID S-1-3-4 (directory owner),
+ * and therefore user's actual SID must be used instead.
+ *
+ * Returns a copy of SID string on success, NULL on failure (or if the SID is unavailable
+ * or zero-length). The returned string must be freed using LocalFree().
  */
 static wchar_t *
-_pyi_win32_get_user_sid()
+_pyi_win32_get_sid(TOKEN_INFORMATION_CLASS token_information_class)
 {
     HANDLE process_token = INVALID_HANDLE_VALUE;
-    DWORD user_info_size = 0;
-    PTOKEN_USER user_info = NULL;
+    DWORD token_info_size = 0;
+    void *token_info = NULL;
     wchar_t *sid = NULL;
 
-    // Get access token for the calling process
+    /* Get access token for the calling process */
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &process_token)) {
         goto cleanup;
     }
-    // Get buffer size and allocate buffer
-    if (!GetTokenInformation(process_token, TokenUser, NULL, 0, &user_info_size)) {
+
+    /* Query buffer size and allocate buffer */
+    if (!GetTokenInformation(process_token, token_information_class, NULL, 0, &token_info_size)) {
         if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
             goto cleanup;
         }
     }
-    user_info = (PTOKEN_USER)calloc(1, user_info_size);
-    if (!user_info) {
+    if (token_info_size == 0) {
+        /* As per MSDN, in the Microsoft implementation, if number or size is zero, calloc
+         * returns a pointer to an allocated block of non-zero size. An attempt to read or
+         * write through the returned pointer leads to undefined behavior. */
         goto cleanup;
     }
-    // Get user information
-    if (!GetTokenInformation(process_token, TokenUser, user_info, user_info_size, &user_info_size)) {
+    token_info = calloc(1, token_info_size);
+    if (!token_info) {
         goto cleanup;
     }
-    // Convert SID to string
-    ConvertSidToStringSidW(user_info->User.Sid, &sid);
+
+    /* Get token information */
+    if (!GetTokenInformation(process_token, token_information_class, token_info, token_info_size, &token_info_size)) {
+        goto cleanup;
+    }
+
+    /* Convert SID to string */
+    switch (token_information_class)
+    {
+        case TokenUser: {
+            PTOKEN_USER user_info = (PTOKEN_USER)token_info;
+            ConvertSidToStringSidW(user_info->User.Sid, &sid);
+            break;
+        }
+        case TokenAppContainerSid: {
+            PTOKEN_APPCONTAINER_INFORMATION app_container_info = (PTOKEN_APPCONTAINER_INFORMATION)token_info;
+            ConvertSidToStringSidW(app_container_info->TokenAppContainer, &sid);
+            break;
+        }
+        default: {
+            /* Unsupoorted token information class */
+            break;
+        }
+    }
 
     // Cleanup
 cleanup:
-    free(user_info);
+    free(token_info);
     if (process_token != INVALID_HANDLE_VALUE) {
         CloseHandle(process_token);
     }
@@ -406,10 +434,15 @@ int
 pyi_win32_initialize_security_descriptor()
 {
     wchar_t *user_sid = NULL;
+    wchar_t *app_container_sid = NULL;
     wchar_t security_descriptor_str[PATH_MAX];
     int ret;
 
-    user_sid = _pyi_win32_get_user_sid(); /* Resolve user's SID for compatibility with wine */
+    user_sid = _pyi_win32_get_sid(TokenUser); /* Resolve user's SID for compatibility with wine */
+
+    /* If program is running within an AppContainer, the app container SID has to be added to
+     * the DACL, otherwise our process will not have access to the temporary directory. */
+    app_container_sid = _pyi_win32_get_sid(TokenAppContainerSid); /* NULL when not running in AppContainer */
 
     /* DACL descriptor D:dacl_flags(string_ace1)(string_ace2)
      * with ACE string:
@@ -418,13 +451,23 @@ pyi_win32_initialize_security_descriptor()
      * - rights = SDDL_FILE_ALL (FA)
      * - account_sid = current user (queried SID)
      */
-    ret = _snwprintf(
-        security_descriptor_str,
-        PATH_MAX,
-        L"D:(A;;FA;;;%s)",
-        user_sid ? user_sid : L"S-1-3-4");
+    if (app_container_sid) {
+        ret = _snwprintf(
+            security_descriptor_str,
+            PATH_MAX,
+            L"D:(A;;FA;;;%s)(A;;FA;;;%s)",
+            user_sid ? user_sid : L"S-1-3-4",
+            app_container_sid);
+    } else {
+        ret = _snwprintf(
+            security_descriptor_str,
+            PATH_MAX,
+            L"D:(A;;FA;;;%s)",
+            user_sid ? user_sid : L"S-1-3-4");
+    }
 
     LocalFree(user_sid); /* Must be freed using LocalFree() */
+    LocalFree(app_container_sid); /* Must be freed using LocalFree() */
 
     if (ret >= PATH_MAX) {
         OTHERERROR("Security descriptor string length exceeds PATH_MAX!\n");
