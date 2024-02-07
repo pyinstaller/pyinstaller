@@ -237,7 +237,22 @@ def process_collected_binary(
 
         cmd = ["strip", *strip_options, cached_name]
         logger.info("Executing: %s", " ".join(cmd))
-        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            p = subprocess.run(
+                cmd,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=True,
+                errors='ignore',
+                encoding='utf-8',
+            )
+            logger.debug("Output from strip command:\n%s", p.stdout)
+        except subprocess.CalledProcessError as e:
+            logger.warning("Failed to run strip on %r!", cached_name, exc_info=True)
+            logger.warning("Output from strip command:\n%s", e.stdout)
+        except Exception:
+            logger.warning("Failed to run strip on %r!", cached_name, exc_info=True)
 
     # Apply UPX
     if use_upx:
@@ -260,7 +275,22 @@ def process_collected_binary(
 
         cmd = [upx_exe, *upx_options, cached_name]
         logger.info("Executing: %s", " ".join(cmd))
-        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            p = subprocess.run(
+                cmd,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=True,
+                errors='ignore',
+                encoding='utf-8',
+            )
+            logger.debug("Output from upx command:\n%s", p.stdout)
+        except subprocess.CalledProcessError as e:
+            logger.warning("Failed to upx strip on %r!", cached_name, exc_info=True)
+            logger.warning("Output from upx command:\n%s", e.stdout)
+        except Exception:
+            logger.warning("Failed to run upx on %r!", cached_name, exc_info=True)
 
     # On macOS, we need to modify the given binary's paths to the dependent libraries, in order to ensure they are
     # relocatable and always refer to location within the frozen application. Specifically, we make all dependent
