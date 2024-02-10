@@ -1,4 +1,0 @@
-(macOS) When validating the macOS SDK version of collected binaries,
-handle errors raised by ``osxutils.get_macos_sdk_version``; log a
-warning about failed version query, and add the offending binary to
-the list of potentially problematic binaries to warn the user about.

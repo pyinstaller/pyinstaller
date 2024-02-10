@@ -5,6 +5,15 @@ Thanks goes to all the kind PyInstaller contributors who have contributed
 new code, bug reports, fixes, comments and ideas. A brief list follows,
 please let us know if your name is omitted by accident:
 
+Contributions to PyInstaller 6.4.0
+----------------------------------
+
+* Rok Mandeljc
+* Dan Yeaw
+* Andrey Marakulin
+* mbushkov
+* xuanzhi33
+
 Contributions to PyInstaller 6.3.0
 ----------------------------------
 

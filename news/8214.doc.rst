@@ -1,2 +1,0 @@
-Update the introduction part of the :ref:`understanding pyinstaller hooks`
-section.

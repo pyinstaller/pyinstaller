@@ -47,6 +47,11 @@ while not test (read -n1 -P 'Do the two opened docs pages look OK? Check for for
     sh -c 'cd doc; make clean html'
 end
 
+# Bump the minimum supported pyinstaller-hooks-contrib to its current latest to  minimise duplicate bug reports
+# from people with stale versions of the hooks package.
+set new_version (curl -L https://pypi.org/pypi/pyinstaller-hooks-contrib/json | jq --raw-output '.releases | keys[-1]')
+perl -i -pe 's|pyinstaller-hooks-contrib >= .*|pyinstaller-hooks-contrib >= '$new_version'|g' setup.cfg
+
 read -P 'If the bootloaders need to be rebuilt, now is the time to do it. Hit return if they don\'t need rebuilding or once you have rebuilt and copied the '(set_color --bold)'Windows and macOS bootloaders only'(set_color normal)' into PyInstaller/bootloaders: '
 
 echo 'Building bootloaders for Linux. If this is the first time you\'ve done so on this machine then this will take a while.'
