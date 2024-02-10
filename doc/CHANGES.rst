@@ -15,6 +15,116 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.4.0 (2024-02-10)
+------------------
+
+Features
+~~~~~~~~
+
+* (Linux) Collect ``.hmac`` files accompanying shared libraries, if such files
+  are available. This allows frozen application to run on FIPS-enabled Red Hat
+  Enterprise systems, where HMAC is required by self-check implemented by the
+  OpenSSL crypto library. Furthermore, ensure that shared libraries with
+  accompanying ``.hmac`` files are exempted from any additional processing (for
+  example, when building with :option:`--strip` option) to avoid invalidating
+  the HMAC. (:issue:`8273`)
+* (Windows) Make bootloader codepaths involved in creation of temporary
+  directories for ``onefile`` builds AppContainer-aware. If the process runs
+  inside an AppContainer, the temporary directory's DACL needs to explicitly
+  include the AppContainerSID, otherwise the directory becomes inaccessible to
+  the process. (:issue:`8291`)
+* (Windows) Make Windows implementation of PyInstaller's
+  ``_pyi_rth_utils.tempdir.secure_mkdir`` (used by ``matplotlib`` and
+  ``win32com`` run-time hooks to create temporary directories)
+  AppContainer-aware. If the process runs inside an AppContainer, the temporary
+  directory's DACL needs to explicitly include the AppContainerSID, otherwise
+  the directory becomes inaccessible to the process. (:issue:`8290`)
+* Implement strict Qt dependency validation for collection of Qt plugins and QML
+  components/plugins. We now perform preliminary binary dependency analysis of
+  the plugins, and automatically exclude plugins that have at least one missing
+  Qt dependency. This prevents collection of plugins that cannot be used anyway
+  because of a missing Qt shared library (that is, for example, omitted from a
+  PyPI wheel). Furthermore, we disallow Qt dependencies of a plugin to be
+  resolved outside of the primary location of Qt shared libraries, in order to
+  prevent missing dependencies from pulling in Qt libraries from alternative
+  locations that happen to be in the search path (for example, when using
+  ``PyQt5`` PyPI wheels while also having a system-installed Qt5 on Linux, a
+  Homebrew-installed Qt5 on macOS, or a custom Windows Qt5 build that happens to
+  be in ``PATH``). (:issue:`8226`)
+
+
+Bugfix
+~~~~~~
+
+* (Linux) Prevent collection of ``libcuda.so.1``, which is part of NVIDIA
+  driver and must match the rest of the driver's components. Collecting
+  a copy might lead to issues when build and target system use different
+  versions of NVIDIA driver. (:issue:`8278`)
+* (macOS) When validating the macOS SDK version of collected binaries,
+  handle errors raised by ``osxutils.get_macos_sdk_version``; log a
+  warning about failed version query, and add the offending binary to
+  the list of potentially problematic binaries to warn the user about.
+  (:issue:`8220`)
+* Fix ``pkgutil.iter_modules`` override to gracefully handle cases when
+  the given path corresponds to a module instead of a package. (:issue:`8191`)
+* Prevent Qt and QML plugins with missing Qt dependencies in the
+  ``PySide2``, ``PyQt5``, ``PySide6``, and ``PyQt6`` PyPI wheels from
+  pulling in Qt shared libraries from alternative locations (for example,
+  system-installed Qt on Linux, Homebrew-installed Qt on macOS, or
+  a custom Windows Qt build that happens to be in ``PATH``), and resulting
+  in a frozen application that contains an incompatible mix of Qt libraries.
+  (:issue:`8087`)
+* Switch the hashing function in PyInstaller's binary cache from MD5 to
+  SHA1, as the former cannot be used on FIPS-enabled Red Hat Enterprise
+  Linux systems. (:issue:`8288`)
+* When trying to run ``pyinstaller`` (or equivalent ``python -m PyInstaller``)
+  against non-existing script file(s), exit immediately - without trying
+  to write the .spec file and building it. This prevents us from overwriting
+  an existing (and customized) .spec file if user makes a typo in the .spec
+  file's suffix when trying to build it, for example, ``pyinstaller
+  program.cpes``. (:issue:`8279`)
+
+
+Hooks
+~~~~~
+
+* (macOS) Have ``PySide6`` and ``PyQt6`` run-time hooks prepend
+  ``sys._MEIPASS`` to ``DYLD_LIBRARY_PATH`` in POSIX builds, in order
+  to ensure that ``QtNetwork`` discovers the bundled copy of the OpenSSL
+  shared library. (:issue:`8226`)
+* Extend the OpenSSL shared library collection in the ``QtNetwork`` hook
+  helper for ``PySide2``, ``PyQt5``, ``PySide6``, and ``PyQt6`` to
+  cover all applicable versions of OpenSSL (1.0.2, 1.1.x, 3.x). In
+  addition to Windows, the OpenSSL shared library is now also collected
+  on Linux and macOS. (:issue:`8226`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Windows) Update the bundled zlib sources to v1.3.1. (:issue:`8292`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Add a new documentation chapter, called :ref:`common issues`, to cover
+  topics such as launching external programs from frozen applications,
+  multi-processing via :mod:`multiprocessing` (specifically, the requirement
+  to call :func:`multiprocessing.freeze_support`), use of symbolic links in
+  POSIX builds in PyInstaller >= 6.0 and its implications for distribution
+  (e.g., when copying frozen application, or creating ``zip`` archives),
+  :data:`sys.stdout` and :data:`sys.stderr` being :data:`None` in Windows
+  no-console builds. (:issue:`8214`)
+* Cleanup docstrings to remove mention of ``exec_command_stdout``.
+  (:issue:`8173`)
+* Update the :ref:`macOS app bundles` section to reflect the layout of
+  macOS app bundles as produced by PyInstaller 6.0 and later. Add a note
+  to discourage use of onefile .app bundles. (:issue:`8214`)
+* Update the introduction part of the :ref:`understanding pyinstaller hooks`
+  section. (:issue:`8214`)
+
+
 6.3.0 (2023-12-10)
 ------------------
 

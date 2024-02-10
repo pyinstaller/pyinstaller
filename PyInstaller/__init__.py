@@ -18,7 +18,7 @@ from PyInstaller import compat
 from PyInstaller.utils.git import get_repo_revision
 
 # Note: Keep this variable as plain string so it could be updated automatically when doing a release.
-__version__ = '6.3.0'
+__version__ = '6.4.0'
 
 # Absolute path of this package's directory. Save this early so all submodules can use the absolute path. This is
 # required for example if the current directory changes prior to loading the hooks.

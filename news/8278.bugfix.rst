@@ -1,4 +1,0 @@
-(Linux) Prevent collection of ``libcuda.so.1``, which is part of NVIDIA
-driver and must match the rest of the driver's components. Collecting
-a copy might lead to issues when build and target system use different
-versions of NVIDIA driver.

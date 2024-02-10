@@ -1,6 +1,0 @@
-(Windows) Make Windows implementation of PyInstaller's
-``_pyi_rth_utils.tempdir.secure_mkdir`` (used by ``matplotlib`` and
-``win32com`` run-time hooks to create temporary directories)
-AppContainer-aware. If the process runs inside an AppContainer, the
-temporary directory's DACL needs to explicitly include the AppContainerSID,
-otherwise the directory becomes inaccessible to the process.
