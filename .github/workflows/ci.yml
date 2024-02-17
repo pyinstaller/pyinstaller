@@ -65,6 +65,27 @@ jobs:
             gir1.2-gtk-3.0 libgirepository1.0-dev \
             libfuse2
 
+      # The following locales are required by test_basic::test_user_preferred_locale
+      #  - en_US.UTF-8
+      #  - en_US.ISO8859-1
+      #  - sl_SI.UTF-8
+      #  - sl_SI.ISO8859-2
+      #
+      # The following locale is used by test_basic::test_time_module_localized
+      #  - cs_CZ.UTF-8
+      - name: Install and enable additional locales
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq --no-install-recommends locales
+          sudo locale-gen \
+            en_US.UTF-8 \
+            en_US \
+            sl_SI.UTF-8 \
+            sl_SI \
+            cs_CZ.UTF-8
+          locale -a
+
       - name: Download AppImage tool
         if: startsWith(matrix.os, 'ubuntu')
         run: |
