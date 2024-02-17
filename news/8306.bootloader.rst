@@ -1,0 +1,3 @@
+Have bootloader set the ``configure_locale`` field in the interpreter
+pre-config structure, so that user-preferred locale is set during
+interpreter pre-initialization.
