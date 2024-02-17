@@ -1140,9 +1140,22 @@ class QtLibraryInfo:
             datas.append((os.path.join(self.location['DataPath'], resources), os.path.join(rel_data_path, resources)),)
 
             # Helper process executable (QtWebEngineProcess), located in ``LibraryExecutablesPath``.
-            dest = os.path.join(
-                rel_data_path, os.path.relpath(self.location['LibraryExecutablesPath'], self.location['PrefixPath'])
-            )
+            # The target directory is determined as `LibraryExecutablesPath` relative to `PrefixPath`. On Windows,
+            # this should handle the differences between PySide2 and PySide6/PyQt5/PyQt6 PyPI wheel layout.
+            rel_helper_path = os.path.relpath(self.location['LibraryExecutablesPath'], self.location['PrefixPath'])
+            # However, on Linux, we need to account for distribution-packaged Qt, where `LibraryExecutablesPath` might
+            # be nested deeper under `PrefixPath` than anticipated (w.r.t. PyPI wheel layout). For example, in Fedora,
+            # the helper is located under `/usr/lib64/qt5/libexec/QtWebEngineProcess`, with `PrefixPath` being `/usr`
+            # and `LibraryExecutablesPath` being `/usr/lib64/qt5/libexec/`, so the relative path ends up being
+            # `lib64/qt5/libexec` instead of just `libexec`. So on linux, we explicitly force the PyPI-compliant
+            # layout, by overriding relative helper path to just `libexec`.
+            if compat.is_linux and rel_helper_path != "libexec":
+                logger.info(
+                    "%s: overriding relative destination path of QtWebEngineProcess helper from %r to %r!", self,
+                    rel_helper_path, "libexec"
+                )
+                rel_helper_path = "libexec"
+            dest = os.path.join(rel_data_path, rel_helper_path)
             binaries.append((os.path.join(self.location['LibraryExecutablesPath'], 'QtWebEngineProcess*'), dest))
 
             # The helper QtWebEngineProcess executable should have an accompanying qt.conf file that helps it locate the
@@ -1152,8 +1165,13 @@ class QtLibraryInfo:
                 # The file seems to have been dropped from Qt 6.3 (and corresponding PySide6 and PyQt6) due to
                 # redundancy; however, we still need it in the frozen application - so generate our own.
                 from PyInstaller.config import CONF  # workpath
-                # Relative path to root prefix of bundled Qt
-                rel_prefix = os.path.relpath(self.location['PrefixPath'], self.location['LibraryExecutablesPath'])
+                # Relative path to root prefix of bundled Qt - this corresponds to the "inverse" of `rel_helper_path`
+                # variable that we computed earlier.
+                if rel_helper_path == '.':
+                    rel_prefix = '.'
+                else:
+                    # Replace each directory component in `rel_helper_path` with `..`.
+                    rel_prefix = os.path.join(*['..' for _ in range(len(rel_helper_path.split(os.pathsep)))])
                 # We expect the relative path to be either . or .. depending on PySide/PyQt layout; if that is not the
                 # case, warn about irregular path.
                 if rel_prefix not in ('.', '..'):
