@@ -642,8 +642,12 @@ pyi_pyconfig_preinit_python(const PyiRuntimeOptions *runtime_options)
     PyPreConfig_Common config;
 
     PI_PyPreConfig_InitIsolatedConfig((PyPreConfig *)&config);
+
     config.utf8_mode = runtime_options->utf8_mode;
     config.dev_mode = runtime_options->dev_mode;
+
+    /* Set the LC_CTYPE locale to the user-preferred locale, so it can be read using `locale.getlocale()` in python code. */
+    config.configure_locale = 1;
 
     /* Pre-initialize */
     PyStatus status = PI_Py_PreInitialize((const PyPreConfig *)&config);
