@@ -417,6 +417,58 @@ def test_time_module_localized(pyi_builder, monkeypatch):
         """)
 
 
+# Check that `locale.getlocale()` in frozen application returns user-preferred locale (i.e., that user-preferred
+# locale is set in the bootloader during python interpreter setup). The test ensures that the user-preferred locale
+# is  set *at all* (see #8305), as well as that it matches the environment variables.
+@pytest.mark.darwin
+@pytest.mark.linux
+def test_user_preferred_locale(pyi_builder):
+    # NOTE: this runs the program without arguments, which checks that locale is set at all.
+    pyi_builder.test_source(
+        """
+        import sys
+        import locale
+
+        user_locale = locale.getlocale()
+        print(f"User locale: {user_locale}", file=sys.stderr)
+
+        if len(sys.argv) == 1:
+            # No arguments - check that locale is set at all; the tuple must have two elements, and neither of them is
+            # None.
+            if (len(user_locale) != 2) or (user_locale[0] is None) or (user_locale[1] is None):
+                raise Exception(f"Invalid user locale: {user_locale!r}")
+        elif len(sys.argv) == 2:
+            expected_locale = tuple(sys.argv[1].split('.'))
+            print(f"Expected locale: {expected_locale}", file=sys.stderr)
+            if user_locale != expected_locale:
+                raise Exception(f"Unexpected user locale: {user_locale!r} (expected: {expected_locale!r})")
+        else:
+            print(f"Usage: {sys.argv[0]} [expected_locale]")
+            sys.exit(1)
+
+        print("OK!", file=sys.stderr)
+        """
+    )
+
+    # Find executable and run additional tests with locale set via LC_ALL
+    exes = pyi_builder._find_executables('test_source')
+    assert len(exes) == 1
+
+    test_locales = [
+        "en_US.UTF-8",
+        "en_US.ISO8859-1",
+        "sl_SI.UTF-8",
+        "sl_SI.ISO8859-2",
+    ]
+
+    for test_locale in test_locales:
+        print(f"Running test with locale: {test_locale!r}...", file=sys.stderr)
+        env = {
+            "LC_ALL": test_locale,
+        }
+        subprocess.run([exes[0], test_locale], check=True, env=env)
+
+
 def test_xmldom_module(pyi_builder):
     pyi_builder.test_source(
         """
