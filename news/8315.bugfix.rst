@@ -1,0 +1,5 @@
+(Linux) Fix collection of ``QtWebEngineProcess`` helper when collecting
+Qt (and ``PySide``/``PyQt`` bindings) installed via Linux distribution
+packages. In such scenarios, we now force collection of the helper
+executable into ``libexec`` directory inside the Qt sub-directory of
+the bindings' package directory, in order to match the PyPI wheel layout.
