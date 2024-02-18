@@ -18,12 +18,12 @@ importlib_resources==6.1.1; python_version < '3.9'
 babel==2.14.0
 Django==5.0.2; python_version >= '3.10'
 future==0.18.3
-gevent==23.9.1
+gevent==24.2.1
 ipython==8.21.0; python_version >= '3.10'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==24.3.0; sys_platform != 'darwin' or python_version >= '3.8.7'
-matplotlib==3.8.2; python_version >= '3.9'
+matplotlib==3.8.3; python_version >= '3.9'
 numpy==1.26.4; python_version >= '3.9'
 pandas==2.2.0; python_version >= '3.9'
 pygments==2.17.2
@@ -32,9 +32,9 @@ PyGObject==3.46.0; sys_platform == 'linux'
 PySide2==5.15.2.1; python_version < '3.11'
 # PySide6 is a metapackage that depends on PySide6-Essentials and PySide6-Addons. Their versions are
 # usually kept in sync.
-PySide6==6.6.1
-PySide6-Addons==6.6.1
-PySide6-Essentials==6.6.1
+PySide6==6.6.2
+PySide6-Addons==6.6.2
+PySide6-Essentials==6.6.2
 # PyQt5 and add-on packages
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
@@ -53,18 +53,18 @@ PyQtWebEngine==5.15.6
 # version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
 # thus the ABI is still changing.
 PyQt6==6.6.1
-PyQt6-Qt6==6.6.1
+PyQt6-Qt6==6.6.2
 PyQt6-3D==6.6.0
-PyQt6-3D-Qt6==6.6.1
+PyQt6-3D-Qt6==6.6.2
 PyQt6-Charts==6.6.0
-PyQt6-Charts-Qt6==6.6.1
+PyQt6-Charts-Qt6==6.6.2
 PyQt6-DataVisualization==6.6.0
-PyQt6-DataVisualization-Qt6==6.6.1
+PyQt6-DataVisualization-Qt6==6.6.2
 PyQt6-NetworkAuth==6.6.0
-PyQt6-NetworkAuth-Qt6==6.6.1
+PyQt6-NetworkAuth-Qt6==6.6.2
 PyQt6-QScintilla==2.14.1  # Does not have a corresponding -Qt6 package
 PyQt6-WebEngine==6.6.0
-PyQt6-WebEngine-Qt6==6.6.1
+PyQt6-WebEngine-Qt6==6.6.2
 python-dateutil==2.8.2
 pytz==2024.1
 requests==2.31.0
@@ -73,8 +73,8 @@ scipy==1.12.0; python_version >= '3.9'
 simplejson==3.19.2
 sphinx==7.2.6; python_version >= '3.9'
 # Required for test_namespace_package
-sqlalchemy==2.0.25
-zope.interface==6.1
+sqlalchemy==2.0.27
+zope.interface==6.2
 Pillow==10.2.0
 
 
