@@ -18,6 +18,7 @@ def _pyi_rthook():
     import sys
 
     from _pyi_rth_utils import is_macos_app_bundle, prepend_path_to_environment_variable
+    from _pyi_rth_utils import qt as qt_rth_utils
 
     # Try PyQt6 6.0.3-style path first...
     pyqt_path = os.path.join(sys._MEIPASS, 'PyQt6', 'Qt6')
@@ -54,6 +55,12 @@ def _pyi_rthook():
     # as Homebrew. For .app bundles, this is unnecessary because `QtNetwork` explicitly searches `Contents/Frameworks`.
     if sys.platform == 'darwin' and not is_macos_app_bundle:
         prepend_path_to_environment_variable(sys._MEIPASS, 'DYLD_LIBRARY_PATH')
+
+    # Qt bindings package installed via PyPI wheels typically ensures that its bundled Qt is relocatable, by creating
+    # embedded `qt.conf` file during its initialization. This run-time generated qt.conf dynamically sets the Qt prefix
+    # path to the package's Qt directory. For bindings packages that do not create embedded `qt.conf` during their
+    # initialization (for example, conda-installed packages), try to perform this step ourselves.
+    qt_rth_utils.create_embedded_qt_conf("PyQt6", pyqt_path)
 
 
 _pyi_rthook()

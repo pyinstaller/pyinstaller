@@ -1,0 +1,8 @@
+Have run-time hooks for Qt bindings (``PySide2``, ``PySide6``, ``PyQt5``,
+and ``PyQt6``) check for presence of the embedded ``:/qt/etc/qt.conf``
+resource, and if not present, inject their own version. This
+aims to ensure that the bundled Qt is always relocatable, even if the
+package does not perform injection of embedded ``qt.conf`` file (most
+notably, this seems to be the case with ``PySide2`` collected from
+Linux distribution packages, and ``PySide2`` collected from Anaconda
+on Windows, Linux, and macOS).
