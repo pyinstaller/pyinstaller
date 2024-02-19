@@ -1141,8 +1141,9 @@ class QtLibraryInfo:
 
             # Helper process executable (QtWebEngineProcess), located in ``LibraryExecutablesPath``.
             # The target directory is determined as `LibraryExecutablesPath` relative to `PrefixPath`. On Windows,
-            # this should handle the differences between PySide2 and PySide6/PyQt5/PyQt6 PyPI wheel layout.
+            # this should handle the differences between PySide2/PySide6 and PyQt5/PyQt6 PyPI wheel layout.
             rel_helper_path = os.path.relpath(self.location['LibraryExecutablesPath'], self.location['PrefixPath'])
+
             # However, on Linux, we need to account for distribution-packaged Qt, where `LibraryExecutablesPath` might
             # be nested deeper under `PrefixPath` than anticipated (w.r.t. PyPI wheel layout). For example, in Fedora,
             # the helper is located under `/usr/lib64/qt5/libexec/QtWebEngineProcess`, with `PrefixPath` being `/usr`
@@ -1155,7 +1156,19 @@ class QtLibraryInfo:
                     rel_helper_path, "libexec"
                 )
                 rel_helper_path = "libexec"
-            dest = os.path.join(rel_data_path, rel_helper_path)
+
+            # Similarly, force the relative helper path for PySide2/PySide6 on Windows to `.`. This is already the case
+            # with PyPI PySide Windows wheels. But it is not the case with conda-installed PySide2, where the Qt's
+            # `PrefixPath` is for example `C:/Users/<user>/miniconda3/envs/<env-name>/Library`, while the corresponding
+            # `LibraryExecutablesPath` is `C:/Users/<user>/miniconda3/envs/<env-name>/Library/bin`.
+            if compat.is_win and not self.is_pyqt and rel_helper_path != ".":
+                logger.info(
+                    "%s: overriding relative destination path of QtWebEngineProcess helper from %r to %r!", self,
+                    rel_helper_path, "."
+                )
+                rel_helper_path = "."
+
+            dest = os.path.normpath(os.path.join(rel_data_path, rel_helper_path))
             binaries.append((os.path.join(self.location['LibraryExecutablesPath'], 'QtWebEngineProcess*'), dest))
 
             # The helper QtWebEngineProcess executable should have an accompanying qt.conf file that helps it locate the
