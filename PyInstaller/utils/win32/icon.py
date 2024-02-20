@@ -17,6 +17,7 @@ is used to support the operation of CopyIcons_FromIco(). None of these classes a
 this module.
 """
 
+import os
 import os.path
 import struct
 
@@ -168,9 +169,11 @@ def CopyIcons(dstpath, srcpath):
     case, the path can be relative or absolute.
     """
 
-    if isinstance(srcpath, str):
+    if isinstance(srcpath, (str, os.PathLike)):
         # Just a single string, make it a one-element list.
         srcpath = [srcpath]
+    # Convert possible PathLike elements to strings to allow the splitter function to work.
+    srcpath = [str(path) for path in srcpath]
 
     def splitter(s):
         """
