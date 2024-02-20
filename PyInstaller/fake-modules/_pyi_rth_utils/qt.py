@@ -47,7 +47,13 @@ _QT_CONF_RESOURCE_STRUCT = (
 
 
 def create_embedded_qt_conf(qt_bindings, prefix_path):
-    QtCore = importlib.import_module(qt_bindings + ".QtCore")
+    # The QtCore module might be unavailable if we collected just the top-level binding package (e.g., PyQt5) without
+    # any of its submodules. Since this helper is called from run-time hook for the binding package, we need to handle
+    # that scenario here.
+    try:
+        QtCore = importlib.import_module(qt_bindings + ".QtCore")
+    except ImportError:
+        return
 
     # No-op if embedded qt.conf already exists
     if QtCore.QFile.exists(_QT_CONF_FILENAME):
