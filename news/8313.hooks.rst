@@ -1,0 +1,1 @@
+Remove run-time hook for ``win32com``, as per discussion in issue:`8309`.
