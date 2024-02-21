@@ -18,7 +18,6 @@
     'PySide2':      ['pyi_rth_pyside2.py'],
     'PySide6':    ['pyi_rth_pyside6.py'],
     '_tkinter':    ['pyi_rth__tkinter.py'],
-    'win32com':   ['pyi_rth_win32comgenpy.py'],
     'multiprocessing': ['pyi_rth_multiprocessing.py'],
     'setuptools': ['pyi_rth_setuptools.py'],
 }
