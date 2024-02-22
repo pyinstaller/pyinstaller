@@ -1209,19 +1209,54 @@ class QtLibraryInfo:
             # which is used by QtWebEngine. In some distributions, the ``libnss`` supporting libraries are stored in a
             # subdirectory ``nss``. Since ``libnss`` is not linked against them but loads them dynamically at run-time,
             # we need to search for and add them.
+            #
+            # Specifically, the files we are looking for are
+            #  - libfreebl3.so
+            #  - libfreeblpriv3.so
+            #  - libnssckbi.so
+            #  - libnssdbm3.so
+            #  - libsoftokn3.so
+            # and they might be in the same directory as ``libnss3.so`` (instead of ``nss`` subdirectory); this is
+            # the case even with contemporary Debian releases. See
+            # https://packages.debian.org/bullseye/amd64/libnss3/filelist
+            # vs.
+            # https://packages.debian.org/bookworm/amd64/libnss3/filelist
 
-            # First, get all libraries linked to ``QtWebEngineCore`` extension module.
+            # Analyze imports of ``QtWebEngineCore`` extension module, and look for ``libnss3.so`` to determine its
+            # parent directory.
+            libnss_dir = None
             module_file = hooks.get_module_file_attribute(self.namespace + '.QtWebEngineCore')
             for lib_name, lib_path in bindepend.get_imports(module_file):  # (name, fullpath) tuples
                 if lib_path is None:
                     continue  # Skip unresolved libraries
                 # Look for ``libnss3.so``.
                 if os.path.basename(lib_path).startswith('libnss3.so'):
-                    # Find the location of NSS: given a ``/path/to/libnss.so``, search ``/path/to/nss/*.so`` to get the
-                    # missing NSS libraries.
-                    nss_glob = os.path.join(os.path.dirname(lib_path), 'nss', '*.so')
-                    if glob.glob(nss_glob):
-                        binaries.append((nss_glob, 'nss'))
+                    libnss_dir = os.path.dirname(lib_path)
+                    break
+
+            # Search for NSS libraries
+            logger.debug("%s: QtWebEngineCore is linked against libnss3.so; collecting NSS libraries...", self)
+            if libnss_dir is not None:
+                # Libraries to search for
+                NSS_LIBS = [
+                    'libfreebl3.so',
+                    'libfreeblpriv3.so',
+                    'libnssckbi.so',
+                    'libnssdbm3.so',
+                    'libsoftokn3.so',
+                ]
+                # Directories (relative to `libnss_dir`) to search in. Also serve as relative destination paths.
+                NSS_LIB_SUBDIRS = [
+                    'nss',
+                    '.',
+                ]
+
+                for subdir in NSS_LIB_SUBDIRS:
+                    for lib_name in NSS_LIBS:
+                        lib_file = os.path.normpath(os.path.join(libnss_dir, subdir, lib_name))
+                        if os.path.isfile(lib_file):
+                            logger.debug("%s: collecting NSS library: %r", self, lib_file)
+                            binaries.append((lib_file, subdir))
 
         return binaries, datas
 
