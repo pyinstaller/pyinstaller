@@ -1,0 +1,6 @@
+(Linux) When searching for dynamically-loaded NSS libraries during
+collection of ``QtWebEnginge``, account for the possibility of said
+libraries being either in a separate ``nss`` directory or in the main
+library directory. This fixes problems with missing NSS libraries on
+contemporary Linux distributions that do not use separate ``nss``
+directory (anymore).
