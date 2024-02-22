@@ -1,0 +1,2 @@
+(Linux) Extend the mechanism for collection of ``.hmac`` files from
+:issue:`8288` to ``.chk`` files that are used by NSS libraries.

@@ -154,14 +154,18 @@ def process_collected_binary(
         logger.info('Disabling UPX for %s due to it being a Qt plugin!', src_name)
         use_upx = False
 
-    # On linux, if a binary has an accompanying HMAC file, avoid modifying it in any way.
+    # On linux, if a binary has an accompanying HMAC or CHK file, avoid modifying it in any way.
     if (use_upx or use_strip) and is_linux:
         src_path = pathlib.Path(src_name)
         hmac_path = src_path.with_name(f".{src_path.name}.hmac")
+        chk_path = src_path.with_suffix(".chk")
         if hmac_path.is_file():
             logger.info('Disabling UPX and/or strip for %s due to accompanying .hmac file!', src_name)
             use_upx = use_strip = False
-        del src_path, hmac_path
+        elif chk_path.is_file():
+            logger.info('Disabling UPX and/or strip for %s due to accompanying .chk file!', src_name)
+            use_upx = use_strip = False
+        del src_path, hmac_path, chk_path
 
     # Exit early if no processing is required after above rules are applied.
     if not use_strip and not use_upx and not is_darwin:

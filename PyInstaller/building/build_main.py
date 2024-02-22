@@ -819,10 +819,15 @@ class Analysis(Target):
                     continue  # Skip symbolic links
                 src_lib_path = pathlib.Path(src_name)
                 src_hmac_path = src_lib_path.with_name(f".{src_lib_path.name}.hmac")
-                if not src_hmac_path.is_file():
-                    continue
-                dest_hmac_path = pathlib.PurePath(dest_name).with_name(src_hmac_path.name)
-                self.datas.append((str(dest_hmac_path), str(src_hmac_path), 'DATA'))
+                if src_hmac_path.is_file():
+                    dest_hmac_path = pathlib.PurePath(dest_name).with_name(src_hmac_path.name)
+                    self.datas.append((str(dest_hmac_path), str(src_hmac_path), 'DATA'))
+
+                # Similarly, look for .chk files that are used by NSS libraries.
+                src_chk_path = src_lib_path.with_suffix(".chk")
+                if src_chk_path.is_file():
+                    dest_chk_path = pathlib.PurePath(dest_name).with_name(src_chk_path.name)
+                    self.datas.append((str(dest_chk_path), str(src_chk_path), 'DATA'))
 
         # Final normalization of `datas` and `binaries`:
         #  - normalize both TOCs together (to avoid having duplicates across the lists)
