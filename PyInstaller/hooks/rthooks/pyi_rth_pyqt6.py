@@ -20,6 +20,9 @@ def _pyi_rthook():
     from _pyi_rth_utils import is_macos_app_bundle, prepend_path_to_environment_variable
     from _pyi_rth_utils import qt as qt_rth_utils
 
+    # Ensure this is the only Qt bindings package in the application.
+    qt_rth_utils.ensure_single_qt_bindings_package("PyQt6")
+
     # Try PyQt6 6.0.3-style path first...
     pyqt_path = os.path.join(sys._MEIPASS, 'PyQt6', 'Qt6')
     if not os.path.isdir(pyqt_path):

@@ -13,6 +13,21 @@ import os
 import importlib
 import atexit
 
+# Helper for ensuring that only one Qt bindings package is registered at run-time via run-time hooks.
+_registered_qt_bindings = None
+
+
+def ensure_single_qt_bindings_package(qt_bindings):
+    global _registered_qt_bindings
+    if _registered_qt_bindings is not None:
+        raise RuntimeError(
+            f"Cannot execute run-time hook for {qt_bindings!r} because run-time hook for {_registered_qt_bindings!r} "
+            "has been run before, and PyInstaller-frozen applications do not support multiple Qt bindings in the same "
+            "application!"
+        )
+    _registered_qt_bindings = qt_bindings
+
+
 # Helper for relocating Qt prefix via embedded qt.conf file.
 _QT_CONF_FILENAME = ":/qt/etc/qt.conf"
 
