@@ -1314,3 +1314,24 @@ add_qt5_dependencies = add_qt_dependencies  # Use generic implementation
 # Find the Qt6 dependencies based on the hook name of a PySide6/PyQt6 hook. Returns (hiddenimports, binaries, datas).
 # Typical usage: ``hiddenimports, binaries, datas = add_qt6_dependencies(__file__)``.
 add_qt6_dependencies = add_qt_dependencies  # Use generic implementation
+
+
+# A helper for ensuring that only one Qt bindings package is collected into frozen application. Intended to be called
+# from hooks for top-level bindings packages.
+def ensure_single_qt_bindings_package(qt_bindings):
+    # For the lack of better alternative, use CONF structure. Note that this enforces single bindings for the whole
+    # spec file instead of individual Analysis instances!
+    from PyInstaller.config import CONF
+
+    seen_qt_bindings = CONF.get("_seen_qt_bindings")
+    if seen_qt_bindings is None:
+        CONF["_seen_qt_bindings"] = qt_bindings
+    elif qt_bindings != seen_qt_bindings:
+        # Raise SystemExit to abort build process
+        raise SystemExit(
+            "Aborting build process due to attempt to collect multiple Qt bindings packages: attempting to run hook "
+            f"for {qt_bindings!r}, while hook for {seen_qt_bindings!r} has already been run! PyInstaller does not "
+            "support multiple Qt bindings packages in a frozen application - either ensure that the build environment "
+            "has only one Qt bindings package installed, or exclude the extraneous bindings packages via the module "
+            "exclusion mechanism (--exclude command-line option, or excludes list in the spec file)."
+        )

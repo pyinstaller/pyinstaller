@@ -9,7 +9,10 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks.qt import pyside2_library_info
+from PyInstaller.utils.hooks.qt import pyside2_library_info, ensure_single_qt_bindings_package
+
+# Allow only one Qt bindings package to be collected in frozen application.
+ensure_single_qt_bindings_package("PySide2")
 
 # Only proceed if PySide2 can be imported.
 if pyside2_library_info.version is not None:

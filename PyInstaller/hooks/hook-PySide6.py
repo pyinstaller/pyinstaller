@@ -10,7 +10,10 @@
 #-----------------------------------------------------------------------------
 
 from PyInstaller.utils.hooks import check_requirement
-from PyInstaller.utils.hooks.qt import pyside6_library_info
+from PyInstaller.utils.hooks.qt import pyside6_library_info, ensure_single_qt_bindings_package
+
+# Allow only one Qt bindings package to be collected in frozen application.
+ensure_single_qt_bindings_package("PySide6")
 
 # Only proceed if PySide6 can be imported.
 if pyside6_library_info.version is not None:
