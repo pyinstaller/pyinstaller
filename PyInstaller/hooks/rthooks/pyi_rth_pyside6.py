@@ -20,6 +20,9 @@ def _pyi_rthook():
     from _pyi_rth_utils import is_macos_app_bundle, prepend_path_to_environment_variable
     from _pyi_rth_utils import qt as qt_rth_utils
 
+    # Ensure this is the only Qt bindings package in the application.
+    qt_rth_utils.ensure_single_qt_bindings_package("PySide6")
+
     if sys.platform.startswith('win'):
         pyqt_path = os.path.join(sys._MEIPASS, 'PySide6')
     else:
