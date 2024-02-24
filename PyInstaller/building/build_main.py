@@ -215,7 +215,15 @@ def find_binary_dependencies(binaries, import_packages):
         with isolated.Python() as child:
             child.call(setup)
             for package in import_packages:
-                child.call(import_library, package)
+                try:
+                    child.call(import_library, package)
+                except isolated.SubprocessDiedError as e:
+                    # Re-raise as `isolated.SubprocessDiedError` again, to trigger error-handling codepath in
+                    # `isolated.Python.__exit__()`.
+                    raise isolated.SubprocessDiedError(
+                        f"Isolated subprocess crashed while importing package {package!r}! "
+                        f"Package import list: {import_packages!r}"
+                    ) from e
             added_dll_directories, added_path_directories = child.call(process_search_paths)
 
         # Process extra search paths...

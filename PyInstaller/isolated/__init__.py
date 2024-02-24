@@ -28,4 +28,4 @@ This submodule provides:
 """
 
 # ruff: noqa
-from ._parent import Python, call, decorate
+from ._parent import Python, call, decorate, SubprocessDiedError
