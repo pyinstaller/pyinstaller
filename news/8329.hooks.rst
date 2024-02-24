@@ -1,0 +1,7 @@
+PyInstaller now explicitly disallows attempts to collect multiple Qt
+bindings packages (``PySide2``, ``PySide6``, ``PyQt5``, ``PyQt6``) into
+a frozen application. When hooks for more than one top-level Qt bindings
+package are executed, the build process is aborted with error message
+that informs user of the situation and what to do about it (i.e., exclusion
+of extraneous packages). The limitation applies to all analyses within a
+spec file.

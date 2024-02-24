@@ -9,7 +9,10 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks.qt import pyqt6_library_info
+from PyInstaller.utils.hooks.qt import pyqt6_library_info, ensure_single_qt_bindings_package
+
+# Allow only one Qt bindings package to be collected in frozen application.
+ensure_single_qt_bindings_package("PyQt6")
 
 # Only proceed if PyQt6 can be imported.
 if pyqt6_library_info.version is not None:
