@@ -1335,3 +1335,80 @@ def ensure_single_qt_bindings_package(qt_bindings):
             "has only one Qt bindings package installed, or exclude the extraneous bindings packages via the module "
             "exclusion mechanism (--exclude command-line option, or excludes list in the spec file)."
         )
+
+
+# A helper for generating exclude rules for extraneous Qt bindings. Intended for use in hooks for packages that pull in
+# multiple Qt bindings packages due to conditional imports (for example, `matplotlib.backends.qt_compat`, `qtpy`).
+def exclude_extraneous_qt_bindings(hook_name, qt_bindings_order=None):
+    _QT_BINDINGS = ['PyQt5', 'PySide2', 'PyQt6', 'PySide6']  # Known bindings, and also their preferred order
+    _QT_API_ENV = 'QT_API'
+
+    def _create_excludes(selected_bindings):
+        return [bindings for bindings in _QT_BINDINGS if bindings != selected_bindings]
+
+    logger.debug("%s: selecting Qt bindings package...", hook_name)
+
+    if not qt_bindings_order:
+        qt_bindings_order = _QT_BINDINGS  # Use default preference order
+
+    env_qt_bindings = os.environ.get(_QT_API_ENV)
+    if env_qt_bindings is not None and env_qt_bindings not in _QT_BINDINGS:
+        logger.warning(
+            "%s: ignoring unsupported Qt bindings specified via %s environment variable (supported values: %r)!",
+            hook_name, _QT_API_ENV, _QT_BINDINGS
+        )
+        env_qt_bindings = None
+
+    # First choice: see if a hook for top-level Qt bindings package has already been run; if it has, use that bindings
+    # package. Due to check in the `ensure_single_qt_bindings_package` that these hooks use, only one such hook could
+    # have been run. This should cover cases when the entry-point script explicitly imports one of Qt bindings before
+    # importing a package that supports multiple bindings.
+    from PyInstaller.config import CONF
+    seen_qt_bindings = CONF.get("_seen_qt_bindings")
+    if seen_qt_bindings is not None:
+        # If bindings are also specified via environment variable and they differ, display a warning.
+        if env_qt_bindings is not None and env_qt_bindings != seen_qt_bindings:
+            logger.warning(
+                "%s: ignoring %s environment variable (%r) because hook for %r has been run!", hook_name, _QT_API_ENV,
+                env_qt_bindings, seen_qt_bindings
+            )
+
+        logger.info(
+            "%s: selected %r as Qt bindings because hook for %r has been run before.", hook_name, seen_qt_bindings,
+            seen_qt_bindings
+        )
+        return _create_excludes(seen_qt_bindings)
+
+    # Second choice: honor the QT_API environment variable, if it specified a valid Qt bindings package.
+    if env_qt_bindings is not None:
+        logger.info(
+            "%s: selected %r as Qt bindings as specified by the %s environment variable.", hook_name, env_qt_bindings,
+            _QT_API_ENV
+        )
+        return _create_excludes(env_qt_bindings)
+
+    # Third choice: select first available bindings (sorted by the given preference order), and display a warning if
+    # multiple bindings are available.
+    available_qt_bindings = []
+    for bindings_name in qt_bindings_order:
+        # Check if bindings are available
+        info = get_qt_library_info(bindings_name)
+        if info.version is None:
+            continue
+        available_qt_bindings.append(bindings_name)
+
+    if not available_qt_bindings:
+        logger.warning("%s: no Qt bindings are available!", hook_name)
+        return []  # No need to generate any excludes...
+
+    selected_qt_bindings = available_qt_bindings[0]
+    if len(available_qt_bindings) == 1:
+        logger.info("%s: selected %r as the only available Qt bindings.", hook_name, selected_qt_bindings)
+    else:
+        # Warn on multiple bindings, and tell user to use QT_API environment variable
+        logger.warning(
+            "%s: selected %r as Qt bindings, but multiple bindings are available: %r. Use the %s environment variable "
+            "to select different bindings and suppress this warning.", hook_name, selected_qt_bindings,
+            available_qt_bindings, _QT_API_ENV
+        )
+    return _create_excludes(selected_qt_bindings)
