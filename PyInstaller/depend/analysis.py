@@ -434,7 +434,24 @@ class PyiModuleGraph(ModuleGraph):
                     # None...
                     target_attr_names = filtered_target_attr_names or None
 
-        return super()._safe_import_hook(target_module_partname, source_module, target_attr_names, level, edge_attr)
+        ret_modules = super()._safe_import_hook(
+            target_module_partname, source_module, target_attr_names, level, edge_attr
+        )
+
+        # Ensure that hooks are pre-loaded for returned module(s), in an attempt to ensure that hooks are called in the
+        # order of imports. The hooks are cached, so there should be no downsides to pre-loading hooks early (as opposed
+        # to loading them in post-graph analysis). When modules are imported from other modules, the hooks for those
+        # referring (source) modules and their parent package(s) are loaded by the exclusion mechanism that takes place
+        # before the above `super()._safe_import_hook` call. The code below attempts to complement that, but for the
+        # referred (target) modules and their parent package(s).
+        for ret_module in ret_modules:
+            if type(ret_module).__name__ not in VALID_MODULE_TYPES:
+                continue
+            # (Ab)use the `_find_all_excluded_imports` helper to load all hooks for the given module and its parent
+            # package(s).
+            self._find_all_excluded_imports(ret_module.identifier)
+
+        return ret_modules
 
     def _safe_import_module(self, module_basename, module_name, parent_package):
         """
