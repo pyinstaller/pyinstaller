@@ -169,11 +169,12 @@ def find_binary_dependencies(binaries, import_packages):
     # and track changes made to the environment.
     if compat.is_win:
         # Helper functions to be executed in isolated environment.
-        def setup():
+        def setup(suppressed_imports):
             """
             Prepare environment for change tracking
             """
             import os
+            import sys
 
             os._added_dll_directories = []
             os._original_path_env = os.environ.get('PATH', '')
@@ -185,6 +186,10 @@ def find_binary_dependencies(binaries, import_packages):
                 return _original_add_dll_directory(path)
 
             os.add_dll_directory = _pyi_add_dll_directory
+
+            # Suppress import of specified packages
+            for name in suppressed_imports:
+                sys.modules[name] = None
 
         def import_library(package):
             """
@@ -211,9 +216,35 @@ def find_binary_dependencies(binaries, import_packages):
 
             return dll_directories, path_additions
 
+        # Pre-process the list of packages to import.
+        # Check for Qt bindings packages, and put them at the front of the packages list. This ensures that they are
+        # always imported first, which should prevent packages that support multiple bindings (`qtypy`, `pyqtgraph`,
+        # `matplotlib`, etc.) from trying to auto-select bindings.
+        _QT_BINDINGS = ('PySide2', 'PyQt5', 'PySide6', 'PyQt6')
+
+        qt_packages = []
+        other_packages = []
+        for package in import_packages:
+            if package.startswith(_QT_BINDINGS):
+                qt_packages.append(package)
+            else:
+                other_packages.append(package)
+        import_packages = qt_packages + other_packages
+
+        # Just in case, explicitly suppress imports of Qt bindings that we are *not* collecting - if multiple bindings
+        # are available and some were excluded from our analysis, a package imported here might still try to import an
+        # excluded bindings package (and succeed at doing so).
+        suppressed_imports = [package for package in _QT_BINDINGS if package not in qt_packages]
+
+        # If we suppressed PySide2 or PySide6, we must also suppress their corresponding shiboken package
+        if "PySide2" in suppressed_imports:
+            suppressed_imports += ["shiboken2"]
+        if "PySide6" in suppressed_imports:
+            suppressed_imports += ["shiboken6"]
+
         # Processing in isolated environment.
         with isolated.Python() as child:
-            child.call(setup)
+            child.call(setup, suppressed_imports)
             for package in import_packages:
                 try:
                     child.call(import_library, package)
