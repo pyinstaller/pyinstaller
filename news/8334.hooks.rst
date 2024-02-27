@@ -1,0 +1,2 @@
+Update hook for ``matplotlib.backends`` to include ``QtAgg`` and ``Gtk4Agg``
+in the list of backend candidates.

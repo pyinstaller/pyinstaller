@@ -135,7 +135,9 @@ def _autodetect_used_backends(hook_api):
         logger.info("Found configured default matplotlib backend: %s", default_backend)
         return [default_backend]
 
-    candidates = ["Qt5Agg", "Gtk3Agg", "TkAgg", "WxAgg"]
+    # `QtAgg` supersedes `Qt5Agg`; however, we keep `Qt5Agg` in the candidate list to support older versions of
+    # matplotlib that do not have `QtAgg`.
+    candidates = ["QtAgg", "Qt5Agg", "Gtk4Agg", "Gtk3Agg", "TkAgg", "WxAgg"]
     if is_darwin:
         candidates = ["MacOSX"] + candidates
     logger.info("Trying determine the default backend as first importable candidate from the list: %r", candidates)
