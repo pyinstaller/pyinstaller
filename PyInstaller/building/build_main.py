@@ -242,6 +242,10 @@ def find_binary_dependencies(binaries, import_packages):
         if "PySide6" in suppressed_imports:
             suppressed_imports += ["shiboken6"]
 
+        # Suppress import of `pyqtgraph.canvas`, which is known to crash python interpreter. See #7452 and #8322, as
+        # well as https://github.com/pyqtgraph/pyqtgraph/issues/2838.
+        suppressed_imports += ['pyqtgraph.canvas']
+
         # Processing in isolated environment.
         with isolated.Python() as child:
             child.call(setup, suppressed_imports)
