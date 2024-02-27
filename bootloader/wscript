@@ -379,31 +379,52 @@ int main ()
 
 
 def _msvc_target(ctx):
+    if getattr(ctx.options, "msvc_targets", False):
+        return re.findall(r"[^, ]+", ctx.options.msvc_targets)
+
     try:
-        host = {"AMD64": "amd64", "x86": "x86", "ARM64": "arm64"}[platform.machine()]
+        _msvc_names = {"AMD64": "amd64", "x86": "x86", "ARM64": "arm64"}
+        host = _msvc_names[os.environ.get("PROCESSOR_ARCHITECTURE", platform.machine())]
     except KeyError:
         return []
+
     if ctx.options.target_arch == '32bit':
         target = 'x86'
     elif ctx.options.target_arch == '64bit':
-        target = 'amd64'
+        target = 'x64'
     elif ctx.options.target_arch == '64bit-arm':
         target = 'arm64'
     else:
-        return []
-    # If we are not cross-compiling, we need to return single-architecture target string.
-    if host == target:
-        if host == 'amd64':
-            return 'x64'  # Native amd64 compiler is actually called 'x64'. See `waflib/Tools/msvc.py`.
-        return host  # x86, arm64
-    # Cross-compiling; set host_target combination: amd64_x86, amd64_arm64, x86_amd64, arm64_amd64, ...
-    return [host + "_" + target]
+        target = "x64" if host == "amd64" else host
+
+    if host == 'x86':
+        if target == 'x86':
+            return ['x86']
+        elif target == 'x64':
+            return ['x86_amd64']
+        else:  # arm64
+            return ['x86_arm64']
+    elif host == 'amd64':
+        if target == 'x86':
+            return ['amd64_x86', 'x86']
+        elif target == 'x64':
+            return ['x64', 'x86_amd64']
+        else:  # arm64
+            return ['amd64_arm64', 'x86_arm64']
+    else:  # arm64
+        if target == 'x86':
+            return ['arm64_x86', 'x86', 'amd64_x86']
+        elif target == 'x64':
+            return ['arm64_amd64', 'x64', 'x86_amd64']
+        else:  # arm64
+            return ['arm64']
 
 
 def configure(ctx):
     ctx.msg('Python Version', sys.version.replace(os.linesep, ''))
     # For MSVC the target arch must have already been set when the compiler is searched.
     ctx.env['MSVC_TARGETS'] = _msvc_target(ctx)
+    ctx.msg('MSVC target(s)', ctx.env['MSVC_TARGETS'])
 
     # ** C compiler **
 

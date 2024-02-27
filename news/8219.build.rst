@@ -1,0 +1,2 @@
+The target architecture on Windows using MSVC now defaults to that of the
+current Python environment – not the current OS.

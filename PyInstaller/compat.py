@@ -231,7 +231,12 @@ else:
 system = 'Cygwin' if is_cygwin else platform.system()
 
 # Machine suffix for bootloader.
-machine = _pyi_machine(platform.machine(), platform.system())
+if is_win:
+    # On Windows ARM64 using an x64 Python environment, platform.machine() returns ARM64 but
+    # we really want the bootloader that matches the Python environment instead of the OS.
+    machine = _pyi_machine(os.environ.get("PROCESSOR_ARCHITECTURE", platform.machine()), platform.system())
+else:
+    machine = _pyi_machine(platform.machine(), platform.system())
 
 
 # Wine detection and support
