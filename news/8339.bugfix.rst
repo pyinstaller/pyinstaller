@@ -1,0 +1,2 @@
+(Windows) Suppress warnings about unresolvable UCRT DLLs
+(``api-ms-win-*.dll``) on Windows 11.
