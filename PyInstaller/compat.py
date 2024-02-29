@@ -73,6 +73,7 @@ is_py312 = sys.version_info >= (3, 12)
 
 is_win = sys.platform.startswith('win')
 is_win_10 = is_win and (platform.win32_ver()[0] == '10')
+is_win_11 = is_win and (platform.win32_ver()[0] == '11')
 is_win_wine = False  # Running under Wine; determined later on.
 is_cygwin = sys.platform == 'cygwin'
 is_darwin = sys.platform == 'darwin'  # Mac OS X
