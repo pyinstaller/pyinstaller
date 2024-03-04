@@ -224,6 +224,15 @@ a path to a directory in a filesystem mounted without ``noexec`` flags, e.g.::
 Helping PyInstaller Find Modules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+If a module is having trouble being found, it is good practice to first 
+try running pip install::
+
+    pip install module_name
+
+
+This ensures the module has been installed to the development environment 
+and is up to date.
+
 Extending the Path
 ------------------
 
