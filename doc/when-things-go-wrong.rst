@@ -229,7 +229,6 @@ try running pip install::
 
     pip install module_name
 
-
 This ensures the module has been installed to the development environment 
 and is up to date.
 
