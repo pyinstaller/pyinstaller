@@ -1,4 +1,0 @@
-Add a hook for ``pandas.io.clipboard`` to exclude the conditional
-import of ``PyQt5`` from this module; the module primarily uses ``qtpy``
-as its Qt bindings abstraction, and the conditional import of ``PyQt5``
-interferes with Qt bindings selection done by our ``qtpy`` hook.

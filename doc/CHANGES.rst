@@ -15,6 +15,134 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.5.0 (2024-03-09)
+------------------
+
+Features
+~~~~~~~~
+
+* (Linux) Extend the mechanism for collection of ``.hmac`` files from
+  :issue:`8288` to ``.chk`` files that are used by NSS libraries.
+  (:issue:`8315`)
+
+
+Bugfix
+~~~~~~
+
+* (Linux) Fix collection of ``QtWebEngineProcess`` helper when collecting
+  Qt (and ``PySide``/``PyQt`` bindings) installed via Linux distribution
+  packages. In such scenarios, we now force collection of the helper
+  executable into ``libexec`` directory inside the Qt sub-directory of
+  the bindings' package directory, in order to match the PyPI wheel layout.
+  (:issue:`8315`)
+* (Linux) Fix regression that caused :func:`locale.getlocale` in
+  frozen applications created with PyInstaller v6.x to return ``(None, None)``
+  instead of user-preferred locale. (:issue:`8306`)
+* (Windows) Avoid trying to import ``pyqtgraph.canvas`` in the subprocess
+  that analyzes dynamic library search modifications made by packages prior
+  to the binary dependency analysis. Trying to import ``pyqtgraph.canvas``
+  causes python interpreter to crash under certain circumstances (the
+  issue is present in ``pyqtgraph`` <= 0.13.3). (:issue:`8322`)
+* (Windows) Fix collection of ``QtWebEngineProcess`` helper when
+  collecting ``PySide2`` and Qt installed via Anaconda on Windows.
+  The helper executable is now collected into top-level ``PySide2``
+  package directory, in order to match the PyPI wheel layout. (:issue:`8315`)
+* (Windows) Suppress warnings about unresolvable UCRT DLLs
+  (``api-ms-win-*.dll``) on Windows 11. (:issue:`8339`)
+* Fix bootloaders not being found when running an Intel build of Python on
+  Windows ARM64. (:issue:`8219`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* PyInstaller now explicitly disallows attempts to collect multiple Qt
+  bindings packages (``PySide2``, ``PySide6``, ``PyQt5``, ``PyQt6``) into
+  a frozen application. When hooks for more than one top-level Qt bindings
+  package are executed, the build process is aborted with error message.
+  This restriction applies across all instances of ``Analysis`` within
+  a single build (i.e., a single .spec file).
+
+  If you encounter build errors caused by this new restriction, either
+  clean up your build environment (remove the bindings that you are not
+  using), or explicitly exclude the extraneous bindings using
+  :option:`--exclude-module`
+  (or equivalent ``excludes`` list passed as argument to ``Analysis`` in
+  the .spec file).
+
+  The automatic exclusion of extraneous bindings needs to be done via hooks on
+  per-package basis, so please `report problematic packages
+  <https://github.com/pyinstaller/pyinstaller-hooks-contrib/issues>`_ so that we
+  can write hooks for them. (:issue:`8329`)
+
+
+Hooks
+~~~~~
+
+* (Linux) When searching for dynamically-loaded NSS libraries during
+  collection of ``QtWebEnginge``, account for the possibility of said
+  libraries being either in a separate ``nss`` directory or in the main
+  library directory. This fixes problems with missing NSS libraries on
+  contemporary Linux distributions that do not use separate ``nss``
+  directory (anymore). (:issue:`8315`)
+* Add a hook for ``pandas.io.clipboard`` to exclude the conditional
+  import of ``PyQt5`` from this module; the module primarily uses ``qtpy``
+  as its Qt bindings abstraction, and the conditional import of ``PyQt5``
+  interferes with Qt bindings selection done by our ``qtpy`` hook.
+  (:issue:`8329`)
+* Add hook for ``qtpy`` to prevent collection of multiple available Qt
+  bindings. The hook attempts to select a single Qt bindings package
+  and exclude all other Qt bindings packages with the help of the
+  ``PyInstaller.utils.hooks.qt.exclude_extraneous_qt_bindings``
+  helper. (:issue:`8329`)
+* Extend hooks for ``matplotlib`` to prevent collection of multiple
+  available Qt bindings. The new hook for ``matplotlib.backends.qt_compat``
+  attempts to select a single Qt bindings package via the following
+  logic implemented in the
+  ``PyInstaller.utils.hooks.qt.exclude_extraneous_qt_bindings``
+  helper: first, we check if hooks for any Qt bindings package have already
+  been run; if they had, those bindings are selected. If not, we check for
+  user-specified bindings in the ``QT_API`` environment variable; if valid
+  bindings name is specified, those bindings are selected. Otherwise, we
+  select one of available bindings. Once a Qt bindings package is selected,
+  the imports of all other Qt bindings packages are excluded from the
+  hooked package. (:issue:`8329`)
+* Have run-time hooks for Qt bindings (``PySide2``, ``PySide6``, ``PyQt5``,
+  and ``PyQt6``) check for presence of the embedded ``:/qt/etc/qt.conf``
+  resource, and if not present, inject their own version. This
+  aims to ensure that the bundled Qt is always relocatable, even if the
+  package does not perform injection of embedded ``qt.conf`` file (most
+  notably, this seems to be the case with ``PySide2`` collected from
+  Linux distribution packages, and ``PySide2`` collected from Anaconda
+  on Windows, Linux, and macOS). (:issue:`8315`)
+* PyInstaller now explicitly disallows attempts to collect multiple Qt
+  bindings packages (``PySide2``, ``PySide6``, ``PyQt5``, ``PyQt6``) into
+  a frozen application. When hooks for more than one top-level Qt bindings
+  package are executed, the build process is aborted with error message
+  that informs user of the situation and what to do about it (i.e., exclusion
+  of extraneous packages). The limitation applies to all analyses within a
+  spec file. (:issue:`8329`)
+* Remove run-time hook for ``win32com``, as per discussion in issue:`8309`.
+  (:issue:`8313`)
+* Update hook for ``matplotlib.backends`` to include ``QtAgg`` and ``Gtk4Agg``
+  in the list of backend candidates. (:issue:`8334`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* Have bootloader set the ``configure_locale`` field in the interpreter
+  pre-config structure, so that user-preferred locale is set during
+  interpreter pre-initialization. (:issue:`8306`)
+
+
+Bootloader build
+~~~~~~~~~~~~~~~~
+
+* The target architecture on Windows using MSVC now defaults to that of the
+  current Python environment – not the current OS. (:issue:`8219`)
+
+
 6.4.0 (2024-02-10)
 ------------------
 

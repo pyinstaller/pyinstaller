@@ -1,4 +1,0 @@
-(Windows) Fix collection of ``QtWebEngineProcess`` helper when
-collecting ``PySide2`` and Qt installed via Anaconda on Windows.
-The helper executable is now collected into top-level ``PySide2``
-package directory, in order to match the PyPI wheel layout.

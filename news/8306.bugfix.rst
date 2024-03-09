@@ -1,3 +1,0 @@
-(Linux) Fix regression that caused :func:`locale.getlocale` in
-frozen applications created with PyInstaller 6.x return ``(None, None)``
-instead of user-preferred locale.

@@ -1,5 +1,0 @@
-Add hook for ``qtpy`` to prevent collection of multiple available Qt
-bindings. The hook attempts to select a single Qt bindings package
-and exclude all other Qt bindings packages with the help of the
-``PyInstaller.utils.hooks.qt.exclude_extraneous_qt_bindings``
-helper.

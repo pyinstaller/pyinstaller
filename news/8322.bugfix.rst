@@ -1,5 +1,0 @@
-(Windows) Avoid trying to import ``pyqtgraph.canvas`` in the subprocess
-that analyzes dynamic library search modifications made by packages prior
-to the binary dependency analysis. Trying to import ``pyqtgraph.canvas``
-causes python interpreter to crash under certain circumstances (the
-issue is present in ``pyqtgraph`` <= 0.13.3).

@@ -1,1 +1,0 @@
-Fix bootloaders not being found when running an Intel build of Python on Windows ARM64.
