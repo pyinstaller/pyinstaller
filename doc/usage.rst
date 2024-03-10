@@ -204,7 +204,11 @@ Splash Screen *(Experimental)*
 .. Note::
     This feature is incompatible with macOS. In the current design, the
     splash screen operates in a secondary thread, which is disallowed by
-    the Tcl/Tk (or rather, the underlying GUI toolkit) on macOS.
+    the Tcl/Tk (or rather, the underlying GUI toolkit) on macOS. On Linux 
+    there is a platform-specific limitation of Tcl/Tk in regard to wm 
+    attributes -alpha. For an opacity change to take effect, a compositing 
+    window manager is required. Tcl/Tk does not natively support this on 
+    Linux platforms.
 
 Some applications may require a splash screen as soon as the application
 (bootloader) has been started, because especially in onefile mode large
