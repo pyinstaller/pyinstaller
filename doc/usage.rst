@@ -204,10 +204,7 @@ Splash Screen *(Experimental)*
 .. Note::
     This feature is incompatible with macOS. In the current design, the
     splash screen operates in a secondary thread, which is disallowed by
-    the Tcl/Tk (or rather, the underlying GUI toolkit) on macOS. On Linux
-    there is a platform-specific limitation of Tcl/Tk in regard to wm attributes
-    -alpha. For an opacity change to take effect, a compositin window manager
-    is required.Tcl/Tk does not natively support this on Linux.
+    the Tcl/Tk (or rather, the underlying GUI toolkit) on macOS.
 
 Some applications may require a splash screen as soon as the application
 (bootloader) has been started, because especially in onefile mode large
@@ -219,6 +216,11 @@ The bootloader is able to display a one-image (i.e. only an image) splash
 screen, which is displayed before the actual main extraction process starts.
 The splash screen supports non-transparent and hard-cut-transparent images as background
 image, so non-rectangular splash screens can also be displayed.
+
+.. Note::
+    Splash images with transparent regions are not supported on Linux due to
+    Tcl/Tk platform limitations. The -transparentcolor and -transparent wm attributes
+    used by pyinstaller are not available to Linux.
 
 This splash screen is based on `Tcl/Tk`_, which is the same library used by the Python
 module `tkinter`_. PyInstaller bundles the dynamic libraries of tcl and tk into the
