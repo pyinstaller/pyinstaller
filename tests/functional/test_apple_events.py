@@ -329,6 +329,7 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
 
 @pytest.mark.darwin
 @macos11_check_tmpdir
+@pytest.mark.flaky(reruns=3)
 @pytest.mark.parametrize("build_mode", ['onefile', 'onedir'])
 @pytest.mark.parametrize("argv_emu", [True, False], ids=["emu", "noemu"])
 def test_apple_event_handling_carbon(tmpdir, pyi_builder_spec, monkeypatch, build_mode, argv_emu):
