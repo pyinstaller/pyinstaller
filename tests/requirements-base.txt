@@ -20,8 +20,5 @@ pytest-timeout >= 2.0.0
 # Allows specifying order without duplicates
 pytest-drop-dup-tests
 
-# Ability to retry a failed test
-flaky
-
 # Better subprocess alternative with implemented timeout.
 psutil
