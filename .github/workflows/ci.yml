@@ -173,7 +173,6 @@ jobs:
         run: >
             pytest
             -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
-            --force-flaky --no-flaky-report
 
       # Install and test PyInstaller Hook Sample, to ensure that tests declared in
       # entry-points are discovered.
@@ -206,7 +205,6 @@ jobs:
           foo
           pytest
           -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
-          --force-flaky --no-flaky-report
 
       # Verify that installing from sdist works. This is mostly just a verification that the MANIFEST.in contains
       # all the extras needed to compile the bootloader.
