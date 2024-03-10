@@ -1,0 +1,4 @@
+Make runtime hook execution order deterministic, based on the runtime
+hook filenames. This change affects only the runtime hooks tied to
+the imported modules; the custom runtime hooks are still executed
+first and in the order that they are specified.
