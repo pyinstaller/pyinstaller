@@ -220,7 +220,7 @@ image, so non-rectangular splash screens can also be displayed.
 .. Note::
     Splash images with transparent regions are not supported on Linux due to
     Tcl/Tk platform limitations. The ``-transparentcolor`` and ``-transparent`` wm attributes
-    used by pyinstaller are not available to Linux.
+    used by PyInstaller are not available to Linux.
 
 This splash screen is based on `Tcl/Tk`_, which is the same library used by the Python
 module `tkinter`_. PyInstaller bundles the dynamic libraries of tcl and tk into the
