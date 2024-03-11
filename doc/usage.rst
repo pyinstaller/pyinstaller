@@ -217,6 +217,11 @@ screen, which is displayed before the actual main extraction process starts.
 The splash screen supports non-transparent and hard-cut-transparent images as background
 image, so non-rectangular splash screens can also be displayed.
 
+.. Note::
+    Splash images with transparent regions are not supported on Linux due to
+    Tcl/Tk platform limitations. The ``-transparentcolor`` and ``-transparent`` wm attributes
+    used by PyInstaller are not available to Linux.
+
 This splash screen is based on `Tcl/Tk`_, which is the same library used by the Python
 module `tkinter`_. PyInstaller bundles the dynamic libraries of tcl and tk into the
 application at compile time. These are loaded into the bootloader at startup of the
