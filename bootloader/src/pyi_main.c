@@ -402,6 +402,21 @@ pyi_main(int argc, char * argv[])
         }
 #endif
 
+        /* Use message queue to have Windows stop showing spinning-wheel
+         * cursor indicating that the program is starting. For details,
+         * see the corresponding comment in the onefile code-path.
+         *
+         * In onedir mode, this aims to make noconsole programs that do
+         * not display any UI appear to start faster.
+         */
+#if defined(_WIN32) && defined(WINDOWED)
+        if (!splash_status) {
+            MSG msg;
+            PostMessageW(NULL, 0, 0, 0);
+            GetMessageW(&msg, NULL, 0, 0);
+        }
+#endif
+
         /* Main code to initialize Python and run user's code. */
         pyi_launch_initialize(archive_status);
         rc = pyi_launch_execute(archive_status);
@@ -470,6 +485,31 @@ pyi_main(int argc, char * argv[])
             } else if (strcmp(hide_console_option, HIDE_CONSOLE_OPTION_MINIMIZE_LATE) == 0) {
                 pyi_win32_minimize_console();
             }
+        }
+#endif
+
+        /* When a windowed/noconsole process is launched on Windows, the
+         * OS displays a spinning-wheel cursor to indicate that the program
+         * is starting. This goes on for a fixed amount of time or until
+         * the process uses some UI functionality (creates a window, uses
+         * message queue). In a PyInstaller onefile application, the parent
+         * process displays a window only if splash screen is used; the UI
+         * is created and shown by the child process. To prevent the
+         * "program is starting" cursor being shown for the full duration
+         * (i.e., after the child process shows its UI), make use of
+         * message queue to signal the OS that the process is alive.
+         *
+         * For onefile, we do this just before we spawn the child process,
+         * so that the "program is starting" cursor is shown while the
+         * parent process unpacks the application.
+         *
+         * See: https://github.com/python/cpython/blob/v3.12.2/PC/launcher.c#L765-L779
+         */
+#if defined(_WIN32) && defined(WINDOWED)
+        if (!splash_status) {
+            MSG msg;
+            PostMessageW(NULL, 0, 0, 0);
+            GetMessageW(&msg, NULL, 0, 0);
         }
 #endif
 
