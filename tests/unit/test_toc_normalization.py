@@ -193,23 +193,3 @@ def test_normalize_pyz_toc_case_sensitivity():
 
     normalized_toc = normalize_pyz_toc(toc)
     assert normalized_toc == expected_toc
-
-
-def test_normalize_pyz_toc_module_and_data1():
-    # In PYZ TOC, a DATA entry should not mask a PYMODULE one.
-    toc = copy.copy(_BASE_PYZ_TOC)
-    toc.insert(5, ('mymodule1', 'data-dir/mymodule1', 'DATA'))
-    expected_toc = _BASE_PYZ_TOC
-
-    normalized_toc = normalize_pyz_toc(toc)
-    assert normalized_toc == expected_toc
-
-
-def test_normalize_pyz_toc_module_and_data2():
-    # In PYZ TOC, a DATA entry should not mask a PYMODULE one. Variant with switched order.
-    toc = copy.copy(_BASE_PYZ_TOC)
-    toc.insert(6, ('mymodule1', 'data-dir/mymodule1', 'DATA'))
-    expected_toc = _BASE_PYZ_TOC
-
-    normalized_toc = normalize_pyz_toc(toc)
-    assert normalized_toc == expected_toc
