@@ -376,6 +376,16 @@ The following options are supported by this mechanism:
 * ``'O'`` or ``'optimize'``: increment the value of ``sys.flags.optimize``.
   Equivalent to Python's ``-O`` command-line option.
 
+.. note::
+    The optimization level reflected by ``sys.flags.optimize`` affects
+    only bytecode that python interpreter would end up compiling at the
+    run time. In a PyInstaller-frozen application, however, most of
+    python modules are available as pre-compiled bytecode, hence the
+    run-time bytecode optimization level does not affect them at all.
+
+    For details on how to enforce the bytecode optimization level for
+    collected modules, see :ref:`bytecode optimization level`.
+
 * ``'W <arg>'``: a pass-through for `Python's W-options
   <https://docs.python.org/3/using/cmdline.html#cmdoption-W>`_ that
   control warning messages.

@@ -130,6 +130,126 @@ So if you are using a Cython C object module, which imports Python modules,
 you will have to list these as :option:`--hidden-import`.
 
 
+.. _bytecode optimization level:
+
+Bytecode Optimization Level
+===========================
+
+In unfrozen Python, the :envvar:`PYTHONOPTIMIZE` environment variable
+and the ``-O`` `command-line option
+<https://docs.python.org/3/using/cmdline.html#miscellaneous-options>`_
+control the optimization level, which is reflected in the value of the
+``optimize`` flag in :data:`sys.flags`. The optimization level determines
+how python byte-compiles pure-python modules when it loads the for the
+first time (or which version of byte-compiled modules is loaded from
+``__pycache__``, if available). For example, at the first optimization level,
+the ``__debug__`` constant becomes ``False`` and ``assert`` statements
+are optimized away, while at the second level, documentation strings are
+removed from the modules' bytecode.
+
+In a PyInstaller-frozen applications, the optimization level of the embedded
+python interpreter is controlled by setting :ref:`python interpreter options
+<specifying python interpreter options>` that are set at the build time.
+This affects the value of ``optimize`` flag in :data:`sys.flags`. However,
+as PyInstaller by default collects pure-python modules in byte-compiled
+form, the value of the ``optimize`` flag at run time has no effect on the
+bytecode of such modules. I.e., even if optimization level of python
+interpreter in the frozen application is set to the second level via
+:ref:`python interpreter options <specifying python interpreter options>`,
+``assert`` statements will continue to work, and functions will retain their
+documentation strings. In order to affect the bytecode, the optimization
+level needs to be enforced during the build, specifically when PyInstaller
+compiles bytecode of modules that are to be collected.
+
+In PyInstaller <= 6.5, the only way to affect optimization level of
+the collected python code was to set the optimization level of the python
+process in which PyInstaller was running; either by setting the
+:envvar:`PYTHONOPTIMIZE` environment variable prior to running the
+PyInstaller command, or by invoking PyInstaller as a module and setting
+the python's ``-O`` flag, for example ``python -OO -m PyInstaller <...>``.
+
+In PyInstaller 6.6, an explicit bytecode optimization setting has been
+added both to the ``Analysis`` object in the :ref:`spec file <using spec files>`
+and to the command-line interface, in the form of the :option:`--optimize`
+command-line option.
+
+
+Optimization setting in the spec file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting with PyInstaller 6.6, the constructor of the ``Analysis`` object
+in the :ref:`spec file <using spec files>` accepts an integer parameter
+called ``optimize``. This parameter directly controls the optimization
+level of bytecode for collected python modules and the program's entry-point
+script.
+
+Setting the optimization level to a fixed value (0, 1, or 2) helps
+ensuring that the collected bytecode is always compiled with the specified
+optimization level, regardless of the optimization level under which
+the build process is running. On the other hand, setting the value to -1
+will cause the bytecode optimization level to be inherited from the
+build process (the behavior of older PyInstaller versions).
+
+Note that the ``optimize`` parameter passed to ``Analysis`` affects only
+the bytecode of collected modules. The run-time optimization level of the
+embedded interpreter (reflected in the value of ``optimize`` flag in
+:data:`sys.flags` as shown at run-time) is still controlled by
+:ref:`python interpreter options <specifying python interpreter options>`
+passed to the ``EXE`` constructor, and at the spec file level, the two
+settings are *not* coupled in any way.
+
+Therefore, if you want to disable ``assert`` statements in the
+collected modules as well as ensure that ``sys.flags.optimize`` displays
+1 at run time, you need to pass ``optimize=1`` parameter to ``Analysis``
+and pass a ``[('O', None, 'OPTION')]`` to ``EXE`` (as per
+:ref:`specifying python interpreter options`).
+
+
+Using the :option:`--optimize` command-line option
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PyInstaller 6.6 introduced a new command-line option, called :option:`--optimize`.
+This option can be used with ``pyi-makespec`` when generating a
+:ref:`spec file <using spec files>` for later use, or with ``pyinstaller``
+when building directly from a .py file (i.e., with spec file generated
+on-the-fly during the build).
+
+In the generated :ref:`spec file <using spec files>`, the value passed
+via :option:`--optimize` option is passed to ``Analysis`` via the
+``optimize`` argument, and in addition, the corresponding
+:ref:`python interpreter options <specifying python interpreter options>`
+are also generated for the ``EXE``. Therefore, this is the preferred
+approach to specifying the target bytecode optimization level for the
+frozen application.
+
+If :option:`--optimize` is not used on the command-line, but
+:option:`--python-option` is used to pass the ``O``
+:ref:`python interpreter options <specifying python interpreter options>`,
+the optimization level is inferred from number of such options, and passed
+to ``Analysis`` in the generated spec file.
+
+If neither :option:`--optimize` nor :option:`--python-option` are used,
+the optimization level for the generated spec file is determined from
+the optimization level of python interpreter under which PyInstaller
+is running. In the generated spec file, the inherited optimization level
+is passed to ``Analysis`` (thus fixing the optimization level for
+subsequent builds) and corresponding ``OPTION`` entries are generated
+for ``EXE`` as necessary.
+
+
+Optimization level and the modulegraph's code-cache
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+During the import analysis process, PyInstaller's modulegraph ends up
+retrieving the code objects (bytecode) for all python modules that pass
+through analysis.
+
+If the optimization level of the PyInstaller's build process matches the
+target optimization level for collected modules, the modulegraph's
+code-object cache can be reused, which helps to speed up the build
+process.
+
+
 .. _macos multi-arch support:
 
 macOS multi-arch support
