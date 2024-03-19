@@ -15,6 +15,7 @@ Automatically build spec files containing a description of the project.
 import argparse
 import os
 import re
+import sys
 
 from PyInstaller import DEFAULT_SPECPATH, HOMEPATH
 from PyInstaller import log as logging
@@ -441,6 +442,15 @@ def __add_options(parser):
         ),
     )
     g.add_argument(
+        '--optimize',
+        dest='optimize',
+        metavar='LEVEL',
+        type=int,
+        choices={-1, 0, 1, 2},
+        default=None,
+        help='Bytecode optimization level used for collected python modules and scripts.',
+    )
+    g.add_argument(
         '--python-option',
         dest='python_options',
         metavar='PYTHON_OPTION',
@@ -684,6 +694,7 @@ def main(
     entitlements_file=None,
     argv_emulation=False,
     hide_console=None,
+    optimize=None,
     **_kwargs
 ):
     # Default values for onefile and console when not explicitly specified on command-line (indicated by None)
@@ -784,6 +795,34 @@ def main(
     else:
         splash_init = splash_binaries = splash_target = ""
 
+    # Infer byte-code optimization level.
+    opt_level = sum([opt == 'O' for opt in python_options])
+    if opt_level > 2:
+        logger.warning(
+            "The switch '--python-option O' has been specified %d times - it should be specified at most twice!",
+            opt_level,
+        )
+        opt_level = 2
+
+    if optimize is None:
+        if opt_level == 0:
+            # Infer from running python process
+            optimize = sys.flags.optimize
+        else:
+            # Infer from `--python-option O` switch(es).
+            optimize = opt_level
+    elif optimize != opt_level and opt_level != 0:
+        logger.warning(
+            "Mismatch between optimization level passed via --optimize switch (%d) and number of '--python-option O' "
+            "switches (%d)!",
+            optimize,
+            opt_level,
+        )
+
+    if optimize >= 0:
+        # Ensure OPTIONs passed to bootloader match the optimization settings.
+        python_options += max(0, optimize - opt_level) * ['O']
+
     # Create OPTIONs array
     if 'imports' in debug and 'v' not in python_options:
         python_options.append('v')
@@ -798,6 +837,7 @@ def main(
         'preamble': preamble.content,
         'name': name,
         'noarchive': 'noarchive' in debug,
+        'optimize': optimize,
         'options': python_options_array,
         'debug_bootloader': 'bootloader' in debug,
         'bootloader_ignore_signals': bootloader_ignore_signals,

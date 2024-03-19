@@ -75,7 +75,7 @@ class ZlibArchiveWriter:
     @classmethod
     def _write_entry(cls, fp, entry, code_dict):
         name, src_path, typecode = entry
-        assert typecode == 'PYMODULE'
+        assert typecode in {'PYMODULE', 'PYMODULE-1', 'PYMODULE-2'}
 
         typecode = PYZ_ITEM_MODULE
         if src_path in ('-', None):
@@ -183,7 +183,7 @@ class CArchiveWriter:
         # (a file with same destination name, subject to OS case normalization rules).
         if strict_collect_mode:
             normalized_dest = None
-            if typecode in ('s', 'm', 'M'):
+            if typecode in {'s', 's1', 's2', 'm', 'M'}:
                 # Exempt python source scripts and modules from the check.
                 pass
             else:
@@ -201,14 +201,16 @@ class CArchiveWriter:
             # Dependency; merge src_name (= reference path prefix) and dest_name (= name) into single-string format that
             # is parsed by bootloader.
             return self._write_blob(fp, b"", f"{src_name}:{dest_name}", typecode)
-        elif typecode == 's':
+        elif typecode in {'s', 's1', 's2'}:
             # If it is a source code file, compile it to a code object and marshal the object, so it can be unmarshalled
-            # by the bootloader.
-            code = get_code_object(dest_name, src_name)
+            # by the bootloader. For that, we need to know target optimization level, which is stored in typecode.
+            optim_level = {'s': 0, 's1': 1, 's2': 2}[typecode]
+            code = get_code_object(dest_name, src_name, optimize=optim_level)
             code = strip_paths_in_code(code)
-            return self._write_blob(fp, marshal.dumps(code), dest_name, typecode, compress=compress)
+            return self._write_blob(fp, marshal.dumps(code), dest_name, 's', compress=compress)
         elif typecode in ('m', 'M'):
-            # Read the PYC file
+            # Read the PYC file. We do not perform compilation here (in contrast to script files in the above branch),
+            # so typecode does not contain optimization level information.
             with open(src_name, "rb") as in_fp:
                 data = in_fp.read()
             assert data[:4] == BYTECODE_MAGIC
