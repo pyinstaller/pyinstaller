@@ -10,6 +10,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import json
 
 import pytest
 
@@ -415,3 +416,37 @@ def test_excluded_relative_imports(pyi_builder, exclude):
         """.format(str(int(not exclude))),
         pyi_args=pyi_args,
     )
+
+
+# Test that setting optimization flags via python interpreter options applies optimization to collected modules as well.
+@pytest.mark.parametrize('level', [0, 1, 2])
+def test_optimization(pyi_builder, level, tmpdir):
+    extra_path = os.path.join(_MODULES_DIR, "pyi_optimization")
+    results_filename = tmpdir / "results.json"
+
+    pyi_args = ["--path", extra_path] + level * ["--python", "O"]
+
+    pyi_builder.test_script("pyi_optimization.py", pyi_args=pyi_args, app_args=[results_filename])
+
+    with open(results_filename, "r") as fp:
+        results = json.load(fp)
+
+    # Check that sys.flags.optimize matches the specified level
+    runtime_level = results["sys.flags.optimize"]
+    assert runtime_level == level, f"Unexpected sys.flags.optimize={level}!"
+
+    def _check_flag(results, area, flag, expected_value):
+        value = results[area][flag]
+        assert value == expected_value, \
+            f"Unexpected value for {flag!r} in {area!r}. Expected {expected_value!r}, found {value!r}"
+
+    # Check results for entry-point script
+    _check_flag(results, "script", "has_debug", level < 1)
+    _check_flag(results, "script", "has_assert", level < 1)
+    _check_flag(results, "script", "function_has_doc", level < 2)
+
+    # Check results for module
+    _check_flag(results, "module", "has_debug", level < 1)
+    _check_flag(results, "module", "has_assert", level < 1)
+    _check_flag(results, "module", "module_has_doc", level < 2)
+    _check_flag(results, "module", "function_has_doc", level < 2)
