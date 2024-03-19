@@ -10,6 +10,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import sys
 import json
 
 import pytest
@@ -418,13 +419,13 @@ def test_excluded_relative_imports(pyi_builder, exclude):
     )
 
 
-# Test that setting optimization flags via python interpreter options applies optimization to collected modules as well.
-@pytest.mark.parametrize('level', [0, 1, 2])
-def test_optimization(pyi_builder, level, tmpdir):
+# Test the bytecode optimization settings (either implicit via python interpreter options or explicit via the new
+# optimize option).
+def _test_optimization(pyi_builder, level, tmpdir, pyi_args):
     extra_path = os.path.join(_MODULES_DIR, "pyi_optimization")
     results_filename = tmpdir / "results.json"
 
-    pyi_args = ["--path", extra_path] + level * ["--python", "O"]
+    pyi_args = ["--path", extra_path] + pyi_args
 
     pyi_builder.test_script("pyi_optimization.py", pyi_args=pyi_args, app_args=[results_filename])
 
@@ -433,7 +434,8 @@ def test_optimization(pyi_builder, level, tmpdir):
 
     # Check that sys.flags.optimize matches the specified level
     runtime_level = results["sys.flags.optimize"]
-    assert runtime_level == level, f"Unexpected sys.flags.optimize={level}!"
+    assert runtime_level == level, \
+        f"Unexpected sys.flags.optimize value! Expected {level}, found {runtime_level}!"
 
     def _check_flag(results, area, flag, expected_value):
         value = results[area][flag]
@@ -450,3 +452,20 @@ def test_optimization(pyi_builder, level, tmpdir):
     _check_flag(results, "module", "has_assert", level < 1)
     _check_flag(results, "module", "module_has_doc", level < 2)
     _check_flag(results, "module", "function_has_doc", level < 2)
+
+
+@pytest.mark.parametrize('level', [0, 1, 2], ids=["unspecified", "O", "OO"])
+def test_optimization_via_python_option(pyi_builder, level, tmpdir):
+    pyi_args = level * ["--python", "O"]
+
+    # If no "--python O" flags are supplied, the optimization level is set to `sys.flags.optimize`.
+    if not pyi_args:
+        level = sys.flags.optimize
+
+    _test_optimization(pyi_builder, level, tmpdir, pyi_args)
+
+
+@pytest.mark.parametrize('level', [0, 1, 2])
+def test_optimization_via_optimize_option(pyi_builder, level, tmpdir):
+    pyi_args = ["--optimize", str(level)]
+    _test_optimization(pyi_builder, level, tmpdir, pyi_args)
