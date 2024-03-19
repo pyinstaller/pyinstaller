@@ -448,7 +448,8 @@ def __add_options(parser):
         type=int,
         choices={-1, 0, 1, 2},
         default=None,
-        help='Bytecode optimization level used for collected python modules and scripts.',
+        help='Bytecode optimization level used for collected python modules and scripts. For details, see the section '
+        '“Bytecode Optimization Level” in PyInstaller manual.',
     )
     g.add_argument(
         '--python-option',
