@@ -376,6 +376,7 @@ class Analysis(Target):
         win_private_assemblies=False,
         noarchive=False,
         module_collection_mode=None,
+        optimize=-1,
         **_kwargs,
     ):
         """
@@ -409,6 +410,9 @@ class Analysis(Target):
         module_collection_mode
                 An optional dict of package/module names and collection mode strings. Valid collection mode strings:
                 'pyz' (default), 'pyc', 'py', 'pyz+py' (or 'py+pyz')
+        optimize
+                Optimization level for collected bytecode. If not specified or set to -1, it is set to the value of
+                `sys.flags.optimize` of the running build process.
         """
         if cipher is not None:
             from PyInstaller.exceptions import RemovedCipherFeatureError
@@ -489,6 +493,11 @@ class Analysis(Target):
         self._python_version = sys.version
         self.noarchive = noarchive
         self.module_collection_mode = module_collection_mode or {}
+        self.optimize = sys.flags.optimize if optimize in {-1, None} else optimize
+
+        # Validate the optimization level to avoid errors later on...
+        if self.optimize not in {0, 1, 2}:
+            raise ValueError(f"Unsupported bytecode optimization level: {self.optimize!r}")
 
         # Expand the `binaries` and `datas` lists specified in the .spec file, and ensure that the lists are normalized
         # and sorted before guts comparison.
@@ -522,6 +531,7 @@ class Analysis(Target):
         ('custom_runtime_hooks', _check_guts_eq),
         ('noarchive', _check_guts_eq),
         ('module_collection_mode', _check_guts_eq),
+        ('optimize', _check_guts_eq),
 
         ('_input_binaries', _check_guts_toc),
         ('_input_datas', _check_guts_toc),
@@ -588,6 +598,9 @@ class Analysis(Target):
         """
         from PyInstaller.config import CONF
 
+        logger.info("Running Analysis %s", self.tocbasename)
+        logger.info("Target bytecode optimization level: %d", self.optimize)
+
         for m in self.excludes:
             logger.debug("Excluding module '%s'" % m)
         self.graph = initialize_modgraph(excludes=self.excludes, user_hook_dirs=self.hookspath)
@@ -614,8 +627,6 @@ class Analysis(Target):
         # Scan for legacy namespace packages.
         self.graph.scan_legacy_namespace_packages()
 
-        logger.info("Running Analysis %s", self.tocbasename)
-
         # Search for python shared library, which we need to collect into frozen application.
         logger.info('Looking for Python shared library...')
         python_lib = bindepend.get_python_library_path()
@@ -641,14 +652,14 @@ class Analysis(Target):
         # node, ensuring imported module nodes will be reachable from the root node -- which is is (arbitrarily) chosen
         # to be the first entry point's node.
 
-        # List to hold graph nodes of scripts and runtime hooks in use order.
-        priority_scripts = []
+        # List of graph nodes corresponding to program scripts.
+        program_scripts = []
 
         # Assume that if the script does not exist, Modulegraph will raise error. Save the graph nodes of each in
         # sequence.
         for script in self.inputs:
             logger.info("Analyzing %s", script)
-            priority_scripts.append(self.graph.add_script(script))
+            program_scripts.append(self.graph.add_script(script))
 
         # Analyze the script's hidden imports (named on the command line)
         self.graph.add_hiddenimports(self.hiddenimports)
@@ -725,17 +736,23 @@ class Analysis(Target):
         self.datas.extend((dest, source, "DATA")
                           for (dest, source) in format_binaries_and_datas(self.graph.metadata_required()))
 
-        # Analyze run-time hooks. Run-time hooks has to be executed before user scripts. Add them to the beginning of
-        # 'priority_scripts'.
-        priority_scripts = self.graph.analyze_runtime_hooks(self.custom_runtime_hooks) + priority_scripts
-
-        # 'priority_scripts' is now a list of the graph nodes of custom runtime hooks, then regular runtime hooks, then
-        # the PyI loader scripts. Further on, we will make sure they end up at the front of self.scripts
+        # Analyze run-time hooks.
+        rhtook_scripts = self.graph.analyze_runtime_hooks(self.custom_runtime_hooks)
 
         # -- Extract the nodes of the graph as TOCs for further processing. --
 
-        # Initialize the scripts list with priority scripts in the proper order.
-        self.scripts = self.graph.nodes_to_toc(priority_scripts)
+        # Initialize the scripts list: run-time hooks (custom ones, followed by regular ones), followed by program
+        # script(s).
+
+        # We do not optimize bytecode of run-time hooks.
+        rthook_toc = self.graph.nodes_to_toc(rhtook_scripts)
+
+        # Override the typecode of program script(s) to include bytecode optimization level.
+        program_toc = self.graph.nodes_to_toc(program_scripts)
+        optim_typecode = {0: 'PYSOURCE', 1: 'PYSOURCE-1', 2: 'PYSOURCE-2'}[self.optimize]
+        program_toc = [(name, src_path, optim_typecode) for name, src_path, typecode in program_toc]
+
+        self.scripts = rthook_toc + program_toc
         self.scripts = normalize_toc(self.scripts)  # Should not really contain duplicates, but just in case...
 
         # Extend the binaries list with all the Extensions modulegraph has found.
@@ -777,16 +794,35 @@ class Analysis(Target):
         self.graph._module_collection_mode.update(self.module_collection_mode)
         logger.debug("Module collection settings: %r", self.graph._module_collection_mode)
 
-        pycs_dir = os.path.join(CONF['workpath'], 'localpycs')
-        code_cache = self.graph.get_code_objects()
+        # If target bytecode optimization level matches the run-time bytecode optimization level (i.e., of the running
+        # build process), we can re-use the modulegraph's code-object cache.
+        if self.optimize == sys.flags.optimize:
+            logger.debug(
+                "Target optimization level %d matches run-time optimization level %d - using modulegraph's code-object "
+                "cache.",
+                self.optimize,
+                sys.flags.optimize,
+            )
+            code_cache = self.graph.get_code_objects()
+        else:
+            logger.debug(
+                "Target optimization level %d differs from run-time optimization level %d - ignoring modulegraph's "
+                "code-object cache.",
+                self.optimize,
+                sys.flags.optimize,
+            )
+            code_cache = None
 
+        pycs_dir = os.path.join(CONF['workpath'], 'localpycs')
+        optim_level = self.optimize  # We could extend this with per-module settings, similar to `collect_mode`.
         for name, src_path, typecode in pure_pymodules_toc:
             assert typecode == 'PYMODULE'
             collect_mode = _get_module_collection_mode(self.graph._module_collection_mode, name, self.noarchive)
 
-            # Collect byte-compiled .pyc into PYZ archive
+            # Collect byte-compiled .pyc into PYZ archive. Embed optimization level into typecode.
             if _ModuleCollectionMode.PYZ in collect_mode:
-                self.pure.append((name, src_path, typecode))
+                optim_typecode = {0: 'PYMODULE', 1: 'PYMODULE-1', 2: 'PYMODULE-2'}[optim_level]
+                self.pure.append((name, src_path, optim_typecode))
 
             # Pure namespace packages have no source path, and cannot be collected as external data file.
             if src_path in (None, '-'):
@@ -795,7 +831,7 @@ class Analysis(Target):
             # Collect source .py file as external data file
             if _ModuleCollectionMode.PY in collect_mode:
                 dest_path = name.replace('.', os.sep)
-                # Special case: modules have an implied filename to add.
+                # Special case: packages have an implied `__init__` filename that needs to be added.
                 basename, ext = os.path.splitext(os.path.basename(src_path))
                 if basename == '__init__':
                     dest_path += os.sep + '__init__' + ext
@@ -806,7 +842,7 @@ class Analysis(Target):
             # Collect byte-compiled .pyc file as external data file
             if _ModuleCollectionMode.PYC in collect_mode:
                 dest_path = name.replace('.', os.sep)
-                # Special case: modules have an implied filename to add.
+                # Special case: packages have an implied `__init__` filename that needs to be added.
                 basename, ext = os.path.splitext(os.path.basename(src_path))
                 if basename == '__init__':
                     dest_path += os.sep + '__init__'
@@ -815,8 +851,14 @@ class Analysis(Target):
                 # need to use the .pyc extension.
                 dest_path += '.pyc'
 
-                # Compile
-                obj_path = compile_pymodule(name, src_path, workpath=pycs_dir, code_cache=code_cache)
+                # Compile - use optimization-level-specific sub-directory in local working directory.
+                obj_path = compile_pymodule(
+                    name,
+                    src_path,
+                    workpath=os.path.join(pycs_dir, str(optim_level)),
+                    optimize=optim_level,
+                    code_cache=code_cache,
+                )
 
                 self.datas.append((dest_path, obj_path, "DATA"))
 

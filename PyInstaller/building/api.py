@@ -85,7 +85,14 @@ class PYZ(Target):
         for name, src_path, typecode in bootstrap_dependencies:
             if typecode == 'PYMODULE':
                 # Compile pymodule and include the compiled .pyc file.
-                pyc_path = compile_pymodule(name, src_path, workpath, code_cache=None)
+                pyc_path = compile_pymodule(
+                    name,
+                    src_path,
+                    workpath,
+                    # Never optimize bootstrap dependencies!
+                    optimize=0,
+                    code_cache=None,
+                )
                 self.dependencies.append((name, pyc_path, typecode))
             else:
                 # Include as is (extensions).
@@ -105,7 +112,7 @@ class PYZ(Target):
             for entry in toc:
                 name, _, typecode = entry
                 # PYZ expects only PYMODULE entries (python code objects).
-                assert typecode == 'PYMODULE', f"Invalid entry passed to PYZ: {entry}!"
+                assert typecode in {'PYMODULE', 'PYMODULE-1', 'PYMODULE-2'}, f"Invalid entry passed to PYZ: {entry}!"
                 # Module required during bootstrap; skip to avoid collecting a duplicate.
                 if name in bootstrap_module_names:
                     continue
@@ -136,8 +143,9 @@ class PYZ(Target):
             name, src_path, typecode = entry
             if name not in self.code_dict:
                 # The code object is not available from the ModuleGraph's cache; re-create it.
+                optim_level = {'PYMODULE': 0, 'PYMODULE-1': 1, 'PYMODULE-2': 2}[typecode]
                 try:
-                    self.code_dict[name] = get_code_object(name, src_path)
+                    self.code_dict[name] = get_code_object(name, src_path, optimize=optim_level)
                 except SyntaxError:
                     # The module was likely written for different Python version; exclude it
                     continue
@@ -157,8 +165,15 @@ class PKG(Target):
     to include various read-only data in a single-file deployment.
     """
     xformdict = {
+        # PYMODULE entries are already byte-compiled, so we do not need to encode optimization level in the low-level
+        # typecodes. PYSOURCE entries are byte-compiled by the underlying writer, so we need to pass the optimization
+        # level via low-level typecodes.
         'PYMODULE': 'm',
+        'PYMODULE-1': 'm',
+        'PYMODULE-2': 'm',
         'PYSOURCE': 's',
+        'PYSOURCE-1': 's1',
+        'PYSOURCE-2': 's2',
         'EXTENSION': 'b',
         'PYZ': 'z',
         'PKG': 'a',
@@ -315,7 +330,7 @@ class PKG(Target):
                     archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), carchive_typecode))
             elif typecode == 'OPTION':
                 archive_toc.append((dest_name, '', False, 'o'))
-            elif typecode in ('PYSOURCE', 'PYMODULE'):
+            elif typecode in {'PYSOURCE', 'PYSOURCE-1', 'PYSOURCE-2', 'PYMODULE', 'PYMODULE-1', 'PYMODULE-2'}:
                 # Collect python script and modules in a TOC that will not be sorted.
                 bootstrap_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
             else:

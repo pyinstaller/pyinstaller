@@ -26,6 +26,7 @@ a = Analysis(
     runtime_hooks=%(runtime_hooks)r,
     excludes=%(excludes)s,
     noarchive=%(noarchive)s,
+    optimize=%(optimize)r,
 )
 pyz = PYZ(a.pure)
 %(splash_init)s
@@ -65,6 +66,7 @@ a = Analysis(
     runtime_hooks=%(runtime_hooks)r,
     excludes=%(excludes)s,
     noarchive=%(noarchive)s,
+    optimize=%(optimize)r,
 )
 pyz = PYZ(a.pure)
 %(splash_init)s

@@ -330,8 +330,10 @@ def normalize_toc(toc):
 def normalize_pyz_toc(toc):
     # Default priority: 0
     _TOC_TYPE_PRIORITIES = {
-        # Ensure that modules are never shadowed by PYZ-embedded data files.
-        'PYMODULE': 1,
+        # Ensure that entries with higher optimization level take precedence.
+        'PYMODULE-2': 2,
+        'PYMODULE-1': 1,
+        'PYMODULE': 0,
     }
 
     return _normalize_toc(toc, _TOC_TYPE_PRIORITIES)

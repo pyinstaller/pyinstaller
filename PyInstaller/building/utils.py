@@ -528,7 +528,7 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
     return toc_datas
 
 
-def get_code_object(modname, filename):
+def get_code_object(modname, filename, optimize):
     """
     Get the code-object for a module.
 
@@ -540,7 +540,7 @@ def get_code_object(modname, filename):
         # check for None, too, to be forward-compatible.)
         logger.debug('Compiling namespace package %s', modname)
         txt = '#\n'
-        code_object = compile(txt, filename, 'exec')
+        code_object = compile(txt, filename, 'exec', optimize=optimize)
     else:
         _, ext = os.path.splitext(filename)
         ext = ext.lower()
@@ -570,7 +570,7 @@ def get_code_object(modname, filename):
                 filename += '.py'
 
             try:
-                code_object = compile(source, filename, 'exec')
+                code_object = compile(source, filename, 'exec', optimize=optimize)
             except SyntaxError:
                 logger.warning("Sytnax error while compiling %s", filename)
                 raise
@@ -626,11 +626,23 @@ def _should_include_system_binary(binary_tuple, exceptions):
     return False
 
 
-def compile_pymodule(name, src_path, workpath, code_cache=None):
+def compile_pymodule(name, src_path, workpath, optimize, code_cache=None):
     """
-    Given the TOC entry (name, path, typecode) for a pure-python module, compile the module in the specified working
-    directory, and return the TOC entry for collecting the byte-compiled module. No-op for typecodes other than
-    PYMODULE.
+    Given the name and source file for a pure-python module, compile the module in the specified working directory,
+    and return the name of resulting .pyc file. The paths in the resulting .pyc module are anonymized by having their
+    absolute prefix removed.
+
+    If a .pyc file with matching name already exists in the target working directory, it is re-used (provided it has
+    compatible bytecode magic in the header, and that its modification time is newer than that of the source file).
+
+    If the specified module is available in binary-only form, the input .pyc file is copied to the target working
+    directory and post-processed. If the specified module is available in source form, it is compiled only if
+    corresponding code object is not available in the optional code-object cache; otherwise, it is copied from cache
+    and post-processed. When compiling the module, the specified byte-code optimization level is used.
+
+    It is up to caller to ensure that the optional code-object cache contains only code-objects of target optimization
+    level, and that if the specified working directory already contains .pyc files, that they were created with target
+    optimization level.
     """
 
     # Construct the target .pyc filename in the workpath
@@ -671,7 +683,7 @@ def compile_pymodule(name, src_path, workpath, code_cache=None):
 
         if ext == '.py':
             # Source py file; compile...
-            py_compile.compile(src_path, pyc_path)
+            py_compile.compile(src_path, pyc_path, optimize=optimize)
             # ... and read the contents
             with open(pyc_path, 'rb') as fp:
                 pyc_data = fp.read()
