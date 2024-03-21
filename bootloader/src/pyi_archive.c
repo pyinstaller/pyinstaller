@@ -383,7 +383,7 @@ _pyi_find_pkg_cookie_offset(FILE *fp)
  * Fix the endianness of fields in the TOC entries.
  */
 static void
-_pyi_arch_fix_toc_endianess(ARCHIVE_STATUS *status)
+_pyi_arch_fix_toc_endianness(ARCHIVE_STATUS *status)
 {
     TOC *ptoc = status->tocbuff;
     while (ptoc < status->tocend) {
@@ -473,7 +473,7 @@ pyi_arch_open(ARCHIVE_STATUS *status)
     }
 
     /* Fix the endianness of the fields in the TOC entries */
-    _pyi_arch_fix_toc_endianess(status);
+    _pyi_arch_fix_toc_endianness(status);
 
     rc = 0; /* Succeeded */
 
