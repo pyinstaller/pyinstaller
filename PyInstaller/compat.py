@@ -203,22 +203,30 @@ if is_win:
         win32api = None
     else:
         try:
+            # Hide the `cffi` package from win32-ctypes by temporarily blocking its import. This ensures that `ctypes`
+            # backend is always used, even if `cffi` is available. The `cffi` backend uses `pycparser`, which is
+            # incompatible with -OO mode (2nd optimization level) due to its removal of docstrings.
+            # See https://github.com/pyinstaller/pyinstaller/issues/6345
+            # On the off chance that `cffi` has already been imported, store the `sys.modules` entry so we can restore
+            # it after importing `pywin32-ctypes` modules.
+            orig_cffi = sys.modules.get('cffi')
+            sys.modules['cffi'] = None
+
             from win32ctypes.pywin32 import pywintypes  # noqa: F401, E402
             from win32ctypes.pywin32 import win32api  # noqa: F401, E402
         except ImportError as e:
             raise SystemExit(
-                'PyInstaller cannot check for assembly dependencies.\n'
-                'Please install pywin32-ctypes.\n\n'
+                'Could not import `pywintypes` or `win32api` from `win32ctypes.pywin32`.\n'
+                'Please make sure that `pywin32-ctypes` is installed and importable, for example:\n\n'
                 'pip install pywin32-ctypes\n'
             ) from e
-        except Exception as e:
-            if sys.flags.optimize == 2:
-                raise SystemExit(
-                    "pycparser, a Windows only indirect dependency of PyInstaller, is incompatible with "
-                    "Python's \"discard docstrings\" (-OO) flag mode. For more information see:\n"
-                    "    https://github.com/pyinstaller/pyinstaller/issues/6345"
-                ) from e
-            raise
+        finally:
+            # Unblock `cffi`.
+            if orig_cffi is not None:
+                sys.modules['cffi'] = orig_cffi
+            else:
+                del sys.modules['cffi']
+            del orig_cffi
 
 # macOS's platform.architecture() can be buggy, so we do this manually here. Based off the python documentation:
 # https://docs.python.org/3/library/platform.html#platform.architecture
