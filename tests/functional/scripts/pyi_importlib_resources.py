@@ -54,6 +54,9 @@
 # NOTE: functions `contents`, `is_resource`, `path`, `read_binary`, and `read_text` have been deprecated in python 3.11
 # stdlib (importlib_resources 5.7) and removed in python 3.13 stdlib (importlib_resources 6.0). We test these based on
 # their availability.
+#
+# NOTE: the afore-mentioned functions were brought back in importlib_resources 6.4.0. Their behavior is changed; if they
+# are given a sub-path as a resource name, they do not raise a ValueError.
 
 import sys
 import pathlib
@@ -73,6 +76,10 @@ except ImportError:
     print("Using backported importlib_resources...")
 
 is_frozen = getattr(sys, 'frozen', False)
+
+# Try to determine the presence of new functional API, which was introduced in importlib_resources 6.4. As per note at
+# the top of the file, the new functional API allows sub-paths to be passed as resource names.
+new_functional_api = hasattr(importlib_resources, 'functional')
 
 ########################################################################
 #          Validate behavior of importlib.resources.contents()         #
@@ -125,7 +132,6 @@ else:
 ########################################################################
 #              Validate importlib.resources.is_resource()              #
 ########################################################################
-# `is_resource()` has been removed in python 3.13 stdlib and equivalent importlib_resources 6.0.0.
 if hasattr(importlib_resources, "is_resource"):
     print(f"Testing {package_name}.is_resource()...")
 
@@ -148,7 +154,7 @@ if hasattr(importlib_resources, "is_resource"):
     assert importlib_resources.is_resource('pyi_pkgres_testpkg.subpkg1', '__init__.py') is not is_frozen
     assert not importlib_resources.is_resource('pyi_pkgres_testpkg.subpkg1', 'data')
 
-    # Try to specify a sub-path; should raise ValueError.
+    # Try to specify a sub-path; should raise ValueError, unless importlib_resources >= 6.4.0.
     try:
         ret = importlib_resources.is_resource('pyi_pkgres_testpkg.subpkg1', 'data/entry1.txt')
     except ValueError:
@@ -156,7 +162,9 @@ if hasattr(importlib_resources, "is_resource"):
     except Exception:
         raise
     else:
-        assert False, "Expected a ValueError!"
+        assert new_functional_api, "Expected a ValueError!"
+        # If we passed above check for importlib_resources >= 6.4.0, check the return value.
+        assert ret
 
     if not is_frozen:
         assert importlib_resources.is_resource('pyi_pkgres_testpkg.subpkg2', 'mod.py')
@@ -168,7 +176,6 @@ else:
 ########################################################################
 #                  Validate importlib.resources.path()                 #
 ########################################################################
-# `path()` has been removed in python 3.13 stdlib and equivalent importlib_resources 6.0.0.
 if hasattr(importlib_resources, "path"):
     print(f"Testing {package_name}.path()...")
 
@@ -207,7 +214,7 @@ if hasattr(importlib_resources, "path"):
     else:
         assert not is_builtin, "Expected a FileNotFoundError!"
 
-    # Try to specify a sub-path; should raise ValueError.
+    # Try to specify a sub-path; should raise ValueError, unless importlib_resources >= 6.4.0.
     try:
         _path_test('pyi_pkgres_testpkg.subpkg1', 'data/entry1.txt', None)
     except ValueError:
@@ -215,7 +222,7 @@ if hasattr(importlib_resources, "path"):
     except Exception:
         raise
     else:
-        assert False, "Expected a ValueError!"
+        assert new_functional_api, "Expected a ValueError!"
 else:
     print(f"Skipping {package_name}.path() test...")
 
@@ -246,7 +253,7 @@ if hasattr(importlib_resources, "read_binary"):
     else:
         assert False, "Expected a FileNotFoundError!"
 
-    # Try to specify sub-path; should raise ValueError
+    # Try to specify sub-path; should raise ValueError, unless importlib_resources >= 6.4.0.
     try:
         importlib_resources.read_binary('pyi_pkgres_testpkg.subpkg1', 'data/entry1.txt')
     except ValueError:
@@ -254,7 +261,7 @@ if hasattr(importlib_resources, "read_binary"):
     except Exception:
         raise
     else:
-        assert False, "Expected a ValueError!"
+        assert new_functional_api, "Expected a ValueError!"
 else:
     print(f"Skipping {package_name}.read_binary() test...")
 
@@ -285,7 +292,7 @@ if hasattr(importlib_resources, "read_text"):
     else:
         assert False, "Expected a FileNotFoundError!"
 
-    # Try to specify sub-path; should raise ValueError
+    # Try to specify sub-path; should raise ValueError, unless importlib_resources >= 6.4.0.
     try:
         importlib_resources.read_text('pyi_pkgres_testpkg.subpkg1', 'data/entry1.txt', encoding='utf8')
     except ValueError:
@@ -293,7 +300,7 @@ if hasattr(importlib_resources, "read_text"):
     except Exception:
         raise
     else:
-        assert False, "Expected a ValueError!"
+        assert new_functional_api, "Expected a ValueError!"
 else:
     print(f"Skipping {package_name}.read_text() test...")
 
