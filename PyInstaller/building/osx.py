@@ -58,7 +58,10 @@ class BUNDLE(Target):
         self.name = os.path.join(CONF['distpath'], base_name)
 
         self.appname = os.path.splitext(base_name)[0]
-        self.version = kwargs.get("version", "0.0.0")
+        # Ensure version is a string, even if user accidentally passed an int or a float.
+        # Having a `CFBundleShortVersionString` entry of non-string type in `Info.plist` causes the .app bundle to
+        # crash at start (#4466).
+        self.version = str(kwargs.get("version", "0.0.0"))
         self.toc = []
         self.strip = False
         self.upx = False
