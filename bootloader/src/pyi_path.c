@@ -375,17 +375,22 @@ pyi_path_executable(char *execfile, const char *appname)
         }
     }
 
-    /* Check if execfile is a symbolic link. Usually, the /proc entry resolution
-     * ensures that it is a regular file path. However, in some cases, /proc entry
-     * resolution is unavailable (e.g., launching via ld.so dynamic loader), and
-     * we need to deal with symlinks ourselves... */
+#endif /* ifdef _WIN32 */
+
+    /* Check if execfile is a symbolic link. The macOS and POSIX codepaths should
+     * already take care of resolving symbolic links, while Windows codepath does
+     * not. Keep this as a common step nevertheless, just in case. */
     if (pyi_path_is_symlink(execfile)) {
+        char orig_execfile[PATH_MAX];
+
+        VS("LOADER: executable %s is a symbolic link - resolving...\n", execfile);
+
         /* Create a copy of original name; we need this to resolve relative symbolic
          * link (as well as for the error message). */
-        char orig_execfile[PATH_MAX];
         if (snprintf(orig_execfile, PATH_MAX, "%s", execfile) >= PATH_MAX) {
             return false;
         }
+
         /* Fully resolve the path */
         if (pyi_path_fullpath(execfile, PATH_MAX, orig_execfile) == false) {
             VS("LOADER: failed to resolve executable symbolic link %s\n", orig_execfile);
@@ -393,7 +398,6 @@ pyi_path_executable(char *execfile, const char *appname)
         }
     }
 
-#endif /* ifdef _WIN32 */
     VS("LOADER: executable is %s\n", execfile);
     return true;
 }
