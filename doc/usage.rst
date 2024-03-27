@@ -272,12 +272,66 @@ For a detailed description see :ref:`pyi_splash Module`.
 Defining the Extraction Location
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In rare cases, when you bundle to a single executable
-(see :ref:`Bundling to One File` and :ref:`how the one-file program works`),
-you may want to control the location of the temporary directory at compile
-time. This can be done using the :option:`--runtime-tmpdir` option. If this option is
-given, the bootloader will ignore any temp-folder location defined by the
-run-time OS. Please use this option only if you know what you are doing.
+When building your application in ``onefile`` mode (see :ref:`Bundling to
+One File` and :ref:`how the one-file program works`), you might encounter
+situations where you want to control the location of the temporary directory
+where the application unpacks itself. For example:
+
+- your application is supposed to be running for long periods of time,
+  and you need to prevent its files from being deleted by the OS that
+  performs periodic clean-up in standard temporary directories.
+
+- your target POSIX system does not use standard temporary directory
+  location (i.e., ``/tmp``) and the standard environment variables for
+  temporary directory are not set in the environment.
+
+- the default temporary directory on the target POSIX system is mounted
+  with ``noexec`` option, which prevents the frozen application from
+  loading the unpacked shared libraries.
+
+The location of the temporary directory can be overridden dynamically,
+by setting corresponding environment variable(s) before launching the
+application, or set statically, using the :option:`--runtime-tmpdir` option
+during the build process.
+
+Using environment variables
+---------------------------
+
+The extraction location can be controlled dynamically, by setting the
+environment variable(s) that PyInstaller uses to determine the temporary
+directory. This can, for example, be done in a wrapper shell script that
+sets the environment variable(s) before running the frozen application's
+executable.
+
+On POSIX systems, the environment variables used for temporary
+directory location are ``TMPDIR``, ``TEMP``, and ``TMP``, in that
+order; if none are defined (or the corresponding directories do not
+exist or cannot be used), ``/tmp``, ``/var/tmp``, and ``/usr/tmp`` are
+used as hard-coded fall-backs, in the specified order. The directory
+specified via the environment variable must exist (i.e., the application
+attempts to create only its own directory under the base temporary directory).
+
+On Windows, the default temporary directory location is determined via
+`GetTempPathW <https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-gettemppathw>`_
+function (which looks at ``TMP`` and ``TEMP`` environment variables for
+initial temporary directory candidates).
+
+Using the :option:`--runtime-tmpdir` option
+-------------------------------------------
+
+The location of the temporary directory can be set statically, at compile
+time, using the :option:`--runtime-tmpdir` option. If this option is used,
+the bootloader will ignore temporary directory locations defined by
+the OS, and use the specified path. The path can be either absolute
+or relative (which makes it relative to the current working directory).
+
+Please use this option only if you know what you are doing.
+
+.. note::
+    On POSIX systems, PyInstaller's bootloader does **not** perform shell-style
+    environment variable expansion on the path string given via
+    :option:`--runtime-tmpdir` option. Therefore, using environment
+    variables (e.g., ``~`` or ``$HOME``) in the path will **not** work.
 
 
 .. _supporting multiple platforms:
