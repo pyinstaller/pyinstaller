@@ -1,0 +1,2 @@
+(Windows) Implement support for resolving executable's true location
+when launched via a symbolic link.

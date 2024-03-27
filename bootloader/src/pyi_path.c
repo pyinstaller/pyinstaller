@@ -172,19 +172,43 @@ pyi_path_resolve(const char *path, char *resolved_path)
 {
 #ifdef _WIN32
     wchar_t wpath[PATH_MAX + 1];
-    wchar_t *wresolved_path = NULL;
+    wchar_t wresolved_path[PATH_MAX + 1];
+
+    HANDLE handle;
+    DWORD ret;
 
     pyi_win32_utils_from_utf8(wpath, path, PATH_MAX);
 
-    wresolved_path = _wfullpath(NULL, wpath, PATH_MAX);
-    if (wresolved_path == NULL) {
+    /* Open file/directory handle */
+    handle = CreateFileW(
+        wpath, /* lpFileName */
+        0, /* dwDesiredAccess */
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, /* dwShareMode */
+        NULL, /* lpSecurityAttributes */
+        OPEN_EXISTING, /* dwCreationDisposition */
+        FILE_ATTRIBUTE_NORMAL, /* dwFlagsAndAttributes*/
+        NULL /* hTemplateFile */
+    );
+    if (handle == INVALID_HANDLE_VALUE) {
         return 0;
     }
 
-    char *ret = pyi_win32_utils_to_utf8(resolved_path, wresolved_path, PATH_MAX);
-    free(wresolved_path);
+    /* Fully resolve the path */
+    ret = GetFinalPathNameByHandleW(
+        handle,  /* hFile */
+        wresolved_path, /* lpszFilePath */
+        PATH_MAX, /* cchFilePath */
+        FILE_NAME_NORMALIZED /* dwFlags */
+    );
 
-    return ret != NULL;
+    CloseHandle(handle);
+
+    if (ret == 0 || ret >= PATH_MAX) {
+        /* Failure or insufficient buffer size */
+        return  0;
+    }
+
+    return pyi_win32_utils_to_utf8(resolved_path, wresolved_path, PATH_MAX) != NULL;
 #else
     return realpath(path, resolved_path) != NULL;
 #endif
