@@ -177,6 +177,8 @@ pyi_path_resolve(const char *path, char *resolved_path)
     HANDLE handle;
     DWORD ret;
 
+    int offset = 0;
+
     pyi_win32_utils_from_utf8(wpath, path, PATH_MAX);
 
     /* Open file/directory handle */
@@ -208,7 +210,13 @@ pyi_path_resolve(const char *path, char *resolved_path)
         return  0;
     }
 
-    return pyi_win32_utils_to_utf8(resolved_path, wresolved_path, PATH_MAX) != NULL;
+    /* Remove the extended path indicator, to avoid potential issues due
+     * to its appearance in `sys.executable`, `sys._MEIPASS`, etc. */
+    if (ret >= 4 && wcsncmp(L"\\\\?\\", wresolved_path, 4) == 0) {
+        offset = 4;
+    }
+
+    return pyi_win32_utils_to_utf8(resolved_path, wresolved_path + offset, PATH_MAX) != NULL;
 #else
     return realpath(path, resolved_path) != NULL;
 #endif
