@@ -162,28 +162,31 @@ pyi_path_join(char *result, const char *path1, const char *path2)
 }
 
 /*
- * Return full path to a file. Wraps platform specific function.
+ * Fully resolve the given path; canonicalize it and resolve symbolic
+ * links. It is implicitly assumed that the output buffer is large
+ * enough to accept up to PATH_MAX characters (including the terminating
+ * NULL character).
  */
 int
-pyi_path_fullpath(char *abs, size_t abs_size, const char *rel)
+pyi_path_resolve(const char *path, char *resolved_path)
 {
 #ifdef _WIN32
-    wchar_t wrel[PATH_MAX + 1];
-    wchar_t *wabs = NULL;
+    wchar_t wpath[PATH_MAX + 1];
+    wchar_t *wresolved_path = NULL;
 
-    pyi_win32_utils_from_utf8(wrel, rel, PATH_MAX);
+    pyi_win32_utils_from_utf8(wpath, path, PATH_MAX);
 
-    wabs = _wfullpath(NULL, wrel, PATH_MAX);
-    if (wabs == NULL) {
+    wresolved_path = _wfullpath(NULL, wpath, PATH_MAX);
+    if (wresolved_path == NULL) {
         return 0;
     }
 
-    char *ret = pyi_win32_utils_to_utf8(abs, wabs, abs_size);
-    free(wabs);
+    char *ret = pyi_win32_utils_to_utf8(resolved_path, wresolved_path, PATH_MAX);
+    free(wresolved_path);
 
     return ret != NULL;
 #else
-    return realpath(rel, abs) != NULL;
+    return realpath(path, resolved_path) != NULL;
 #endif
 }
 
@@ -305,7 +308,7 @@ pyi_path_executable(char *execfile, const char *appname)
         return false;
     }
 
-    if (pyi_path_fullpath(execfile, PATH_MAX, program_path) == false) {
+    if (pyi_path_resolve(program_path, execfile) == false) {
         VS("LOADER: failed to resolve full path for %s\n", program_path);
         return false;
     }
@@ -346,7 +349,7 @@ pyi_path_executable(char *execfile, const char *appname)
             /* Absolute or relative path was given. Canonicalize it, and
              * resolve symbolic links. */
             VS("LOADER: resolving program path %s...\n", appname);
-            if (pyi_path_fullpath(execfile, PATH_MAX, appname) == false) {
+            if (pyi_path_resolve(appname, execfile) == false) {
                 VS("LOADER: failed to resolve full path for %s\n", appname);
                 return false;
             }
@@ -357,7 +360,7 @@ pyi_path_executable(char *execfile, const char *appname)
             if (pyi_search_path(program_path, appname)) {
                 /* Program found in $PATH; resolve full path */
                 VS("LOADER: program %s found in PATH: %s. Resolving full path...\n", appname, program_path);
-                if (pyi_path_fullpath(execfile, PATH_MAX, program_path) == false) {
+                if (pyi_path_resolve(program_path, execfile) == false) {
                     VS("LOADER: failed to resolve full path for %s\n", program_path);
                     return false;
                 }
@@ -367,7 +370,7 @@ pyi_path_executable(char *execfile, const char *appname)
                  * part? How was the executable even launched in such
                  * case? */
                 VS("LOADER: could not find %s in $PATH! Attempting to resolve as-is...\n", appname);
-                if (pyi_path_fullpath(execfile, PATH_MAX, appname) == false) {
+                if (pyi_path_resolve(appname, execfile) == false) {
                     VS("LOADER: failed to resolve full path for %s\n", appname);
                     return false;
                 }
@@ -392,7 +395,7 @@ pyi_path_executable(char *execfile, const char *appname)
         }
 
         /* Fully resolve the path */
-        if (pyi_path_fullpath(execfile, PATH_MAX, orig_execfile) == false) {
+        if (pyi_path_resolve(orig_execfile, execfile) == false) {
             VS("LOADER: failed to resolve executable symbolic link %s\n", orig_execfile);
             return false;
         }
