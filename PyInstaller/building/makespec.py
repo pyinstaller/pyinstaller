@@ -629,9 +629,11 @@ def __add_options(parser):
         "--runtime-tmpdir",
         dest="runtime_tmpdir",
         metavar="PATH",
-        help="Where to extract libraries and support files in `onefile`-mode. If this option is given, the bootloader "
+        help="Where to extract libraries and support files in `onefile` mode. If this option is given, the bootloader "
         "will ignore any temp-folder location defined by the run-time OS. The ``_MEIxxxxxx``-folder will be created "
-        "here. Please use this option only if you know what you are doing.",
+        "here. Please use this option only if you know what you are doing. Note that on POSIX systems, PyInstaller's "
+        "bootloader does NOT perform shell-style environment variable expansion on the given path string. Therefore, "
+        "using environment variables (e.g., ``~`` or ``$HOME``) in path will NOT work.",
     )
     g.add_argument(
         "--bootloader-ignore-signals",
