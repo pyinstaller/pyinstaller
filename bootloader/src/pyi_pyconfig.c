@@ -295,6 +295,7 @@ pyi_pyconfig_create()
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
@@ -306,11 +307,15 @@ pyi_pyconfig_create()
 }
 
 /*
- * Clean up and free the PyConfig structure.
+ * Clean up and free the PyConfig structure. No-op if passed a NULL pointer.
  */
 void
 pyi_pyconfig_free(PyConfig *config)
 {
+    if (config == NULL) {
+        return;
+    }
+
     /* Clear the fields that PyConfig API allocated */
     PI_PyConfig_Clear(config);
 
@@ -342,6 +347,7 @@ pyi_pyconfig_set_program_name(PyConfig *config, const ARCHIVE_STATUS *archive_st
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
@@ -372,6 +378,7 @@ pyi_pyconfig_set_python_home(PyConfig *config, const ARCHIVE_STATUS *archive_sta
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
@@ -411,6 +418,7 @@ _pyi_pyconfig_set_module_search_paths(PyConfig *config, int num_paths, wchar_t *
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
@@ -505,6 +513,7 @@ _pyi_pyconfig_set_argv(PyConfig *config, int argc, wchar_t **argv_w)
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
@@ -622,6 +631,7 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, const PyiRuntimeOptions *runt
         _IMPL_CASE(310, PyConfig_v310)
         _IMPL_CASE(311, PyConfig_v311)
         _IMPL_CASE(312, PyConfig_v312)
+        _IMPL_CASE(313, PyConfig_v313)
         default: {
             break;
         }
