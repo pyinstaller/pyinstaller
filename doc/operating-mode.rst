@@ -214,7 +214,9 @@ to mount the ``/tmp`` folder with a "no-execution" option.
 That option is not compatible with a PyInstaller
 one-file bundle. It needs to execute code out of :file:`/tmp`.
 If you know the target environment,
-:option:`--runtime-tmpdir` might be a workaround.)
+:option:`--runtime-tmpdir` might be a workaround. Alternatively,
+you can set the environment variable that controls the temporary
+directory before launching the program. See :ref:`defining the extraction location`).
 
 Because the program makes a temporary folder with a unique name,
 you can run multiple copies of the app;
