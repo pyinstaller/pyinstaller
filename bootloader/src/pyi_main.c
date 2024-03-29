@@ -18,14 +18,15 @@
 #ifdef _WIN32
     #include <windows.h>
     #include <wchar.h>
+#else
+    #include <unistd.h>
 #endif
+
 #ifdef __CYGWIN__
     #include <sys/cygwin.h>  /* cygwin_conv_path */
     #include <windows.h>  /* SetDllDirectoryW */
-    /* NOTE: SetDllDirectoryW is part of KERNEL32, which is automatically
-     * linked by Cygwin, so we do not need to explicitly link any
-     * win32 libraries. */
 #endif
+
 #include <stdio.h>  /* FILE */
 #include <stdlib.h> /* calloc */
 #include <string.h> /* memset */
@@ -57,6 +58,12 @@
 
 #endif
 
+
+/* Large parts of `pyi_main` are implemented as helper functions. We
+ * keep their definitions below that of `pyi_main`, in an attempt to
+ * keep code organized in top-down fashion. Hence, we need forward
+ * declarations here */
+static int _pyi_main_resolve_executable(PYI_CONTEXT *pyi_context);
 
 static int
 _pyi_allow_pkg_sideload(const char *executable)
@@ -94,7 +101,6 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     /*  archive_status contain status information of the main process. */
     ARCHIVE_STATUS *archive_status = NULL;
     SPLASH_STATUS *splash_status = NULL;
-    char executable[PATH_MAX];
     char archivefile[PATH_MAX];
     int rc = 0;
     int in_child = 0;
@@ -110,12 +116,18 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
     VS("PyInstaller Bootloader 6.x\n");
 
+    /* Fully resolve the executable name. */
+    if (_pyi_main_resolve_executable(pyi_ctx) < 0) {
+        return -1;
+    }
+    VS("LOADER: executable file: %s\n", pyi_ctx->executable_filename);
+
+    /* Resolve archive */
     archive_status = pyi_arch_status_new();
     if (archive_status == NULL) {
         return -1;
     }
-    if ((! pyi_path_executable(executable, pyi_ctx->argv[0])) ||
-        (! pyi_path_archivefile(archivefile, executable))) {
+    if (!pyi_path_archivefile(archivefile, pyi_ctx->executable_filename)) {
         return -1;
     }
 
@@ -164,16 +176,17 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     /* Try opening the archive; first attempt to read it from executable
      * itself (embedded mode), then from a stand-alone pkg file (sideload mode)
      */
-    if (!pyi_arch_setup(archive_status, executable, executable)) {
-        if (!pyi_arch_setup(archive_status, archivefile, executable)) {
-            FATALERROR("Cannot open PyInstaller archive from executable (%s) or external archive (%s)\n",
-                       executable, archivefile);
+    if (!pyi_arch_setup(archive_status, pyi_ctx->executable_filename, pyi_ctx->executable_filename)) {
+        if (!pyi_arch_setup(archive_status, archivefile, pyi_ctx->executable_filename)) {
+            FATALERROR(
+                "Cannot open PyInstaller archive from executable (%s) or external archive (%s)\n",
+                pyi_ctx->executable_filename, archivefile);
             return -1;
         } else if (extractionpath == NULL) {
             /* Check if package side-load is allowed. But only on the first
              * run, in the parent process (i.e., when extractionpath is not
              * yet set). */
-            rc = _pyi_allow_pkg_sideload(executable);
+            rc = _pyi_allow_pkg_sideload(pyi_ctx->executable_filename);
             if (rc != 0) {
                 FATALERROR("Cannot side-load external archive %s (code %d)!\n", archivefile, rc);
                 return -1;
@@ -275,7 +288,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
         /* Restart the process. The helper function performs exec() without
          * fork(), so we never return from the call. */
-        if (pyi_utils_replace_process(executable, pyi_ctx->argc, pyi_ctx->argv) == -1) {
+        if (pyi_utils_replace_process(pyi_ctx->executable_filename, pyi_ctx->argc, pyi_ctx->argv) == -1) {
             return -1;
         }
     }
@@ -322,7 +335,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             (!pyi_splash_attach(splash_status))) {
             /* Everything was initialized, so it is safe to start
              * the splash screen */
-            pyi_splash_start(splash_status, executable);
+            pyi_splash_start(splash_status, pyi_ctx->executable_filename);
         }
         else {
             /* Error attaching tcl/tk libraries.
@@ -517,7 +530,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 #endif
 
         /* Run user's code in a subprocess and pass command line arguments to it. */
-        rc = pyi_utils_create_child(executable, archive_status, pyi_ctx->argc, pyi_ctx->argv);
+        rc = pyi_utils_create_child(pyi_ctx->executable_filename, archive_status, pyi_ctx->argc, pyi_ctx->argv);
 
         VS("LOADER: Back to parent (RC: %d)\n", rc);
 
@@ -540,4 +553,236 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 #endif
     }
     return rc;
+}
+
+
+/**********************************************************************\
+ *                     Executable file resolution                     *
+\**********************************************************************/
+#ifdef _WIN32
+
+static int
+_pyi_resolve_executable_win32(char *executable_filename)
+{
+    wchar_t modulename_w[PATH_MAX];
+
+    /* GetModuleFileNameW returns an absolute, fully qualified path */
+    if (!GetModuleFileNameW(NULL, modulename_w, PATH_MAX)) {
+        FATAL_WINERROR("GetModuleFileNameW", "Failed to obtain executable path.\n");
+        return -1;
+    }
+
+    /* If path is a symbolic link, resolve it */
+    if (pyi_win32_is_symlink(modulename_w)) {
+        wchar_t executable_filename_w[PATH_MAX];
+        int offset = 0;
+
+        VS("LOADER: executable file %S is a symbolic link - resolving...\n", modulename_w);
+
+        /* Resolve */
+        if (pyi_win32_realpath(modulename_w, executable_filename_w) < 0) {
+            VS("LOADER: failed to resolve full path for %s\n", modulename_w);
+            return -1;
+        }
+
+        /* Remove the extended path indicator, to avoid potential issues due
+         * to its appearance in `sys.executable`, `sys._MEIPASS`, etc. */
+        if (wcsncmp(L"\\\\?\\", executable_filename_w, 4) == 0) {
+            offset = 4;
+        }
+
+        /* Convert to UTF-8 */
+        if (!pyi_win32_utils_to_utf8(executable_filename, executable_filename_w + offset, PATH_MAX)) {
+            FATALERROR("Failed to convert executable path to UTF-8.\n");
+            return -1;
+        }
+    } else {
+        /* Convert to UTF-8 */
+        if (!pyi_win32_utils_to_utf8(executable_filename, modulename_w, PATH_MAX)) {
+            FATALERROR("Failed to convert executable path to UTF-8.\n");
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+#elif __APPLE__
+
+static int
+_pyi_resolve_executable_macos(char *executable_filename)
+{
+    char program_path[PATH_MAX];
+    uint32_t name_length = sizeof(program_path);
+
+    /* Mac OS X has special function to obtain path to executable.
+     * This may return a symbolic link. */
+    if (_NSGetExecutablePath(program_path, &name_length) != 0) {
+        FATALERROR("Failed to obtain executable path via _NSGetExecutablePath!\n");
+        return -1;
+    }
+
+    /* Canonicalize the filename and resolve symbolic links */
+    if (realpath(program_path, executable_filename) == NULL) {
+        VS("LOADER: failed to resolve full path for %s\n", program_path);
+        return -1;
+    }
+
+    return 0;
+}
+
+#else
+
+#if defined(__linux__)
+
+/* Return 1 if the given executable name is in fact the ld.so dynamic loader. */
+static bool
+_pyi_is_ld_linux_so(const char *filename)
+{
+    char basename[PATH_MAX];
+    int status;
+    char loader_name[65] = "";
+    int soversion = 0;
+
+    pyi_path_basename(basename, filename);
+
+    /* Match the string against ld-*.so.X. In sscanf, the %s is greedy, so
+     * instead we match with character group that disallows dot (.). Also
+     * limit the name length; note that the output array must be one byte
+     * larger, to include the terminating NULL character. */
+    status = sscanf(basename, "ld-%64[^.].so.%d", loader_name, &soversion);
+    if (status != 2) {
+        return false;
+    }
+
+    /* If necessary, we could further validate the loader name and soversion
+     * against known patterns:
+     *  - ld-linux.so.2 (glibc, x86)
+     *  - ld-linux-x86-64.so.2 (glibc, x86_64)
+     *  - ld-linux-x32.so.2 (glibc, x32)
+     *  - ld-linux-aarch64.so.1 (glibc, aarch64)
+     *  - ld-musl-x86_64.so.1 (musl, x86_64)
+     *  - ...
+     */
+
+    return true;
+}
+
+#endif /* defined(__linux__) */
+
+/* Search $PATH for the program with the given name, and return its full path. */
+static bool
+_pyi_find_progam_in_search_path(const char *name, char *result_path)
+{
+    char *search_paths = pyi_getenv("PATH"); // returns a copy
+    char *search_path;
+
+    if (search_paths == NULL) {
+        return false;
+    }
+
+    search_path = strtok(search_paths, PYI_PATHSEPSTR);
+    while (search_path != NULL) {
+        if ((pyi_path_join(result_path, search_path, name) != NULL) && pyi_path_exists(result_path)) {
+            free(search_paths);
+            return true;
+        }
+        search_path = strtok(NULL, PYI_PATHSEPSTR);
+    }
+
+    free(search_paths);
+    return false;
+}
+
+static int
+_pyi_resolve_executable_posix(const char *argv0, char *executable_filename)
+{
+    /* On Linux, Cygwin, FreeBSD, and Solaris, we try /proc entry first.
+     * The entry points at "true" file location, i.e., fully canonicalized
+     * and with all symbolic links resolved. */
+    ssize_t name_len = -1;
+
+#if defined(__linux__) || defined(__CYGWIN__)
+    name_len = readlink("/proc/self/exe", executable_filename, PATH_MAX - 1);  /* Linux, Cygwin */
+#elif defined(__FreeBSD__)
+    name_len = readlink("/proc/curproc/file", executable_filename, PATH_MAX - 1);  /* FreeBSD */
+#elif defined(__sun)
+    name_len = readlink("/proc/self/path/a.out", executable_filename, PATH_MAX - 1);  /* Solaris */
+#endif
+
+    if (name_len != -1) {
+        /* Output is not yet NULL-terminated, so we need to do it using returned byte count. */
+        executable_filename[name_len] = 0;
+    }
+
+    /* On linux, we might have been launched using custom ld.so dynamic loader.
+     * In that case, /proc/self/exe points to the ld.so executable, and we need
+     * to ignore it. */
+#if defined(__linux__)
+    if (_pyi_is_ld_linux_so(executable_filename) == true) {
+        VS("LOADER: resolved executable file %s is ld.so dynamic loader - ignoring it!\n", executable_filename);
+        name_len = -1;
+    }
+#endif
+
+    if (name_len != -1) {
+        return 0;
+    }
+
+    /* We failed to resolve the executable file via /proc (or we were
+     * launched via ld.so dynamic loader). Try to manually resolve the
+     * program path/name given via argv[0]. */
+    if (strchr(argv0, PYI_SEP)) {
+        /* Absolute or relative path was given. Canonicalize it, and
+         * resolve symbolic links. */
+        VS("LOADER: resolving program path from argv[0]: %s\n", argv0);
+        if (realpath(argv0, executable_filename) == NULL) {
+            VS("LOADER: failed to resolve full path for %s\n", argv0);
+            return -1;
+        }
+    } else {
+        /* No path, just program name. Search $PATH for executable with
+         * matching name. */
+        char program_path[PATH_MAX];
+
+        if (_pyi_find_progam_in_search_path(argv0, program_path)) {
+            /* Program found in $PATH; resolve full path */
+            VS("LOADER: program %s found in PATH: %s. Resolving full path...\n", argv0, program_path);
+            if (realpath(program_path, executable_filename) == NULL) {
+                VS("LOADER: failed to resolve full path for %s\n", program_path);
+                return -1;
+            }
+        } else {
+            /* Searching $PATH failed; try resolving the name as-is,
+             * and hope for the best. NOTE: can we even reach this part?
+             * How was the executable even launched in such case? */
+            VS("LOADER: could not find %s in $PATH! Attempting to resolve as-is...\n", argv0);
+            if (realpath(argv0, executable_filename) == NULL) {
+                VS("LOADER: failed to resolve full path for %s\n", argv0);
+                return -1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+#endif
+
+
+static int
+_pyi_main_resolve_executable(PYI_CONTEXT *pyi_ctx)
+{
+    int ret;
+
+    /* Resolve using OS-specific approach */
+#ifdef _WIN32
+    ret = _pyi_resolve_executable_win32(pyi_ctx->executable_filename);
+#elif __APPLE__
+    ret = _pyi_resolve_executable_macos(pyi_ctx->executable_filename);
+#else
+    ret = _pyi_resolve_executable_posix(pyi_ctx->argv[0], pyi_ctx->executable_filename);
+#endif
+
+    return ret;
 }

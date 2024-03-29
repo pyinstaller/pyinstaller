@@ -183,14 +183,6 @@ static void test_join(void **state) {
 }
 
 
-int pyi_search_path(char *result, const char *appname);
-
-static void test_search_path(void **state) {
-    char result[PATH_MAX];
-    pyi_search_path(result, "my-app");
-}
-
-
 #if defined(_WIN32)
 int wmain(void)
 #else
@@ -201,7 +193,6 @@ int main(void)
         cmocka_unit_test(test_dirname),
         cmocka_unit_test(test_basename),
         cmocka_unit_test(test_join),
-        cmocka_unit_test(test_search_path),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -33,6 +33,8 @@ int pyi_win32_mkdir(const wchar_t *path);
 
 int pyi_win32_is_symlink(const wchar_t *path);
 
+int pyi_win32_realpath(const wchar_t *path, wchar_t *resolved_path);
+
 int pyi_win32_is_drive_root(const wchar_t *path);
 
 #if !defined(WINDOWED)
