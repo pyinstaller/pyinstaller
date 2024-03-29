@@ -89,7 +89,7 @@ _pyi_allow_pkg_sideload(const char *executable)
 }
 
 int
-pyi_main(int argc, char * argv[])
+pyi_main(PYI_CONTEXT *pyi_ctx)
 {
     /*  archive_status contain status information of the main process. */
     ARCHIVE_STATUS *archive_status = NULL;
@@ -114,7 +114,7 @@ pyi_main(int argc, char * argv[])
     if (archive_status == NULL) {
         return -1;
     }
-    if ((! pyi_path_executable(executable, argv[0])) ||
+    if ((! pyi_path_executable(executable, pyi_ctx->argv[0])) ||
         (! pyi_path_archivefile(archivefile, executable))) {
         return -1;
     }
@@ -212,8 +212,8 @@ pyi_main(int argc, char * argv[])
 #endif  /* defined(__linux__) */
 
     /* These are passed on to python interpreter, so they show up in sys.argv */
-    archive_status->argc = argc;
-    archive_status->argv = argv;
+    archive_status->argc = pyi_ctx->argc;
+    archive_status->argv = pyi_ctx->argv;
 
     /* Check if we need to unpack the embedded archive (onefile build, or onedir
      * build in MERGE mode). If we do, create the temporary directory. */
@@ -275,7 +275,7 @@ pyi_main(int argc, char * argv[])
 
         /* Restart the process. The helper function performs exec() without
          * fork(), so we never return from the call. */
-        if (pyi_utils_replace_process(executable, argc, argv) == -1) {
+        if (pyi_utils_replace_process(executable, pyi_ctx->argc, pyi_ctx->argv) == -1) {
             return -1;
         }
     }
@@ -517,7 +517,7 @@ pyi_main(int argc, char * argv[])
 #endif
 
         /* Run user's code in a subprocess and pass command line arguments to it. */
-        rc = pyi_utils_create_child(executable, archive_status, argc, argv);
+        rc = pyi_utils_create_child(executable, archive_status, pyi_ctx->argc, pyi_ctx->argv);
 
         VS("LOADER: Back to parent (RC: %d)\n", rc);
 

@@ -1,0 +1,1 @@
+A major refactor and cleanup of bootloader's code.
