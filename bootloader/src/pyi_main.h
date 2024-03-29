@@ -11,4 +11,14 @@
  * ****************************************************************************
  */
 
-int pyi_main(int argc, char * argv[]);
+typedef struct
+{
+    /* Command line arguments passed to the application */
+    int argc;
+    char **argv;
+} PYI_CONTEXT;
+
+extern PYI_CONTEXT *global_pyi_ctx;
+
+
+int pyi_main(PYI_CONTEXT *pyi_ctx);
