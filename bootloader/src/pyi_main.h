@@ -11,11 +11,17 @@
  * ****************************************************************************
  */
 
+#include "pyi_global.h"
+
+
 typedef struct
 {
     /* Command line arguments passed to the application */
     int argc;
     char **argv;
+
+    /* Fully resolved path to the executable */
+    char executable_filename[PATH_MAX];
 } PYI_CONTEXT;
 
 extern PYI_CONTEXT *global_pyi_ctx;

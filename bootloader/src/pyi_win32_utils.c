@@ -558,6 +558,46 @@ int pyi_win32_is_symlink(const wchar_t *path)
     return 0;
 }
 
+/* Equivalent of `realpath()` function on POSIX systems; canonicalize
+ * the given path and resolve symbolic links */
+int pyi_win32_realpath(const wchar_t *path, wchar_t *resolved_path)
+{
+    HANDLE handle;
+    DWORD ret;
+
+    /* Open file/directory handle */
+    handle = CreateFileW(
+        path, /* lpFileName */
+        0, /* dwDesiredAccess */
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, /* dwShareMode */
+        NULL, /* lpSecurityAttributes */
+        OPEN_EXISTING, /* dwCreationDisposition */
+        FILE_ATTRIBUTE_NORMAL, /* dwFlagsAndAttributes*/
+        NULL /* hTemplateFile */
+    );
+    if (handle == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
+
+    /* Fully resolve the path */
+    ret = GetFinalPathNameByHandleW(
+        handle,  /* hFile */
+        resolved_path, /* lpszFilePath */
+        PATH_MAX, /* cchFilePath */
+        FILE_NAME_NORMALIZED /* dwFlags */
+    );
+
+    CloseHandle(handle);
+
+    if (ret == 0 || ret >= PATH_MAX) {
+        /* Failure or insufficient buffer size */
+        return  -1;
+    }
+
+    return 0;
+}
+
+
 /* Check if the given path is just a drive letter */
 int pyi_win32_is_drive_root(const wchar_t *path)
 {
