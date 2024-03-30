@@ -287,7 +287,7 @@ _extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_pool[], const 
  * during the extraction with the name of currently processed TOC entry.
  */
 int
-pyi_launch_extract_binaries(PYI_CONTEXT *pyi_ctx)
+pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
 {
     int retcode = 0;
     ptrdiff_t index = 0;

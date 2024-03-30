@@ -22,7 +22,7 @@
 /*
  * Extract files from embedded archive (onefile mode).
  */
-int pyi_launch_extract_binaries(PYI_CONTEXT *pyi_ctx);
+int pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx);
 
 /*
  * Wrapped platform specific initialization before loading Python and executing
