@@ -142,9 +142,6 @@ void pyi_arch_status_free(ARCHIVE_STATUS *status);
  */
 bool pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *executable_path);
 
-/* Temporary directory creation for builds that need to unpack themselvs */
-int pyi_arch_create_tempdir(ARCHIVE_STATUS *status);
-
 const char *pyi_arch_get_option(const ARCHIVE_STATUS *status, const char *optname);
 const TOC *pyi_arch_find_by_name(const ARCHIVE_STATUS *status, const char *name);
 
