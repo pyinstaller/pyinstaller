@@ -138,7 +138,7 @@ pyi_pylib_load(const ARCHIVE_STATUS *archive_status)
  * Initialize and start python interpreter.
  */
 int
-pyi_pylib_start_python(const ARCHIVE_STATUS *archive_status)
+pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx)
 {
     PyiRuntimeOptions *runtime_options = NULL;
     PyConfig *config = NULL;
@@ -146,7 +146,7 @@ pyi_pylib_start_python(const ARCHIVE_STATUS *archive_status)
     int ret = -1;
 
     /* Read run-time options */
-    runtime_options = pyi_runtime_options_read(archive_status);
+    runtime_options = pyi_runtime_options_read(pyi_ctx);
     if (runtime_options == NULL) {
         FATALERROR("Failed to parse run-time options!\n");
         goto end;
@@ -175,28 +175,28 @@ pyi_pylib_start_python(const ARCHIVE_STATUS *archive_status)
 
     /* Set program name */
     VS("LOADER: Setting program name...\n");
-    if (pyi_pyconfig_set_program_name(config, archive_status) < 0) {
+    if (pyi_pyconfig_set_program_name(config, pyi_ctx) < 0) {
         FATALERROR("Failed to set program name!\n");
         goto end;
     }
 
     /* Set python home */
     VS("LOADER: Setting python home path...\n");
-    if (pyi_pyconfig_set_python_home(config, archive_status) < 0) {
+    if (pyi_pyconfig_set_python_home(config, pyi_ctx) < 0) {
         FATALERROR("Failed to set python home path!\n");
         goto end;
     }
 
     /* Set module search paths */
     VS("LOADER: Setting module search paths...\n");
-    if (pyi_pyconfig_set_module_search_paths(config, archive_status) < 0) {
+    if (pyi_pyconfig_set_module_search_paths(config, pyi_ctx) < 0) {
         FATALERROR("Failed to set module search paths!\n");
         goto end;
     }
 
     /* Set arguments (sys.argv) */
     VS("LOADER: Setting sys.argv...\n");
-    if (pyi_pyconfig_set_argv(config, archive_status) < 0) {
+    if (pyi_pyconfig_set_argv(config, pyi_ctx) < 0) {
         FATALERROR("Failed to set sys.argv!\n");
         goto end;
     }

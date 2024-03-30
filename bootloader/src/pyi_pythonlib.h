@@ -19,9 +19,10 @@
 #define PYI_PYTHONLIB_H
 
 #include "pyi_archive.h"
+#include "pyi_main.h"
 
 int pyi_pylib_load(const ARCHIVE_STATUS *archive_status);
-int pyi_pylib_start_python(const ARCHIVE_STATUS *archive_status);
+int pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx);
 int pyi_pylib_import_modules(ARCHIVE_STATUS *archive_status);
 int pyi_pylib_install_pyz(const ARCHIVE_STATUS *archive_status);
 int pyi_pylib_run_scripts(const ARCHIVE_STATUS *archive_status);

@@ -28,20 +28,20 @@ int pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx);
  * Wrapped platform specific initialization before loading Python and executing
  * all scripts in the archive.
  */
-void pyi_launch_initialize(ARCHIVE_STATUS *archive_status);
+void pyi_launch_initialize(PYI_CONTEXT *pyi_ctx);
 
 /*
  * Wrapped platform specific finalization before loading Python and executing
  * all scripts in the archive.
  */
-void pyi_launch_finalize(ARCHIVE_STATUS *archive_status);
+void pyi_launch_finalize(PYI_CONTEXT *pyi_ctx);
 
 /*
  * Load Python and execute all scripts in the archive
  *
  * @return -1 for internal failures, or the rc of the last script.
  */
-int pyi_launch_execute(ARCHIVE_STATUS *status);
+int pyi_launch_execute(PYI_CONTEXT *pyi_ctx);
 
 
 #endif  /* PYI_LAUNCH_H */

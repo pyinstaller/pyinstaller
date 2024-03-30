@@ -137,10 +137,11 @@ _pyi_match_and_parse_xflag(const char *flag, const char *name, int *dest_var)
  * options found in the PKG archive.
  */
 PyiRuntimeOptions *
-pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
+pyi_runtime_options_read(const PYI_CONTEXT *pyi_ctx)
 {
     PyiRuntimeOptions *options;
-    const TOC *ptoc;
+    const ARCHIVE_STATUS *archive = pyi_ctx->archive;
+    const TOC *toc_entry;
     int num_wflags = 0;
     int num_xflags = 0;
     int failed = 0;
@@ -154,46 +155,46 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
     options->utf8_mode = -1; /* default: auto-select based on locale */
 
     /* Parse run-time options from PKG archive */
-    for (ptoc = archive_status->tocbuff; ptoc < archive_status->tocend; ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc)) {
+    for (toc_entry = archive->tocbuff; toc_entry < archive->tocend; toc_entry = pyi_arch_increment_toc_ptr(archive, toc_entry)) {
         const char *value_str;
 
         /* Skip bootloader options; these start with "pyi-" */
-        if (strncmp(ptoc->name, "pyi-", 4) == 0) {
+        if (strncmp(toc_entry->name, "pyi-", 4) == 0) {
             continue;
         }
 
         /* Verbose flag: v, verbose */
-        if (strcmp(ptoc->name, "v") == 0 || strcmp(ptoc->name, "verbose") == 0) {
+        if (strcmp(toc_entry->name, "v") == 0 || strcmp(toc_entry->name, "verbose") == 0) {
             options->verbose++;
             continue;
         }
 
         /* Unbuffered flag: u, unbuffered */
-        if (strcmp(ptoc->name, "u") == 0 || strcmp(ptoc->name, "unbuffered") == 0) {
+        if (strcmp(toc_entry->name, "u") == 0 || strcmp(toc_entry->name, "unbuffered") == 0) {
             options->unbuffered = 1;
             continue;
         }
 
         /* Optimize flag: O, optimize */
-        if (strcmp(ptoc->name, "O") == 0 || strcmp(ptoc->name, "optimize") == 0) {
+        if (strcmp(toc_entry->name, "O") == 0 || strcmp(toc_entry->name, "optimize") == 0) {
             options->optimize++;
             continue;
         }
 
         /* W flag: W <warning_rule> */
-        if (strncmp(ptoc->name, "W ", 2) == 0) {
+        if (strncmp(toc_entry->name, "W ", 2) == 0) {
             num_wflags++;
             continue;
         }
 
         /* X flag: X <key=value> */
-        if (strncmp(ptoc->name, "X ", 2) == 0) {
+        if (strncmp(toc_entry->name, "X ", 2) == 0) {
             num_xflags++;
             continue;
         }
 
         /* Hash seed flag: hash_seed=value */
-        value_str = _pyi_match_key_value_flag(ptoc->name, "hash_seed");
+        value_str = _pyi_match_key_value_flag(toc_entry->name, "hash_seed");
         if (value_str && value_str[0]) {
             options->use_hash_seed = 1;
             options->hash_seed = strtoul(value_str, NULL, 10);
@@ -212,18 +213,18 @@ pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status)
     }
 
     /* Collect */
-    for (ptoc = archive_status->tocbuff; ptoc < archive_status->tocend; ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc)) {
-        if (strncmp(ptoc->name, "W ", 2) == 0) {
+    for (toc_entry = archive->tocbuff; toc_entry < archive->tocend; toc_entry = pyi_arch_increment_toc_ptr(archive, toc_entry)) {
+        if (strncmp(toc_entry->name, "W ", 2) == 0) {
             /* Copy for pass-through */
-            const char *flag = &ptoc->name[2]; /* Skip first two characters */
+            const char *flag = &toc_entry->name[2]; /* Skip first two characters */
             if (_pyi_copy_xwflag(flag, &options->wflags[options->num_wflags]) < 0) {
                 failed = 1;
                 goto end;
             }
             options->num_wflags++;
-        } else if (strncmp(ptoc->name, "X ", 2) == 0) {
+        } else if (strncmp(toc_entry->name, "X ", 2) == 0) {
             /* Copy for pass-through */
-            const char *flag = &ptoc->name[2]; /* Skip first two characters */
+            const char *flag = &toc_entry->name[2]; /* Skip first two characters */
             if (_pyi_copy_xwflag(flag, &options->xflags[options->num_xflags]) < 0) {
                 failed = 1;
                 goto end;
@@ -323,13 +324,13 @@ pyi_pyconfig_free(PyConfig *config)
  * Set program name. Used to set sys.executable, and in early error messages.
  */
 int
-pyi_pyconfig_set_program_name(PyConfig *config, const ARCHIVE_STATUS *archive_status)
+pyi_pyconfig_set_program_name(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
 {
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
     case PY_VERSION: { \
         PYCONFIG_IMPL *config_impl = (PYCONFIG_IMPL *)config; \
-        if (_pyi_pyconfig_set_string(config, &config_impl->program_name, archive_status->executablename) < 0) { \
+        if (_pyi_pyconfig_set_string(config, &config_impl->program_name, pyi_ctx->executable_filename) < 0) { \
             return -1; \
         } \
         return 0; \
@@ -356,13 +357,13 @@ pyi_pyconfig_set_program_name(PyConfig *config, const ARCHIVE_STATUS *archive_st
  * Set python home directory. Used to set sys.prefix.
  */
 int
-pyi_pyconfig_set_python_home(PyConfig *config, const ARCHIVE_STATUS *archive_status)
+pyi_pyconfig_set_python_home(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
 {
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
     case PY_VERSION: { \
         PYCONFIG_IMPL *config_impl = (PYCONFIG_IMPL *)config; \
-        return _pyi_pyconfig_set_string(config, &config_impl->home, archive_status->mainpath); \
+        return _pyi_pyconfig_set_string(config, &config_impl->home, pyi_ctx->application_home_dir); \
     }
     /* Macro end */
 
@@ -422,7 +423,7 @@ _pyi_pyconfig_set_module_search_paths(PyConfig *config, int num_paths, wchar_t *
 }
 
 int
-pyi_pyconfig_set_module_search_paths(PyConfig *config, const ARCHIVE_STATUS *archive_status)
+pyi_pyconfig_set_module_search_paths(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
 {
     /* TODO: instead of stitching together char strings and converting
      * them, we could probably stitch together wide-char strings directly,
@@ -437,18 +438,18 @@ pyi_pyconfig_set_module_search_paths(PyConfig *config, const ARCHIVE_STATUS *arc
     int i;
 
     /* home/base_library.zip */
-    if (snprintf(base_library_path, PATH_MAX, "%s%c%s", archive_status->mainpath, PYI_SEP, "base_library.zip") >= PATH_MAX) {
+    if (snprintf(base_library_path, PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, "base_library.zip") >= PATH_MAX) {
         return -1;
     }
 
     /* home/lib-dynload */
-    if (snprintf(lib_dynload_path, PATH_MAX, "%s%c%s", archive_status->mainpath, PYI_SEP, "lib-dynload") >= PATH_MAX) {
+    if (snprintf(lib_dynload_path, PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, "lib-dynload") >= PATH_MAX) {
         return -1;
     }
 
     module_search_paths[0] = base_library_path;
     module_search_paths[1] = lib_dynload_path;
-    module_search_paths[2] = archive_status->mainpath;
+    module_search_paths[2] = pyi_ctx->application_home_dir;
 
     /* Convert */
     for (i = 0; i < 3; i++) {
@@ -517,24 +518,24 @@ _pyi_pyconfig_set_argv(PyConfig *config, int argc, wchar_t **argv_w)
 
 
 int
-pyi_pyconfig_set_argv(PyConfig *config, const ARCHIVE_STATUS *archive_status)
+pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
 {
     wchar_t **argv_w;
     int ret = 0;
     int i;
 
     /* Allocate */
-    argv_w = calloc(archive_status->argc, sizeof(wchar_t *));
+    argv_w = calloc(pyi_ctx->archive->argc, sizeof(wchar_t *));
     if (argv_w == NULL) {
         return -1;
     }
 
     /* Convert */
-    for (i = 0; i < archive_status->argc; i++) {
+    for (i = 0; i < pyi_ctx->archive->argc; i++) {
 #ifdef _WIN32
-        argv_w[i] = pyi_win32_utils_from_utf8(NULL, archive_status->argv[i], 0);
+        argv_w[i] = pyi_win32_utils_from_utf8(NULL, pyi_ctx->archive->argv[i], 0);
 #else
-        argv_w[i] = PI_Py_DecodeLocale(archive_status->argv[i], NULL);
+        argv_w[i] = PI_Py_DecodeLocale(pyi_ctx->archive->argv[i], NULL);
 #endif
         if (argv_w[i] == NULL) {
             /* Do not break; we need to initialize all elements */
@@ -546,11 +547,11 @@ pyi_pyconfig_set_argv(PyConfig *config, const ARCHIVE_STATUS *archive_status)
     }
 
     /* Set */
-    ret = _pyi_pyconfig_set_argv(config, archive_status->argc, argv_w);
+    ret = _pyi_pyconfig_set_argv(config, pyi_ctx->archive->argc, argv_w);
 
 end:
     /* Cleanup */
-    for (i = 0; i < archive_status->argc; i++) {
+    for (i = 0; i < pyi_ctx->archive->argc; i++) {
 #ifdef _WIN32
         free(argv_w[i]);
 #else
