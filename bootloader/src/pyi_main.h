@@ -13,6 +13,7 @@
 
 #include "pyi_global.h"
 
+typedef struct _archive_status ARCHIVE_STATUS;
 
 typedef struct
 {
@@ -22,6 +23,12 @@ typedef struct
 
     /* Fully resolved path to the executable */
     char executable_filename[PATH_MAX];
+
+    /* Fully resolved path to the main PKG archive */
+    char archive_filename[PATH_MAX];
+
+    /* Main PKG archive */
+    ARCHIVE_STATUS *archive;
 } PYI_CONTEXT;
 
 extern PYI_CONTEXT *global_pyi_ctx;

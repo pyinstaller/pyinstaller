@@ -171,26 +171,6 @@ pyi_path_exists(char * path)
 #endif
 }
 
-
-/*
- * Return full path to an external PYZ-archive.
- * The name is based on the excutable's name: path/myappname.pkg
- *
- * archivefile - buffer where to put path the .pkg.
- * thisfile    - usually the executable's filename.
- */
-bool
-pyi_path_archivefile(char *archivefile, const char *thisfile)
-{
-#ifdef _WIN32
-    strcpy(archivefile, thisfile);
-    strcpy(archivefile + strlen(archivefile) - 3, "pkg");
-    return true;
-#else
-    return (snprintf(archivefile, PATH_MAX, "%s.pkg", thisfile) < PATH_MAX);
-#endif
-}
-
 /*
  * Multiplatform wrapper around function fopen().
  */

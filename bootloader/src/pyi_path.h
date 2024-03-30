@@ -28,9 +28,6 @@ char *pyi_path_join(char *result, const char *path1, const char *path2);
 /* void *pyi_path_abspath(char *result, const char *path); */
 int pyi_path_exists(char *path);
 
-bool pyi_path_homepath(char *homepath, const char *executable);
-bool pyi_path_archivefile(char *archivefile, const char *executable);
-
 bool pyi_path_is_symlink(const char *path);
 
 #ifdef _WIN32
