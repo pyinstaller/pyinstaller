@@ -18,14 +18,10 @@
 #ifdef _WIN32
     #include <windows.h>
 #else
-    #include <langinfo.h> /* CODESET, nl_langinfo */
     #include <stdlib.h>   /* malloc */
 #endif
-#include <stdarg.h>
+#include <string.h>   /* memset */
 #include <stddef.h>   /* ptrdiff_t */
-#include <stdio.h>    /* vsnprintf */
-#include <string.h>   /* strcpy */
-#include <sys/stat.h> /* struct stat */
 
 /* PyInstaller headers. */
 #include "pyi_launch.h"
@@ -38,242 +34,8 @@
 #include "pyi_pythonlib.h"
 #include "pyi_win32_utils.h"  /* CreateActContext */
 #include "pyi_exception_dialog.h"
+#include "pyi_multipkg.h"
 
-/* Max count of possible opened archives in multipackage mode. */
-#define _MAX_ARCHIVE_POOL_LEN 20
-
-/*
- * The functions in this file defined in reverse order so that forward
- * declarations are not necessary.
- */
-
-/* Constructs the file path from given components and checks that the path exists. */
-/* NOTE: must be visible outside of this unit (i.e., non-static) due to tests! */
-int
-_format_and_check_path(char *buf, const char *fmt, ...)
-{
-    va_list args;
-    struct stat tmp;
-
-    va_start(args, fmt);
-    if (vsnprintf(buf, PATH_MAX, fmt, args) >= PATH_MAX) {
-        return -1;
-    };
-    va_end(args);
-
-    return stat(buf, &tmp);
-}
-
-/* Splits the item in the form path:filename. The first part is the path
- * to the other executable (which contains the dependency); the path is
- * relative to the current executable. The second part is the filename of
- * dependency, relative to the top-level application directory. */
-/* NOTE: must be visible outside of this unit (i.e., non-static) due to tests! */
-int
-_split_dependency_name(char *path, char *filename, const char *item)
-{
-    char *p;
-
-    // copy directly into destination buffer and manipulate there
-    if (snprintf(path, PATH_MAX, "%s", item) >= PATH_MAX) {
-        return -1;
-    }
-    p = strchr(path, ':');
-    if (p == NULL) { // No colon in string
-        return -1;
-    };
-    p[0] ='\0'; // terminate path part
-    // `path` fits into PATH_MAX, so will all substrings
-    strcpy(filename, ++p);
-    if (path[0] == 0 || filename[0] == 0) {
-        return -1;
-    }
-    return 0;
-}
-
-
-/*
- * Look for the archive identified by path into the ARCHIVE_STATUS pool archive_pool.
- * If the archive is found, a pointer to the associated ARCHIVE_STATUS is returned
- * otherwise the needed archive is opened and added to the pool and then returned.
- * If an error occurs, returns NULL.
- *
- * Having several archives is useful for sharing binary dependencies with several
- * executables (multipackage feature).
- */
-static ARCHIVE_STATUS *
-_get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_pool[], const char *path)
-{
-    ARCHIVE_STATUS *archive = NULL;
-    int index = 0;
-
-    VS("LOADER: retrieving archive for path %s.\n", path);
-
-    for (index = 0; archive_pool[index] != NULL; index++) {
-        if (strcmp(archive_pool[index]->archivename, path) == 0) {
-            VS("LOADER: archive found in pool: %s\n", path);
-            return archive_pool[index];
-        }
-    }
-
-    VS("LOADER: archive not found in pool. Creating new entry...\n");
-
-    archive = pyi_arch_status_new();
-    if (archive == NULL) {
-        return NULL;
-    }
-
-    /* TODO: clean this up once we remove the variables */
-    if ((snprintf(archive->archivename, PATH_MAX, "%s", path) >= PATH_MAX) ||
-        (snprintf(archive->homepath, PATH_MAX, "%s", pyi_ctx->archive->homepath) >= PATH_MAX) ||
-        (snprintf(archive->temppath, PATH_MAX, "%s", pyi_ctx->archive->temppath) >= PATH_MAX)) {
-        FATALERROR("Archive path exceeds PATH_MAX\n");
-        pyi_arch_status_free(archive);
-        return NULL;
-    }
-    /* For now, this is necessary to facilitate extraction */
-    archive->has_temp_directory = true;
-
-    if (pyi_arch_open(archive)) {
-        FATALERROR("Failed to open archive %s!\n", path);
-        pyi_arch_status_free(archive);
-        return NULL;
-    }
-
-    /* Store in the pool */
-    archive_pool[index] = archive;
-    return archive;
-}
-
-/* Extract a file identifed by filename from the archive associated to status. */
-static int
-_extract_dependency_from_archive(ARCHIVE_STATUS *archive, const char *filename)
-{
-    const TOC *ptoc = archive->tocbuff;
-
-    VS("LOADER: extracting dependency %s from archive\n", filename);
-
-    while (ptoc < archive->tocend) {
-#if defined(_WIN32) || defined(__APPLE__)
-        /* On Windows and macOS, use case-insensitive comparison to
-         * simulate case-insensitive filesystem... */
-        if (strcasecmp(ptoc->name, filename) == 0) {
-#else
-        if (strcmp(ptoc->name, filename) == 0) {
-#endif
-            return pyi_arch_extract2fs(archive, ptoc);
-        }
-        ptoc = pyi_arch_increment_toc_ptr(archive, ptoc);
-    }
-    return -1; /* Entry not found */
-}
-
-/* Decide if the dependency identified by item is in a onedir or onfile archive
- * then call the appropriate function.
- */
-static int
-_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_pool[], const char *item)
-{
-    char other_executable[PATH_MAX];
-    char other_executable_dir[PATH_MAX];
-    char filename[PATH_MAX];
-    char this_executable_dir[PATH_MAX];
-    char full_srcpath[PATH_MAX];
-
-    const char *contents_directory;
-    int ret;
-
-    VS("LOADER: processing dependency reference: %s\n", item);
-
-    /* Dependency reference consists of two parts, separated by a colon, for example
-     *   (../)other_program:path/to/file
-     * if other_program is a onefile executable, or
-     *   (../)other_program/other_program:path/to/file
-     * if other_program is a onefile executable.
-     *
-     * The first part is path to the other executable (which contains the dependency),
-     * relative to the current executable. On Windows, the executable name does NOT
-     * contain .exe suffix. The second part is the filename of dependency, relative to
-     * the top-level application directory.
-     */
-    if (_split_dependency_name(other_executable, filename, item) == -1) {
-        return -1;
-    }
-
-    /* Determine parent directories of this executable (absolute path) and the other
-     * executable (relative to this executable). If executables are co-located
-     * (e.g., two onefile builds), the other executable's parent directory will be ".".
-     */
-    pyi_path_dirname(this_executable_dir, pyi_ctx->executable_filename);
-    pyi_path_dirname(other_executable_dir, other_executable);
-
-    /* Retrieve contents-directory setting, from THIS executable, assuming it is
-     * the same across all multi-package executables. In practice, this should matter
-     * only if multi-package involves onedir builds.
-     */
-    contents_directory = pyi_arch_get_option(pyi_ctx->archive, "pyi-contents-directory");
-
-    /* If dependency is located in a onedir build, we should be able to find
-     * it on the filesystem (accounting for contents sub-directory settings).
-     * If dependency is located in a onefile build, we need to look up the
-     * executable (or external PKG archive in case of side-loading). As the
-     * executable (with embedded or external PKG archive) is also available
-     * in onedir builds, we need to first check for the onedir option.
-     *
-     * Note that the path relations between different programs in a multipackage
-     * should already be handled by the path encoded in the reference, and thus
-     * reflected in the `other_executable_dir`:
-     *  - for a onefile program referencing a dependency in a onefile program,
-     *    it is "."
-     *  - for a onedir program referencing a dependency in a onefile program,
-     *    it is ".."
-     *  - for a onefile program referencing a dependency in a onedir program,
-     *    it is "other_program"
-     *  - for a onedir program referencing a dependency in a onedir program,
-     *    it is "../other_program"
-     */
-    if (contents_directory) {
-        ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, contents_directory, PYI_SEP, filename);
-    } else {
-        ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, filename);
-    }
-    if (ret == 0) {
-        VS("LOADER: file %s found on filesystem (%s), assuming onedir reference.\n", filename, full_srcpath);
-        if (pyi_copy_file(full_srcpath, pyi_ctx->application_home_dir, filename) == -1) {
-            FATALERROR("Failed to copy file %s from %s!\n", filename, full_srcpath);
-            return -1;
-        }
-    } else {
-        ARCHIVE_STATUS *other_archive = NULL;
-        char other_archive_path[PATH_MAX];
-
-        VS("LOADER: file %s not found on filesystem, assuming onefile reference.\n", filename);
-
-        /* First check for the presence of external .pkg archive, located
-         * next to the executable, to account for side-loading mode. */
-        if ((_format_and_check_path(other_archive_path, "%s%c%s.pkg", this_executable_dir, PYI_SEP, other_executable) != 0) &&
-            (_format_and_check_path(other_archive_path, "%s%c%s.exe", this_executable_dir, PYI_SEP, other_executable) != 0) &&
-            (_format_and_check_path(other_archive_path, "%s%c%s", this_executable_dir, PYI_SEP, other_executable) != 0)) {
-            FATALERROR("Referenced dependency archive %s not found.\n", other_executable);
-            return -1;
-        }
-
-        if ((other_archive = _get_archive(pyi_ctx, archive_pool, other_archive_path)) == NULL) {
-            FATALERROR("Failed to open referenced dependency archive %s.\n", other_archive_path);
-            return -1;
-        }
-
-        if (_extract_dependency_from_archive(other_archive, filename) == -1) {
-            FATALERROR("Failed to extract %s from referenced dependency archive %s.\n", filename, other_archive_path);
-            /* Do not free the archive ("status") here, because its
-             * pointer is stored in the archive pool that is cleaned up
-             * by the caller. */
-            return -1;
-        }
-    }
-
-    return 0;
-}
 
 /*
  * Extract all binaries (type 'b') and all data files (type 'x') to the filesystem
@@ -289,28 +51,27 @@ _extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_pool[], const 
 int
 pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
 {
+    const TOC *toc_entry;
+    ptrdiff_t index;
     int retcode = 0;
-    ptrdiff_t index = 0;
-    bool update_text = (pyi_ctx->splash != NULL);
 
-    /* Archive pool contains dependent archives */
-    ARCHIVE_STATUS *archive_pool[_MAX_ARCHIVE_POOL_LEN];
-    const TOC *ptoc = pyi_ctx->archive->tocbuff;
+    ARCHIVE_STATUS *multipkg_archive_pool[PYI_MULTIPKG_ARCHIVE_POOL_SIZE];
 
     /* Clear the archive pool array. */
-    memset(archive_pool, 0, _MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
+    memset(multipkg_archive_pool, 0, sizeof(multipkg_archive_pool));
 
-    while (ptoc < pyi_ctx->archive->tocend) {
-        if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
-            ptoc->typcd == ARCHIVE_ITEM_ZIPFILE || ptoc->typcd == ARCHIVE_ITEM_SYMLINK) {
+    toc_entry = pyi_ctx->archive->tocbuff;
+    while (toc_entry < pyi_ctx->archive->tocend) {
+        if (toc_entry->typcd == ARCHIVE_ITEM_BINARY || toc_entry->typcd == ARCHIVE_ITEM_DATA ||
+            toc_entry->typcd == ARCHIVE_ITEM_ZIPFILE || toc_entry->typcd == ARCHIVE_ITEM_SYMLINK) {
             /* 'Splash screen' feature */
-            if (update_text) {
+            if (pyi_ctx->splash != NULL) {
                 /* Update the text on the splash screen if one is available */
-                pyi_splash_update_prg(pyi_ctx->splash, ptoc);
+                pyi_splash_update_prg(pyi_ctx->splash, toc_entry);
             }
 
             /* Extract the file to the disk */
-            if (pyi_arch_extract2fs(pyi_ctx->archive, ptoc)) {
+            if (pyi_arch_extract2fs(pyi_ctx->archive, toc_entry)) {
                 retcode = -1;
                 break;  /* No need to extract other items in case of error. */
             }
@@ -318,20 +79,19 @@ pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
 
         else {
             /* 'Multipackage' feature - dependency is stored in different executables. */
-            if (ptoc->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-                if (_extract_dependency(pyi_ctx, archive_pool, ptoc->name) == -1) {
+            if (toc_entry->typcd == ARCHIVE_ITEM_DEPENDENCY) {
+                if (pyi_multipkg_extract_dependency(pyi_ctx, multipkg_archive_pool, toc_entry->name) == -1) {
                     retcode = -1;
                     break;  /* No need to extract other items in case of error. */
                 }
-
             }
         }
-        ptoc = pyi_arch_increment_toc_ptr(pyi_ctx->archive, ptoc);
+        toc_entry = pyi_arch_increment_toc_ptr(pyi_ctx->archive, toc_entry);
     }
 
     /* Free memory allocated for archive pool. */
-    for (index = 0; archive_pool[index] != NULL; index++) {
-        pyi_arch_status_free(archive_pool[index]);
+    for (index = 0; multipkg_archive_pool[index] != NULL; index++) {
+        pyi_arch_status_free(multipkg_archive_pool[index]);
     }
 
     return retcode;
