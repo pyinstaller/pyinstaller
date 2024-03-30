@@ -17,28 +17,12 @@
 #ifndef PYI_LAUNCH_H
 #define PYI_LAUNCH_H
 
-#include "pyi_archive.h"
-#include "pyi_splash.h"
-
-/*****************************************************************
-* The following 4 entries are for applications which may need to
-* use to 2 steps to execute
-*****************************************************************/
+#include "pyi_main.h"
 
 /*
- * Extract binaries from the archive
- *
- * @param archive_status     The archive from which the binaries will
- *                           be extracted.
- *
- * @param splash_status      The splash screen status which describes
- *                           on which progress updated to occur. May
- *                           be NULL
- *
- * @return 0 on success, non-zero otherwise.
+ * Extract files from embedded archive (onefile mode).
  */
-int pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status,
-                                SPLASH_STATUS *splash_status);
+int pyi_launch_extract_binaries(PYI_CONTEXT *pyi_ctx);
 
 /*
  * Wrapped platform specific initialization before loading Python and executing

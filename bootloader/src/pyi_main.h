@@ -11,6 +11,10 @@
  * ****************************************************************************
  */
 
+#ifndef PYI_MAIN_H
+#define PYI_MAIN_H
+
+
 #include "pyi_global.h"
 
 
@@ -93,3 +97,6 @@ extern PYI_CONTEXT *global_pyi_ctx;
 
 
 int pyi_main(PYI_CONTEXT *pyi_ctx);
+
+
+#endif /* PYI_MAIN_H */
