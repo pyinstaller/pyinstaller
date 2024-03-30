@@ -185,9 +185,9 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
             free(meipass2_value);
         } else {
-            VS("LOADER: this is parent process of onefile application.\n");
+            const char *runtime_tmpdir;
 
-            /* Create temporary directory */
+            VS("LOADER: this is parent process of onefile application.\n");
 
             /* On Windows, initialize security descriptor for temporary directory.
              * This is required by `pyi_win32_mkdir()` calls made when creating application's
@@ -200,13 +200,20 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             }
 #endif
 
-            VS("LOADER: creating temporary directory...\n");
-            if (pyi_arch_create_tempdir(pyi_ctx->archive) == -1) {
+            /* Create temporary directory */
+            runtime_tmpdir = pyi_arch_get_option(pyi_ctx->archive, "pyi-runtime-tmpdir");
+            VS("LOADER: creating temporary directory (runtime_tmpdir=%s)...\n", runtime_tmpdir);
+
+            if (!pyi_create_tempdir(pyi_ctx->application_home_dir, runtime_tmpdir)) {
+                FATALERROR("Could not create temporary directory!\n");
                 return -1;
             }
-            VS("LOADER: created temporary directory: %s\n", pyi_ctx->archive->temppath);
 
-            snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", pyi_ctx->archive->temppath);
+            VS("LOADER: created temporary directory: %s\n", pyi_ctx->application_home_dir);
+
+            /* TODO: remove once archive extraction code is reworked */
+            snprintf(pyi_ctx->archive->temppath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
+            pyi_ctx->archive->has_temp_directory = true;
         }
     } else {
         VS("LOADER: application has onedir semantics...\n");

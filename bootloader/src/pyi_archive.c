@@ -684,34 +684,3 @@ pyi_arch_find_by_name(const ARCHIVE_STATUS *status, const char *name)
     }
     return NULL;
 }
-
-
-/*
- * Creates a temporary directory for the ARCHIVE_STATUS.
- */
-int
-pyi_arch_create_tempdir(ARCHIVE_STATUS *status)
-{
-    const char *runtime_tmpdir = NULL;
-
-    /* No-op if already initialized */
-    if (status->has_temp_directory == true) {
-        return 0;
-    }
-
-    /* Check for custom run-time temporary directory options */
-    runtime_tmpdir = pyi_arch_get_option(status, "pyi-runtime-tmpdir");
-    if (runtime_tmpdir != NULL) {
-        VS("LOADER: Found runtime-tmpdir %s\n", runtime_tmpdir);
-    }
-
-    if (!pyi_create_tempdir(status->temppath, runtime_tmpdir)) {
-        FATALERROR("Cannot create temporary directory!\n");
-        return -1;
-    }
-
-    /* Set flag that temp directory is created and available. */
-    status->has_temp_directory = true;
-
-    return 0;
-}
