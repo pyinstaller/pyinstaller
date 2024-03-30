@@ -59,10 +59,6 @@ void pyi_launch_finalize(ARCHIVE_STATUS *archive_status);
  */
 int pyi_launch_execute(ARCHIVE_STATUS *status);
 
-/*
- * Transform parent process to background (OSX only).
- */
-void pyi_parent_to_background();
 
 #endif  /* PYI_LAUNCH_H */
 
