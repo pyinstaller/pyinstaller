@@ -447,7 +447,7 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
 
     /* Extract files to temporary directory */
     VS("LOADER: extracting files to temporary directory...\n");
-    if (pyi_launch_extract_binaries(pyi_ctx) < 0) {
+    if (pyi_launch_extract_files_from_archive(pyi_ctx) < 0) {
         VS("LOADER: failed to extract files!\n");
         return -1;
     }
