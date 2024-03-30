@@ -296,43 +296,39 @@ _extract_dependency(ARCHIVE_STATUS *archive_pool[], const char *item)
  * .exe files. Having files in other executables allows share binary files among
  * executables and thus reduce the final size of the executable.
  *
- * 'Splash screen' feature is supported by passing a SPLASH_STATUS to this
- * function. The parameter may be NULL, if not the name of the TOC is displayed
- * on the splash screen asynchronously.
+ * If 'splash screen' feature is enabled, the text on splash screen will be updated
+ * during the extraction with the name of currently processed TOC entry.
  */
 int
-pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splash_status)
+pyi_launch_extract_binaries(PYI_CONTEXT *pyi_ctx)
 {
     int retcode = 0;
     ptrdiff_t index = 0;
-    /* We create this cache variable for faster execution time */
-    bool update_text = (splash_status != NULL);
+    bool update_text = (pyi_ctx->splash != NULL);
 
     /*
      * archive_pool[0] is reserved for the main process, the others for dependencies.
      */
     ARCHIVE_STATUS *archive_pool[_MAX_ARCHIVE_POOL_LEN];
-    const TOC *ptoc = archive_status->tocbuff;
+    const TOC *ptoc = pyi_ctx->archive->tocbuff;
 
     /* Clean memory for archive_pool list. */
     memset(archive_pool, 0, _MAX_ARCHIVE_POOL_LEN * sizeof(ARCHIVE_STATUS *));
 
     /* Current process is the 1st item. */
-    archive_pool[0] = archive_status;
+    archive_pool[0] = pyi_ctx->archive;
 
-    VS("LOADER: Extracting binaries\n");
-
-    while (ptoc < archive_status->tocend) {
+    while (ptoc < pyi_ctx->archive->tocend) {
         if (ptoc->typcd == ARCHIVE_ITEM_BINARY || ptoc->typcd == ARCHIVE_ITEM_DATA ||
             ptoc->typcd == ARCHIVE_ITEM_ZIPFILE || ptoc->typcd == ARCHIVE_ITEM_SYMLINK) {
             /* 'Splash screen' feature */
             if (update_text) {
                 /* Update the text on the splash screen if one is available */
-                pyi_splash_update_prg(splash_status, ptoc);
+                pyi_splash_update_prg(pyi_ctx->splash, ptoc);
             }
 
             /* Extract the file to the disk */
-            if (pyi_arch_extract2fs(archive_status, ptoc)) {
+            if (pyi_arch_extract2fs(pyi_ctx->archive, ptoc)) {
                 retcode = -1;
                 break;  /* No need to extract other items in case of error. */
             }
@@ -348,7 +344,7 @@ pyi_launch_extract_binaries(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splas
 
             }
         }
-        ptoc = pyi_arch_increment_toc_ptr(archive_status, ptoc);
+        ptoc = pyi_arch_increment_toc_ptr(pyi_ctx->archive, ptoc);
     }
 
     /*
