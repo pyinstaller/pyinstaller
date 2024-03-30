@@ -24,7 +24,8 @@
 // NOTE: path separator is platform dependent, hence the use of PYI_SEPSTR
 // and string concatenation...
 
-static void test_dirname(void **state) {
+static void test_dirname(void **state)
+{
     char result[PATH_MAX];
 
     // pyi_path_dirname("/a1/bb/cc/dd") -> "/a1/bb/cc"
@@ -62,7 +63,8 @@ static void test_dirname(void **state) {
 }
 
 
-static void test_basename(void **state) {
+static void test_basename(void **state)
+{
     char result[PATH_MAX];
     char input[PATH_MAX];
     // basename()'s second argument is not `const`, thus using a constant
@@ -101,7 +103,8 @@ static void test_basename(void **state) {
 }
 
 
-static void test_join(void **state) {
+static void test_join(void **state)
+{
     char path1[PATH_MAX];
     char path2[PATH_MAX];
     char result[PATH_MAX];

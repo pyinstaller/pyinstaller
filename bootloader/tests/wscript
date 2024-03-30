@@ -42,4 +42,4 @@ def build(ctx):
 
     if ctx.options.enable_tests and "LIB_CMOCKA" in ctx.env:
         test_program("path")
-        test_program("launch")
+        test_program("multipkg")
