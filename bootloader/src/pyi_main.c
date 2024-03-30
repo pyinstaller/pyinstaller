@@ -213,14 +213,48 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
             /* TODO: remove once archive extraction code is reworked */
             snprintf(pyi_ctx->archive->temppath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
+            snprintf(pyi_ctx->archive->homepath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
+            snprintf(pyi_ctx->archive->mainpath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
             pyi_ctx->archive->has_temp_directory = true;
         }
     } else {
+        char executable_dir[PATH_MAX];
+        bool is_macos_app_bundle = false;
+#if defined(__APPLE__)
+        size_t executable_dir_len;
+#endif
+
         VS("LOADER: application has onedir semantics...\n");
 
         /* Determine application's top-level directory based on the
          * executable's location. */
-        snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", pyi_ctx->archive->homepath);
+        pyi_path_dirname(executable_dir, pyi_ctx->executable_filename);
+
+#if defined(__APPLE__)
+        executable_dir_len = strnlen(executable_dir, PATH_MAX);
+        is_macos_app_bundle = executable_dir_len > 19 && strncmp(executable_dir + executable_dir_len - 19, ".app/Contents/MacOS", 19) == 0;
+#endif
+
+        if (is_macos_app_bundle) {
+            /* macOS .app bundle; relocate top-level application directory
+             * from Contents/MacOS directory to Contents/Frameworks */
+            char contents_dir[PATH_MAX]; /* the parent Contents directory */
+            pyi_path_dirname(contents_dir, executable_dir);
+            pyi_path_join(pyi_ctx->application_home_dir, contents_dir, "Frameworks");
+        } else {
+            const char *contents_directory = pyi_arch_get_option(pyi_ctx->archive, "pyi-contents-directory");
+            if (contents_directory) {
+                pyi_path_join(pyi_ctx->application_home_dir, executable_dir, contents_directory);
+            } else {
+                snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", executable_dir);
+            }
+        }
+
+        /* TODO: remove once homepath and similar variables are removed from archive */
+        snprintf(pyi_ctx->archive->temppath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
+        snprintf(pyi_ctx->archive->homepath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
+        snprintf(pyi_ctx->archive->mainpath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
+        pyi_ctx->archive->has_temp_directory = false;
 
         /* Special handling for onedir mode on POSIX systems other than
          * macOS. To achieve single-process onedir mode, we need to set

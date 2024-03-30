@@ -541,33 +541,6 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *exe
         ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
     }
 
-    /* Set homepath (a.k.a. sys._MEIPASS) */
-    char executable_dir[PATH_MAX];
-    pyi_path_dirname(executable_dir, executable_path);
-#if defined(__APPLE__)
-    size_t executable_dir_len;
-    executable_dir_len = strnlen(executable_dir, PATH_MAX);
-    bool is_macos_app_bundle = executable_dir_len > 19 && strncmp(executable_dir + executable_dir_len - 19, ".app/Contents/MacOS", 19) == 0;
-#else
-    bool is_macos_app_bundle = false;
-#endif
-    if (is_macos_app_bundle) {
-        /* macOS .app bundle; relocate homepath from Contents/MacOS
-         * directory to Contents/Frameworks */
-        char contents_dir[PATH_MAX];
-        pyi_path_dirname(contents_dir, executable_dir);
-        pyi_path_join(status->homepath, contents_dir, "Frameworks");
-    } else {
-        const char *contents_directory = pyi_arch_get_option(status, "pyi-contents-directory");
-        if (contents_directory && status->needs_to_extract == false) {
-            char root_path[PATH_MAX];
-            pyi_path_dirname(root_path, archive_path);
-            pyi_path_join(status->homepath, root_path, contents_directory);
-        } else {
-            pyi_path_dirname(status->homepath, archive_path);
-        }
-    }
-
     /*
      * Initial value of mainpath is homepath. It might be overridden
      * by temppath if it is available.
