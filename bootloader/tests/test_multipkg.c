@@ -22,19 +22,20 @@
 
 int _format_and_check_path(char *buf, const char *fmt, ...);
 
-static void test__format_and_check_path(void **state) {
+static void test_format_and_check_path(void **state)
+{
     char result[PATH_MAX];
 
     // TODO: use some mocks to determine stat() output
 
     errno = 0;
-    assert_int_equal(-1, _format_and_check_path(result, "%s%s%s.pkg", "a1", "bb", "cc", "dd"));
-    assert_int_not_equal(errno, 0); // formatting passed, stat failed
+    assert_int_equal(0, _format_and_check_path(result, "%s%s%s.pkg", "a1", "bb", "cc", "dd"));
+    assert_int_not_equal(errno, 0); // formatting passed, pyi_path_exists (stat) failed
     assert_string_equal(result, "a1bbcc.pkg");
 
     errno = 0;
-    assert_int_equal(-1, _format_and_check_path(result, "%s", ""));
-    assert_int_not_equal(errno, 0); // formatting passed, stat failed
+    assert_int_equal(0, _format_and_check_path(result, "%s", ""));
+    assert_int_not_equal(errno, 0); // formatting passed, pyi_path_exists (stat) failed
     assert_string_equal(result, "");
 
     char *path2 = (char *) malloc(PATH_MAX+10);
@@ -43,22 +44,23 @@ static void test__format_and_check_path(void **state) {
     errno = 0;
     path2[PATH_MAX+8] = '\0';
     assert_int_equal(-1, _format_and_check_path(result, "%s%s%s.pkg", "a1", path2, "ccc"));
-    assert_int_equal(errno, 0); // formatting formatting failed
+    assert_int_equal(errno, 0); // formatting failed
     // exact length
     errno = 0;
     path2[PATH_MAX] = '\0';
     assert_int_equal(-1, _format_and_check_path(result, "%s", path2));
-    assert_int_equal(errno, 0); // formatting formatting failed
+    assert_int_equal(errno, 0); // formatting failed
     // one byte less
     errno = 0;
     path2[PATH_MAX-1] = '\0';
-    assert_int_equal(-1, _format_and_check_path(result, "%s", path2));
+    assert_int_equal(0, _format_and_check_path(result, "%s", path2));
     assert_int_not_equal(errno, 0); // formatting passed, stat failed
 }
 
 int _split_dependency_name(char *path, char *filename, const char *item);
 
-static void test_split_dependency_name(void **state) {
+static void test_split_dependency_name(void **state)
+{
     char path[PATH_MAX];
     char filename[PATH_MAX];
 
@@ -101,7 +103,7 @@ int main(void)
 #endif
 {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test__format_and_check_path),
+        cmocka_unit_test(test_format_and_check_path),
         cmocka_unit_test(test_split_dependency_name),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
