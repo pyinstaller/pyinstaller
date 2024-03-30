@@ -362,7 +362,7 @@ pyi_launch_execute(PYI_CONTEXT *pyi_ctx)
     int rc = 0;
 
     /* Load Python DLL */
-    if (pyi_pylib_load(pyi_ctx->archive)) {
+    if (pyi_pylib_load(pyi_ctx)) {
         return -1;
     } else {
         /* With this flag Python cleanup will be called. */
@@ -375,12 +375,12 @@ pyi_launch_execute(PYI_CONTEXT *pyi_ctx)
     }
 
     /* Import core pyinstaller modules from the executable - bootstrap */
-    if (pyi_pylib_import_modules(pyi_ctx->archive)) {
+    if (pyi_pylib_import_modules(pyi_ctx)) {
         return -1;
     }
 
     /* Install PYZ archive */
-    if (pyi_pylib_install_pyz(pyi_ctx->archive)) {
+    if (pyi_pylib_install_pyz(pyi_ctx)) {
         return -1;
     }
 
@@ -399,5 +399,5 @@ pyi_launch_execute(PYI_CONTEXT *pyi_ctx)
 void
 pyi_launch_finalize(PYI_CONTEXT *pyi_ctx)
 {
-    pyi_pylib_finalize(pyi_ctx->archive);
+    pyi_pylib_finalize(pyi_ctx);
 }
