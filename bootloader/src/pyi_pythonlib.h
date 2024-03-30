@@ -21,12 +21,12 @@
 #include "pyi_archive.h"
 #include "pyi_main.h"
 
-int pyi_pylib_load(const ARCHIVE_STATUS *archive_status);
+int pyi_pylib_load(const PYI_CONTEXT *pyi_ctx);
 int pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx);
-int pyi_pylib_import_modules(ARCHIVE_STATUS *archive_status);
-int pyi_pylib_install_pyz(const ARCHIVE_STATUS *archive_status);
-int pyi_pylib_run_scripts(const ARCHIVE_STATUS *archive_status);
+int pyi_pylib_import_modules(const PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_install_pyz(const PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_run_scripts(const PYI_CONTEXT *pyi_ctx);
 
-void pyi_pylib_finalize(const ARCHIVE_STATUS *archive_status);
+void pyi_pylib_finalize(const PYI_CONTEXT *pyi_ctx);
 
 #endif  /* PYI_PYTHONLIB_H */

@@ -88,7 +88,7 @@ DECLPROC(PyUnicode_Replace);
  * Bind all required functions from python shared library.
  */
 int
-pyi_python_bind_functions(HMODULE dll, int pyvers)
+pyi_python_bind_functions(HMODULE dll, int python_version)
 {
     GETPROC(dll, Py_DecRef);
     GETPROC(dll, Py_DecodeLocale);
@@ -149,7 +149,7 @@ pyi_python_bind_functions(HMODULE dll, int pyvers)
     GETPROC(dll, PyUnicode_Join);
     GETPROC(dll, PyUnicode_Replace);
 
-    VS("LOADER: Loaded functions from Python library.\n");
+    VS("LOADER: loaded functions from Python shared library.\n");
 
     return 0;
 }

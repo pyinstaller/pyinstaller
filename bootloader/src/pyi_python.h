@@ -29,7 +29,7 @@
 
 
 /* Bind all required functions from python shared library */
-int pyi_python_bind_functions(HMODULE dll, int pyvers);
+int pyi_python_bind_functions(HMODULE dll, int python_version);
 
 /*
  * Python.h replacements.
