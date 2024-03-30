@@ -205,12 +205,13 @@ _pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
  * Run scripts
  * Return non zero on failure
  */
-int
-pyi_launch_run_scripts(const ARCHIVE_STATUS *status)
+static int
+_pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
 {
+    const ARCHIVE_STATUS *archive = pyi_ctx->archive;
     unsigned char *data;
     char buf[PATH_MAX];
-    const TOC *ptoc = status->tocbuff;
+    const TOC *toc_entry;
     PyObject *__main__;
     PyObject *__file__;
     PyObject *main_dict;
@@ -231,119 +232,119 @@ pyi_launch_run_scripts(const ARCHIVE_STATUS *status)
     }
 
     /* Iterate through toc looking for scripts (type 's') */
-    while (ptoc < status->tocend) {
-        if (ptoc->typcd == ARCHIVE_ITEM_PYSOURCE) {
-            /* Get data out of the archive.  */
-            data = pyi_arch_extract(status, ptoc);
-            /* Set the __file__ attribute within the __main__ module,
-             *  for full compatibility with normal execution. */
-            if (snprintf(buf, PATH_MAX, "%s%c%s.py", status->mainpath, PYI_SEP, ptoc->name) >= PATH_MAX) {
-                FATALERROR("Absolute path to script exceeds PATH_MAX\n");
-                return -1;
-            }
-            VS("LOADER: Running %s.py\n", ptoc->name);
-            __file__ = PI_PyUnicode_FromString(buf);
-            PI_PyObject_SetAttrString(__main__, "__file__", __file__);
-            PI_Py_DecRef(__file__);
-
-            /* Unmarshall code object */
-            code = PI_PyMarshal_ReadObjectFromString((const char *) data, ptoc->ulen);
-            if (!code) {
-                FATALERROR("Failed to unmarshal code object for %s\n", ptoc->name);
-                PI_PyErr_Print();
-                return -1;
-            }
-
-            /* Store the code object to __main__ module's _pyi_main_co
-             * attribute, so it can be retrieved by PyiFrozenImporter,
-             * if necessary. */
-            PI_PyObject_SetAttrString(__main__, "_pyi_main_co", code);
-
-            /* Run it */
-            retval = PI_PyEval_EvalCode(code, main_dict, main_dict);
-
-            /* If retval is NULL, an error occurred. Otherwise, it is a Python object.
-             * (Since we evaluate module-level code, which is not allowed to return an
-             * object, the Python object returned is always None.) */
-            if (!retval) {
-                #if defined(WINDOWED)
-                    /* In windowed mode, we need to display error information
-                     * via non-console means (i.e., error dialog on Windows,
-                     * syslog on macOS). For that, we need to extract the error
-                     * indicator data before PyErr_Print() call below clears
-                     * it. But it seems that for PyErr_Print() to properly
-                     * exit on SystemExit(), we also need to restore the error
-                     * indicator via PyErr_Restore(). Therefore, we extract
-                     * deep copies of relevant strings, and release all
-                     * references to error indicator and its data.
-                     */
-                    PyObject *ptype, *pvalue, *ptraceback;
-                    char *msg_exc, *msg_tb;
-                    int fmt_mode = PYI_TB_FMT_REPR;
-
-                    #if defined(_WIN32)
-                        fmt_mode = PYI_TB_FMT_CRLF;
-                    #elif defined(__APPLE__)
-                        fmt_mode = PYI_TB_FMT_LF;
-                    #endif
-
-                    PI_PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-                    PI_PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
-                    msg_exc = _pyi_extract_exception_message(pvalue);
-                    if (pyi_arch_get_option(status, "pyi-disable-windowed-traceback") != NULL) {
-                        /* Traceback is disabled via option */
-                        msg_tb = strdup("Traceback is disabled via bootloader option.");
-                    } else {
-                        msg_tb = _pyi_extract_exception_traceback(
-                            ptype, pvalue, ptraceback, fmt_mode);
-                    }
-                    PI_PyErr_Restore(ptype, pvalue, ptraceback);
-                #endif
-
-                /* If the error was SystemExit, PyErr_Print calls exit() without
-                 * returning. This means we won't print "Failed to execute" on
-                 * normal SystemExit's.
-                 */
-                PI_PyErr_Print();
-
-                /* Display error information */
-                #if !defined(WINDOWED)
-                    /* Non-windowed mode; PyErr_print() above dumps the
-                     * traceback, so the only thing we need to do here
-                     * is provide a summary */
-                     FATALERROR("Failed to execute script '%s' due to unhandled exception!\n", ptoc->name);
-                #else
-                    #if defined(_WIN32)
-                        /* Windows; use custom dialog */
-                        pyi_unhandled_exception_dialog(ptoc->name, msg_exc, msg_tb);
-                    #elif defined(__APPLE__)
-                        /* macOS .app bundle; use FATALERROR(), which
-                         * prints to stderr (invisible) as well as sends
-                         * the message to syslog */
-                         FATALERROR("Failed to execute script '%s' due to unhandled exception: %s\n", ptoc->name, msg_exc);
-                         FATALERROR("Traceback:\n%s\n", msg_tb);
-                    #endif
-
-                    /* Clean up exception information strings */
-                    free(msg_exc);
-                    free(msg_tb);
-                #endif /* if !defined(WINDOWED) */
-
-                /* Be consistent with python interpreter, which returns
-                 * 1 if it exits due to unhandled exception.
-                 */
-                return 1;
-            }
-            free(data);
+    for (toc_entry = archive->tocbuff; toc_entry < archive->tocend; toc_entry = pyi_arch_increment_toc_ptr(archive, toc_entry)) {
+        if (toc_entry->typcd != ARCHIVE_ITEM_PYSOURCE) {
+            continue;
         }
 
-        ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
+        /* Get data out of the archive.  */
+        data = pyi_arch_extract(archive, toc_entry);
+
+        /* Set the __file__ attribute within the __main__ module, for
+         * full compatibility with normal execution. */
+        if (snprintf(buf, PATH_MAX, "%s%c%s.py", pyi_ctx->application_home_dir, PYI_SEP, toc_entry->name) >= PATH_MAX) {
+            FATALERROR("Absolute path to script exceeds PATH_MAX\n");
+            return -1;
+        }
+
+        VS("LOADER: running %s.py\n", toc_entry->name);
+
+        __file__ = PI_PyUnicode_FromString(buf);
+        PI_PyObject_SetAttrString(__main__, "__file__", __file__);
+        PI_Py_DecRef(__file__);
+
+        /* Unmarshall code object */
+        code = PI_PyMarshal_ReadObjectFromString((const char *)data, toc_entry->ulen);
+        free(data);
+        if (!code) {
+            FATALERROR("Failed to unmarshal code object for %s\n", toc_entry->name);
+            PI_PyErr_Print();
+            return -1;
+        }
+
+        /* Store the code object to __main__ module's _pyi_main_co
+         * attribute, so it can be retrieved by PyiFrozenImporter,
+         * if necessary. */
+        PI_PyObject_SetAttrString(__main__, "_pyi_main_co", code);
+
+        /* Run it */
+        retval = PI_PyEval_EvalCode(code, main_dict, main_dict);
+
+        /* If retval is NULL, an error occurred. Otherwise, it is a Python object.
+         * (Since we evaluate module-level code, which is not allowed to return an
+         * object, the Python object returned is always None.) */
+        if (!retval) {
+#if defined(WINDOWED)
+            /* In windowed mode, we need to display error information
+             * via non-console means (i.e., error dialog on Windows,
+             * syslog on macOS). For that, we need to extract the error
+             * indicator data before PyErr_Print() call below clears
+             * it. But it seems that for PyErr_Print() to properly
+             * exit on SystemExit(), we also need to restore the error
+             * indicator via PyErr_Restore(). Therefore, we extract
+             * deep copies of relevant strings, and release all
+             * references to error indicator and its data. */
+            PyObject *ptype, *pvalue, *ptraceback;
+            char *msg_exc, *msg_tb;
+            int fmt_mode = PYI_TB_FMT_REPR;
+
+#if defined(_WIN32)
+            fmt_mode = PYI_TB_FMT_CRLF;
+#elif defined(__APPLE__)
+            fmt_mode = PYI_TB_FMT_LF;
+#endif
+
+            PI_PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+            PI_PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
+            msg_exc = _pyi_extract_exception_message(pvalue);
+            if (pyi_arch_get_option(archive, "pyi-disable-windowed-traceback") != NULL) {
+                /* Traceback is disabled via option */
+                msg_tb = strdup("Traceback is disabled via bootloader option.");
+            } else {
+                msg_tb = _pyi_extract_exception_traceback(ptype, pvalue, ptraceback, fmt_mode);
+            }
+            PI_PyErr_Restore(ptype, pvalue, ptraceback);
+#endif /* defined(WINDOWED) */
+
+            /* If the error was SystemExit, PyErr_Print calls exit() without
+             * returning. This means we won't print "Failed to execute" on
+             * normal SystemExit's. */
+            PI_PyErr_Print();
+
+            /* Display error information */
+#if !defined(WINDOWED)
+            /* Non-windowed mode; PyErr_print() above dumps the
+             * traceback, so the only thing we need to do here
+             * is provide a summary */
+            FATALERROR("Failed to execute script '%s' due to unhandled exception!\n", toc_entry->name);
+#else /* !defined(WINDOWED) */
+#if defined(_WIN32)
+            /* Windows; use custom dialog */
+            pyi_unhandled_exception_dialog(toc_entry->name, msg_exc, msg_tb);
+#elif defined(__APPLE__)
+            /* macOS .app bundle; use FATALERROR(), which
+             * prints to stderr (invisible) as well as sends
+             * the message to syslog */
+            FATALERROR("Failed to execute script '%s' due to unhandled exception: %s\n", toc_entry->name, msg_exc);
+            FATALERROR("Traceback:\n%s\n", msg_tb);
+#endif /* defined(_WIN32) */
+
+            /* Clean up exception information strings */
+            free(msg_exc);
+            free(msg_tb);
+#endif /* if !defined(WINDOWED) */
+
+            /* Be consistent with python interpreter, which returns
+             * 1 if it exits due to unhandled exception. */
+            return 1;
+        }
     }
+
     return 0;
 }
 
 void
-pyi_launch_initialize(ARCHIVE_STATUS * status)
+pyi_launch_initialize(PYI_CONTEXT *pyi_ctx)
 {
     /* Nothing to do here at the moment. */
 }
@@ -356,35 +357,35 @@ pyi_launch_initialize(ARCHIVE_STATUS * status)
  * to pyi_launch_execute(), which is the important part.
  */
 int
-pyi_launch_execute(ARCHIVE_STATUS *status)
+pyi_launch_execute(PYI_CONTEXT *pyi_ctx)
 {
     int rc = 0;
 
     /* Load Python DLL */
-    if (pyi_pylib_load(status)) {
+    if (pyi_pylib_load(pyi_ctx->archive)) {
         return -1;
     } else {
         /* With this flag Python cleanup will be called. */
-        status->is_pylib_loaded = true;
+        pyi_ctx->archive->is_pylib_loaded = true;
     }
 
     /* Start Python. */
-    if (pyi_pylib_start_python(status)) {
+    if (pyi_pylib_start_python(pyi_ctx)) {
         return -1;
     }
 
     /* Import core pyinstaller modules from the executable - bootstrap */
-    if (pyi_pylib_import_modules(status)) {
+    if (pyi_pylib_import_modules(pyi_ctx->archive)) {
         return -1;
     }
 
     /* Install PYZ archive */
-    if (pyi_pylib_install_pyz(status)) {
+    if (pyi_pylib_install_pyz(pyi_ctx->archive)) {
         return -1;
     }
 
     /* Run scripts */
-    rc = pyi_launch_run_scripts(status);
+    rc = _pyi_launch_run_scripts(pyi_ctx);
 
     if (rc == 0) {
         VS("LOADER: OK.\n");
@@ -396,7 +397,7 @@ pyi_launch_execute(ARCHIVE_STATUS *status)
 }
 
 void
-pyi_launch_finalize(ARCHIVE_STATUS *status)
+pyi_launch_finalize(PYI_CONTEXT *pyi_ctx)
 {
-    pyi_pylib_finalize(status);
+    pyi_pylib_finalize(pyi_ctx->archive);
 }

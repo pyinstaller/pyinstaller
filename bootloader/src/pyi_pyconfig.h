@@ -22,7 +22,7 @@
 #define PYI_PYCONFIG_H
 
 #include "pyi_python.h"
-#include "pyi_archive.h"
+#include "pyi_main.h"
 
 
 /* Collect run-time options from PKG */
@@ -45,17 +45,17 @@ typedef struct
     wchar_t **xflags;
 }  PyiRuntimeOptions;
 
-PyiRuntimeOptions *pyi_runtime_options_read(const ARCHIVE_STATUS *archive_status);
+PyiRuntimeOptions *pyi_runtime_options_read(const PYI_CONTEXT *pyi_ctx);
 void pyi_runtime_options_free(PyiRuntimeOptions *options);
 
 /* PEP 587 helpers */
 PyConfig *pyi_pyconfig_create();
 void pyi_pyconfig_free(PyConfig *config);
 
-int pyi_pyconfig_set_program_name(PyConfig *config, const ARCHIVE_STATUS *archive_status);
-int pyi_pyconfig_set_python_home(PyConfig *config, const ARCHIVE_STATUS *archive_status);
-int pyi_pyconfig_set_module_search_paths(PyConfig *config, const ARCHIVE_STATUS *archive_status);
-int pyi_pyconfig_set_argv(PyConfig *config, const ARCHIVE_STATUS *archive_status);
+int pyi_pyconfig_set_program_name(PyConfig *config, const PYI_CONTEXT *pyi_ctx);
+int pyi_pyconfig_set_python_home(PyConfig *config, const PYI_CONTEXT *pyi_ctx);
+int pyi_pyconfig_set_module_search_paths(PyConfig *config, const PYI_CONTEXT *pyi_ctx);
+int pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx);
 int pyi_pyconfig_set_runtime_options(PyConfig *config, const PyiRuntimeOptions *runtime_options);
 
 int pyi_pyconfig_preinit_python(const PyiRuntimeOptions *runtime_options);

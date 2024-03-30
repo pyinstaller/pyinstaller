@@ -419,9 +419,9 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
 #endif
 
     /* Main code to initialize Python and run user's code. */
-    pyi_launch_initialize(pyi_ctx->archive);
-    ret = pyi_launch_execute(pyi_ctx->archive);
-    pyi_launch_finalize(pyi_ctx->archive);
+    pyi_launch_initialize(pyi_ctx);
+    ret = pyi_launch_execute(pyi_ctx);
+    pyi_launch_finalize(pyi_ctx);
 
     /* Clean up splash screen resources; required when in single-process
      * execution mode, i.e. when using --onedir on Windows or macOS. */
