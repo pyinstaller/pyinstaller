@@ -64,6 +64,7 @@
  * keep code organized in top-down fashion. Hence, we need forward
  * declarations here */
 static int _pyi_main_resolve_executable(PYI_CONTEXT *pyi_context);
+static int _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_context);
 
 static int
 _pyi_allow_pkg_sideload(const char *executable)
@@ -98,10 +99,7 @@ _pyi_allow_pkg_sideload(const char *executable)
 int
 pyi_main(PYI_CONTEXT *pyi_ctx)
 {
-    /*  archive_status contain status information of the main process. */
-    ARCHIVE_STATUS *archive_status = NULL;
     SPLASH_STATUS *splash_status = NULL;
-    char archivefile[PATH_MAX];
     int rc = 0;
     int in_child = 0;
     char *extractionpath = NULL;
@@ -122,14 +120,14 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     }
     VS("LOADER: executable file: %s\n", pyi_ctx->executable_filename);
 
-    /* Resolve archive */
-    archive_status = pyi_arch_status_new();
-    if (archive_status == NULL) {
+    /* Resolve main PKG archive - embedded or side-loaded. */
+    if (_pyi_main_resolve_pkg_archive(pyi_ctx) < 0) {
         return -1;
     }
-    if (!pyi_path_archivefile(archivefile, pyi_ctx->executable_filename)) {
-        return -1;
-    }
+    VS("LOADER: archive file: %s\n", pyi_ctx->archive_filename);
+
+    /* We can now access PKG archive via pyi_ctx->archive; for example,
+     * to read run-time options */
 
     /* For the curious:
      * On Windows, the UTF-8 form of MEIPASS2 is passed to pyi_setenv, which
@@ -173,30 +171,9 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
     VS("LOADER: _MEIPASS2 is %s\n", (extractionpath ? extractionpath : "not set"));
 
-    /* Try opening the archive; first attempt to read it from executable
-     * itself (embedded mode), then from a stand-alone pkg file (sideload mode)
-     */
-    if (!pyi_arch_setup(archive_status, pyi_ctx->executable_filename, pyi_ctx->executable_filename)) {
-        if (!pyi_arch_setup(archive_status, archivefile, pyi_ctx->executable_filename)) {
-            FATALERROR(
-                "Cannot open PyInstaller archive from executable (%s) or external archive (%s)\n",
-                pyi_ctx->executable_filename, archivefile);
-            return -1;
-        } else if (extractionpath == NULL) {
-            /* Check if package side-load is allowed. But only on the first
-             * run, in the parent process (i.e., when extractionpath is not
-             * yet set). */
-            rc = _pyi_allow_pkg_sideload(pyi_ctx->executable_filename);
-            if (rc != 0) {
-                FATALERROR("Cannot side-load external archive %s (code %d)!\n", archivefile, rc);
-                return -1;
-            }
-        }
-    }
-
 #if defined(_WIN32) && !defined(WINDOWED)
     /* Early console hiding/minimization */
-    const char *hide_console_option = pyi_arch_get_option(archive_status, "pyi-hide-console");
+    const char *hide_console_option = pyi_arch_get_option(pyi_ctx->archive_status, "pyi-hide-console");
     if (hide_console_option != NULL) {
         if (strcmp(hide_console_option, HIDE_CONSOLE_OPTION_HIDE_EARLY) == 0) {
             pyi_win32_hide_console();
@@ -225,12 +202,12 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 #endif  /* defined(__linux__) */
 
     /* These are passed on to python interpreter, so they show up in sys.argv */
-    archive_status->argc = pyi_ctx->argc;
-    archive_status->argv = pyi_ctx->argv;
+    pyi_ctx->archive->argc = pyi_ctx->argc;
+    pyi_ctx->archive->argv = pyi_ctx->argv;
 
     /* Check if we need to unpack the embedded archive (onefile build, or onedir
      * build in MERGE mode). If we do, create the temporary directory. */
-    if (!in_child && archive_status->needs_to_extract) {
+    if (!in_child && pyi_ctx->archive->needs_to_extract) {
         /* On Windows, initialize security descriptor for temporary directory.
          * This is required by `pyi_win32_mkdir()` calls made when creating application's
          * temporary directory and its sub-directories during file extration. */
@@ -243,18 +220,18 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 #endif
 
         VS("LOADER: creating temporary directory...\n");
-        if (pyi_arch_create_tempdir(archive_status) == -1) {
+        if (pyi_arch_create_tempdir(pyi_ctx->archive) == -1) {
             return -1;
         }
-        VS("LOADER: created temporary directory: %s\n", archive_status->temppath);
+        VS("LOADER: created temporary directory: %s\n", pyi_ctx->archive->temppath);
     }
 
 #if defined(_WIN32) || defined(__APPLE__)
 
     /* On Windows and Mac use single-process for --onedir mode. */
-    if (!extractionpath && !archive_status->needs_to_extract) {
+    if (!extractionpath && !pyi_ctx->archive->needs_to_extract) {
         VS("LOADER: No need to extract files to run; setting extractionpath to homepath\n");
-        extractionpath = archive_status->homepath;
+        extractionpath = pyi_ctx->archive->homepath;
     }
 
 #else
@@ -264,12 +241,12 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
      * set environment (i.e., LD_LIBRARY_PATH) and then restart/replace the
      * process via exec() without fork() for the environment changes (library
      * search path) to take effect. */
-     if (!extractionpath && !archive_status->needs_to_extract) {
+     if (!extractionpath && !pyi_ctx->archive->needs_to_extract) {
         VS("LOADER: No need to extract files to run; setting up environment and restarting bootloader...\n");
 
         /* Set _MEIPASS2, so that the restarted bootloader process will enter
          * the codepath that corresponds to child process. */
-        pyi_setenv("_MEIPASS2", archive_status->homepath);
+        pyi_setenv("_MEIPASS2", pyi_ctx->archive->homepath);
 
         /* Set _PYI_ONEDIR_MODE to signal to restarted bootloader that it
          * should reset in_child variable even though it is operating in
@@ -280,9 +257,9 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         /* Set up the library search path (by modifying LD_LIBRARY_PATH or
          * equivalent), so that the restarted process will be able to find
          * the collected libraries in the top-level application directory
-         * (i.e., archive_status->homepath).
+         * (i.e., archive->homepath).
          */
-        if (pyi_utils_set_library_search_path(archive_status->homepath) == -1) {
+        if (pyi_utils_set_library_search_path(pyi_ctx->archive->homepath) == -1) {
             return -1;
         }
 
@@ -326,12 +303,12 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
      */
     splash_status = pyi_splash_status_new();
 
-    if (!in_child && pyi_splash_setup(splash_status, archive_status) == 0) {
+    if (!in_child && pyi_splash_setup(splash_status, pyi_ctx->archive) == 0) {
         /*
          * Splash resources found, start splash screen
          * If in onefile mode extract the required binaries
          */
-        if ((!pyi_splash_extract(archive_status, splash_status)) &&
+        if ((!pyi_splash_extract(pyi_ctx->archive, splash_status)) &&
             (!pyi_splash_attach(splash_status))) {
             /* Everything was initialized, so it is safe to start
              * the splash screen */
@@ -356,8 +333,8 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         /*  If binaries were extracted to temppath,
          *  we pass it through status variable
          */
-        if (strcmp(archive_status->homepath, extractionpath) != 0) {
-            if (snprintf(archive_status->temppath, PATH_MAX,
+        if (strcmp(pyi_ctx->archive->homepath, extractionpath) != 0) {
+            if (snprintf(pyi_ctx->archive->temppath, PATH_MAX,
                          "%s", extractionpath) >= PATH_MAX) {
                 VS("LOADER: temppath exceeds PATH_MAX\n");
                 return -1;
@@ -366,18 +343,18 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
              * Temp path exits - set appropriate flag and change
              * status->mainpath to point to temppath.
              */
-            archive_status->has_temp_directory = true;
-            strcpy(archive_status->mainpath, archive_status->temppath);
+            pyi_ctx->archive->has_temp_directory = true;
+            strcpy(pyi_ctx->archive->mainpath, pyi_ctx->archive->temppath);
         }
 
 #if defined(__APPLE__) && defined(WINDOWED)
         if (!in_child) {
             /* Initialize argc_pyi and argv_pyi with argc and argv */
-            if (pyi_utils_initialize_args(archive_status->argc, archive_status->argv) < 0) {
+            if (pyi_utils_initialize_args(pyi_ctx->archive->argc, pyi_ctx->archive->argv) < 0) {
                 return -1;
             }
             /* Optional argv emulation for onedir .app bundles */
-            if (pyi_arch_get_option(archive_status, "pyi-macos-argv-emulation") != NULL) {
+            if (pyi_arch_get_option(pyi_ctx->archive, "pyi-macos-argv-emulation") != NULL) {
                 /* Install event handlers */
                 pyi_apple_install_event_handlers();
                 /* Process Apple events; this updates argc_pyi/argv_pyi
@@ -399,7 +376,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
              * because pyi_utils_initialize_args() also filters out
              * -psn_xxx argument.
              */
-            pyi_utils_get_args(&archive_status->argc, &archive_status->argv);
+            pyi_utils_get_args(&pyi_ctx->archive->argc, &pyi_ctx->archive->argv);
         }
 #endif
 
@@ -434,9 +411,9 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 #endif
 
         /* Main code to initialize Python and run user's code. */
-        pyi_launch_initialize(archive_status);
-        rc = pyi_launch_execute(archive_status);
-        pyi_launch_finalize(archive_status);
+        pyi_launch_initialize(pyi_ctx->archive);
+        rc = pyi_launch_execute(pyi_ctx->archive);
+        pyi_launch_finalize(pyi_ctx->archive);
 
         /* Clean up splash screen resources; required when in single-process
          * execution mode, i.e. when using --onedir on Windows or macOS. */
@@ -451,8 +428,8 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     else {
 
         /* status->temppath is created if necessary. */
-        if (pyi_launch_extract_binaries(archive_status, splash_status)) {
-            VS("LOADER: temppath is %s\n", archive_status->temppath);
+        if (pyi_launch_extract_binaries(pyi_ctx->archive, splash_status)) {
+            VS("LOADER: temppath is %s\n", pyi_ctx->archive->temppath);
             VS("LOADER: Error extracting binaries\n");
             return -1;
         }
@@ -467,7 +444,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         /* Run the 'child' process, then clean up. */
 
         VS("LOADER: Executing self as child\n");
-        pyi_setenv("_MEIPASS2", archive_status->temppath);
+        pyi_setenv("_MEIPASS2", pyi_ctx->archive->temppath);
 
         VS("LOADER: set _MEIPASS2 to %s\n", pyi_getenv("_MEIPASS2"));
 
@@ -485,7 +462,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         /* On OSes other than Windows and macOS, we need to set library
          * search path (via LD_LIBRARY_PATH or equivalent). */
 #if !defined(_WIN32) && !defined(__APPLE__)
-        if (pyi_utils_set_library_search_path(archive_status->temppath) == -1) {
+        if (pyi_utils_set_library_search_path(pyi_ctx->archive->temppath) == -1) {
             return -1;
         }
 #endif /* !defined(_WIN32) && !defined(__APPLE__) */
@@ -530,7 +507,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 #endif
 
         /* Run user's code in a subprocess and pass command line arguments to it. */
-        rc = pyi_utils_create_child(pyi_ctx->executable_filename, archive_status, pyi_ctx->argc, pyi_ctx->argv);
+        rc = pyi_utils_create_child(pyi_ctx->executable_filename, pyi_ctx->archive, pyi_ctx->argc, pyi_ctx->argv);
 
         VS("LOADER: Back to parent (RC: %d)\n", rc);
 
@@ -542,10 +519,11 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         pyi_splash_finalize(splash_status);
         pyi_splash_status_free(&splash_status);
 
-        if (archive_status->has_temp_directory == true) {
-            pyi_recursive_rmdir(archive_status->temppath);
+        if (pyi_ctx->archive->has_temp_directory == true) {
+            pyi_recursive_rmdir(pyi_ctx->archive->temppath);
         }
-        pyi_arch_status_free(archive_status);
+        pyi_arch_status_free(pyi_ctx->archive);
+        pyi_ctx->archive = NULL;
 
         /* Re-raise child's signal, if necessary (non-Windows only) */
 #ifndef _WIN32
@@ -773,16 +751,75 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename)
 static int
 _pyi_main_resolve_executable(PYI_CONTEXT *pyi_ctx)
 {
-    int ret;
-
-    /* Resolve using OS-specific approach */
+    /* Resolve using OS-specific implementation */
 #ifdef _WIN32
-    ret = _pyi_resolve_executable_win32(pyi_ctx->executable_filename);
+    return _pyi_resolve_executable_win32(pyi_ctx->executable_filename);
 #elif __APPLE__
-    ret = _pyi_resolve_executable_macos(pyi_ctx->executable_filename);
+    return _pyi_resolve_executable_macos(pyi_ctx->executable_filename);
 #else
-    ret = _pyi_resolve_executable_posix(pyi_ctx->argv[0], pyi_ctx->executable_filename);
+    return _pyi_resolve_executable_posix(pyi_ctx->argv[0], pyi_ctx->executable_filename);
+#endif
+}
+
+
+/**********************************************************************\
+ *                      Archive file resolution                       *
+\**********************************************************************/
+static int
+_pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
+{
+    int status;
+
+    /* Allocate the archive structure */
+    pyi_ctx->archive = pyi_arch_status_new();
+    if (pyi_ctx->archive == NULL) {
+        return -1;
+    }
+
+    /* Try opening embedded archive first */
+    VS("LOADER: trying to load executable-embedded archive...\n");
+    status = pyi_arch_setup(pyi_ctx->archive, pyi_ctx->executable_filename, pyi_ctx->executable_filename);
+    if (status == true) {
+        /* Copy executable filename to archive filename; we know it does not exceed PATH_MAX */
+        snprintf(pyi_ctx->archive_filename, PATH_MAX, "%s", pyi_ctx->executable_filename);
+        return 0;
+    }
+
+    VS("LOADER: failed to open executable-embedded archive!\n");
+
+    /* Check if side-load is allowed */
+    status = _pyi_allow_pkg_sideload(pyi_ctx->executable_filename);
+    if (status != 0) {
+        VS("LOADER: side-load is disabled (code %d)!\n", status);
+        FATALERROR(
+            "Could not load PyInstaller's embedded PKG archive from the executable (%s)\n",
+            pyi_ctx->executable_filename
+        );
+        return -1;
+    }
+
+    /* Infer the archive filename in side-load mode. On Windows, the .exe
+     * suffix is replaced with .pkg, while elsewhere, .pkg suffix is
+     * appended to the executable file name. */
+#ifdef _WIN32
+    snprintf(pyi_ctx->archive_filename, PATH_MAX, "%s", pyi_ctx->executable_filename);
+    strcpy(pyi_ctx->archive_filename + strlen(pyi_ctx->archive) - 3, "pkg");
+#else
+    if (snprintf(pyi_ctx->archive_filename, PATH_MAX, "%s.pkg", pyi_ctx->executable_filename) >= PATH_MAX) {
+        return -1;
+    }
 #endif
 
-    return ret;
+    VS("LOADER: trying to load external PKG archive (%s)...\n", pyi_ctx->archive_filename);
+
+    status = pyi_arch_setup(pyi_ctx->archive, pyi_ctx->archive_filename, pyi_ctx->executable_filename);
+    if (status != true) {
+        FATALERROR(
+            "Could not load PyInstaller's PKG archive from external file (%s)\n",
+            pyi_ctx->archive_filename
+        );
+        return -1;
+    }
+
+    return 0;
 }
