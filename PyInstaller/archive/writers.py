@@ -395,13 +395,26 @@ class SplashWriter:
                 fp.write(image_data)
                 del image_data
 
+            # The following strings are written to 16-character fields with zero-padding, which means that we need to
+            # ensure that their length is strictly below 16 characters (if it were exactly 16, the field would have no
+            # terminating NULL character!).
+            def _encode_str(value, field_name, limit):
+                enc_value = value.encode("utf-8")
+                if len(enc_value) >= limit:
+                    raise ValueError(
+                        f"Length of the encoded field {field_name!r} is greater or equal to the limit of {limit} "
+                        "characters!"
+                    )
+
+                return enc_value
+
             # Write header
             header_data = struct.pack(
                 self._HEADER_FORMAT,
-                tcl_libname.encode("utf-8"),
-                tk_libname.encode("utf-8"),
-                tklib.encode("utf-8"),
-                rundir.encode("utf-8"),
+                _encode_str(tcl_libname, 'tcl_libname', 16),
+                _encode_str(tk_libname, 'tk_libname', 16),
+                _encode_str(tklib, 'tklib', 16),
+                _encode_str(rundir, 'rundir', 16),
                 script_len,
                 script_offset,
                 image_len,
