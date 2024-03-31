@@ -116,6 +116,7 @@ int
 pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
 {
     SPLASH_DATA_HEADER *data_header;
+    char rundir_fullpath[PATH_MAX];
 
     /* Read splash resources entry from the archive */
     data_header = _pyi_splash_find_data_header(pyi_ctx->archive);
@@ -124,19 +125,52 @@ pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
     }
     VS("SPLASH: found splash screen resources.\n");
 
-    /* We assume first that we run in onedir mode, therefore the Tcl and Tk
-     * libraries are relative to the executable. Only if pyi_splash_extract
-     * is called we know that we are in a onefile application.
-     * pyi_splash_extract changes these fields again to point to the
-     * extracted libraries. */
-    strncpy(splash->tcl_libpath, data_header->tcl_libname, 16);
-    strncpy(splash->tk_libpath, data_header->tk_libname, 16);
-    strncpy(splash->rundir, data_header->rundir, 16);
+    /* In onedir mode, Tcl/Tk dependencies (shared libraries, .tcl files)
+     * are located directly in top-level application directory. In onefile
+     * mode, they are extracted into sub-directory under (temporary/ephemeral)
+     * top-level application directory. The sub-directory name is controlled
+     * by the `rundir` value in SPLASH_DATA_HEADER.
+     *
+     * NOTE: the name fields in SPLASH_DATA_HEADER are 16 characters wide,
+     * and are *implicitly* NULL terminated; the build process uses zero
+     * padding and is ensuring that strings themselves have no more than
+     * 15 characters long. */
 
-    /* Tcl requires a full path to the tk library. Since we expect at
-     * this moment that we are in a onedir application the tk library is in
-     * homepath. If we run in onefile, pyi_splash_extract will change this value */
-    pyi_path_join(splash->tk_lib, pyi_ctx->archive->homepath, data_header->tk_lib);
+    /* We need a copy of rundir as-is to prepend it to TOC entries when
+     * extracting. */
+    snprintf(splash->rundir, PATH_MAX, "%s", data_header->rundir);
+
+    /* Full path to run-time directory that contains Tcl/Tk dependencies. */
+    if (pyi_ctx->is_onefile) {
+        if (pyi_path_join(rundir_fullpath, pyi_ctx->application_home_dir, data_header->rundir) == NULL) {
+            OTHERERROR("SPLASH: length of run-time directory path exceeds maximum path length!\n");
+            free(data_header);
+            return -1;
+        }
+    } else {
+        snprintf(rundir_fullpath, PATH_MAX, "%s", pyi_ctx->application_home_dir); /* Cannot exceed PATH_MAX */
+    }
+
+    /* Tcl shared library */
+    if (pyi_path_join(splash->tcl_libpath, rundir_fullpath, data_header->tcl_libname) == NULL) {
+        OTHERERROR("SPLASH: length of Tcl shared library path exceeds maximum path length!\n");
+        free(data_header);
+        return -1;
+    }
+
+    /* Tk shared library */
+    if (pyi_path_join(splash->tk_libpath, rundir_fullpath, data_header->tk_libname) == NULL) {
+        OTHERERROR("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
+        free(data_header);
+        return -1;
+    }
+
+    /* Tk modules directory */
+    if (pyi_path_join(splash->tk_lib, rundir_fullpath, data_header->tk_lib) == NULL) {
+        OTHERERROR("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
+        free(data_header);
+        return -1;
+    }
 
     /* Copy the script into a buffer owned by SPLASH_STATUS */
     splash->script_len = pyi_be32toh(data_header->script_len);
@@ -250,110 +284,68 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
 
 /*
  * Extract the necessary parts of the splash screen resources from
- * the PKG/CArchive, if they are bundled. Those resources are required to
- * be on the filesystem. If no dependencies are in the archive, this function
- * does nothing.
+ * the PKG/CArchive, if they are bundled (i.e., onefile mode). No-op
+ * in onedir mode.
  *
- * Since these extracted files would collide with the files the loop inside
- * pyi_launch_extract_files_from_archive extracts, we put the splash screen
- * files into a subdirectory inside archive_status->temppath. The name of
- * the subdirectory is provided by the SPLASH_DATA_HEADER "rundir" field,
- * which is ensured to not collide with any custom directory the user's
- * program includes.
+ * Since these extracted files would collide with the files that are
+ * extracted in pyi_launch_extract_files_from_archive, we put the splash
+ * screen files into a subdirectory inside the application's (temporary)
+ * top-level directory. The name of this subdirectory is provided by the
+ * SPLASH_DATA_HEADER "rundir" field, which is ensured to not collide
+ * with any custom directory that is part of frozen application.
  *
  * Unpacking into a subdirectory creates a small inefficiency, because
  * the loop in pyi_launch_extract_files_from_archive unpacks these files
  * again later.
  */
 int
-pyi_splash_extract(SPLASH_CONTEXT *splash, ARCHIVE_STATUS *archive)
+pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
 {
-    /*
-     * Alternative implementations considered:
-     *    - Implementing a check in pyi_launch_extract_files_from_archive if an
-     *      already extracted and therefore in temppath existing file belongs to
-     *      the splash screen.
-     *      -> Discarded this idea, because SPLASH_STATUS would need to be passed
-     *         down to pyi_open_target_file and for every file already extracted a loop
-     *         through the archive would need to check if it belongs to the splash screen
-     *    - Implementing a "prioritized" TOC, which starts at a specific level to extract
-     *      files. If splash resources are appended these would be extracted, because they
-     *      would get the level e.g. 0 assigned. After this extracting those resources only
-     *      files with levels >0 would be extracted.
-     *      -> Discarded this idea, because it would need a huge rewrite of the current TOC
-     *         system in PyInstaller and the bootloader
-     */
-    size_t pos;
+    const ARCHIVE_STATUS *archive = pyi_ctx->archive;
     const TOC *toc_entry;
+    const char *filename = NULL;
     TOC *tmp_toc;
+    size_t pos;
     int rc = 0;
-    bool extracted = false;
-    char *filename;
-    char tmp[PATH_MAX];
-    char run_dir[PATH_MAX];
 
-    /* The last item in TOC is a path, so limit it is at PATH_MAX */
+    /* No-op in onedir mode */
+    if (!pyi_ctx->is_onefile) {
+        return 0;
+    }
+
+    /* The last item in TOC is a path, so limit it at PATH_MAX */
     tmp_toc = (TOC *)calloc(1, sizeof(TOC) + PATH_MAX);
 
     /* Iterate over the requirements array */
     for (pos = 0; pos < (size_t)splash->requirements_len; pos += strlen(filename) + 1) {
+        /* Read filename from requirements array */
         filename = splash->requirements + pos;
 
-        if ((toc_entry = pyi_arch_find_by_name(archive, filename)) != NULL) {
-            /* If there was a requirement in the archive, we assume that we are in
-             * a onefile archive, so we try to extract all dependencies and update
-             * the paths */
-            extracted = true;
-            /*
-             * Copy the TOC into a new buffer, because we need to modify
-             * the TOCs name in order to change its extractionpath.
-             * The name is changed to move the file into a directory named
-             * after the value of rundir. This is necessary, since the extraction
-             * of the rest of the files would collide with these files.
-             */
-            memcpy(tmp_toc, toc_entry, toc_entry->structlen);
-            pyi_path_join(tmp_toc->name, splash->rundir, toc_entry->name);
-            tmp_toc->structlen = toc_entry->structlen - (int) strlen(toc_entry->name) + (int) strlen(tmp_toc->name);
-
-            /* Extract file into the rundir */
-            if (pyi_arch_extract2fs(archive, tmp_toc)) {
-                FATALERROR("SPLASH: Cannot extract requirement %s.\n", toc_entry->name);
-                rc = -2;
-                goto cleanup;
-            }
-        } else if (extracted) {
-            /* We extracted previously some files but we didn't find this one, so
-             * the dependency is not available */
-            FATALERROR("SPLASH: Cannot find requirement %s in archive.\n", filename);
+        /* Look-up entry in archive's TOC */
+        toc_entry = pyi_arch_find_by_name(archive, filename);
+        if (toc_entry == NULL) {
+            FATALERROR("SPLASH: could not find requirement %s in archive.\n", filename);
             rc = -1;
-            goto cleanup;
+            break;
+        }
+
+        /* Copy the TOC into a new buffer, because we need to modify
+         * the TOCs name in order to change its extraction path.
+         * The name is changed to move the file into a directory named
+         * after the value of rundir. This is necessary, since the extraction
+         * of the rest of the files would collide with these files. */
+        memcpy(tmp_toc, toc_entry, toc_entry->structlen);
+        pyi_path_join(tmp_toc->name, splash->rundir, toc_entry->name);
+        tmp_toc->structlen = toc_entry->structlen - (int) strlen(toc_entry->name) + (int) strlen(tmp_toc->name);
+
+        /* Extract file into the rundir */
+        if (pyi_arch_extract2fs(archive, tmp_toc)) {
+            FATALERROR("SPLASH: could not extract requirement %s.\n", toc_entry->name);
+            rc = -2;
+            break;
         }
     }
 
-    /* Alter the paths inside SPLASH_STATUS to load the the libraries from the
-     * correct place */
-    if (extracted) {
-        /* Onefile mode; the libraries were extracted into a sub-directory of
-         * temppath */
-        pyi_path_join(run_dir, archive->temppath, splash->rundir);
-    } else {
-        /* Onedir mode; we also need to adjust the paths to shared libraries so that
-         * the absolute paths are used. On Windows, we could seemingly get away with
-         * using just library base name, but not so on Linux, where we would end up
-         * trying to load system-wide library instead of the bundled one. */
-        strncpy(run_dir, archive->homepath, PATH_MAX);
-    }
-
-    strncpy(tmp, splash->tcl_libpath, PATH_MAX);
-    pyi_path_join(splash->tcl_libpath, run_dir, tmp);
-
-    strncpy(tmp, splash->tk_libpath, PATH_MAX);
-    pyi_path_join(splash->tk_libpath, run_dir, tmp);
-
-    pyi_path_basename(tmp, splash->tk_lib);
-    pyi_path_join(splash->tk_lib, run_dir, tmp);
-
-cleanup:
     free(tmp_toc);
     return rc;
 }
