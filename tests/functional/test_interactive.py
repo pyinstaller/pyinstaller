@@ -45,5 +45,5 @@ def test_pyi_splash(pyi_builder_spec, capfd, monkeypatch, build_mode, with_tkint
     pyi_builder_spec.test_spec('spec_with_splash.spec', runtime=_RUNTIME)
 
     out, err = capfd.readouterr()
-    assert 'SPLASH: Splash screen started' in err, \
+    assert 'SPLASH: splash screen started' in err, \
         f"Cannot find log entry indicating start of splash screen in:\n{err}"
