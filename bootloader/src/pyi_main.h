@@ -19,7 +19,7 @@
 
 
 typedef struct _archive_status ARCHIVE_STATUS;
-typedef struct _splash_status SPLASH_STATUS;
+typedef struct _splash_context SPLASH_CONTEXT;
 
 
 /* Console hiding/minimization options. Windows only. */
@@ -60,7 +60,7 @@ typedef struct
     ARCHIVE_STATUS *archive;
 
     /* Splash screen context structure */
-    SPLASH_STATUS *splash;
+    SPLASH_CONTEXT *splash;
 
     /* Flag indicating whether the application's main PKG archive has
      * onefile semantics or not (i.e., needs to extract files to

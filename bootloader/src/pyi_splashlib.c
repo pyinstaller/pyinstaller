@@ -67,13 +67,12 @@ DECLPROC(Tcl_Free);
 DECLPROC(Tk_Init);
 DECLPROC(Tk_GetNumMainWindows);
 
+
 /*
- * Fill foreign function pointers with the valid dll functions.
- * This function will return 0 on success, a nonzero value
- * on failure
+ * Bind all required functions from Tcl/Tk shared libraries.
  */
 int
-pyi_splashlib_attach(dylib_t dll_tcl, dylib_t dll_tk)
+pyi_splashlib_bind_functions(dylib_t dll_tcl, dylib_t dll_tk)
 {
     /* Tcl Initialization/Destruction */
     GETPROC(dll_tcl, Tcl_Init);
@@ -116,6 +115,6 @@ pyi_splashlib_attach(dylib_t dll_tcl, dylib_t dll_tk)
     GETPROC(dll_tk, Tk_Init);
     GETPROC(dll_tk, Tk_GetNumMainWindows);
 
-    VS("LOADER: Loaded functions from tcl/tk libraries.\n");
+    VS("LOADER: loaded functions from Tcl/Tk shared libraries.\n");
     return 0;
 }
