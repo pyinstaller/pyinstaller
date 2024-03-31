@@ -299,15 +299,15 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
      * child process. */
     if (!(pyi_ctx->is_onefile && !pyi_ctx->needs_to_extract)) {
         VS("LOADER: looking for splash screen resources...\n");
-        pyi_ctx->splash = pyi_splash_status_new();
-        if (pyi_splash_setup(pyi_ctx->splash, pyi_ctx->archive) == 0) {
+        pyi_ctx->splash = pyi_splash_context_new();
+        if (pyi_splash_setup(pyi_ctx->splash, pyi_ctx) == 0) {
             int succeeded = 0;
 
             /* Splash screen resources found; extract resources if
              * necessary (onefile mode) and start splash screen.*/
             VS("LOADER: setting up splash screen...\n");
-            if (pyi_splash_extract(pyi_ctx->archive, pyi_ctx->splash) == 0) {
-                if (pyi_splash_attach(pyi_ctx->splash) == 0) {
+            if (pyi_splash_extract(pyi_ctx->splash, pyi_ctx->archive) == 0) {
+                if (pyi_splash_load_shared_libaries(pyi_ctx->splash) == 0) {
                     pyi_splash_start(pyi_ctx->splash, pyi_ctx->executable_filename);
                     succeeded = 1;
                 }
@@ -319,12 +319,12 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
                  * the state by finalizing it, and free the allocated
                  * structure. */
                 pyi_splash_finalize(pyi_ctx->splash);
-                pyi_splash_status_free(&pyi_ctx->splash);
+                pyi_splash_context_free(&pyi_ctx->splash);
             }
         } else {
             /* Splash screen resources not found */
             VS("LOADER: splash screen resources not found.\n");
-            pyi_splash_status_free(&pyi_ctx->splash);
+            pyi_splash_context_free(&pyi_ctx->splash);
         }
     }
 
@@ -426,7 +426,7 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
     /* Clean up splash screen resources; required when in single-process
      * execution mode, i.e. when using --onedir on Windows or macOS. */
     pyi_splash_finalize(pyi_ctx->splash);
-    pyi_splash_status_free(&pyi_ctx->splash);
+    pyi_splash_context_free(&pyi_ctx->splash);
 
 #if defined(__APPLE__) && defined(WINDOWED)
     /* Clean up arguments that were used with Apple event processing .*/
@@ -550,7 +550,7 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
      * screen might hold handles to shared libraries inside the temp dir. Those
      * wouldn't be removed, leaving the temp folder behind. */
     pyi_splash_finalize(pyi_ctx->splash);
-    pyi_splash_status_free(&pyi_ctx->splash);
+    pyi_splash_context_free(&pyi_ctx->splash);
 
     if (pyi_ctx->archive->has_temp_directory) {
         pyi_recursive_rmdir(pyi_ctx->application_home_dir);

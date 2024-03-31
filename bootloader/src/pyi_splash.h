@@ -16,153 +16,140 @@
 
 #include "zlib.h"
 #include "pyi_global.h"
+#include "pyi_main.h"
 #include "pyi_archive.h"
 #include "pyi_splashlib.h"
 
 /* Archive item header for splash data
  * This struct is a header describing the rest of this archive item */
-typedef struct _splash_data_header {
+typedef struct _splash_data_header
+{
     /*
-     * The filenames of the tcl and tk dynamic libraries. These
-     * files are extracted into a subdirectory named after the name in
-     * "rundir". This prevents the an error of "file already exists".
+     * The filenames of the Tcl and Tk shared libraries. In onefile
+     * mode, these files extracted into a sub-directory named after
+     * the name in "rundir". This prevents the "file already exists"
+     * error when main onefile extraction takes place.
      */
-    char tcl_libname[16];  /* Filename of tcl library, e.g. tcl86t.dll */
-    char tk_libname[16];   /* Filename of tk library, e.g. tk86t.dll */
-    char tk_lib[16];       /* Tk library root , e.g. "tk/" */
-    char rundir[16];       /* temp folder inside extraction path
-                            * in which the dependencies are extracted */
 
-    int script_len;        /* Length of the script */
-    int script_offset;     /* Offset (rel to start) of the script */
+    /* Filename of the Tcl shared library, e.g., tcl86t.dll */
+    char tcl_libname[16];
 
-    int image_len;         /* Length of the image data */
-    int image_offset;      /* Offset (rel to start) of the image */
+    /* Filename of the Tk shared library, e.g. tk86t.dll */
+    char tk_libname[16];
+
+    /* Tk module library root, e.g. "tk/" */
+    char tk_lib[16];
+
+    /* Name of the temporary directory inside the onefile extraction
+     * path, into which splash dependencies are extracted when running
+     * in onefile mode. */
+    char rundir[16];
+
+    /* Splash screen script */
+    int script_len;
+    int script_offset;
+
+    /* Image data */
+    int image_len;
+    int image_offset;
+
     /*
-     * To only extract the necessary files from the archive,
-     * those fields describe an array of strings. Each string is
-     * null-terminated and aligned after each other.
+     * To only extract the necessary files from the archive, the following
+     * two fields define an array of strings. Strings are NULL-terminated
+     * and stored one after another.
      */
     int requirements_len;
     int requirements_offset;
+
     /*
      * Followed by a chunk of data, including the splash screen
-     * script,the image and the required files array.
+     * script, the image, and the required files array.
      */
-
 } SPLASH_DATA_HEADER;
 
-/* Runtime status for the splash screen */
-typedef struct _splash_status {
-    /*
-     * The Tcl interpreter in which the splash screen will run.
-     * Threaded Tcl locks a interpreter to its thread which created
-     * it and because we need to run the interpreter in a different
-     * thread than python and the bootloader, this field is set
-     * from a secondary thread. To not get into any hustles before using
-     * the interpreter check via the thread_id if the current thread
-     * is allowed to use the interpreter, if not use other methods.
-     */
+/* Runtime context for the splash screen */
+typedef struct _splash_context
+{
+    /* The Tcl interpreter in which the splash screen will run. Runs
+     * in a secondary thread, as we cannot block the program's primary
+     * thread (which in onedir mode needs to run user's python program
+     * in python interpreter). */
     Tcl_Interp *interp;
-    /*
-     * We only support threaded tcl. To identify on which thread
-     * the status is currently accessed we store a unique identifier
-     * for the thread in which the interpreter runs.
-     *
-     * On Windows:
-     *  CPython commonly distributes a threaded version of tcl/tk, since
-     *  a builtin module of tcl requires to be threaded (winsocks). We
-     *  use that module to communicate with the python interpreter.
-     *
-     * On MacOs:
-     *  As CPython/Mac/BuildScript/build-installer.py defines the
-     *  --enable-threads flag is set for tcl/tk building, Python on MacOS
-     *  probably comes with a threaded version.
-     */
+
+    /* The ID of the thread in which the Tcl interpreter (and thus
+     * splash screen) is running. Used to determine if splash context
+     * functions are called from the program's main thread or from
+     * the Tcl interpreter's (i.e., secondary) thread. */
     Tcl_ThreadId thread_id;
-    /*
-     * Store the paths of the the libraries.
-     * The values of these fields are either relative to the executable
-     * or absolute.
+
+    /* The paths to Tcl/Tk shared libraries and Tk module library directory.
      *
-     * In onedir mode the paths are relative to the executable inside
-     * the distribution folder. We assume onedir mode as long
-     * pyi_splash_extract wasn't called-
+     * In onedir mode, these are located in the top-level application
+     * directory.
      *
-     * In onefile mode the paths are absolute values, pointing into
-     * the temp directory.
-     */
+     * In onefile mode, they are extracted to sub-directory of the top-level
+     * application directory (an ephemeral temporary directory). The full
+     * path to this sub-directory is stored in rundir variable. */
     char tcl_libpath[PATH_MAX];
     char tk_libpath[PATH_MAX];
     char tk_lib[PATH_MAX];
     char rundir[PATH_MAX];
-    /*
-     * The Tcl script to be executed to create the splash screen
-     * and IPC mechanism
-     */
+
+    /* The Tcl script that creates splash screen and the IPC mechanism
+     * to communicate with python code. */
     char *script;
-    int   script_len;
-    /*
-     * Image to be show on the splash screen.
-     * The image pointer will eventually be NULL, because it is only kept
-     * till the interpreter is fully setup and copied the image data into
-     * an buffer owned by it.
-     */
+    int script_len;
+
+    /* Image to be show on the splash screen.
+     * The image data pointer will eventually be NULL, because it is only
+     * kept until the Tcl interpreter is fully set up, at which point it
+     * copies the image data into its own data buffer. */
     void *image;
-    int   image_len;
-    /*
-     * To start tcl/tk some file have to be on the filesystem.
-     * These fields describe an array of null-terminated strings. Those
-     * strings are the filenames like those in the CArchive, listing all
-     * files from the archive which have to be extracted before the
-     * interpreter can be started.
-     */
+    int image_len;
+
+    /* To start Tcl/Tk, its files need to be present on the filesystem.
+     * These fields describe an array of NULL-terminated strings, that
+     * contain filenames of files that need to be extracted from
+     * PKG/CArchive in onefile mode before splash screen can be started. */
     char *requirements;
-    int   requirements_len;
-    /*
-     * Flag indicating that Tcl/Tk shared libraries were successfully loaded
-     * and required symbols from them have been succesfully loaded and bound.
-     * This is primarily used in finalization function to detect properly
-     * handle tear-down of splash screen that failed to load the libraries or
-     * symbols.
-     */
+    int requirements_len;
+
+    /* Flag indicating that Tcl/Tk shared libraries were successfully
+     * loaded and that required symbols have been loaded and bound. This
+     * is primarily used during finalization to properly handle tear-down
+     * of partially-initialized splash screen. */
     bool dlls_fully_loaded;
-    /*
-     * Keep the handles to the shared library, in order to close
-     * them at finalization.
-     */
+
+    /* Keep the handles to loaded shared libraries, in order to close them
+     * during finalization. */
     dylib_t dll_tcl;
     dylib_t dll_tk;
+} SPLASH_CONTEXT;
 
-} SPLASH_STATUS;
-
-typedef int (pyi_splash_event_proc)(SPLASH_STATUS *, const void *);
+typedef int (pyi_splash_event_proc)(SPLASH_CONTEXT *, const void *);
 
 /**
  * Public API functions for pyi_splash
  */
-int pyi_splash_setup(
-    SPLASH_STATUS *splash_status,
-    ARCHIVE_STATUS *archive_status
-);
-int pyi_splash_attach(SPLASH_STATUS *status);
-int pyi_splash_finalize(SPLASH_STATUS *status);
-int pyi_splash_start(SPLASH_STATUS *status, const char *executable);
+int pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx);
+
+int pyi_splash_load_shared_libaries(SPLASH_CONTEXT *splash);
+int pyi_splash_finalize(SPLASH_CONTEXT *splash);
+int pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable);
 
 /* Archive helper functions */
-SPLASH_DATA_HEADER *pyi_splash_find(ARCHIVE_STATUS *status);
-int pyi_splash_extract(ARCHIVE_STATUS *archive_status, SPLASH_STATUS *splash_status);
+int pyi_splash_extract(SPLASH_CONTEXT *splash, ARCHIVE_STATUS *archive);
 
 int pyi_splash_send(
-    SPLASH_STATUS *status,
+    SPLASH_CONTEXT *splash,
     bool async,
     const void *user_data,
     pyi_splash_event_proc proc
 );
-int pyi_splash_update_prg(SPLASH_STATUS *status, const TOC *ptoc);
+int pyi_splash_update_prg(SPLASH_CONTEXT *splash, const TOC *toc_entry);
 
 /* Memory allocation functions */
-SPLASH_STATUS *pyi_splash_status_new();
-void pyi_splash_status_free(SPLASH_STATUS **splash_status);
+SPLASH_CONTEXT *pyi_splash_context_new();
+void pyi_splash_context_free(SPLASH_CONTEXT **splash_ref);
 
 #endif  /*PYI_SPLASH_H */
