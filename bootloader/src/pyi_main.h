@@ -50,6 +50,34 @@ typedef struct
     int argc;
     char **argv;
 
+    /* A copy of command-line arguments, so that PyInstaller can manipulate
+     * them if necessary.
+     *
+     * For example, in macOS .app bundles, we need to remove the `-psnxxx`
+     * argument. Furthermore, if argv-emulation is enabled for macOS .app
+     * bundles, we receive AppleEvents and convert them to command-line
+     * arguments.
+     *
+     * In addition, the `pyi_argv` array itself is NULL-terminated (in
+     * contrast to the original `argv` array, it has `pyi_argc + 1`
+     * elements, and `pyi_argv[pyi_argc]` is NULL). This makes it
+     * suitable for passing to `execvp` calls that are used on POSIX to
+     * spawn onefile child process and also used on POSIX systems other
+     * than macOS for onedir process to restart itself.
+     *
+     * These fields are initialized on on-demand basis, in the codepaths
+     * that involve `execvp` calls and/or macOS app bundles. Look for
+     * `pyi_utils_initialize_args` calls.
+     *
+     * While setting up the embedded python interpreter configuration,
+     * the corresponding codepath automatically chooses between argc/argv
+     * and pyi_argc/pyi_argv depending on the availability of the latter.
+     * This means that if `pyi_utils_initialize_args` was called at
+     * some point before, the modified arguments are passed on to the
+     * python interpreter (and will appear in sys.argv). */
+    int pyi_argc;
+    char **pyi_argv;
+
     /* Fully resolved path to the executable */
     char executable_filename[PATH_MAX];
 
@@ -90,6 +118,22 @@ typedef struct
     /* Argv emulation for macOS .app bundles */
 #if defined(__APPLE__) && defined(WINDOWED)
     unsigned char macos_argv_emulation;
+#endif
+
+    /* Ignore signals passed to parent process of a onefile application
+     * (POSIX systems only).
+     *
+     * If this option is not specified, a custom sugnal handler is
+     * installed that forwards signals to the child process.
+     *
+     * If this option is specified, a custom no-op signal handler is
+     * installed, so signals are effectively ignored.
+     *
+     * In current implementation, SIGCHLD, SIGCLD, and SIGTSTP are exempt
+     * from modification, and use *default* signal handler regardless of
+     * whether this option is specified or not. */
+#if !defined(_WIN32)
+    unsigned char ignore_signals;
 #endif
 } PYI_CONTEXT;
 

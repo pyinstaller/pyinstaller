@@ -94,13 +94,6 @@ typedef struct _archive_status {
      * calling this function would cause segmentation fault.
      */
     bool is_pylib_loaded;
-    /*
-     * Cached command-line arguments.
-     * On Windows, argv contains UTF-8 encoded version of __wargv. On
-     * Linux and macOS, it contains argv as received by main(),
-     */
-    int argc;
-    char **argv;
 } ARCHIVE_STATUS;
 
 const TOC *pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC *ptoc);
