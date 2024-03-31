@@ -77,17 +77,8 @@ typedef void (*sighandler_t)(int);
 #include "pyi_win32_utils.h"
 #include "pyi_apple_events.h"
 
-/*
- *  global variables that are used to copy argc/argv, so that PyIstaller can manipulate them
- *  if need be.  One case in which the incoming argc/argv is manipulated is in the case of
- *  Apple/Windowed, where we watch for AppleEvents in order to add files to the command line.
- *  (this is argv_emulation).  These variables must be of file global scope to be able to
- *  be accessed inside of the AppleEvents handlers.
- */
-static char **argv_pyi = NULL;
-static int argc_pyi = 0;
 
-// some platforms do not provide strnlen
+/* some platforms do not provide strnlen */
 #ifndef HAVE_STRNLEN
 size_t
 strnlen(const char *str, size_t n)
@@ -821,61 +812,63 @@ _pyi_get_stream_handle(FILE *stream)
 }
 
 int
-pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
-                       const int argc, char *const argv[])
+pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
 {
-    SECURITY_ATTRIBUTES sa;
-    STARTUPINFOW si;
-    PROCESS_INFORMATION pi;
-    int rc = 0;
-    wchar_t buffer[PATH_MAX];
+    SECURITY_ATTRIBUTES security_attributes;
+    STARTUPINFOW startup_info;
+    PROCESS_INFORMATION process_info;
+    wchar_t executable_filename_w[PATH_MAX];
+    bool succeeded;
+    DWORD child_exitcode;
 
     /* TODO is there a replacement for this conversion or just use wchar_t everywhere? */
     /* Convert file name to wchar_t from utf8. */
-    pyi_win32_utils_from_utf8(buffer, thisfile, PATH_MAX);
+    pyi_win32_utils_from_utf8(executable_filename_w, pyi_ctx->executable_filename, PATH_MAX);
 
     /* Set up console ctrl handler; the call returns non-zero on success */
     if (SetConsoleCtrlHandler(_pyi_win32_console_ctrl, TRUE) == 0) {
         VS("LOADER: failed to install console ctrl handler!\n");
     }
 
-    VS("LOADER: Setting up to run child\n");
-    sa.nLength = sizeof(sa);
-    sa.lpSecurityDescriptor = NULL;
-    sa.bInheritHandle = TRUE;
-    GetStartupInfoW(&si);
-    si.lpReserved = NULL;
-    si.lpDesktop = NULL;
-    si.lpTitle = NULL;
-    si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
-    si.wShowWindow = SW_NORMAL;
-    si.hStdInput = _pyi_get_stream_handle(stdin);
-    si.hStdOutput = _pyi_get_stream_handle(stdout);
-    si.hStdError = _pyi_get_stream_handle(stderr);
+    VS("LOADER: setting up to run child\n");
 
-    VS("LOADER: Creating child process\n");
+    security_attributes.nLength = sizeof(security_attributes);
+    security_attributes.lpSecurityDescriptor = NULL;
+    security_attributes.bInheritHandle = TRUE;
 
-    if (CreateProcessW(
-            buffer,            /* Pointer to name of executable module. */
-            GetCommandLineW(), /* pointer to command line string */
-            &sa,               /* pointer to process security attributes */
-            NULL,              /* pointer to thread security attributes */
-            TRUE,              /* handle inheritance flag */
-            0,                 /* creation flags */
-            NULL,              /* pointer to new environment block */
-            NULL,              /* pointer to current directory name */
-            &si,               /* pointer to STARTUPINFO */
-            &pi                /* pointer to PROCESS_INFORMATION */
-            )) {
-        VS("LOADER: Waiting for child process to finish...\n");
-        WaitForSingleObject(pi.hProcess, INFINITE);
-        GetExitCodeProcess(pi.hProcess, (unsigned long *)&rc);
+    GetStartupInfoW(&startup_info);
+    startup_info.lpReserved = NULL;
+    startup_info.lpDesktop = NULL;
+    startup_info.lpTitle = NULL;
+    startup_info.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+    startup_info.wShowWindow = SW_NORMAL;
+    startup_info.hStdInput = _pyi_get_stream_handle(stdin);
+    startup_info.hStdOutput = _pyi_get_stream_handle(stdout);
+    startup_info.hStdError = _pyi_get_stream_handle(stderr);
+
+    VS("LOADER: creating child process\n");
+
+    succeeded = CreateProcessW(
+        executable_filename_w, /* lpApplicationName */
+        GetCommandLineW(), /* lpCommandLine */
+        &security_attributes, /* lpProcessAttributes */
+        NULL, /* lpThreadAttributes */
+        TRUE, /* bInheritHandles */
+        0, /* dwCreationFlags */
+        NULL, /* lpEnvironment */
+        NULL, /* lpCurrentDirectory */
+        &startup_info, /* lpStartupInfo */
+        &process_info /* lpProcessInformation */
+    );
+    if (succeeded) {
+        VS("LOADER: waiting for child process to finish...\n");
+        WaitForSingleObject(process_info.hProcess, INFINITE);
+        GetExitCodeProcess(process_info.hProcess, &child_exitcode);
+        return child_exitcode;
     }
-    else {
-        FATAL_WINERROR("CreateProcessW", "Error creating child process!\n");
-        rc = -1;
-    }
-    return rc;
+
+    FATAL_WINERROR("CreateProcessW", "Failed to create child process!\n");
+    return -1;
 }
 
 #else /* ifdef _WIN32 */
@@ -935,10 +928,10 @@ pyi_utils_set_library_search_path(const char *path)
  * by systemd.
  */
 static int
-set_systemd_env()
+_pyi_set_systemd_env()
 {
-    const char * env_var = "LISTEN_PID";
-    if(pyi_getenv(env_var) != NULL) {
+    const char *env_var = "LISTEN_PID";
+    if (pyi_getenv(env_var) != NULL) {
         /* the ULONG_STRING_SIZE is roughly equal to log10(max number)
          * but can be calculated in compile time.
          * The idea is from an answer on stackoverflow,
@@ -996,11 +989,9 @@ _signal_handler(int signum)
 }
 
 /* Start frozen application in a subprocess. The frozen application runs
- * in a subprocess.
- */
+ * in a subprocess. */
 int
-pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
-                       const int argc, char *const argv[])
+pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
 {
     pid_t pid = 0;
     int rc = 0;
@@ -1014,11 +1005,10 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     const size_t num_signals = 65;
 
     sighandler_t handler;
-    int ignore_signals;
     int signum;
 
-    /* Initialize argv_pyi and argc_pyi */
-    if (pyi_utils_initialize_args(argc, argv) < 0) {
+    /* Initialize pyi_argc and pyi_argv from original argc/argv */
+    if (pyi_utils_initialize_args(pyi_ctx, pyi_ctx->argc, pyi_ctx->argv) < 0) {
         goto cleanup;
     }
 
@@ -1028,7 +1018,7 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     pyi_apple_install_event_handlers();
     /* argv emulation; do a short (250 ms) cycle of Apple Events processing
      * before bringing up the child process */
-    if (pyi_arch_get_option(status, "pyi-macos-argv-emulation") != NULL) {
+    if (pyi_ctx->macos_argv_emulation) {
         pyi_apple_process_events(0.25);  /* short timeout (250 ms) */
     }
 #endif
@@ -1042,11 +1032,10 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
     /* Child code. */
     if (pid == 0) {
         /* Replace process by starting a new application. */
-        if (set_systemd_env() != 0) {
-            VS("WARNING: Application is started by systemd socket,"
-               "but we can't set proper LISTEN_PID on it.\n");
+        if (_pyi_set_systemd_env() != 0) {
+            VS("WARNING: application is started by systemd socket, but we cannot set proper LISTEN_PID on it.\n");
         }
-        if (execvp(thisfile, argv_pyi) < 0) {
+        if (execvp(pyi_ctx->executable_filename, pyi_ctx->pyi_argv) < 0) {
             VS("Failed to exec: %s\n", strerror(errno));
             goto cleanup;
         }
@@ -1058,19 +1047,18 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
      * wait_rc is -1, so the child exit code checking is skipped. */
 
     child_pid = pid;
-    ignore_signals = (pyi_arch_get_option(status, "pyi-bootloader-ignore-signals") != NULL);
-    handler = ignore_signals ? &_ignoring_signal_handler : &_signal_handler;
+    handler = pyi_ctx->ignore_signals ? &_ignoring_signal_handler : &_signal_handler;
 
     /* Redirect all signals received by parent to child process. */
-    if (ignore_signals) {
+    if (pyi_ctx->ignore_signals) {
         VS("LOADER: Ignoring all signals in parent\n");
     } else {
         VS("LOADER: Registering signal handlers\n");
     }
     for (signum = 0; signum < num_signals; ++signum) {
-        // don't mess with SIGCHLD/SIGCLD; it affects our ability
-        // to wait() for the child to exit
-        // don't change SIGTSP handling to allow Ctrl-Z
+        /* Don't mess with SIGCHLD/SIGCLD; it affects our ability
+         * to wait() for the child to exit. Similarly, do not change
+         * don't change SIGTSP handling to allow Ctrl-Z */
         if (signum != SIGCHLD && signum != SIGCLD && signum != SIGTSTP) {
             signal(signum, handler);
         }
@@ -1119,7 +1107,7 @@ pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS* status,
 
 cleanup:
     VS("LOADER: freeing args\n");
-    pyi_utils_free_args();
+    pyi_utils_free_args(pyi_ctx);
 
     /* Either wait() failed, or we jumped to `cleanup` and
      * didn't wait() at all. Either way, exit with error,
@@ -1155,27 +1143,29 @@ void pyi_utils_reraise_child_signal()
     }
 }
 
-
 #if !defined(__APPLE__)
 
 /* Replace the current process with another instance of itself, i.e.,
  * restart the process in-place (exec() without fork()). Used on linux
  * and unix-like OSes to achieve single-process onedir execution mode.
  */
-int pyi_utils_replace_process(const char *thisfile, const int argc, char *const argv[])
+int pyi_utils_replace_process(PYI_CONTEXT *pyi_ctx)
 {
     int rc;
 
-    /* Use helper to copy argv into NULL-terminated arguments array, argv_pyi. */
-    if (pyi_utils_initialize_args(argc, argv) < 0) {
+    /* Use helper to copy original argv into NULL-terminated arguments array, pyi_argv. */
+    if (pyi_utils_initialize_args(pyi_ctx, pyi_ctx->argc, pyi_ctx->argv) < 0) {
         return -1;
     }
+
     /* Replace the current executable image. */
-    rc = execvp(thisfile, argv_pyi);
+    rc = execvp(pyi_ctx->executable_filename, pyi_ctx->pyi_argv);
+
     /* This part is reached only if exec() failed. */
     if (rc < 0) {
         VS("Failed to exec: %s\n", strerror(errno));
     }
+
     return rc;
 }
 
@@ -1185,26 +1175,26 @@ int pyi_utils_replace_process(const char *thisfile, const int argc, char *const 
 
 
 /*
- * Initialize private argc_pyi and argv_pyi from the given argc and
- * argv by creating a deep copy. The resulting argc_pyi and argv_pyi
- * can be retrieved by pyi_utils_get_args() and are freed/cleaned-up by
- * pyi_utils_free_args().
+ * Initialize private pyi_argc and pyi_argv from the given argc and
+ * argv by creating a deep copy. The resulting pyi_argc and pyi_argv
+ * can be retrieved directly from PYI_CONTEXT structure, and are
+ * freed/cleaned-up by calling pyi_utils_free_args().
  *
- * The argv_pyi contains argc_pyi + 1 elements, with the last element
+ * The pyi_argv contains pyi_argv + 1 elements, with the last element
  * being NULL (i.e., it is execv-compatible NULL-terminated array).
  *
  * On macOS, this function filters out the -psnxxx argument that is
  * passed to executable when .app bundle is launched from Finder:
  * https://stackoverflow.com/questions/10242115/os-x-strange-psn-command-line-parameter-when-launched-from-finder
  */
-int pyi_utils_initialize_args(const int argc, char *const argv[])
+int pyi_utils_initialize_args(PYI_CONTEXT *pyi_ctx, const int argc, char *const argv[])
 {
     int i;
 
-    argv_pyi = (char**)calloc(argc + 1, sizeof(char*));
-    argc_pyi = 0;
-    if (!argv_pyi) {
-        FATALERROR("LOADER: failed to allocate argv_pyi: %s\n", strerror(errno));
+    pyi_ctx->pyi_argc = 0;
+    pyi_ctx->pyi_argv = (char**)calloc(argc + 1, sizeof(char*));
+    if (!pyi_ctx->pyi_argv) {
+        FATALERROR("LOADER: failed to allocate pyi_argv: %s\n", strerror(errno));
         return -1;
     }
 
@@ -1212,99 +1202,79 @@ int pyi_utils_initialize_args(const int argc, char *const argv[])
         char *tmp;
 
         /* Filter out -psnxxx argument that is used on macOS to pass
-         * unique process serial number (PSN) to apps launched via Finder. */
-        #if defined(__APPLE__) && defined(WINDOWED)
+         * unique process serial number (PSN) to .app bundles launched
+         * via Finder. */
+#if defined(__APPLE__) && defined(WINDOWED)
         if (strstr(argv[i], "-psn") == argv[i]) {
             continue;
         }
-        #endif
+#endif
 
         /* Copy the argument */
         tmp = strdup(argv[i]);
         if (!tmp) {
             FATALERROR("LOADER: failed to strdup argv[%d]: %s\n", i, strerror(errno));
-            /* If we can't allocate basic amounts of memory at this critical point,
+            /* If we cannot allocate basic amounts of memory at this critical point,
              * we should probably just give up. */
             return -1;
         }
-        argv_pyi[argc_pyi++] = tmp;
+        pyi_ctx->pyi_argv[pyi_ctx->pyi_argc++] = tmp;
     }
 
     return 0;
 }
 
 /*
- * Append given argument to private argv_pyi and increment argc_pyi.
- * The argv_pyi array is reallocated accordingly.
+ * Append given argument to private pyi_argv and increment pyi_argc.
+ * The pyi_argv array is reallocated accordingly.
  *
  * Returns 0 on success, -1 on failure (due to failed array reallocation).
- * On failure, argv_pyi and argc_pyi remain unchanged.
+ * On failure, pyi_argv and pyi_argc remain unchanged.
  */
-int pyi_utils_append_to_args(const char *arg)
+int pyi_utils_append_to_args(PYI_CONTEXT *pyi_ctx, const char *arg)
 {
-    char **new_argv_pyi;
-    char *new_arg;
+    char **new_pyi_argv;
+    char *arg_copy;
 
     /* Make a copy of new argument */
-    new_arg = strdup(arg);
-    if (!new_arg) {
+    arg_copy = strdup(arg);
+    if (!arg_copy) {
         return -1;
     }
 
-    /* Reallocate argv_pyi array, making space for new argument plus
+    /* Reallocate pyi_argv array, making space for new argument plus
      * terminating NULL */
-    new_argv_pyi = (char**)realloc(argv_pyi, (argc_pyi + 2) * sizeof(char *));
-    if (!new_argv_pyi) {
-        free(new_arg);
+    new_pyi_argv = (char**)realloc(pyi_ctx->pyi_argv, (pyi_ctx->pyi_argc + 2) * sizeof(char *));
+    if (!new_pyi_argv) {
+        free(arg_copy);
         return -1;
     }
-    argv_pyi = new_argv_pyi;
+    pyi_ctx->pyi_argv = new_pyi_argv;
 
     /* Store new argument */
-    argv_pyi[argc_pyi++] = new_arg;
-    argv_pyi[argc_pyi] = NULL;
+    pyi_ctx->pyi_argv[pyi_ctx->pyi_argc++] = arg_copy;
+    pyi_ctx->pyi_argv[pyi_ctx->pyi_argc] = NULL;
 
     return 0;
-}
-
-/*
- * Retrieve value of argc_pyi and the pointer to argv_pyi. The retrieved
- * arguments are originally the same as the ones passed to
- * pyi_utils_initialize_args(), but may have been modified by subsequent
- * processing code (e.g., Apple event processing).
- *
- * The argv_pyi array is NULL terminated (i.e., contains argc_pyi + 1)
- * entries, and the last entry is NULL).
- *
- * The ownership of array is not transferred, i.e., it should not be
- * explicitly freed by the caller. Instead, the array and its resources
- * are cleaned up oncepyi_utils_free_args() is called.
- */
-void pyi_utils_get_args(int *argc, char ***argv)
-{
-    if (argc) {
-        *argc = argc_pyi;
-    }
-    if (argv) {
-        *argv = argv_pyi;
-    }
 }
 
 /*
  * Free/clean-up the private arguments (pyi_argv).
  */
-void pyi_utils_free_args()
+void pyi_utils_free_args(PYI_CONTEXT *pyi_ctx)
 {
     /* Free each entry */
     int i;
-    for (i = 0; i < argc_pyi; i++) {
-        free(argv_pyi[i]);
+    for (i = 0; i < pyi_ctx->pyi_argc; i++) {
+        free(pyi_ctx->pyi_argv[i]);
     }
-    /* Free the list */
-    free(argv_pyi);
+
+    /* Free the array itself */
+    free(pyi_ctx->pyi_argv);
+
     /* Clean-up the variables, just in case */
-    argc_pyi = 0;
-    argv_pyi = NULL;
+    pyi_ctx->pyi_argc = 0;
+    pyi_ctx->pyi_argv = NULL;
 }
 
 

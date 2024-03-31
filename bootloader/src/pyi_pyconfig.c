@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "pyi_pyconfig.h"
+#include "pyi_archive.h"
 #include "pyi_global.h"
 #include "pyi_utils.h"
 #include "pyi_win32_utils.h"
@@ -520,22 +521,35 @@ _pyi_pyconfig_set_argv(PyConfig *config, int argc, wchar_t **argv_w)
 int
 pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
 {
+    char *const *argv;
     wchar_t **argv_w;
+    int argc;
     int ret = 0;
     int i;
 
+    /* Select original argc/argv vs. modified pyi_argc/pyi_argv */
+    if (pyi_ctx->pyi_argv != NULL) {
+        /* Modified pyi_argc/pyi_argv are available; use those */
+        argc = pyi_ctx->pyi_argc;
+        argv = pyi_ctx->pyi_argv;
+    } else {
+        /* Use original argc/argv */
+        argc = pyi_ctx->argc;
+        argv = pyi_ctx->argv;
+    }
+
     /* Allocate */
-    argv_w = calloc(pyi_ctx->archive->argc, sizeof(wchar_t *));
+    argv_w = calloc(argc, sizeof(wchar_t *));
     if (argv_w == NULL) {
         return -1;
     }
 
     /* Convert */
-    for (i = 0; i < pyi_ctx->archive->argc; i++) {
+    for (i = 0; i < argc; i++) {
 #ifdef _WIN32
-        argv_w[i] = pyi_win32_utils_from_utf8(NULL, pyi_ctx->archive->argv[i], 0);
+        argv_w[i] = pyi_win32_utils_from_utf8(NULL, argv[i], 0);
 #else
-        argv_w[i] = PI_Py_DecodeLocale(pyi_ctx->archive->argv[i], NULL);
+        argv_w[i] = PI_Py_DecodeLocale(argv[i], NULL);
 #endif
         if (argv_w[i] == NULL) {
             /* Do not break; we need to initialize all elements */
@@ -547,11 +561,11 @@ pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
     }
 
     /* Set */
-    ret = _pyi_pyconfig_set_argv(config, pyi_ctx->archive->argc, argv_w);
+    ret = _pyi_pyconfig_set_argv(config, argc, argv_w);
 
 end:
     /* Cleanup */
-    for (i = 0; i < pyi_ctx->archive->argc; i++) {
+    for (i = 0; i < argc; i++) {
 #ifdef _WIN32
         free(argv_w[i]);
 #else

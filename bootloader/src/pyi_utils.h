@@ -19,11 +19,14 @@
 #ifndef HEADER_PYI_UTILS_H
 #define HEADER_PYI_UTILS_H
 
-#include "pyi_archive.h"
+#include "pyi_main.h"
 
 #ifndef _WIN32
 #include <sys/types.h> /* pid_t */
 #endif
+
+#include <stdio.h> /* FILE */
+#include <inttypes.h> /* uint64_t */
 
 // some platforms do not provide strnlen
 #ifndef HAVE_STRNLEN
@@ -49,8 +52,9 @@ int pyi_copy_file(const char *src, const char *dst, const char *filename);
 /* Other routines. */
 dylib_t pyi_utils_dlopen(const char *dllpath);
 int pyi_utils_dlclose(dylib_t dll);
-int pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS *status,
-                           const int argc, char *const argv[]);
+
+int pyi_utils_create_child(PYI_CONTEXT *pyi_ctx);
+
 #ifndef _WIN32
 pid_t pyi_utils_get_child_pid();
 void pyi_utils_reraise_child_signal();
@@ -58,14 +62,13 @@ void pyi_utils_reraise_child_signal();
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 int pyi_utils_set_library_search_path(const char *path);
-int pyi_utils_replace_process(const char *thisfile, const int argc, char *const argv[]);
+int pyi_utils_replace_process(PYI_CONTEXT *pyi_ctx);
 #endif
 
 /* Argument handling */
-int pyi_utils_initialize_args(const int argc, char *const argv[]);
-int pyi_utils_append_to_args(const char *arg);
-void pyi_utils_get_args(int *argc, char ***argv);
-void pyi_utils_free_args();
+int pyi_utils_initialize_args(PYI_CONTEXT *pyi_ctx, const int argc, char *const argv[]);
+int pyi_utils_append_to_args(PYI_CONTEXT *pyi_ctx, const char *arg);
+void pyi_utils_free_args(PYI_CONTEXT *pyi_ctx);
 
 /* Magic pattern matching */
 extern const unsigned char MAGIC_BASE[8];

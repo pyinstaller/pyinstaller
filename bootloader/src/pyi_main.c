@@ -98,10 +98,6 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     pyi_ctx->is_onefile = pyi_ctx->archive->needs_to_extract;
     pyi_ctx->needs_to_extract = pyi_ctx->is_onefile;
 
-    /* These are passed on to python interpreter, so they show up in sys.argv */
-    pyi_ctx->archive->argc = pyi_ctx->argc;
-    pyi_ctx->archive->argv = pyi_ctx->argv;
-
     /* Read argv emulation setting (macOS .app bundles) */
 #if defined(__APPLE__) && defined(WINDOWED)
     pyi_ctx->macos_argv_emulation = pyi_arch_get_option(pyi_ctx->archive, "pyi-macos-argv-emulation") != NULL;
@@ -132,6 +128,11 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     } else if (pyi_ctx->hide_console == PYI_HIDE_CONSOLE_MINIMIZE_EARLY) {
         pyi_win32_minimize_console();
     }
+#endif
+
+#if !defined(_WIN32)
+    /* Read ignore-signals option (POSIX only) */
+    pyi_ctx->ignore_signals = pyi_arch_get_option(pyi_ctx->archive, "pyi-bootloader-ignore-signals") != NULL;
 #endif
 
     /* On Linux, restore process name (passed from parent process via
@@ -369,12 +370,14 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
     snprintf(pyi_ctx->archive->mainpath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
 
     /* Argument processing and argv emulation for onedir macOS .app bundles.
-     * In onefile mode, this step is performed by the parent, and extra
-     * arguments are passed to argv/argc when spawning child process. */
+     * In onefile mode, this step was performed by the parent, and extra
+     * arguments were passed to argv/argc when spawning child process. */
 #if defined(__APPLE__) && defined(WINDOWED)
     if (!pyi_ctx->is_onefile) {
-        /* Initialize argc_pyi and argv_pyi with argc and argv */
-        if (pyi_utils_initialize_args(pyi_ctx->archive->argc, pyi_ctx->archive->argv) < 0) {
+        /* Initialize pyi_argc and pyi_argv with original argc and argv.
+         * Do this regardless of argv-emulation setting, because
+         * pyi_utils_initialize_args() also filters out -psn_xxx argument. */
+        if (pyi_utils_initialize_args(pyi_ctx, pyi_ctx->argc, pyi_ctx->argv) < 0) {
             return -1;
         }
 
@@ -396,11 +399,6 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
              * to ourselves... */
             pyi_apple_submit_oapp_event();
         }
-
-        /* Update pointer to arguments; regardless of argv-emulation,
-         * because pyi_utils_initialize_args() also filters out
-         * -psn_xxx argument. */
-        pyi_utils_get_args(&pyi_ctx->archive->argc, &pyi_ctx->archive->argv);
     }
 #endif
 
@@ -443,7 +441,7 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
 
 #if defined(__APPLE__) && defined(WINDOWED)
     /* Clean up arguments that were used with Apple event processing .*/
-    pyi_utils_free_args();
+    pyi_utils_free_args(pyi_ctx);
 #endif
 
     return ret;
@@ -548,12 +546,7 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
 
     /* Start the child process that will execute user's program. */
     VS("LOADER: starting the child process...\n");
-    ret = pyi_utils_create_child(
-        pyi_ctx->executable_filename,
-        pyi_ctx->archive,
-        pyi_ctx->argc,
-        pyi_ctx->argv
-    );
+    ret = pyi_utils_create_child(pyi_ctx);
 
     VS("LOADER: child process exited (return code: %d)\n", ret);
 
@@ -949,7 +942,7 @@ _pyi_main_handle_posix_onedir(PYI_CONTEXT *pyi_ctx)
 
     /* Restart the process. The helper function performs exec() without
      * fork(), so we never return from the call. */
-    if (pyi_utils_replace_process(pyi_ctx->executable_filename, pyi_ctx->argc, pyi_ctx->argv) < 0) {
+    if (pyi_utils_replace_process(pyi_ctx) < 0) {
         return -1;
     }
 

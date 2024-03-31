@@ -23,6 +23,7 @@
 #include <ApplicationServices/ApplicationServices.h> /* GetProcessForPID, etc */
 
 #include "pyi_global.h"
+#include "pyi_main.h"
 #include "pyi_utils.h"
 #include "pyi_apple_events.h"
 
@@ -305,7 +306,7 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
                 }
                 /* Append URL to argv_pyi array, reallocating as necessary */
                 VS("LOADER [AppleEvent ARGV_EMU]: appending '%s' to argv_pyi\n", buf);
-                if (pyi_utils_append_to_args(buf) < 0) {
+                if (pyi_utils_append_to_args(global_pyi_ctx, buf) < 0) {
                     OTHERERROR("LOADER [AppleEvent ARGV_EMU]: failed to append to argv_pyi: %s\n",
                                buf, strerror(errno));
                 } else {
