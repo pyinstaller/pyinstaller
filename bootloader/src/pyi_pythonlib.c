@@ -95,9 +95,10 @@ pyi_pylib_load(const PYI_CONTEXT *pyi_ctx)
     }
 
 #ifdef _WIN32
-    /* If ucrtbase.dll exists in temppath, load it proactively before Python
-     * library loading to avoid Python library loading failure (unresolved
-     * symbol errors) on systems with Universal CRT update not installed. */
+    /* If ucrtbase.dll exists in top-level application directory, load
+     * it proactively before Python library loading to avoid Python library
+     * loading failure (unresolved symbol errors) on systems with Universal
+     * CRT update not installed. */
     if (1) {
         char ucrtpath[PATH_MAX];
         if (pyi_path_join(ucrtpath, pyi_ctx->application_home_dir, "ucrtbase.dll") == NULL) {

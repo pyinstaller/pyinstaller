@@ -116,7 +116,6 @@ int
 pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
 {
     SPLASH_DATA_HEADER *data_header;
-    char rundir_fullpath[PATH_MAX];
 
     /* Read splash resources entry from the archive */
     data_header = _pyi_splash_find_data_header(pyi_ctx->archive);
@@ -136,37 +135,37 @@ pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
      * padding and is ensuring that strings themselves have no more than
      * 15 characters long. */
 
-    /* We need a copy of rundir as-is to prepend it to TOC entries when
-     * extracting. */
-    snprintf(splash->rundir, PATH_MAX, "%s", data_header->rundir);
-
     /* Full path to run-time directory that contains Tcl/Tk dependencies. */
     if (pyi_ctx->is_onefile) {
-        if (pyi_path_join(rundir_fullpath, pyi_ctx->application_home_dir, data_header->rundir) == NULL) {
-            OTHERERROR("SPLASH: length of run-time directory path exceeds maximum path length!\n");
+        /* Onefile mode: sub-directory under (temporary/ephemeral) top-level
+         * application directory. */
+        if (pyi_path_join(splash->splash_dependencies_dir, pyi_ctx->application_home_dir, data_header->rundir) == NULL) {
+            OTHERERROR("SPLASH: length of run-time splash directory path exceeds maximum path length!\n");
             free(data_header);
             return -1;
         }
     } else {
-        snprintf(rundir_fullpath, PATH_MAX, "%s", pyi_ctx->application_home_dir); /* Cannot exceed PATH_MAX */
+        /* Onedir mode: top-level application directory */
+        /* NOTE: the path length is guaranteed to fit PATH_MAX */
+        snprintf(splash->splash_dependencies_dir, PATH_MAX, "%s", pyi_ctx->application_home_dir);
     }
 
     /* Tcl shared library */
-    if (pyi_path_join(splash->tcl_libpath, rundir_fullpath, data_header->tcl_libname) == NULL) {
+    if (pyi_path_join(splash->tcl_libpath, splash->splash_dependencies_dir, data_header->tcl_libname) == NULL) {
         OTHERERROR("SPLASH: length of Tcl shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }
 
     /* Tk shared library */
-    if (pyi_path_join(splash->tk_libpath, rundir_fullpath, data_header->tk_libname) == NULL) {
+    if (pyi_path_join(splash->tk_libpath, splash->splash_dependencies_dir, data_header->tk_libname) == NULL) {
         OTHERERROR("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }
 
     /* Tk modules directory */
-    if (pyi_path_join(splash->tk_lib, rundir_fullpath, data_header->tk_lib) == NULL) {
+    if (pyi_path_join(splash->tk_lib, splash->splash_dependencies_dir, data_header->tk_lib) == NULL) {
         OTHERERROR("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
@@ -290,7 +289,8 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
  * Since these extracted files would collide with the files that are
  * extracted in pyi_launch_extract_files_from_archive, we put the splash
  * screen files into a subdirectory inside the application's (temporary)
- * top-level directory. The name of this subdirectory is provided by the
+ * top-level directory, which we refer to as "splash dependencies
+ * directory". The name of this subdirectory is controlled by the
  * SPLASH_DATA_HEADER "rundir" field, which is ensured to not collide
  * with any custom directory that is part of frozen application.
  *
@@ -304,17 +304,23 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
     const ARCHIVE_STATUS *archive = pyi_ctx->archive;
     const TOC *toc_entry;
     const char *filename = NULL;
-    TOC *tmp_toc;
     size_t pos;
-    int rc = 0;
 
     /* No-op in onedir mode */
     if (!pyi_ctx->is_onefile) {
         return 0;
     }
 
-    /* The last item in TOC is a path, so limit it at PATH_MAX */
-    tmp_toc = (TOC *)calloc(1, sizeof(TOC) + PATH_MAX);
+    /* Make sure splash dependencies directory exists */
+    if (pyi_path_exists(splash->splash_dependencies_dir) == 0) {
+        if (pyi_path_mkdir(splash->splash_dependencies_dir) < 0) {
+            FATALERROR(
+                "SPLASH: could not create splash dependencies directory %s.\n",
+                splash->splash_dependencies_dir
+            );
+            return -1;
+        }
+    }
 
     /* Iterate over the requirements array */
     for (pos = 0; pos < (size_t)splash->requirements_len; pos += strlen(filename) + 1) {
@@ -325,29 +331,17 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
         toc_entry = pyi_arch_find_by_name(archive, filename);
         if (toc_entry == NULL) {
             FATALERROR("SPLASH: could not find requirement %s in archive.\n", filename);
-            rc = -1;
-            break;
+            return -1;
         }
 
-        /* Copy the TOC into a new buffer, because we need to modify
-         * the TOCs name in order to change its extraction path.
-         * The name is changed to move the file into a directory named
-         * after the value of rundir. This is necessary, since the extraction
-         * of the rest of the files would collide with these files. */
-        memcpy(tmp_toc, toc_entry, toc_entry->structlen);
-        pyi_path_join(tmp_toc->name, splash->rundir, toc_entry->name);
-        tmp_toc->structlen = toc_entry->structlen - (int) strlen(toc_entry->name) + (int) strlen(tmp_toc->name);
-
-        /* Extract file into the rundir */
-        if (pyi_arch_extract2fs(archive, tmp_toc)) {
+        /* Extract file into the splash dependencies directory */
+        if (pyi_arch_extract2fs(archive, toc_entry, splash->splash_dependencies_dir)) {
             FATALERROR("SPLASH: could not extract requirement %s.\n", toc_entry->name);
-            rc = -2;
-            break;
+            return -2;
         }
     }
 
-    free(tmp_toc);
-    return rc;
+    return 0;
 }
 
 /* Load Tcl/Tk shared libraries and bind required symbols (functions). */

@@ -212,10 +212,8 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             VS("LOADER: created temporary directory: %s\n", pyi_ctx->application_home_dir);
 
             /* TODO: remove once archive extraction code is reworked */
-            snprintf(pyi_ctx->archive->temppath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
             snprintf(pyi_ctx->archive->homepath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
             snprintf(pyi_ctx->archive->mainpath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
-            pyi_ctx->archive->has_temp_directory = true;
         }
     } else {
         char executable_dir[PATH_MAX];
@@ -251,10 +249,8 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         }
 
         /* TODO: remove once homepath and similar variables are removed from archive */
-        snprintf(pyi_ctx->archive->temppath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
         snprintf(pyi_ctx->archive->homepath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
         snprintf(pyi_ctx->archive->mainpath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
-        pyi_ctx->archive->has_temp_directory = false;
 
         /* Special handling for onedir mode on POSIX systems other than
          * macOS. To achieve single-process onedir mode, we need to set
@@ -370,9 +366,7 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
     /* TODO: this was done in the old codepath - keep it around just
      * in case, until we remove temppath, mainpath, etc. from archive
      * data structure */
-    pyi_ctx->archive->has_temp_directory = true;
-    snprintf(pyi_ctx->archive->temppath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
-    strcpy(pyi_ctx->archive->mainpath, pyi_ctx->archive->temppath);
+    snprintf(pyi_ctx->archive->mainpath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
 
     /* Argument processing and argv emulation for onedir macOS .app bundles.
      * In onefile mode, this step is performed by the parent, and extra
@@ -571,9 +565,9 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
     pyi_splash_finalize(pyi_ctx->splash);
     pyi_splash_context_free(&pyi_ctx->splash);
 
-    if (pyi_ctx->archive->has_temp_directory) {
-        pyi_recursive_rmdir(pyi_ctx->application_home_dir);
-    }
+    /* Delete the application's temporary directory */
+    pyi_recursive_rmdir(pyi_ctx->application_home_dir);
+
     pyi_arch_status_free(pyi_ctx->archive);
     pyi_ctx->archive = NULL;
 

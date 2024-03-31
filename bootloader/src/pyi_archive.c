@@ -257,25 +257,25 @@ cleanup:
  * Create/extract symbolic link from the archive.
  */
 static int
-pyi_arch_create_symlink(const ARCHIVE_STATUS *status, const TOC *ptoc)
+pyi_arch_create_symlink(const ARCHIVE_STATUS *archive, const TOC *toc_entry, const char *output_directory)
 {
     char *link_target = NULL;
     char link_name[PATH_MAX];
     int rc = -1;
 
     /* Extract symlink target */
-    link_target = (char *) pyi_arch_extract(status, ptoc);
+    link_target = (char *)pyi_arch_extract(archive, toc_entry);
     if (!link_target) {
         goto cleanup;
     }
 
     /* Ensure parent path exists */
-    if (pyi_create_parent_directory(status->temppath, ptoc->name) < 0) {
+    if (pyi_create_parent_directory(output_directory, toc_entry->name) < 0) {
         goto cleanup;
     }
 
     /* Create the symbolic link */
-    if (snprintf(link_name, PATH_MAX, "%s%c%s", status->temppath, PYI_SEP, ptoc->name) >= PATH_MAX) {
+    if (snprintf(link_name, PATH_MAX, "%s%c%s", output_directory, PYI_SEP, toc_entry->name) >= PATH_MAX) {
         goto cleanup;
     }
     rc = pyi_path_mksymlink(link_target, link_name);
@@ -287,61 +287,53 @@ cleanup:
 }
 
 /*
- * Extract an archive entry into file in the temporary directory.
- * The temporary directory must be initialized via `pyi_arch_create_tempdir`
- * before this function is called.
+ * Extract an archive entry into file in the specified output directory.
  */
 int
-pyi_arch_extract2fs(const ARCHIVE_STATUS *status, const TOC *ptoc)
+pyi_arch_extract2fs(const ARCHIVE_STATUS *archive, const TOC *toc_entry, const char *output_directory)
 {
     FILE *archive_fp = NULL;
     FILE *out_fp = NULL;
     int rc = 0;
 
-    /* Temporary directory must be initialized before calling this function */
-    if (status->has_temp_directory != true) {
-        FATALERROR("pyi_arch_extract2fs was called before temporary directory was initialized!\n");
-        return -1;
-    }
-
     /* Handle symbolic links */
-    if (ptoc->typcd == ARCHIVE_ITEM_SYMLINK) {
-        rc = pyi_arch_create_symlink(status, ptoc);
+    if (toc_entry->typcd == ARCHIVE_ITEM_SYMLINK) {
+        rc = pyi_arch_create_symlink(archive, toc_entry, output_directory);
         if (rc < 0) {
-            FATALERROR("Failed to create symbolic link %s!\n", ptoc->name);
+            FATALERROR("Failed to create symbolic link %s!\n", toc_entry->name);
         }
         return rc;
     }
 
     /* Open target file */
-    out_fp = pyi_open_target_file(status->temppath, ptoc->name);
+    out_fp = pyi_open_target_file(output_directory, toc_entry->name);
     if (out_fp == NULL) {
-        FATAL_PERROR("fopen", "Failed to extract %s: failed to open target file!\n", ptoc->name);
+        FATAL_PERROR("fopen", "Failed to extract %s: failed to open target file!\n", toc_entry->name);
         return -1;
     }
 
     /* Open archive (source) file... */
-    archive_fp = pyi_path_fopen(status->archivename, "rb");
+    archive_fp = pyi_path_fopen(archive->archivename, "rb");
     if (archive_fp == NULL) {
-        FATALERROR("Failed to extract %s: failed to open archive file!\n", ptoc->name);
+        FATALERROR("Failed to extract %s: failed to open archive file!\n", toc_entry->name);
         rc = -1;
         goto cleanup;
     }
     /* ... and seek to the beginning of entry's data */
-    if (pyi_fseek(archive_fp, status->pkgstart + ptoc->pos, SEEK_SET) < 0) {
-        FATAL_PERROR("fseek", "Failed to extract %s: failed to seek to the entry's data!\n", ptoc->name);
+    if (pyi_fseek(archive_fp, archive->pkgstart + toc_entry->pos, SEEK_SET) < 0) {
+        FATAL_PERROR("fseek", "Failed to extract %s: failed to seek to the entry's data!\n", toc_entry->name);
         rc = -1;
         goto cleanup;
     }
 
     /* Extract */
-    if (ptoc->cflag == '\1') {
-        rc = _pyi_arch_extract_compressed(archive_fp, ptoc, out_fp, NULL);
+    if (toc_entry->cflag == 1) {
+        rc = _pyi_arch_extract_compressed(archive_fp, toc_entry, out_fp, NULL);
     } else {
-        rc = _pyi_arch_extract2fs_uncompressed(archive_fp, ptoc, out_fp);
+        rc = _pyi_arch_extract2fs_uncompressed(archive_fp, toc_entry, out_fp);
     }
 #ifndef WIN32
-    if (ptoc->typcd == ARCHIVE_ITEM_BINARY) {
+    if (toc_entry->typcd == ARCHIVE_ITEM_BINARY) {
         fchmod(fileno(out_fp), S_IRUSR | S_IWUSR | S_IXUSR);
     } else {
         fchmod(fileno(out_fp), S_IRUSR | S_IWUSR);
@@ -545,7 +537,6 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *exe
      * Initial value of mainpath is homepath. It might be overridden
      * by temppath if it is available.
      */
-    status->has_temp_directory = false;
     strcpy(status->mainpath, status->homepath);
 
     return true;
