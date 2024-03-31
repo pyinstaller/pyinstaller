@@ -138,7 +138,7 @@ int pyi_splash_finalize(SPLASH_CONTEXT *splash);
 int pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable);
 
 /* Archive helper functions */
-int pyi_splash_extract(SPLASH_CONTEXT *splash, ARCHIVE_STATUS *archive);
+int pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx);
 
 int pyi_splash_send(
     SPLASH_CONTEXT *splash,

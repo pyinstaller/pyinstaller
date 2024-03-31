@@ -301,19 +301,38 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         VS("LOADER: looking for splash screen resources...\n");
         pyi_ctx->splash = pyi_splash_context_new();
         if (pyi_splash_setup(pyi_ctx->splash, pyi_ctx) == 0) {
-            int succeeded = 0;
+            int ret = 0;
 
-            /* Splash screen resources found; extract resources if
-             * necessary (onefile mode) and start splash screen.*/
+            /* Splash screen resources found; setup up splash screen */
             VS("LOADER: setting up splash screen...\n");
-            if (pyi_splash_extract(pyi_ctx->splash, pyi_ctx->archive) == 0) {
-                if (pyi_splash_load_shared_libaries(pyi_ctx->splash) == 0) {
-                    pyi_splash_start(pyi_ctx->splash, pyi_ctx->executable_filename);
-                    succeeded = 1;
+
+            /* In onefile mode, we need to extract dependencies (shared
+             * libraries, .tcl files, etc.) from PKG archive. */
+            if (pyi_ctx->is_onefile) {
+                VS("LOADER: extracting splash screen dependencies...\n");
+                ret = pyi_splash_extract(pyi_ctx->splash, pyi_ctx);
+                if (ret != 0) {
+                    OTHERERROR("Failed to unpack splash screen dependencies from PKG archive!\n");
                 }
             }
 
-            if (!succeeded) {
+            /* Load Tcl/Tk shared libraries */
+            if (ret == 0) {
+                ret = pyi_splash_load_shared_libaries(pyi_ctx->splash);
+                if (ret != 0) {
+                    OTHERERROR("Failed to load Tcl/Tk shared libraries for splash screen!\n");
+                }
+            }
+
+            /* Finally, start the splash screen */
+            if (ret == 0) {
+                ret = pyi_splash_start(pyi_ctx->splash, pyi_ctx->executable_filename);
+                if (ret != 0) {
+                    OTHERERROR("Failed to start splash screen!\n");
+                }
+            }
+
+            if (ret != 0) {
                 /* Either we failed to extract splash resources, or
                  * failed to load Tcl/Tk shared libraries. Clean up
                  * the state by finalizing it, and free the allocated
