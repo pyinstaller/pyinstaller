@@ -88,12 +88,18 @@ typedef struct _splash_context
      * directory.
      *
      * In onefile mode, they are extracted to sub-directory of the top-level
-     * application directory (an ephemeral temporary directory). The full
-     * path to this sub-directory is stored in rundir variable. */
+     * application directory (an ephemeral temporary directory). The name
+     * of this sub-directory is controlled by the `rundir` field in the
+     * splash header.
+     *
+     * The `splash_dependencies_dir` contains full path to either application's
+     * top-level directory, or sub-directory under it. All other paths
+     * (`tcl_libpath`, `tk_libpath`, `tk_lib` are full paths that are
+     * rooted in `splash_dependencies_dir`. */
+    char splash_dependencies_dir[PATH_MAX];
     char tcl_libpath[PATH_MAX];
     char tk_libpath[PATH_MAX];
     char tk_lib[PATH_MAX];
-    char rundir[PATH_MAX];
 
     /* The Tcl script that creates splash screen and the IPC mechanism
      * to communicate with python code. */

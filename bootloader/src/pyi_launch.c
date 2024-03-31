@@ -71,7 +71,7 @@ pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
             }
 
             /* Extract the file to the disk */
-            if (pyi_arch_extract2fs(pyi_ctx->archive, toc_entry)) {
+            if (pyi_arch_extract2fs(pyi_ctx->archive, toc_entry, pyi_ctx->application_home_dir)) {
                 retcode = -1;
                 break;  /* No need to extract other items in case of error. */
             }

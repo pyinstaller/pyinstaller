@@ -77,7 +77,6 @@ typedef struct _archive_status {
     char archivename[PATH_MAX];
     char executablename[PATH_MAX];
     char homepath[PATH_MAX];
-    char temppath[PATH_MAX];
     /*
      * Main path could be homepath or temppath. It will be temppath
      * if temppath is available. Sometimes we do not need to know if temppath
@@ -89,12 +88,6 @@ typedef struct _archive_status {
      * to the temporary directory (onefile mode).
      */
     bool needs_to_extract;
-    /*
-     * Flag if temporary directory is available. This usually means running
-     * executable in onefile mode. Bootloader has to behave differently
-     * in this mode.
-     */
-    bool has_temp_directory;
     /*
      * Flag if Python library was loaded. This indicates if it is safe
      * to call function PI_Py_Finalize(). If Python dll is missing
@@ -113,7 +106,7 @@ typedef struct _archive_status {
 const TOC *pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC *ptoc);
 
 unsigned char *pyi_arch_extract(const ARCHIVE_STATUS *status, const TOC *ptoc);
-int pyi_arch_extract2fs(const ARCHIVE_STATUS *status, const TOC *ptoc);
+int pyi_arch_extract2fs(const ARCHIVE_STATUS *archive, const TOC *toc_entry, const char *output_directory);
 
 /**
  * Helpers for embedders

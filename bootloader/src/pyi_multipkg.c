@@ -109,14 +109,11 @@ _get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS **archive_pool, const char *ar
 
     /* TODO: clean this up once we remove the variables */
     if ((snprintf(archive->archivename, PATH_MAX, "%s", archive_filename) >= PATH_MAX) ||
-        (snprintf(archive->homepath, PATH_MAX, "%s", pyi_ctx->archive->homepath) >= PATH_MAX) ||
-        (snprintf(archive->temppath, PATH_MAX, "%s", pyi_ctx->archive->temppath) >= PATH_MAX)) {
+        (snprintf(archive->homepath, PATH_MAX, "%s", pyi_ctx->archive->homepath) >= PATH_MAX)) {
         FATALERROR("Archive path exceeds PATH_MAX\n");
         pyi_arch_status_free(archive);
         return NULL;
     }
-    /* For now, this is necessary to facilitate extraction */
-    archive->has_temp_directory = true;
 
     if (pyi_arch_open(archive)) {
         FATALERROR("Failed to open archive %s!\n", archive_filename);
@@ -129,31 +126,8 @@ _get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS **archive_pool, const char *ar
     return archive;
 }
 
-/* Extract file from the archive */
-static int
-_extract_dependency_from_archive(ARCHIVE_STATUS *archive, const char *filename)
-{
-    const TOC *toc_entry = archive->tocbuff;
-
-    VS("LOADER: extracting dependency %s from archive\n", filename);
-
-    while (toc_entry < archive->tocend) {
-#if defined(_WIN32) || defined(__APPLE__)
-        /* On Windows and macOS, use case-insensitive comparison to
-         * simulate case-insensitive filesystem... */
-        if (strcasecmp(toc_entry->name, filename) == 0) {
-#else
-        if (strcmp(toc_entry->name, filename) == 0) {
-#endif
-            return pyi_arch_extract2fs(archive, toc_entry);
-        }
-        toc_entry = pyi_arch_increment_toc_ptr(archive, toc_entry);
-    }
-    return -1; /* Entry not found */
-}
-
 /* Decide if the dependency identified by item is in a onedir or onfile archive
- * and extract using the appropriate function. */
+ * and extract it using the appropriate helpers. */
 int
 pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_pool[], const char *dependency_name)
 {
@@ -229,6 +203,7 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_po
     } else {
         ARCHIVE_STATUS *other_archive = NULL;
         char other_archive_path[PATH_MAX];
+        const TOC *toc_entry;
 
         VS("LOADER: file %s not found on filesystem, assuming onefile reference.\n", filename);
 
@@ -241,16 +216,26 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_po
             return -1;
         }
 
+        /* Retrieve the referenced archive */
         if ((other_archive = _get_archive(pyi_ctx, archive_pool, other_archive_path)) == NULL) {
             FATALERROR("Failed to open referenced dependency archive %s.\n", other_archive_path);
             return -1;
         }
 
-        if (_extract_dependency_from_archive(other_archive, filename) == -1) {
+        /* NOTE: on errors in subsequent calls, do not free the `other_archive`,
+         * because its pointer is stored in the archive pool that is cleaned up
+         * by the caller! */
+
+        /* Look-up entry in archive's TOC */
+        toc_entry = pyi_arch_find_by_name(other_archive, filename);
+        if (toc_entry == NULL) {
+            FATALERROR("Dependency %s not found in the referenced dependency archive.\n", filename, other_archive_path);
+            return -1; /* Entry not found */
+        }
+
+        /* Extract */
+        if (pyi_arch_extract2fs(other_archive, toc_entry, pyi_ctx->application_home_dir) < 0) {
             FATALERROR("Failed to extract %s from referenced dependency archive %s.\n", filename, other_archive_path);
-            /* Do not free the archive ("status") here, because its
-             * pointer is stored in the archive pool that is cleaned up
-             * by the caller. */
             return -1;
         }
     }
