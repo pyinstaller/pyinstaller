@@ -78,19 +78,9 @@ typedef void (*sighandler_t)(int);
 #include "pyi_apple_events.h"
 
 
-/* some platforms do not provide strnlen */
-#ifndef HAVE_STRNLEN
-size_t
-strnlen(const char *str, size_t n)
-{
-    const char *stop = (char *)memchr(str, '\0', n);
-    return stop ? stop - str : n;
-}
-#endif
-
-
 char *
-pyi_strjoin(const char *first, const char *sep, const char *second){
+pyi_strjoin(const char *first, const char *sep, const char *second)
+{
     /* join first and second string, using sep as separator.
      * any of them may be either a null-terminated string or NULL.
      * sep will be only used if first and second string are not empty.

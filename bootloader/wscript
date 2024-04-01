@@ -668,7 +668,6 @@ def configure(ctx):
         ('stdlib.h', 'mkdtemp'),
         ('libgen.h', 'dirname'),
         ('libgen.h', 'basename'),
-        ('string.h', 'strnlen'),
     ):
         ctx.check(
             fragment=SNIP_FUNCTION % (header, function_name),

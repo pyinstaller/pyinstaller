@@ -28,11 +28,6 @@
 #include <stdio.h> /* FILE */
 #include <inttypes.h> /* uint64_t */
 
-// some platforms do not provide strnlen
-#ifndef HAVE_STRNLEN
-size_t strnlen(const char *str, size_t n);
-#endif
-
 /* Environment variables. */
 char *pyi_getenv(const char *variable);
 int pyi_setenv(const char *variable, const char *value);
