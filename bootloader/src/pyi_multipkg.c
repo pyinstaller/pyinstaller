@@ -123,8 +123,6 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, co
     char filename[PATH_MAX];
     char this_executable_dir[PATH_MAX];
     char full_srcpath[PATH_MAX];
-
-    const char *contents_directory;
     int ret;
 
     VS("LOADER: processing dependency reference: %s\n", dependency_name);
@@ -151,14 +149,11 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, co
     pyi_path_dirname(this_executable_dir, pyi_ctx->executable_filename);
     pyi_path_dirname(other_executable_dir, other_executable);
 
-    /* Retrieve contents-directory setting, from THIS executable, assuming it is
-     * the same across all multi-package executables. In practice, this should matter
-     * only if multi-package involves onedir builds.
-     */
-    contents_directory = pyi_archive_get_option(pyi_ctx->archive, "pyi-contents-directory");
-
     /* If dependency is located in a onedir build, we should be able to find
-     * it on the filesystem (accounting for contents sub-directory settings).
+     * it on the filesystem (accounting for contents sub-directory setting
+     * of the main archive/executable - assuming they are the same across
+     * all executables).
+     *
      * If dependency is located in a onefile build, we need to look up the
      * executable (or external PKG archive in case of side-loading). As the
      * executable (with embedded or external PKG archive) is also available
@@ -176,8 +171,8 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, co
      *  - for a onedir program referencing a dependency in a onedir program,
      *    it is "../other_program"
      */
-    if (contents_directory) {
-        ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, contents_directory, PYI_SEP, filename);
+    if (pyi_ctx->contents_subdirectory) {
+        ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, pyi_ctx->contents_subdirectory, PYI_SEP, filename);
     } else {
         ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, filename);
     }

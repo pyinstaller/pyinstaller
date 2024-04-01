@@ -527,40 +527,6 @@ pyi_archive_free(ARCHIVE **archive_ref)
     free(archive);
 }
 
-/*
- * Searches for run-time option by the given name, and returns its value.
- * Returns NULL if the option is not present. Returns an empty string if
- * the option is present, but has no associated value.
- *
- * The return value string is owned by the ARCHIVE structure; the caller
- * should NOT free it.
- */
-const char *
-pyi_archive_get_option(const ARCHIVE *archive, const char *option_name)
-{
-    size_t option_name_length;
-    const TOC_ENTRY *toc_entry;;
-
-    option_name_length = strlen(option_name);
-
-    for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
-        if (toc_entry->typecode != ARCHIVE_ITEM_RUNTIME_OPTION) {
-            continue;
-        }
-
-        if (strncmp(toc_entry->name, option_name, option_name_length) == 0) {
-            if (toc_entry->name[option_name_length] == 0) {
-                /* No option value, just return the empty string. */
-                return toc_entry->name + option_name_length;
-            } else {
-                /* Space separates option name from option value, so add 1. */
-                return toc_entry->name + option_name_length + 1;
-            }
-        }
-    }
-
-    return NULL;
-}
 
 /*
  * Find a TOC entry by its name and return it.
