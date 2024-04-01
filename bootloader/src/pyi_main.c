@@ -95,7 +95,9 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     /* We can now access PKG archive via pyi_ctx->archive; for example,
      * to read run-time options */
 
-    pyi_ctx->is_onefile = pyi_ctx->archive->needs_to_extract;
+    /* First, check if archive contains extractable entries - this implies
+     * that we are running in onefile mode */
+    pyi_ctx->is_onefile = pyi_ctx->archive->contains_extractable_entries;
     pyi_ctx->needs_to_extract = pyi_ctx->is_onefile;
 
     /* Read argv emulation setting (macOS .app bundles) */
@@ -834,7 +836,7 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
 
     /* Try opening embedded archive first */
     VS("LOADER: trying to load executable-embedded archive...\n");
-    status = pyi_arch_setup(pyi_ctx->archive, pyi_ctx->executable_filename);
+    status = pyi_arch_open(pyi_ctx->archive, pyi_ctx->executable_filename);
     if (status == true) {
         /* Copy executable filename to archive filename; we know it does not exceed PATH_MAX */
         snprintf(pyi_ctx->archive_filename, PATH_MAX, "%s", pyi_ctx->executable_filename);
@@ -868,7 +870,7 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
 
     VS("LOADER: trying to load external PKG archive (%s)...\n", pyi_ctx->archive_filename);
 
-    status = pyi_arch_setup(pyi_ctx->archive, pyi_ctx->archive_filename);
+    status = pyi_arch_open(pyi_ctx->archive, pyi_ctx->archive_filename);
     if (status != true) {
         FATALERROR(
             "Could not load PyInstaller's PKG archive from external file (%s)\n",
