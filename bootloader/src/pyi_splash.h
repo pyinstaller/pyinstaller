@@ -46,20 +46,20 @@ typedef struct _splash_data_header
     char rundir[16];
 
     /* Splash screen script */
-    int script_len;
-    int script_offset;
+    uint32_t script_len;
+    uint32_t script_offset;
 
     /* Image data */
-    int image_len;
-    int image_offset;
+    uint32_t image_len;
+    uint32_t image_offset;
 
     /*
      * To only extract the necessary files from the archive, the following
      * two fields define an array of strings. Strings are NULL-terminated
      * and stored one after another.
      */
-    int requirements_len;
-    int requirements_offset;
+    uint32_t requirements_len;
+    uint32_t requirements_offset;
 
     /*
      * Followed by a chunk of data, including the splash screen
