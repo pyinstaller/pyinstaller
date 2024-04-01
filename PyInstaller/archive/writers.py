@@ -112,10 +112,10 @@ class CArchiveWriter:
     _COOKIE_MAGIC_PATTERN = b'MEI\014\013\012\013\016'
 
     # For cookie and TOC entry structure, see `PyInstaller.archive.readers.CArchiveReader`.
-    _COOKIE_FORMAT = '!8sIIii64s'
+    _COOKIE_FORMAT = '!8sIIII64s'
     _COOKIE_LENGTH = struct.calcsize(_COOKIE_FORMAT)
 
-    _TOC_ENTRY_FORMAT = '!iIIIBB'
+    _TOC_ENTRY_FORMAT = '!IIIIBc'
     _TOC_ENTRY_LENGTH = struct.calcsize(_TOC_ENTRY_FORMAT)
 
     _COMPRESSION_LEVEL = 9  # zlib compression level
@@ -293,7 +293,7 @@ class CArchiveWriter:
                 compressed_length,
                 data_length,
                 compress,
-                ord(typecode),
+                typecode.encode('ascii'),
                 name,
             )
             serialized_toc.append(serialized_entry)
@@ -312,25 +312,25 @@ class SplashWriter:
     # Whereas script and image fields are binary data, the requirements fields describe an array of strings. Each string
     # is null-terminated in order to easily iterate over this list from within C.
     #
-    #   typedef struct _splash_data_header {
-    #       char tcl_libname[16];  /* Name of tcl library, e.g. tcl86t.dll */
-    #       char tk_libname[16];   /* Name of tk library, e.g. tk86t.dll */
-    #       char tk_lib[16];       /* Tk Library generic, e.g. "tk/" */
-    #       char rundir[16];       /* temp folder inside extraction path in
-    #                               * which the dependencies are extracted */
+    # typedef struct _splash_data_header
+    # {
+    #     char tcl_libname[16];
+    #     char tk_libname[16];
+    #     char tk_lib[16];
     #
-    #       int script_len;        /* Length of the script */
-    #       int script_offset;     /* Offset (rel to start) of the script */
+    #     char rundir[16];
     #
-    #       int image_len;         /* Length of the image data */
-    #       int image_offset;      /* Offset (rel to start) of the image */
+    #     uint32_t script_len;
+    #     uint32_t script_offset;
     #
-    #       int requirements_len;
-    #       int requirements_offset;
+    #     uint32_t image_len;
+    #     uint32_t image_offset;
     #
-    #   } SPLASH_DATA_HEADER;
+    #     uint32_t requirements_len;
+    #     uint32_t requirements_offset;
+    # } SPLASH_DATA_HEADER;
     #
-    _HEADER_FORMAT = '!16s 16s 16s 16s ii ii ii'
+    _HEADER_FORMAT = '!16s 16s 16s 16s II II II'
     _HEADER_LENGTH = struct.calcsize(_HEADER_FORMAT)
 
     # The created archive is compressed by the CArchive, so no need to compress the data here.

@@ -43,35 +43,35 @@ class CArchiveReader:
     # Cookie - holds some information for the bootloader. C struct format definition. '!' at the beginning means network
     # byte order. C struct looks like:
     #
-    #   typedef struct _cookie {
-    #       char magic[8]; /* 'MEI\014\013\012\013\016' */
-    #       uint32_t len;  /* len of entire package */
-    #       uint32_t TOC;  /* pos (rel to start) of TableOfContents */
-    #       int  TOClen;   /* length of TableOfContents */
-    #       int  pyvers;   /* new in v4 */
-    #       char pylibname[64];    /* Filename of Python dynamic library. */
-    #   } COOKIE;
+    # typedef struct _archive_cookie
+    # {
+    #     char magic[8];
+    #     uint32_t pkg_length;
+    #     uint32_t toc_offset;
+    #     uint32_t toc_length;
+    #     uint32_t python_version;
+    #     char python_libname[64];
+    # } ARCHIVE_COOKIE;
     #
     _COOKIE_MAGIC_PATTERN = b'MEI\014\013\012\013\016'
 
-    _COOKIE_FORMAT = '!8sIIii64s'
+    _COOKIE_FORMAT = '!8sIIII64s'
     _COOKIE_LENGTH = struct.calcsize(_COOKIE_FORMAT)
 
     # TOC entry:
     #
-    #   typedef struct _toc {
-    #       int  structlen;  /* len of this one - including full len of name */
-    #       uint32_t pos;    /* pos rel to start of concatenation */
-    #       uint32_t len;    /* len of the data (compressed) */
-    #       uint32_t ulen;   /* len of data (uncompressed) */
-    #       char cflag;      /* is it compressed (really a byte) */
-    #       char typcd;      /* type code -'b' binary, 'z' zlib, 'm' module,
-    #                         * 's' script (v3),'x' data, 'o' runtime option  */
-    #       char name[1];    /* the name to save it as */
-    #                        /* starting in v5, we stretch this out to a mult of 16 */
-    #   } TOC;
+    # typedef struct _toc_entry
+    # {
+    #     uint32_t entry_length;
+    #     uint32_t offset;
+    #     uint32_t length;
+    #     uint32_t uncompressed_length;
+    #     unsigned char compression_flag;
+    #     char typecode;
+    #     char name[1]; /* Variable-length name, padded to multiple of 16 */
+    # } TOC_ENTRY;
     #
-    _TOC_ENTRY_FORMAT = '!iIIIBB'
+    _TOC_ENTRY_FORMAT = '!IIIIBc'
     _TOC_ENTRY_LENGTH = struct.calcsize(_TOC_ENTRY_FORMAT)
 
     def __init__(self, filename):
@@ -154,7 +154,7 @@ class CArchiveReader:
             # Name string may contain up to 15 bytes of padding
             name = name.rstrip(b'\0').decode('utf-8')
 
-            typecode = chr(typecode)
+            typecode = typecode.decode('ascii')
 
             # The TOC should not contain duplicates, except for OPTION entries. Therefore, keep those
             # in a separate list. With options, the rest of the entries do not make sense, anyway.
