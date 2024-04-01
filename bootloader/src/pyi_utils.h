@@ -16,8 +16,8 @@
  * file path manipulation and other shared data types or functions.
  */
 
-#ifndef HEADER_PYI_UTILS_H
-#define HEADER_PYI_UTILS_H
+#ifndef PYI_UTILS_H
+#define PYI_UTILS_H
 
 #include "pyi_main.h"
 
@@ -69,4 +69,4 @@ void pyi_utils_free_args(PYI_CONTEXT *pyi_ctx);
 extern const unsigned char MAGIC_BASE[8];
 uint64_t pyi_utils_find_magic_pattern(FILE *fp, const unsigned char *magic, size_t magic_len);
 
-#endif  /* HEADER_PY_UTILS_H */
+#endif /* PYI_UTILS_H */

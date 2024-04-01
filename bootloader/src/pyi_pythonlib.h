@@ -28,4 +28,4 @@ int pyi_pylib_run_scripts(const PYI_CONTEXT *pyi_ctx);
 
 void pyi_pylib_finalize(const PYI_CONTEXT *pyi_ctx);
 
-#endif  /* PYI_PYTHONLIB_H */
+#endif /* PYI_PYTHONLIB_H */

@@ -92,4 +92,4 @@ int pyi_archive_extract2fs(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, c
 
 const TOC_ENTRY *pyi_archive_find_entry_by_name(const ARCHIVE *archive, const char *name);
 
-#endif  /* PYI_ARCHIVE_H */
+#endif /* PYI_ARCHIVE_H */

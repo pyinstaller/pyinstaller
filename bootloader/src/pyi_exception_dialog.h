@@ -11,8 +11,8 @@
  * ****************************************************************************
  */
 
-#ifndef EXCEPTION_DIALOG_H
-#define EXCEPTION_DIALOG_H
+#ifndef PYI_EXCEPTION_DIALOG_H
+#define PYI_EXCEPTION_DIALOG_H
 
 #if defined(WINDOWED) && defined(_WIN32)
 
@@ -20,4 +20,4 @@ int pyi_unhandled_exception_dialog(const char *script_name, const char *exceptio
 
 #endif /* defined(WINDOWED) && defined(_WIN32) */
 
-#endif  /* EXCEPTION_DIALOG_H */
+#endif /* PYI_EXCEPTION_DIALOG_H */

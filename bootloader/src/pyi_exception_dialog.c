@@ -433,4 +433,4 @@ pyi_unhandled_exception_dialog(const char *script_name, const char *exception_me
     return ret;
 }
 
-#endif
+#endif /* defined(WINDOWED) && defined(_WIN32) */

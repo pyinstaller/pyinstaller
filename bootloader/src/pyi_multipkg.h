@@ -27,5 +27,5 @@
 int pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *dependency_name);
 
 
-#endif  /* PYI_MULTIPKG_H */
+#endif /* PYI_MULTIPKG_H */
 

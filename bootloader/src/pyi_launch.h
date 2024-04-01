@@ -44,5 +44,4 @@ void pyi_launch_finalize(PYI_CONTEXT *pyi_ctx);
 int pyi_launch_execute(PYI_CONTEXT *pyi_ctx);
 
 
-#endif  /* PYI_LAUNCH_H */
-
+#endif /* PYI_LAUNCH_H */
