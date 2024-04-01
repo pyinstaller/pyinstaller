@@ -43,7 +43,7 @@
 int
 pyi_pylib_load(const PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE_STATUS *archive = pyi_ctx->archive;
+    const ARCHIVE *archive = pyi_ctx->archive;
     char dll_name[MAX_DLL_NAME_LEN];
     size_t dll_name_len;
     char dll_fullpath[PATH_MAX];
@@ -61,34 +61,34 @@ pyi_pylib_load(const PYI_CONTEXT *pyi_ctx)
     /* Determine if shared lib is in `libpython?.?.so` or
      * `libpython?.?.a(libpython?.?.so)` format. */
     char *p;
-    if ((p = strrchr(archive->cookie.pylibname, '.')) != NULL && strcmp(p, ".a") == 0) {
-        uint32_t pyvers_major;
-        uint32_t pyvers_minor;
+    if ((p = strrchr(archive->python_libname, '.')) != NULL && strcmp(p, ".a") == 0) {
+        uint32_t pyver_major;
+        uint32_t pyver_minor;
 
-        pyvers_major = pyvers / 100;
-        pyvers_minor = pyvers % 100;
+        pyver_major = archive->python_version / 100;
+        pyver_minor = archive->python_version % 100;
 
         dll_name_len = snprintf(
             dllname,
             DLLNAME_LEN,
             "libpython%d.%d.a(libpython%d.%d.so)",
-            pyvers_major,
-            pyvers_minor,
-            pyvers_major,
-            pyvers_minor
+            pyver_major,
+            pyver_minor,
+            pyver_major,
+            pyver_minor
         );
     } else {
-        dll_name_len = snprintf(dll_name, MAX_DLL_NAME_LEN, "%s", archive->cookie.pylibname);
+        dll_name_len = snprintf(dll_name, MAX_DLL_NAME_LEN, "%s", archive->python_libname);
     }
 #else
-    dll_name_len = snprintf(dll_name, MAX_DLL_NAME_LEN, "%s", archive->cookie.pylibname);
+    dll_name_len = snprintf(dll_name, MAX_DLL_NAME_LEN, "%s", archive->python_libname);
 #endif
 
     if (dll_name_len >= MAX_DLL_NAME_LEN) {
         FATALERROR(
             "Reported length (%d) of Python shared library name (%s) exceeds buffer size (%d)\n",
             dll_name_len,
-            archive->cookie.pylibname,
+            archive->python_libname,
             MAX_DLL_NAME_LEN
         );
         return -1;
@@ -130,7 +130,7 @@ pyi_pylib_load(const PYI_CONTEXT *pyi_ctx)
         return -1;
     }
 
-    return pyi_python_bind_functions(dll, pyvers);
+    return pyi_python_bind_functions(dll, archive->python_version);
 }
 
 /*
@@ -143,6 +143,7 @@ pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx)
     PyConfig *config = NULL;
     PyStatus status;
     int ret = -1;
+    const int python_version = pyi_ctx->archive->python_version;
 
     /* Read run-time options */
     runtime_options = pyi_runtime_options_read(pyi_ctx);
@@ -162,7 +163,7 @@ pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx)
     /* Allocate the config structure. Since underlying layout is specific to
      * python version, this also verifies that python version is supported. */
     VS("LOADER: Creating PyConfig structure...\n");
-    config = pyi_pyconfig_create();
+    config = pyi_pyconfig_create(python_version);
     if (config == NULL) {
         FATALERROR("Failed to allocate PyConfig structure! Unsupported python version?\n");
         goto end;
@@ -202,7 +203,7 @@ pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx)
 
     /* Apply run-time options */
     VS("LOADER: Applying run-time options...\n");
-    if (pyi_pyconfig_set_runtime_options(config, runtime_options) < 0) {
+    if (pyi_pyconfig_set_runtime_options(config, python_version, runtime_options) < 0) {
         FATALERROR("Failed to set run-time options!\n");
         goto end;
     }
@@ -258,8 +259,8 @@ end:
 int
 pyi_pylib_import_modules(const PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE_STATUS *archive = pyi_ctx->archive;
-    const TOC *toc_entry;
+    const ARCHIVE *archive = pyi_ctx->archive;
+    const TOC_ENTRY *toc_entry;
     unsigned char *data;
     PyObject *co;
     PyObject *mod;
@@ -285,16 +286,16 @@ pyi_pylib_import_modules(const PYI_CONTEXT *pyi_ctx)
 
     /* Iterate through toc looking for module entries (type 'm')
      * this is normally just bootstrap stuff (archive and iu) */
-    for (toc_entry = archive->tocbuff; toc_entry < archive->tocend; toc_entry = pyi_arch_increment_toc_ptr(archive, toc_entry)) {
-        if (toc_entry->typcd != ARCHIVE_ITEM_PYMODULE && toc_entry->typcd != ARCHIVE_ITEM_PYPACKAGE) {
+    for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
+        if (toc_entry->typecode != ARCHIVE_ITEM_PYMODULE && toc_entry->typecode != ARCHIVE_ITEM_PYPACKAGE) {
             continue;
         }
 
-        data = pyi_arch_extract(archive, toc_entry);
+        data = pyi_archive_extract(archive, toc_entry);
         VS("LOADER: extracted %s\n", toc_entry->name);
 
         /* Unmarshal the stored code object */
-        co = PI_PyMarshal_ReadObjectFromString((const char *)data, toc_entry->ulen);
+        co = PI_PyMarshal_ReadObjectFromString((const char *)data, toc_entry->uncompressed_length);
         free(data);
 
         if (co == NULL) {
@@ -335,7 +336,7 @@ pyi_pylib_import_modules(const PYI_CONTEXT *pyi_ctx)
  * NB: This entry is removed from sys.path by the Python-side bootstrap scripts.
  */
 int
-_pyi_pylib_install_pyz_entry(const PYI_CONTEXT *pyi_ctx, const TOC *toc_entry)
+_pyi_pylib_install_pyz_entry(const PYI_CONTEXT *pyi_ctx, const TOC_ENTRY *toc_entry)
 {
     unsigned long long zlib_offset;
     PyObject *sys_path;
@@ -359,7 +360,7 @@ _pyi_pylib_install_pyz_entry(const PYI_CONTEXT *pyi_ctx, const TOC *toc_entry)
     archivename_obj = PI_PyUnicode_DecodeFSDefault(pyi_ctx->archive_filename);
 #endif
 
-    zlib_offset = pyi_ctx->archive->pkgstart + toc_entry->pos;
+    zlib_offset = pyi_ctx->archive->pkg_offset + toc_entry->offset;
     zlib_entry = PI_PyUnicode_FromFormat("%U?%llu", archivename_obj, zlib_offset);
     PI_Py_DecRef(archivename_obj);
 
@@ -381,14 +382,14 @@ _pyi_pylib_install_pyz_entry(const PYI_CONTEXT *pyi_ctx, const TOC *toc_entry)
 int
 pyi_pylib_install_pyz(const PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE_STATUS *archive = pyi_ctx->archive;
-    const TOC *toc_entry;
+    const ARCHIVE *archive = pyi_ctx->archive;
+    const TOC_ENTRY *toc_entry;
 
     VS("LOADER: installing PYZ archive with Python modules.\n");
 
     /* Iterate through TOC looking for PYZ (type 'z') */
-    for (toc_entry = archive->tocbuff; toc_entry < archive->tocend; toc_entry = pyi_arch_increment_toc_ptr(archive, toc_entry)) {
-        if (toc_entry->typcd != ARCHIVE_ITEM_PYZ) {
+    for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
+        if (toc_entry->typecode != ARCHIVE_ITEM_PYZ) {
             continue;
         }
 

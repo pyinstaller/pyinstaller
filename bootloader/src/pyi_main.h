@@ -18,7 +18,7 @@
 #include "pyi_global.h"
 
 
-typedef struct _archive_status ARCHIVE_STATUS;
+typedef struct _archive ARCHIVE;
 typedef struct _splash_context SPLASH_CONTEXT;
 
 
@@ -85,7 +85,7 @@ typedef struct
     char archive_filename[PATH_MAX];
 
     /* Main PKG archive */
-    ARCHIVE_STATUS *archive;
+    ARCHIVE *archive;
 
     /* Splash screen context structure */
     SPLASH_CONTEXT *splash;

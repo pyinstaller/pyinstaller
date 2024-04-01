@@ -18,7 +18,6 @@
 #ifndef PYI_PYTHONLIB_H
 #define PYI_PYTHONLIB_H
 
-#include "pyi_archive.h"
 #include "pyi_main.h"
 
 int pyi_pylib_load(const PYI_CONTEXT *pyi_ctx);

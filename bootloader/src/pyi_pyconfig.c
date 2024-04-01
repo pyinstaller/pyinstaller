@@ -141,8 +141,8 @@ PyiRuntimeOptions *
 pyi_runtime_options_read(const PYI_CONTEXT *pyi_ctx)
 {
     PyiRuntimeOptions *options;
-    const ARCHIVE_STATUS *archive = pyi_ctx->archive;
-    const TOC *toc_entry;
+    const ARCHIVE *archive = pyi_ctx->archive;
+    const TOC_ENTRY *toc_entry;
     int num_wflags = 0;
     int num_xflags = 0;
     int failed = 0;
@@ -156,8 +156,13 @@ pyi_runtime_options_read(const PYI_CONTEXT *pyi_ctx)
     options->utf8_mode = -1; /* default: auto-select based on locale */
 
     /* Parse run-time options from PKG archive */
-    for (toc_entry = archive->tocbuff; toc_entry < archive->tocend; toc_entry = pyi_arch_increment_toc_ptr(archive, toc_entry)) {
+    for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
         const char *value_str;
+
+        /* We are only interested in OPTION entries */
+        if (toc_entry->typecode != ARCHIVE_ITEM_RUNTIME_OPTION) {
+            continue;
+        }
 
         /* Skip bootloader options; these start with "pyi-" */
         if (strncmp(toc_entry->name, "pyi-", 4) == 0) {
@@ -214,7 +219,12 @@ pyi_runtime_options_read(const PYI_CONTEXT *pyi_ctx)
     }
 
     /* Collect */
-    for (toc_entry = archive->tocbuff; toc_entry < archive->tocend; toc_entry = pyi_arch_increment_toc_ptr(archive, toc_entry)) {
+    for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
+        /* We are only interested in OPTION entries */
+        if (toc_entry->typecode != ARCHIVE_ITEM_RUNTIME_OPTION) {
+            continue;
+        }
+
         if (strncmp(toc_entry->name, "W ", 2) == 0) {
             /* Copy for pass-through */
             const char *flag = &toc_entry->name[2]; /* Skip first two characters */
@@ -235,8 +245,6 @@ pyi_runtime_options_read(const PYI_CONTEXT *pyi_ctx)
             /* Try matching the utf8 and dev X-flag */
             _pyi_match_and_parse_xflag(flag, "utf8", &options->utf8_mode);
             _pyi_match_and_parse_xflag(flag, "dev", &options->dev_mode);
-        } else {
-            continue;
         }
     }
 
@@ -282,7 +290,7 @@ _pyi_pyconfig_set_string(PyConfig *config, wchar_t **dest_field, const char *str
  * Allocate the PyConfig structure, based on the python version.
  */
 PyConfig *
-pyi_pyconfig_create()
+pyi_pyconfig_create(int python_version)
 {
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
@@ -291,7 +299,7 @@ pyi_pyconfig_create()
     }
     /* Macro end */
 
-    switch (pyvers) {
+    switch (python_version) {
         _IMPL_CASE(308, PyConfig_v38)
         _IMPL_CASE(309, PyConfig_v39)
         _IMPL_CASE(310, PyConfig_v310)
@@ -338,7 +346,7 @@ pyi_pyconfig_set_program_name(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
     }
     /* Macro end */
 
-    switch (pyvers) {
+    switch (pyi_ctx->archive->python_version) {
         _IMPL_CASE(308, PyConfig_v38)
         _IMPL_CASE(309, PyConfig_v39)
         _IMPL_CASE(310, PyConfig_v310)
@@ -368,7 +376,7 @@ pyi_pyconfig_set_python_home(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
     }
     /* Macro end */
 
-    switch (pyvers) {
+    switch (pyi_ctx->archive->python_version) {
         _IMPL_CASE(308, PyConfig_v38)
         _IMPL_CASE(309, PyConfig_v39)
         _IMPL_CASE(310, PyConfig_v310)
@@ -394,7 +402,7 @@ pyi_pyconfig_set_python_home(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
  * sys.path.
  */
 static int
-_pyi_pyconfig_set_module_search_paths(PyConfig *config, int num_paths, wchar_t **paths)
+_pyi_pyconfig_set_module_search_paths(PyConfig *config, int python_version, int num_paths, wchar_t **paths)
 {
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
@@ -407,7 +415,7 @@ _pyi_pyconfig_set_module_search_paths(PyConfig *config, int num_paths, wchar_t *
     }
     /* Macro end */
 
-    switch (pyvers) {
+    switch (python_version) {
         _IMPL_CASE(308, PyConfig_v38)
         _IMPL_CASE(309, PyConfig_v39)
         _IMPL_CASE(310, PyConfig_v310)
@@ -469,7 +477,12 @@ pyi_pyconfig_set_module_search_paths(PyConfig *config, const PYI_CONTEXT *pyi_ct
     }
 
     /* Set */
-    ret = _pyi_pyconfig_set_module_search_paths(config, 3, module_search_paths_w);
+    ret = _pyi_pyconfig_set_module_search_paths(
+        config,
+        pyi_ctx->archive->python_version,
+        3,
+        module_search_paths_w
+    );
 
 end:
     /* Cleanup */
@@ -489,7 +502,7 @@ end:
  * Set program arguments (sys.argv).
  */
 static int
-_pyi_pyconfig_set_argv(PyConfig *config, int argc, wchar_t **argv_w)
+_pyi_pyconfig_set_argv(PyConfig *config, int python_version, int argc, wchar_t **argv_w)
 {
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
@@ -501,7 +514,7 @@ _pyi_pyconfig_set_argv(PyConfig *config, int argc, wchar_t **argv_w)
     }
     /* Macro end */
 
-    switch (pyvers) {
+    switch (python_version) {
         _IMPL_CASE(308, PyConfig_v38)
         _IMPL_CASE(309, PyConfig_v39)
         _IMPL_CASE(310, PyConfig_v310)
@@ -561,7 +574,12 @@ pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
     }
 
     /* Set */
-    ret = _pyi_pyconfig_set_argv(config, argc, argv_w);
+    ret = _pyi_pyconfig_set_argv(
+        config,
+        pyi_ctx->archive->python_version,
+        argc,
+        argv_w
+    );
 
 end:
     /* Cleanup */
@@ -582,7 +600,7 @@ end:
  * Set run-time options.
  */
 int
-pyi_pyconfig_set_runtime_options(PyConfig *config, const PyiRuntimeOptions *runtime_options)
+pyi_pyconfig_set_runtime_options(PyConfig *config, int python_version, const PyiRuntimeOptions *runtime_options)
 {
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
@@ -631,7 +649,7 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, const PyiRuntimeOptions *runt
     }
     /* Macro end */
 
-    switch (pyvers) {
+    switch (python_version) {
         _IMPL_CASE(308, PyConfig_v38)
         _IMPL_CASE(309, PyConfig_v39)
         _IMPL_CASE(310, PyConfig_v310)

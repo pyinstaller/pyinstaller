@@ -24,7 +24,7 @@
 #define PYI_MULTIPKG_ARCHIVE_POOL_SIZE 20
 
 /* Extract depdencency */
-int pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_pool[], const char *dependency_name);
+int pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *dependency_name);
 
 
 #endif  /* PYI_MULTIPKG_H */
