@@ -119,4 +119,4 @@ EXTDECLPROC(int, Tk_GetNumMainWindows, (void));
 /* Bind all required functions from Tcl and Tk shared libraries */
 int pyi_splashlib_bind_functions(dylib_t dll_tcl, dylib_t dll_tk);
 
-#endif  /*PYI_SPLASHLIB_H */
+#endif /* PYI_SPLASHLIB_H */

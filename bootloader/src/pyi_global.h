@@ -288,4 +288,4 @@ void mbvs(const char *fmt, ...);
     #define pyi_be32toh(x) ntohl(x)
 #endif /* ifdef _WIN32 */
 
-#endif  /* PYI_GLOBAL_H */
+#endif /* PYI_GLOBAL_H */

@@ -158,4 +158,4 @@ int pyi_splash_update_prg(SPLASH_CONTEXT *splash, const TOC_ENTRY *toc_entry);
 SPLASH_CONTEXT *pyi_splash_context_new();
 void pyi_splash_context_free(SPLASH_CONTEXT **splash_ref);
 
-#endif  /*PYI_SPLASH_H */
+#endif /*PYI_SPLASH_H */

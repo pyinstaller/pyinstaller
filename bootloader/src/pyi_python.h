@@ -229,4 +229,4 @@ EXTDECLPROC(PyObject *, PyUnicode_Join, (PyObject *, PyObject *));
 EXTDECLPROC(PyObject *, PyUnicode_Replace, (PyObject *, PyObject *, PyObject *, Py_ssize_t));
 
 
-#endif  /* PYI_PYTHON_H */
+#endif /* PYI_PYTHON_H */

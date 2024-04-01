@@ -11,20 +11,23 @@
  * ****************************************************************************
  */
 
-/* TODO Convert this file to file ./common/pyi_win32_utils.h */
-#ifndef UTILS_H
-#define UTILS_H
+/*
+ * Windows-specific helper functions.
+ */
+
+#ifndef PYI_WIN32_UTILS_H
+#define PYI_WIN32_UTILS_H
 
 #ifdef _WIN32
 
-char * GetWinErrorString(DWORD error_code);
+char *GetWinErrorString(DWORD error_code);
 
-char ** pyi_win32_argv_to_utf8(int argc, wchar_t **wargv);
+char **pyi_win32_argv_to_utf8(int argc, wchar_t **wargv);
 
-char * pyi_win32_utils_to_utf8(char *buffer, const wchar_t *str, size_t n);
-wchar_t * pyi_win32_utils_from_utf8(wchar_t *buffer, const char *ostr, size_t n);
+char *pyi_win32_utils_to_utf8(char *buffer, const wchar_t *str, size_t n);
+wchar_t *pyi_win32_utils_from_utf8(wchar_t *buffer, const char *ostr, size_t n);
 
-char * pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max);
+char *pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max);
 
 int pyi_win32_initialize_security_descriptor();
 void pyi_win32_free_security_descriptor();
@@ -42,8 +45,8 @@ int pyi_win32_is_drive_root(const wchar_t *path);
 void pyi_win32_hide_console();
 void pyi_win32_minimize_console();
 
-#endif
+#endif /* !defined(WINDOWED) */
 
-#endif /* ifdef _WIN32 */
+#endif /* _WIN32 */
 
-#endif  /* UTILS_H */
+#endif  /* PYI_WIN32_UTILS_H */

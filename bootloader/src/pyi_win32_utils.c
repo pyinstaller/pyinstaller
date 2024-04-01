@@ -11,13 +11,8 @@
  * ****************************************************************************
  */
 
-/* TODO move this code to file  pyi_win32.c. */
-
 /*
- * Functions in this file are windows specific and are mostly related to handle
- * Side-by-Side assembly:
- *
- * https://en.wikipedia.org/wiki/Side-by-side_assembly
+ * Windows-specific helper functions.
  */
 
 #ifdef _WIN32
@@ -661,7 +656,7 @@ void pyi_win32_minimize_console()
     pyi_win32_adjust_console(SW_SHOWMINNOACTIVE);
 }
 
-#endif
+#endif /* !defined(WINDOWED) */
 
 
-#endif  /* _WIN32 */
+#endif /* _WIN32 */
