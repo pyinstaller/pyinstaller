@@ -135,6 +135,12 @@ typedef struct
 #if !defined(_WIN32)
     unsigned char ignore_signals;
 #endif
+
+    /* Flag indicating whether symbols from Python shared library have
+     * been successfully loaded. Used to gracefully handle cleanup in
+     * situations when Python shared library is successfully loaded,
+     * but we fail to import the symbols. */
+    unsigned char python_symbols_loaded;
 } PYI_CONTEXT;
 
 extern PYI_CONTEXT *global_pyi_ctx;

@@ -361,12 +361,13 @@ pyi_launch_execute(PYI_CONTEXT *pyi_ctx)
 {
     int rc = 0;
 
-    /* Load Python DLL */
+    /* Load Python shared library and import symbols from it */
     if (pyi_pylib_load(pyi_ctx)) {
         return -1;
     } else {
-        /* With this flag Python cleanup will be called. */
-        pyi_ctx->archive->is_pylib_loaded = true;
+        /* Set the flag that lets cleanup code know that it is safe to
+         * call Python functions */
+        pyi_ctx->python_symbols_loaded = 1;
     }
 
     /* Start Python. */

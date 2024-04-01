@@ -437,9 +437,6 @@ pyi_arch_open(ARCHIVE_STATUS *status)
      * the archive start position */
     status->pkgstart = cookie_pos + sizeof(COOKIE) - status->cookie.len;
 
-    /* Set the flag that Python library was not loaded yet. */
-    status->is_pylib_loaded = false;
-
     /* Set the the Python version used. */
     pyvers = pyi_arch_get_pyversion(status);
 

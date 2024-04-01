@@ -406,7 +406,7 @@ pyi_pylib_finalize(const PYI_CONTEXT *pyi_ctx)
 {
     /* Ensure python library was loaded; otherwise PI_* function pointers
      * are invalid, and we have nothing to do here. */
-    if (pyi_ctx->archive->is_pylib_loaded != true) {
+    if (!pyi_ctx->python_symbols_loaded) {
         return;
     }
 
