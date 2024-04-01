@@ -665,7 +665,8 @@ def configure(ctx):
     # OS support for these functions varies.
     for header, function_name in (
         ('stdlib.h', 'unsetenv'),
-        ('stdlib.h', 'mkdtemp'),
+        # Most systems have `mkdtemp` defined in `stdlib.h`; except for macOS, where it is defined in `unistd.h`.
+        ('unistd.h' if ctx.env.DEST_OS == 'darwin' else 'stdlib.h', 'mkdtemp'),
         ('libgen.h', 'dirname'),
         ('libgen.h', 'basename'),
     ):
