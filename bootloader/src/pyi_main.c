@@ -102,13 +102,13 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
     /* Read argv emulation setting (macOS .app bundles) */
 #if defined(__APPLE__) && defined(WINDOWED)
-    pyi_ctx->macos_argv_emulation = pyi_arch_get_option(pyi_ctx->archive, "pyi-macos-argv-emulation") != NULL;
+    pyi_ctx->macos_argv_emulation = pyi_archive_get_option(pyi_ctx->archive, "pyi-macos-argv-emulation") != NULL;
 #endif
 
     /* Read and decode console hiding/minimization option (Windows only) */
 #if defined(_WIN32) && !defined(WINDOWED)
     if (1) {
-        const char *option_value = pyi_arch_get_option(pyi_ctx->archive, "pyi-hide-console");
+        const char *option_value = pyi_archive_get_option(pyi_ctx->archive, "pyi-hide-console");
         if (option_value) {
             if (strcmp(option_value, HIDE_CONSOLE_OPTION_HIDE_EARLY) == 0) {
                 pyi_ctx->hide_console = PYI_HIDE_CONSOLE_HIDE_EARLY;
@@ -134,7 +134,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
 #if !defined(_WIN32)
     /* Read ignore-signals option (POSIX only) */
-    pyi_ctx->ignore_signals = pyi_arch_get_option(pyi_ctx->archive, "pyi-bootloader-ignore-signals") != NULL;
+    pyi_ctx->ignore_signals = pyi_archive_get_option(pyi_ctx->archive, "pyi-bootloader-ignore-signals") != NULL;
 #endif
 
     /* On Linux, restore process name (passed from parent process via
@@ -204,7 +204,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 #endif
 
             /* Create temporary directory */
-            runtime_tmpdir = pyi_arch_get_option(pyi_ctx->archive, "pyi-runtime-tmpdir");
+            runtime_tmpdir = pyi_archive_get_option(pyi_ctx->archive, "pyi-runtime-tmpdir");
             VS("LOADER: creating temporary directory (runtime_tmpdir=%s)...\n", runtime_tmpdir);
 
             if (!pyi_create_tempdir(pyi_ctx->application_home_dir, runtime_tmpdir)) {
@@ -239,7 +239,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             pyi_path_dirname(contents_dir, executable_dir);
             pyi_path_join(pyi_ctx->application_home_dir, contents_dir, "Frameworks");
         } else {
-            const char *contents_directory = pyi_arch_get_option(pyi_ctx->archive, "pyi-contents-directory");
+            const char *contents_directory = pyi_archive_get_option(pyi_ctx->archive, "pyi-contents-directory");
             if (contents_directory) {
                 pyi_path_join(pyi_ctx->application_home_dir, executable_dir, contents_directory);
             } else {
@@ -550,8 +550,8 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
     /* Delete the application's temporary directory */
     pyi_recursive_rmdir(pyi_ctx->application_home_dir);
 
-    pyi_arch_status_free(pyi_ctx->archive);
-    pyi_ctx->archive = NULL;
+    /* Clean up the archive structure */
+    pyi_archive_free(&pyi_ctx->archive);
 
     /* Re-raise child's signal, if necessary (non-Windows only) */
 #ifndef _WIN32
@@ -828,16 +828,10 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
 {
     int status;
 
-    /* Allocate the archive structure */
-    pyi_ctx->archive = pyi_arch_status_new();
-    if (pyi_ctx->archive == NULL) {
-        return -1;
-    }
-
     /* Try opening embedded archive first */
     VS("LOADER: trying to load executable-embedded archive...\n");
-    status = pyi_arch_open(pyi_ctx->archive, pyi_ctx->executable_filename);
-    if (status == true) {
+    pyi_ctx->archive = pyi_archive_open(pyi_ctx->executable_filename);
+    if (pyi_ctx->archive != NULL) {
         /* Copy executable filename to archive filename; we know it does not exceed PATH_MAX */
         snprintf(pyi_ctx->archive_filename, PATH_MAX, "%s", pyi_ctx->executable_filename);
         return 0;
@@ -870,10 +864,10 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
 
     VS("LOADER: trying to load external PKG archive (%s)...\n", pyi_ctx->archive_filename);
 
-    status = pyi_arch_open(pyi_ctx->archive, pyi_ctx->archive_filename);
-    if (status != true) {
+    pyi_ctx->archive = pyi_archive_open(pyi_ctx->archive_filename);
+    if (pyi_ctx->archive == NULL) {
         FATALERROR(
-            "Could not load PyInstaller's PKG archive from external file (%s)\n",
+            "Could not side-load PyInstaller's PKG archive from external file (%s)\n",
             pyi_ctx->archive_filename
         );
         return -1;

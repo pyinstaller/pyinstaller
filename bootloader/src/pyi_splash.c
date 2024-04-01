@@ -91,18 +91,18 @@ typedef struct Splash_Event Splash_Event;
  * in network/big endian, and must be converted to system endianness.
  */
 static SPLASH_DATA_HEADER *
-_pyi_splash_find_data_header(ARCHIVE_STATUS *archive)
+_pyi_splash_find_data_header(ARCHIVE *archive)
 {
     SPLASH_DATA_HEADER *header = NULL;
-    const TOC *toc_entry;
+    const TOC_ENTRY *toc_entry;
 
-    toc_entry = archive->tocbuff;
-    while (toc_entry < archive->tocend) {
-        if (toc_entry->typcd == ARCHIVE_ITEM_SPLASH) {
-            header = (SPLASH_DATA_HEADER *)pyi_arch_extract(archive, toc_entry);
+    toc_entry = archive->toc;
+    while (toc_entry < archive->toc_end) {
+        if (toc_entry->typecode == ARCHIVE_ITEM_SPLASH) {
+            header = (SPLASH_DATA_HEADER *)pyi_archive_extract(archive, toc_entry);
             break;
         }
-        toc_entry = pyi_arch_increment_toc_ptr(archive, toc_entry);
+        toc_entry = pyi_archive_next_toc_entry(archive, toc_entry);
     }
 
     return header;
@@ -301,8 +301,8 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
 int
 pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE_STATUS *archive = pyi_ctx->archive;
-    const TOC *toc_entry;
+    const ARCHIVE *archive = pyi_ctx->archive;
+    const TOC_ENTRY *toc_entry;
     const char *filename = NULL;
     size_t pos;
 
@@ -328,14 +328,14 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
         filename = splash->requirements + pos;
 
         /* Look-up entry in archive's TOC */
-        toc_entry = pyi_arch_find_by_name(archive, filename);
+        toc_entry = pyi_archive_find_entry_by_name(archive, filename);
         if (toc_entry == NULL) {
             FATALERROR("SPLASH: could not find requirement %s in archive.\n", filename);
             return -1;
         }
 
         /* Extract file into the splash dependencies directory */
-        if (pyi_arch_extract2fs(archive, toc_entry, splash->splash_dependencies_dir)) {
+        if (pyi_archive_extract2fs(archive, toc_entry, splash->splash_dependencies_dir)) {
             FATALERROR("SPLASH: could not extract requirement %s.\n", toc_entry->name);
             return -2;
         }
@@ -598,7 +598,7 @@ _splash_event_proc(Tcl_Event *ev, int flags)
 static int
 _pyi_splash_progress_update(SPLASH_CONTEXT *splash, const void *user_data)
 {
-    const TOC *toc_entry = (const TOC *)user_data;
+    const TOC_ENTRY *toc_entry = (const TOC_ENTRY *)user_data;
     PI_Tcl_SetVar2(splash->interp, "status_text", NULL, toc_entry->name, TCL_GLOBAL_ONLY);
     return 0;
 }
@@ -614,7 +614,7 @@ _pyi_splash_progress_update(SPLASH_CONTEXT *splash, const void *user_data)
  * from the executable-embedded archive.
  */
 int
-pyi_splash_update_prg(SPLASH_CONTEXT *splash, const TOC *toc_entry)
+pyi_splash_update_prg(SPLASH_CONTEXT *splash, const TOC_ENTRY *toc_entry)
 {
     /* We enqueue the _pyi_splash_progress_update function into the tcl
      * interpreter event queue in async mode, ignoring the return value. */

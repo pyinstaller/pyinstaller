@@ -79,10 +79,10 @@ _split_dependency_name(char *path, char *filename, const char *dependency_name)
  * returned; otherwise, the archive is opened and added to the pool,
  * and then returned. If an error occurs, returns NULL.
  */
-static ARCHIVE_STATUS *
-_get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS **archive_pool, const char *archive_filename)
+static ARCHIVE *
+_get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *archive_filename)
 {
-    ARCHIVE_STATUS *archive = NULL;
+    ARCHIVE *archive = NULL;
     int index = 0;
 
     VS("LOADER: retrieving archive for path %s.\n", archive_filename);
@@ -102,26 +102,21 @@ _get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS **archive_pool, const char *ar
 
     VS("LOADER: archive not found in pool. Creating new entry...\n");
 
-    archive = pyi_arch_status_new();
-    if (archive == NULL) {
-        return NULL;
+    archive = pyi_archive_open(archive_filename);
+    if (archive) {
+        /* Store in the pool and return */
+        archive_pool[index] = archive;
+        return archive;
     }
 
-    if (pyi_arch_open(archive, archive_filename)) {
-        FATALERROR("Failed to open archive %s!\n", archive_filename);
-        pyi_arch_status_free(archive);
-        return NULL;
-    }
-
-    /* Store in the pool */
-    archive_pool[index] = archive;
-    return archive;
+    FATALERROR("Failed to open archive %s!\n", archive_filename);
+    return NULL;
 }
 
 /* Decide if the dependency identified by item is in a onedir or onfile archive
  * and extract it using the appropriate helpers. */
 int
-pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_pool[], const char *dependency_name)
+pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *dependency_name)
 {
     char other_executable[PATH_MAX];
     char other_executable_dir[PATH_MAX];
@@ -160,7 +155,7 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_po
      * the same across all multi-package executables. In practice, this should matter
      * only if multi-package involves onedir builds.
      */
-    contents_directory = pyi_arch_get_option(pyi_ctx->archive, "pyi-contents-directory");
+    contents_directory = pyi_archive_get_option(pyi_ctx->archive, "pyi-contents-directory");
 
     /* If dependency is located in a onedir build, we should be able to find
      * it on the filesystem (accounting for contents sub-directory settings).
@@ -193,9 +188,9 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_po
             return -1;
         }
     } else {
-        ARCHIVE_STATUS *other_archive = NULL;
+        ARCHIVE *other_archive = NULL;
         char other_archive_path[PATH_MAX];
-        const TOC *toc_entry;
+        const TOC_ENTRY *toc_entry;
 
         VS("LOADER: file %s not found on filesystem, assuming onefile reference.\n", filename);
 
@@ -219,14 +214,14 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS *archive_po
          * by the caller! */
 
         /* Look-up entry in archive's TOC */
-        toc_entry = pyi_arch_find_by_name(other_archive, filename);
+        toc_entry = pyi_archive_find_entry_by_name(other_archive, filename);
         if (toc_entry == NULL) {
             FATALERROR("Dependency %s not found in the referenced dependency archive.\n", filename, other_archive_path);
             return -1; /* Entry not found */
         }
 
         /* Extract */
-        if (pyi_arch_extract2fs(other_archive, toc_entry, pyi_ctx->application_home_dir) < 0) {
+        if (pyi_archive_extract2fs(other_archive, toc_entry, pyi_ctx->application_home_dir) < 0) {
             FATALERROR("Failed to extract %s from referenced dependency archive %s.\n", filename, other_archive_path);
             return -1;
         }

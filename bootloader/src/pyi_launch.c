@@ -51,47 +51,57 @@
 int
 pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
 {
-    const TOC *toc_entry;
+    const TOC_ENTRY *toc_entry;
     ptrdiff_t index;
     int retcode = 0;
 
-    ARCHIVE_STATUS *multipkg_archive_pool[PYI_MULTIPKG_ARCHIVE_POOL_SIZE];
+    ARCHIVE *multipkg_archive_pool[PYI_MULTIPKG_ARCHIVE_POOL_SIZE];
 
     /* Clear the archive pool array. */
     memset(multipkg_archive_pool, 0, sizeof(multipkg_archive_pool));
 
-    toc_entry = pyi_ctx->archive->tocbuff;
-    while (toc_entry < pyi_ctx->archive->tocend) {
-        if (toc_entry->typcd == ARCHIVE_ITEM_BINARY || toc_entry->typcd == ARCHIVE_ITEM_DATA ||
-            toc_entry->typcd == ARCHIVE_ITEM_ZIPFILE || toc_entry->typcd == ARCHIVE_ITEM_SYMLINK) {
-            /* 'Splash screen' feature */
-            if (pyi_ctx->splash != NULL) {
-                /* Update the text on the splash screen if one is available */
-                pyi_splash_update_prg(pyi_ctx->splash, toc_entry);
-            }
-
-            /* Extract the file to the disk */
-            if (pyi_arch_extract2fs(pyi_ctx->archive, toc_entry, pyi_ctx->application_home_dir)) {
-                retcode = -1;
-                break;  /* No need to extract other items in case of error. */
-            }
-        }
-
-        else {
-            /* 'Multipackage' feature - dependency is stored in different executables. */
-            if (toc_entry->typcd == ARCHIVE_ITEM_DEPENDENCY) {
-                if (pyi_multipkg_extract_dependency(pyi_ctx, multipkg_archive_pool, toc_entry->name) == -1) {
-                    retcode = -1;
-                    break;  /* No need to extract other items in case of error. */
+    toc_entry = pyi_ctx->archive->toc;
+    while (toc_entry < pyi_ctx->archive->toc_end) {
+        switch (toc_entry->typecode) {
+            /* Onefile mode */
+            case ARCHIVE_ITEM_BINARY:
+            case ARCHIVE_ITEM_DATA:
+            case ARCHIVE_ITEM_ZIPFILE:
+            case ARCHIVE_ITEM_SYMLINK: {
+                /* Update splash screen */
+                if (pyi_ctx->splash != NULL) {
+                    pyi_splash_update_prg(pyi_ctx->splash, toc_entry);
                 }
+
+                /* Extract the file to the disk; non-zero return code will break the loop. */
+                retcode = pyi_archive_extract2fs(pyi_ctx->archive, toc_entry, pyi_ctx->application_home_dir);
+                break;
+            }
+            /* MERGE multi-package */
+            case ARCHIVE_ITEM_DEPENDENCY: {
+                /* Update splash screen */
+                if (pyi_ctx->splash != NULL) {
+                    pyi_splash_update_prg(pyi_ctx->splash, toc_entry);
+                }
+
+                /* Extract multi-package dependency; non-zero return code will break the loop. */
+                retcode = pyi_multipkg_extract_dependency(pyi_ctx, multipkg_archive_pool, toc_entry->name);
+                break;
             }
         }
-        toc_entry = pyi_arch_increment_toc_ptr(pyi_ctx->archive, toc_entry);
+
+        /* If extraction failed, there is no need to continue. */
+        if (retcode != 0) {
+            break;
+        }
+
+        /* Retrieve next TOC entry */
+        toc_entry = pyi_archive_next_toc_entry(pyi_ctx->archive, toc_entry);
     }
 
     /* Free memory allocated for archive pool. */
     for (index = 0; multipkg_archive_pool[index] != NULL; index++) {
-        pyi_arch_status_free(multipkg_archive_pool[index]);
+        pyi_archive_free(&multipkg_archive_pool[index]);
     }
 
     return retcode;
@@ -208,10 +218,10 @@ _pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
 static int
 _pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE_STATUS *archive = pyi_ctx->archive;
+    const ARCHIVE *archive = pyi_ctx->archive;
     unsigned char *data;
     char buf[PATH_MAX];
-    const TOC *toc_entry;
+    const TOC_ENTRY *toc_entry;
     PyObject *__main__;
     PyObject *__file__;
     PyObject *main_dict;
@@ -232,13 +242,17 @@ _pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
     }
 
     /* Iterate through toc looking for scripts (type 's') */
-    for (toc_entry = archive->tocbuff; toc_entry < archive->tocend; toc_entry = pyi_arch_increment_toc_ptr(archive, toc_entry)) {
-        if (toc_entry->typcd != ARCHIVE_ITEM_PYSOURCE) {
+    for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
+        if (toc_entry->typecode != ARCHIVE_ITEM_PYSOURCE) {
             continue;
         }
 
         /* Get data out of the archive.  */
-        data = pyi_arch_extract(archive, toc_entry);
+        data = pyi_archive_extract(archive, toc_entry);
+        if (data == NULL) {
+            FATALERROR("Failed to extract script from archive!\n");
+            return -1;
+        }
 
         /* Set the __file__ attribute within the __main__ module, for
          * full compatibility with normal execution. */
@@ -254,7 +268,7 @@ _pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
         PI_Py_DecRef(__file__);
 
         /* Unmarshall code object */
-        code = PI_PyMarshal_ReadObjectFromString((const char *)data, toc_entry->ulen);
+        code = PI_PyMarshal_ReadObjectFromString((const char *)data, toc_entry->uncompressed_length);
         free(data);
         if (!code) {
             FATALERROR("Failed to unmarshal code object for %s\n", toc_entry->name);
@@ -297,7 +311,7 @@ _pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
             PI_PyErr_Fetch(&ptype, &pvalue, &ptraceback);
             PI_PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
             msg_exc = _pyi_extract_exception_message(pvalue);
-            if (pyi_arch_get_option(archive, "pyi-disable-windowed-traceback") != NULL) {
+            if (pyi_archive_get_option(archive, "pyi-disable-windowed-traceback") != NULL) {
                 /* Traceback is disabled via option */
                 msg_tb = strdup("Traceback is disabled via bootloader option.");
             } else {
