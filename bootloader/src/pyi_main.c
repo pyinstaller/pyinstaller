@@ -211,10 +211,6 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             }
 
             VS("LOADER: created temporary directory: %s\n", pyi_ctx->application_home_dir);
-
-            /* TODO: remove once archive extraction code is reworked */
-            snprintf(pyi_ctx->archive->homepath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
-            snprintf(pyi_ctx->archive->mainpath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
         }
     } else {
         char executable_dir[PATH_MAX];
@@ -248,10 +244,6 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
                 snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", executable_dir);
             }
         }
-
-        /* TODO: remove once homepath and similar variables are removed from archive */
-        snprintf(pyi_ctx->archive->homepath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
-        snprintf(pyi_ctx->archive->mainpath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
 
         /* Special handling for onedir mode on POSIX systems other than
          * macOS. To achieve single-process onedir mode, we need to set
@@ -363,11 +355,6 @@ static int
 _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
 {
     int ret;
-
-    /* TODO: this was done in the old codepath - keep it around just
-     * in case, until we remove temppath, mainpath, etc. from archive
-     * data structure */
-    snprintf(pyi_ctx->archive->mainpath, PATH_MAX, "%s", pyi_ctx->application_home_dir);
 
     /* Argument processing and argv emulation for onedir macOS .app bundles.
      * In onefile mode, this step was performed by the parent, and extra
@@ -847,7 +834,7 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
 
     /* Try opening embedded archive first */
     VS("LOADER: trying to load executable-embedded archive...\n");
-    status = pyi_arch_setup(pyi_ctx->archive, pyi_ctx->executable_filename, pyi_ctx->executable_filename);
+    status = pyi_arch_setup(pyi_ctx->archive, pyi_ctx->executable_filename);
     if (status == true) {
         /* Copy executable filename to archive filename; we know it does not exceed PATH_MAX */
         snprintf(pyi_ctx->archive_filename, PATH_MAX, "%s", pyi_ctx->executable_filename);
@@ -881,7 +868,7 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
 
     VS("LOADER: trying to load external PKG archive (%s)...\n", pyi_ctx->archive_filename);
 
-    status = pyi_arch_setup(pyi_ctx->archive, pyi_ctx->archive_filename, pyi_ctx->executable_filename);
+    status = pyi_arch_setup(pyi_ctx->archive, pyi_ctx->archive_filename);
     if (status != true) {
         FATALERROR(
             "Could not load PyInstaller's PKG archive from external file (%s)\n",

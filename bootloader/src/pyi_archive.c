@@ -501,15 +501,12 @@ _pyi_arch_is_extractable(const TOC *ptoc)
  * Sets f_archivename, f_homepath, f_mainpath
  */
 bool
-pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *executable_path)
+pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path)
 {
     const TOC *ptoc;
 
     /* Copy archive path and executable path */
     if (snprintf(status->archivename, PATH_MAX, "%s", archive_path) >= PATH_MAX) {
-        return false;
-    }
-    if (snprintf(status->executablename, PATH_MAX, "%s", executable_path) >= PATH_MAX) {
         return false;
     }
 
@@ -529,12 +526,6 @@ pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *exe
         }
         ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
     }
-
-    /*
-     * Initial value of mainpath is homepath. It might be overridden
-     * by temppath if it is available.
-     */
-    strcpy(status->mainpath, status->homepath);
 
     return true;
 }

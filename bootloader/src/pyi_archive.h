@@ -75,15 +75,7 @@ typedef struct _archive_status {
      *    (formerly called _Py_char2wchar) first.
      */
     char archivename[PATH_MAX];
-    char executablename[PATH_MAX];
-    char homepath[PATH_MAX];
-    /*
-     * Main path could be homepath or temppath. It will be temppath
-     * if temppath is available. Sometimes we do not need to know if temppath
-     * or homepath should be used. We only need to know the path. This variable
-     * is used for example to set sys.path, sys.prefix, and sys._MEIPASS.
-     */
-    char mainpath[PATH_MAX];
+
     /* Flag indicating that contents of the archive need to be extracted
      * to the temporary directory (onefile mode).
      */
@@ -120,7 +112,7 @@ void pyi_arch_status_free(ARCHIVE_STATUS *status);
  *
  * @return true on success, false otherwise.
  */
-bool pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path, char const *executable_path);
+bool pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path);
 
 const char *pyi_arch_get_option(const ARCHIVE_STATUS *status, const char *optname);
 const TOC *pyi_arch_find_by_name(const ARCHIVE_STATUS *status, const char *name);

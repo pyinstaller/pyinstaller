@@ -108,8 +108,7 @@ _get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS **archive_pool, const char *ar
     }
 
     /* TODO: clean this up once we remove the variables */
-    if ((snprintf(archive->archivename, PATH_MAX, "%s", archive_filename) >= PATH_MAX) ||
-        (snprintf(archive->homepath, PATH_MAX, "%s", pyi_ctx->archive->homepath) >= PATH_MAX)) {
+    if (snprintf(archive->archivename, PATH_MAX, "%s", archive_filename) >= PATH_MAX) {
         FATALERROR("Archive path exceeds PATH_MAX\n");
         pyi_arch_status_free(archive);
         return NULL;
