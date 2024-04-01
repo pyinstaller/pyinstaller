@@ -56,6 +56,8 @@
  * keep their definitions below that of `pyi_main`, in an attempt to
  * keep code organized in top-down fashion. Hence, we need forward
  * declarations here */
+static void _pyi_main_read_runtime_options(PYI_CONTEXT *pyi_ctx);
+
 static int _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx);
 static int _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx);
 
@@ -100,41 +102,16 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     pyi_ctx->is_onefile = pyi_ctx->archive->contains_extractable_entries;
     pyi_ctx->needs_to_extract = pyi_ctx->is_onefile;
 
-    /* Read argv emulation setting (macOS .app bundles) */
-#if defined(__APPLE__) && defined(WINDOWED)
-    pyi_ctx->macos_argv_emulation = pyi_archive_get_option(pyi_ctx->archive, "pyi-macos-argv-emulation") != NULL;
-#endif
-
-    /* Read and decode console hiding/minimization option (Windows only) */
-#if defined(_WIN32) && !defined(WINDOWED)
-    if (1) {
-        const char *option_value = pyi_archive_get_option(pyi_ctx->archive, "pyi-hide-console");
-        if (option_value) {
-            if (strcmp(option_value, HIDE_CONSOLE_OPTION_HIDE_EARLY) == 0) {
-                pyi_ctx->hide_console = PYI_HIDE_CONSOLE_HIDE_EARLY;
-            } else if (strcmp(option_value, HIDE_CONSOLE_OPTION_MINIMIZE_EARLY) == 0) {
-                pyi_ctx->hide_console = PYI_HIDE_CONSOLE_MINIMIZE_EARLY;
-            } else if (strcmp(option_value, HIDE_CONSOLE_OPTION_HIDE_LATE) == 0) {
-                pyi_ctx->hide_console = PYI_HIDE_CONSOLE_HIDE_LATE;
-            } else if (strcmp(option_value, HIDE_CONSOLE_OPTION_MINIMIZE_LATE) == 0) {
-                pyi_ctx->hide_console = PYI_HIDE_CONSOLE_MINIMIZE_LATE;
-            } else {
-                pyi_ctx->hide_console = PYI_HIDE_CONSOLE_UNUSED;
-            }
-        }
-    }
+    /* Read all applicable run-time options from the PKG archive */
+    _pyi_main_read_runtime_options(pyi_ctx);
 
     /* Early console hiding/minimization (Windows-only) */
+#if defined(_WIN32) && !defined(WINDOWED)
     if (pyi_ctx->hide_console == PYI_HIDE_CONSOLE_HIDE_EARLY) {
         pyi_win32_hide_console();
     } else if (pyi_ctx->hide_console == PYI_HIDE_CONSOLE_MINIMIZE_EARLY) {
         pyi_win32_minimize_console();
     }
-#endif
-
-#if !defined(_WIN32)
-    /* Read ignore-signals option (POSIX only) */
-    pyi_ctx->ignore_signals = pyi_archive_get_option(pyi_ctx->archive, "pyi-bootloader-ignore-signals") != NULL;
 #endif
 
     /* On Linux, restore process name (passed from parent process via
@@ -188,8 +165,6 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
             free(meipass2_value);
         } else {
-            const char *runtime_tmpdir;
-
             VS("LOADER: this is parent process of onefile application.\n");
 
             /* On Windows, initialize security descriptor for temporary directory.
@@ -204,10 +179,9 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 #endif
 
             /* Create temporary directory */
-            runtime_tmpdir = pyi_archive_get_option(pyi_ctx->archive, "pyi-runtime-tmpdir");
-            VS("LOADER: creating temporary directory (runtime_tmpdir=%s)...\n", runtime_tmpdir);
+            VS("LOADER: creating temporary directory (runtime_tmpdir=%s)...\n", pyi_ctx->runtime_tempdir);
 
-            if (!pyi_create_tempdir(pyi_ctx->application_home_dir, runtime_tmpdir)) {
+            if (!pyi_create_tempdir(pyi_ctx->application_home_dir, pyi_ctx->runtime_tempdir)) {
                 FATALERROR("Could not create temporary directory!\n");
                 return -1;
             }
@@ -239,9 +213,8 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             pyi_path_dirname(contents_dir, executable_dir);
             pyi_path_join(pyi_ctx->application_home_dir, contents_dir, "Frameworks");
         } else {
-            const char *contents_directory = pyi_archive_get_option(pyi_ctx->archive, "pyi-contents-directory");
-            if (contents_directory) {
-                pyi_path_join(pyi_ctx->application_home_dir, executable_dir, contents_directory);
+            if (pyi_ctx->contents_subdirectory) {
+                pyi_path_join(pyi_ctx->application_home_dir, executable_dir, pyi_ctx->contents_subdirectory);
             } else {
                 snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", executable_dir);
             }
@@ -346,6 +319,92 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     } else {
         /* Onedir or onefile child */
         return _pyi_main_onedir_or_onefile_child(pyi_ctx);
+    }
+}
+
+static void
+_pyi_main_read_runtime_options(PYI_CONTEXT *pyi_ctx)
+{
+    const ARCHIVE *archive = pyi_ctx->archive;
+    const TOC_ENTRY *toc_entry;
+
+    for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
+        if (toc_entry->typecode != ARCHIVE_ITEM_RUNTIME_OPTION) {
+            continue;
+        }
+
+        /* NOTE: option names are constants, so we use hard-coded
+         * lengths as well to avoid invoking strlen() on each
+         * comparison. */
+
+        /* pyi-runtime-tmpdir <value>
+         *
+         * Run-time temporary directory override for onefile programs. */
+        if (strncmp(toc_entry->name, "pyi-runtime-tmpdir", 18) == 0) {
+            pyi_ctx->runtime_tempdir = toc_entry->name + 19;
+        }
+
+        /* pyi-contents-directory <value>
+         *
+         * Contents sub-directory in onedir programs. */
+        if (strncmp(toc_entry->name, "pyi-contents-directory", 22) == 0) {
+            pyi_ctx->contents_subdirectory = toc_entry->name + 23;
+        }
+
+        /* pyi-macos-argv-emulation
+         *
+         * Argv emulation for macOS .app bundles. */
+#if defined(__APPLE__) && defined(WINDOWED)
+        if (strncmp(toc_entry->name, "pyi-macos-argv-emulation", 24) == 0) {
+            pyi_ctx->macos_argv_emulation = 1;
+            continue;
+        }
+#endif
+
+        /* pyi-hide-console <value>
+         *
+         * Console hiding/minimization option for Windows console-enabled
+         * builds. */
+#if defined(_WIN32) && !defined(WINDOWED)
+        if (strncmp(toc_entry->name, "pyi-hide-console", 16) == 0) {
+            const char *option_value = toc_entry->name + 17;
+            if (strcmp(option_value, HIDE_CONSOLE_OPTION_HIDE_EARLY) == 0) {
+                pyi_ctx->hide_console = PYI_HIDE_CONSOLE_HIDE_EARLY;
+            } else if (strcmp(option_value, HIDE_CONSOLE_OPTION_MINIMIZE_EARLY) == 0) {
+                pyi_ctx->hide_console = PYI_HIDE_CONSOLE_MINIMIZE_EARLY;
+            } else if (strcmp(option_value, HIDE_CONSOLE_OPTION_HIDE_LATE) == 0) {
+                pyi_ctx->hide_console = PYI_HIDE_CONSOLE_HIDE_LATE;
+            } else if (strcmp(option_value, HIDE_CONSOLE_OPTION_MINIMIZE_LATE) == 0) {
+                pyi_ctx->hide_console = PYI_HIDE_CONSOLE_MINIMIZE_LATE;
+            } else {
+                pyi_ctx->hide_console = PYI_HIDE_CONSOLE_UNUSED;
+            }
+            continue;
+        }
+#endif
+
+        /* pyi-disable-windowed-traceback
+         *
+         * Disable traceback in the unhandled exception message in
+         * windowed/noconsole builds (unhandled exception dialog in
+         * Windows noconsole builds, syslog message in macOS .app
+         * bundles) */
+#if defined(WINDOWED)
+        if (strncmp(toc_entry->name, "pyi-disable-windowed-traceback", 30) == 0) {
+            pyi_ctx->disable_windowed_traceback = 1;
+            continue;
+        }
+#endif
+
+        /* pyi-bootloader-ignore-signals
+         *
+         * Ignore signals in onefile parent process (POSIX only) */
+#if !defined(_WIN32)
+        if (strncmp(toc_entry->name, "pyi-bootloader-ignore-signals", 29) == 0) {
+            pyi_ctx->ignore_signals = 1;
+            continue;
+        }
+#endif
     }
 }
 

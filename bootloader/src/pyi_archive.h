@@ -90,7 +90,6 @@ const TOC_ENTRY *pyi_archive_next_toc_entry(const ARCHIVE *archive, const TOC_EN
 unsigned char *pyi_archive_extract(const ARCHIVE *archive, const TOC_ENTRY *toc_entry);
 int pyi_archive_extract2fs(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, const char *output_directory);
 
-const char *pyi_archive_get_option(const ARCHIVE *archive, const char *option_name);
 const TOC_ENTRY *pyi_archive_find_entry_by_name(const ARCHIVE *archive, const char *name);
 
 #endif  /* PYI_ARCHIVE_H */

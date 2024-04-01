@@ -110,9 +110,41 @@ typedef struct
      * itself. */
     char application_home_dir[PATH_MAX];
 
-    /* Console hiding/minimization options. Windows only. */
+    /* Flag indicating whether symbols from Python shared library have
+     * been successfully loaded. Used to gracefully handle cleanup in
+     * situations when Python shared library is successfully loaded,
+     * but we fail to import the symbols. */
+    unsigned char python_symbols_loaded;
+
+    /**
+     * Runtime options
+     */
+
+    /* Run-time temporary directory path in onefile builds. If this
+     * option is not specified, the OS-configured temporary directory
+     * is used.
+     *
+     * NOTE: if non-NULL, the pointer points at the TOC buffer entry in
+     * the `archive` structure! */
+    const char *runtime_tempdir;
+
+    /* Contents sub-directory in onedir builds.
+     *
+     * NOTE: if non-NULL, the pointer points at the TOC buffer entry in
+     * the `archive` structure! */
+    const char *contents_subdirectory;
+
+    /* Console hiding/minimization options for Windows console builds. */
 #if defined(_WIN32) && !defined(WINDOWED)
     unsigned char hide_console;
+#endif
+
+    /* Disable traceback in the unhandled exception message in
+     * windowed/noconsole builds (unhandled exception dialog in
+     * Windows noconsole builds, syslog message in macOS .app
+     * bundles) */
+#if defined(WINDOWED)
+    unsigned char disable_windowed_traceback;
 #endif
 
     /* Argv emulation for macOS .app bundles */
@@ -135,12 +167,6 @@ typedef struct
 #if !defined(_WIN32)
     unsigned char ignore_signals;
 #endif
-
-    /* Flag indicating whether symbols from Python shared library have
-     * been successfully loaded. Used to gracefully handle cleanup in
-     * situations when Python shared library is successfully loaded,
-     * but we fail to import the symbols. */
-    unsigned char python_symbols_loaded;
 } PYI_CONTEXT;
 
 extern PYI_CONTEXT *global_pyi_ctx;
