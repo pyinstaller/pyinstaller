@@ -154,8 +154,12 @@ enum
  * Returns a copy of traceback string or NULL. Must be freed by caller.
  */
 static char *
-_pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
-                                 PyObject *ptraceback, int fmt_mode)
+_pyi_extract_exception_traceback(
+    PyObject *ptype,
+    PyObject *pvalue,
+    PyObject *ptraceback,
+    int fmt_mode
+)
 {
     PyObject *module;
     char *retval = NULL;
@@ -169,8 +173,8 @@ _pyi_extract_exception_traceback(PyObject *ptype, PyObject *pvalue,
             PyObject *tb = NULL;
             PyObject *tb_str = NULL;
             const char *tb_cchar = NULL;
-            tb = PI_PyObject_CallFunctionObjArgs(func, ptype, pvalue,
-                                                 ptraceback, NULL);
+
+            tb = PI_PyObject_CallFunctionObjArgs(func, ptype, pvalue, ptraceback, NULL);
             if (tb != NULL) {
                 if (fmt_mode == PYI_TB_FMT_REPR) {
                     /* Represent the list as string */
