@@ -88,12 +88,6 @@ typedef struct _archive_status {
      * to the temporary directory (onefile mode).
      */
     bool needs_to_extract;
-    /*
-     * Flag if Python library was loaded. This indicates if it is safe
-     * to call function PI_Py_Finalize(). If Python dll is missing
-     * calling this function would cause segmentation fault.
-     */
-    bool is_pylib_loaded;
 } ARCHIVE_STATUS;
 
 const TOC *pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC *ptoc);
