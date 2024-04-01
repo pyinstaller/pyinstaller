@@ -58,29 +58,28 @@ typedef struct _cookie {
     char pylibname[64]; /* Filename of Python dynamic library e.g. python2.7.dll. */
 } COOKIE;
 
-typedef struct _archive_status {
+typedef struct _archive_status
+{
+    /* Full path to archive file. */
+    char filename[PATH_MAX];
+
     uint64_t pkgstart;
     TOC *tocbuff;
     const TOC *tocend;
     COOKIE cookie;
-    /*
-     * On Windows:
-     *    These strings are UTF-8 encoded (via pyi_win32_utils_to_utf8). On Python 2,
-     *    they are re-encoded to ANSI with ShortFileNames when passed to Python. On
-     *    Python 3, they are decoded back to wchar_t.
-     *
-     * On Linux/OS X:
-     *    These strings are system-provided. On Python 2, they are passed as-is to Python.
-     *    On Python 3, they are decoded to wchar_t using Py_DecodeLocale
-     *    (formerly called _Py_char2wchar) first.
-     */
-    char archivename[PATH_MAX];
 
-    /* Flag indicating that contents of the archive need to be extracted
-     * to the temporary directory (onefile mode).
-     */
-    bool needs_to_extract;
+    /* Flag indicating that the archive contains extractable files,
+     * and thus has onefile semantics */
+    bool contains_extractable_entries;
 } ARCHIVE_STATUS;
+
+
+/* Structure allocation and cleanup */
+ARCHIVE_STATUS *pyi_arch_status_new();
+void pyi_arch_status_free(ARCHIVE_STATUS *status);
+
+/* Open the archive */
+int pyi_arch_open(ARCHIVE_STATUS *archive, const char *filename);
 
 const TOC *pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC *ptoc);
 
@@ -92,27 +91,6 @@ int pyi_arch_extract2fs(const ARCHIVE_STATUS *archive, const TOC *toc_entry, con
  */
 int pyi_arch_get_pyversion(const ARCHIVE_STATUS *status);
 extern int pyvers;
-
-/**
- * The gory detail level
- */
-int pyi_arch_open(ARCHIVE_STATUS *status);
-
-/*
- * Memory allocation wrappers.
- */
-ARCHIVE_STATUS *pyi_arch_status_new();
-void pyi_arch_status_free(ARCHIVE_STATUS *status);
-
-/*
- * Setup the paths and open the archive
- *
- * @param archive_path  The path including filename to the archive (can be different from executable path).
- * @param executable_path  The path including filename to the executable.
- *
- * @return true on success, false otherwise.
- */
-bool pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path);
 
 const char *pyi_arch_get_option(const ARCHIVE_STATUS *status, const char *optname);
 const TOC *pyi_arch_find_by_name(const ARCHIVE_STATUS *status, const char *name);

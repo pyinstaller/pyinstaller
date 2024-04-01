@@ -88,7 +88,7 @@ _get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS **archive_pool, const char *ar
     VS("LOADER: retrieving archive for path %s.\n", archive_filename);
 
     for (index = 0; archive_pool[index] != NULL; index++) {
-        if (strcmp(archive_pool[index]->archivename, archive_filename) == 0) {
+        if (strcmp(archive_pool[index]->filename, archive_filename) == 0) {
             VS("LOADER: archive found in pool: %s\n", archive_filename);
             return archive_pool[index];
         }
@@ -107,14 +107,7 @@ _get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE_STATUS **archive_pool, const char *ar
         return NULL;
     }
 
-    /* TODO: clean this up once we remove the variables */
-    if (snprintf(archive->archivename, PATH_MAX, "%s", archive_filename) >= PATH_MAX) {
-        FATALERROR("Archive path exceeds PATH_MAX\n");
-        pyi_arch_status_free(archive);
-        return NULL;
-    }
-
-    if (pyi_arch_open(archive)) {
+    if (pyi_arch_open(archive, archive_filename)) {
         FATALERROR("Failed to open archive %s!\n", archive_filename);
         pyi_arch_status_free(archive);
         return NULL;

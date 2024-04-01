@@ -218,7 +218,7 @@ pyi_arch_extract(const ARCHIVE_STATUS *status, const TOC *ptoc)
     int rc = 0;
 
     /* Open archive (source) file... */
-    archive_fp = pyi_path_fopen(status->archivename, "rb");
+    archive_fp = pyi_path_fopen(status->filename, "rb");
     if (archive_fp == NULL) {
         FATALERROR("Failed to extract %s: failed to open archive file!\n", ptoc->name);
         return NULL;
@@ -313,7 +313,7 @@ pyi_arch_extract2fs(const ARCHIVE_STATUS *archive, const TOC *toc_entry, const c
     }
 
     /* Open archive (source) file... */
-    archive_fp = pyi_path_fopen(archive->archivename, "rb");
+    archive_fp = pyi_path_fopen(archive->filename, "rb");
     if (archive_fp == NULL) {
         FATALERROR("Failed to extract %s: failed to open archive file!\n", toc_entry->name);
         rc = -1;
@@ -371,112 +371,11 @@ _pyi_find_pkg_cookie_offset(FILE *fp)
     return pyi_utils_find_magic_pattern(fp, magic, sizeof(magic));
 }
 
-/*
- * Fix the endianness of fields in the TOC entries.
- */
-static void
-_pyi_arch_fix_toc_endianness(ARCHIVE_STATUS *status)
-{
-    TOC *ptoc = status->tocbuff;
-    while (ptoc < status->tocend) {
-        /* Fixup the current entry */
-        ptoc->structlen = pyi_be32toh(ptoc->structlen);
-        ptoc->pos = pyi_be32toh(ptoc->pos);
-        ptoc->len = pyi_be32toh(ptoc->len);
-        ptoc->ulen = pyi_be32toh(ptoc->ulen);
-        /* Jump to next entry; with the current entry fixed up, we can
-         * use non-const equivalent of pyi_arch_increment_toc_ptr() */
-        ptoc = (TOC *)((const char *)ptoc + ptoc->structlen);
-    }
-}
-
-/*
- * Open the archive.
- * Sets f_archiveFile, f_pkgstart, f_tocbuff and f_cookie.
- */
-int
-pyi_arch_open(ARCHIVE_STATUS *status)
-{
-    FILE *archive_fp = NULL;
-    uint64_t cookie_pos = 0;
-    int rc = -1;
-
-    VS("LOADER: archivename is %s\n", status->archivename);
-
-    /* Open the archive file */
-    archive_fp = pyi_path_fopen(status->archivename, "rb");
-    if (archive_fp == NULL) {
-        VS("LOADER: Cannot open archive: %s\n", status->archivename);
-        return -1;
-    }
-
-    /* Search for the embedded archive's cookie */
-    cookie_pos = _pyi_find_pkg_cookie_offset(archive_fp);
-    if (cookie_pos == 0) {
-        VS("LOADER: Cannot find cookie!\n");
-        goto cleanup;
-    }
-    VS("LOADER: Cookie found at offset 0x%" PRIX64 "\n", cookie_pos);
-
-    /* Read the cookie */
-    if (pyi_fseek(archive_fp, cookie_pos, SEEK_SET) < 0) {
-        FATAL_PERROR("fseek", "Failed to seek to cookie position!\n");
-        goto cleanup;
-    }
-    if (fread(&status->cookie, sizeof(COOKIE), 1, archive_fp) < 1) {
-        FATAL_PERROR("fread", "Failed to read cookie!\n");
-        goto cleanup;
-    }
-    /* Fix endianness of COOKIE fields */
-    status->cookie.len = pyi_be32toh(status->cookie.len);
-    status->cookie.TOC = pyi_be32toh(status->cookie.TOC);
-    status->cookie.TOClen = pyi_be32toh(status->cookie.TOClen);
-    status->cookie.pyvers = pyi_be32toh(status->cookie.pyvers);
-
-    /* From the cookie position and declared archive size, calculate
-     * the archive start position */
-    status->pkgstart = cookie_pos + sizeof(COOKIE) - status->cookie.len;
-
-    /* Set the the Python version used. */
-    pyvers = pyi_arch_get_pyversion(status);
-
-    /* Read in in the table of contents */
-    pyi_fseek(archive_fp, status->pkgstart + status->cookie.TOC, SEEK_SET);
-    status->tocbuff = (TOC *)malloc(status->cookie.TOClen);
-
-    if (status->tocbuff == NULL) {
-        FATAL_PERROR("malloc", "Could not allocate buffer for TOC!\n");
-        goto cleanup;
-    }
-
-    if (fread(status->tocbuff, status->cookie.TOClen, 1, archive_fp) < 1) {
-        FATAL_PERROR("fread", "Could not read full TOC!\n");
-        goto cleanup;
-    }
-    status->tocend = (const TOC *)(((const char *)status->tocbuff) + status->cookie.TOClen);
-
-    /* Check input file is still ok (should be). */
-    if (ferror(archive_fp)) {
-        FATALERROR("Error on file.\n");
-        goto cleanup;
-    }
-
-    /* Fix the endianness of the fields in the TOC entries */
-    _pyi_arch_fix_toc_endianness(status);
-
-    rc = 0; /* Succeeded */
-
-cleanup:
-    fclose(archive_fp);
-
-    return rc;
-}
-
-/* Check if the TOC entry corresponds to extractable file */
+/* Check if the TOC entry's typecode corresponds to an extractable file */
 static bool
-_pyi_arch_is_extractable(const TOC *ptoc)
+_pyi_arch_is_extractable(char typecode)
 {
-    switch (ptoc->typcd) {
+    switch (typecode) {
         /* onefile mode */
         case ARCHIVE_ITEM_BINARY:
         case ARCHIVE_ITEM_DATA:
@@ -496,39 +395,107 @@ _pyi_arch_is_extractable(const TOC *ptoc)
     return false;
 }
 
-/* Setup the archive with python modules and the paths required by rest of
- * this module (this always needs to be done).
- * Sets f_archivename, f_homepath, f_mainpath
+/*
+ * Open the archive.
  */
-bool
-pyi_arch_setup(ARCHIVE_STATUS *status, char const *archive_path)
+int
+pyi_arch_open(ARCHIVE_STATUS *archive, const char *filename)
 {
-    const TOC *ptoc;
+    FILE *archive_fp = NULL;
+    uint64_t cookie_pos = 0;
+    int rc = -1;
+    TOC *toc_entry;
 
-    /* Copy archive path and executable path */
-    if (snprintf(status->archivename, PATH_MAX, "%s", archive_path) >= PATH_MAX) {
-        return false;
+    VS("LOADER: attempting to open archive %s\n", filename);
+
+    /* Copy the filename; since the input buffer originates from within
+     * bootloader, the string is guaranteed to be within PATH_MAX limit */
+    snprintf(archive->filename, PATH_MAX, "%s", filename);
+
+    /* Open the archive file */
+    archive_fp = pyi_path_fopen(archive->filename, "rb");
+    if (archive_fp == NULL) {
+        VS("LOADER: Cannot open archive: %s\n", archive->filename);
+        return -1;
     }
 
-    /* Try to open the archive with given archive and executable path */
-    if (pyi_arch_open(status)) {
-        return false;
+    /* Search for the embedded archive's cookie */
+    cookie_pos = _pyi_find_pkg_cookie_offset(archive_fp);
+    if (cookie_pos == 0) {
+        VS("LOADER: Cannot find cookie!\n");
+        goto cleanup;
+    }
+    VS("LOADER: Cookie found at offset 0x%" PRIX64 "\n", cookie_pos);
+
+    /* Read the cookie */
+    if (pyi_fseek(archive_fp, cookie_pos, SEEK_SET) < 0) {
+        FATAL_PERROR("fseek", "Failed to seek to cookie position!\n");
+        goto cleanup;
+    }
+    if (fread(&archive->cookie, sizeof(COOKIE), 1, archive_fp) < 1) {
+        FATAL_PERROR("fread", "Failed to read cookie!\n");
+        goto cleanup;
+    }
+    /* Fix endianness of COOKIE fields */
+    archive->cookie.len = pyi_be32toh(archive->cookie.len);
+    archive->cookie.TOC = pyi_be32toh(archive->cookie.TOC);
+    archive->cookie.TOClen = pyi_be32toh(archive->cookie.TOClen);
+    archive->cookie.pyvers = pyi_be32toh(archive->cookie.pyvers);
+
+    /* From the cookie position and declared archive size, calculate
+     * the archive start position */
+    archive->pkgstart = cookie_pos + sizeof(COOKIE) - archive->cookie.len;
+
+    /* Set the the Python version used. */
+    pyvers = pyi_arch_get_pyversion(archive);
+
+    /* Read in in the table of contents */
+    pyi_fseek(archive_fp, archive->pkgstart + archive->cookie.TOC, SEEK_SET);
+    archive->tocbuff = (TOC *)malloc(archive->cookie.TOClen);
+
+    if (archive->tocbuff == NULL) {
+        FATAL_PERROR("malloc", "Could not allocate buffer for TOC!\n");
+        goto cleanup;
     }
 
-    /* Check if contents need to be extracted */
-    status->needs_to_extract = false;
+    if (fread(archive->tocbuff, archive->cookie.TOClen, 1, archive_fp) < 1) {
+        FATAL_PERROR("fread", "Could not read full TOC!\n");
+        goto cleanup;
+    }
+    archive->tocend = (const TOC *)(((const char *)archive->tocbuff) + archive->cookie.TOClen);
 
-    ptoc = status->tocbuff;
-    while (ptoc < status->tocend) {
-        if (_pyi_arch_is_extractable(ptoc)) {
-            status->needs_to_extract = true;
-            break;
-        }
-        ptoc = pyi_arch_increment_toc_ptr(status, ptoc);
+    /* Check input file is still ok (should be). */
+    if (ferror(archive_fp)) {
+        FATALERROR("Error on file.\n");
+        goto cleanup;
     }
 
-    return true;
+    /* Fix the endianness of the fields in the TOC entries. At the same
+     * time, check for extractable entries that imply onefile semantics. */
+    toc_entry = archive->tocbuff;
+    while (toc_entry < archive->tocend) {
+        /* Fixup the current TOC entry */
+        toc_entry->structlen = pyi_be32toh(toc_entry->structlen);
+        toc_entry->pos = pyi_be32toh(toc_entry->pos);
+        toc_entry->len = pyi_be32toh(toc_entry->len);
+        toc_entry->ulen = pyi_be32toh(toc_entry->ulen);
+
+        /* Check if entry is extractable */
+        archive->contains_extractable_entries |= _pyi_arch_is_extractable(toc_entry->typcd);
+
+        /* Jump to next entry; with the current entry fixed up, we can
+         * use non-const equivalent of pyi_arch_increment_toc_ptr() */
+        toc_entry = (TOC *)((const char *)toc_entry + toc_entry->structlen);
+    }
+
+    rc = 0; /* Succeeded */
+
+cleanup:
+    fclose(archive_fp);
+
+    return rc;
 }
+
 
 /*
  * Helpers for embedders.
@@ -545,31 +512,29 @@ pyi_arch_get_pyversion(const ARCHIVE_STATUS *status)
 ARCHIVE_STATUS *
 pyi_arch_status_new()
 {
-    ARCHIVE_STATUS *archive_status;
-    archive_status = (ARCHIVE_STATUS *)calloc(1, sizeof(ARCHIVE_STATUS));
-    if (archive_status == NULL) {
+    ARCHIVE_STATUS *archive;
+    archive = (ARCHIVE_STATUS *)calloc(1, sizeof(ARCHIVE_STATUS));
+    if (archive == NULL) {
         FATAL_PERROR("calloc", "Cannot allocate memory for ARCHIVE_STATUS\n");
     }
-    return archive_status;
+    return archive;
 }
 
 /*
  * Free memory allocated for archive status.
  */
 void
-pyi_arch_status_free(ARCHIVE_STATUS *archive_status)
+pyi_arch_status_free(ARCHIVE_STATUS *archive)
 {
-    if (archive_status == NULL) {
+    if (archive == NULL) {
         return;
     }
 
-    VS("LOADER: Freeing archive status for %s\n", archive_status->archivename);
-
     /* Free the TOC buffer */
-    free(archive_status->tocbuff);
+    free(archive->tocbuff);
 
     /* Free the structure itself */
-    free(archive_status);
+    free(archive);
 }
 
 /*
