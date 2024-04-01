@@ -57,18 +57,6 @@ typedef void (*sighandler_t)(int);
 #include <sys/stat.h> /* struct stat */
 #include <wchar.h>    /* wchar_t */
 
-/*
- * Function 'mkdtemp' (make temporary directory) is missing on some *nix platforms:
- * - On Solaris function 'mkdtemp' is missing.
- * - On AIX 5.2 function 'mkdtemp' is missing. It is there in version 6.1 but we don't know
- *   the runtime platform at compile time, so we always include our own implementation on AIX.
- */
-#if defined(SUNOS) || defined(AIX) || defined(HPUX)
-    #if !defined(HAVE_MKDTEMP)
-    #include "mkdtemp.h"
-    #endif
-#endif
-
 /* PyInstaller headers. */
 #include "pyi_global.h"
 #include "pyi_path.h"
@@ -342,6 +330,30 @@ pyi_create_tempdir(char *buffer, const char *runtime_tmpdir)
 }
 
 #else /* ifdef _WIN32 */
+
+/*
+ * Function 'mkdtemp' (make temporary directory) is missing on some POSIX platforms:
+ * - On Solaris function 'mkdtemp' is missing.
+ * - On AIX 5.2 function 'mkdtemp' is missing. It is there in version 6.1 but we don't know
+ *   the runtime platform at compile time, so we always include our own implementation on AIX.
+ */
+#if !defined(HAVE_MKDTEMP)
+
+static char*
+mkdtemp(char *template)
+{
+    if (!mktemp(template) ) {
+        return NULL;
+    }
+
+    if (mkdir(template, 0700) ) {
+        return NULL;
+    }
+
+    return template;
+}
+
+#endif /* !defined(HAVE_MKDTEMP) */
 
 /* TODO Is this really necessary to test for temp path? Why not just use mkdtemp()? */
 int
