@@ -10,10 +10,55 @@
 #-----------------------------------------------------------------------------
 
 import os
+import sys
+import subprocess
 
 import pytest
 
 from PyInstaller.compat import is_win
+
+
+# Test that bootloader is able to fully resolve a symlinked executable, on all OSes.
+def test_bootloader_symlinked_executable(pyi_builder, tmpdir):
+    pyi_builder.test_source(
+        """
+        import sys
+
+        print(f"sys.argv={sys.argv}")
+        print(f"sys.executable={sys.executable}")
+        """
+    )
+
+    # Find executable and run additional tests with symbolic links
+    print('------- Looking for executable. -------', file=sys.stderr)
+    exes = pyi_builder._find_executables('test_source')
+    assert len(exes) == 1
+    executable = exes[0]
+    print(f"True executable location: {executable}")
+
+    exe_suffix = '.exe' if is_win else ''
+
+    # Case #1: a relative symbolic link in a subdirectory
+    print('------- Test case #1: relative symlink in subdirectory -------', file=sys.stderr)
+    subdir = tmpdir / 'subdir'
+    subdir.mkdir()
+
+    symlink1 = subdir / f'relative-symlink-in-subdir{exe_suffix}'
+    rel_link = os.path.relpath(executable, subdir)  # Compute relative link
+    print(f"Relative symbolic link: {symlink1} -> {rel_link}", file=sys.stderr)
+
+    _create_symlink(rel_link, symlink1)
+
+    subprocess.check_call([symlink1])
+
+    # Case #2: an absolute symbolic link pointing to relative symbolic link from case #1.
+    print('------- Test case #2: absolute symlink pointing to relative symlink -------', file=sys.stderr)
+    symlink2 = tmpdir / f'absolute-symlink{exe_suffix}'
+    print(f"Absolute symbolic link: {symlink2} -> {symlink1}", file=sys.stderr)
+
+    _create_symlink(symlink1, symlink2)
+
+    subprocess.check_call([symlink2])
 
 
 # Wrapper for os.symlink that skips the test if symlink cannot be created on Windows.
