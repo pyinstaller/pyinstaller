@@ -415,18 +415,11 @@ cleanup:
     return sid;
 }
 
-/* Security descriptor applied to application's temporary directory and its
- * sub-directories, which are created by `pyi_win32_mkdir`. Must be explicitly
- * initialized via `pyi_win32_initialize_security_descriptor`, and freed via
- * `pyi_win32_free_security_descriptor`.
- */
-static PSECURITY_DESCRIPTOR security_descriptor = NULL;
-
 /* Initialize security descriptor applied to application's temporary directory and its
  * sub-directories.
  */
 int
-pyi_win32_initialize_security_descriptor()
+pyi_win32_initialize_security_descriptor(PYI_CONTEXT *pyi_ctx)
 {
     wchar_t *user_sid = NULL;
     wchar_t *app_container_sid = NULL;
@@ -474,7 +467,7 @@ pyi_win32_initialize_security_descriptor()
     ret = ConvertStringSecurityDescriptorToSecurityDescriptorW(
         security_descriptor_str,
         SDDL_REVISION_1,
-        &security_descriptor,
+        &pyi_ctx->security_descriptor,
         NULL);
     if (ret == 0) {
         return -1;
@@ -487,38 +480,23 @@ pyi_win32_initialize_security_descriptor()
  * sub-directories.
  */
 void
-pyi_win32_free_security_descriptor()
+pyi_win32_free_security_descriptor(PYI_CONTEXT *pyi_ctx)
 {
-    LocalFree(security_descriptor);
-    security_descriptor = NULL;
+    LocalFree(pyi_ctx->security_descriptor);
+    pyi_ctx->security_descriptor = NULL;
 }
 
 
-/* Create a directory at path with restricted permissions.
- *
- * The directory owner will be the only one with permissions on the created
- * dir. Calling this function is equivalent to calling chmod(path, 0700) on
- * POSIX systems.
- *
- * Requires initialization of security descriptor by calling
- * `pyi_win32_initialize_security_descriptor` prior to first attempt at
- * creating directory with this function.
+/* Create a directory at path with restricted permissions, enforced by the
+ * provided security descriptor.
  *
  * Returns 0 on success, -1 on error.
  */
 int
-pyi_win32_mkdir(const wchar_t *path)
+pyi_win32_mkdir(const wchar_t *path, const PSECURITY_DESCRIPTOR security_descriptor)
 {
-    /* Set up security attributes with pre-initialized security descriptor.
-     * `pyi_win32_initialize_security_descriptor()` must have been called
-     * prior to calling this function.
-     */
+    /* Set up security attributes with provided security descriptor. */
     SECURITY_ATTRIBUTES security_attr;
-
-    if (!security_descriptor) {
-        OTHERERROR("Security descriptor is not initialized!\n");
-        return -1;
-    }
 
     security_attr.nLength = sizeof(SECURITY_ATTRIBUTES);
     security_attr.bInheritHandle = FALSE;
@@ -527,7 +505,8 @@ pyi_win32_mkdir(const wchar_t *path)
     /* Create directory */
     if (!CreateDirectoryW(path, &security_attr)) {
         return -1;
-    };
+    }
+
     return 0;
 }
 

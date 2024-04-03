@@ -18,6 +18,8 @@
 #ifndef PYI_WIN32_UTILS_H
 #define PYI_WIN32_UTILS_H
 
+#include "pyi_main.h"
+
 #ifdef _WIN32
 
 char *GetWinErrorString(DWORD error_code);
@@ -29,10 +31,10 @@ wchar_t *pyi_win32_utils_from_utf8(wchar_t *buffer, const char *ostr, size_t n);
 
 char *pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max);
 
-int pyi_win32_initialize_security_descriptor();
-void pyi_win32_free_security_descriptor();
+int pyi_win32_initialize_security_descriptor(PYI_CONTEXT *pyi_ctx);
+void pyi_win32_free_security_descriptor(PYI_CONTEXT *pyi_ctx);
 
-int pyi_win32_mkdir(const wchar_t *path);
+int pyi_win32_mkdir(const wchar_t *path, const PSECURITY_DESCRIPTOR security_descriptor);
 
 int pyi_win32_is_symlink(const wchar_t *path);
 

@@ -128,7 +128,7 @@ pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
         }
 
         /* Create parent directory tree */
-        if (pyi_create_parent_directory_tree(pyi_ctx->application_home_dir, entry_filename) < 0) {
+        if (pyi_create_parent_directory_tree(pyi_ctx, pyi_ctx->application_home_dir, entry_filename) < 0) {
             FATALERROR("Failed to create parent directory structure.\n");
             retcode = -1;
             break;
