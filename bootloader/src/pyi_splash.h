@@ -24,13 +24,6 @@
  * This struct is a header describing the rest of this archive item */
 typedef struct _splash_data_header
 {
-    /*
-     * The filenames of the Tcl and Tk shared libraries. In onefile
-     * mode, these files extracted into a sub-directory named after
-     * the name in "rundir". This prevents the "file already exists"
-     * error when main onefile extraction takes place.
-     */
-
     /* Filename of the Tcl shared library, e.g., tcl86t.dll */
     char tcl_libname[16];
 
@@ -39,11 +32,6 @@ typedef struct _splash_data_header
 
     /* Tk module library root, e.g. "tk/" */
     char tk_lib[16];
-
-    /* Name of the temporary directory inside the onefile extraction
-     * path, into which splash dependencies are extracted when running
-     * in onefile mode. */
-    char rundir[16];
 
     /* Splash screen script */
     uint32_t script_len;
@@ -83,20 +71,8 @@ typedef struct _splash_context
     Tcl_ThreadId thread_id;
 
     /* The paths to Tcl/Tk shared libraries and Tk module library directory.
-     *
-     * In onedir mode, these are located in the top-level application
-     * directory.
-     *
-     * In onefile mode, they are extracted to sub-directory of the top-level
-     * application directory (an ephemeral temporary directory). The name
-     * of this sub-directory is controlled by the `rundir` field in the
-     * splash header.
-     *
-     * The `splash_dependencies_dir` contains full path to either application's
-     * top-level directory, or sub-directory under it. All other paths
-     * (`tcl_libpath`, `tk_libpath`, `tk_lib` are full paths that are
-     * rooted in `splash_dependencies_dir`. */
-    char splash_dependencies_dir[PATH_MAX];
+     * These are anchored to application's top-level directory (static
+     * or temporary, depending on onedir vs. onefile mode). */
     char tcl_libpath[PATH_MAX];
     char tk_libpath[PATH_MAX];
     char tk_lib[PATH_MAX];
@@ -145,6 +121,7 @@ int pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable);
 
 /* Archive helper functions */
 int pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx);
+int pyi_splash_is_splash_requirement(SPLASH_CONTEXT *splash, const char *name);
 
 int pyi_splash_send(
     SPLASH_CONTEXT *splash,

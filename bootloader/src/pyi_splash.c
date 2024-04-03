@@ -124,46 +124,30 @@ pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
 
     /* In onedir mode, Tcl/Tk dependencies (shared libraries, .tcl files)
      * are located directly in top-level application directory. In onefile
-     * mode, they are extracted into sub-directory under (temporary/ephemeral)
-     * top-level application directory. The sub-directory name is controlled
-     * by the `rundir` value in SPLASH_DATA_HEADER.
+     * mode, they are extracted into temporary/ephemeral)top-level
+     * application directory.
      *
      * NOTE: the name fields in SPLASH_DATA_HEADER are 16 characters wide,
      * and are *implicitly* NULL terminated; the build process uses zero
      * padding and is ensuring that strings themselves have no more than
      * 15 characters long. */
 
-    /* Full path to run-time directory that contains Tcl/Tk dependencies. */
-    if (pyi_ctx->is_onefile) {
-        /* Onefile mode: sub-directory under (temporary/ephemeral) top-level
-         * application directory. */
-        if (pyi_path_join(splash->splash_dependencies_dir, pyi_ctx->application_home_dir, data_header->rundir) == NULL) {
-            OTHERERROR("SPLASH: length of run-time splash directory path exceeds maximum path length!\n");
-            free(data_header);
-            return -1;
-        }
-    } else {
-        /* Onedir mode: top-level application directory */
-        /* NOTE: the path length is guaranteed to fit PATH_MAX */
-        snprintf(splash->splash_dependencies_dir, PATH_MAX, "%s", pyi_ctx->application_home_dir);
-    }
-
     /* Tcl shared library */
-    if (pyi_path_join(splash->tcl_libpath, splash->splash_dependencies_dir, data_header->tcl_libname) == NULL) {
+    if (pyi_path_join(splash->tcl_libpath, pyi_ctx->application_home_dir, data_header->tcl_libname) == NULL) {
         OTHERERROR("SPLASH: length of Tcl shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }
 
     /* Tk shared library */
-    if (pyi_path_join(splash->tk_libpath, splash->splash_dependencies_dir, data_header->tk_libname) == NULL) {
+    if (pyi_path_join(splash->tk_libpath, pyi_ctx->application_home_dir, data_header->tk_libname) == NULL) {
         OTHERERROR("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }
 
     /* Tk modules directory */
-    if (pyi_path_join(splash->tk_lib, splash->splash_dependencies_dir, data_header->tk_lib) == NULL) {
+    if (pyi_path_join(splash->tk_lib, pyi_ctx->application_home_dir, data_header->tk_lib) == NULL) {
         OTHERERROR("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
@@ -284,17 +268,10 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
  * the PKG/CArchive, if they are bundled (i.e., onefile mode). No-op
  * in onedir mode.
  *
- * Since these extracted files would collide with the files that are
- * extracted in pyi_launch_extract_files_from_archive, we put the splash
- * screen files into a subdirectory inside the application's (temporary)
- * top-level directory, which we refer to as "splash dependencies
- * directory". The name of this subdirectory is controlled by the
- * SPLASH_DATA_HEADER "rundir" field, which is ensured to not collide
- * with any custom directory that is part of frozen application.
- *
- * Unpacking into a subdirectory creates a small inefficiency, because
- * the loop in pyi_launch_extract_files_from_archive unpacks these files
- * again later.
+ * The files are extracted into (temporary) application's top-level
+ * directory; later, when `pyi_launch_extract_files_from_archive`
+ * performs the main extraction, it skips the extraction of files that
+ * were already extracted here (and exempts them from warning message).
  */
 int
 pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
@@ -310,17 +287,6 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
         return 0;
     }
 
-    /* Make sure splash dependencies directory exists */
-    if (pyi_path_exists(splash->splash_dependencies_dir) == 0) {
-        if (pyi_path_mkdir(splash->splash_dependencies_dir) < 0) {
-            FATALERROR(
-                "SPLASH: could not create splash dependencies directory %s.\n",
-                splash->splash_dependencies_dir
-            );
-            return -1;
-        }
-    }
-
     /* Iterate over the requirements array */
     for (pos = 0; pos < (size_t)splash->requirements_len; pos += strlen(requirement_filename) + 1) {
         /* Read filename from requirements array */
@@ -334,7 +300,7 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
         }
 
         /* Construct output filename */
-        if (snprintf(output_filename, PATH_MAX, "%s%c%s", splash->splash_dependencies_dir, PYI_SEP, requirement_filename) >= PATH_MAX) {
+        if (snprintf(output_filename, PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, requirement_filename) >= PATH_MAX) {
             FATALERROR("SPLASH: extraction path length exceeds maximum path length!\n");
             return -1;
         }
@@ -350,7 +316,7 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
         }
 
         /* Create parent directory tree */
-        if (pyi_create_parent_directory_tree(splash->splash_dependencies_dir, requirement_filename) < 0) {
+        if (pyi_create_parent_directory_tree(pyi_ctx->application_home_dir, requirement_filename) < 0) {
             FATALERROR("SPLASH: failed to create parent directory structure.\n");
             return -1;
         }
@@ -364,6 +330,39 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
 
     return 0;
 }
+
+/* Check if the given TOC entry is a splash dependency. Used by
+ * `pyi_launch_extract_files_from_archive` to avoid overwriting files
+ * that were already extracted by `pyi_splash_extract` (and are in use
+ * by splash screen code).
+ */
+int
+pyi_splash_is_splash_requirement(SPLASH_CONTEXT *splash, const char *name)
+{
+    const char *requirement_filename = NULL;
+    size_t pos;
+
+    /* Iterate over the requirements array */
+    for (pos = 0; pos < (size_t)splash->requirements_len; pos += strlen(requirement_filename) + 1) {
+        /* Read filename from requirements array */
+        requirement_filename = splash->requirements + pos;
+
+#if defined(_WIN32) || defined(__APPLE__)
+        /* On Windows and macOS, use case-insensitive comparison to
+         * simulate case-insensitive filesystem for extractable entries. */
+        if (strcasecmp(requirement_filename, name) == 0) {
+            return 1;
+        }
+#else
+        if (strcmp(requirement_filename, name) == 0) {
+            return 1;
+        }
+#endif
+    }
+
+    return 0;
+}
+
 
 /* Load Tcl/Tk shared libraries and bind required symbols (functions). */
 int

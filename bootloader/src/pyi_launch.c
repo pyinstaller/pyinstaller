@@ -112,7 +112,13 @@ pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
 
         /* Check if file already exists (it should not) */
         if (pyi_path_exists(output_filename) == 1) {
-            if (pyi_ctx->strict_unpack_mode) {
+            /* Check if file was a splash screen requirement */
+            if (pyi_ctx->splash && pyi_splash_is_splash_requirement(pyi_ctx->splash, entry_filename) == 1) {
+                /* This is splash requirement, so it is expected to exist.
+                 * Also, the file should be in use right now, so avoid
+                 * overwriting it. */
+                continue;
+            } else if (pyi_ctx->strict_unpack_mode) {
                 FATALERROR("File already exists but should not: %s\n", output_filename);
                 retcode = -1;
                 break;

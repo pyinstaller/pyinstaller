@@ -1,0 +1,5 @@
+The splash screen resources in ``onefile`` builds are now extracted
+into the application's temporary directory (instead of being extracted
+into a sub-directory within the application's temporary directory);
+therefore, they are now extracted only once, and are shared with the
+application itself, if necessary.

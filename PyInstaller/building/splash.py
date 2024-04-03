@@ -106,10 +106,6 @@ class Splash(Target):
         :keyword minify_script:
             The splash screen is created by executing an Tcl/Tk script. This option enables minimizing the script,
             meaning removing all non essential parts from the script. Default: ``True``
-        :keyword rundir:
-            The folder name in which tcl/tk will be extracted at runtime. There should be no matching folder in your
-            application to avoid conflicts. Default:  ``'__splash'``
-        :type rundir: str
         :keyword name:
             An optional alternative filename for the .res file. If not specified, a name is generated.
         :type name: str
@@ -149,7 +145,6 @@ class Splash(Target):
         self.name = kwargs.get("name", None)
         self.script_name = kwargs.get("script_name", None)
         self.minify_script = kwargs.get("minify_script", True)
-        self.rundir = kwargs.get("rundir", None)
         self.max_img_size = kwargs.get("max_img_size", (760, 480))
 
         # text options
@@ -168,9 +163,6 @@ class Splash(Target):
             self.name = root + '.res'
         if self.script_name is None:
             self.script_name = root + '_script.tcl'
-
-        if self.rundir is None:
-            self.rundir = self._find_rundir(binaries + datas)
 
         # Internal variables
         try:
@@ -263,7 +255,6 @@ class Splash(Target):
         ('always_on_top', _check_guts_eq),
         ('full_tk', _check_guts_eq),
         ('minify_script', _check_guts_eq),
-        ('rundir', _check_guts_eq),
         ('max_img_size', _check_guts_eq),
         # calculated/analysed values
         ('uses_tkinter', _check_guts_eq),
@@ -371,7 +362,6 @@ class Splash(Target):
             self.tcl_lib[0],  # tcl86t.dll
             self.tk_lib[0],  # tk86t.dll
             tcltk_utils.TK_ROOTNAME,
-            self.rundir,
             image,
             self.script
         )
@@ -446,23 +436,3 @@ class Splash(Target):
             if pathlib.PurePath(src_name) == tkinter_file:
                 return True
         return False
-
-    @staticmethod
-    def _find_rundir(structure):
-        # First try a name the user could understand, if one would find the directory.
-        rundir = '__splash%s'
-        candidate = rundir % ""
-        counter = 0
-
-        # Run this loop as long as a folder exist named like rundir. In most cases __splash will be sufficient and this
-        # loop won't enter.
-        while any(e[0].startswith(candidate + os.sep) for e in structure):
-            # just append to rundir a counter
-            candidate = rundir % str(counter)
-            counter += 1
-
-            # The SPLASH_DATA_HEADER structure limits the name to be 16 bytes at maximum. So if we exceed the limit
-            # raise an error. This will never happen, since there are 10^8 different possibilities, but just in case.
-            assert len(candidate) <= 16
-
-        return candidate
