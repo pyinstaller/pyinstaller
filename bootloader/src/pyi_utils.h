@@ -33,14 +33,14 @@ char *pyi_getenv(const char *variable);
 int pyi_setenv(const char *variable, const char *value);
 int pyi_unsetenv(const char *variable);
 
-/* Temporary directory. */
-int pyi_create_tempdir(char *buff, const char *runtime_tmpdir);
+/* Temporary top-level application directory (onefile). */
+int pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx);
 
 /* Recursive directory deletion. */
 void pyi_recursive_rmdir(const char *dir);
 
 /* File manipulation. */
-int pyi_create_parent_directory_tree(const char *prefix_path, const char *filename);
+int pyi_create_parent_directory_tree(const PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename);
 int pyi_copy_file(const char *src_filename, const char *dest_filename);
 
 /* Other routines. */

@@ -126,6 +126,19 @@ typedef struct
      * PyInstaller's CI. */
     unsigned char strict_unpack_mode;
 
+#if defined(_WIN32)
+    /* Security descriptor that limits the access to created directory
+     * to the user. Used with `pyi_win32_mkdir`, when creating the
+     * application's temporary top-level directory and its sub-directories
+     * in onefile mode.
+     *
+     * Must be explicitly initialized by calling
+     * `pyi_win32_initialize_security_descriptor`, and freed by calling
+     * `pyi_win32_free_security_descriptor`.
+     */
+    PSECURITY_DESCRIPTOR security_descriptor;
+#endif
+
     /**
      * Runtime options
      */
@@ -136,7 +149,7 @@ typedef struct
      *
      * NOTE: if non-NULL, the pointer points at the TOC buffer entry in
      * the `archive` structure! */
-    const char *runtime_tempdir;
+    const char *runtime_tmpdir;
 
     /* Contents sub-directory in onedir builds.
      *

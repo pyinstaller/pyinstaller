@@ -316,7 +316,7 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
         }
 
         /* Create parent directory tree */
-        if (pyi_create_parent_directory_tree(pyi_ctx->application_home_dir, requirement_filename) < 0) {
+        if (pyi_create_parent_directory_tree(pyi_ctx, pyi_ctx->application_home_dir, requirement_filename) < 0) {
             FATALERROR("SPLASH: failed to create parent directory structure.\n");
             return -1;
         }

@@ -193,140 +193,165 @@ pyi_unsetenv(const char *variable)
     return rc;
 }
 
+
+/**********************************************************************\
+ *         Temporary application top-level directory (onefile)        *
+\**********************************************************************/
 #ifdef _WIN32
 
-/* Resolve the runtime tmpdir path and build nested directories */
-static wchar_t
-*pyi_build_temp_folder(const char *runtime_tmpdir)
+/* Resolve the temporary directory specified by user via runtime_tmpdir
+ * option, and create corresponding directory tree. */
+static wchar_t *
+_pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
 {
-    wchar_t *wruntime_tmpdir;
-    wchar_t wruntime_tmpdir_expanded[PATH_MAX];
-    wchar_t *wruntime_tmpdir_abspath;
+    wchar_t *runtime_tmpdir_w;
+    wchar_t runtime_tmpdir_expanded[PATH_MAX];
+    wchar_t *runtime_tmpdir_abspath;
     wchar_t *cursor;
-    wchar_t path_builder[PATH_MAX];
+    wchar_t directory_tree_path[PATH_MAX];
     DWORD rc;
-    // Expand environment variables like %LOCALAPPDATA%
-    wruntime_tmpdir = pyi_win32_utils_from_utf8(NULL, runtime_tmpdir, 0);
-    if (!wruntime_tmpdir) {
-        FATALERROR("LOADER: Failed to convert runtime-tmpdir to a wide string.\n");
+
+    /* Convert UTF-8 path to wide-char */
+    runtime_tmpdir_w = pyi_win32_utils_from_utf8(NULL, runtime_tmpdir, 0);
+    if (!runtime_tmpdir_w) {
+        FATALERROR("LOADER: failed to convert runtime-tmpdir to a wide string.\n");
         return NULL;
     }
-    rc = ExpandEnvironmentStringsW(wruntime_tmpdir, wruntime_tmpdir_expanded,
-                                   PATH_MAX);
-    free(wruntime_tmpdir);
+
+    /* Expand environment variables like %LOCALAPPDATA% */
+    rc = ExpandEnvironmentStringsW(runtime_tmpdir_w, runtime_tmpdir_expanded, PATH_MAX);
+    free(runtime_tmpdir_w);
     if (!rc) {
-        FATALERROR("LOADER: Failed to expand environment variables in the runtime-tmpdir.\n");
+        FATALERROR("LOADER: failed to expand environment variables in the runtime-tmpdir.\n");
         return NULL;
     }
-    // Get the absolute path
-    if (pyi_win32_is_drive_root(wruntime_tmpdir_expanded)) {
+
+    /* Resolve absolute path */
+    if (pyi_win32_is_drive_root(runtime_tmpdir_expanded)) {
         /* Disk drive (e.g., "c:"); do not attempt to call _wfullpath(), because it will return
-           the current directory of this drive. So return a verbatim copy instead. */
-        wruntime_tmpdir_abspath = _wcsdup(wruntime_tmpdir_expanded);
+         * the current directory of this drive. So return a verbatim copy instead. */
+        runtime_tmpdir_abspath = _wcsdup(runtime_tmpdir_expanded);
     } else {
-        wruntime_tmpdir_abspath = _wfullpath(NULL, wruntime_tmpdir_expanded, PATH_MAX);
+        runtime_tmpdir_abspath = _wfullpath(NULL, runtime_tmpdir_expanded, PATH_MAX);
     }
-    if (!wruntime_tmpdir_abspath) {
-        FATALERROR("LOADER: Failed to obtain the absolute path of the runtime-tmpdir.\n");
+    if (!runtime_tmpdir_abspath) {
+        FATALERROR("LOADER: failed to obtain the absolute path of the runtime-tmpdir.\n");
         return NULL;
     }
-    VS("LOADER: absolute runtime tmpdir is %ls\n", wruntime_tmpdir_abspath);
-    // Create the directory path if it does not yet already exist (e.g.
-    // %AppData%\NewFolder\NestedFolder)
-    ZeroMemory(path_builder, PATH_MAX * sizeof(wchar_t));
-    cursor = wcschr(wruntime_tmpdir_abspath, L'\\');
+
+    VS("LOADER: absolute runtime-tmpdir is %ls\n", runtime_tmpdir_abspath);
+
+    /* Recursively create the directory structure
+     *
+     * NOTE: we call CreateDirectoryW without security descriptor for
+     * this part of directory tree, as it might be shared by application
+     * instances ran by different users. Only the last component (the
+     * actual _MEIXXXXXX directory), created by the caller, uses security
+     * descriptor to restrict access to current user.
+     *
+     * NOTE2: we ignore errors returned by CreateDirectoryW; if we
+     * actually fail to create (a part of) directory tree here, we will
+     * catch the error in the caller when trying to create the final
+     * temporary directory component  (the actual _MEIXXXXXX directory).
+     *
+     * NOTE3: zero-clear the `directory_tree_path`, because `wcsncpy`
+     * does not perform zero termination after it copies the string! */
+    memset(directory_tree_path, 0, sizeof(directory_tree_path));
+    cursor = wcschr(runtime_tmpdir_abspath, L'\\');
     while(cursor != NULL) {
-        wcsncpy(path_builder, wruntime_tmpdir_abspath,
-                cursor - wruntime_tmpdir_abspath + 1);
-        CreateDirectoryW(path_builder, NULL);
-        // We expect ERROR_ALREADY_EXISTS, ERROR_ACCESS_DENIED (if try to
-        // create a drive when running as an admin), etc...
+        wcsncpy(directory_tree_path, runtime_tmpdir_abspath, cursor - runtime_tmpdir_abspath + 1);
+        CreateDirectoryW(directory_tree_path, NULL);
         cursor = wcschr(++cursor, L'\\');
     }
-    // May not have a string terminated with \, so run CreateDirectoryW one
-    // last time to handle that case
-    CreateDirectoryW(wruntime_tmpdir_abspath, NULL);
-    return wruntime_tmpdir_abspath;
+
+    /* Run once more on full path, to handle cases when path did not end
+     * with separator. */
+    CreateDirectoryW(runtime_tmpdir_abspath, NULL);
+
+    return runtime_tmpdir_abspath;
 }
 
-/* TODO rename function and revisit */
 int
-pyi_create_tempdir(char *buffer, const char *runtime_tmpdir)
+pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
 {
-    int i;
-    wchar_t *wchar_ret;
+    char *original_tmp_value = NULL;
     wchar_t prefix[16];
-    wchar_t wchar_buffer[PATH_MAX];
-    char *original_tmpdir = NULL;
-    wchar_t *wruntime_tmpdir_abspath;
-    DWORD rc;
+    wchar_t tempdir_path[PATH_MAX];
+    int ret = 0;
+    int i;
 
-    if (runtime_tmpdir != NULL) {
-      /*
-       * Get original TMP environment variable so it can be restored
-       * after this is done.
-       */
-      original_tmpdir = pyi_getenv("TMP");
-      /*
-       * Set TMP to runtime_tmpdir for _wtempnam() later
-       */
-      wruntime_tmpdir_abspath = pyi_build_temp_folder(runtime_tmpdir);
-      if (!wruntime_tmpdir_abspath) {
-          return 0;
-      }
-      // Store in the TMP environment variable
-      rc = _wputenv_s(L"TMP", wruntime_tmpdir_abspath);
-      free(wruntime_tmpdir_abspath);
-      if (rc) {
-          FATALERROR("LOADER: Failed to set the TMP environment variable.\n");
-          return 0;
-      }
-      VS("LOADER: Successfully resolved the specified runtime-tmpdir\n");
+    /* If user specified the temporary directory via runtime_tmpdir
+     * option, resolve it, create it, and store the path to TMP
+     * environment variable to have`GetTempPathW` use it. */
+    if (pyi_ctx->runtime_tmpdir != NULL) {
+        wchar_t *runtime_tmpdir_w;
+        DWORD rc;
+
+        /* Retrieve original value of TMP environment variable, so we
+         * can restore it at the very end of this function. */
+        original_tmp_value = pyi_getenv("TMP");
+
+        /* Resolve and create directory specified via the runtime_tmpdir
+         * option. */
+        runtime_tmpdir_w = _pyi_create_runtime_tmpdir(pyi_ctx->runtime_tmpdir);
+        if (runtime_tmpdir_w == NULL) {
+            free(original_tmp_value);
+            return -1;
+        }
+
+        /* Store the path in the TMP environment variable. */
+        rc = _wputenv_s(L"TMP", runtime_tmpdir_w);
+        free(runtime_tmpdir_w);
+        if (rc) {
+            FATALERROR("LOADER: failed to set the TMP environment variable.\n");
+            free(original_tmp_value);
+            return -1;
+        }
+
+        VS("LOADER: successfully resolved the specified runtime-tmpdir\n");
     }
 
-    GetTempPathW(PATH_MAX, wchar_buffer);
+    /* Retrieve temporary directory */
+    GetTempPathW(PATH_MAX, tempdir_path);
 
+    /* Create _MEI + PID prefix */
     swprintf(prefix, 16, L"_MEI%d", getpid());
 
-    /*
-     * Windows does not have a race-free function to create a temporary
+    /* Windows does not have a race-free function to create a temporary
      * directory. Thus, we rely on _tempnam, and simply try several times
-     * to avoid stupid race conditions.
-     */
+     * to avoid stupid race conditions. */
     for (i = 0; i < 5; i++) {
-        /* TODO use race-free function - if any exists? */
-        wchar_ret = _wtempnam(wchar_buffer, prefix);
+        wchar_t *application_home_dir_w = _wtempnam(tempdir_path, prefix);
 
-        if (pyi_win32_mkdir(wchar_ret) == 0) {
-            pyi_win32_utils_to_utf8(buffer, wchar_ret, PATH_MAX);
-            free(wchar_ret);
-            if (runtime_tmpdir != NULL) {
-              /*
-               * Restore TMP to what it was
-               */
-              if (original_tmpdir != NULL) {
-                pyi_setenv("TMP", original_tmpdir);
-                free(original_tmpdir);
-              } else {
-                pyi_unsetenv("TMP");
-              }
+        /* Try creating the directory. Use `pyi_win32_mkdir` with security
+         * descriptor to limit access to current user. */
+        ret = pyi_win32_mkdir(application_home_dir_w, pyi_ctx->security_descriptor);
+
+        if (ret == 0) {
+            /* Convert path to UTF-8 and store it in main context structure */
+            if (pyi_win32_utils_to_utf8(pyi_ctx->application_home_dir, application_home_dir_w, PATH_MAX) == NULL) {
+                FATALERROR("LOADER: length of teporary directory path exceeds maximum path length!\n");
+                ret = -1;
             }
-            return 1;
+            free(application_home_dir_w);
+            break;
+        } else {
+            free(application_home_dir_w);
         }
-        free(wchar_ret);
     }
-    if (runtime_tmpdir != NULL) {
-      /*
-       * Restore TMP to what it was
-       */
-      if (original_tmpdir != NULL) {
-        pyi_setenv("TMP", original_tmpdir);
-        free(original_tmpdir);
-      } else {
-        pyi_unsetenv("TMP");
-      }
+
+    /* If we modified TMP environment variable due to runtime_tmpdir
+     * option, restore the environment variable to its original state. */
+    if (pyi_ctx->runtime_tmpdir != NULL) {
+        if (original_tmp_value!= NULL) {
+            pyi_setenv("TMP", original_tmp_value);
+            free(original_tmp_value);
+        } else {
+            pyi_unsetenv("TMP");
+        }
     }
-    return 0;
+
+    return ret;
 }
 
 #else /* ifdef _WIN32 */
@@ -339,7 +364,7 @@ pyi_create_tempdir(char *buffer, const char *runtime_tmpdir)
  */
 #if !defined(HAVE_MKDTEMP)
 
-static char*
+static char *
 mkdtemp(char *template)
 {
     if (!mktemp(template) ) {
@@ -355,65 +380,97 @@ mkdtemp(char *template)
 
 #endif /* !defined(HAVE_MKDTEMP) */
 
-/* TODO Is this really necessary to test for temp path? Why not just use mkdtemp()? */
-int
-pyi_test_temp_path(char *buff)
+/* Append the _MEIXXXXXX string to the temporary directory path template,
+ * and try creating the temporary directory. */
+static int
+_pyi_format_and_create_tmpdir(char *tmpdir_path)
 {
-    /*
-     * If path does not end with directory separator - append it there.
-     * On OSX the value from $TMPDIR ends with '/'.
-     */
-    if (buff[strlen(buff) - 1] != PYI_SEP) {
-        strcat(buff, PYI_SEPSTR);
-    }
-    strcat(buff, "_MEIXXXXXX");
+    size_t path_len;
+    unsigned char needs_separator;
 
-    if (mkdtemp(buff)) {
-        return 1;
+    /* Compute length of the given temporary directory path - to ensure
+     * that strcat operations below do not exceed buffer length. */
+    path_len = strlen(tmpdir_path);
+
+    /* Check whether the given path ends with separator or not. Typically,
+     * it should not, but on macOS, the value from $TMPDIR does. */
+    needs_separator = tmpdir_path[path_len - 1] != PYI_SEP;
+
+    /* Add separator , _MEI, and six X characters required by mkdtemp */
+    path_len += needs_separator + 4 + 6;
+    if (path_len >= PATH_MAX) {
+        return -1;
     }
+
+    if (needs_separator) {
+        strcat(tmpdir_path, PYI_SEPSTR);
+    }
+    strcat(tmpdir_path, "_MEIXXXXXX");
+
+    /* Try creating the directory */
+    if (mkdtemp(tmpdir_path) == NULL) {
+        return -1;
+    }
+
     return 0;
 }
 
-/* TODO merge this function with windows version. */
 int
-pyi_create_tempdir(char *buff, const char *runtime_tmpdir)
+pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
 {
-    if (runtime_tmpdir != NULL) {
-      strcpy(buff, runtime_tmpdir);
-      if (pyi_test_temp_path(buff))
-        return 1;
-    } else {
-      /* On OSX the variable TMPDIR is usually defined. */
-      static const char *envname[] = {
-          "TMPDIR", "TEMP", "TMP", 0
-      };
-      static const char *dirname[] = {
-          "/tmp", "/var/tmp", "/usr/tmp", 0
-      };
-      int i;
-      char *p;
+    static const char *candidate_env_vars[] = {
+        "TMPDIR",
+        "TEMP",
+        "TMP"
+    };
 
-      for (i = 0; envname[i]; i++) {
-          p = pyi_getenv(envname[i]);
+    static const char *candidate_tmp_dirs[] = {
+        "/tmp",
+        "/var/tmp",
+        "/usr/tmp"
+    };
 
-          if (p) {
-              strcpy(buff, p);
+    int i;
 
-              if (pyi_test_temp_path(buff)) {
-                  return 1;
-              }
-          }
-      }
+    /* If specified, use runtime_tmpdir */
+    if (pyi_ctx->runtime_tmpdir != NULL) {
+        if (snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", pyi_ctx->runtime_tmpdir) >= PATH_MAX) {
+            return -1;
+        }
 
-      for (i = 0; dirname[i]; i++) {
-          strcpy(buff, dirname[i]);
-
-          if (pyi_test_temp_path(buff)) {
-              return 1;
-          }
-      }
+        return _pyi_format_and_create_tmpdir(pyi_ctx->application_home_dir);
     }
-    return 0;
+
+    /* Check the standard environment variables */
+    for (i = 0; i < sizeof(candidate_env_vars)/sizeof(candidate_env_vars[0]); i++) {
+        char *env_var_value = pyi_getenv(candidate_env_vars[i]);
+        int ret;
+
+        if (env_var_value == NULL) {
+            continue;
+        }
+
+        ret = snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", env_var_value);
+        free(env_var_value);
+
+        if (ret >= PATH_MAX) {
+            continue;
+        }
+
+        if (_pyi_format_and_create_tmpdir(pyi_ctx->application_home_dir) == 0) {
+            return 0;
+        }
+    }
+
+    /* Check the standard temporary directory paths */
+    for (i = 0; i < sizeof(candidate_tmp_dirs)/sizeof(candidate_tmp_dirs[0]); i++) {
+         snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", candidate_tmp_dirs[i]);
+         if (_pyi_format_and_create_tmpdir(pyi_ctx->application_home_dir) == 0) {
+            return 0;
+        }
+    }
+
+    return -1; /* No suitable location found */
 }
 
 #endif /* ifdef _WIN32 */
@@ -545,7 +602,7 @@ pyi_recursive_rmdir(const char *dir)
  * Returns 0 on success, -1 on failure.
  */
 int
-pyi_create_parent_directory_tree(const char *prefix_path, const char *filename)
+pyi_create_parent_directory_tree(const PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename)
 {
     char filename_copy[PATH_MAX];
     char path[PATH_MAX];
@@ -581,9 +638,17 @@ pyi_create_parent_directory_tree(const char *prefix_path, const char *filename)
 
         /* Create path if necessary */
         if (pyi_path_exists(path) == 0) {
-            if (pyi_path_mkdir(path) < 0) {
+#ifdef _WIN32
+            wchar_t path_w[PATH_MAX];
+            pyi_win32_utils_from_utf8(path_w, path, PATH_MAX);
+            if (pyi_win32_mkdir(path_w, pyi_ctx->security_descriptor) < 0) {
                 return -1;
             }
+#else
+            if (mkdir(path, 0700) < 0) {
+                return -1;
+            }
+#endif
         }
     }
 

@@ -182,16 +182,16 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
              * temporary directory and its sub-directories during file extration. */
 #if defined(_WIN32)
             VS("LOADER: initializing security descriptor for temporary directory...\n");
-            if (pyi_win32_initialize_security_descriptor() == -1) {
+            if (pyi_win32_initialize_security_descriptor(pyi_ctx) == -1) {
                 FATALERROR("Failed to initialize security descriptor for temporary directory!\n");
                 return -1;
             }
 #endif
 
             /* Create temporary directory */
-            VS("LOADER: creating temporary directory (runtime_tmpdir=%s)...\n", pyi_ctx->runtime_tempdir);
+            VS("LOADER: creating temporary directory (runtime_tmpdir=%s)...\n", pyi_ctx->runtime_tmpdir);
 
-            if (!pyi_create_tempdir(pyi_ctx->application_home_dir, pyi_ctx->runtime_tempdir)) {
+            if (pyi_create_temporary_application_directory(pyi_ctx) < 0) {
                 FATALERROR("Could not create temporary directory!\n");
                 return -1;
             }
@@ -351,7 +351,7 @@ _pyi_main_read_runtime_options(PYI_CONTEXT *pyi_ctx)
          *
          * Run-time temporary directory override for onefile programs. */
         if (strncmp(toc_entry->name, "pyi-runtime-tmpdir", 18) == 0) {
-            pyi_ctx->runtime_tempdir = toc_entry->name + 19;
+            pyi_ctx->runtime_tmpdir = toc_entry->name + 19;
         }
 
         /* pyi-contents-directory <value>
@@ -525,7 +525,7 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
      * and we can free the Windows security descriptor that was used
      * during creation of temporary directory and its sub-directories. */
 #if defined(_WIN32)
-    pyi_win32_free_security_descriptor();
+    pyi_win32_free_security_descriptor(pyi_ctx);
 #endif
 
     /* Late console hiding/minimization */
