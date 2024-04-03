@@ -23,9 +23,8 @@
 /* Maximum number of allowed archives in multi-package archive pool. */
 #define PYI_MULTIPKG_ARCHIVE_POOL_SIZE 20
 
-/* Extract depdencency */
-int pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *dependency_name);
-
+int pyi_multipkg_split_dependency_string(char *path, char *filename, const char *dependency_string);
+int pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *other_executable, const char *dependency_name, const char *output_filename);
 
 #endif /* PYI_MULTIPKG_H */
 

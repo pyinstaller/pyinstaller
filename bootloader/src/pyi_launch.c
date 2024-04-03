@@ -51,52 +51,101 @@
 int
 pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
 {
+    const ARCHIVE *archive = pyi_ctx->archive;
     const TOC_ENTRY *toc_entry;
     ptrdiff_t index;
     int retcode = 0;
+    char output_filename[PATH_MAX];
 
     ARCHIVE *multipkg_archive_pool[PYI_MULTIPKG_ARCHIVE_POOL_SIZE];
+    char multipkg_ref[PATH_MAX];
+    char multipkg_name[PATH_MAX];
+
+    const char *entry_filename;
 
     /* Clear the archive pool array. */
     memset(multipkg_archive_pool, 0, sizeof(multipkg_archive_pool));
 
-    toc_entry = pyi_ctx->archive->toc;
-    while (toc_entry < pyi_ctx->archive->toc_end) {
+    for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
+        /* Check if entry is extractable */
         switch (toc_entry->typecode) {
             /* Onefile mode */
             case ARCHIVE_ITEM_BINARY:
             case ARCHIVE_ITEM_DATA:
             case ARCHIVE_ITEM_ZIPFILE:
             case ARCHIVE_ITEM_SYMLINK: {
-                /* Update splash screen */
-                if (pyi_ctx->splash != NULL) {
-                    pyi_splash_update_prg(pyi_ctx->splash, toc_entry);
-                }
-
-                /* Extract the file to the disk; non-zero return code will break the loop. */
-                retcode = pyi_archive_extract2fs(pyi_ctx->archive, toc_entry, pyi_ctx->application_home_dir);
+                /* toc_entry->name is the output filename */
+                entry_filename = toc_entry->name;
                 break;
             }
             /* MERGE multi-package */
             case ARCHIVE_ITEM_DEPENDENCY: {
-                /* Update splash screen */
-                if (pyi_ctx->splash != NULL) {
-                    pyi_splash_update_prg(pyi_ctx->splash, toc_entry);
+                /* toc_entry->name is multi-package reference; split it */
+                if (pyi_multipkg_split_dependency_string(multipkg_ref, multipkg_name, toc_entry->name) == -1) {
+                    retcode = -1;
                 }
-
-                /* Extract multi-package dependency; non-zero return code will break the loop. */
-                retcode = pyi_multipkg_extract_dependency(pyi_ctx, multipkg_archive_pool, toc_entry->name);
+                entry_filename = multipkg_name;
                 break;
+            }
+            /* Not extractable; skip */
+            default: {
+                continue;
             }
         }
 
-        /* If extraction failed, there is no need to continue. */
+        /* Break on errors in the above switch */
         if (retcode != 0) {
             break;
         }
 
-        /* Retrieve next TOC entry */
-        toc_entry = pyi_archive_next_toc_entry(pyi_ctx->archive, toc_entry);
+        /* Update splash screen (display name of the currently-processed entry) */
+        if (pyi_ctx->splash != NULL) {
+            pyi_splash_update_text(pyi_ctx->splash, entry_filename);
+        }
+
+        /* Construct output filename */
+        if (snprintf(output_filename, PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, entry_filename) >= PATH_MAX) {
+            FATALERROR("Extraction path length exceeds maximum path length!\n");
+            retcode = -1;
+            break;
+        }
+
+        /* Check if file already exists (it should not) */
+        if (pyi_path_exists(output_filename) == 1) {
+            if (pyi_ctx->strict_unpack_mode) {
+                FATALERROR("File already exists but should not: %s\n", output_filename);
+                retcode = -1;
+                break;
+            } else {
+                OTHERERROR("WARNING: file already exists but should not: %s\n", output_filename);
+            }
+        }
+
+        /* Create parent directory tree */
+        if (pyi_create_parent_directory_tree(pyi_ctx->application_home_dir, entry_filename) < 0) {
+            FATALERROR("Failed to create parent directory structure.\n");
+            retcode = -1;
+            break;
+        }
+
+        /* Extract */
+        if (toc_entry->typecode == ARCHIVE_ITEM_DEPENDENCY) {
+            retcode = pyi_multipkg_extract_dependency(
+                pyi_ctx,
+                multipkg_archive_pool,
+                multipkg_ref,
+                multipkg_name,
+                output_filename
+            );
+        } else {
+            retcode = pyi_archive_extract2fs(archive, toc_entry, output_filename);
+        }
+
+        /* If extraction failed, there is no need to continue. */
+        if (retcode != 0) {
+            FATALERROR("Failed to extract entry: %s.\n", toc_entry->name);
+            break;
+        }
     }
 
     /* Free memory allocated for archive pool. */

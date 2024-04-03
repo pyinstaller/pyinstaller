@@ -41,18 +41,17 @@ _format_and_check_path(char *path, const char *fmt, ...)
     return pyi_path_exists(path);
 }
 
-/* Splits the item in the form path:filename. The first part is the path
- * to the other executable (which contains the dependency); the path is
- * relative to the current executable. The second part is the filename of
- * dependency, relative to the top-level application directory. */
-/* NOTE: must be visible outside of this unit (i.e., non-static) due to tests! */
+/* Splits the dependency string in the form path:filename. The first part
+ * is the path to the other executable (which contains the dependency);
+ * the path is relative to the current executable. The second part is the
+ * filename of dependency, relative to the top-level application directory. */
 int
-_split_dependency_name(char *path, char *filename, const char *dependency_name)
+pyi_multipkg_split_dependency_string(char *path, char *filename, const char *dependency_string)
 {
     char *p;
 
     /* Copy directly into destination buffer and manipulate there, */
-    if (snprintf(path, PATH_MAX, "%s", dependency_name) >= PATH_MAX) {
+    if (snprintf(path, PATH_MAX, "%s", dependency_string) >= PATH_MAX) {
         return -1;
     }
 
@@ -60,7 +59,7 @@ _split_dependency_name(char *path, char *filename, const char *dependency_name)
     if (p == NULL) {
         return -1; /* no colon in string */
     }
-    p[0] ='\0'; /* Terminate path part */
+    p[0] = 0; /* Terminate path part */
 
     /* `path` fits into PATH_MAX, so will all substrings. */
     strcpy(filename, ++p);
@@ -116,16 +115,18 @@ _get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *archive_f
 /* Decide if the dependency identified by item is in a onedir or onfile archive
  * and extract it using the appropriate helpers. */
 int
-pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *dependency_name)
+pyi_multipkg_extract_dependency(
+    PYI_CONTEXT *pyi_ctx,
+    ARCHIVE **archive_pool,
+    const char *other_executable,
+    const char *dependency_name,
+    const char *output_filename
+)
 {
-    char other_executable[PATH_MAX];
     char other_executable_dir[PATH_MAX];
-    char filename[PATH_MAX];
     char this_executable_dir[PATH_MAX];
     char full_srcpath[PATH_MAX];
     int ret;
-
-    VS("LOADER: processing dependency reference: %s\n", dependency_name);
 
     /* Dependency reference consists of two parts, separated by a colon, for example
      *   (../)other_program:path/to/file
@@ -137,10 +138,14 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, co
      * relative to the current executable. On Windows, the executable name does NOT
      * contain .exe suffix. The second part is the filename of dependency, relative to
      * the top-level application directory.
+     *
+     * This implementation assumes that the dependency name from the TOC entry has
+     * already been split by the caller, using `pyi_multipkg_split_dependency_name`,
+     * and that results have been passed via `other_executable` and `dependency_name`
+     * arguments.
      */
-    if (_split_dependency_name(other_executable, filename, dependency_name) == -1) {
-        return -1;
-    }
+
+    VS("LOADER: processing multi-package reference: %s %s\n", other_executable, dependency_name);
 
     /* Determine parent directories of this executable (absolute path) and the other
      * executable (relative to this executable). If executables are co-located
@@ -172,14 +177,14 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, co
      *    it is "../other_program"
      */
     if (pyi_ctx->contents_subdirectory) {
-        ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, pyi_ctx->contents_subdirectory, PYI_SEP, filename);
+        ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, pyi_ctx->contents_subdirectory, PYI_SEP, dependency_name);
     } else {
-        ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, filename);
+        ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, dependency_name);
     }
     if (ret == true) {
-        VS("LOADER: file %s found on filesystem (%s), assuming onedir reference.\n", filename, full_srcpath);
-        if (pyi_copy_file(full_srcpath, pyi_ctx->application_home_dir, filename) == -1) {
-            FATALERROR("Failed to copy file %s from %s!\n", filename, full_srcpath);
+        VS("LOADER: file %s found on filesystem (%s), assuming onedir reference.\n", dependency_name, full_srcpath);
+        if (pyi_copy_file(full_srcpath, output_filename) == -1) {
+            FATALERROR("Failed to copy file %s from %s!\n", dependency_name, full_srcpath);
             return -1;
         }
     } else {
@@ -187,7 +192,7 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, co
         char other_archive_path[PATH_MAX];
         const TOC_ENTRY *toc_entry;
 
-        VS("LOADER: file %s not found on filesystem, assuming onefile reference.\n", filename);
+        VS("LOADER: file %s not found on filesystem, assuming onefile reference.\n", dependency_name);
 
         /* First check for the presence of external .pkg archive, located
          * next to the executable, to account for side-loading mode. */
@@ -209,15 +214,15 @@ pyi_multipkg_extract_dependency(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, co
          * by the caller! */
 
         /* Look-up entry in archive's TOC */
-        toc_entry = pyi_archive_find_entry_by_name(other_archive, filename);
+        toc_entry = pyi_archive_find_entry_by_name(other_archive, dependency_name);
         if (toc_entry == NULL) {
-            FATALERROR("Dependency %s not found in the referenced dependency archive.\n", filename, other_archive_path);
+            FATALERROR("Dependency %s not found in the referenced dependency archive.\n", dependency_name, other_archive_path);
             return -1; /* Entry not found */
         }
 
         /* Extract */
-        if (pyi_archive_extract2fs(other_archive, toc_entry, pyi_ctx->application_home_dir) < 0) {
-            FATALERROR("Failed to extract %s from referenced dependency archive %s.\n", filename, other_archive_path);
+        if (pyi_archive_extract2fs(other_archive, toc_entry, output_filename) < 0) {
+            FATALERROR("Failed to extract %s from referenced dependency archive %s.\n", dependency_name, other_archive_path);
             return -1;
         }
     }

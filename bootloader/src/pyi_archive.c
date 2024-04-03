@@ -256,10 +256,9 @@ cleanup:
  * Create/extract symbolic link from the archive.
  */
 static int
-_pyi_archive_create_symlink(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, const char *output_directory)
+_pyi_archive_create_symlink(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, const char *output_filename)
 {
     char *link_target = NULL;
-    char link_name[PATH_MAX];
     int rc = -1;
 
     /* Extract symlink target */
@@ -268,16 +267,8 @@ _pyi_archive_create_symlink(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, 
         goto cleanup;
     }
 
-    /* Ensure parent path exists */
-    if (pyi_create_parent_directory(output_directory, toc_entry->name) < 0) {
-        goto cleanup;
-    }
-
     /* Create the symbolic link */
-    if (snprintf(link_name, PATH_MAX, "%s%c%s", output_directory, PYI_SEP, toc_entry->name) >= PATH_MAX) {
-        goto cleanup;
-    }
-    rc = pyi_path_mksymlink(link_target, link_name);
+    rc = pyi_path_mksymlink(link_target, output_filename);
 
 cleanup:
     free(link_target);
@@ -286,10 +277,10 @@ cleanup:
 }
 
 /*
- * Extract an archive entry into file in the specified output directory.
+ * Extract an archive entry into specified output file.
  */
 int
-pyi_archive_extract2fs(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, const char *output_directory)
+pyi_archive_extract2fs(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, const char *output_filename)
 {
     FILE *archive_fp = NULL;
     FILE *out_fp = NULL;
@@ -297,7 +288,7 @@ pyi_archive_extract2fs(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, const
 
     /* Handle symbolic links */
     if (toc_entry->typecode == ARCHIVE_ITEM_SYMLINK) {
-        rc = _pyi_archive_create_symlink(archive, toc_entry, output_directory);
+        rc = _pyi_archive_create_symlink(archive, toc_entry, output_filename);
         if (rc < 0) {
             FATALERROR("Failed to create symbolic link %s!\n", toc_entry->name);
         }
@@ -305,7 +296,7 @@ pyi_archive_extract2fs(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, const
     }
 
     /* Open target file */
-    out_fp = pyi_open_target_file(output_directory, toc_entry->name);
+    out_fp = pyi_path_fopen(output_filename, "wb");
     if (out_fp == NULL) {
         FATAL_PERROR("fopen", "Failed to extract %s: failed to open target file!\n", toc_entry->name);
         return -1;
