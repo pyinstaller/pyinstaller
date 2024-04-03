@@ -96,13 +96,11 @@ _pyi_splash_find_data_header(ARCHIVE *archive)
     SPLASH_DATA_HEADER *header = NULL;
     const TOC_ENTRY *toc_entry;
 
-    toc_entry = archive->toc;
-    while (toc_entry < archive->toc_end) {
+    for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
         if (toc_entry->typecode == ARCHIVE_ITEM_SPLASH) {
             header = (SPLASH_DATA_HEADER *)pyi_archive_extract(archive, toc_entry);
             break;
         }
-        toc_entry = pyi_archive_next_toc_entry(archive, toc_entry);
     }
 
     return header;
@@ -303,7 +301,8 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
 {
     const ARCHIVE *archive = pyi_ctx->archive;
     const TOC_ENTRY *toc_entry;
-    const char *filename = NULL;
+    const char *requirement_filename = NULL;
+    char output_filename[PATH_MAX];
     size_t pos;
 
     /* No-op in onedir mode */
@@ -323,19 +322,41 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
     }
 
     /* Iterate over the requirements array */
-    for (pos = 0; pos < (size_t)splash->requirements_len; pos += strlen(filename) + 1) {
+    for (pos = 0; pos < (size_t)splash->requirements_len; pos += strlen(requirement_filename) + 1) {
         /* Read filename from requirements array */
-        filename = splash->requirements + pos;
+        requirement_filename = splash->requirements + pos;
 
         /* Look-up entry in archive's TOC */
-        toc_entry = pyi_archive_find_entry_by_name(archive, filename);
+        toc_entry = pyi_archive_find_entry_by_name(archive, requirement_filename);
         if (toc_entry == NULL) {
-            FATALERROR("SPLASH: could not find requirement %s in archive.\n", filename);
+            FATALERROR("SPLASH: could not find requirement %s in archive.\n", requirement_filename);
+            return -1;
+        }
+
+        /* Construct output filename */
+        if (snprintf(output_filename, PATH_MAX, "%s%c%s", splash->splash_dependencies_dir, PYI_SEP, requirement_filename) >= PATH_MAX) {
+            FATALERROR("SPLASH: extraction path length exceeds maximum path length!\n");
+            return -1;
+        }
+
+        /* Check if file already exists (it should not) */
+        if (pyi_path_exists(output_filename) == 1) {
+            if (pyi_ctx->strict_unpack_mode) {
+                FATALERROR("SPLASH: file already exists but should not: %s\n", output_filename);
+                return -1;
+            } else {
+                OTHERERROR("SPLASH: WARNING: file already exists but should not: %s\n", output_filename);
+            }
+        }
+
+        /* Create parent directory tree */
+        if (pyi_create_parent_directory_tree(splash->splash_dependencies_dir, requirement_filename) < 0) {
+            FATALERROR("SPLASH: failed to create parent directory structure.\n");
             return -1;
         }
 
         /* Extract file into the splash dependencies directory */
-        if (pyi_archive_extract2fs(archive, toc_entry, splash->splash_dependencies_dir)) {
+        if (pyi_archive_extract2fs(archive, toc_entry, output_filename)) {
             FATALERROR("SPLASH: could not extract requirement %s.\n", toc_entry->name);
             return -2;
         }
@@ -585,8 +606,8 @@ _splash_event_proc(Tcl_Event *ev, int flags)
 }
 
 /*
- * To update the splash screen text with the name of the currently-processed
- * TOC entry, we schedule a Splash_Event into the Tcl interpreters event queue.
+ * To update the splash screen text with the given text, we schedule a
+ * Splash_Event into the Tcl interpreter's event queue.
  *
  * This function will update the variable "status_text", which updates the label
  * on the splash screen. We schedule this function in async mode, meaning
@@ -596,29 +617,27 @@ _splash_event_proc(Tcl_Event *ev, int flags)
  * Note: this function is executed inside the Tcl interpreter thread.
  */
 static int
-_pyi_splash_progress_update(SPLASH_CONTEXT *splash, const void *user_data)
+_pyi_splash_text_update(SPLASH_CONTEXT *splash, const void *user_data)
 {
-    const TOC_ENTRY *toc_entry = (const TOC_ENTRY *)user_data;
-    PI_Tcl_SetVar2(splash->interp, "status_text", NULL, toc_entry->name, TCL_GLOBAL_ONLY);
+    const char *text = (const char *)user_data;
+    PI_Tcl_SetVar2(splash->interp, "status_text", NULL, text, TCL_GLOBAL_ONLY);
     return 0;
 }
 
 /*
- * To update the text on the splash screen (optionally) we provide
- * this function, which enqueues an event for the Tcl interpreter
- * thread to service. We update the text based on the name gave by TOC
- * entry.
+ * To update the text on the splash screen, we provide this function,
+ * which enqueues an event for the Tcl interpreter thread to service.
  *
  * This function is called from bootloader's main thread, namely from
  * the pyi_launch_extract_files_from_archive while it extracts files
  * from the executable-embedded archive.
  */
 int
-pyi_splash_update_prg(SPLASH_CONTEXT *splash, const TOC_ENTRY *toc_entry)
+pyi_splash_update_text(SPLASH_CONTEXT *splash, const char *text)
 {
-    /* We enqueue the _pyi_splash_progress_update function into the tcl
+    /* We enqueue the _pyi_splash_text_update function into the Tcl
      * interpreter event queue in async mode, ignoring the return value. */
-    return pyi_splash_send(splash, true, toc_entry, _pyi_splash_progress_update);
+    return pyi_splash_send(splash, true, text, _pyi_splash_text_update);
 }
 
 /*

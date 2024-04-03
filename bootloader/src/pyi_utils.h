@@ -40,9 +40,8 @@ int pyi_create_tempdir(char *buff, const char *runtime_tmpdir);
 void pyi_recursive_rmdir(const char *dir);
 
 /* File manipulation. */
-int pyi_create_parent_directory(const char *path, const char *name_);
-FILE *pyi_open_target_file(const char *path, const char* name_);
-int pyi_copy_file(const char *src, const char *dst, const char *filename);
+int pyi_create_parent_directory_tree(const char *prefix_path, const char *filename);
+int pyi_copy_file(const char *src_filename, const char *dest_filename);
 
 /* Other routines. */
 dylib_t pyi_utils_dlopen(const char *dllpath);

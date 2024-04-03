@@ -537,67 +537,51 @@ pyi_recursive_rmdir(const char *dir)
 #endif /* ifdef _WIN32 */
 
 
-static int
-_check_strict_unpack_mode ()
-{
-    static int enabled = -1;
-    if (enabled == -1) {
-        char *env_strict = pyi_getenv("PYINSTALLER_STRICT_UNPACK_MODE"); /* strdup'd copy or NULL */
-        if (env_strict) {
-            if (strcmp(env_strict, "0") == 0) {
-                enabled = 0;
-            } else {
-                enabled = 1;
-            }
-            free(env_strict);
-        } else {
-            enabled = 0;
-        }
-    }
-    return enabled;
-}
-
 /*
- * Helper that creates parent path for the given filename. The filename
- * is given as a path prefix (which already exists) and name (which
- * could be either just a basename or a path relative to the already
- * existing prefix).
+ * Helper that creates parent directory tree for the given filename,
+ * rooted under the given prefix path. The prefix path is assumed to
+ * already exist.
  *
  * Returns 0 on success, -1 on failure.
  */
 int
-pyi_create_parent_directory(const char *path, const char *name_)
+pyi_create_parent_directory_tree(const char *prefix_path, const char *filename)
 {
-    char fnm[PATH_MAX];
-    char name[PATH_MAX];
-    char *dir;
-    size_t len;
+    char filename_copy[PATH_MAX];
+    char path[PATH_MAX];
+    char *dir_component;
+    size_t path_length;
 
-    /* Ensure given components do not exist PATH_MAX */
-    if (snprintf(fnm, PATH_MAX, "%s", path) >= PATH_MAX ||
-        snprintf(name, PATH_MAX, "%s", name_) >= PATH_MAX) {
-        return -1;
-    }
+    /* We need to make a copy of filename for strtok() */
+    snprintf(filename_copy, PATH_MAX, "%s", filename);
 
-    len = strlen(fnm);
-    dir = strtok(name, PYI_SEPSTR);
+    /* Start with the prefix path (which is known to be under PATH_MAX limit */
+    snprintf(path, PATH_MAX, "%s", prefix_path);
+    path_length = strlen(prefix_path); /* Start with the prefix path length */
 
-    while (dir != NULL) {
-        len += strlen(dir) + strlen(PYI_SEPSTR);
-        /* Check if fnm does not exceed the buffer size */
-        if (len >= PATH_MAX-1) {
+    /* Process directory components in filename */
+    dir_component = strtok(filename_copy, PYI_SEPSTR);
+    while (dir_component != NULL) {
+        /* Update and verify path length */
+        path_length += strlen(dir_component) + strlen(PYI_SEPSTR);
+        if (path_length >= PATH_MAX - 1) {
             return -1;
         }
-        strcat(fnm, PYI_SEPSTR);
-        strcat(fnm, dir);
-        dir = strtok(NULL, PYI_SEPSTR);
 
-        if (!dir) {
+        /* Update path */
+        strcat(path, PYI_SEPSTR);
+        strcat(path, dir_component);
+
+        /* Look for next directory component, to ensure that our current
+         * path is not the final filename. */
+        dir_component = strtok(NULL, PYI_SEPSTR);
+        if (dir_component == NULL) {
             break;
         }
 
-        if (pyi_path_exists(fnm) == 0) {
-            if (pyi_path_mkdir(fnm) < 0) {
+        /* Create path if necessary */
+        if (pyi_path_exists(path) == 0) {
+            if (pyi_path_mkdir(path) < 0) {
                 return -1;
             }
         }
@@ -607,84 +591,56 @@ pyi_create_parent_directory(const char *path, const char *name_)
 }
 
 /*
- * Helper for extract2fs that attempts to open the given filename in
- * (existing) prefix path, after ensuring that all its parent
- * directories exist.
- *
- * Returns opened FILE handle on success, NULL on failure.
+ * Copy the source file to destination, in chunkc of 4 kB. The parent
+ * directory tree of the destination must file must already exist
  */
-FILE *
-pyi_open_target_file(const char *path, const char* name_)
-{
-    char fnm[PATH_MAX];
-
-    /* Merge prefix and name into full path */
-    if (snprintf(fnm, PATH_MAX, "%s%c%s", path, PYI_SEP, name_) >= PATH_MAX) {
-        return NULL;
-    }
-
-    /* Check if file already exists (it should not) */
-    if (pyi_path_exists(fnm) == 1) {
-        if (_check_strict_unpack_mode()) {
-            OTHERERROR("ERROR: file already exists but should not: %s\n", fnm);
-            return NULL;
-        } else {
-            OTHERERROR("WARNING: file already exists but should not: %s\n", fnm);
-        }
-    }
-
-    /* Create parent directories, if necessary */
-    if (pyi_create_parent_directory(path, name_) < 0) {
-        return NULL;
-    }
-
-    /* Open the file */
-    return pyi_path_fopen(fnm, "wb");
-}
-
-/* Copy the file src to dst 4KB per time */
 int
-pyi_copy_file(const char *src, const char *dst, const char *filename)
+pyi_copy_file(const char *src_filename, const char *dest_filename)
 {
-    FILE *in = pyi_path_fopen(src, "rb");
-    FILE *out = pyi_open_target_file(dst, filename);
-    char buf[4096];
-    size_t read_count = 0;
+    FILE *fp_in;
+    FILE *fp_out ;
+    char buffer[4096];
+    size_t byte_count = 0;
     int error = 0;
 
-    if (in == NULL || out == NULL) {
-        if (in) {
-            fclose(in);
-        }
-        if (out) {
-            fclose(out);
-        }
+    fp_in = pyi_path_fopen(src_filename, "rb");
+    if (fp_in == NULL) {
         return -1;
     }
 
-    while (!feof(in)) {
-        read_count = fread(buf, 1, 4096, in);
-        if (read_count <= 0 ) {
-            if (ferror(in)) {
-                clearerr(in);
+    fp_out = pyi_path_fopen(dest_filename, "wb");
+    if (fp_out == NULL) {
+        fclose(fp_in);
+        return -1;
+    }
+
+    while (!feof(fp_in)) {
+        /* Read chunk */
+        byte_count = fread(buffer, 1, 4096, fp_in);
+        if (byte_count <= 0) {
+            /* No data left or error */
+            if (ferror(fp_in)) {
+                clearerr(fp_in);
                 error = -1;
-                break;
             }
+            break;
         }
-        else {
-            size_t rc = fwrite(buf, 1, read_count, out);
-            if (rc <= 0 || ferror(out)) {
-                clearerr(out);
-                error = -1;
-                break;
-            }
+
+        /* Write chunk */
+        byte_count = fwrite(buffer, 1, byte_count, fp_out);
+        if (byte_count <= 0 || ferror(fp_out)) {
+            clearerr(fp_out);
+            error = -1;
+            break;
         }
     }
+
 #ifndef WIN32
-    fchmod(fileno(out), S_IRUSR | S_IWUSR | S_IXUSR);
+    fchmod(fileno(fp_out), S_IRUSR | S_IWUSR | S_IXUSR);
 #endif
-    fclose(in);
-    fclose(out);
+
+    fclose(fp_in);
+    fclose(fp_out);
 
     return error;
 }

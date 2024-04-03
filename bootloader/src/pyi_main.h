@@ -116,6 +116,16 @@ typedef struct
      * but we fail to import the symbols. */
     unsigned char python_symbols_loaded;
 
+    /* Strict unpack mode for onefile builds. This flag is dynamically
+     * controlled by `PYINSTALLER_STRICT_UNPACK_MODE` environment variable
+     * (enabled by a value different from 0). If enabled, extraction of
+     * onefile builds (either splash screen dependencies, or main archive
+     * unpacking) fails if trying to overwrite an existing file. Otherwise,
+     * a warning is displayed on stderr. This is primarily used for
+     * run-time detection of duplicated resources in onefile archives on
+     * PyInstaller's CI. */
+    unsigned char strict_unpack_mode;
+
     /**
      * Runtime options
      */

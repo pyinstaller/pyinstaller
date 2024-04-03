@@ -152,7 +152,7 @@ int pyi_splash_send(
     const void *user_data,
     pyi_splash_event_proc proc
 );
-int pyi_splash_update_prg(SPLASH_CONTEXT *splash, const TOC_ENTRY *toc_entry);
+int pyi_splash_update_text(SPLASH_CONTEXT *splash, const char *toc_entry_name);
 
 /* Memory allocation functions */
 SPLASH_CONTEXT *pyi_splash_context_new();

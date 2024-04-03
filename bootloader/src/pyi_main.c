@@ -114,6 +114,16 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     }
 #endif
 
+    /* Read the setting for strict unpack mode from corresponding
+     * environment variable. */
+    if (1) {
+        char *env_strict = pyi_getenv("PYINSTALLER_STRICT_UNPACK_MODE"); /* strdup'd copy or NULL */
+        if (env_strict) {
+            pyi_ctx->strict_unpack_mode = strcmp(env_strict, "0") != 0;
+            free(env_strict);
+        }
+    }
+
     /* On Linux, restore process name (passed from parent process via
      * environment variable. */
 #if defined(__linux__)
