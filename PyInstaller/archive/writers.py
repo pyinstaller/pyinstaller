@@ -318,8 +318,6 @@ class SplashWriter:
     #     char tk_libname[16];
     #     char tk_lib[16];
     #
-    #     char rundir[16];
-    #
     #     uint32_t script_len;
     #     uint32_t script_offset;
     #
@@ -330,12 +328,12 @@ class SplashWriter:
     #     uint32_t requirements_offset;
     # } SPLASH_DATA_HEADER;
     #
-    _HEADER_FORMAT = '!16s 16s 16s 16s II II II'
+    _HEADER_FORMAT = '!16s 16s 16s II II II'
     _HEADER_LENGTH = struct.calcsize(_HEADER_FORMAT)
 
     # The created archive is compressed by the CArchive, so no need to compress the data here.
 
-    def __init__(self, filename, name_list, tcl_libname, tk_libname, tklib, rundir, image, script):
+    def __init__(self, filename, name_list, tcl_libname, tk_libname, tklib, image, script):
         """
         Writer for splash screen resources that are bundled into the CArchive as a single archive/entry.
 
@@ -344,7 +342,6 @@ class SplashWriter:
         :param str tcl_libname: Name of the tcl shared library file
         :param str tk_libname: Name of the tk shared library file
         :param str tklib: Root of tk library (e.g. tk/)
-        :param str rundir: Unique path to extract requirements to
         :param Union[str, bytes] image: Image like object
         :param str script: The tcl/tk script to execute to create the screen.
         """
@@ -414,7 +411,6 @@ class SplashWriter:
                 _encode_str(tcl_libname, 'tcl_libname', 16),
                 _encode_str(tk_libname, 'tk_libname', 16),
                 _encode_str(tklib, 'tklib', 16),
-                _encode_str(rundir, 'rundir', 16),
                 script_len,
                 script_offset,
                 image_len,
