@@ -37,7 +37,7 @@ int pyi_unsetenv(const char *variable);
 int pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx);
 
 /* Recursive directory deletion. */
-void pyi_recursive_rmdir(const char *dir);
+int pyi_recursive_rmdir(const char *dir);
 
 /* File manipulation. */
 int pyi_create_parent_directory_tree(const PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename);

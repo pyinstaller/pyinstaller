@@ -617,7 +617,9 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
     pyi_splash_context_free(&pyi_ctx->splash);
 
     /* Delete the application's temporary directory */
-    pyi_recursive_rmdir(pyi_ctx->application_home_dir);
+    if (pyi_recursive_rmdir(pyi_ctx->application_home_dir) < 0) {
+        OTHERERROR("WARNING: failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
+    }
 
     /* Clean up the archive structure */
     pyi_archive_free(&pyi_ctx->archive);

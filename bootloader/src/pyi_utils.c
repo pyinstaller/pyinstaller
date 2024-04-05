@@ -476,121 +476,162 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
 #endif /* ifdef _WIN32 */
 
 
-/* TODO merge unix/win versions of remove_one() and pyi_remove_temp_path() */
+/**********************************************************************\
+ *                  Recursive removal of a directory                  *
+\**********************************************************************/
+/* Used for removal of temporary application top-level directory in
+ * onefile builds. */
+
 #ifdef _WIN32
-static void
-remove_one(wchar_t *wfnm, size_t pos, struct _wfinddata_t wfinfo)
+
+/* The actual implementation with wide-char path */
+static int
+_pyi_recursive_rmdir(const wchar_t *dir_path)
 {
-    char fnm[PATH_MAX + 1];
+    int dir_path_length;
+    int buffer_size;
+    wchar_t entry_path[PATH_MAX];
+    HANDLE handle;
+    WIN32_FIND_DATAW entry_info;
 
-    if (wcscmp(wfinfo.name, L".") == 0  || wcscmp(wfinfo.name, L"..") == 0) {
-        return;
+    /* Copy the directory path, and append separator and a wildcard for
+     * the `FindFirstFileW()` call. Store the length of the directory
+     * path plus the separator; this allows us to re-use the same buffer
+     * for constructing entries' full paths, by overwriting only the
+     * part of the string that follows the path separator that we added. */
+    dir_path_length = _snwprintf(entry_path, PATH_MAX, L"%s\\*", dir_path);
+    if (dir_path_length >= PATH_MAX) {
+        return -1;
     }
-    wfnm[pos] = 0;
-    wcscat(wfnm, wfinfo.name);
+    dir_path_length--; /* Ignore the wildcard at the end */
+    buffer_size = PATH_MAX - dir_path_length; /* Remaining buffer size */
 
-    if ((wfinfo.attrib & _A_SUBDIR)) {
-        if (!pyi_win32_is_symlink(wfnm)) {
-            /* Use recursion to remove subdirectories. */
-            pyi_win32_utils_to_utf8(fnm, wfnm, PATH_MAX);
-            pyi_recursive_rmdir(fnm);
+    /* Start the search by looking for first entry */
+    handle = FindFirstFileW(entry_path, &entry_info);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
+
+    do {
+        /* Skip . and .. */
+        if (wcscmp(entry_info.cFileName, L".") == 0 || wcscmp(entry_info.cFileName, L"..") == 0) {
+            continue;
+        }
+
+        /* Construct the full path, by overwriting the part of string
+         * that starts after path directory and separator. */
+        if (_snwprintf(entry_path + dir_path_length, buffer_size, L"%s", entry_info.cFileName) >= buffer_size) {
+            continue;
+        }
+
+        /* Deteremine the type of entry, and remove it. Ignore errors
+         * here - if we fail to  remove an entry here, we will also fail
+         * to remove the top-level directory.*/
+        if (entry_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            /* Avoid recursing into symlinked directories */
+            unsigned char is_symlink = 0;
+
+            if (entry_info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+                if (entry_info.dwReserved0 == IO_REPARSE_TAG_SYMLINK) {
+                    is_symlink = 1;
+                }
+            }
+
+            if (is_symlink) {
+                /* Remove only the symlink itself */
+                RemoveDirectoryW(entry_path);
+            } else {
+                /* Recurse into directory */
+                _pyi_recursive_rmdir(entry_path);
+            }
         } else {
-            /* Remove only directory link */
-            _wrmdir(wfnm);
+            /* Delete file (or symlink to a file) */
+            DeleteFileW(entry_path);
         }
-    }
-    else if (_wremove(wfnm)) {
-        /* HACK: Possible concurrency issue... spin a little while */
-        Sleep(100);
-        _wremove(wfnm);
-    }
+    } while (FindNextFileW(handle, &entry_info) != 0);
+
+    FindClose(handle);
+
+    /* Finally, remove the directory */
+    return RemoveDirectoryW(dir_path) != 1 ? -1 : 0; /* false/true-> -1/0 */
 }
 
-/* TODO: find easier and more portable implementation of removing directory recursively. */
-void
-pyi_recursive_rmdir(const char *dir)
+
+/* For now, the caller is supplying narrow-char path in  UTF-8 encoding. */
+int
+pyi_recursive_rmdir(const char *dir_path)
 {
-    wchar_t wfnm[PATH_MAX + 1];
-    wchar_t wdir[PATH_MAX + 1];
-    struct _wfinddata_t wfinfo;
-    intptr_t h;
-    size_t dirnmlen;
-
-    pyi_win32_utils_from_utf8(wdir, dir, PATH_MAX);
-    wcscpy(wfnm, wdir);
-    dirnmlen = wcslen(wfnm);
-
-    if (wfnm[dirnmlen - 1] != L'/' && wfnm[dirnmlen - 1] != L'\\') {
-        wcscat(wfnm, L"\\");
-        dirnmlen++;
-    }
-    wcscat(wfnm, L"*");
-    h = _wfindfirst(wfnm, &wfinfo);
-
-    if (h != -1) {
-        remove_one(wfnm, dirnmlen, wfinfo);
-
-        while (_wfindnext(h, &wfinfo) == 0) {
-            remove_one(wfnm, dirnmlen, wfinfo);
-        }
-        _findclose(h);
-    }
-    _wrmdir(wdir);
+    wchar_t dir_path_w[PATH_MAX];
+    pyi_win32_utils_from_utf8(dir_path_w, dir_path, PATH_MAX);
+    return _pyi_recursive_rmdir(dir_path_w);
 }
+
+
 #else /* ifdef _WIN32 */
-static void
-remove_one(char *pnm, int pos, const char *fnm)
+
+
+int
+pyi_recursive_rmdir(const char *dir_path)
 {
-    struct stat sbuf;
+    DIR *dir_handle;
+    struct dirent *dir_entry;
+    struct stat stat_buf;
+    int dir_path_length;
+    int buffer_size;
+    char entry_path[PATH_MAX];
 
-    if (strcmp(fnm, ".") == 0  || strcmp(fnm, "..") == 0) {
-        return;
+    /* Make a copy of directory path (and append a path separator), into
+     * mutable buffer that we will use to construct entries' full paths.
+     * Store the length of the directory path string; this allows us to
+     * overwrite only the sub-component part of the string, without having
+     * to copy the directory path each time. */
+    dir_path_length = snprintf(entry_path, PATH_MAX, "%s%c", dir_path, PYI_SEP);
+    if (dir_path_length >= PATH_MAX) {
+        return -1;
     }
-    pnm[pos] = 0;
-    strcat(pnm, fnm);
+    buffer_size = PATH_MAX - dir_path_length; /* Remaining buffer size */
 
-    /* Use lstat() instead of stat() to prevent recursion into
-     * symlinked directories */
-    if (lstat(pnm, &sbuf) == 0) {
-        if (S_ISDIR(sbuf.st_mode) ) {
-            /* Use recursion to remove subdirectories. */
-            pyi_recursive_rmdir(pnm);
+    /* Open the directory */
+    dir_handle = opendir(dir_path);
+    if (dir_handle == NULL) {
+        return -1;
+    }
+
+    /* Iterate over directory contents */
+    for (dir_entry = readdir(dir_handle); dir_entry != NULL; dir_entry = readdir(dir_handle))
+    {
+        /* Skip . and .. */
+        if (strcmp(dir_entry->d_name, ".") == 0 || strcmp(dir_entry->d_name, "..") == 0) {
+            continue;
         }
-        else {
-            unlink(pnm);
+
+        /* Construct the full path, by overwriting the part of string
+         * that starts after path directory and separator. */
+        if (snprintf(entry_path + dir_path_length, buffer_size, "%s", dir_entry->d_name) >= buffer_size) {
+            continue;
+        }
+
+        /* Deteremine the type of entry, and remove it. Use lstat()
+         * instead of stat() in order to prevent recursion into symlinked
+         * directories. Ignore errors here - if we fail to remove an entry
+         * here, we will also fail to remove the top-level directory.*/
+        if (lstat(entry_path, &stat_buf) == 0) {
+            if (S_ISDIR(stat_buf.st_mode) ) {
+                /* Recurse into sub-directory */
+                pyi_recursive_rmdir(entry_path);
+            } else {
+                unlink(entry_path);
+            }
         }
     }
+    closedir(dir_handle);
+
+    /* Finally, remove the directory; the return value of rmdir (0 on
+     * success, -1 on error) maps directly to this function's return. */
+    return rmdir(dir_path);
 }
 
-void
-pyi_recursive_rmdir(const char *dir)
-{
-    char fnm[PATH_MAX + 1];
-    DIR *ds;
-    struct dirent *finfo;
-    int dirnmlen;
 
-    /* Leave 1 char for PY_SEP if needed */
-    strncpy(fnm, dir, PATH_MAX);
-    dirnmlen = strlen(fnm);
-
-    if (fnm[dirnmlen - 1] != PYI_SEP) {
-        strcat(fnm, PYI_SEPSTR);
-        dirnmlen++;
-    }
-    ds = opendir(dir);
-    if (!ds) {
-        return;
-    }
-    finfo = readdir(ds);
-
-    while (finfo) {
-        remove_one(fnm, dirnmlen, finfo->d_name);
-        finfo = readdir(ds);
-    }
-    closedir(ds);
-    rmdir(dir);
-}
 #endif /* ifdef _WIN32 */
 
 
