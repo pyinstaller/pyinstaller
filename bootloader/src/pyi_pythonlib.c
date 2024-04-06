@@ -41,13 +41,12 @@
  * Load the Python shared library, and bind all required symbols from it.
  */
 int
-pyi_pylib_load(const PYI_CONTEXT *pyi_ctx)
+pyi_pylib_load(PYI_CONTEXT *pyi_ctx)
 {
     const ARCHIVE *archive = pyi_ctx->archive;
     char dll_name[MAX_DLL_NAME_LEN];
     size_t dll_name_len;
     char dll_fullpath[PATH_MAX];
-    dylib_t dll;
 
     /* On AIX, the name of shared library path might be an archive, because
      * the 'ar' archives can be used for both static and shared objects.
@@ -119,9 +118,9 @@ pyi_pylib_load(const PYI_CONTEXT *pyi_ctx)
     VS("LOADER: loading Python shared library: %s\n", dll_fullpath);
 
     /* Load the shared libary */
-    dll = pyi_utils_dlopen(dll_fullpath);
+    pyi_ctx->python_dll = pyi_utils_dlopen(dll_fullpath);
 
-    if (dll == 0) {
+    if (pyi_ctx->python_dll == 0) {
 #ifdef _WIN32
         FATAL_WINERROR("LoadLibrary", "Failed to load Python DLL '%s'.\n", dll_fullpath);
 #else
@@ -130,7 +129,7 @@ pyi_pylib_load(const PYI_CONTEXT *pyi_ctx)
         return -1;
     }
 
-    return pyi_python_bind_functions(dll, archive->python_version);
+    return pyi_python_bind_functions(pyi_ctx->python_dll, archive->python_version);
 }
 
 /*
@@ -422,7 +421,7 @@ pyi_pylib_finalize(const PYI_CONTEXT *pyi_ctx)
     /* We need to manually flush the buffers because otherwise there can be errors.
      * The native python interpreter flushes buffers before calling Py_Finalize,
      * so we need to manually do the same. See isse #4908. */
-    VS("LOADER: manually flushing stdout and stderr\n");
+    VS("LOADER: manually flushing stdout and stderr...\n");
 
     /* sys.stdout.flush() */
     PI_PyRun_SimpleStringFlags(
@@ -439,6 +438,6 @@ pyi_pylib_finalize(const PYI_CONTEXT *pyi_ctx)
 #endif
 
     /* Finalize the interpreter. This calls all of the atexit functions. */
-    VS("LOADER: cleaning up Python interpreter.\n");
+    VS("LOADER: cleaning up Python interpreter...\n");
     PI_Py_Finalize();
 }
