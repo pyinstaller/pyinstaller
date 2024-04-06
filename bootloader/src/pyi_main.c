@@ -20,6 +20,7 @@
     #include <wchar.h>
 #else
     #include <unistd.h>
+    #include <signal.h>  /* raise */
 #endif
 
 #ifdef __CYGWIN__
@@ -624,9 +625,12 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
     /* Clean up the archive structure */
     pyi_archive_free(&pyi_ctx->archive);
 
-    /* Re-raise child's signal, if necessary (non-Windows only) */
+    /* Re-raise child's signal, if necessary (POSIX only) */
 #ifndef _WIN32
-    pyi_utils_reraise_child_signal();
+    if (pyi_ctx->child_signalled) {
+        VS("LOADER: re-raising child signal %d\n", pyi_ctx->child_signal);
+        raise(pyi_ctx->child_signal);
+    }
 #endif
 
     return ret;

@@ -14,8 +14,11 @@
 #ifndef PYI_MAIN_H
 #define PYI_MAIN_H
 
-
 #include "pyi_global.h"
+
+#ifndef _WIN32
+    #include <sys/types.h> /* pid_t */
+#endif
 
 
 typedef struct _archive ARCHIVE;
@@ -140,6 +143,19 @@ typedef struct
      * `pyi_win32_free_security_descriptor`.
      */
     PSECURITY_DESCRIPTOR security_descriptor;
+#endif
+
+    /* Child process (onefile mode) variables. Used only in POSIX codepath. */
+#if !defined(_WIN32)
+    /* Process ID of the child process (onefile mode). Keeping track of
+     * the child PID allows us to forward signals to the child. */
+    pid_t child_pid;
+
+    /* Remember whether child has received a signal and what signal it was.
+     * In onefile mode, this allows us to re-raise the signal in the parent
+     * once the temporary directory has been cleaned up. */
+    int child_signalled;
+    int child_signal;
 #endif
 
     /**

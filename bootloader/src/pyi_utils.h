@@ -21,10 +21,6 @@
 
 #include "pyi_main.h"
 
-#ifndef _WIN32
-#include <sys/types.h> /* pid_t */
-#endif
-
 #include <stdio.h> /* FILE */
 #include <inttypes.h> /* uint64_t */
 
@@ -49,11 +45,6 @@ int pyi_utils_dlclose(dylib_t handle);
 
 /* Child process */
 int pyi_utils_create_child(PYI_CONTEXT *pyi_ctx);
-
-#ifndef _WIN32
-pid_t pyi_utils_get_child_pid();
-void pyi_utils_reraise_child_signal();
-#endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 int pyi_utils_set_library_search_path(const char *path);
