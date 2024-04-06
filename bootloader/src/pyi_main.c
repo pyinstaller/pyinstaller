@@ -53,6 +53,25 @@
 #include "pyi_apple_events.h"
 
 
+/* Global PYI_CONTEXT structure used for bookkeeping of state variables.
+ * Since the structure is always used, we can define as static here.
+ *
+ * We also define a pointer to it, which is intended for use in callbacks
+ * and signal handlers that do not allow passing additional data. In
+ * accordance with encapsulation principle, it is preferred that the
+ * pointer to structure is passed along regular function calls.
+ *
+ * NOTE: per C standard, static objects are default-initialized, so
+ * we do not need explicit zero-initialization.
+ */
+static PYI_CONTEXT _pyi_ctx;
+
+
+/* Pointer to global PYI_CONTEXT structure. Intended for use in signal
+ * handlers that have no user data / context */
+PYI_CONTEXT *global_pyi_ctx = &_pyi_ctx;
+
+
 /* Large parts of `pyi_main` are implemented as helper functions. We
  * keep their definitions below that of `pyi_main`, in an attempt to
  * keep code organized in top-down fashion. Hence, we need forward

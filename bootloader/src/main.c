@@ -36,22 +36,6 @@
 #include "pyi_win32_utils.h"
 
 
-/* Global PYI_CONTEXT structure used for bookkeeping of state variables.
- * Since the structure is always used, we can define as static here.
- *
- * We also define a pointer to it, which is intended for use in callbacks
- * and signal handlers that do not allow passing additional data. In
- * accordance with encapsulation principle, it is preferred that the
- * pointer to structure is passed along regular function calls.
- *
- * NOTE: per C standard, static objects are default-initialized, so
- * we do not need explicit zero-initialization.
- */
-static PYI_CONTEXT _pyi_ctx;
-
-PYI_CONTEXT *global_pyi_ctx = NULL;
-
-
 #if defined(_WIN32)
 
 /* Prevent programs compiled with MinGW (gcc) from performing glob-style
@@ -73,10 +57,8 @@ wWinMain(
 {
     /* Convert wide-char arguments to UTF-8 and store them in global
      * context structure */
-    _pyi_ctx.argc = __argc;
-    _pyi_ctx.argv = pyi_win32_argv_to_utf8(__argc, __wargv);
-
-    global_pyi_ctx = &_pyi_ctx;
+    global_pyi_ctx->argc = __argc;
+    global_pyi_ctx->argv = pyi_win32_argv_to_utf8(__argc, __wargv);
 
     return pyi_main(global_pyi_ctx);
 }
@@ -89,10 +71,8 @@ wmain(int argc, wchar_t **argv)
 {
     /* Convert wide-char arguments to UTF-8 and store them in global
      * context structure */
-    _pyi_ctx.argc = argc;
-    _pyi_ctx.argv = pyi_win32_argv_to_utf8(argc, argv);
-
-    global_pyi_ctx = &_pyi_ctx;
+    global_pyi_ctx->argc = argc;
+    global_pyi_ctx->argv = pyi_win32_argv_to_utf8(argc, argv);
 
     return pyi_main(global_pyi_ctx);
 }
@@ -114,10 +94,8 @@ main(int argc, char **argv)
 #endif
 
     /* Store arguments in global context structure */
-    _pyi_ctx.argc = argc;
-    _pyi_ctx.argv = argv;
-
-    global_pyi_ctx = &_pyi_ctx;
+    global_pyi_ctx->argc = argc;
+    global_pyi_ctx->argv = argv;
 
     return pyi_main(global_pyi_ctx);
 }
