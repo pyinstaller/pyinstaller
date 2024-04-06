@@ -39,14 +39,15 @@ int pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx);
 /* Recursive directory deletion. */
 int pyi_recursive_rmdir(const char *dir);
 
-/* File manipulation. */
+/* Misc. file/directory manipulation. */
 int pyi_create_parent_directory_tree(const PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename);
 int pyi_copy_file(const char *src_filename, const char *dest_filename);
 
-/* Other routines. */
-dylib_t pyi_utils_dlopen(const char *dllpath);
-int pyi_utils_dlclose(dylib_t dll);
+/* Shared library loading. */
+dylib_t pyi_utils_dlopen(const char *filename);
+int pyi_utils_dlclose(dylib_t handle);
 
+/* Child process */
 int pyi_utils_create_child(PYI_CONTEXT *pyi_ctx);
 
 #ifndef _WIN32

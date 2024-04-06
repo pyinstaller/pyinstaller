@@ -793,55 +793,61 @@ pyi_copy_file(const char *src_filename, const char *dest_filename)
     return error;
 }
 
-/* Load the shared dynamic library (DLL) */
-dylib_t
-pyi_utils_dlopen(const char *dllpath)
-{
 
+/**********************************************************************\
+ *                  Shared library loading/unloading                  *
+\**********************************************************************/
 #ifdef _WIN32
-    wchar_t * dllpath_w;
-    dylib_t ret;
-#else
-    int dlopenMode = RTLD_NOW | RTLD_GLOBAL;
-#endif
+
+/* Load shared/dynamic library */
+dylib_t
+pyi_utils_dlopen(const char *filename)
+{
+    wchar_t *filename_w;
+    dylib_t handle;
+
+    /* Convert UTF-8 to wide-char */
+    filename_w = pyi_win32_utils_from_utf8(NULL, filename, 0);
+
+    /* Load shared library */
+    handle = LoadLibraryExW(filename_w, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+
+    free(filename_w);
+
+    return handle;
+}
+
+/* Unload shared library by closing its handle */
+int
+pyi_utils_dlclose(dylib_t handle)
+{
+    return FreeLibrary(handle) ? 0 : -1; /* true/false -> 0/-1 */
+}
+
+#else /* ifdef _WIN32 */
+
+dylib_t
+pyi_utils_dlopen(const char *filename)
+{
+    int flags = RTLD_NOW | RTLD_GLOBAL;
 
 #ifdef AIX
     /* Append the RTLD_MEMBER to the open mode for 'dlopen()'
-     * in order to load shared object member from library.
-     */
-    dlopenMode |= RTLD_MEMBER;
+     * in order to load shared object member from library. */
+    flags |= RTLD_MEMBER;
 #endif
 
-#ifdef _WIN32
-    dllpath_w = pyi_win32_utils_from_utf8(NULL, dllpath, 0);
-    ret = LoadLibraryExW(dllpath_w, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-    free(dllpath_w);
-    return ret;
-#else
-    return dlopen(dllpath, dlopenMode);
-#endif
-
+    return dlopen(filename, flags);
 }
 
-/* TODO use pyi_utils_dlclose() when exiting. */
-/* Unlink/Close the shared library.
- * Returns zero on success, a nonzero value on failure.
- *
- * Interesting fact: many debuggers link to attached libraries
- * too, therefore calling dlclose from within the bootloader
- * does **not** necessarily mean the library will be unloaded
- * if a debugger is attached. */
 int
-pyi_utils_dlclose(dylib_t dll)
+pyi_utils_dlclose(dylib_t handle)
 {
-#ifdef _WIN32
-    /* FreeLibrary returns a nonzero value on success,
-     * invert it to provide a common return value */
-    return !FreeLibrary(dll);
-#else
-    return dlclose(dll);
-#endif
+    return dlclose(handle);
 }
+
+#endif /* ifdef _WIN32 */
+
 
 /* ////////////////////////////////////////////////////////////////// */
 /* TODO better merging of the following platform specific functions. */
