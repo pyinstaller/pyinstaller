@@ -21,6 +21,7 @@
 #else
     #include <unistd.h>
     #include <signal.h>  /* raise */
+    #include <errno.h>
 #endif
 
 #ifdef __CYGWIN__
@@ -1012,14 +1013,16 @@ _pyi_main_handle_posix_onedir(PYI_CONTEXT *pyi_ctx)
         return -1;
     }
 
-
     /* Set environment variable to signal the bootloader that the process
      * has already been restarted. */
     pyi_setenv("_PYI_POSIX_ONEDIR_MODE", "1");
 
-    /* Restart the process. The helper function performs exec() without
-     * fork(), so we never return from the call. */
-    if (pyi_utils_replace_process(pyi_ctx) < 0) {
+    /* Restart the process, by calling execvp() without fork(). */
+    /* NOTE: the codepath that ended up here does not perform any
+     * argument modification, so we always use pyi_ctx->argv (as
+     * pyi_ctx->pyi_argv is unavailable). */
+    if (execvp(pyi_ctx->executable_filename, pyi_ctx->argv) < 0) {
+        OTHERERROR("LOADER: failed to restart process via execvp: %s\n", strerror(errno));
         return -1;
     }
 

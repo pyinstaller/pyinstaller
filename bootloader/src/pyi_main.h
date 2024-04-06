@@ -61,23 +61,20 @@ typedef struct
      * bundles, we receive AppleEvents and convert them to command-line
      * arguments.
      *
-     * In addition, the `pyi_argv` array itself is NULL-terminated (in
-     * contrast to the original `argv` array, it has `pyi_argc + 1`
-     * elements, and `pyi_argv[pyi_argc]` is NULL). This makes it
-     * suitable for passing to `execvp` calls that are used on POSIX to
-     * spawn onefile child process and also used on POSIX systems other
-     * than macOS for onedir process to restart itself.
-     *
-     * These fields are initialized on on-demand basis, in the codepaths
-     * that involve `execvp` calls and/or macOS app bundles. Look for
-     * `pyi_utils_initialize_args` calls.
+     * These two fields are initialized only if needed, for example in
+     * codepaths that involve macOS app bundles. Look for calls to the
+     * `pyi_utils_initialize_args` function.
      *
      * While setting up the embedded python interpreter configuration,
      * the corresponding codepath automatically chooses between argc/argv
      * and pyi_argc/pyi_argv depending on the availability of the latter.
      * This means that if `pyi_utils_initialize_args` was called at
      * some point before, the modified arguments are passed on to the
-     * python interpreter (and will appear in sys.argv). */
+     * python interpreter (and will appear in sys.argv).
+     *
+     * Similarly, when spawning the child process of a onefile application,
+     * we pass pyi_argv to the `execvp` call if available, and if not,
+     * we use the original argv. */
     int pyi_argc;
     char **pyi_argv;
 

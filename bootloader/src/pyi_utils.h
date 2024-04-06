@@ -48,7 +48,6 @@ int pyi_utils_create_child(PYI_CONTEXT *pyi_ctx);
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 int pyi_utils_set_library_search_path(const char *path);
-int pyi_utils_replace_process(PYI_CONTEXT *pyi_ctx);
 #endif
 
 /* Argument handling */
