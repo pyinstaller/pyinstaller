@@ -849,19 +849,19 @@ pyi_utils_dlclose(dylib_t handle)
 #endif /* ifdef _WIN32 */
 
 
-/* ////////////////////////////////////////////////////////////////// */
-/* TODO better merging of the following platform specific functions. */
-/* ////////////////////////////////////////////////////////////////// */
-
+/**********************************************************************\
+ *                  Child process spawning (onefile)                  *
+\**********************************************************************/
 #ifdef _WIN32
 
 static BOOL WINAPI
 _pyi_win32_console_ctrl(DWORD dwCtrlType)
 {
-    /* Due to different handling of VS() macro in MSVC and mingw gcc, the former requires the name variable
-     * below to be available even in non-debug builds (where VS() is no-op), while the latter complains about
-     * the unused variable. So put everything under ifdef guard to appease both.
-     */
+    /* Due to different handling of VS() macro in MSVC and mingw gcc, the
+     * former requires the name variable below to be available even in
+     * non-debug builds (where VS() is no-op), while the latter complains
+     * about the unused variable. So put everything under ifdef guard to
+     * appease both. */
 #if defined(LAUNCH_DEBUG)
     /* https://docs.microsoft.com/en-us/windows/console/handlerroutine */
     static const char *name_map[] = {
@@ -875,32 +875,36 @@ _pyi_win32_console_ctrl(DWORD dwCtrlType)
     };
     const char *name = (dwCtrlType >= 0 && dwCtrlType <= 6) ? name_map[dwCtrlType] : NULL;
 
-    /* NOTE: in case of CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, or CTRL_SHUTDOWN_EVENT, the following
-     * message may not be printed to console anymore. As per MSDN, the internal console cleanup routine
-     * might have already been executed, preventing console functions from working reliably.
-     * See Remarks section at: https://docs.microsoft.com/en-us/windows/console/setconsolectrlhandler
-     */
+    /* NOTE: in case of CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, or
+     * CTRL_SHUTDOWN_EVENT, the following message may not be printed to
+     * console anymore. As per MSDN, the internal console cleanup routine
+     * might have already been executed, preventing console functions
+     * from working reliably. See Remarks section at:
+     * https://docs.microsoft.com/en-us/windows/console/setconsolectrlhandler */
     VS("LOADER: received console control signal %d (%s)!\n", dwCtrlType, name ? name : "unknown");
-#endif
+#endif /* defined(LAUNCH_DEBUG) */
 
-    /* Handle Ctrl+C and Ctrl+Break signals immediately. By returning TRUE, their default handlers
-     * (which would call ExitProcess()) are not called, so we are effectively suppressing the signal
-     * here, while letting the child process (who also received it) handle it as they see it fit.
-     */
+    /* Handle Ctrl+C and Ctrl+Break signals immediately. By returning TRUE,
+     * their default handlers (which would call ExitProcess()) are not
+     * called, so we are effectively suppressing the signal here, while
+     * letting the child process (who also received it) handle it as they
+     * see it fit. */
     if (dwCtrlType == CTRL_C_EVENT || dwCtrlType == CTRL_BREAK_EVENT) {
         return TRUE;
     }
 
-    /* Delay the inevitable for as long as we can. The same signal should also be received
-     * by the child process (as it is in the same process group as the parent), which will
-     * terminate (after optionally processing the signal, if python code installed its own handler).
-     * Therefore, we just wait here "forever" (compared to OS-imposed timeout for signal handling)
-     * to buy time for the child process to terminate and for the main thread of this (parent)
-     * process to perform the cleanup (sidenote: this handler is executed in a separate thread).
-     * So this thread is terminated either when the main thread of the process finishes and the
-     * program exits (gracefully), or when the time runs out and the OS kills everything (see
-     * https://docs.microsoft.com/en-us/windows/console/handlerroutine#timeouts).
-     */
+    /* Delay the inevitable for as long as we can. The same signal should
+     * also be received by the child process (as it is in the same process
+     * group as the parent), which will terminate (after optionally
+     * processing the signal, if python code installed its own handler).
+     * Therefore, we just wait here "forever" (compared to OS-imposed
+     * timeout for signal handling) to buy time for the child process to
+     * terminate and for the main thread of this (parent) process to
+     * perform the cleanup (sidenote: this handler is executed in a
+     * separate thread). So this thread is terminated either when the
+     * main thread of the process finishes and the program exits
+     * (gracefully), or when the time runs out and the OS kills everything (see
+     * https://docs.microsoft.com/en-us/windows/console/handlerroutine#timeouts). */
     Sleep(20000);
     return TRUE;
 }
@@ -909,14 +913,15 @@ static HANDLE
 _pyi_get_stream_handle(FILE *stream)
 {
     HANDLE handle = (void *)_get_osfhandle(fileno(stream));
-    /* When stdin, stdout, and stderr are not associated with a stream (e.g., Windows application
-     * without console), _fileno() returns special value -2. Therefore, call to _get_osfhandle()
-     * returns INVALID_HANDLE_VALUE. If we caled _get_osfhandle() with 0, 1, or 2 instead of the
-     * result of _fileno(), _get_osfhandle() would also return -2 when the file descriptor is
-     * not associated with the stream. But because we take the _fileno() route, we need to handle
+    /* When stdin, stdout, and stderr are not associated with a stream
+     * (e.g., Windows application without console), _fileno() returns
+     * special value -2. Therefore, call to _get_osfhandle() returns
+     * INVALID_HANDLE_VALUE. If we caled _get_osfhandle() with 0, 1, or 2
+     * instead of the result of _fileno(), _get_osfhandle() would also
+     * return -2 when the file descriptor is not associated with the
+     * stream. But because we take the _fileno() route, we need to handle
      * only INVALID_HANDLE_VALUE (= -1).
-     * See: https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/get-osfhandle
-     */
+     * See: https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/get-osfhandle */
     if (handle == INVALID_HANDLE_VALUE) {
         return NULL;
     }
@@ -1002,7 +1007,7 @@ pyi_utils_set_library_search_path(const char *path)
     /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
     env_var = "LD_LIBRARY_PATH";
     env_var_orig = "LD_LIBRARY_PATH_ORIG";
-#endif /* AIX */
+#endif
 
     /* keep original value in a new env var so the application can restore it
      * before forking subprocesses. This is important so that e.g. a forked
@@ -1047,8 +1052,7 @@ _pyi_set_systemd_env()
         /* the ULONG_STRING_SIZE is roughly equal to log10(max number)
          * but can be calculated in compile time.
          * The idea is from an answer on stackoverflow,
-         * https://stackoverflow.com/questions/8257714/
-         */
+         * https://stackoverflow.com/questions/8257714 */
         #define ULONG_STRING_SIZE (sizeof (unsigned long) * CHAR_BIT / 3 + 2)
         char pid_str[ULONG_STRING_SIZE];
         snprintf(pid_str, ULONG_STRING_SIZE, "%ld", (unsigned long)getpid());
@@ -1060,14 +1064,12 @@ _pyi_set_systemd_env()
 /* Remember child process id. It allows sending a signal to child process.
  * Frozen application always runs in a child process. Parent process is used
  * to setup environment for child process and clean the environment when
- * child exited.
- */
+ * child exited. */
 pid_t child_pid = 0;
 
 /* Remember whether child has received a signal and what signal it was.
  * In onefile mode, this allows us to re-raise the signal in the parent
- * once the temporary directory has been cleaned up.
- */
+ * once the temporary directory has been cleaned up. */
 int child_signalled = 0;
 int child_signal = 0;
 
@@ -1084,9 +1086,8 @@ static void
 _ignoring_signal_handler(int signum)
 {
     /* Ignore the signal. Avoid generating debug messages as per
-     * explanation in _signal_handler().
-     */
-    (void)signum;  /* Supress unused argument warnings */
+     * explanation in _signal_handler(). */
+    (void)signum; /* Supress unused argument warnings */
 }
 
 static void
@@ -1095,8 +1096,7 @@ _signal_handler(int signum)
     /* Forward signal to the child. Avoid generating debug messages, as
      * functions involved are generally not signal safe. Furthermore, it
      * may result in endless spamming of SIGPIPE, as reported and
-     * diagnosed in #5270.
-     */
+     * diagnosed in #5270. */
     kill(child_pid, signum);
 }
 
@@ -1107,9 +1107,6 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
 {
     pid_t pid = 0;
     int rc = 0;
-
-    /* cause nonzero return unless this is overwritten
-     * with a successful return code from wait() */
     int wait_rc = -1;
 
     /* As indicated in signal(7), signal numbers range from 1-31 (standard)
@@ -1167,6 +1164,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     } else {
         VS("LOADER: Registering signal handlers\n");
     }
+
     for (signum = 0; signum < num_signals; ++signum) {
         /* Don't mess with SIGCHLD/SIGCLD; it affects our ability
          * to wait() for the child to exit. Similarly, do not change
@@ -1197,16 +1195,19 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
             pyi_apple_process_events(1.0);  /* long timeout (1 sec) */
         }
     } while (!wait_rc);
+
     /* Check if we have a pending event to forward (for diagnostics) */
     if (pyi_apple_has_pending_event()) {
         VS("LOADER [AppleEvent]: Child terminated before pending event could be forwarded!\n");
         pyi_apple_cleanup_pending_event();
     }
+
     /* Uninstall event handlers */
     pyi_apple_uninstall_event_handlers();
 #else
     wait_rc = waitpid(child_pid, &rc, 0);
 #endif
+
     if (wait_rc < 0) {
         VS("LOADER: failed to wait for child process: %s\n", strerror(errno));
     }
@@ -1286,6 +1287,9 @@ int pyi_utils_replace_process(PYI_CONTEXT *pyi_ctx)
 #endif /* _WIN32 */
 
 
+/**********************************************************************\
+ *                 Argument filtering and modification                *
+\**********************************************************************/
 /*
  * Initialize private pyi_argc and pyi_argv from the given argc and
  * argv by creating a deep copy. The resulting pyi_argc and pyi_argv
@@ -1390,6 +1394,9 @@ void pyi_utils_free_args(PYI_CONTEXT *pyi_ctx)
 }
 
 
+/**********************************************************************\
+ *                       Magic pattern scanning                       *
+\**********************************************************************/
 /*
  * The base for MAGIC pattern(s) used within the bootloader. The actual
  * pattern should be programmatically constructed by copying this
