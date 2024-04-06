@@ -662,6 +662,9 @@ pyi_recursive_rmdir(const char *dir_path)
 #endif /* ifdef _WIN32 */
 
 
+/**********************************************************************\
+ *                    Misc. file/directory helpers                    *
+\**********************************************************************/
 /*
  * Helper that creates parent directory tree for the given filename,
  * rooted under the given prefix path. The prefix path is assumed to
@@ -768,8 +771,20 @@ pyi_copy_file(const char *src_filename, const char *dest_filename)
         }
     }
 
+    /* Copy permissions bits */
 #ifndef WIN32
-    fchmod(fileno(fp_out), S_IRUSR | S_IWUSR | S_IXUSR);
+    if (1) {
+        struct stat stat_buf;
+        mode_t permissions;
+
+        /* Always set user readable and user writable, and copy the rest
+         * from the source file */
+        permissions = S_IRUSR | S_IWUSR;
+        if (stat(src_filename, &stat_buf) == 0) {
+            permissions |= stat_buf.st_mode;
+        }
+        fchmod(fileno(fp_out), permissions);
+    }
 #endif
 
     fclose(fp_in);
