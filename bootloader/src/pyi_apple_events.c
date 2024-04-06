@@ -101,7 +101,7 @@ static OSErr generic_forward_apple_event(const AppleEvent *const theAppleEvent /
 
     VS("LOADER [AppleEvent]: Forwarder called for \"%s\".\n", descStr);
 
-    child_pid = pyi_utils_get_child_pid();
+    child_pid = global_pyi_ctx->child_pid; /* Copy from PYI_CONTEXT */
     if (!child_pid) {
         /* Child not up yet -- there is no way to "forward" this before child started!. */
          VS("LOADER [AppleEvent]: Child not up yet (child_pid is 0)\n");
@@ -228,7 +228,7 @@ static OSErr handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEv
 
     VS("LOADER [AppleEvent]: %s handler called.\n", descStr);
 
-    if (!pyi_utils_get_child_pid()) {
+    if (global_pyi_ctx->child_pid == 0) {
         /* Child process is not up yet -- so we pick up kAEOpen and/or kAEGetURL events and append them to argv. */
 
         AEDescList docList;

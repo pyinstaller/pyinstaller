@@ -1046,27 +1046,6 @@ _pyi_set_systemd_env()
     return 0;
 }
 
-/* Remember child process id. It allows sending a signal to child process.
- * Frozen application always runs in a child process. Parent process is used
- * to setup environment for child process and clean the environment when
- * child exited. */
-pid_t child_pid = 0;
-
-/* Remember whether child has received a signal and what signal it was.
- * In onefile mode, this allows us to re-raise the signal in the parent
- * once the temporary directory has been cleaned up. */
-int child_signalled = 0;
-int child_signal = 0;
-
-/*
- * Retrieve child process' PID, if available.
- */
-pid_t
-pyi_utils_get_child_pid()
-{
-    return child_pid;
-}
-
 static void
 _ignoring_signal_handler(int signum)
 {
@@ -1082,7 +1061,7 @@ _signal_handler(int signum)
      * functions involved are generally not signal safe. Furthermore, it
      * may result in endless spamming of SIGPIPE, as reported and
      * diagnosed in #5270. */
-    kill(child_pid, signum);
+    kill(global_pyi_ctx->child_pid, signum);
 }
 
 /* Start frozen application in a subprocess. The frozen application runs
@@ -1140,7 +1119,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
      * The exception is the `cleanup` block that frees argv_pyi; in the child,
      * wait_rc is -1, so the child exit code checking is skipped. */
 
-    child_pid = pid;
+    pyi_ctx->child_pid = pid;
     handler = pyi_ctx->ignore_signals ? &_ignoring_signal_handler : &_signal_handler;
 
     /* Redirect all signals received by parent to child process. */
@@ -1164,7 +1143,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     do {
         /* The below loop will iterate about once every second on Apple,
          * waiting on the event queue most of that time. */
-        wait_rc = waitpid(child_pid, &rc, WNOHANG);
+        wait_rc = waitpid(pyi_ctx->child_pid, &rc, WNOHANG);
         if (wait_rc == 0) {
             /* Check if we have a pending event that we need to forward... */
             if (pyi_apple_has_pending_event()) {
@@ -1190,7 +1169,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     /* Uninstall event handlers */
     pyi_apple_uninstall_event_handlers();
 #else
-    wait_rc = waitpid(child_pid, &rc, 0);
+    wait_rc = waitpid(pyi_ctx->child_pid, &rc, 0);
 #endif
 
     if (wait_rc < 0) {
@@ -1198,7 +1177,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     }
 
     /* When child process exited, reset signal handlers to default values. */
-    VS("LOADER: Restoring signal handlers\n");
+    VS("LOADER: restoring signal handlers\n");
     for (signum = 0; signum < num_signals; ++signum) {
         signal(signum, SIG_DFL);
     }
@@ -1221,24 +1200,12 @@ cleanup:
     }
 
     /* Process ended abnormally */
-    child_signalled = WIFSIGNALED(rc);
-    if (child_signalled) {
-        child_signal = WTERMSIG(rc);
-        VS("LOADER: child received signal %d; storing for re-raise after cleanup...\n", child_signal);
+    pyi_ctx->child_signalled = WIFSIGNALED(rc);
+    if (pyi_ctx->child_signalled) {
+        pyi_ctx->child_signal = WTERMSIG(rc);
+        VS("LOADER: child received signal %d; storing for re-raise after cleanup...\n", pyi_ctx->child_signal);
     }
     return 1;
-}
-
-/* If the child process received a signal during execution, re-raise it.
- * Otherwise, this function is a no-op.
- */
-void pyi_utils_reraise_child_signal()
-{
-    if (child_signalled) {
-        /* Mimic the signal the child received */
-        VS("LOADER: re-raising child signal %d\n", child_signal);
-        raise(child_signal);
-    }
 }
 
 #if !defined(__APPLE__)
