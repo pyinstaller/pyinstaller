@@ -1087,15 +1087,18 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     sighandler_t handler;
     int signum;
 
-    /* Initialize pyi_argc and pyi_argv from original argc/argv */
+    /* macOS: Apple Events handling */
+#if defined(__APPLE__) && defined(WINDOWED)
+    /* Initialize pyi_argc and pyi_argv with original argc and argv.
+     * Do this regardless of argv-emulation setting, because
+     * pyi_utils_initialize_args() also filters out -psn_xxx argument. */
     if (pyi_utils_initialize_args(pyi_ctx, pyi_ctx->argc, pyi_ctx->argv) < 0) {
         goto cleanup;
     }
 
-    /* macOS: Apple Events handling */
-#if defined(__APPLE__) && defined(WINDOWED)
     /* Install Apple Event handlers */
     pyi_apple_install_event_handlers();
+
     /* argv emulation; do a short (250 ms) cycle of Apple Events processing
      * before bringing up the child process */
     if (pyi_ctx->macos_argv_emulation) {
@@ -1112,13 +1115,19 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     /* Child code. */
     if (pid == 0) {
         /* Replace process by starting a new application. */
+        /* If modified arguments (pyi_ctx->pyi_argv) are available, use
+         * those. Otherwise, use the original pyi_ctx->argv. */
+        char *const *argv = (pyi_ctx->pyi_argv != NULL) ? pyi_ctx->pyi_argv : pyi_ctx->argv;
+
         if (_pyi_set_systemd_env() != 0) {
             VS("WARNING: application is started by systemd socket, but we cannot set proper LISTEN_PID on it.\n");
         }
-        if (execvp(pyi_ctx->executable_filename, pyi_ctx->pyi_argv) < 0) {
+
+        if (execvp(pyi_ctx->executable_filename, argv) < 0) {
             VS("Failed to exec: %s\n", strerror(errno));
             goto cleanup;
         }
+
         /* NOTREACHED */
     }
 
@@ -1190,8 +1199,11 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     }
 
 cleanup:
-    VS("LOADER: freeing args\n");
-    pyi_utils_free_args(pyi_ctx);
+    /* Clean up the modified copy of command-line arguments, if applicable. */
+    if (pyi_ctx->pyi_argv) {
+        VS("LOADER: freeing modified copy of command-line arguments\n");
+        pyi_utils_free_args(pyi_ctx);
+    }
 
     /* Either wait() failed, or we jumped to `cleanup` and
      * didn't wait() at all. Either way, exit with error,
@@ -1214,34 +1226,6 @@ cleanup:
     }
     return 1;
 }
-
-#if !defined(__APPLE__)
-
-/* Replace the current process with another instance of itself, i.e.,
- * restart the process in-place (exec() without fork()). Used on linux
- * and unix-like OSes to achieve single-process onedir execution mode.
- */
-int pyi_utils_replace_process(PYI_CONTEXT *pyi_ctx)
-{
-    int rc;
-
-    /* Use helper to copy original argv into NULL-terminated arguments array, pyi_argv. */
-    if (pyi_utils_initialize_args(pyi_ctx, pyi_ctx->argc, pyi_ctx->argv) < 0) {
-        return -1;
-    }
-
-    /* Replace the current executable image. */
-    rc = execvp(pyi_ctx->executable_filename, pyi_ctx->pyi_argv);
-
-    /* This part is reached only if exec() failed. */
-    if (rc < 0) {
-        VS("Failed to exec: %s\n", strerror(errno));
-    }
-
-    return rc;
-}
-
-#endif /* !defined(__APPLE) */
 
 #endif /* _WIN32 */
 
