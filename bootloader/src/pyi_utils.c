@@ -66,38 +66,6 @@ typedef void (*sighandler_t)(int);
 #include "pyi_apple_events.h"
 
 
-char *
-pyi_strjoin(const char *first, const char *sep, const char *second)
-{
-    /* join first and second string, using sep as separator.
-     * any of them may be either a null-terminated string or NULL.
-     * sep will be only used if first and second string are not empty.
-     * returns a null-terminated string which the caller is responsible
-     * for freeing. Returns NULL if memory could not be allocated.
-     */
-    size_t first_len, sep_len, second_len;
-    char *result;
-    first_len = first ? strlen(first) : 0;
-    sep_len = sep ? strlen(sep) : 0;
-    second_len = second ? strlen(second) : 0;
-    result = malloc(first_len + sep_len + second_len + 1);
-    if (!result) {
-        return NULL;
-    }
-    *result = '\0';
-    if (first_len) {
-        strcat(result, first);
-    }
-    if (sep_len && first_len && second_len) {
-        strcat(result, sep);
-    }
-    if (second_len) {
-        strcat(result, second);
-    }
-    return result;
-}
-
-
 /**********************************************************************\
  *                  Environment variable management                   *
 \**********************************************************************/
@@ -995,36 +963,53 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
 int
 pyi_utils_set_library_search_path(const char *path)
 {
-    int rc = 0;
-    char *env_var, *env_var_orig;
-    char *new_path, *orig_path;
-
+    /* On AIX, LIBPATH is used to set dynamic library search path. On
+     * other POSIX platforms (other than macOS), LD_LIBRARY_PATH is used. */
 #ifdef AIX
-    /* LIBPATH is used to look up dynamic libraries on AIX. */
-    env_var = "LIBPATH";
-    env_var_orig = "LIBPATH_ORIG";
+    const char *variable_name = "LIBPATH";
+    const char *variable_name_copy = "LIBPATH_ORIG";
 #else
-    /* LD_LIBRARY_PATH is used on other *nix platforms (except Darwin). */
-    env_var = "LD_LIBRARY_PATH";
-    env_var_orig = "LD_LIBRARY_PATH_ORIG";
+    const char *variable_name = "LD_LIBRARY_PATH";
+    const char *variable_name_copy = "LD_LIBRARY_PATH_ORIG";
 #endif
 
-    /* keep original value in a new env var so the application can restore it
-     * before forking subprocesses. This is important so that e.g. a forked
-     * (system installed) ssh can find the matching (system installed) ssh
-     * related libraries - not the potentially different versions of same libs
-     * that we have bundled.
-     */
-    orig_path = pyi_getenv(env_var);
-    if (orig_path) {
-        pyi_setenv(env_var_orig, orig_path);
-        VS("LOADER: %s=%s\n", env_var_orig, orig_path);
+    char *orig_library_path = NULL;
+
+    int rc = 0;
+
+    /* Try retrieving the original value of the library-path environment
+     * variable. */
+    orig_library_path = pyi_getenv(variable_name);
+    if (orig_library_path) {
+        char *new_library_path;
+        int new_library_path_length;
+
+        /* Variable is set; store a copy (*_ORIG environment variable),
+         * so that it can be restored, if necessary. */
+        VS("LOADER: setting %s=%s\n", variable_name_copy, orig_library_path);
+        pyi_setenv(variable_name_copy, orig_library_path);
+
+        /* Compute the length of the new environment variable value:
+         * given path + separator + original value + terminating NULL. */
+        new_library_path_length = strlen(orig_library_path) + strlen(path) + 2;
+        new_library_path = malloc(new_library_path_length);
+        if (new_library_path == NULL) {
+            rc = -1; /* Allocation failed */
+        } else {
+            snprintf(new_library_path, new_library_path_length, "%s:%s", path, orig_library_path);
+            VS("LOADER: setting %s=%s\n", variable_name, new_library_path);
+            rc = pyi_setenv(variable_name, new_library_path);
+            free(new_library_path);
+        }
+
+        free(orig_library_path);
+    } else {
+        /* Variable not set; the new search path should contain just the
+         * given path. */
+        VS("LOADER: setting %s=%s\n", variable_name, path);
+        rc = pyi_setenv(variable_name, path);
     }
-    /* prepend our path to the original path, pyi_strjoin can deal with orig_path being NULL or empty string */
-    new_path = pyi_strjoin(path, ":", orig_path);
-    rc = pyi_setenv(env_var, new_path);
-    VS("LOADER: %s=%s\n", env_var, new_path);
-    free(new_path);
+
     return rc;
 }
 
