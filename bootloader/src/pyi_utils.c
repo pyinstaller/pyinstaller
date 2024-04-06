@@ -97,101 +97,128 @@ pyi_strjoin(const char *first, const char *sep, const char *second)
     return result;
 }
 
-/* Return string copy of environment variable. */
+
+/**********************************************************************\
+ *                  Environment variable management                   *
+\**********************************************************************/
+#ifdef _WIN32
+
 char *
 pyi_getenv(const char *variable)
 {
-    char *env = NULL;
-
-#ifdef _WIN32
-    wchar_t * wenv = NULL;
-    wchar_t * wvar = NULL;
-    wchar_t buf1[PATH_MAX], buf2[PATH_MAX];
+    wchar_t *variable_w;
+    wchar_t value[PATH_MAX];
+    wchar_t expanded_value[PATH_MAX];
     DWORD rc;
 
-    wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
-    rc = GetEnvironmentVariableW(wvar, buf1, sizeof(buf1));
+    /* Convert the variable name from UTF-8 to wide-char */
+    variable_w = pyi_win32_utils_from_utf8(NULL, variable, 0);
 
-    if (rc > 0) {
-        wenv = buf1;
-        /* Expand environment variables like %VAR% in value. */
-        rc = ExpandEnvironmentStringsW(wenv, buf2, sizeof(buf2));
-
-        if (rc > 0) {
-            wenv = buf1;
-        }
+    /* Retrieve environment variable */
+    rc = GetEnvironmentVariableW(variable_w, value, PATH_MAX);
+    if (rc >= PATH_MAX) {
+        return NULL; /* Insufficient buffer size */
+    }
+    if (rc == 0) {
+        return NULL; /* Variable unavailable */
     }
 
-    if (wenv) {
-        env = pyi_win32_utils_to_utf8(NULL, wenv, 0);
+    /* Expand environment variables within the environment variable's
+     * value */
+    rc = ExpandEnvironmentStringsW(value, expanded_value, PATH_MAX);
+    if (rc >= PATH_MAX) {
+        return NULL; /* Insufficient buffer size */
     }
-#else /*
-       * ifdef _WIN32
-       * Standard POSIX function.
-       */
-    env = getenv(variable);
-#endif /* ifdef _WIN32 */
+    if (rc == 0) {
+        return NULL; /* Error during expansion */
+    }
 
-    /* If the Python program we are about to run invokes another PyInstaller
-     * one-file program as subprocess, this subprocess must not be fooled into
-     * thinking that it is already unpacked. Therefore, PyInstaller deletes
-     * the _MEIPASS2 variable from the environment in pyi_main().
-     *
-     * However, on some platforms (e.g. AIX) the Python function 'os.unsetenv()'
-     * does not always exist. In these cases we cannot delete the _MEIPASS2
-     * environment variable from Python but only set it to the empty string.
-     * The code below takes into account that a variable may exist while its
-     * value is only the empty string.
-     *
-     * Return copy of string to avoid modification of the process environment.
-     */
-    return (env && env[0]) ? strdup(env) : NULL;
+    /* Convert to UTF-8 and return */
+    return pyi_win32_utils_to_utf8(NULL, expanded_value, 0);
 }
 
-/* Set environment variable. */
 int
 pyi_setenv(const char *variable, const char *value)
 {
     int rc;
+    wchar_t *variable_w;
+    wchar_t *value_w;
 
-#ifdef _WIN32
-    wchar_t * wvar, *wval;
+    /* Convert from UTF-8 to wide-char */
+    variable_w = pyi_win32_utils_from_utf8(NULL, variable, 0);
+    value_w = pyi_win32_utils_from_utf8(NULL, value, 0);
 
-    wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
-    wval = pyi_win32_utils_from_utf8(NULL, value, 0);
+    /* `SetEnvironmentVariableW` updates only the value in the process
+     * environment block, while _wputenv_s updates the value in the CRT
+     * block AND calls `SetEnvironmentVariableW` to update the process
+     * environment block.
+     *
+     * Therefore, in order for modification to be visible to other CRT
+     * functions (for example, `_wtempnam`), we must use `_wputenv_s`. */
+    rc = _wputenv_s(variable_w, value_w);
 
-    // Not sure why, but SetEnvironmentVariableW() didn't work with _wtempnam()
-    // Replaced it with _wputenv_s()
-    rc = _wputenv_s(wvar, wval);
+    free(variable_w);
+    free(value_w);
 
-    free(wvar);
-    free(wval);
-#else
-    rc = setenv(variable, value, true);
-#endif
     return rc;
 }
 
-/* Unset environment variable. */
 int
 pyi_unsetenv(const char *variable)
 {
     int rc;
+    wchar_t *variable_w;
 
-#ifdef _WIN32
-    wchar_t * wvar;
-    wvar = pyi_win32_utils_from_utf8(NULL, variable, 0);
-    rc = SetEnvironmentVariableW(wvar, NULL);
-    free(wvar);
-#else  /* _WIN32 */
-    #if HAVE_UNSETENV
-    rc = unsetenv(variable);
-    #else /* HAVE_UNSETENV */
-    rc = setenv(variable, "", true);
-    #endif /* HAVE_UNSETENV */
-#endif     /* _WIN32 */
+    /* Convert from UTF-8 to wide-char */
+    variable_w = pyi_win32_utils_from_utf8(NULL, variable, 0);
+
+    /* See the comment in `pyi_setenv`. As per MSDN, "You can remove a
+     * variable from the environment by specifying an empty string (that
+     * is, "") for value_string. */
+    rc = _wputenv_s(variable_w, L"");
+
+    free(variable_w);
+
     return rc;
 }
+
+#else /* ifdef _WIN32 */
+
+char *
+pyi_getenv(const char *variable)
+{
+    char *value;
+
+    /* Use standard POSIX getenv(). */
+    value = getenv(variable);
+
+    /* On some POSIX platforms, `unsetenv` is not available. In such
+     * cases, we "undefine" environment variables by setting them to
+     * empty strings. Therefore, treat empty environment variables as
+     * being undefined. */
+    return (value && value[0]) ? strdup(value) : NULL; /* Return a copy */
+}
+
+int
+pyi_setenv(const char *variable, const char *value)
+{
+    /* Standard POSIX function. */
+    return setenv(variable, value, 1 /* overwrite */);
+}
+
+int
+pyi_unsetenv(const char *variable)
+{
+#if HAVE_UNSETENV
+    return unsetenv(variable);
+#else /* HAVE_UNSETENV */
+    /* If `unsetenv` is unavailable, set the variable to an empty string. */
+    return setenv(variable, "", 1 /* overwrite */);
+#endif /* HAVE_UNSETENV */
+}
+
+
+#endif /* ifdef _WIN32 */
 
 
 /**********************************************************************\
