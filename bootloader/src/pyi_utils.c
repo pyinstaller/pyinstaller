@@ -1032,17 +1032,24 @@ pyi_utils_set_library_search_path(const char *path)
 static int
 _pyi_set_systemd_env()
 {
-    const char *env_var = "LISTEN_PID";
-    if (pyi_getenv(env_var) != NULL) {
-        /* the ULONG_STRING_SIZE is roughly equal to log10(max number)
-         * but can be calculated in compile time.
-         * The idea is from an answer on stackoverflow,
-         * https://stackoverflow.com/questions/8257714 */
-        #define ULONG_STRING_SIZE (sizeof (unsigned long) * CHAR_BIT / 3 + 2)
-        char pid_str[ULONG_STRING_SIZE];
-        snprintf(pid_str, ULONG_STRING_SIZE, "%ld", (unsigned long)getpid());
-        return pyi_setenv(env_var, pid_str);
+    const char *env_var_name = "LISTEN_PID";
+    char *value;
+
+    value = pyi_getenv(env_var_name);
+    if (value != NULL) {
+        /* 32 characters should be enough to accommodate the largest
+         * value unsigned 64-bit integer (2^64 - 1), which takes up 20
+         * characters. Even on contemporary 64-bit linux systems, PID
+         * values have theoretical limit of 2^22, so there is a lot of
+         * headroom here...   */
+        char pid_str[32];
+
+        free(value); /* Free the copy of original value, which we do not need. */
+
+        snprintf(pid_str, 32, "%ld", (unsigned long)getpid());
+        return pyi_setenv(env_var_name, pid_str);
     }
+
     return 0;
 }
 
