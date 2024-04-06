@@ -110,6 +110,9 @@ typedef struct
      * itself. */
     char application_home_dir[PATH_MAX];
 
+    /* Handle to loaded python shared library. */
+    dylib_t python_dll;
+
     /* Flag indicating whether symbols from Python shared library have
      * been successfully loaded. Used to gracefully handle cleanup in
      * situations when Python shared library is successfully loaded,

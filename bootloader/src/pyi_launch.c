@@ -473,5 +473,13 @@ pyi_launch_execute(PYI_CONTEXT *pyi_ctx)
 void
 pyi_launch_finalize(PYI_CONTEXT *pyi_ctx)
 {
+    /* CLean up the python interpreter */
     pyi_pylib_finalize(pyi_ctx);
+
+    /* Unload python shared library */
+    if (pyi_ctx->python_dll) {
+        VS("LOADER: unloading Python shared library...\n");
+        pyi_utils_dlclose(pyi_ctx->python_dll);
+        pyi_ctx->python_dll = NULL;
+    }
 }

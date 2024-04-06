@@ -20,7 +20,7 @@
 
 #include "pyi_main.h"
 
-int pyi_pylib_load(const PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_load(PYI_CONTEXT *pyi_ctx);
 int pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx);
 int pyi_pylib_import_modules(const PYI_CONTEXT *pyi_ctx);
 int pyi_pylib_install_pyz(const PYI_CONTEXT *pyi_ctx);
