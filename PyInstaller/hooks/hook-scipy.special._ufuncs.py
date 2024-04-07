@@ -9,6 +9,13 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Module scipy.io._ufunc on some other C/C++ extensions. The hidden import is necessary for SciPy 0.13+.
+from PyInstaller.utils.hooks import is_module_satisfies
+
+# Module scipy.io._ufunc depends on some other C/C++ extensions. The hidden import is necessary for SciPy 0.13+.
 # Thanks to dyadkin; see issue #826.
 hiddenimports = ['scipy.special._ufuncs_cxx']
+
+# SciPy 1.13.0 cythonized cdflib; this introduced new `scipy.special._cdflib` extension that is imported from the
+# `scipy.special._ufuncs` extension, and thus we need a hidden import here.
+if is_module_satisfies('scipy >= 1.13.0'):
+    hiddenimports += ['scipy.special._cdflib']
