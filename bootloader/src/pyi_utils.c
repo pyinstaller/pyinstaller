@@ -1199,11 +1199,11 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     }
 
 cleanup:
-    /* Clean up the modified copy of command-line arguments, if applicable. */
-    if (pyi_ctx->pyi_argv) {
-        VS("LOADER: freeing modified copy of command-line arguments\n");
-        pyi_utils_free_args(pyi_ctx);
-    }
+    /* Clean up the modified copy of command-line arguments (currently
+     * applicable only to macOS windowed bootloader builds). */
+#if defined(__APPLE__) && defined(WINDOWED)
+    pyi_utils_free_args(pyi_ctx);
+#endif
 
     /* Either wait() failed, or we jumped to `cleanup` and
      * didn't wait() at all. Either way, exit with error,
@@ -1233,6 +1233,9 @@ cleanup:
 /**********************************************************************\
  *                 Argument filtering and modification                *
 \**********************************************************************/
+/* This is applicable only to POSIX systems */
+#ifndef _WIN32
+
 /*
  * Initialize private pyi_argc and pyi_argv from the given argc and
  * argv by creating a deep copy. The resulting pyi_argc and pyi_argv
@@ -1335,6 +1338,8 @@ void pyi_utils_free_args(PYI_CONTEXT *pyi_ctx)
     pyi_ctx->pyi_argc = 0;
     pyi_ctx->pyi_argv = NULL;
 }
+
+#endif /* ifndef _WIN32 */
 
 
 /**********************************************************************\

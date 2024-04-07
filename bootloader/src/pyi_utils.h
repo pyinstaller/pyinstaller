@@ -50,10 +50,12 @@ int pyi_utils_create_child(PYI_CONTEXT *pyi_ctx);
 int pyi_utils_set_library_search_path(const char *path);
 #endif
 
-/* Argument handling */
+/* Argument handling (POSIX only) */
+#if !defined(_WIN32)
 int pyi_utils_initialize_args(PYI_CONTEXT *pyi_ctx, const int argc, char *const argv[]);
 int pyi_utils_append_to_args(PYI_CONTEXT *pyi_ctx, const char *arg);
 void pyi_utils_free_args(PYI_CONTEXT *pyi_ctx);
+#endif
 
 /* Magic pattern matching */
 extern const unsigned char MAGIC_BASE[8];
