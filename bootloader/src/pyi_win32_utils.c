@@ -137,47 +137,6 @@ pyi_win32_wcs_to_mbs(const wchar_t *wstr)
     return str;
 }
 
-/* We shouldn't need to convert ANSI to wchar_t since everything is provided as wchar_t */
-
-/* The following are used to convert the UTF-16 strings provided by Windows
- * into UTF-8 so we can store them in the `char *` variables and fields
- * we use on Linux. Storing them like this is a wart, but storing them as `wchar_t *`
- * and converting back and forth everywhere on Linux/OS X is an even bigger wart
- */
-
-/* Convert elements of wargv to UTF-8 */
-
-char **
-pyi_win32_argv_to_utf8(int argc, wchar_t **wargv)
-{
-    int i, j;
-    char ** argv;
-
-    argv = (char **)calloc(argc + 1, sizeof(char *));
-    if (argv == NULL) {
-        return NULL;
-    };
-
-    for (i = 0; i < argc; i++) {
-        argv[i] = pyi_win32_utils_to_utf8(NULL, wargv[i], 0);
-
-        if (NULL == argv[i]) {
-            goto err;
-        }
-    }
-    argv[argc] = NULL;
-
-    return argv;
-err:
-
-    for (j = 0; j <= i; j++) {
-        free(argv[j]);
-    }
-    free(argv);
-    return NULL;
-}
-
-
 /*
  * Encode wchar_t (UTF16) into char (UTF8).
  *

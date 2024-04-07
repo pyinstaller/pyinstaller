@@ -531,6 +531,29 @@ _pyi_pyconfig_set_argv(PyConfig *config, int python_version, int argc, wchar_t *
 }
 
 
+#ifdef _WIN32
+
+/* On Windows, the command-line arguments are already available in array
+ * of wide-char strings, we can directly pass it into Python's
+ * configuration structure. */
+int
+pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
+{
+    return _pyi_pyconfig_set_argv(
+        config,
+        pyi_ctx->archive->python_version,
+        pyi_ctx->argc,
+        pyi_ctx->argv_w
+    );
+}
+
+#else /* ifdef _WIN32 */
+
+/* On POSIX systems, we need to convert command-line arguments from
+ * their local 8-bit encoding into wide-char strings used by Python
+ * configuration structure. This is done using `Py_DecodeLocale`
+ * function, which accounts for the locale/encoding that was set up
+ * during pre-initialization of Python interpreter. */
 int
 pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
 {
@@ -559,11 +582,7 @@ pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
 
     /* Convert */
     for (i = 0; i < argc; i++) {
-#ifdef _WIN32
-        argv_w[i] = pyi_win32_utils_from_utf8(NULL, argv[i], 0);
-#else
         argv_w[i] = PI_Py_DecodeLocale(argv[i], NULL);
-#endif
         if (argv_w[i] == NULL) {
             /* Do not break; we need to initialize all elements */
             ret = -1;
@@ -584,16 +603,14 @@ pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
 end:
     /* Cleanup */
     for (i = 0; i < argc; i++) {
-#ifdef _WIN32
-        free(argv_w[i]);
-#else
         PI_PyMem_RawFree(argv_w[i]);
-#endif
     }
     free(argv_w);
 
     return ret;
 }
+
+#endif /* ifdef _WIN32 */
 
 
 /*

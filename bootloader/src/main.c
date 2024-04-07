@@ -55,10 +55,9 @@ wWinMain(
     int nCmdShow              /* show state of window */
     )
 {
-    /* Convert wide-char arguments to UTF-8 and store them in global
-     * context structure */
+    /* Store arguments in global context structure. */
     global_pyi_ctx->argc = __argc;
-    global_pyi_ctx->argv = pyi_win32_argv_to_utf8(__argc, __wargv);
+    global_pyi_ctx->argv_w = __wargv;
 
     return pyi_main(global_pyi_ctx);
 }
@@ -69,10 +68,9 @@ wWinMain(
 int
 wmain(int argc, wchar_t **argv)
 {
-    /* Convert wide-char arguments to UTF-8 and store them in global
-     * context structure */
+    /* Store arguments in global context structure. */
     global_pyi_ctx->argc = argc;
-    global_pyi_ctx->argv = pyi_win32_argv_to_utf8(argc, argv);
+    global_pyi_ctx->argv_w = argv;
 
     return pyi_main(global_pyi_ctx);
 }
@@ -93,7 +91,7 @@ main(int argc, char **argv)
     fpsetmask(fpgetmask() & ~FP_X_OFL);
 #endif
 
-    /* Store arguments in global context structure */
+    /* Store arguments in global context structure. */
     global_pyi_ctx->argc = argc;
     global_pyi_ctx->argv = argv;
 

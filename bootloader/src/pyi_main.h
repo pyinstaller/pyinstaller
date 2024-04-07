@@ -49,7 +49,21 @@ enum PYI_HIDE_CONSOLE
 
 typedef struct
 {
-    /* Command line arguments passed to the application */
+    /* Command line arguments passed to the application.
+     *
+     * On Windows, these are wide-char (UTF-16) strings, which can be
+     * directly passed into python's configuration structure.
+     *
+     * On POSIX systems, the strings are in local 8-bit encoding, and we
+     * will need to convert them to wide-char strings when setting up
+     * python's configuration structure. But in POSIX codepath, the 8-bit
+     * strings from `argv` are also used in other places, for example, 
+     * when trying to resolve the executable's true location, and when
+     * spawning child process in onefile mode. */
+#ifdef _WIN32
+    int argc;
+    wchar_t **argv_w;
+#else
     int argc;
     char **argv;
 
@@ -77,6 +91,7 @@ typedef struct
      * we use the original argv. */
     int pyi_argc;
     char **pyi_argv;
+#endif /* ifdef _WIN32 */
 
     /* Fully resolved path to the executable */
     char executable_filename[PATH_MAX];
