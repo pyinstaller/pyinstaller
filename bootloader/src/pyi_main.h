@@ -51,7 +51,7 @@ enum PYI_HIDE_CONSOLE
 #endif
 
 
-typedef struct
+typedef struct _pyi_context
 {
     /* Command line arguments passed to the application.
      *

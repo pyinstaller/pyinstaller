@@ -27,21 +27,28 @@
 
 #include <Carbon/Carbon.h>
 
+typedef struct _pyi_context PYI_CONTEXT;
+
 /* Context structure for keeping track of data */
 typedef struct _apple_event_handler_context
 {
     /* Event handlers for argv-emu / event forwarding */
-    Boolean installed;  /* Are handlers installed? */
+    Boolean installed; /* Are handlers installed? */
 
-    EventHandlerUPP upp_handler;  /* UPP for event handler callback */
-    AEEventHandlerUPP upp_handler_ae;  /* UPP for AppleEvent handler callback */
+    EventHandlerUPP upp_handler; /* UPP for event handler callback */
+    EventHandlerRef handler_ref; /* Reference to installed event handler */
 
-    EventHandlerRef handler_ref;  /* Reference to installer event handler */
+    /* Event handler callbacks for individual AppleEvent types */
+    AEEventHandlerUPP upp_handler_oapp;
+    AEEventHandlerUPP upp_handler_odoc;
+    AEEventHandlerUPP upp_handler_gurl;
+    AEEventHandlerUPP upp_handler_rapp;
+    AEEventHandlerUPP upp_handler_actv;
 
     /* Deferred/pending event forwarding */
-    Boolean has_pending_event;  /* Flag indicating that pending_event is valid */
-    unsigned int retry_count;  /* Retry count for send attempts */
-    AppleEvent pending_event;  /* Copy of the event */
+    Boolean has_pending_event; /* Flag indicating that pending_event is valid */
+    unsigned int retry_count; /* Retry count for send attempts */
+    AppleEvent pending_event; /* Copy of the event */
 
     /* Event types used when registering events. The single entry should
      * be initialized to {kEventClassAppleEvent, kEventAppleEvent}
@@ -50,8 +57,9 @@ typedef struct _apple_event_handler_context
 } APPLE_EVENT_HANDLER_CONTEXT;
 
 
-/* Install Apple Event handlers */
-int pyi_apple_install_event_handlers(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx);
+/* Install Apple Event handlers. Requires PYI_CONTEXT as argument, in
+ * order to pass the pointer to callbacks. */
+int pyi_apple_install_event_handlers(PYI_CONTEXT *pyi_ctx);
 
 /* Uninstall Apple Event handlers */
 int pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx);

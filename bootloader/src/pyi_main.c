@@ -463,7 +463,7 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
         /* Optional argv emulation for onedir .app bundles */
         if (pyi_ctx->macos_argv_emulation) {
             /* Install event handlers */
-            pyi_apple_install_event_handlers(&pyi_ctx->ae_ctx);
+            pyi_apple_install_event_handlers(pyi_ctx);
             /* Process Apple events; this updates argc_pyi/argv_pyi
              * accordingly */
             pyi_apple_process_events(&pyi_ctx->ae_ctx, 0.25);  /* short_timeout (250 ms) */
