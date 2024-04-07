@@ -30,20 +30,14 @@
 extern Boolean ConvertEventRefToEventRecord(EventRef inEvent, EventRecord *outEvent);
 
 
-/* Convert a FourCharCode into a string (useful for debug). Returned
- * buffer is a static buffer, so subsequent calls may overwrite the
- * same buffer. */
-static const char *
-CC2Str(FourCharCode code)
-{
-    /* support up to 3 calls on the same debug print line */
-    static char bufs[3][5];
-    static unsigned int bufsidx = 0;
-    char *buf = bufs[bufsidx++ % 3u];
-    snprintf(buf, 5, "%c%c%c%c", (code >> 24) & 0xFF, (code >> 16) & 0xFF, (code >> 8) & 0xFF, code & 0xFF);
-    /* buffer is guaranteed to be nul terminated here */
-    return buf;
-}
+/* Helper macro for printing character from FOURCC codes; intended for
+ * use in print-formatting functions with %c%c%c%c format. */
+#define _FOURCC_CHARS(code) \
+    ((char)((FourCharCode)code >> 24) & 0xFF), \
+    ((char)((FourCharCode)code >> 16) & 0xFF), \
+    ((char)((FourCharCode)code >> 8) & 0xFF), \
+    ((char)((FourCharCode)code) & 0xFF)
+
 
 /* Generic event forwarder -- forwards an event destined for this process
  * to the child process, copying its param object, if any. Parameter
@@ -57,7 +51,6 @@ generic_forward_apple_event(
     const char *const descStr
 )
 {
-    const FourCharCode evtCode = (FourCharCode)evtID;
     OSErr err;
     AppleEvent childEvent;
     AEAddressDesc target;
@@ -77,7 +70,7 @@ generic_forward_apple_event(
          return errAEEventNotHandled;
     }
 
-    VS("LOADER [AppleEvent]: forwarding '%s' event.\n", CC2Str(evtCode));
+    VS("LOADER [AppleEvent]: forwarding '%c%c%c%c' event.\n", _FOURCC_CHARS(evtID));
     err = AECreateDesc(typeKernelProcessID, &child_pid, sizeof(child_pid), &target);
     if (err != noErr) {
         OTHERERROR("LOADER [AppleEvent]: failed to create AEAddressDesc: %d\n", (int)err);
@@ -103,18 +96,18 @@ generic_forward_apple_event(
          * here and it will have 0 params. Assumption: caller knows that
          * the event type in question normally has 0 params. */
         VS(
-            "LOADER [AppleEvent]: new AppleEvent class: '%s' code: '%s'\n",
-            CC2Str((FourCharCode)eventClass),
-            CC2Str((FourCharCode)evtID)
+            "LOADER [AppleEvent]: new AppleEvent class: '%c%c%c%c' code: '%c%c%c%c'\n",
+            _FOURCC_CHARS(eventClass),
+            _FOURCC_CHARS(evtID)
         );
     } else {
         err = AESizeOfParam(theAppleEvent, keyDirectObject, &typeCode, &bufSize);
         if (err != noErr) {
             /* No params for this event */
             VS(
-                "LOADER [AppleEvent]: failed to get size of param (error=%d) -- event '%s' may lack params.\n",
+                "LOADER [AppleEvent]: failed to get size of param (error=%d) -- event '%c%c%c%c' may lack params.\n",
                 (int)err,
-                CC2Str(evtCode)
+                _FOURCC_CHARS(evtID)
             );
         } else  {
             /* This event has a param object, copy it. */
@@ -158,9 +151,9 @@ generic_forward_apple_event(
             }
 
             VS(
-                "LOADER [AppleEvent]: got param type=%x ('%s') size=%ld\n",
+                "LOADER [AppleEvent]: got param type=%x ('%c%c%c%c') size=%ld\n",
                 (UInt32)actualType,
-                CC2Str((FourCharCode)actualType),
+                _FOURCC_CHARS(actualType),
                 (long)actualSize
             );
 
@@ -398,7 +391,7 @@ handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon h
     const AEEventID evtID = (AEEventID)(intptr_t)handlerRefCon;
     (void)reply; /* unused */
 
-    VS("LOADER [AppleEvent]: %s called with code '%s'.\n", __FUNCTION__, CC2Str(evtCode));
+    VS("LOADER [AppleEvent]: %s called with code '%c%c%c%c'.\n", __FUNCTION__, _FOURCC_CHARS(evtCode));
 
     switch(evtID) {
         case kAEOpenApplication: {
@@ -424,9 +417,9 @@ handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon h
              * unless there is a programming error in the code that sets up
              * the handler(s) in pyi_process_apple_events. */
             OTHERERROR(
-                "LOADER [AppleEvent]: %s called with unexpected event type '%s'!\n",
+                "LOADER [AppleEvent]: %s called with unexpected event type '%c%c%c%c'!\n",
                 __FUNCTION__,
-                CC2Str(evtCode)
+                _FOURCC_CHARS(evtCode)
             );
             return errAEEventNotHandled;
         }
@@ -459,10 +452,10 @@ evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *data)
     /* Convert the event ref to the type AEProcessAppleEvent expects. */
     ConvertEventRefToEventRecord(eref, &eventRecord);
     VS(
-        "LOADER [AppleEvent]: what=%hu message=%lx ('%s') modifiers=%hu\n",
+        "LOADER [AppleEvent]: what=%hu message=%lx ('%c%c%c%c') modifiers=%hu\n",
         eventRecord.what,
         eventRecord.message,
-        CC2Str((FourCharCode)eventRecord.message),
+        _FOURCC_CHARS(eventRecord.message),
         eventRecord.modifiers
     );
 
