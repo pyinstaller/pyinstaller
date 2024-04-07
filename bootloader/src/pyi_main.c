@@ -463,12 +463,12 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
         /* Optional argv emulation for onedir .app bundles */
         if (pyi_ctx->macos_argv_emulation) {
             /* Install event handlers */
-            pyi_apple_install_event_handlers();
+            pyi_apple_install_event_handlers(&pyi_ctx->ae_ctx);
             /* Process Apple events; this updates argc_pyi/argv_pyi
              * accordingly */
-            pyi_apple_process_events(0.25);  /* short_timeout (250 ms) */
+            pyi_apple_process_events(&pyi_ctx->ae_ctx, 0.25);  /* short_timeout (250 ms) */
             /* Uninstall event handlers */
-            pyi_apple_uninstall_event_handlers();
+            pyi_apple_uninstall_event_handlers(&pyi_ctx->ae_ctx);
             /* The processing of Apple events swallows up the initial
              * activation event, whatever it might have been (typically
              * oapp, but could also be odoc or GURL if application is
@@ -476,7 +476,7 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
              * This seems to cause issues with some UI frameworks
              * (Tcl/Tk, in particular); so we submit a new oapp event
              * to ourselves... */
-            pyi_apple_submit_oapp_event();
+            pyi_apple_submit_oapp_event(&pyi_ctx->ae_ctx);
         }
     }
 #endif

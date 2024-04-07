@@ -16,6 +16,10 @@
 
 #include "pyi_global.h"
 
+#if defined(__APPLE__) && defined(WINDOWED)
+#include "pyi_apple_events.h"
+#endif
+
 #ifndef _WIN32
     #include <sys/types.h> /* pid_t */
 #endif
@@ -57,7 +61,7 @@ typedef struct
      * On POSIX systems, the strings are in local 8-bit encoding, and we
      * will need to convert them to wide-char strings when setting up
      * python's configuration structure. But in POSIX codepath, the 8-bit
-     * strings from `argv` are also used in other places, for example, 
+     * strings from `argv` are also used in other places, for example,
      * when trying to resolve the executable's true location, and when
      * spawning child process in onefile mode. */
 #ifdef _WIN32
@@ -220,6 +224,13 @@ typedef struct
      * whether this option is specified or not. */
 #if !defined(_WIN32)
     unsigned char ignore_signals;
+#endif
+
+    /**
+     * Apple Events handling in macOS .app bundles
+     */
+#if defined(__APPLE__) && defined(WINDOWED)
+    APPLE_EVENT_HANDLER_CONTEXT ae_ctx;
 #endif
 } PYI_CONTEXT;
 
