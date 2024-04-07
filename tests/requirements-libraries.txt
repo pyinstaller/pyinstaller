@@ -16,25 +16,25 @@ importlib_resources==6.4.0; python_version < '3.9'
 # -------
 # These packages work with no (known) issues.
 babel==2.14.0
-Django==5.0.3; python_version >= '3.10'
+Django==5.0.4; python_version >= '3.10'
 future==1.0.0
 gevent==24.2.1
-ipython==8.22.2; python_version >= '3.10'
+ipython==8.23.0; python_version >= '3.10'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
-keyring==25.0.0; sys_platform != 'darwin' or python_version >= '3.8.7'
-matplotlib==3.8.3; python_version >= '3.9'
+keyring==25.1.0; sys_platform != 'darwin' or python_version >= '3.8.7'
+matplotlib==3.8.4; python_version >= '3.9'
 numpy==1.26.4; python_version >= '3.9'
 pandas==2.2.1; python_version >= '3.9'
 pygments==2.17.2
-PyGObject==3.48.1; sys_platform == 'linux'
+PyGObject==3.48.2; sys_platform == 'linux'
 # Official PySide2 wheels do not support python 3.11 or newer
 PySide2==5.15.2.1; python_version < '3.11'
 # PySide6 is a metapackage that depends on PySide6-Essentials and PySide6-Addons. Their versions are
 # usually kept in sync.
-PySide6==6.6.2
-PySide6-Addons==6.6.2
-PySide6-Essentials==6.6.2
+PySide6==6.6.3.1
+PySide6-Addons==6.6.3.1
+PySide6-Essentials==6.6.3.1
 # PyQt5 and add-on packages
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
@@ -68,14 +68,14 @@ PyQt6-WebEngine-Qt6==6.6.2
 python-dateutil==2.9.0.post0
 pytz==2024.1
 requests==2.31.0
-scipy==1.12.0; python_version >= '3.9'
+scipy==1.13.0; python_version >= '3.9'
 # simplejson is used for text_c_extension
 simplejson==3.19.2
 sphinx==7.2.6; python_version >= '3.9'
 # Required for test_namespace_package
 sqlalchemy==2.0.29
 zope.interface==6.2
-Pillow==10.2.0
+Pillow==10.3.0
 
 
 # Python versions not supported / supported for older package versions
