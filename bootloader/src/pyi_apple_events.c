@@ -48,7 +48,8 @@ generic_forward_apple_event(
     const AppleEvent *const theAppleEvent /* NULL ok */,
     const AEEventClass eventClass,
     const AEEventID evtID,
-    const char *const descStr
+    const char *const descStr,
+    PYI_CONTEXT *pyi_ctx
 )
 {
     OSErr err;
@@ -63,7 +64,7 @@ generic_forward_apple_event(
 
     VS("LOADER [AppleEvent]: forwarder called for \"%s\".\n", descStr);
 
-    child_pid = global_pyi_ctx->child_pid; /* Copy from PYI_CONTEXT */
+    child_pid = pyi_ctx->child_pid; /* Copy from PYI_CONTEXT */
     if (!child_pid) {
         /* Child not up yet -- there is no way to "forward" this before child started!. */
          VS("LOADER [AppleEvent]: child not up yet (child PID is 0)\n");
@@ -179,7 +180,7 @@ generic_forward_apple_event(
      * context structure, so that the caller can re-attempt to send it
      * using the pyi_apple_send_pending_event() function. */
     if (err == procNotFound) {
-        APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = &global_pyi_ctx->ae_ctx;
+        APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = &pyi_ctx->ae_ctx;
 
         VS("LOADER [AppleEvent]: sending failed with procNotFound; storing the pending event...\n");
 
@@ -216,155 +217,222 @@ realloc_checked(void **bufptr, Size size)
     return true;
 }
 
-/* Handles apple events 'odoc' and 'GURL', both before and after the
- * child process is up; if child process is up, the event is forwarded
- * to it; otherwise, the event is converted and added to argv. */
+/* Converts 'odoc' or 'GURL' event into command-line arguments, and
+ * appends them to argv array. */
 static OSErr
-handle_odoc_GURL_events(const AppleEvent *theAppleEvent, const AEEventID evtID)
+convert_event_to_argv(const AppleEvent *theAppleEvent, const AEEventID evtID, PYI_CONTEXT *pyi_ctx)
 {
-    const FourCharCode evtCode = (FourCharCode)evtID;
-    const Boolean apple_event_is_open_doc = evtID == kAEOpenDocuments;
-    const char *const descStr = apple_event_is_open_doc ? "OpenDoc" : "GetURL";
+    const Boolean is_odoc_event = evtID == kAEOpenDocuments; /* 'odoc' vs 'GURL' */
+    AEDescList docList;
+    OSErr err;
+    long index;
+    long count = 0;
+    char *buf = NULL; /* Dynamically (re)allocated buffer for URL/file path entries */
 
-    VS("LOADER [AppleEvent]: %s handler called.\n", descStr);
+    VS("LOADER [AppleEvent ARGV_EMU]: converting %s event to command-line arguments...\n", is_odoc_event ? "OpenDoc" : "GetURL");
 
-    if (global_pyi_ctx->child_pid == 0) {
-        /* Child process is not up yet -- so we pick up kAEOpen and/or
-         * kAEGetURL events and append them to argv. */
-        AEDescList docList;
-        OSErr err;
-        long index;
-        long count = 0;
-        char *buf = NULL; /* Dynamically (re)allocated buffer for URL/file path entries */
+    /* Retrieve event parameters/arguments */
+    err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
+    if (err != noErr) {
+        return err;
+    }
 
-        VS("LOADER [AppleEvent ARGV_EMU]: processing args for forward...\n");
+    err = AECountItems(&docList, &count);
+    if (err != noErr) {
+        return err;
+    }
 
-        err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
-        if (err != noErr) return err;
+    /* AppleEvent lists are 1-indexed (I guess because of Pascal?) */
+    for (index = 1; index <= count; ++index) {
+        DescType returnedType;
+        AEKeyword keywd;
+        Size actualSize = 0;
+        Size bufSize = 0;
+        DescType typeCode = typeWildCard;
 
-        err = AECountItems(&docList, &count);
-        if (err != noErr) return err;
-
-        /* AppleEvent lists are 1-indexed (I guess because of Pascal?) */
-        for (index = 1; index <= count; ++index) {
-            DescType returnedType;
-            AEKeyword keywd;
-            Size actualSize = 0;
-            Size bufSize = 0;
-            DescType typeCode = typeWildCard;
-
-            err = AESizeOfNthItem(&docList, index, &typeCode, &bufSize);
-            if (err != noErr) {
-                OTHERERROR("LOADER [AppleEvent ARGV_EMU]: item #%ld: failed to retrieve item size, error code: %d\n", index, (int)err);
-                continue;
-            }
-
-            if (!realloc_checked((void **)&buf, bufSize+1)) {
-                /* Not enough memory -- very unlikely but if so keep going */
-                OTHERERROR("LOADER [AppleEvent ARGV_EMU]: item #%ld: insufficient memory - skipping!\n", index);
-                continue;
-            }
-
-            err = AEGetNthPtr(
-                &docList,
-                index,
-                apple_event_is_open_doc ? typeFileURL : typeUTF8Text,
-                &keywd,
-                &returnedType,
-                buf,
-                bufSize,
-                &actualSize
-            );
-            if (err != noErr) {
-                OTHERERROR("LOADER [AppleEvent ARGV_EMU]: item #%ld: failed to retrieve item, error code: %d\n", index, (int)err);
-            } else if (actualSize > bufSize) {
-                /* This should never happen but is here for thoroughness */
-                OTHERERROR(
-                    "LOADER [AppleEvent ARGV_EMU]: item #%ld: not enough space in buffer (%ld > %ld)\n",
-                    index,
-                    (long)actualSize,
-                    (long)bufSize
-                );
-            } else {
-                /* Copied data to buf, now ensure data is a simple file path and then append it to argv_pyi */
-                char *tmp_str = NULL;
-                Boolean ok;
-
-                buf[actualSize] = 0; /* Ensure NUL-char termination. */
-                if (apple_event_is_open_doc) {
-                    /* Now, convert file:/// style URLs to an actual filesystem path for argv emu. */
-                    CFURLRef url = CFURLCreateWithBytes
-                        (NULL,
-                        (UInt8 *)buf,
-                        actualSize,
-                        kCFStringEncodingUTF8,
-                        NULL
-                    );
-                    if (url) {
-                        CFStringRef path = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
-                        ok = false;
-                        if (path) {
-                            const Size newLen = (Size)CFStringGetMaximumSizeOfFileSystemRepresentation(path);
-                            if (realloc_checked((void **)&buf, newLen+1)) {
-                                bufSize = newLen;
-                                ok = CFStringGetFileSystemRepresentation(path, buf, bufSize);
-                                buf[bufSize] = 0; /* Ensure NUL termination */
-                            }
-                            CFRelease(path); /* free */
-                        }
-                        CFRelease(url); /* free */
-                        if (!ok) {
-                            OTHERERROR(
-                                "LOADER [AppleEvent ARGV_EMU]: item #%ld: failed to convert file:/// path to POSIX filesystem representation!\n",
-                               index
-                            );
-                            continue;
-                        }
-                    }
-                }
-
-                /* Append URL to argv_pyi array, reallocating as necessary */
-                VS("LOADER [AppleEvent ARGV_EMU]: appending '%s' to argv_pyi\n", buf);
-                if (pyi_utils_append_to_args(global_pyi_ctx, buf) < 0) {
-                    OTHERERROR(
-                        "LOADER [AppleEvent ARGV_EMU]: failed to append to argv_pyi: %s\n",
-                        buf,
-                        strerror(errno)
-                    );
-                } else {
-                    VS("LOADER [AppleEvent ARGV_EMU]: argv entry appended.\n");
-                }
-            }
+        /* Query data length */
+        err = AESizeOfNthItem(&docList, index, &typeCode, &bufSize);
+        if (err != noErr) {
+            OTHERERROR("LOADER [AppleEvent ARGV_EMU]: item #%ld: failed to retrieve item size, error code: %d\n", index, (int)err);
+            continue;
         }
 
-        free(buf); /* free of possible-NULL ok */
+        /* Reallocate the buffer to required size */
+        if (!realloc_checked((void **)&buf, bufSize + 1)) {
+            /* Not enough memory -- very unlikely but if so keep going */
+            OTHERERROR("LOADER [AppleEvent ARGV_EMU]: item #%ld: insufficient memory - skipping!\n", index);
+            continue;
+        }
 
-        err = AEDisposeDesc(&docList);
+        /* Copy data */
+        err = AEGetNthPtr(
+            &docList,
+            index,
+            is_odoc_event ? typeFileURL : typeUTF8Text,
+            &keywd,
+            &returnedType,
+            buf,
+            bufSize,
+            &actualSize
+        );
 
-        return err;
-    } /* else ... */
+        if (err != noErr) {
+            OTHERERROR("LOADER [AppleEvent ARGV_EMU]: item #%ld: failed to retrieve item, error code: %d\n", index, (int)err);
+        } else if (actualSize > bufSize) {
+            /* This should never happen but is here for thoroughness */
+            OTHERERROR(
+                "LOADER [AppleEvent ARGV_EMU]: item #%ld: not enough space in buffer (%ld > %ld)\n",
+                index,
+                (long)actualSize,
+                (long)bufSize
+            );
+        } else {
+            /* Data was successfully copied; NULL-terminate the string */
+            buf[actualSize] = 0;
 
-    /* The child process exists.. so we forward event to it */
-    return generic_forward_apple_event(
-        theAppleEvent,
-        apple_event_is_open_doc ? kCoreEventClass : kInternetEventClass,
-        evtID,
-        descStr
-    );
+            /* If this is 'odoc' event, convert file:/// style URLs to
+             * actual filesystem path */
+            if (is_odoc_event) {
+                /* Create URL from string */
+                CFURLRef url = CFURLCreateWithBytes(
+                    NULL,
+                    (UInt8 *)buf,
+                    actualSize,
+                    kCFStringEncodingUTF8,
+                    NULL
+                );
+                if (url) {
+                    /* Convert URL to POSIX path */
+                    CFStringRef path = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
+                    Boolean ok = false;
+                    if (path) {
+                        const Size newLen = (Size)CFStringGetMaximumSizeOfFileSystemRepresentation(path);
+                        if (realloc_checked((void **)&buf, newLen + 1)) {
+                            bufSize = newLen;
+                            ok = CFStringGetFileSystemRepresentation(path, buf, bufSize);
+                            buf[bufSize] = 0; /* Ensure NULL termination */
+                        }
+                        CFRelease(path); /* free */
+                    }
+                    CFRelease(url); /* free */
+                    if (!ok) {
+                        OTHERERROR(
+                            "LOADER [AppleEvent ARGV_EMU]: item #%ld: failed to convert file:/// path to POSIX filesystem representation!\n",
+                            index
+                        );
+                        continue;
+                    }
+                }
+            }
+
+            /* Append URL to argv_pyi array, reallocating as necessary */
+            VS("LOADER [AppleEvent ARGV_EMU]: appending '%s' to argv_pyi\n", buf);
+            if (pyi_utils_append_to_args(pyi_ctx, buf) < 0) {
+                OTHERERROR(
+                    "LOADER [AppleEvent ARGV_EMU]: failed to append to argv_pyi: %s\n",
+                    buf,
+                    strerror(errno)
+                );
+            } else {
+                VS("LOADER [AppleEvent ARGV_EMU]: argv entry appended.\n");
+            }
+        }
+    }
+
+    free(buf); /* free of possible-NULL ok */
+
+    err = AEDisposeDesc(&docList);
+
+    return err;
 }
 
-/* This brings the child process's windows to the foreground when user
- * double-clicks the app's icon again in the macOS UI. 'rapp' is accepted
- * by us only when the child is already running. */
+
+/* 'oapp' event handler
+ *
+ * Nothing to do here, just make sure we report event as handled.
+ */
 static OSErr
-handle_rapp_event(const AppleEvent *const theAppleEvent, const AEEventID evtID)
+handle_oapp_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
+{
+    (void)theAppleEvent; /* unused */
+    (void)reply; /* unused */
+    (void)handlerRefCon; /* unused */
+
+    VS("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
+    return noErr;
+}
+
+/* 'odoc' event handler */
+static OSErr
+handle_odoc_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
+{
+    PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
+    (void)reply; /* unused */
+
+    VS("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
+
+    /* If child process is running, forward the event */
+    if (pyi_ctx->child_pid != 0) {
+        return generic_forward_apple_event(
+            theAppleEvent,
+            kCoreEventClass,
+            kAEOpenDocuments,
+            "OpenDoc",
+            pyi_ctx
+        );
+    }
+
+    /* Otherwise, convert the event into command-line argument */
+    return convert_event_to_argv(theAppleEvent, kAEOpenDocuments, pyi_ctx);
+}
+
+/* 'GURL' event handler */
+static OSErr
+handle_gurl_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
+{
+    PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
+    (void)reply; /* unused */
+
+    VS("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
+
+    /* If child process is running, forward the event */
+    if (pyi_ctx->child_pid != 0) {
+        return generic_forward_apple_event(
+            theAppleEvent,
+            kInternetEventClass,
+            kAEGetURL,
+            "GetURL",
+            pyi_ctx
+        );
+    }
+
+    /* Otherwise, convert the event into command-line argument */
+    return convert_event_to_argv(theAppleEvent, kAEGetURL, pyi_ctx);
+}
+
+/* 'rapp' event handler
+ *
+ * This brings the child process's windows to the foreground when user
+ * double-clicks the app's icon again in the macOS UI. 'rapp' is accepted
+ * by us only when the child is already running.
+ */
+static OSErr
+handle_rapp_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
 {
     OSErr err;
+    PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
+    (void)reply; /* unused */
 
-    VS("LOADER [AppleEvent]: ReopenApp handler called.\n");
+    VS("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
 
     /* First, forward the 'rapp' event to the child */
-    err = generic_forward_apple_event(theAppleEvent, kCoreEventClass, evtID, "ReopenApp");
+    err = generic_forward_apple_event(
+        theAppleEvent,
+        kCoreEventClass,
+        kAEReopenApplication,
+        "ReopenApp",
+        pyi_ctx
+    );
 
     if (err == noErr) {
         /* Next, create a new activate ('actv') event. We never receive
@@ -376,55 +444,39 @@ handle_rapp_event(const AppleEvent *const theAppleEvent, const AEEventID evtID)
             NULL /* create new event with 0 params */,
             kAEMiscStandards,
             kAEActivate,
-            "Activate"
+            "Activate",
+            pyi_ctx
         );
     }
 
     return err;
+
 }
 
-/* Top-level event handler -- dispatches 'odoc', 'GURL', 'rapp', or 'actv' events. */
+/* 'actv' event handler
+ *
+ * We should normally not receive this event, because the bootloader
+ * process lacks a window, and macOS only sends this event to process
+ * that has a window. However, since the Apple API docs are very sparse,
+ * this has been left-in here just in case.
+ */
 static OSErr
-handle_apple_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
+handle_actv_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
 {
-    const FourCharCode evtCode = (FourCharCode)(intptr_t)handlerRefCon;
-    const AEEventID evtID = (AEEventID)(intptr_t)handlerRefCon;
+    PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
     (void)reply; /* unused */
 
-    VS("LOADER [AppleEvent]: %s called with code '%c%c%c%c'.\n", __FUNCTION__, _FOURCC_CHARS(evtCode));
+    VS("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
 
-    switch(evtID) {
-        case kAEOpenApplication: {
-            /* Nothing to do here, just make sure we report event as handled. */
-            return noErr;
-        }
-        case kAEOpenDocuments:
-        case kAEGetURL: {
-            return handle_odoc_GURL_events(theAppleEvent, evtID);
-        }
-        case kAEReopenApplication: {
-            return handle_rapp_event(theAppleEvent, evtID);
-        }
-        case kAEActivate: {
-            /* This is not normally reached since the bootloader process
-             * lacks a window, and it turns out macOS never sends this event
-             * to processes lacking a window. However, since the Apple API
-             * docs are very sparse, this has been left-in here just in case. */
-            return generic_forward_apple_event(theAppleEvent, kAEMiscStandards, evtID, "Activate");
-        }
-        default: {
-            /* Not 'GURL', 'odoc', 'rapp', or 'actv'  -- this is not reached
-             * unless there is a programming error in the code that sets up
-             * the handler(s) in pyi_process_apple_events. */
-            OTHERERROR(
-                "LOADER [AppleEvent]: %s called with unexpected event type '%c%c%c%c'!\n",
-                __FUNCTION__,
-                _FOURCC_CHARS(evtCode)
-            );
-            return errAEEventNotHandled;
-        }
-    }
+    return generic_forward_apple_event(
+        theAppleEvent,
+        kAEMiscStandards,
+        kAEActivate,
+        "Activate",
+        pyi_ctx
+    );
 }
+
 
 /* This function gets installed as the process-wide UPP event handler.
  * It is responsible for dequeuing events and telling Carbon to forward
@@ -442,7 +494,7 @@ evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *data)
      * before being passed to AEProcessAppleEvent. */
     if (IsEventInQueue(GetMainEventQueue(), eref)) {
         /* RemoveEventFromQueue will release the event, which will
-         * destroy it if we don't retain it first. */
+         * destroy it if we do not retain it first. */
         VS("LOADER [AppleEvent]: event was in queue, will release.\n");
         RetainEvent(eref);
         release = true;
@@ -460,13 +512,16 @@ evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *data)
     );
 
     /* This will end up calling one of the callback functions
-     * that we installed in pyi_process_apple_events() */
+     * that we installed in pyi_apple_install_event_handlers() */
     err = AEProcessAppleEvent(&eventRecord);
-    if (err == errAEEventNotHandled) {
+    if (err == noErr) {
+        VS("LOADER [AppleEvent]: event handled.\n");
+    } else if (err == errAEEventNotHandled) {
         VS("LOADER [AppleEvent]: ignored event.\n");
-    } else if (err != noErr) {
+    } else {
         VS("LOADER [AppleEvent]: error processing event: %d\n", (int)err);
     }
+
     if (release) {
         ReleaseEvent(eref);
     }
@@ -476,12 +531,13 @@ evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *data)
 
 
 /*
- * Install Apple Event handlers. The handlers must be install prior to
+ * Install Apple Event handlers. The handlers must be installed prior to
  * calling pyi_apple_process_events().
  */
 int
-pyi_apple_install_event_handlers(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
+pyi_apple_install_event_handlers(PYI_CONTEXT *pyi_ctx)
 {
+    APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = &pyi_ctx->ae_ctx;
     OSStatus err;
 
     /* Already installed; nothing to do */
@@ -497,50 +553,59 @@ pyi_apple_install_event_handlers(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
 
     /* Allocate UPP (universal procedure pointer) for handler functions */
     ae_ctx->upp_handler = NewEventHandlerUPP(evt_handler_proc);
-    ae_ctx->upp_handler_ae = NewAEEventHandlerUPP(handle_apple_event);
+
+    ae_ctx->upp_handler_oapp = NewAEEventHandlerUPP(handle_oapp_event);
+    ae_ctx->upp_handler_odoc = NewAEEventHandlerUPP(handle_odoc_event);
+    ae_ctx->upp_handler_gurl = NewAEEventHandlerUPP(handle_gurl_event);
+    ae_ctx->upp_handler_rapp = NewAEEventHandlerUPP(handle_rapp_event);
+    ae_ctx->upp_handler_actv = NewAEEventHandlerUPP(handle_actv_event);
 
     /* Register Apple Event handlers */
     /* 'oapp' (open application) */
-    err = AEInstallEventHandler(kCoreEventClass, kAEOpenApplication, ae_ctx->upp_handler_ae, (SRefCon)kAEOpenApplication, false);
+    err = AEInstallEventHandler(kCoreEventClass, kAEOpenApplication, ae_ctx->upp_handler_oapp, (SRefCon)pyi_ctx, false);
     if (err != noErr) {
         goto end;
     }
     /* 'odoc' (open document) */
-    err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, ae_ctx->upp_handler_ae, (SRefCon)kAEOpenDocuments, false);
+    err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, ae_ctx->upp_handler_odoc, (SRefCon)pyi_ctx, false);
     if (err != noErr) {
         goto end;
     }
     /* 'GURL' (open url) */
-    err = AEInstallEventHandler(kInternetEventClass, kAEGetURL, ae_ctx->upp_handler_ae, (SRefCon)kAEGetURL, false);
+    err = AEInstallEventHandler(kInternetEventClass, kAEGetURL, ae_ctx->upp_handler_gurl, (SRefCon)pyi_ctx, false);
     if (err != noErr) {
         goto end;
     }
     /* 'rapp' (re-open application) */
-    err = AEInstallEventHandler(kCoreEventClass, kAEReopenApplication, ae_ctx->upp_handler_ae, (SRefCon)kAEReopenApplication, false);
+    err = AEInstallEventHandler(kCoreEventClass, kAEReopenApplication, ae_ctx->upp_handler_rapp, (SRefCon)pyi_ctx, false);
     if (err != noErr) {
         goto end;
     }
-    /* register 'actv' (activate) */
-    err = AEInstallEventHandler(kAEMiscStandards, kAEActivate, ae_ctx->upp_handler_ae, (SRefCon)kAEActivate, false);
+    /* 'actv' (activate) */
+    err = AEInstallEventHandler(kAEMiscStandards, kAEActivate, ae_ctx->upp_handler_actv, (SRefCon)pyi_ctx, false);
     if (err != noErr) {
         goto end;
     }
 
     /* Install application event handler */
-    err = InstallApplicationEventHandler(ae_ctx->upp_handler, 1, ae_ctx->event_types, NULL, &ae_ctx->handler_ref);
+    err = InstallApplicationEventHandler(ae_ctx->upp_handler, 1, ae_ctx->event_types, (void *)pyi_ctx, &ae_ctx->handler_ref);
 
 end:
     if (err != noErr) {
         /* Failed to install one of AE handlers or application event handler.
          * Remove everything. */
-        AERemoveEventHandler(kAEMiscStandards, kAEActivate, ae_ctx->upp_handler_ae, false);
-        AERemoveEventHandler(kCoreEventClass, kAEReopenApplication, ae_ctx->upp_handler_ae, false);
-        AERemoveEventHandler(kInternetEventClass, kAEGetURL, ae_ctx->upp_handler_ae, false);
-        AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, ae_ctx->upp_handler_ae, false);
-        AERemoveEventHandler(kCoreEventClass, kAEOpenApplication, ae_ctx->upp_handler_ae, false);
+        AERemoveEventHandler(kAEMiscStandards, kAEActivate, ae_ctx->upp_handler_actv, false);
+        AERemoveEventHandler(kCoreEventClass, kAEReopenApplication, ae_ctx->upp_handler_rapp, false);
+        AERemoveEventHandler(kInternetEventClass, kAEGetURL, ae_ctx->upp_handler_gurl, false);
+        AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, ae_ctx->upp_handler_odoc, false);
+        AERemoveEventHandler(kCoreEventClass, kAEOpenApplication, ae_ctx->upp_handler_oapp, false);
 
         DisposeEventHandlerUPP(ae_ctx->upp_handler);
-        DisposeAEEventHandlerUPP(ae_ctx->upp_handler_ae);
+        DisposeAEEventHandlerUPP(ae_ctx->upp_handler_oapp);
+        DisposeAEEventHandlerUPP(ae_ctx->upp_handler_odoc);
+        DisposeAEEventHandlerUPP(ae_ctx->upp_handler_gurl);
+        DisposeAEEventHandlerUPP(ae_ctx->upp_handler_rapp);
+        DisposeAEEventHandlerUPP(ae_ctx->upp_handler_actv);
 
         OTHERERROR("LOADER [AppleEvent]: failed to install event handlers!\n");
         return -1;
@@ -569,18 +634,26 @@ pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
     ae_ctx->handler_ref = NULL;
 
     /* Remove Apple Event handlers */
-    AERemoveEventHandler(kAEMiscStandards, kAEActivate, ae_ctx->upp_handler_ae, false);
-    AERemoveEventHandler(kCoreEventClass, kAEReopenApplication, ae_ctx->upp_handler_ae, false);
-    AERemoveEventHandler(kInternetEventClass, kAEGetURL, ae_ctx->upp_handler_ae, false);
-    AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, ae_ctx->upp_handler_ae, false);
-    AERemoveEventHandler(kCoreEventClass, kAEOpenApplication, ae_ctx->upp_handler_ae, false);
+    AERemoveEventHandler(kAEMiscStandards, kAEActivate, ae_ctx->upp_handler_actv, false);
+    AERemoveEventHandler(kCoreEventClass, kAEReopenApplication, ae_ctx->upp_handler_rapp, false);
+    AERemoveEventHandler(kInternetEventClass, kAEGetURL, ae_ctx->upp_handler_gurl, false);
+    AERemoveEventHandler(kCoreEventClass, kAEOpenDocuments, ae_ctx->upp_handler_odoc, false);
+    AERemoveEventHandler(kCoreEventClass, kAEOpenApplication, ae_ctx->upp_handler_oapp, false);
 
     /* Cleanup UPPs */
     DisposeEventHandlerUPP(ae_ctx->upp_handler);
-    DisposeAEEventHandlerUPP(ae_ctx->upp_handler_ae);
+    DisposeAEEventHandlerUPP(ae_ctx->upp_handler_oapp);
+    DisposeAEEventHandlerUPP(ae_ctx->upp_handler_odoc);
+    DisposeAEEventHandlerUPP(ae_ctx->upp_handler_gurl);
+    DisposeAEEventHandlerUPP(ae_ctx->upp_handler_rapp);
+    DisposeAEEventHandlerUPP(ae_ctx->upp_handler_actv);
 
     ae_ctx->upp_handler = NULL;
-    ae_ctx->upp_handler_ae = NULL;
+    ae_ctx->upp_handler_oapp = NULL;
+    ae_ctx->upp_handler_odoc = NULL;
+    ae_ctx->upp_handler_gurl = NULL;
+    ae_ctx->upp_handler_rapp = NULL;
+    ae_ctx->upp_handler_actv = NULL;
 
     ae_ctx->installed = false;
 

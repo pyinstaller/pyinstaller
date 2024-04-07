@@ -1097,7 +1097,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     }
 
     /* Install Apple Event handlers */
-    pyi_apple_install_event_handlers(&pyi_ctx->ae_ctx);
+    pyi_apple_install_event_handlers(pyi_ctx);
 
     /* argv emulation; do a short (250 ms) cycle of Apple Events processing
      * before bringing up the child process */
