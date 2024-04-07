@@ -1,0 +1,2 @@
+Update ``scipy.special._ufuncs`` hook for compatibility with SciPy 1.13.0
+(add ``scipy.special._cdflib`` to hidden imports).
