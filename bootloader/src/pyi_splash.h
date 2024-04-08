@@ -16,7 +16,6 @@
 
 #include "zlib.h"
 #include "pyi_global.h"
-#include "pyi_main.h"
 #include "pyi_archive.h"
 #include "pyi_splashlib.h"
 
@@ -109,6 +108,9 @@ typedef struct _splash_context
 } SPLASH_CONTEXT;
 
 typedef int (pyi_splash_event_proc)(SPLASH_CONTEXT *, const void *);
+
+typedef struct _pyi_context PYI_CONTEXT;
+
 
 /**
  * Public API functions for pyi_splash

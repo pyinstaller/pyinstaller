@@ -19,6 +19,7 @@
 #include <string.h> /* strcpy */
 
 #include "pyi_multipkg.h"
+#include "pyi_main.h"
 #include "pyi_archive.h"
 #include "pyi_path.h"
 #include "pyi_utils.h"

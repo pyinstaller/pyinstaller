@@ -19,10 +19,10 @@
 #ifndef PYI_UTILS_H
 #define PYI_UTILS_H
 
-#include "pyi_main.h"
-
 #include <stdio.h> /* FILE */
 #include <inttypes.h> /* uint64_t */
+
+typedef struct _pyi_context PYI_CONTEXT;
 
 /* Environment variables. */
 char *pyi_getenv(const char *variable);

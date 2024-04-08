@@ -21,6 +21,7 @@
 /* PyInstaller headers */
 #include "pyi_global.h"
 #include "pyi_archive.h"
+#include "pyi_main.h"
 #include "pyi_utils.h"
 #include "pyi_path.h"
 #include "pyi_splash.h"

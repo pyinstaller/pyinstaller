@@ -22,7 +22,8 @@
 #define PYI_PYCONFIG_H
 
 #include "pyi_python.h"
-#include "pyi_main.h"
+
+typedef struct _pyi_context PYI_CONTEXT;
 
 
 /* Collect run-time options from PKG */
