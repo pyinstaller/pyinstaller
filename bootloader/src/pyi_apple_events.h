@@ -25,44 +25,17 @@
 
 #if defined(__APPLE__) && defined(WINDOWED)
 
-#include <Carbon/Carbon.h>
-
 typedef struct _pyi_context PYI_CONTEXT;
-
-/* Context structure for keeping track of data */
-typedef struct _apple_event_handler_context
-{
-    /* Event handlers for argv-emu / event forwarding */
-    Boolean installed; /* Are handlers installed? */
-
-    EventHandlerUPP upp_handler; /* UPP for event handler callback */
-    EventHandlerRef handler_ref; /* Reference to installed event handler */
-
-    /* Event handler callbacks for individual AppleEvent types */
-    AEEventHandlerUPP upp_handler_oapp;
-    AEEventHandlerUPP upp_handler_odoc;
-    AEEventHandlerUPP upp_handler_gurl;
-    AEEventHandlerUPP upp_handler_rapp;
-    AEEventHandlerUPP upp_handler_actv;
-
-    /* Deferred/pending event forwarding */
-    Boolean has_pending_event; /* Flag indicating that pending_event is valid */
-    unsigned int retry_count; /* Retry count for send attempts */
-    AppleEvent pending_event; /* Copy of the event */
-
-    /* Event types used when registering events. The single entry should
-     * be initialized to {kEventClassAppleEvent, kEventAppleEvent}
-     * when handlers are being set up. */
-    EventTypeSpec event_types[1];
-} APPLE_EVENT_HANDLER_CONTEXT;
+typedef struct _apple_event_handler_context APPLE_EVENT_HANDLER_CONTEXT;
 
 
-/* Install Apple Event handlers. Requires PYI_CONTEXT as argument, in
- * order to pass the pointer to callbacks. */
-int pyi_apple_install_event_handlers(PYI_CONTEXT *pyi_ctx);
+/* Install Apple Event handlers, and return instance of allocated context
+ * structure. Requires PYI_CONTEXT as argument, in order to pass the
+ * pointer to callbacks. */
+APPLE_EVENT_HANDLER_CONTEXT *pyi_apple_install_event_handlers(PYI_CONTEXT *pyi_ctx);
 
 /* Uninstall Apple Event handlers */
-int pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx);
+void pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT **ae_ctx_ref);
 
 /*
  * Process Apple Events, either appending them to sys.argv (if argv-emu
@@ -70,12 +43,6 @@ int pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx);
  * them to the child process.
  */
 void pyi_apple_process_events(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float timeout);
-
-/*
- * Attempt to submit oapp event to ourselves in order to mitigate
- * issues with UI frameworks when argv-emu is used in onedir mode.
- */
-void pyi_apple_submit_oapp_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx);
 
 /* Check if we have a pending event that we need to forward. */
 int pyi_apple_has_pending_event(const APPLE_EVENT_HANDLER_CONTEXT *ae_ctx);
@@ -85,6 +52,14 @@ int pyi_apple_send_pending_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float dela
 
 /* Clean-up the pending event data and status. */
 void pyi_apple_cleanup_pending_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx);
+
+/*
+ * Attempt to submit oapp event to ourselves in order to mitigate
+ * issues with UI frameworks when argv-emu is used in onedir mode.
+ * NOTE: does not require AppleEvent handler context, and is in fact
+ * intended to be used *after* the handler context is freed.
+ */
+void pyi_apple_submit_oapp_event();
 
 #endif  /* defined(__APPLE__) && defined(WINDOWED) */
 

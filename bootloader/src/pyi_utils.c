@@ -1098,12 +1098,15 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     }
 
     /* Install Apple Event handlers */
-    pyi_apple_install_event_handlers(pyi_ctx);
+    pyi_ctx->ae_ctx = pyi_apple_install_event_handlers(pyi_ctx);
+    if (pyi_ctx->ae_ctx == NULL) {
+        goto cleanup;
+    }
 
     /* argv emulation; do a short (250 ms) cycle of Apple Events processing
      * before bringing up the child process */
     if (pyi_ctx->macos_argv_emulation) {
-        pyi_apple_process_events(&pyi_ctx->ae_ctx, 0.25);  /* short timeout (250 ms) */
+        pyi_apple_process_events(pyi_ctx->ae_ctx, 0.25);  /* short timeout (250 ms) */
     }
 #endif
 
@@ -1163,9 +1166,9 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
         wait_rc = waitpid(pyi_ctx->child_pid, &rc, WNOHANG);
         if (wait_rc == 0) {
             /* Check if we have a pending event that we need to forward... */
-            if (pyi_apple_has_pending_event(&pyi_ctx->ae_ctx)) {
+            if (pyi_apple_has_pending_event(pyi_ctx->ae_ctx)) {
                 /* Attempt to re-send the pending event after 0.5 second delay. */
-                if (pyi_apple_send_pending_event(&pyi_ctx->ae_ctx, 0.5) != 0) {
+                if (pyi_apple_send_pending_event(pyi_ctx->ae_ctx, 0.5) != 0) {
                     /* Do not process additional events until the pending one
                      * is successfully forwarded (or cleaned up by error). */
                     continue;
@@ -1173,14 +1176,14 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
             }
             /* Wait for and process AppleEvents with a 1-second timeout, forwarding
              * events to the child. */
-            pyi_apple_process_events(&pyi_ctx->ae_ctx, 1.0);  /* long timeout (1 sec) */
+            pyi_apple_process_events(pyi_ctx->ae_ctx, 1.0);  /* long timeout (1 sec) */
         }
     } while (!wait_rc);
 
     /* Check if we have a pending event to forward (for diagnostics) */
-    if (pyi_apple_has_pending_event(&pyi_ctx->ae_ctx)) {
+    if (pyi_apple_has_pending_event(pyi_ctx->ae_ctx)) {
         VS("LOADER [AppleEvent]: Child terminated before pending event could be forwarded!\n");
-        pyi_apple_cleanup_pending_event(&pyi_ctx->ae_ctx);
+        pyi_apple_cleanup_pending_event(pyi_ctx->ae_ctx);
     }
 
     /* Uninstall event handlers */
