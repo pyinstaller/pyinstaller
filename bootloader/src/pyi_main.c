@@ -643,7 +643,14 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
 
     /* Delete the application's temporary directory */
     if (pyi_recursive_rmdir(pyi_ctx->application_home_dir) < 0) {
-        OTHERERROR("WARNING: failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
+        /* Return error if we failed to remove temporary directory while
+         * strict unpack mode is enabled. */
+        if (pyi_ctx->strict_unpack_mode) {
+            OTHERERROR("ERROR: failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
+            ret = -1;
+        } else {
+            OTHERERROR("WARNING: failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
+        }
     }
 
     /* Clean up the archive structure */
