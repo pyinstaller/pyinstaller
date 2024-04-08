@@ -18,9 +18,11 @@
 #ifndef PYI_WIN32_UTILS_H
 #define PYI_WIN32_UTILS_H
 
-#include "pyi_main.h"
-
 #ifdef _WIN32
+
+#include <windows.h>
+
+typedef struct _pyi_context PYI_CONTEXT;
 
 char *GetWinErrorString(DWORD error_code);
 

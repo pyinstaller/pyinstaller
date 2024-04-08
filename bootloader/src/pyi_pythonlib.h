@@ -18,7 +18,7 @@
 #ifndef PYI_PYTHONLIB_H
 #define PYI_PYTHONLIB_H
 
-#include "pyi_main.h"
+typedef struct _pyi_context PYI_CONTEXT;
 
 int pyi_pylib_load(PYI_CONTEXT *pyi_ctx);
 int pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx);

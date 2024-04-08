@@ -17,7 +17,7 @@
 #ifndef PYI_LAUNCH_H
 #define PYI_LAUNCH_H
 
-#include "pyi_main.h"
+typedef struct _pyi_context PYI_CONTEXT;
 
 /*
  * Extract files from embedded archive (onefile mode).
