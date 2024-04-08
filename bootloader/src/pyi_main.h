@@ -16,10 +16,6 @@
 
 #include "pyi_global.h"
 
-#if defined(__APPLE__) && defined(WINDOWED)
-#include "pyi_apple_events.h"
-#endif
-
 #ifndef _WIN32
     #include <sys/types.h> /* pid_t */
 #endif
@@ -27,6 +23,10 @@
 
 typedef struct _archive ARCHIVE;
 typedef struct _splash_context SPLASH_CONTEXT;
+
+#if defined(__APPLE__) && defined(WINDOWED)
+typedef struct _apple_event_handler_context APPLE_EVENT_HANDLER_CONTEXT;
+#endif
 
 
 /* Console hiding/minimization options. Windows only. */
@@ -230,7 +230,7 @@ typedef struct _pyi_context
      * Apple Events handling in macOS .app bundles
      */
 #if defined(__APPLE__) && defined(WINDOWED)
-    APPLE_EVENT_HANDLER_CONTEXT ae_ctx;
+    APPLE_EVENT_HANDLER_CONTEXT *ae_ctx;
 #endif
 } PYI_CONTEXT;
 

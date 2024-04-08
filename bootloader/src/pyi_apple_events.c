@@ -19,6 +19,8 @@
 
 #if defined(__APPLE__) && defined(WINDOWED)
 
+#include <Carbon/Carbon.h>
+
 #include "pyi_global.h"
 #include "pyi_main.h"
 #include "pyi_utils.h"
@@ -37,6 +39,32 @@ extern Boolean ConvertEventRefToEventRecord(EventRef inEvent, EventRecord *outEv
     ((char)((FourCharCode)code >> 16) & 0xFF), \
     ((char)((FourCharCode)code >> 8) & 0xFF), \
     ((char)((FourCharCode)code) & 0xFF)
+
+
+/* Context structure for keeping track of data. */
+typedef struct _apple_event_handler_context
+{
+    /* Event handlers for argv-emu / event forwarding */
+    EventHandlerUPP upp_handler; /* UPP for event handler callback */
+    EventHandlerRef handler_ref; /* Reference to installed event handler */
+
+    /* Event handler callbacks for individual AppleEvent types */
+    AEEventHandlerUPP upp_handler_oapp;
+    AEEventHandlerUPP upp_handler_odoc;
+    AEEventHandlerUPP upp_handler_gurl;
+    AEEventHandlerUPP upp_handler_rapp;
+    AEEventHandlerUPP upp_handler_actv;
+
+    /* Deferred/pending event forwarding */
+    Boolean has_pending_event; /* Flag indicating that pending_event is valid */
+    unsigned int retry_count; /* Retry count for send attempts */
+    AppleEvent pending_event; /* Copy of the event */
+
+    /* Event types used when registering events. The single entry should
+     * be initialized to {kEventClassAppleEvent, kEventAppleEvent}
+     * when handlers are being set up. */
+    EventTypeSpec event_types[1];
+} APPLE_EVENT_HANDLER_CONTEXT;
 
 
 /* Generic event forwarder -- forwards an event destined for this process
@@ -180,7 +208,7 @@ generic_forward_apple_event(
      * context structure, so that the caller can re-attempt to send it
      * using the pyi_apple_send_pending_event() function. */
     if (err == procNotFound) {
-        APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = &pyi_ctx->ae_ctx;
+        APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = pyi_ctx->ae_ctx;
 
         VS("LOADER [AppleEvent]: sending failed with procNotFound; storing the pending event...\n");
 
@@ -534,22 +562,24 @@ evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *data)
  * Install Apple Event handlers. The handlers must be installed prior to
  * calling pyi_apple_process_events().
  */
-int
+APPLE_EVENT_HANDLER_CONTEXT *
 pyi_apple_install_event_handlers(PYI_CONTEXT *pyi_ctx)
 {
-    APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = &pyi_ctx->ae_ctx;
+    APPLE_EVENT_HANDLER_CONTEXT *ae_ctx;
     OSStatus err;
 
-    /* Already installed; nothing to do */
-    if (ae_ctx->installed) {
-        return 0;
+    VS("LOADER [AppleEvent]: installing event handlers...\n");
+
+    /* Allocate the context structure */
+    ae_ctx = (APPLE_EVENT_HANDLER_CONTEXT *)calloc(1, sizeof(APPLE_EVENT_HANDLER_CONTEXT));
+    if (ae_ctx == NULL) {
+        FATAL_PERROR("calloc", "Could not allocate memory for APPLE_EVENT_HANDLER_CONTEXT.\n");
+        return NULL;
     }
 
     /* Initialize the single entry of event_types field */
     ae_ctx->event_types[0].eventClass = kEventClassAppleEvent;
     ae_ctx->event_types[0].eventKind = kEventAppleEvent;
-
-    VS("LOADER [AppleEvent]: installing event handlers...\n");
 
     /* Allocate UPP (universal procedure pointer) for handler functions */
     ae_ctx->upp_handler = NewEventHandlerUPP(evt_handler_proc);
@@ -607,31 +637,36 @@ end:
         DisposeAEEventHandlerUPP(ae_ctx->upp_handler_rapp);
         DisposeAEEventHandlerUPP(ae_ctx->upp_handler_actv);
 
+        free(ae_ctx);
+
         OTHERERROR("LOADER [AppleEvent]: failed to install event handlers!\n");
-        return -1;
+        return NULL;
     }
 
     VS("LOADER [AppleEvent]: installed event handlers.\n");
-    ae_ctx->installed = true;
-    return 0;
+
+    return ae_ctx;
 }
 
 /*
  * Uninstall Apple Event handlers.
  */
-int
-pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
+void
+pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT **ae_ctx_ref)
 {
-    /* Not installed; nothing to do */
-    if (!ae_ctx->installed) {
-        return 0;
+    APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = *ae_ctx_ref;
+
+    *ae_ctx_ref = NULL;
+
+    /* Context unavailable; nothing to do */
+    if (ae_ctx == NULL) {
+        return;
     }
 
     VS("LOADER [AppleEvent]: uninstalling event handlers...\n");
 
     /* Remove application event handler */
     RemoveEventHandler(ae_ctx->handler_ref);
-    ae_ctx->handler_ref = NULL;
 
     /* Remove Apple Event handlers */
     AERemoveEventHandler(kAEMiscStandards, kAEActivate, ae_ctx->upp_handler_actv, false);
@@ -648,18 +683,10 @@ pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
     DisposeAEEventHandlerUPP(ae_ctx->upp_handler_rapp);
     DisposeAEEventHandlerUPP(ae_ctx->upp_handler_actv);
 
-    ae_ctx->upp_handler = NULL;
-    ae_ctx->upp_handler_oapp = NULL;
-    ae_ctx->upp_handler_odoc = NULL;
-    ae_ctx->upp_handler_gurl = NULL;
-    ae_ctx->upp_handler_rapp = NULL;
-    ae_ctx->upp_handler_actv = NULL;
-
-    ae_ctx->installed = false;
+    /* Free the context structure */
+    free(ae_ctx);
 
     VS("LOADER [AppleEvent]: uninstalled event handlers.\n");
-
-    return 0;
 }
 
 
@@ -670,11 +697,6 @@ pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
 void
 pyi_apple_process_events(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float timeout)
 {
-    /* No-op if we failed to install event handlers */
-    if (!ae_ctx->installed) {
-        return;
-    }
-
     VS("LOADER [AppleEvent]: processing Apple Events...\n");
 
     /* Event pump: process events until timeout (in seconds) or error */
@@ -729,13 +751,17 @@ pyi_apple_process_events(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float timeout)
  * Apple Event processing took place in the bootloader.
  */
 void
-pyi_apple_submit_oapp_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
+pyi_apple_submit_oapp_event()
 {
     AppleEvent event = {typeNull, nil};
     AEAddressDesc target = {typeNull, nil};
     EventRef event_ref;
     ProcessSerialNumber psn;
     OSErr err;
+
+    EventTypeSpec event_types[1] = {
+        {kEventClassAppleEvent, kEventAppleEvent}
+    };
 
     VS("LOADER [AppleEvent]: submitting 'oapp' event...\n");
 
@@ -782,7 +808,7 @@ pyi_apple_submit_oapp_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
     // assumes that no other activation event shows up, but those would
     // also solve the problem we are trying to mitigate).
     VS("LOADER [AppleEvent]: waiting for 'oapp' event to show up in queue...\n");
-    err = ReceiveNextEvent(1, ae_ctx->event_types, 10.0, kEventLeaveInQueue, &event_ref);
+    err = ReceiveNextEvent(1, event_types, 10.0, kEventLeaveInQueue, &event_ref);
     if (err != noErr) {
         OTHERERROR("LOADER [AppleEvent]: timed out while waiting for submitted 'oapp' event to show up in queue!\n");
     } else {
