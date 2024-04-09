@@ -1,0 +1,6 @@
+(Windows) Avoid trying to import ``PySimpleGUI`` in the subprocess that
+analyzes dynamic library search modifications made by packages prior to
+the binary dependency analysis. When imported for the first time,
+``PySimpleGUI`` 5.x displays a "first-run" dialog, which poses a problem
+for unattended PyInstaller builds running in a clean environment, for
+example, in a CI pipeline.

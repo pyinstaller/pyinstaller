@@ -246,6 +246,11 @@ def find_binary_dependencies(binaries, import_packages):
         # well as https://github.com/pyqtgraph/pyqtgraph/issues/2838.
         suppressed_imports += ['pyqtgraph.canvas']
 
+        # PySimpleGUI 5.x displays a "first-run" dialog when imported for the first time, which blocks the loop below.
+        # This is a problem for building on CI, where the dialog cannot be closed, and where PySimpleGUI runs "for the
+        # first time" every time. See #8396.
+        suppressed_imports += ['PySimpleGUI']
+
         # Processing in isolated environment.
         with isolated.Python() as child:
             child.call(setup, suppressed_imports)
