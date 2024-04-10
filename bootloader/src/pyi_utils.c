@@ -321,11 +321,13 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
     for (i = 0; i < 5; i++) {
         wchar_t *application_home_dir_w = _wtempnam(tempdir_path, prefix);
 
-        /* Try creating the directory. Use `pyi_win32_mkdir` with security
-         * descriptor to limit access to current user. */
-        ret = pyi_win32_mkdir(application_home_dir_w, pyi_ctx->security_descriptor);
-
-        if (ret == 0) {
+        /* Try creating the directory. Use `CreateDirectoryW` with security
+         * descriptor to limit access to current user. The functon returns
+         * 0 on failure. */
+        if (CreateDirectoryW(application_home_dir_w, pyi_ctx->security_attr) == 0) {
+            free(application_home_dir_w);
+            ret = -1; /* In case we reached max. retries */
+        } else {
             /* Convert path to UTF-8 and store it in main context structure */
             if (pyi_win32_utils_to_utf8(pyi_ctx->application_home_dir, application_home_dir_w, PATH_MAX) == NULL) {
                 FATALERROR("LOADER: length of teporary directory path exceeds maximum path length!\n");
@@ -333,8 +335,6 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
             }
             free(application_home_dir_w);
             break;
-        } else {
-            free(application_home_dir_w);
         }
     }
 
@@ -733,7 +733,9 @@ pyi_create_parent_directory_tree(const PYI_CONTEXT *pyi_ctx, const char *prefix_
 #ifdef _WIN32
             wchar_t path_w[PATH_MAX];
             pyi_win32_utils_from_utf8(path_w, path, PATH_MAX);
-            if (pyi_win32_mkdir(path_w, pyi_ctx->security_descriptor) < 0) {
+
+            /* CreateDirectoryW returns 0 on failure. */
+            if (CreateDirectoryW(path_w, pyi_ctx->security_attr) == 0) {
                 return -1;
             }
 #else

@@ -378,15 +378,18 @@ cleanup:
 /* Initialize security descriptor applied to application's temporary directory and its
  * sub-directories.
  */
-int
-pyi_win32_initialize_security_descriptor(PYI_CONTEXT *pyi_ctx)
+SECURITY_ATTRIBUTES *
+pyi_win32_initialize_security_descriptor()
 {
-    wchar_t *user_sid = NULL;
-    wchar_t *app_container_sid = NULL;
+    SECURITY_ATTRIBUTES *security_attr;
+    LPVOID lpSecurityDescriptor;
+    wchar_t *user_sid;
+    wchar_t *app_container_sid;
     wchar_t security_descriptor_str[PATH_MAX];
     int ret;
 
-    user_sid = _pyi_win32_get_sid(TokenUser); /* Resolve user's SID for compatibility with wine */
+    /* Resolve user's SID for compatibility with wine */
+    user_sid = _pyi_win32_get_sid(TokenUser);
 
     /* If program is running within an AppContainer, the app container SID has to be added to
      * the DACL, otherwise our process will not have access to the temporary directory. */
@@ -419,55 +422,45 @@ pyi_win32_initialize_security_descriptor(PYI_CONTEXT *pyi_ctx)
 
     if (ret >= PATH_MAX) {
         OTHERERROR("Security descriptor string length exceeds PATH_MAX!\n");
-        return -1;
+        return NULL;
     }
 
-    /* Convert security descriptor string to security descriptor */
+    /* Convert security descriptor string to security descriptor, and
+     * store it in the SECURITY_ATTRIBUTES structure. */
     VS("LOADER: initializing security descriptor from string: %S\n", security_descriptor_str);
     ret = ConvertStringSecurityDescriptorToSecurityDescriptorW(
         security_descriptor_str,
         SDDL_REVISION_1,
-        &pyi_ctx->security_descriptor,
+        &lpSecurityDescriptor,
         NULL);
     if (ret == 0) {
-        return -1;
+        return NULL;
     }
 
-    return 0;
+    /* Allocate SECURITY_ATTRIBUTES and fill it in. */
+    security_attr = calloc(1, sizeof(SECURITY_ATTRIBUTES));
+    security_attr->nLength = sizeof(SECURITY_ATTRIBUTES);
+    security_attr->bInheritHandle = FALSE;
+    security_attr->lpSecurityDescriptor = lpSecurityDescriptor;
+
+    return security_attr;
 }
 
 /* Free security descriptor applied to application's temporary directory and its
  * sub-directories.
  */
 void
-pyi_win32_free_security_descriptor(PYI_CONTEXT *pyi_ctx)
+pyi_win32_free_security_descriptor(SECURITY_ATTRIBUTES **security_attr_ref)
 {
-    LocalFree(pyi_ctx->security_descriptor);
-    pyi_ctx->security_descriptor = NULL;
-}
+    SECURITY_ATTRIBUTES *security_attr = *security_attr_ref;
 
+    security_attr_ref = NULL;
 
-/* Create a directory at path with restricted permissions, enforced by the
- * provided security descriptor.
- *
- * Returns 0 on success, -1 on error.
- */
-int
-pyi_win32_mkdir(const wchar_t *path, const PSECURITY_DESCRIPTOR security_descriptor)
-{
-    /* Set up security attributes with provided security descriptor. */
-    SECURITY_ATTRIBUTES security_attr;
+    /* Free security descriptor */
+    LocalFree(security_attr->lpSecurityDescriptor);
 
-    security_attr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    security_attr.bInheritHandle = FALSE;
-    security_attr.lpSecurityDescriptor = security_descriptor;
-
-    /* Create directory */
-    if (!CreateDirectoryW(path, &security_attr)) {
-        return -1;
-    }
-
-    return 0;
+    /* Free the structure itself */
+    free(security_attr);
 }
 
 /* Check if the given path is a symbolic link. */

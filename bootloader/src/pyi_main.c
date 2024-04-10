@@ -198,12 +198,14 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         } else {
             VS("LOADER: this is parent process of onefile application.\n");
 
-            /* On Windows, initialize security descriptor for temporary directory.
-             * This is required by `pyi_win32_mkdir()` calls made when creating application's
-             * temporary directory and its sub-directories during file extration. */
+            /* On Windows, initialize security descriptor for temporary
+             * directory. This is required by `CreateDirectoryW()` calls
+             * made when creating application's temporary directory and
+             * its sub-directories during file extration. */
 #if defined(_WIN32)
             VS("LOADER: initializing security descriptor for temporary directory...\n");
-            if (pyi_win32_initialize_security_descriptor(pyi_ctx) == -1) {
+            pyi_ctx->security_attr = pyi_win32_initialize_security_descriptor();
+            if (pyi_ctx->security_attr == NULL) {
                 FATALERROR("Failed to initialize security descriptor for temporary directory!\n");
                 return -1;
             }
@@ -550,7 +552,7 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
      * and we can free the Windows security descriptor that was used
      * during creation of temporary directory and its sub-directories. */
 #if defined(_WIN32)
-    pyi_win32_free_security_descriptor(pyi_ctx);
+    pyi_win32_free_security_descriptor(&pyi_ctx->security_attr);
 #endif
 
     /* Late console hiding/minimization */
