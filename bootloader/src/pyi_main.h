@@ -149,16 +149,15 @@ typedef struct _pyi_context
     unsigned char strict_unpack_mode;
 
 #if defined(_WIN32)
-    /* Security descriptor that limits the access to created directory
-     * to the user. Used with `pyi_win32_mkdir`, when creating the
-     * application's temporary top-level directory and its sub-directories
-     * in onefile mode.
+    /* Security attributes structure with security descriptor that limits
+     * the access to created directory to the user. Used in onefile mode
+     * with `CreateDirectoryW` when creating the application's temporary
+     * top-level directory and its sub-directories.
      *
      * Must be explicitly initialized by calling
      * `pyi_win32_initialize_security_descriptor`, and freed by calling
-     * `pyi_win32_free_security_descriptor`.
-     */
-    PSECURITY_DESCRIPTOR security_descriptor;
+     * `pyi_win32_free_security_descriptor`. */
+    SECURITY_ATTRIBUTES *security_attr;
 #endif
 
     /* Child process (onefile mode) variables. Used only in POSIX codepath. */
