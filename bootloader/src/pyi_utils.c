@@ -376,6 +376,55 @@ mkdtemp(char *template)
 
 #endif /* !defined(HAVE_MKDTEMP) */
 
+/* Resolve the temporary directory specified by user via runtime_tmpdir
+ * option, and create corresponding directory tree. */
+static char *
+_pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
+{
+    char directory_tree_path[PATH_MAX];
+    char *subpath_cursor;
+
+    /* Ensure runtime_tmpdir (and thus also its sub-path components)
+     * do not exceed path limit. */
+    if (strlen(runtime_tmpdir) >= PATH_MAX) {
+        OTHERERROR("LOADER: length of runtime-tmpdir exceeds maximum path length!\n");
+        return NULL;
+    }
+
+    /* Recursively create the directory structure
+     *
+     * NOTE: we call mkdir with mode 0777 for this part of directory
+     * tree, as it might be shared by application instances ran by
+     * different users. Only the last component (the actual _MEIXXXXXX
+     * directory), created by the caller, uses 0700 to restrict access
+     * to current user.
+     *
+     * NOTE2: we ignore errors returned by mkdir; if we actually fail to
+     * create (a part of) directory tree here, we will catch the error
+     * when we try to resolve the full path to it later on. */
+    for(subpath_cursor = strchr(runtime_tmpdir, '/'); subpath_cursor != NULL; subpath_cursor = strchr(++subpath_cursor, '/')) {
+        int subpath_length = subpath_cursor - runtime_tmpdir;
+
+        /* Initial / in absolute path */
+        if (subpath_length == 0) {
+            continue;
+        }
+
+        snprintf(directory_tree_path, PATH_MAX, "%.*s", subpath_length, runtime_tmpdir);
+        VS("LOADER: creating runtime-tmpdir path component: %s\n", directory_tree_path);
+        mkdir(directory_tree_path, 0777);
+    }
+
+    /* Create full path; necessary if runtime_tmpdir did not end with
+     * path separator. */
+    VS("LOADER: creating runtime-tmpdir path: %s\n", runtime_tmpdir);
+    mkdir(runtime_tmpdir, 0777);
+
+    /* Now that directory exists, try to resolve full path to it. */
+    return realpath(runtime_tmpdir, NULL); /* Let realpath allocate the buffer */
+}
+
+
 /* Append the _MEIXXXXXX string to the temporary directory path template,
  * and try creating the temporary directory. */
 static int
@@ -430,10 +479,24 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
 
     /* If specified, use runtime_tmpdir */
     if (pyi_ctx->runtime_tmpdir != NULL) {
-        if (snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", pyi_ctx->runtime_tmpdir) >= PATH_MAX) {
+        char *resolved_runtime_tmpdir;
+        int ret;
+
+        /* Ensure runtime_tmpdir exists, and resolve full path to it */
+        resolved_runtime_tmpdir = _pyi_create_runtime_tmpdir(pyi_ctx->runtime_tmpdir);
+        if (resolved_runtime_tmpdir == NULL) {
+            OTHERERROR("Failed to create or resolve runtime_tmpdir from given path: %s\n", pyi_ctx->runtime_tmpdir);
             return -1;
         }
 
+        ret = snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", resolved_runtime_tmpdir);
+        free(resolved_runtime_tmpdir);
+        if (ret >= PATH_MAX) {
+            OTHERERROR("Length of resolved runtime_tmpdir exceeds maximum path length!\n");
+            return -1;
+        }
+
+        /* Try to create _MEIXXXXXX directory under the runtime_tmpdir */
         return _pyi_format_and_create_tmpdir(pyi_ctx->application_home_dir);
     }
 
