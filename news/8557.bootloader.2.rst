@@ -1,0 +1,6 @@
+(POSIX) Bootloader now attempts to create the run-time temporary
+directory given via :option:`--runtime-tmpdir` option (instead of
+requiring the directory to already exist), in order to match the
+behavior on Windows. A relative run-time temporary directory is now
+resolved to an absolute full path before being used to construct the
+application's temporary directory path.
