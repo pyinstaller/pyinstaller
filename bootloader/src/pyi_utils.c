@@ -203,7 +203,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
     wchar_t *runtime_tmpdir_w;
     wchar_t runtime_tmpdir_expanded[PATH_MAX];
     wchar_t *runtime_tmpdir_abspath;
-    wchar_t *cursor;
+    wchar_t *subpath_cursor;
     wchar_t directory_tree_path[PATH_MAX];
     DWORD rc;
 
@@ -224,12 +224,15 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
 
     /* Resolve absolute path */
     if (pyi_win32_is_drive_root(runtime_tmpdir_expanded)) {
-        /* Disk drive (e.g., "c:"); do not attempt to call _wfullpath(), because it will return
-         * the current directory of this drive. So return a verbatim copy instead. */
-        runtime_tmpdir_abspath = _wcsdup(runtime_tmpdir_expanded);
-    } else {
-        runtime_tmpdir_abspath = _wfullpath(NULL, runtime_tmpdir_expanded, PATH_MAX);
+        /* Disk drive (e.g., "c:"); do not attempt to resolve full path
+         * using _wfullpath(), because it will return the current directory
+         * on the current drive. We also have no path to create. So just
+         * return a verbatim copy of the string. */
+        VS("LOADER: expanded runtime-tmpdir is a drive root: %ls\n", runtime_tmpdir_expanded);
+        return _wcsdup(runtime_tmpdir_expanded);
     }
+
+    runtime_tmpdir_abspath = _wfullpath(NULL, runtime_tmpdir_expanded, PATH_MAX);
     if (!runtime_tmpdir_abspath) {
         FATALERROR("LOADER: failed to obtain the absolute path of the runtime-tmpdir.\n");
         return NULL;
@@ -249,19 +252,18 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
      * actually fail to create (a part of) directory tree here, we will
      * catch the error in the caller when trying to create the final
      * temporary directory component  (the actual _MEIXXXXXX directory).
-     *
-     * NOTE3: zero-clear the `directory_tree_path`, because `wcsncpy`
-     * does not perform zero termination after it copies the string! */
-    memset(directory_tree_path, 0, sizeof(directory_tree_path));
-    cursor = wcschr(runtime_tmpdir_abspath, L'\\');
-    while(cursor != NULL) {
-        wcsncpy(directory_tree_path, runtime_tmpdir_abspath, cursor - runtime_tmpdir_abspath + 1);
+     */
+    for(subpath_cursor = wcschr(runtime_tmpdir_abspath, L'\\'); subpath_cursor != NULL; subpath_cursor = wcschr(++subpath_cursor, L'\\')) {
+        int subpath_length = (int)(subpath_cursor - runtime_tmpdir_abspath);
+
+        _snwprintf(directory_tree_path, PATH_MAX, L"%.*s", subpath_length, runtime_tmpdir_abspath);
+        VS("LOADER: creating runtime-tmpdir path component: %ls\n", directory_tree_path);
         CreateDirectoryW(directory_tree_path, NULL);
-        cursor = wcschr(++cursor, L'\\');
     }
 
     /* Run once more on full path, to handle cases when path did not end
      * with separator. */
+    VS("LOADER: creating runtime-tmpdir path: %ls\n", runtime_tmpdir_abspath);
     CreateDirectoryW(runtime_tmpdir_abspath, NULL);
 
     return runtime_tmpdir_abspath;
@@ -707,37 +709,24 @@ pyi_recursive_rmdir(const char *dir_path)
 int
 pyi_create_parent_directory_tree(const PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename)
 {
-    char filename_copy[PATH_MAX];
     char path[PATH_MAX];
-    char *dir_component;
+    char *subpath_cursor;
     size_t path_length;
 
-    /* We need to make a copy of filename for strtok() */
-    snprintf(filename_copy, PATH_MAX, "%s", filename);
+    /* Ensure that combined path length does not exceed max path. */
+    if (strlen(prefix_path) + strlen(filename) + 1 >= PATH_MAX) {
+        return -1;
+    }
 
-    /* Start with the prefix path (which is known to be under PATH_MAX limit */
-    snprintf(path, PATH_MAX, "%s", prefix_path);
-    path_length = strlen(prefix_path); /* Start with the prefix path length */
+    /* Write prefix path, append separator, and store length; so we
+     * can keep appending sub-paths at the end */
+    path_length = snprintf(path, PATH_MAX, "%s%c", prefix_path, PYI_SEP);
 
     /* Process directory components in filename */
-    dir_component = strtok(filename_copy, PYI_SEPSTR);
-    while (dir_component != NULL) {
-        /* Update and verify path length */
-        path_length += strlen(dir_component) + strlen(PYI_SEPSTR);
-        if (path_length >= PATH_MAX - 1) {
-            return -1;
-        }
+    for (subpath_cursor = strchr(filename, PYI_SEP); subpath_cursor != NULL; subpath_cursor = strchr(++subpath_cursor, PYI_SEP)) {
+        int subpath_length = (int)(subpath_cursor - filename);
 
-        /* Update path */
-        strcat(path, PYI_SEPSTR);
-        strcat(path, dir_component);
-
-        /* Look for next directory component, to ensure that our current
-         * path is not the final filename. */
-        dir_component = strtok(NULL, PYI_SEPSTR);
-        if (dir_component == NULL) {
-            break;
-        }
+        snprintf(path + path_length, PATH_MAX - path_length, "%.*s", subpath_length, filename);
 
         /* Create path if necessary */
         if (pyi_path_exists(path) == 0) {
