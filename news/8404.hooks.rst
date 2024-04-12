@@ -1,0 +1,2 @@
+Update ``PySide6.Qt3DRender`` hook for compatibility with ``PySide6``
+6.7.0 (add hidden import for ``PySide6.QtOpenGL`` module).
