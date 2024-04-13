@@ -37,7 +37,6 @@
 #include "pyi_path.h"
 #include "pyi_global.h"  /* PATH_MAX */
 #include "pyi_utils.h"
-#include "pyi_win32_utils.h"
 
 /*
  * Giving a fullpath, it will copy to the buffer a string

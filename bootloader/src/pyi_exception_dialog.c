@@ -22,7 +22,7 @@
 #include <commctrl.h>
 
 #include "pyi_global.h"
-#include "pyi_win32_utils.h"
+#include "pyi_utils.h"
 
 
 /*

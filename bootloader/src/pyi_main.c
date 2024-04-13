@@ -49,7 +49,6 @@
 #include "pyi_utils.h"
 #include "pyi_pythonlib.h"
 #include "pyi_launch.h"
-#include "pyi_win32_utils.h"
 #include "pyi_splash.h"
 #include "pyi_apple_events.h"
 
