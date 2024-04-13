@@ -61,11 +61,11 @@ show_message_box(const char *msg, const char *caption, UINT uType)
 {
     wchar_t wmsg[MBTXTLEN];
     wchar_t wcaption[MBTXTLEN] = L"";
-    if (pyi_win32_utils_from_utf8(wmsg, msg, MBTXTLEN)) {
+    if (pyi_win32_utf8_to_wcs(msg, wmsg, MBTXTLEN)) {
         /* converting the caption is expected to pass since the given caption
          * is always written in US-ASCII and hard-coded, currently.
          */
-        pyi_win32_utils_from_utf8(wcaption, caption, MBTXTLEN);
+        pyi_win32_utf8_to_wcs(caption, wcaption, MBTXTLEN);
         MessageBoxW(NULL, wmsg, wcaption, MB_OK | uType);
     }
     else {
@@ -118,7 +118,7 @@ void mbfatal_winerror(const char * funcname, const char *fmt, ...)
      * we do not care about truncation here. */
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wformat-truncation"
-    snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, GetWinErrorString(error_code));
+    snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, pyi_win32_get_winerror_string(error_code));
     #pragma GCC diagnostic pop
 
     show_message_box(fullmsg, "Fatal error detected", MB_ICONEXCLAMATION);
@@ -177,8 +177,8 @@ void vprintf_to_stderr(const char *fmt, va_list v) {
     char mbcs_buffer[VPRINTF_TO_STDERR_BUFSIZE];
 
     vsnprintf(utf8_buffer, VPRINTF_TO_STDERR_BUFSIZE, fmt, v);
-    if (pyi_win32_utf8_to_mbs(mbcs_buffer,
-                              utf8_buffer,
+    if (pyi_win32_utf8_to_mbs(utf8_buffer,
+                              mbcs_buffer,
                               VPRINTF_TO_STDERR_BUFSIZE)) {
         fprintf(stderr, "%s", mbcs_buffer);
     }
@@ -254,6 +254,6 @@ void pyi_global_winerror(const char *funcname, const char *fmt, ...) {
     va_start(v, fmt);
     vprintf_to_stderr(fmt, v);
     va_end(v);
-    printf_to_stderr("%s: %s", funcname, GetWinErrorString(GetLastError()));
+    printf_to_stderr("%s: %s", funcname, pyi_win32_get_winerror_string(GetLastError()));
 }
 #endif

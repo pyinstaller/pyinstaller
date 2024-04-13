@@ -47,7 +47,7 @@ pyi_getenv(const char *variable)
     DWORD rc;
 
     /* Convert the variable name from UTF-8 to wide-char */
-    variable_w = pyi_win32_utils_from_utf8(NULL, variable, 0);
+    variable_w = pyi_win32_utf8_to_wcs(variable, NULL, 0);
 
     /* Retrieve environment variable */
     rc = GetEnvironmentVariableW(variable_w, value, PATH_MAX);
@@ -69,7 +69,7 @@ pyi_getenv(const char *variable)
     }
 
     /* Convert to UTF-8 and return */
-    return pyi_win32_utils_to_utf8(NULL, expanded_value, 0);
+    return pyi_win32_wcs_to_utf8(expanded_value, NULL, 0);
 }
 
 int
@@ -80,8 +80,8 @@ pyi_setenv(const char *variable, const char *value)
     wchar_t *value_w;
 
     /* Convert from UTF-8 to wide-char */
-    variable_w = pyi_win32_utils_from_utf8(NULL, variable, 0);
-    value_w = pyi_win32_utils_from_utf8(NULL, value, 0);
+    variable_w = pyi_win32_utf8_to_wcs(variable, NULL, 0);
+    value_w = pyi_win32_utf8_to_wcs(value, NULL, 0);
 
     /* `SetEnvironmentVariableW` updates only the value in the process
      * environment block, while _wputenv_s updates the value in the CRT
@@ -105,7 +105,7 @@ pyi_unsetenv(const char *variable)
     wchar_t *variable_w;
 
     /* Convert from UTF-8 to wide-char */
-    variable_w = pyi_win32_utils_from_utf8(NULL, variable, 0);
+    variable_w = pyi_win32_utf8_to_wcs(variable, NULL, 0);
 
     /* See the comment in `pyi_setenv`. As per MSDN, "You can remove a
      * variable from the environment by specifying an empty string (that
@@ -134,7 +134,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
     DWORD rc;
 
     /* Convert UTF-8 path to wide-char */
-    runtime_tmpdir_w = pyi_win32_utils_from_utf8(NULL, runtime_tmpdir, 0);
+    runtime_tmpdir_w = pyi_win32_utf8_to_wcs(runtime_tmpdir, NULL, 0);
     if (!runtime_tmpdir_w) {
         FATALERROR("LOADER: failed to convert runtime-tmpdir to a wide string.\n");
         return NULL;
@@ -255,7 +255,7 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
             ret = -1; /* In case we reached max. retries */
         } else {
             /* Convert path to UTF-8 and store it in main context structure */
-            if (pyi_win32_utils_to_utf8(pyi_ctx->application_home_dir, application_home_dir_w, PATH_MAX) == NULL) {
+            if (pyi_win32_wcs_to_utf8(application_home_dir_w, pyi_ctx->application_home_dir, PATH_MAX) == NULL) {
                 FATALERROR("LOADER: length of teporary directory path exceeds maximum path length!\n");
                 ret = -1;
             }
@@ -360,7 +360,7 @@ int
 pyi_recursive_rmdir(const char *dir_path)
 {
     wchar_t dir_path_w[PATH_MAX];
-    pyi_win32_utils_from_utf8(dir_path_w, dir_path, PATH_MAX);
+    pyi_win32_utf8_to_wcs(dir_path, dir_path_w, PATH_MAX);
     return _pyi_recursive_rmdir(dir_path_w);
 }
 
@@ -376,7 +376,7 @@ pyi_utils_dlopen(const char *filename)
     dylib_t handle;
 
     /* Convert UTF-8 to wide-char */
-    filename_w = pyi_win32_utils_from_utf8(NULL, filename, 0);
+    filename_w = pyi_win32_utf8_to_wcs(filename, NULL, 0);
 
     /* Load shared library */
     handle = LoadLibraryExW(filename_w, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
@@ -483,7 +483,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
 
     /* TODO is there a replacement for this conversion or just use wchar_t everywhere? */
     /* Convert file name to wchar_t from utf8. */
-    pyi_win32_utils_from_utf8(executable_filename_w, pyi_ctx->executable_filename, PATH_MAX);
+    pyi_win32_utf8_to_wcs(pyi_ctx->executable_filename, executable_filename_w, PATH_MAX);
 
     /* Set up console ctrl handler; the call returns non-zero on success */
     if (SetConsoleCtrlHandler(_pyi_win32_console_ctrl, TRUE) == 0) {

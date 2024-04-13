@@ -278,7 +278,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         }
 #else
         /* Windows */
-        if (pyi_win32_utils_from_utf8(dllpath_w, pyi_ctx->application_home_dir, PATH_MAX) == NULL) {
+        if (pyi_win32_utf8_to_wcs(pyi_ctx->application_home_dir, dllpath_w, PATH_MAX) == NULL) {
             FATALERROR("Failed to convert DLL search path!\n");
             return -1;
         }
@@ -705,13 +705,13 @@ _pyi_resolve_executable_win32(char *executable_filename)
         }
 
         /* Convert to UTF-8 */
-        if (!pyi_win32_utils_to_utf8(executable_filename, executable_filename_w + offset, PATH_MAX)) {
+        if (!pyi_win32_wcs_to_utf8(executable_filename_w + offset, executable_filename, PATH_MAX)) {
             FATALERROR("Failed to convert executable path to UTF-8.\n");
             return -1;
         }
     } else {
         /* Convert to UTF-8 */
-        if (!pyi_win32_utils_to_utf8(executable_filename, modulename_w, PATH_MAX)) {
+        if (!pyi_win32_wcs_to_utf8(modulename_w, executable_filename, PATH_MAX)) {
             FATALERROR("Failed to convert executable path to UTF-8.\n");
             return -1;
         }

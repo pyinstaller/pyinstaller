@@ -78,12 +78,12 @@ void pyi_win32_minimize_console();
 /* Windows low-level helpers */
 #ifdef _WIN32
 
-char *GetWinErrorString(DWORD error_code);
+const char *pyi_win32_get_winerror_string(DWORD error_code);
 
-char *pyi_win32_utils_to_utf8(char *buffer, const wchar_t *str, size_t n);
-wchar_t *pyi_win32_utils_from_utf8(wchar_t *buffer, const char *ostr, size_t n);
+char *pyi_win32_wcs_to_utf8(const wchar_t *src, char *dest, size_t buflen);
+wchar_t *pyi_win32_utf8_to_wcs(const char *src, wchar_t *dest, size_t buflen);
 
-char *pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max);
+char *pyi_win32_utf8_to_mbs(const char *src, char *dest, size_t buflen);
 
 int pyi_win32_is_symlink(const wchar_t *path);
 
