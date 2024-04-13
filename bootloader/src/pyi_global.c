@@ -45,7 +45,7 @@
 
 /* PyInstaller headers. */
 #include "pyi_global.h"
-#include "pyi_win32_utils.h"
+#include "pyi_utils.h"
 /* Text length of MessageBox(). */
 #define MBTXTLEN 1024
 

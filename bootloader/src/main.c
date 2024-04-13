@@ -20,20 +20,13 @@
 
 #ifdef _WIN32
     #include <windows.h>
-    #include <wchar.h>
 #endif
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 #ifdef __FreeBSD__
     #include <floatingpoint.h>
 #endif
 
 #include "pyi_main.h"
-#include "pyi_global.h"
-#include "pyi_win32_utils.h"
 
 
 #if defined(_WIN32)

@@ -12,22 +12,16 @@
  */
 
 /*
- * Windows-specific helper functions.
+ * Utility functions. This file contains low-level helpers that are specific
+ * to Windows.
  */
 
 #ifdef _WIN32
 
-#include <windows.h>
-#include <commctrl.h> /* InitCommonControls */
-#include <stdio.h>    /* _fileno */
-#include <io.h>       /* _get_osfhandle */
-#include <signal.h>   /* signal */
 
 /* PyInstaller headers. */
 #include "pyi_global.h"  /* PATH_MAX */
-#include "pyi_main.h"
 #include "pyi_utils.h"
-#include "pyi_win32_utils.h"
 
 #ifndef IO_REPARSE_TAG_SYMLINK
     #define IO_REPARSE_TAG_SYMLINK 0xA000000CL

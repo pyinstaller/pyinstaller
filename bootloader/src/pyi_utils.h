@@ -75,4 +75,23 @@ void pyi_win32_minimize_console();
 #endif
 
 
+/* Windows low-level helpers */
+#ifdef _WIN32
+
+char *GetWinErrorString(DWORD error_code);
+
+char *pyi_win32_utils_to_utf8(char *buffer, const wchar_t *str, size_t n);
+wchar_t *pyi_win32_utils_from_utf8(wchar_t *buffer, const char *ostr, size_t n);
+
+char *pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max);
+
+int pyi_win32_is_symlink(const wchar_t *path);
+
+int pyi_win32_realpath(const wchar_t *path, wchar_t *resolved_path);
+
+int pyi_win32_is_drive_root(const wchar_t *path);
+
+#endif /* _WIN32 */
+
+
 #endif /* PYI_UTILS_H */
