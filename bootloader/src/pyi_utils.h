@@ -62,4 +62,17 @@ void pyi_utils_free_args(PYI_CONTEXT *pyi_ctx);
 extern const unsigned char MAGIC_BASE[8];
 uint64_t pyi_utils_find_magic_pattern(FILE *fp, const unsigned char *magic, size_t magic_len);
 
+/* Security descriptor for temporary directory (Windows only) */
+#if defined(_WIN32)
+SECURITY_ATTRIBUTES *pyi_win32_initialize_security_descriptor();
+void pyi_win32_free_security_descriptor(SECURITY_ATTRIBUTES **security_attr_ref);
+#endif
+
+/* Console minimization/hiding (Windows console-enabled build only) */
+#if defined(_WIN32) && !defined(WINDOWED)
+void pyi_win32_hide_console();
+void pyi_win32_minimize_console();
+#endif
+
+
 #endif /* PYI_UTILS_H */

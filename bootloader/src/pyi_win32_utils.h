@@ -22,7 +22,6 @@
 
 #include <windows.h>
 
-typedef struct _pyi_context PYI_CONTEXT;
 
 char *GetWinErrorString(DWORD error_code);
 
@@ -31,21 +30,11 @@ wchar_t *pyi_win32_utils_from_utf8(wchar_t *buffer, const char *ostr, size_t n);
 
 char *pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max);
 
-SECURITY_ATTRIBUTES *pyi_win32_initialize_security_descriptor();
-void pyi_win32_free_security_descriptor(SECURITY_ATTRIBUTES **security_attr_ref);
-
 int pyi_win32_is_symlink(const wchar_t *path);
 
 int pyi_win32_realpath(const wchar_t *path, wchar_t *resolved_path);
 
 int pyi_win32_is_drive_root(const wchar_t *path);
-
-#if !defined(WINDOWED)
-
-void pyi_win32_hide_console();
-void pyi_win32_minimize_console();
-
-#endif /* !defined(WINDOWED) */
 
 #endif /* _WIN32 */
 
