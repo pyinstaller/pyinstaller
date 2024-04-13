@@ -128,13 +128,6 @@ def options(ctx):
         dest='debug',
     )
     ctx.add_option(
-        '--leak-detector',
-        action='store_true',
-        help='Link with Boehm garbage collector to detect memory leaks.',
-        default=False,
-        dest='boehmgc',
-    )
-    ctx.add_option(
         '--clang',
         action='store_true',
         help='Try to find clang C compiler instead of gcc.',
@@ -635,15 +628,6 @@ def configure(ctx):
                     "installing directly with pip, then use the environment variable."
                 )
 
-        # This uses Boehm GC to manage memory - it replaces malloc() / free() functions. Some messages are printed if
-        # memory is not deallocated.
-        if ctx.options.boehmgc:
-            ctx.check_cc(lib='gc', mandatory=True)
-            ctx.env.append_value('DEFINES', 'PYI_LEAK_DETECTOR')
-            ctx.env.append_value('DEFINES', 'GC_FIND_LEAK')
-            ctx.env.append_value('DEFINES', 'GC_DEBUG')
-            ctx.env.append_value('DEFINES', 'SAVE_CALL_CHAIN')
-
     ctx.recurse("tests")
 
     # ** Functions **
@@ -834,9 +818,6 @@ def build(ctx):
             # link statically with zlib, case sensitive
             libs.remove('Z')
             staticlibs.append('z')
-
-        if ctx.options.boehmgc:
-            libs.append('GC')
 
         ctx.env.link_with_dynlibs = libs
         ctx.env.link_with_staticlibs = staticlibs
