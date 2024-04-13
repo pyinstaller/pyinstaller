@@ -12,8 +12,7 @@
  */
 
 /*
- * Portable wrapper for some utility functions like getenv/setenv,
- * file path manipulation and other shared data types or functions.
+ * Utility functions.
  */
 
 #ifndef PYI_UTILS_H
@@ -21,6 +20,8 @@
 
 #include <stdio.h> /* FILE */
 #include <inttypes.h> /* uint64_t */
+
+#include "pyi_global.h" /* dylib_t */
 
 typedef struct _pyi_context PYI_CONTEXT;
 
