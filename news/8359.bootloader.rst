@@ -1,2 +1,0 @@
-(Windows) Attempt to shorten the duration of spinning-wheel cursor when
-launching applications built in ``windowed`` / ``noconsole`` mode.

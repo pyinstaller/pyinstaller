@@ -1,6 +1,0 @@
-(macOS) Explicitly convert the value of ``version`` argument to ``BUNDLE``
-into a string, in order to mitigate cases when user accidentally enters
-an integer or a float. The version value ends up being written to
-``Info.plist`` as the ``CFBundleShortVersionString`` entry, and if this
-entry is not of a string type (for example, is an integer), the
-generated .app bundle crashes at start.

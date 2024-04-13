@@ -1,3 +1,0 @@
-Add a new documentation section, :ref:`bytecode optimization level`,
-which the describes the new canonical way to control bytecode
-optimization level of the collected python code.

@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYI-MAKESPEC" "1" "2024-03-09" "6.5.0" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2024-04-13" "6.6.0" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .
@@ -196,6 +196,11 @@ directory.
 .UNINDENT
 .INDENT 0.0
 .TP
+.BI \-\-optimize \ LEVEL
+Bytecode optimization level used for collected python modules and scripts.
+For details, see the section “Bytecode Optimization Level” in PyInstaller
+manual.
+.TP
 .BI \-\-python\-option \ PYTHON_OPTION
 Specify a command\-line option to pass to the Python interpreter at runtime.
 Currently supports "v" (equivalent to "\-\-debug imports"), "u", "W <warning
@@ -230,7 +235,7 @@ option is automatically set if the first script is a \(aq.pyw\(aq file. This
 option is ignored on *NIX systems.
 .UNINDENT
 .sp
-\-\-hide\-console {hide\-late,minimize\-early,hide\-early,minimize\-late}
+\-\-hide\-console {minimize\-late,minimize\-early,hide\-late,hide\-early}
 .INDENT 0.0
 .INDENT 3.5
 Windows only: in console\-enabled executable, have bootloader automatically
@@ -315,10 +320,13 @@ only).
 .INDENT 0.0
 .TP
 .BI \-\-runtime\-tmpdir \ PATH
-Where to extract libraries and support files in \fIonefile\fP\-mode. If this
+Where to extract libraries and support files in \fIonefile\fP mode. If this
 option is given, the bootloader will ignore any temp\-folder location
 defined by the run\-time OS. The \fB_MEIxxxxxx\fP\-folder will be created here.
-Please use this option only if you know what you are doing.
+Please use this option only if you know what you are doing. Note that on
+POSIX systems, PyInstaller\(aqs bootloader does NOT perform shell\-style
+environment variable expansion on the given path string. Therefore, using
+environment variables (e.g., \fB~\fP or \fB$HOME\fP) in path will NOT work.
 .TP
 .B \-\-bootloader\-ignore\-signals
 Tell the bootloader to ignore signals rather than forwarding them to the

@@ -1,6 +1,0 @@
-(Windows) Implement a work-around for running PyInstaller under python
-process with ``-OO`` (or ``PYTHONOPTIMIZE=2``) with ``cffi`` installed.
-We now temporarily disable import of ``cffi`` while importing
-``pywin32-ctypes`` in ``PyInstaller.compat`` to ensure that ``ctypes``
-backend is always used, as the ``cffi`` backend uses ``pycparser`` and
-requires docstrings, which makes it incompatible with the ``-OO`` mode.

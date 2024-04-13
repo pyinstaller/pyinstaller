@@ -15,6 +15,79 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.6.0 (2024-04-13)
+------------------
+
+Features
+~~~~~~~~
+
+* (Windows) Implement support for resolving executable's true location
+  when launched via a symbolic link. (:issue:`8300`)
+* Implement an option to explicitly specify the bytecode optimization level
+  for collected python code, independent of the optimization level in the
+  python process under which PyInstaller is running. At the .spec file level,
+  this is controlled by optional ``optimize`` argument in the ``Analysis``
+  constructor. At the CLI level, this is controlled by new
+  :option:`--optimize` command-line option, which sets the ``optimize``
+  argument for ``Analysis`` as well as :ref:`interpreter run-time options
+  <specifying python interpreter options>` in the generated spec file.
+  See :ref:`bytecode optimization level` for details. (:issue:`8252`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) Explicitly convert the value of ``version`` argument to ``BUNDLE``
+  into a string, in order to mitigate cases when user accidentally enters
+  an integer or a float. The version value ends up being written to
+  ``Info.plist`` as the ``CFBundleShortVersionString`` entry, and if this
+  entry is not of a string type (for example, is an integer), the
+  generated .app bundle crashes at start. (:issue:`4466`)
+* (Windows) Avoid trying to import ``PySimpleGUI`` in the subprocess that
+  analyzes dynamic library search modifications made by packages prior to
+  the binary dependency analysis. When imported for the first time,
+  ``PySimpleGUI`` 5.x displays a "first-run" dialog, which poses a problem
+  for unattended PyInstaller builds running in a clean environment, for
+  example, in a CI pipeline. (:issue:`8396`)
+* (Windows) Implement a work-around for running PyInstaller under python
+  process with ``-OO`` (or ``PYTHONOPTIMIZE=2``) with ``cffi`` installed.
+  We now temporarily disable import of ``cffi`` while importing
+  ``pywin32-ctypes`` in ``PyInstaller.compat`` to ensure that ``ctypes``
+  backend is always used, as the ``cffi`` backend uses ``pycparser`` and
+  requires docstrings, which makes it incompatible with the ``-OO`` mode.
+  (:issue:`6345`)
+
+
+Hooks
+~~~~~
+
+* Update ``PySide6.Qt3DRender`` hook for compatibility with ``PySide6``
+  6.7.0 (add hidden import for ``PySide6.QtOpenGL`` module). (:issue:`8404`)
+* Update ``scipy.special._ufuncs`` hook for compatibility with SciPy 1.13.0
+  (add ``scipy.special._cdflib`` to hidden imports). (:issue:`8394`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Windows) Attempt to shorten the duration of spinning-wheel cursor when
+  launching applications built in ``windowed`` / ``noconsole`` mode.
+  (:issue:`8359`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Add a new documentation section, :ref:`bytecode optimization level`,
+  which the describes the new canonical way to control bytecode
+  optimization level of the collected python code. (:issue:`8252`)
+* Add a note to :ref:`specifying python interpreter options` to inform
+  user that setting the optimization level to the application's embedded
+  python interpreter by itself does not result in bytecode optimization of
+  modules that have been collected in byte-compiled form (i.e., the majority
+  of them). (:issue:`8252`)
+
+
 6.5.0 (2024-03-09)
 ------------------
 

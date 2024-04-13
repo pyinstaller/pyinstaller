@@ -1,5 +1,0 @@
-Add a note to :ref:`specifying python interpreter options` to inform
-user that setting the optimization level to the application's embedded
-python interpreter by itself does not result in bytecode optimization of
-modules that have been collected in byte-compiled form (i.e., the majority
-of them).

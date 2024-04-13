@@ -1,9 +1,0 @@
-Implement an option to explicitly specify the bytecode optimization level
-for collected python code, independent of the optimization level in the
-python process under which PyInstaller is running. At the .spec file level,
-this is controlled by optional ``optimize`` argument in the ``Analysis``
-constructor. At the CLI level, this is controlled by new
-:option:`--optimize` command-line option, which sets the ``optimize``
-argument for ``Analysis`` as well as :ref:`interpreter run-time options
-<specifying python interpreter options>` in the generated spec file.
-See :ref:`bytecode optimization level` for details.
