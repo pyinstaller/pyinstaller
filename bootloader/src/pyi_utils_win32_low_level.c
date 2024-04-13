@@ -27,271 +27,290 @@
     #define IO_REPARSE_TAG_SYMLINK 0xA000000CL
 #endif
 
-#define ERROR_STRING_MAX 4096
-static char errorString[ERROR_STRING_MAX];
 
-/* GetWinErrorString
- *
- * Return a pointer to a null-terminated string containing a textual description of the
- * given error code. If the error code is zero, the result of GetLastError() is used.
- * The text is localized and ANSI-encoded. The caller is not responsible for freeing
- * this pointer.
+/**********************************************************************\
+ *                 WinError code to string conversion                 *
+\**********************************************************************/
+/* Return a pointer to a null-terminated string containing a textual
+ * description of the given error code. If the error code is zero, the
+ * result of GetLastError() is used. The text is localized and
+ * UTF8-encoded. The caller is *NOT* responsible for freeing this
+ * pointer.
  *
  * Returns a pointer to statically-allocated storage. Not thread safe.
  */
+const char *
+pyi_win32_get_winerror_string(DWORD error_code)
+{
+    #define ERROR_STRING_MAX 4096
+    static wchar_t local_buffer_w[ERROR_STRING_MAX];
+    static char local_buffer[ERROR_STRING_MAX];
 
-char * GetWinErrorString(DWORD error_code) {
-    wchar_t local_buffer[ERROR_STRING_MAX];
     DWORD result;
 
     if (error_code == 0) {
         error_code = GetLastError();
     }
+
     /* Note: Giving 0 to dwLanguageID means MAKELANGID(LANG_NEUTRAL,
      * SUBLANG_NEUTRAL), but we should use SUBLANG_DEFAULT instead of
-     * SUBLANG_NEUTRAL. Please see the note written in
-     * "Language Identifier Constants and Strings" on MSDN.
+     * SUBLANG_NEUTRAL. Please see the note written in "Language
+     * Identifier Constants and Strings" on MSDN.
      * https://docs.microsoft.com/en-us/windows/desktop/intl/language-identifier-constants-and-strings
      */
     result = FormatMessageW(
-        FORMAT_MESSAGE_FROM_SYSTEM, // dwFlags
-        NULL,                       // lpSource
-        error_code,                 // dwMessageID
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // dwLanguageID
-        local_buffer,               // lpBuffer
-        ERROR_STRING_MAX,           // nSize
-        NULL                        // Arguments
-        );
+        FORMAT_MESSAGE_FROM_SYSTEM, /* dwFlags */
+        NULL, /* lpSource */
+        error_code, /* dwMessageId */
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+        local_buffer_w, /* lpBuffer */
+        ERROR_STRING_MAX, /* nSize */
+        NULL /* Arguments */
+    );
 
     if (!result) {
-        FATAL_WINERROR("FormatMessageW", "No error messages generated.\n");
         return "PyInstaller: FormatMessageW failed.";
     }
-    if (!pyi_win32_utils_to_utf8(errorString,
-                                 local_buffer,
-                                 ERROR_STRING_MAX)) {
-        return "PyInstaller: pyi_win32_utils_to_utf8 failed.";
+
+    if (pyi_win32_wcs_to_utf8(local_buffer_w, local_buffer, ERROR_STRING_MAX) == NULL) {
+        return "PyInstaller: pyi_win32_wcs_to_utf8 failed.";
     }
-    return errorString;
+
+    return local_buffer;
 }
 
-/* Convert a wide string to an ANSI string.
+
+/**********************************************************************\
+ *                    Character encoding conversion                   *
+\**********************************************************************/
+/*
+ * Convert wchar_t (UTF16) string into char (UTF8) string.
  *
- *  Returns a newly allocated buffer containing the ANSI characters terminated by a null
- *  character. The caller is responsible for freeing this buffer with free().
+ * `src` must be NULL-terminated.
+ *
+ * If `dest` is not NULL, copies the result into the given buffer, which
+ * must hold at least `buflen` bytes (including terminating NULL). Returns
+ * the given buffer if successful. Returns NULL on encoding failure, or
+ * if the UTF-8 encoding requires more than `buflen` bytes.
+ *
+ * If `dest` is NULL, allocates and returns a new buffer to store the
+ * result. The `buflen` argument is ignored. Returns NULL on encoding
+ * failure. The caller is responsible for freeing the returned buffer
+ * using free().
+ */
+char *
+pyi_win32_wcs_to_utf8(const wchar_t *src, char *dest, size_t buflen)
+{
+    char *output = NULL;
+
+    if (dest == NULL) {
+        /* Query buffer size by passing NULL and 0 for output arguments
+         * -1 for cchWideChar means string is null-terminated. */
+        buflen = WideCharToMultiByte(
+            CP_UTF8, /* CodePage */
+            0, /* dwFlags */
+            src, /* lpWideCharStr */
+            -1, /* cchWideChar */
+            NULL, /* lpMultiByteStr */
+            0, /* cbMultiByte */
+            NULL, /* lpDefaultChar */
+            NULL /* lpUsedDefaultChar */
+        );
+
+        if (buflen == 0) {
+            return NULL;
+        }
+
+        output = (char *)calloc(buflen + 1, sizeof(char));
+        if (output == NULL) {
+            return NULL;
+        }
+    } else {
+        output = dest;
+    }
+
+    buflen = WideCharToMultiByte(
+        CP_UTF8, /* CodePage */
+        0, /* dwFlags */
+        src, /* lpWideCharStr */
+        -1, /* cchWideChar */
+        output, /* lpMultiByteStr */
+        (DWORD)buflen, /* cbMultiByte */
+        NULL, /* lpDefaultChar */
+        NULL /* lpUsedDefaultChar */
+    );
+
+    if (buflen == 0) {
+        if (dest == NULL) {
+            free(output); /* Free allocated buffer */
+        }
+        output = NULL;
+    }
+
+    return output;
+}
+
+/*
+ * Convert char (UTF8) string into wchar_t (UTF16) string.
+ *
+ * `src` must be NULL-terminated.
+ *
+ * If `dest` is not NULL, copies the result into the given buffer, which
+ * must hold at least `buflen` characters (including terminating NULL).
+ * Returns the given buffer if successful. Returns NULL on encoding
+ * failure, or if the UTF-16 encoding requires more than `buflen`
+ * characters.
+ *
+ * If `dest` is NULL, allocates and returns a new buffer to store the
+ * result. The `buflen` argument is ignored. Returns NULL on encoding
+ * failure. The caller is responsible for freeing the returned buffer
+ * using free().
+ */
+wchar_t *
+pyi_win32_utf8_to_wcs(const char *src, wchar_t *dest, size_t buflen)
+{
+    wchar_t *output = NULL;
+
+    if (dest == NULL) {
+        /* Query buffer size by passing NULL and 0 for output arguments
+         * -1 for cbMultiByte means string is null-terminated. */
+        buflen = MultiByteToWideChar(
+            CP_UTF8, /* CodePage */
+            0, /* dwFlags */
+            src, /* lpMultiByteStr */
+            -1, /* cbMultiByte*/
+            NULL, /* lpWideCharStr */
+            0 /* cchWideChar */
+        );
+
+        if (buflen == 0) {
+            return NULL;
+        }
+
+        output = (wchar_t *)calloc(buflen + 1, sizeof(wchar_t));
+        if (output == NULL) {
+            return NULL;
+        }
+    } else {
+        output = dest;
+    }
+
+    buflen = MultiByteToWideChar(
+        CP_UTF8, /* CodePage */
+        0, /* dwFlags */
+        src, /* lpMultiByteStr */
+        -1, /* cbMultiByte */
+        output, /* lpWideCharStr */
+        (DWORD)buflen /* cchWideChar */
+    );
+
+    if (buflen == 0) {
+        if (dest == NULL) {
+            free(output); /* Free allocated buffer */
+        }
+        output = NULL;
+    }
+
+    return output;
+}
+
+/*
+ * Convert a wide-char (UTF16) string into an ANSI string.
+ *
+ *  Returns a newly allocated buffer containing the ANSI characters
+ *  terminated by a null character. The caller is responsible for freeing
+ *  this buffer with free().
  *
  *  Returns NULL and logs error reason if encoding fails.
  */
-
-char *
-pyi_win32_wcs_to_mbs(const wchar_t *wstr)
+static char *
+_pyi_win32_wcs_to_mbs(const wchar_t *src)
 {
-    DWORD len, ret;
-    char * str;
+    DWORD dest_size;
+    DWORD ret;
+    char *dest;
 
     /* NOTE: CP_ACP means "current ANSI codepage" which is set in the
      * "Language for Non-Unicode Programs" control panel setting. */
 
-    /* Get buffer size by passing NULL and 0 for output arguments */
-    len = WideCharToMultiByte(CP_ACP,  /* CodePage */
-                              0,       /* dwFlags */
-                              wstr,    /* lpWideCharStr */
-                              -1,      /* cchWideChar - length in chars */
-                              NULL,    /* lpMultiByteStr */
-                              0,       /* cbMultiByte - length in bytes */
-                              NULL,    /* lpDefaultChar */
-                              NULL     /* lpUsedDefaultChar */
-                              );
+    /* Query buffer size by passing NULL and 0 for output arguments */
+    dest_size = WideCharToMultiByte(
+        CP_ACP, /* CodePage */
+        0, /* dwFlags */
+        src, /* lpWideCharStr */
+        -1, /* cchWideChar*/
+        NULL, /* lpMultiByteStr */
+        0, /* cbMultiByte */
+        NULL, /* lpDefaultChar */
+        NULL /* lpUsedDefaultChar */
+    );
 
-    if (0 == len) {
-        FATAL_WINERROR("WideCharToMultiByte", "Failed to get ANSI buffer size.\n");
+    if (dest_size == 0) {
         return NULL;
     }
 
-    str = (char *)calloc(len + 1, sizeof(char));
-    if (str == NULL) {
-        FATAL_WINERROR("win32_wcs_to_mbs", "Out of memory.\n");
-        return NULL;
-    };
-
-    ret = WideCharToMultiByte(CP_ACP,    /* CodePage */
-                              0,         /* dwFlags */
-                              wstr,      /* lpWideCharStr */
-                              -1,        /* cchWideChar - length in chars */
-                              str,       /* lpMultiByteStr */
-                              len,       /* cbMultiByte - length in bytes */
-                              NULL,      /* lpDefaultChar */
-                              NULL       /* lpUsedDefaultChar */
-                              );
-
-    if (0 == ret) {
-        FATAL_WINERROR("WideCharToMultiByte", "Failed to encode filename as ANSI.\n");
+    dest = (char *)calloc(dest_size + 1, sizeof(char));
+    if (dest == NULL) {
         return NULL;
     }
-    return str;
-}
 
-/*
- * Encode wchar_t (UTF16) into char (UTF8).
- *
- * `wstr` must be null-terminated.
- *
- * If `str` is not NULL, copies the result into the given buffer, which must hold
- * at least `len` bytes. Returns the given buffer if successful. Returns NULL on
- * encoding failure, or if the UTF-8 encoding requires more than `len` bytes.
- *
- * If `str` is NULL, allocates and returns a new buffer to store the result. The
- * `len` argument is ignored. Returns NULL on encoding failure. The caller is
- * responsible for freeing the returned buffer using free().
- *
- */
-char *
-pyi_win32_utils_to_utf8(char *str, const wchar_t *wstr, size_t len)
-{
-    char * output;
+    ret = WideCharToMultiByte(
+        CP_ACP, /* CodePage */
+        0, /* dwFlags */
+        src, /* lpWideCharStr */
+        -1, /* cchWideChar - length in chars */
+        dest, /* lpMultiByteStr */
+        dest_size, /* cbMultiByte*/
+        NULL, /* lpDefaultChar */
+        NULL /* lpUsedDefaultChar */
+    );
 
-    if (NULL == str) {
-        /* Get buffer size by passing NULL and 0 for output arguments
-         * -1 for cchWideChar means string is null-terminated
-         */
-        len = WideCharToMultiByte(CP_UTF8,              /* CodePage */
-                                  0,                    /* dwFlags */
-                                  wstr,                 /* lpWideCharStr */
-                                  -1,                   /* cchWideChar - length in chars */
-                                  NULL,                 /* lpMultiByteStr */
-                                  0,                    /* cbMultiByte - length in bytes */
-                                  NULL,                 /* lpDefaultChar */
-                                  NULL                  /* lpUsedDefaultChar */
-                                  );
-
-        if (0 == len) {
-            FATAL_WINERROR("WideCharToMultiByte", "Failed to get UTF-8 buffer size.\n");
-            return NULL;
-        }
-
-        output = (char *)calloc(len + 1, sizeof(char));
-        if (output == NULL) {
-            FATAL_WINERROR("win32_utils_to_utf8", "Out of memory.\n");
-            return NULL;
-        };
-    }
-    else {
-        output = str;
+    if (ret == 0) {
+        free(dest);
+        dest = NULL;
     }
 
-    len = WideCharToMultiByte(CP_UTF8,              /* CodePage */
-                              0,                    /* dwFlags */
-                              wstr,                 /* lpWideCharStr */
-                              -1,                   /* cchWideChar - length in chars */
-                              output,               /* lpMultiByteStr */
-                              (DWORD)len,           /* cbMultiByte - length in bytes */
-                              NULL,                 /* lpDefaultChar */
-                              NULL                  /* lpUsedDefaultChar */
-                              );
-
-    if (len == 0) {
-        FATAL_WINERROR("WideCharToMultiByte",
-                       "Failed to encode wchar_t as UTF-8.\n");
-        return NULL;
-    }
-    return output;
-}
-
-/*
- * Decode char (UTF8) into wchar_t (UTF16).
- *
- * `str` must be null-terminated.
- *
- * If `wstr` is not NULL, copies the result into the given buffer, which must hold
- * at least `wlen` characters. Returns the given buffer if successful. Returns NULL on
- * encoding failure, or if the UTF-16 encoding requires more than `wlen` characters.
- *
- * If `wstr` is NULL, allocates and returns a new buffer to store the result. The
- * `wlen` argument is ignored. Returns NULL on encoding failure. The caller is
- * responsible for freeing the returned buffer using free().
- */
-
-wchar_t *
-pyi_win32_utils_from_utf8(wchar_t *wstr, const char *str, size_t wlen)
-{
-    wchar_t * output;
-
-    if (NULL == wstr) {
-        /* Get buffer size by passing NULL and 0 for output arguments
-         * -1 for cbMultiByte means string is null-terminated.
-         */
-        wlen = MultiByteToWideChar(CP_UTF8,             /* CodePage */
-                                   0,                   /* dwFlags */
-                                   str,                 /* lpMultiByteStr */
-                                   -1,                  /* cbMultiByte - length in bytes */
-                                   NULL,                /* lpWideCharStr */
-                                   0                    /* cchWideChar - length in chars */
-                                   );
-
-        if (0 == wlen) {
-            FATAL_WINERROR("MultiByteToWideChar", "Failed to get wchar_t buffer size.\n");
-            return NULL;
-        }
-
-        output = (wchar_t *)calloc(wlen + 1, sizeof(wchar_t));
-        if (output == NULL) {
-            FATAL_WINERROR("win32_utils_from_utf8", "Out of memory.\n");
-            return NULL;
-        };
-    }
-    else {
-        output = wstr;
-    }
-
-    wlen = MultiByteToWideChar(CP_UTF8,              /* CodePage */
-                               0,                    /* dwFlags */
-                               str,                  /* lpMultiByteStr */
-                               -1,                   /* cbMultiByte - length in bytes */
-                               output,               /* lpWideCharStr */
-                               (DWORD)wlen           /* cchWideChar - length in chars */
-                               );
-
-    if (wlen == 0) {
-        FATAL_WINERROR("MultiByteToWideChar", "Failed to decode wchar_t from UTF-8\n");
-        return NULL;
-    }
-    return output;
+    return dest;
 }
 
 /* Convert an UTF-8 string to an ANSI string.
  *
- *  Returns NULL if encoding fails.
+ * Returns NULL if encoding fails.
  */
 char *
-pyi_win32_utf8_to_mbs(char * dst, const char * src, size_t max)
+pyi_win32_utf8_to_mbs(const char *src, char *dest, size_t buflen)
 {
-    wchar_t * wsrc;
-    char * mbs;
+    wchar_t *src_w;
+    char *mbs;
 
-    wsrc = pyi_win32_utils_from_utf8(NULL, src, 0);
-
-    if (NULL == wsrc) {
+    /* UTF8 -> UTF16 */
+    src_w = pyi_win32_utf8_to_wcs(src, NULL, 0);
+    if (src_w == NULL) {
         return NULL;
     }
 
-    mbs = pyi_win32_wcs_to_mbs(wsrc);
+    /* UTF16 -> MBS */
+    mbs = _pyi_win32_wcs_to_mbs(src_w);
 
-    free(wsrc);
+    free(src_w);
 
-    if (NULL == mbs) {
+    if (mbs == NULL) {
         return NULL;
     }
 
-    if (dst) {
-        strncpy(dst, mbs, max);
+    if (dest) {
+        snprintf(dest, buflen, "%s", mbs);
         free(mbs);
-        return dst;
-    }
-    else {
+        return dest;
+    } else {
         return mbs;
     }
 }
 
+
+/**********************************************************************\
+ *                    Misc. file and path helpers                     *
+\**********************************************************************/
 /* Check if the given path is a symbolic link. */
 int pyi_win32_is_symlink(const wchar_t *path)
 {

@@ -162,7 +162,7 @@ pyi_path_exists(char * path)
 #ifdef _WIN32
     wchar_t wpath[PATH_MAX + 1];
     struct _stat result;
-    pyi_win32_utils_from_utf8(wpath, path, PATH_MAX);
+    pyi_win32_utf8_to_wcs(path, wpath, PATH_MAX);
     return _wstat(wpath, &result) == 0;
 #else
     struct stat result;
@@ -180,8 +180,8 @@ pyi_path_fopen(const char* filename, const char* mode)
     wchar_t wfilename[PATH_MAX];
     wchar_t wmode[10];
 
-    pyi_win32_utils_from_utf8(wfilename, filename, PATH_MAX);
-    pyi_win32_utils_from_utf8(wmode, mode, 10);
+    pyi_win32_utf8_to_wcs(filename, wfilename, PATH_MAX);
+    pyi_win32_utf8_to_wcs(mode, wmode, 10);
     return _wfopen(wfilename, wmode);
 }
 #endif
@@ -191,7 +191,7 @@ pyi_path_is_symlink(const char *path)
 {
 #ifdef _WIN32
     wchar_t wpath[PATH_MAX + 1];
-    pyi_win32_utils_from_utf8(wpath, path, PATH_MAX);
+    pyi_win32_utf8_to_wcs(path, wpath, PATH_MAX);
     return pyi_win32_is_symlink(wpath);
 #else
     struct stat buf;
@@ -214,10 +214,10 @@ pyi_path_mksymlink(const char *link_target, const char *link_name)
     wchar_t wlink_name[PATH_MAX];
     DWORD flags = 0;
 
-    if (!pyi_win32_utils_from_utf8(wlink_target, link_target, PATH_MAX)) {
+    if (!pyi_win32_utf8_to_wcs(link_target, wlink_target, PATH_MAX)) {
         return -1;
     }
-    if (!pyi_win32_utils_from_utf8(wlink_name, link_name, PATH_MAX)) {
+    if (!pyi_win32_utf8_to_wcs(link_name, wlink_name, PATH_MAX)) {
         return -1;
     }
     /* Creation of symbolic links in unprivileged mode was introduced

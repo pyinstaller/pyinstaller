@@ -415,13 +415,13 @@ pyi_unhandled_exception_dialog(const char *script_name, const char *exception_me
     int ret;
 
     if (script_name) {
-        script_name_w = pyi_win32_utils_from_utf8(NULL, script_name, 0);
+        script_name_w = pyi_win32_utf8_to_wcs(script_name, NULL, 0);
     }
     if (exception_message) {
-        exception_message_w = pyi_win32_utils_from_utf8(NULL, exception_message, 0);
+        exception_message_w = pyi_win32_utf8_to_wcs(exception_message, NULL, 0);
     }
     if (traceback) {
-        traceback_w = pyi_win32_utils_from_utf8(NULL, traceback, 0);
+        traceback_w = pyi_win32_utf8_to_wcs(traceback, NULL, 0);
     }
 
     ret = _pyi_unhandled_exception_dialog_w(script_name_w, exception_message_w, traceback_w ? traceback_w : L"Failed to obtain/convert traceback!");

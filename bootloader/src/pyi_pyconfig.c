@@ -272,7 +272,7 @@ _pyi_pyconfig_set_string(PyConfig *config, wchar_t **dest_field, const char *str
 
 #ifdef _WIN32
     wchar_t *str_w;
-    str_w = pyi_win32_utils_from_utf8(NULL, str, 0);
+    str_w = pyi_win32_utf8_to_wcs(str, NULL, 0);
     if (!str_w) {
         return -1;
     }
@@ -463,7 +463,7 @@ pyi_pyconfig_set_module_search_paths(PyConfig *config, const PYI_CONTEXT *pyi_ct
     /* Convert */
     for (i = 0; i < 3; i++) {
 #ifdef _WIN32
-        module_search_paths_w[i] = pyi_win32_utils_from_utf8(NULL, module_search_paths[i], 0);
+        module_search_paths_w[i] = pyi_win32_utf8_to_wcs(module_search_paths[i], NULL, 0);
 #else
         module_search_paths_w[i] = PI_Py_DecodeLocale(module_search_paths[i], NULL);
 #endif

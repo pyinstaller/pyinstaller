@@ -71,7 +71,7 @@ pyi_create_parent_directory_tree(const PYI_CONTEXT *pyi_ctx, const char *prefix_
         if (pyi_path_exists(path) == 0) {
 #ifdef _WIN32
             wchar_t path_w[PATH_MAX];
-            pyi_win32_utils_from_utf8(path_w, path, PATH_MAX);
+            pyi_win32_utf8_to_wcs(path, path_w, PATH_MAX);
 
             /* CreateDirectoryW returns 0 on failure. */
             if (CreateDirectoryW(path_w, pyi_ctx->security_attr) == 0) {
