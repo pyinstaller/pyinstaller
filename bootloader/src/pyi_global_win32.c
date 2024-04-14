@@ -12,36 +12,37 @@
  */
 
 /*
- * Global shared functions used in many bootloader files.
+ * Global shared functions used in many bootloader files. This file
+ * contains implementations that are specific to Windows.
  */
 
-#include <stdarg.h>  /* va_list, va_start(), va_end() */
-#include <stdio.h>
-
 #ifdef _WIN32
-    #include <windows.h>
-    #include <direct.h>
-    #include <process.h>
-    #include <io.h>
-#else
-    #include <sys/types.h>
-    #include <unistd.h>
-#endif
 
-/* On Mac OS X send debug msg also to syslog for windowed app. */
-#if defined(__APPLE__) && defined(WINDOWED)
-    #include <syslog.h>
-#endif
+#include <stdio.h>
+#include <stdarg.h>  /* va_list, va_start(), va_end() */
+
+#include <windows.h>
+#include <direct.h>
+#include <process.h>
+#include <io.h>
 
 /* PyInstaller headers. */
 #include "pyi_global.h"
 #include "pyi_utils.h"
 
-/* Text length of MessageBox(). */
+
+/**********************************************************************\
+ *               Debug and error message implementation               *
+\**********************************************************************/
+/* On Windows, we print messages to stderr if console is available. If
+ * not, we use message box for error/warning messages, and
+ * OutputDebugStringW function for debug messages. */
+
+/* Maximum length of text displayed in a message box. */
 #define MBTXTLEN 1024
 
 
-#if defined(_WIN32) && defined(WINDOWED)
+#if defined(WINDOWED)
 
 /*
  * Dialogs used in Windows windowed/noconsole builds.
@@ -89,7 +90,7 @@ pyi_debug_dialog_warning(const char *fmt, ...)
 }
 
 void
-pyi_debug_dialog_winerror(const char * funcname, const char *fmt, ...)
+pyi_debug_dialog_winerror(const char *funcname, const char *fmt, ...)
 {
     char fullmsg[MBTXTLEN];
     char msg[MBTXTLEN];
@@ -111,7 +112,7 @@ pyi_debug_dialog_winerror(const char * funcname, const char *fmt, ...)
 }
 
 void
-pyi_debug_dialog_perror(const char * funcname, const char *fmt, ...)
+pyi_debug_dialog_perror(const char *funcname, const char *fmt, ...)
 {
     char fullmsg[MBTXTLEN];
     char msg[MBTXTLEN];
@@ -181,75 +182,67 @@ pyi_debug_win32debug_w(const wchar_t *fmt, ...)
 
 #endif /* ifdef LAUNCH_DEBUG */
 
-#else /* defined(_WIN32) && defined(WINDOWED) */
+#else /* defined(WINDOWED) */
 
 
 /*
- * Output error and debug messages to console via stderr.
+ * Print messages to stderr.
  */
 
-#if defined(_WIN32)
-
 /* Format string in UTF-8, then convert to wide-char and display using
- * fwprintf() */
-
+ * fwprintf(). Used by pyi_debug_printf, pyi_debug_perror, and
+ * pyi_debug_winerror helpers. */
 static void
 _pyi_vprintf_to_stderr(const char *fmt, va_list v)
 {
-    #define VPRINTF_TO_STDERR_BUFSIZE (MBTXTLEN * 2)
-    char msg[VPRINTF_TO_STDERR_BUFSIZE];
-    wchar_t msg_w[VPRINTF_TO_STDERR_BUFSIZE];
+    #define BUFSIZE (MBTXTLEN * 2)
+    char msg[BUFSIZE];
+    wchar_t msg_w[BUFSIZE];
 
-    vsnprintf(msg, VPRINTF_TO_STDERR_BUFSIZE, fmt, v);
+    vsnprintf(msg, BUFSIZE, fmt, v);
 
-    if (pyi_win32_utf8_to_wcs(msg, msg_w, VPRINTF_TO_STDERR_BUFSIZE)) {
+    if (pyi_win32_utf8_to_wcs(msg, msg_w, BUFSIZE)) {
         fwprintf(stderr, L"%ls", msg_w);
     } else {
         fwprintf(stderr, L"%ls", L"<Failed to convert message to wide-char string.>\n");
     }
 }
 
-#else /* defined(_WIN32) */
-
-/* Use vprintf() */
-#define _pyi_vprintf_to_stderr(fmt, v) vfprintf(stderr, fmt, v)
-
-#endif /* defined(_WIN32) */
-
-
-/*
- * Wrap printing debug messages to console.
- */
+/* Print a message. Used by PYI_ERROR and PYI_WARNING macros, and by
+ * PYI_DEBUG macro in debug-enabled builds. */
 void
 pyi_debug_printf(const char *fmt, ...)
 {
     va_list v;
 
-    /* Print the [PID] prefix */
-    fprintf(stderr, "[%d] ", getpid());
+    /* Print the [PID] prefix. */
+    fwprintf(stderr, L"[%d] ", getpid());
 
     /* Print the message */
     va_start(v, fmt);
     _pyi_vprintf_to_stderr(fmt, v);
     va_end(v);
-
-    /* In macOS .app bundle bootloaders, send a copy of debug message
-     * to syslog. This allows to see bootloader debug messages in the
-     * Console.app log viewer. */
-    /* https://en.wikipedia.org/wiki/Console_(OS_X) */
-    /* Levels DEBUG and INFO are ignored so use level NOTICE. */
-#if defined(__APPLE__) && defined(WINDOWED)
-    va_start(v, fmt);
-    vsyslog(LOG_NOTICE, fmt, v);
-    va_end(v);
-#endif
 }
 
-/*
- * Print a debug message, followed by the name of the function that
- * resulted in an error and a textual description of the error, obtained
- * via perror().
- */
+/* Wide-char variant of pyi_debug_printf. Used by PYI_DEBUG_W macro. */
+void
+pyi_debug_printf_w(const wchar_t *fmt, ...)
+{
+    va_list v;
+
+    /* Print the [PID] prefix */
+    fwprintf(stderr, L"[%d] ", getpid());
+
+    /* Print the message */
+    va_start(v, fmt);
+    vfwprintf(stderr, fmt, v);
+    va_end(v);
+}
+
+
+/* Print a message, followed by the name of the function that resulted
+ * in an error and a textual description of the error, obtained via
+ * perror(). Used by PYI_PERROR macro. */
 void
 pyi_debug_perror(const char *funcname, const char *fmt, ...)
 {
@@ -261,25 +254,17 @@ pyi_debug_perror(const char *funcname, const char *fmt, ...)
     va_end(v);
 
     /* Perror-formatted error message */
-    perror(funcname);  /* perror() writes to stderr */
-
-#if defined(__APPLE__) && defined(WINDOWED)
-    va_start(v, fmt);
-    vsyslog(LOG_NOTICE, fmt, v);
-    vsyslog(LOG_NOTICE, "%m\n", NULL);  /* %m emits the result of strerror() */
-    va_end(v);
-#endif
+    /* TODO: we should be using _wperror() here! Windows seems to be
+     * quite forgiving about mixing ANSI and wide-char I/O, though
+     * (i.e., stream orientation does not seem to matter). */
+    perror(funcname); /* perror() writes to stderr */
 }
 
-/*
- * Print a debug message, followed by the name of the function that
- * resulted in an error and a textual description of the error, obtained
- * via FormatMessage win32 API.
- */
-#ifdef _WIN32
-
+/* Print a message, followed by the name of the function that resulted
+ * in an error and a textual description of the error, obtained via
+ * FormatMessage win32 API. Used by PYI_WINERROR macro. */
 static void
-_pyi_printf_to_stderr(const char* fmt, ...)
+_pyi_printf_to_stderr(const char *fmt, ...)
 {
     va_list v;
 
@@ -300,27 +285,7 @@ pyi_debug_winerror(const char *funcname, const char *fmt, ...)
     _pyi_printf_to_stderr("%s: %s", funcname, pyi_win32_get_winerror_string(GetLastError()));
 }
 
-#endif  /* ifdef _WIN32 */
 
-/* Wide-char variant of pyi_debug_printf for printing debug messages to
- * console. */
-#ifdef _WIN32
+#endif  /* defined(WINDOWED) */
 
-void
-pyi_debug_printf_w(const wchar_t *fmt, ...)
-{
-    va_list v;
-
-    /* Print the [PID] prefix */
-    fwprintf(stderr, L"[%d] ", getpid());
-
-    /* Print the message */
-    va_start(v, fmt);
-    vfwprintf(stderr, fmt, v);
-    va_end(v);
-}
-
-#endif
-
-
-#endif  /* defined(_WIN32) && defined(WINDOWED) */
+#endif /* ifdef(_WIN32) */
