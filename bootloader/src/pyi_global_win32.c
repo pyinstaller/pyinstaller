@@ -42,6 +42,52 @@
 #define MBTXTLEN 1024
 
 
+/* Return a pointer to a null-terminated string containing a textual
+ * description of the given error code. Used by pyi_debug_dialog_winerror
+ * and pyi_debug_winerror.
+ *
+ * NOTE: this function currently returns UTF-8 encoded string, converted
+ * from wide-char string. It would be better to return wide-char string,
+ * but the callers are currently formatting their strings in UTF-8. Once
+ * that is changed, this implementation can be simplified.
+ */
+static const char *
+_pyi_get_winerror_string(DWORD error_code)
+{
+    #define ERROR_STRING_MAX 4096
+    static wchar_t local_buffer_w[ERROR_STRING_MAX];
+    static char local_buffer[ERROR_STRING_MAX];
+
+    DWORD result;
+
+    /* Note: Giving 0 to dwLanguageID means MAKELANGID(LANG_NEUTRAL,
+     * SUBLANG_NEUTRAL), but we should use SUBLANG_DEFAULT instead of
+     * SUBLANG_NEUTRAL. Please see the note written in "Language
+     * Identifier Constants and Strings" on MSDN.
+     * https://docs.microsoft.com/en-us/windows/desktop/intl/language-identifier-constants-and-strings
+     */
+    result = FormatMessageW(
+        FORMAT_MESSAGE_FROM_SYSTEM, /* dwFlags */
+        NULL, /* lpSource */
+        error_code, /* dwMessageId */
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+        local_buffer_w, /* lpBuffer */
+        ERROR_STRING_MAX, /* nSize */
+        NULL /* Arguments */
+    );
+
+    if (!result) {
+        return "PyInstaller: FormatMessageW failed.";
+    }
+
+    if (pyi_win32_wcs_to_utf8(local_buffer_w, local_buffer, ERROR_STRING_MAX) == NULL) {
+        return "PyInstaller: pyi_win32_wcs_to_utf8 failed.";
+    }
+
+    return local_buffer;
+}
+
+
 #if defined(WINDOWED)
 
 /*
@@ -107,7 +153,7 @@ pyi_debug_dialog_winerror(const char *funcname, const char *fmt, ...)
      * we do not care about truncation here. */
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wformat-truncation"
-    snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, pyi_win32_get_winerror_string(error_code));
+    snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, _pyi_get_winerror_string(error_code));
     #pragma GCC diagnostic pop
 
     _pyi_show_message_box(fullmsg, L"Error", MB_ICONEXCLAMATION);
@@ -287,12 +333,13 @@ void
 pyi_debug_winerror(const char *funcname, const char *fmt, ...)
 {
     va_list v;
+    DWORD error_code = GetLastError();
 
     va_start(v, fmt);
     _pyi_vprintf_to_stderr(fmt, v);
     va_end(v);
 
-    _pyi_printf_to_stderr("%s: %s", funcname, pyi_win32_get_winerror_string(GetLastError()));
+    _pyi_printf_to_stderr("%s: %s", funcname, _pyi_get_winerror_string(error_code));
 }
 
 

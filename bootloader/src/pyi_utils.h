@@ -78,8 +78,6 @@ void pyi_win32_minimize_console();
 /* Windows low-level helpers */
 #ifdef _WIN32
 
-const char *pyi_win32_get_winerror_string(DWORD error_code);
-
 char *pyi_win32_wcs_to_utf8(const wchar_t *src, char *dest, size_t buflen);
 wchar_t *pyi_win32_utf8_to_wcs(const char *src, wchar_t *dest, size_t buflen);
 
