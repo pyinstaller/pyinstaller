@@ -18,6 +18,9 @@
 #ifndef PYI_GLOBAL_H
 #define PYI_GLOBAL_H
 
+#ifdef _WIN32
+    #include <windows.h>
+#endif
 
 /* In the unlikely event that stdbool.h is not available, use our own
  * definitions of bool, true, and false. */
@@ -29,18 +32,14 @@
     #define false 0
 #endif
 
-/* Type for dynamic library. */
+
+/* Type for handle to open/loaded dynamic library. */
 #ifdef _WIN32
-    #include <windows.h>  /* HINSTANCE */
-    #define dylib_t   HINSTANCE
+    #define pyi_dylib_t HMODULE
 #else
-    #define dylib_t   void *
+    #define pyi_dylib_t void *
 #endif
 
-/* Wrap some windows specific declarations for Unix. */
-#ifndef _WIN32
-    #define HMODULE void *
-#endif
 
 /*
  * On Windows PATH_MAX does not exist but MAX_PATH does.
@@ -60,94 +59,63 @@
     #include <limits.h>  /* PATH_MAX */
 #endif
 
+
 /*
- * These macros used to define variables to hold dynamically accessed entry
- * points. These are declared 'extern' in the header, and defined fully later.
+ * These macros used to define variables to hold dynamically accessed
+ * entry points. These are declared 'extern' in the header, and defined
+ * fully later.
  */
 #ifdef _WIN32
 
-    #define EXTDECLPROC(result, name, args) \
+#define PYI_EXTDECLPROC(result, name, args) \
     typedef result (__cdecl *__PROC__ ## name) args; \
     extern __PROC__ ## name PI_ ## name;
 
-    #define EXTDECLVAR(vartyp, name) \
-    typedef vartyp __VAR__ ## name; \
-    extern __VAR__ ## name *PI_ ## name;
+#else /* ifdef _WIN32 */
 
-#else
-
-    #define EXTDECLPROC(result, name, args) \
+#define PYI_EXTDECLPROC(result, name, args) \
     typedef result (*__PROC__ ## name) args; \
     extern __PROC__ ## name PI_ ## name;
 
-    #define EXTDECLVAR(vartyp, name) \
-    typedef vartyp __VAR__ ## name; \
-    extern __VAR__ ## name *PI_ ## name;
+#endif  /* ifdef _WIN32 */
 
-#endif  /* WIN32 */
 
-/* Macros to declare and get foreign entry points in the C file.
+/*
+ * Macros to declare and bind foreign entry points in the C file.
  * Typedefs '__PROC__...' have been done above
- *
- * GETPROC_RENAMED is to support APIs functions that are simply renamed. We use
- * the new name, and when loading an old Python lib, load the old symbol into the
- * new name.
  */
 #ifdef _WIN32
 
-    #define DECLPROC(name) \
+#define PYI_DECLPROC(name) \
     __PROC__ ## name PI_ ## name = NULL;
-    #define GETPROCOPT(dll, name, sym) \
+
+#define PYI_GETPROCOPT(dll, name, sym) \
     PI_ ## name = (__PROC__ ## name)GetProcAddress (dll, #sym)
-    #define GETPROC(dll, name) \
-    GETPROCOPT(dll, name, name); \
-    if (!PI_ ## name) { \
-        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #name "\n"); \
-        return -1; \
-    }
-    #define GETPROC_RENAMED(dll, name, sym) \
-    GETPROCOPT(dll, name, sym); \
-    if (!PI_ ## name) { \
-        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #sym "\n"); \
-        return -1; \
-    }
-    #define DECLVAR(name) \
-    __VAR__ ## name * PI_ ## name = NULL;
-    #define GETVAR(dll, name) \
-    PI_ ## name = (__VAR__ ## name *)GetProcAddress (dll, #name); \
+
+#define PYI_GETPROC(dll, name) \
+    PYI_GETPROCOPT(dll, name, name); \
     if (!PI_ ## name) { \
         FATAL_WINERROR("GetProcAddress", "Failed to get address for " #name "\n"); \
         return -1; \
     }
 
-#else  /* ifdef _WIN32 */
+#else /* ifdef _WIN32 */
 
-    #define DECLPROC(name) \
+#define PYI_DECLPROC(name) \
     __PROC__ ## name PI_ ## name = NULL;
-    #define GETPROCOPT(dll, name, sym) \
+
+#define PYI_GETPROCOPT(dll, name, sym) \
     PI_ ## name = (__PROC__ ## name)dlsym (dll, #sym)
-    #define GETPROC(dll, name) \
-    GETPROCOPT(dll, name, name); \
+
+#define PYI_GETPROC(dll, name) \
+    PYI_GETPROCOPT(dll, name, name); \
     if (!PI_ ## name) { \
-        FATALERROR ("Cannot dlsym for " #name "\n"); \
-        return -1; \
-    }
-    #define GETPROC_RENAMED(dll, name, sym) \
-    GETPROCOPT(dll, name, sym); \
-    if (!PI_ ## name) { \
-        FATALERROR ("Cannot dlsym for " #sym "\n"); \
-        return -1; \
-    }
-    #define DECLVAR(name) \
-    __VAR__ ## name * PI_ ## name = NULL;
-    #define GETVAR(dll, name) \
-    PI_ ## name = (__VAR__ ## name *)dlsym(dll, #name); \
-    if (!PI_ ## name) { \
-        FATALERROR ("Cannot dlsym for " #name "\n"); \
+        FATALERROR("Cannot dlsym for " #name "\n"); \
         return -1; \
     }
 
-#endif  /* WIN32 */
+#endif /* ifdef _WIN32 */
+
 
 /*
  * Debug and error macros.

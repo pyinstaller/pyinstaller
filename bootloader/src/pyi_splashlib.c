@@ -27,93 +27,93 @@
 #include "pyi_splashlib.h"
 
 /* Tcl Initialization/Destruction */
-DECLPROC(Tcl_Init);
-DECLPROC(Tcl_CreateInterp);
-DECLPROC(Tcl_FindExecutable);
-DECLPROC(Tcl_DoOneEvent);
-DECLPROC(Tcl_Finalize);
-DECLPROC(Tcl_FinalizeThread);
-DECLPROC(Tcl_DeleteInterp);
+PYI_DECLPROC(Tcl_Init);
+PYI_DECLPROC(Tcl_CreateInterp);
+PYI_DECLPROC(Tcl_FindExecutable);
+PYI_DECLPROC(Tcl_DoOneEvent);
+PYI_DECLPROC(Tcl_Finalize);
+PYI_DECLPROC(Tcl_FinalizeThread);
+PYI_DECLPROC(Tcl_DeleteInterp);
 
 /* Threading */
-DECLPROC(Tcl_CreateThread);
-DECLPROC(Tcl_GetCurrentThread);
-DECLPROC(Tcl_MutexLock);
-DECLPROC(Tcl_MutexUnlock);
-DECLPROC(Tcl_ConditionFinalize);
-DECLPROC(Tcl_ConditionNotify);
-DECLPROC(Tcl_ConditionWait);
-DECLPROC(Tcl_ThreadQueueEvent);
-DECLPROC(Tcl_ThreadAlert);
+PYI_DECLPROC(Tcl_CreateThread);
+PYI_DECLPROC(Tcl_GetCurrentThread);
+PYI_DECLPROC(Tcl_MutexLock);
+PYI_DECLPROC(Tcl_MutexUnlock);
+PYI_DECLPROC(Tcl_ConditionFinalize);
+PYI_DECLPROC(Tcl_ConditionNotify);
+PYI_DECLPROC(Tcl_ConditionWait);
+PYI_DECLPROC(Tcl_ThreadQueueEvent);
+PYI_DECLPROC(Tcl_ThreadAlert);
 
 /* Tcl interpreter manipulation */
-DECLPROC(Tcl_GetVar2);
-DECLPROC(Tcl_SetVar2);
-DECLPROC(Tcl_CreateObjCommand);
-DECLPROC(Tcl_GetString);
-DECLPROC(Tcl_NewStringObj);
-DECLPROC(Tcl_NewByteArrayObj);
-DECLPROC(Tcl_SetVar2Ex);
-DECLPROC(Tcl_GetObjResult);
+PYI_DECLPROC(Tcl_GetVar2);
+PYI_DECLPROC(Tcl_SetVar2);
+PYI_DECLPROC(Tcl_CreateObjCommand);
+PYI_DECLPROC(Tcl_GetString);
+PYI_DECLPROC(Tcl_NewStringObj);
+PYI_DECLPROC(Tcl_NewByteArrayObj);
+PYI_DECLPROC(Tcl_SetVar2Ex);
+PYI_DECLPROC(Tcl_GetObjResult);
 
 /* Evaluating scripts and memory functions */
-DECLPROC(Tcl_EvalFile);
-DECLPROC(Tcl_EvalEx);
-DECLPROC(Tcl_EvalObjv);
-DECLPROC(Tcl_Alloc);
-DECLPROC(Tcl_Free);
+PYI_DECLPROC(Tcl_EvalFile);
+PYI_DECLPROC(Tcl_EvalEx);
+PYI_DECLPROC(Tcl_EvalObjv);
+PYI_DECLPROC(Tcl_Alloc);
+PYI_DECLPROC(Tcl_Free);
 
 /* Tk */
-DECLPROC(Tk_Init);
-DECLPROC(Tk_GetNumMainWindows);
+PYI_DECLPROC(Tk_Init);
+PYI_DECLPROC(Tk_GetNumMainWindows);
 
 
 /*
  * Bind all required functions from Tcl/Tk shared libraries.
  */
 int
-pyi_splashlib_bind_functions(dylib_t dll_tcl, dylib_t dll_tk)
+pyi_splashlib_bind_functions(pyi_dylib_t dll_tcl, pyi_dylib_t dll_tk)
 {
     /* Tcl Initialization/Destruction */
-    GETPROC(dll_tcl, Tcl_Init);
-    GETPROC(dll_tcl, Tcl_CreateInterp);
-    GETPROC(dll_tcl, Tcl_FindExecutable);
-    GETPROC(dll_tcl, Tcl_DoOneEvent);
-    GETPROC(dll_tcl, Tcl_Finalize);
-    GETPROC(dll_tcl, Tcl_FinalizeThread);
-    GETPROC(dll_tcl, Tcl_DeleteInterp);
+    PYI_GETPROC(dll_tcl, Tcl_Init);
+    PYI_GETPROC(dll_tcl, Tcl_CreateInterp);
+    PYI_GETPROC(dll_tcl, Tcl_FindExecutable);
+    PYI_GETPROC(dll_tcl, Tcl_DoOneEvent);
+    PYI_GETPROC(dll_tcl, Tcl_Finalize);
+    PYI_GETPROC(dll_tcl, Tcl_FinalizeThread);
+    PYI_GETPROC(dll_tcl, Tcl_DeleteInterp);
 
     /* Threading */
-    GETPROC(dll_tcl, Tcl_CreateThread);
-    GETPROC(dll_tcl, Tcl_GetCurrentThread);
-    GETPROC(dll_tcl, Tcl_MutexLock);
-    GETPROC(dll_tcl, Tcl_MutexUnlock);
-    GETPROC(dll_tcl, Tcl_ConditionFinalize);
-    GETPROC(dll_tcl, Tcl_ConditionNotify);
-    GETPROC(dll_tcl, Tcl_ConditionWait);
-    GETPROC(dll_tcl, Tcl_ThreadQueueEvent);
-    GETPROC(dll_tcl, Tcl_ThreadAlert);
+    PYI_GETPROC(dll_tcl, Tcl_CreateThread);
+    PYI_GETPROC(dll_tcl, Tcl_GetCurrentThread);
+    PYI_GETPROC(dll_tcl, Tcl_MutexLock);
+    PYI_GETPROC(dll_tcl, Tcl_MutexUnlock);
+    PYI_GETPROC(dll_tcl, Tcl_ConditionFinalize);
+    PYI_GETPROC(dll_tcl, Tcl_ConditionNotify);
+    PYI_GETPROC(dll_tcl, Tcl_ConditionWait);
+    PYI_GETPROC(dll_tcl, Tcl_ThreadQueueEvent);
+    PYI_GETPROC(dll_tcl, Tcl_ThreadAlert);
 
     /* Tcl interpreter manipulation */
-    GETPROC(dll_tcl, Tcl_GetVar2);
-    GETPROC(dll_tcl, Tcl_SetVar2);
-    GETPROC(dll_tcl, Tcl_CreateObjCommand);
-    GETPROC(dll_tcl, Tcl_GetString);
-    GETPROC(dll_tcl, Tcl_NewStringObj);
-    GETPROC(dll_tcl, Tcl_NewByteArrayObj);
-    GETPROC(dll_tcl, Tcl_SetVar2Ex);
-    GETPROC(dll_tcl, Tcl_GetObjResult);
+    PYI_GETPROC(dll_tcl, Tcl_GetVar2);
+    PYI_GETPROC(dll_tcl, Tcl_SetVar2);
+    PYI_GETPROC(dll_tcl, Tcl_CreateObjCommand);
+    PYI_GETPROC(dll_tcl, Tcl_GetString);
+    PYI_GETPROC(dll_tcl, Tcl_NewStringObj);
+    PYI_GETPROC(dll_tcl, Tcl_NewByteArrayObj);
+    PYI_GETPROC(dll_tcl, Tcl_SetVar2Ex);
+    PYI_GETPROC(dll_tcl, Tcl_GetObjResult);
 
     /* Evaluating scripts and memory functions */
-    GETPROC(dll_tcl, Tcl_EvalFile);
-    GETPROC(dll_tcl, Tcl_EvalEx);
-    GETPROC(dll_tcl, Tcl_EvalObjv);
-    GETPROC(dll_tcl, Tcl_Alloc);
-    GETPROC(dll_tcl, Tcl_Free);
+    PYI_GETPROC(dll_tcl, Tcl_EvalFile);
+    PYI_GETPROC(dll_tcl, Tcl_EvalEx);
+    PYI_GETPROC(dll_tcl, Tcl_EvalObjv);
+    PYI_GETPROC(dll_tcl, Tcl_Alloc);
+    PYI_GETPROC(dll_tcl, Tcl_Free);
 
     /* Tk */
-    GETPROC(dll_tk, Tk_Init);
-    GETPROC(dll_tk, Tk_GetNumMainWindows);
+    PYI_GETPROC(dll_tk, Tk_Init);
+    PYI_GETPROC(dll_tk, Tk_GetNumMainWindows);
 
     VS("LOADER: loaded functions from Tcl/Tk shared libraries.\n");
     return 0;
