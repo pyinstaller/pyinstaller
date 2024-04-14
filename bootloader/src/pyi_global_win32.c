@@ -58,8 +58,10 @@ _pyi_show_message_box(const char *msg, const wchar_t *caption, UINT uType)
     if (pyi_win32_utf8_to_wcs(msg, msg_w, MBTXTLEN)) {
         MessageBoxW(NULL, msg_w, caption, MB_OK | uType);
     } else {
-        /* Conversion failed */
-        MessageBoxW(NULL, L"<Failed to convert error message to wide-char string.>", caption, MB_OK | uType);
+        /* Conversion failed. Try displaying the original UTF-8 string
+         * via the ANSI method. This will produce garbled text if Unicode
+         * characters are present, but it is better than nothing. */
+        MessageBoxA(NULL, msg, "Error/warning (ANSI fallback)", MB_OK | uType);
     }
 }
 
@@ -156,8 +158,10 @@ pyi_debug_win32debug(const char *fmt, ...)
     if (pyi_win32_utf8_to_wcs(msg, msg_w, MBTXTLEN)) {
         OutputDebugStringW(msg_w);
     } else {
-        /* Conversion failed */
-        OutputDebugStringW(L"<Failed to convert message to wide-char string.>");
+        /* Conversion failed; try displaying the original UTF-8 string
+         * via the ANSI method. This will produce garbled text if Unicode
+         * characters are present, but it is better than nothing. */
+        OutputDebugStringA(msg);
     }
 }
 
@@ -204,7 +208,13 @@ _pyi_vprintf_to_stderr(const char *fmt, va_list v)
     if (pyi_win32_utf8_to_wcs(msg, msg_w, BUFSIZE)) {
         fwprintf(stderr, L"%ls", msg_w);
     } else {
-        fwprintf(stderr, L"%ls", L"<Failed to convert message to wide-char string.>\n");
+        /* Conversion failed; try displaying the original UTF-8 string
+         * via the ANSI method. This will produce garbled text if Unicode
+         * characters are present, but it is better than nothing. Also,
+         * we should not be mixing ANSI and wide-char I/O, although
+         * Windows seems to be quite forgiving in this regard (i.e.,
+         * stream orientation does not seem to matter). */
+        fprintf(stderr, "[ANSI fallback]: %s", msg);
     }
 }
 
@@ -254,9 +264,9 @@ pyi_debug_perror(const char *funcname, const char *fmt, ...)
     va_end(v);
 
     /* Perror-formatted error message */
-    /* TODO: we should be using _wperror() here! Windows seems to be
-     * quite forgiving about mixing ANSI and wide-char I/O, though
-     * (i.e., stream orientation does not seem to matter). */
+    /* TODO: we should be using _wperror() here! However, Windows seems
+     * to be quite forgiving about mixing ANSI and wide-char I/O (i.e.,
+     * stream orientation does not seem to matter). */
     perror(funcname); /* perror() writes to stderr */
 }
 
