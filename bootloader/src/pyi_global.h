@@ -114,62 +114,87 @@
 
 
 /*
- * Debug and error macros.
+ * Debug and error macros:
+ *  - PYI_DEBUG
+ *  - PYI_WARNING
+ *  - PYI_ERROR
+ *  - PYI_PERROR
+ *
+ * On Windows, additional macros are available:
+ *  - PYI_WINERROR
+ *  - PYI_DEBUG_W
  */
 
-#if defined(_WIN32) && defined(WINDOWED)
+#if defined(_WIN32)
+    #if defined(WINDOWED)
+        /* On Windows in windowed/noconsole mode, we display error
+         * messages  via message box, due to lack of console. */
+        void pyi_debug_dialog_error(const char *fmt, ...);
+        void pyi_debug_dialog_warning(const char *fmt, ...);
+        void pyi_debug_dialog_perror(const char *funcname, const char *fmt, ...);
+        void pyi_debug_dialog_winerror(const char *funcname, const char *fmt, ...);
 
-/* On Windows in windowed/noconsole mode, we display error messages via
- * message box, due to lack of console. */
-void pyi_debug_dialog_error(const char *fmt, ...);
-void pyi_debug_dialog_warning(const char *fmt, ...);
-void pyi_debug_dialog_perror(const char *funcname, const char *fmt, ...);
-void pyi_debug_dialog_winerror(const char *funcname, const char *fmt, ...);
+        #define PYI_ERROR pyi_debug_dialog_error
+        #define PYI_WARNING pyi_debug_dialog_warning
+        #define PYI_PERROR pyi_debug_dialog_perror
+        #define PYI_WINERROR pyi_debug_dialog_winerror
+    #else
+        /* We have console; emit messages to stderr. */
+        void pyi_debug_printf(const char *fmt, ...);
+        void pyi_debug_printf_w(const wchar_t *fmt, ...);
+        void pyi_debug_perror(const char *funcname, const char *fmt, ...);
+        void pyi_debug_winerror(const char *funcname, const char *fmt, ...);
 
-#define PYI_ERROR pyi_debug_dialog_error
-#define PYI_WARNING pyi_debug_dialog_warning
-#define PYI_PERROR pyi_debug_dialog_perror
-#define PYI_WINERROR pyi_debug_dialog_winerror
+        #define PYI_ERROR pyi_debug_printf
+        #define PYI_WARNING pyi_debug_printf
+        #define PYI_PERROR pyi_debug_perror
+        #define PYI_WINERROR pyi_debug_winerror
+    #endif /* defined(WINDOWED) */
+#else /* defined(_WIN32) */
+    /* POSIX; display error messages to stderr. */
+    void pyi_debug_printf(const char *fmt, ...);
+    void pyi_debug_perror(const char *funcname, const char *fmt, ...);
 
-#else /* defined(_WIN32) && defined(WINDOWED) */
-
-/* POSIX and Windows console mode; display error messages to stderr. */
-void pyi_debug_printf(const char *fmt, ...);
-void pyi_debug_perror(const char *funcname, const char *fmt, ...);
-
-#define PYI_ERROR pyi_debug_printf
-#define PYI_WARNING pyi_debug_printf
-#define PYI_PERROR pyi_debug_perror
-
-#ifdef _WIN32
-void pyi_debug_winerror(const char *funcname, const char *fmt, ...);
-#define PYI_WINERROR pyi_debug_winerror
-#endif /* ifdef _WIN32 */
-
+    #define PYI_ERROR pyi_debug_printf
+    #define PYI_WARNING pyi_debug_printf
+    #define PYI_PERROR pyi_debug_perror
 #endif /* defined(_WIN32) && defined(WINDOWED) */
 
-/* Debug messages */
 #ifdef LAUNCH_DEBUG
+    /* Debug mode - enable PYI_DEBUG macro */
+    #if defined(_WIN32)
+        #if defined(WINDOWED)
+            /* We do not have console; emit messages via OutputDebugString
+             * win32 API */
+            void pyi_debug_win32debug(const char *fmt, ...);
+            void pyi_debug_win32debug_w(const wchar_t *fmt, ...);
 
-#if defined(_WIN32) && defined(WINDOWED)
-    /* We do not have console; emit messages via OutputDebugString
-     * win32 API */
-    void pyi_debug_win32debug(const char *fmt, ...);
-    #define PYI_DEBUG pyi_debug_win32debug
-#else
-    /* We have console; emit messages to stderr */
-    #define PYI_DEBUG pyi_debug_printf
-#endif /* defined(_WIN32) && defined(WINDOWED) */
-
+            #define PYI_DEBUG pyi_debug_win32debug
+            #define PYI_DEBUG_W pyi_debug_win32debug_w
+        #else
+            /* We have console; emit messages to stderr */
+            #define PYI_DEBUG pyi_debug_printf
+            #define PYI_DEBUG_W pyi_debug_printf_w
+        #endif /* defined(WINDOWED) */
+    #else
+        /* POSIX; display messages to stderr */
+        #define PYI_DEBUG pyi_debug_printf
+    #endif /* defined(_WIN32) */
 #else /* ifdef LAUNCH_DEBUG */
-
-/* MSVC does not allow empty vararg macro... */
-#if defined(_WIN32) && defined(_MSC_VER)
-    #define PYI_DEBUG
-#else
-    #define PYI_DEBUG(...)
-#endif /* defined(_WIN32) && defined(_MSC_VER) */
-
+    /* Release mode - disable PYI_DEBUG macro (no-op) */
+    #if defined(_WIN32)
+        /* Windows; MSVC does not allow empty vararg macro... */
+        #if defined(_MSC_VER)
+            #define PYI_DEBUG
+            #define PYI_DEBUG_W
+        #else
+            #define PYI_DEBUG(...)
+            #define PYI_DEBUG_W(...)
+        #endif
+    #else
+        /* POSIX */
+        #define PYI_DEBUG(...)
+    #endif /* defined(_WIN32) */
 #endif /* ifdef LAUNCH_DEBUG */
 
 

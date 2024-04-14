@@ -154,7 +154,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
          * using _wfullpath(), because it will return the current directory
          * on the current drive. We also have no path to create. So just
          * return a verbatim copy of the string. */
-        PYI_DEBUG("LOADER: expanded runtime-tmpdir is a drive root: %ls\n", runtime_tmpdir_expanded);
+        PYI_DEBUG_W(L"LOADER: expanded runtime-tmpdir is a drive root: %ls\n", runtime_tmpdir_expanded);
         return _wcsdup(runtime_tmpdir_expanded);
     }
 
@@ -164,7 +164,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
         return NULL;
     }
 
-    PYI_DEBUG("LOADER: absolute runtime-tmpdir is %ls\n", runtime_tmpdir_abspath);
+    PYI_DEBUG_W(L"LOADER: absolute runtime-tmpdir is %ls\n", runtime_tmpdir_abspath);
 
     /* Recursively create the directory structure
      *
@@ -183,13 +183,13 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
         int subpath_length = (int)(subpath_cursor - runtime_tmpdir_abspath);
 
         _snwprintf(directory_tree_path, PYI_PATH_MAX, L"%.*s", subpath_length, runtime_tmpdir_abspath);
-        PYI_DEBUG("LOADER: creating runtime-tmpdir path component: %ls\n", directory_tree_path);
+        PYI_DEBUG_W(L"LOADER: creating runtime-tmpdir path component: %ls\n", directory_tree_path);
         CreateDirectoryW(directory_tree_path, NULL);
     }
 
     /* Run once more on full path, to handle cases when path did not end
      * with separator. */
-    PYI_DEBUG("LOADER: creating runtime-tmpdir path: %ls\n", runtime_tmpdir_abspath);
+    PYI_DEBUG_W(L"LOADER: creating runtime-tmpdir path: %ls\n", runtime_tmpdir_abspath);
     CreateDirectoryW(runtime_tmpdir_abspath, NULL);
 
     return runtime_tmpdir_abspath;
@@ -662,7 +662,7 @@ pyi_win32_initialize_security_descriptor()
 
     /* Convert security descriptor string to security descriptor, and
      * store it in the SECURITY_ATTRIBUTES structure. */
-    PYI_DEBUG("LOADER: initializing security descriptor from string: %S\n", security_descriptor_str);
+    PYI_DEBUG_W(L"LOADER: initializing security descriptor from string: %ls\n", security_descriptor_str);
     ret = ConvertStringSecurityDescriptorToSecurityDescriptorW(
         security_descriptor_str,
         SDDL_REVISION_1,

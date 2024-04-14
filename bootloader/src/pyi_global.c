@@ -160,6 +160,25 @@ pyi_debug_win32debug(const char *fmt, ...)
     }
 }
 
+void
+pyi_debug_win32debug_w(const wchar_t *fmt, ...)
+{
+    wchar_t msg[MBTXTLEN];
+    va_list args;
+    int pid_len;
+
+    /* Add pid to the message */
+    pid_len = _swprintf(msg, L"[%d] ", getpid());
+
+    /* Format message */
+    va_start(args, fmt);
+    _vsnwprintf(&msg[pid_len], MBTXTLEN-pid_len, fmt, args);
+    va_end(args);
+
+    /* Submit to OutputDebugStringW */
+    OutputDebugStringW(msg);
+}
+
 #endif /* ifdef LAUNCH_DEBUG */
 
 #else /* defined(_WIN32) && defined(WINDOWED) */
@@ -282,6 +301,26 @@ pyi_debug_winerror(const char *funcname, const char *fmt, ...)
 }
 
 #endif  /* ifdef _WIN32 */
+
+/* Wide-char variant of pyi_debug_printf for printing debug messages to
+ * console. */
+#ifdef _WIN32
+
+void
+pyi_debug_printf_w(const wchar_t *fmt, ...)
+{
+    va_list v;
+
+    /* Print the [PID] prefix */
+    fwprintf(stderr, L"[%d] ", getpid());
+
+    /* Print the message */
+    va_start(v, fmt);
+    vfwprintf(stderr, fmt, v);
+    va_end(v);
+}
+
+#endif
 
 
 #endif  /* defined(_WIN32) && defined(WINDOWED) */
