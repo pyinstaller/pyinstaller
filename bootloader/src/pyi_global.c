@@ -48,22 +48,17 @@
  */
 
 static void
-_pyi_show_message_box(const char *msg, const char *caption, UINT uType)
+_pyi_show_message_box(const char *msg, const wchar_t *caption, UINT uType)
 {
-    wchar_t wmsg[MBTXTLEN];
-    wchar_t wcaption[MBTXTLEN] = L"";
-    if (pyi_win32_utf8_to_wcs(msg, wmsg, MBTXTLEN)) {
-        /* converting the caption is expected to pass since the given caption
-         * is always written in US-ASCII and hard-coded, currently.
-         */
-        pyi_win32_utf8_to_wcs(caption, wcaption, MBTXTLEN);
-        MessageBoxW(NULL, wmsg, wcaption, MB_OK | uType);
-    }
-    else {
-        /* The msg here is always shown as not human-readable string,
-         * but can be the hint what the real message is.
-         */
-        MessageBoxA(NULL, msg, caption, MB_OK | uType);
+    wchar_t msg_w[MBTXTLEN];
+
+    /* The original message is formatted in UTF-8; convert it to
+     * wide-char for MessageBoxW. */
+    if (pyi_win32_utf8_to_wcs(msg, msg_w, MBTXTLEN)) {
+        MessageBoxW(NULL, msg_w, caption, MB_OK | uType);
+    } else {
+        /* Conversion failed */
+        MessageBoxW(NULL, L"<Failed to convert error message to wide-char string.>", caption, MB_OK | uType);
     }
 }
 
@@ -77,7 +72,7 @@ pyi_debug_dialog_error(const char *fmt, ...)
     vsnprintf(msg, MBTXTLEN, fmt, args);
     va_end(args);
 
-    _pyi_show_message_box(msg, "Error", MB_ICONEXCLAMATION);
+    _pyi_show_message_box(msg, L"Error", MB_ICONEXCLAMATION);
 }
 
 void
@@ -90,7 +85,7 @@ pyi_debug_dialog_warning(const char *fmt, ...)
     vsnprintf(msg, MBTXTLEN, fmt, args);
     va_end(args);
 
-    _pyi_show_message_box(msg, "Warning", MB_ICONWARNING);
+    _pyi_show_message_box(msg, L"Warning", MB_ICONWARNING);
 }
 
 void
@@ -112,7 +107,7 @@ pyi_debug_dialog_winerror(const char * funcname, const char *fmt, ...)
     snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, pyi_win32_get_winerror_string(error_code));
     #pragma GCC diagnostic pop
 
-    _pyi_show_message_box(fullmsg, "Error", MB_ICONEXCLAMATION);
+    _pyi_show_message_box(fullmsg, L"Error", MB_ICONEXCLAMATION);
 }
 
 void
@@ -133,7 +128,7 @@ pyi_debug_dialog_perror(const char * funcname, const char *fmt, ...)
     snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, strerror(errno));
     #pragma GCC diagnostic pop
 
-    _pyi_show_message_box(fullmsg, "Error", MB_ICONEXCLAMATION);
+    _pyi_show_message_box(fullmsg, L"Error", MB_ICONEXCLAMATION);
 }
 
 /* Emit debug messages (in debug-enabled builds) via OutputDebugString
@@ -144,19 +139,25 @@ void
 pyi_debug_win32debug(const char *fmt, ...)
 {
     char msg[MBTXTLEN];
+    wchar_t msg_w[MBTXTLEN];
     va_list args;
     int pid_len;
 
     /* Add pid to the message */
     pid_len = sprintf(msg, "[%d] ", getpid());
 
+    /* Format message */
     va_start(args, fmt);
     vsnprintf(&msg[pid_len], MBTXTLEN-pid_len, fmt, args);
-    /* Ensure message is trimmed to fit the buffer. */
-    /* msg[MBTXTLEN-1] = '\0'; */
     va_end(args);
 
-    OutputDebugStringA(msg);
+    /* Convert message from UTF-8 to wide-char for OutputDebugStringW */
+    if (pyi_win32_utf8_to_wcs(msg, msg_w, MBTXTLEN)) {
+        OutputDebugStringW(msg_w);
+    } else {
+        /* Conversion failed */
+        OutputDebugStringW(L"<Failed to convert message to wide-char string.>");
+    }
 }
 
 #endif /* ifdef LAUNCH_DEBUG */
@@ -168,28 +169,33 @@ pyi_debug_win32debug(const char *fmt, ...)
  * Output error and debug messages to console via stderr.
  */
 
-#define VPRINTF_TO_STDERR_BUFSIZE (MBTXTLEN * 2)
+#if defined(_WIN32)
+
+/* Format string in UTF-8, then convert to wide-char and display using
+ * fwprintf() */
 
 static void
 _pyi_vprintf_to_stderr(const char *fmt, va_list v)
 {
-#if defined(_WIN32)
-    char utf8_buffer[VPRINTF_TO_STDERR_BUFSIZE];
-    char mbcs_buffer[VPRINTF_TO_STDERR_BUFSIZE];
+    #define VPRINTF_TO_STDERR_BUFSIZE (MBTXTLEN * 2)
+    char msg[VPRINTF_TO_STDERR_BUFSIZE];
+    wchar_t msg_w[VPRINTF_TO_STDERR_BUFSIZE];
 
-    vsnprintf(utf8_buffer, VPRINTF_TO_STDERR_BUFSIZE, fmt, v);
-    if (pyi_win32_utf8_to_mbs(utf8_buffer,
-                              mbcs_buffer,
-                              VPRINTF_TO_STDERR_BUFSIZE)) {
-        fprintf(stderr, "%s", mbcs_buffer);
+    vsnprintf(msg, VPRINTF_TO_STDERR_BUFSIZE, fmt, v);
+
+    if (pyi_win32_utf8_to_wcs(msg, msg_w, VPRINTF_TO_STDERR_BUFSIZE)) {
+        fwprintf(stderr, L"%ls", msg_w);
+    } else {
+        fwprintf(stderr, L"%ls", L"<Failed to convert message to wide-char string.>\n");
     }
-    else {
-        fprintf(stderr, "%s", utf8_buffer);
-    }
-#else
-    vfprintf(stderr, fmt, v);
-#endif /* if defined(_WIN32) */
 }
+
+#else /* defined(_WIN32) */
+
+/* Use vprintf() */
+#define _pyi_vprintf_to_stderr(fmt, v) vfprintf(stderr, fmt, v)
+
+#endif /* defined(_WIN32) */
 
 
 /*
