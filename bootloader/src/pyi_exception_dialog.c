@@ -80,7 +80,7 @@ typedef struct
     WCHAR *wszTraceback;
 
     /* Formatted label message */
-    WCHAR wszLabelMessage[PATH_MAX];
+    WCHAR wszLabelMessage[PYI_PATH_MAX];
 
     /* UI elements / controls */
     HWND hStaticIcon;
@@ -187,7 +187,7 @@ _exception_dialog_initialze(DIALOG_CONTEXT *dialog)
      * Initialize resources
      */
     /* Format the label message */
-    swprintf(dialog->wszLabelMessage, PATH_MAX, L"Failed to execute script '%ls' due to unhandled exception: %ls", dialog->wszScriptName, dialog->wszExceptionMessage);
+    swprintf(dialog->wszLabelMessage, PYI_PATH_MAX, L"Failed to execute script '%ls' due to unhandled exception: %ls", dialog->wszScriptName, dialog->wszExceptionMessage);
 
     /* Estimate button dimensions */
     lUnits = GetDialogBaseUnits();

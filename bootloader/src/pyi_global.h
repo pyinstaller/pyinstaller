@@ -41,22 +41,18 @@
 #endif
 
 
-/*
- * On Windows PATH_MAX does not exist but MAX_PATH does.
- * WinAPI MAX_PATH limit is only 256. MSVCR functions does not have this limit.
- * Redefine PATH_MAX for Windows to support longer path names.
- */
-/* TODO use MSVCR function for file path handling. */
+/* Maximum buffer size for statically allocated path-related buffers in
+ * PyInstaller code. */
 #ifdef _WIN32
-    #ifdef PATH_MAX
-        #undef PATH_MAX  /* On Windows override PATH_MAX if defined. */
-    #endif
-    #define PATH_MAX 4096  /* Default value on Linux. */
+    /* Match the default value of PATH_MAX used on Linux. */
+    #define PYI_PATH_MAX 4096
 #elif __APPLE__
-    #include <limits.h>
-    #define PATH_MAX 1024  /* Recommended value for OSX. */
+    /* Recommended value for macOS. */
+    #define PYI_PATH_MAX 1024
 #else
-    #include <limits.h>  /* PATH_MAX */
+    /* Use PATH_MAX as defined in limits.h */
+    #include <limits.h>
+    #define PYI_PATH_MAX PATH_MAX
 #endif
 
 

@@ -62,7 +62,7 @@ typedef struct _archive_cookie
 typedef struct _archive
 {
     /* Full path to archive file. */
-    char filename[PATH_MAX];
+    char filename[PYI_PATH_MAX];
 
     uint64_t pkg_offset; /* Offset of the PKG archive in the file */
 

@@ -98,10 +98,10 @@ typedef struct _pyi_context
 #endif /* ifdef _WIN32 */
 
     /* Fully resolved path to the executable */
-    char executable_filename[PATH_MAX];
+    char executable_filename[PYI_PATH_MAX];
 
     /* Fully resolved path to the main PKG archive */
-    char archive_filename[PATH_MAX];
+    char archive_filename[PYI_PATH_MAX];
 
     /* Main PKG archive */
     ARCHIVE *archive;
@@ -127,7 +127,7 @@ typedef struct _pyi_context
      * and shared libraries are. For applications with onefile semantics,
      * this is ephemeral temporary directory where application unpacked
      * itself. */
-    char application_home_dir[PATH_MAX];
+    char application_home_dir[PYI_PATH_MAX];
 
     /* Handle to loaded python shared library. */
     pyi_dylib_t python_dll;

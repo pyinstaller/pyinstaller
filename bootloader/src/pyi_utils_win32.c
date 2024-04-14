@@ -42,16 +42,16 @@ char *
 pyi_getenv(const char *variable)
 {
     wchar_t *variable_w;
-    wchar_t value[PATH_MAX];
-    wchar_t expanded_value[PATH_MAX];
+    wchar_t value[PYI_PATH_MAX];
+    wchar_t expanded_value[PYI_PATH_MAX];
     DWORD rc;
 
     /* Convert the variable name from UTF-8 to wide-char */
     variable_w = pyi_win32_utf8_to_wcs(variable, NULL, 0);
 
     /* Retrieve environment variable */
-    rc = GetEnvironmentVariableW(variable_w, value, PATH_MAX);
-    if (rc >= PATH_MAX) {
+    rc = GetEnvironmentVariableW(variable_w, value, PYI_PATH_MAX);
+    if (rc >= PYI_PATH_MAX) {
         return NULL; /* Insufficient buffer size */
     }
     if (rc == 0) {
@@ -60,8 +60,8 @@ pyi_getenv(const char *variable)
 
     /* Expand environment variables within the environment variable's
      * value */
-    rc = ExpandEnvironmentStringsW(value, expanded_value, PATH_MAX);
-    if (rc >= PATH_MAX) {
+    rc = ExpandEnvironmentStringsW(value, expanded_value, PYI_PATH_MAX);
+    if (rc >= PYI_PATH_MAX) {
         return NULL; /* Insufficient buffer size */
     }
     if (rc == 0) {
@@ -127,10 +127,10 @@ static wchar_t *
 _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
 {
     wchar_t *runtime_tmpdir_w;
-    wchar_t runtime_tmpdir_expanded[PATH_MAX];
+    wchar_t runtime_tmpdir_expanded[PYI_PATH_MAX];
     wchar_t *runtime_tmpdir_abspath;
     wchar_t *subpath_cursor;
-    wchar_t directory_tree_path[PATH_MAX];
+    wchar_t directory_tree_path[PYI_PATH_MAX];
     DWORD rc;
 
     /* Convert UTF-8 path to wide-char */
@@ -141,7 +141,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
     }
 
     /* Expand environment variables like %LOCALAPPDATA% */
-    rc = ExpandEnvironmentStringsW(runtime_tmpdir_w, runtime_tmpdir_expanded, PATH_MAX);
+    rc = ExpandEnvironmentStringsW(runtime_tmpdir_w, runtime_tmpdir_expanded, PYI_PATH_MAX);
     free(runtime_tmpdir_w);
     if (!rc) {
         FATALERROR("LOADER: failed to expand environment variables in the runtime-tmpdir.\n");
@@ -158,7 +158,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
         return _wcsdup(runtime_tmpdir_expanded);
     }
 
-    runtime_tmpdir_abspath = _wfullpath(NULL, runtime_tmpdir_expanded, PATH_MAX);
+    runtime_tmpdir_abspath = _wfullpath(NULL, runtime_tmpdir_expanded, PYI_PATH_MAX);
     if (!runtime_tmpdir_abspath) {
         FATALERROR("LOADER: failed to obtain the absolute path of the runtime-tmpdir.\n");
         return NULL;
@@ -182,7 +182,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
     for(subpath_cursor = wcschr(runtime_tmpdir_abspath, L'\\'); subpath_cursor != NULL; subpath_cursor = wcschr(++subpath_cursor, L'\\')) {
         int subpath_length = (int)(subpath_cursor - runtime_tmpdir_abspath);
 
-        _snwprintf(directory_tree_path, PATH_MAX, L"%.*s", subpath_length, runtime_tmpdir_abspath);
+        _snwprintf(directory_tree_path, PYI_PATH_MAX, L"%.*s", subpath_length, runtime_tmpdir_abspath);
         VS("LOADER: creating runtime-tmpdir path component: %ls\n", directory_tree_path);
         CreateDirectoryW(directory_tree_path, NULL);
     }
@@ -200,7 +200,7 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
 {
     char *original_tmp_value = NULL;
     wchar_t prefix[16];
-    wchar_t tempdir_path[PATH_MAX];
+    wchar_t tempdir_path[PYI_PATH_MAX];
     int ret = 0;
     int i;
 
@@ -236,7 +236,7 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
     }
 
     /* Retrieve temporary directory */
-    GetTempPathW(PATH_MAX, tempdir_path);
+    GetTempPathW(PYI_PATH_MAX, tempdir_path);
 
     /* Create _MEI + PID prefix */
     swprintf(prefix, 16, L"_MEI%d", _getpid());
@@ -255,7 +255,7 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
             ret = -1; /* In case we reached max. retries */
         } else {
             /* Convert path to UTF-8 and store it in main context structure */
-            if (pyi_win32_wcs_to_utf8(application_home_dir_w, pyi_ctx->application_home_dir, PATH_MAX) == NULL) {
+            if (pyi_win32_wcs_to_utf8(application_home_dir_w, pyi_ctx->application_home_dir, PYI_PATH_MAX) == NULL) {
                 FATALERROR("LOADER: length of teporary directory path exceeds maximum path length!\n");
                 ret = -1;
             }
@@ -288,7 +288,7 @@ _pyi_recursive_rmdir(const wchar_t *dir_path)
 {
     int dir_path_length;
     int buffer_size;
-    wchar_t entry_path[PATH_MAX];
+    wchar_t entry_path[PYI_PATH_MAX];
     HANDLE handle;
     WIN32_FIND_DATAW entry_info;
 
@@ -297,12 +297,12 @@ _pyi_recursive_rmdir(const wchar_t *dir_path)
      * path plus the separator; this allows us to re-use the same buffer
      * for constructing entries' full paths, by overwriting only the
      * part of the string that follows the path separator that we added. */
-    dir_path_length = _snwprintf(entry_path, PATH_MAX, L"%s\\*", dir_path);
-    if (dir_path_length >= PATH_MAX) {
+    dir_path_length = _snwprintf(entry_path, PYI_PATH_MAX, L"%s\\*", dir_path);
+    if (dir_path_length >= PYI_PATH_MAX) {
         return -1;
     }
     dir_path_length--; /* Ignore the wildcard at the end */
-    buffer_size = PATH_MAX - dir_path_length; /* Remaining buffer size */
+    buffer_size = PYI_PATH_MAX - dir_path_length; /* Remaining buffer size */
 
     /* Start the search by looking for first entry */
     handle = FindFirstFileW(entry_path, &entry_info);
@@ -359,8 +359,8 @@ _pyi_recursive_rmdir(const wchar_t *dir_path)
 int
 pyi_recursive_rmdir(const char *dir_path)
 {
-    wchar_t dir_path_w[PATH_MAX];
-    pyi_win32_utf8_to_wcs(dir_path, dir_path_w, PATH_MAX);
+    wchar_t dir_path_w[PYI_PATH_MAX];
+    pyi_win32_utf8_to_wcs(dir_path, dir_path_w, PYI_PATH_MAX);
     return _pyi_recursive_rmdir(dir_path_w);
 }
 
@@ -477,13 +477,13 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     SECURITY_ATTRIBUTES security_attributes;
     STARTUPINFOW startup_info;
     PROCESS_INFORMATION process_info;
-    wchar_t executable_filename_w[PATH_MAX];
+    wchar_t executable_filename_w[PYI_PATH_MAX];
     bool succeeded;
     DWORD child_exitcode;
 
     /* TODO is there a replacement for this conversion or just use wchar_t everywhere? */
     /* Convert file name to wchar_t from utf8. */
-    pyi_win32_utf8_to_wcs(pyi_ctx->executable_filename, executable_filename_w, PATH_MAX);
+    pyi_win32_utf8_to_wcs(pyi_ctx->executable_filename, executable_filename_w, PYI_PATH_MAX);
 
     /* Set up console ctrl handler; the call returns non-zero on success */
     if (SetConsoleCtrlHandler(_pyi_win32_console_ctrl, TRUE) == 0) {
@@ -620,7 +620,7 @@ pyi_win32_initialize_security_descriptor()
     LPVOID lpSecurityDescriptor;
     wchar_t *user_sid;
     wchar_t *app_container_sid;
-    wchar_t security_descriptor_str[PATH_MAX];
+    wchar_t security_descriptor_str[PYI_PATH_MAX];
     int ret;
 
     /* Resolve user's SID for compatibility with wine */
@@ -640,14 +640,14 @@ pyi_win32_initialize_security_descriptor()
     if (app_container_sid) {
         ret = _snwprintf(
             security_descriptor_str,
-            PATH_MAX,
+            PYI_PATH_MAX,
             L"D:(A;;FA;;;%s)(A;;FA;;;%s)",
             user_sid ? user_sid : L"S-1-3-4",
             app_container_sid);
     } else {
         ret = _snwprintf(
             security_descriptor_str,
-            PATH_MAX,
+            PYI_PATH_MAX,
             L"D:(A;;FA;;;%s)",
             user_sid ? user_sid : L"S-1-3-4");
     }
@@ -655,8 +655,8 @@ pyi_win32_initialize_security_descriptor()
     LocalFree(user_sid); /* Must be freed using LocalFree() */
     LocalFree(app_container_sid); /* Must be freed using LocalFree() */
 
-    if (ret >= PATH_MAX) {
-        OTHERERROR("Security descriptor string length exceeds PATH_MAX!\n");
+    if (ret >= PYI_PATH_MAX) {
+        OTHERERROR("Security descriptor string length exceeds PYI_PATH_MAX!\n");
         return NULL;
     }
 

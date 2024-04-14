@@ -432,8 +432,8 @@ pyi_archive_open(const char *filename)
     }
 
     /* Copy the filename; since the input buffer originates from within
-     * bootloader, the string is guaranteed to be within PATH_MAX limit */
-    snprintf(archive->filename, PATH_MAX, "%s", filename);
+     * bootloader, the string is guaranteed to be within PYI_PATH_MAX limit */
+    snprintf(archive->filename, PYI_PATH_MAX, "%s", filename);
 
     /* Fix endianness of cookie fields */
     archive_cookie.pkg_length = pyi_be32toh(archive_cookie.pkg_length);

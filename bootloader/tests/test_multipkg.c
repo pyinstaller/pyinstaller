@@ -25,7 +25,7 @@ int _format_and_check_path(char *buf, const char *fmt, ...);
 
 static void test_format_and_check_path(void **state)
 {
-    char result[PATH_MAX];
+    char result[PYI_PATH_MAX];
 
     // TODO: use some mocks to determine stat() output
 
@@ -39,29 +39,29 @@ static void test_format_and_check_path(void **state)
     assert_int_not_equal(errno, 0); // formatting passed, pyi_path_exists (stat) failed
     assert_string_equal(result, "");
 
-    char *path2 = (char *) malloc(PATH_MAX+10);
-    memset(path2, 'a', PATH_MAX+8);
+    char *path2 = (char *) malloc(PYI_PATH_MAX+10);
+    memset(path2, 'a', PYI_PATH_MAX+8);
     // a few bytes more
     errno = 0;
-    path2[PATH_MAX+8] = '\0';
+    path2[PYI_PATH_MAX+8] = '\0';
     assert_int_equal(-1, _format_and_check_path(result, "%s%s%s.pkg", "a1", path2, "ccc"));
     assert_int_equal(errno, 0); // formatting failed
     // exact length
     errno = 0;
-    path2[PATH_MAX] = '\0';
+    path2[PYI_PATH_MAX] = '\0';
     assert_int_equal(-1, _format_and_check_path(result, "%s", path2));
     assert_int_equal(errno, 0); // formatting failed
     // one byte less
     errno = 0;
-    path2[PATH_MAX-1] = '\0';
+    path2[PYI_PATH_MAX-1] = '\0';
     assert_int_equal(0, _format_and_check_path(result, "%s", path2));
     assert_int_not_equal(errno, 0); // formatting passed, stat failed
 }
 
 static void test_split_dependency_string(void **state)
 {
-    char path[PATH_MAX];
-    char filename[PATH_MAX];
+    char path[PYI_PATH_MAX];
+    char filename[PYI_PATH_MAX];
 
     // TODO: use some mocks to determine
 
@@ -80,17 +80,17 @@ static void test_split_dependency_string(void **state)
     assert_string_equal(filename, "::");
     assert_int_equal(-1, pyi_multipkg_split_dependency_string(path, filename, ":::bbb"));
 
-    char *path2 = (char *) malloc(PATH_MAX+10);
-    memset(path2, 'a', PATH_MAX+8);
+    char *path2 = (char *) malloc(PYI_PATH_MAX+10);
+    memset(path2, 'a', PYI_PATH_MAX+8);
     path2[10] = ':';
     // a few bytes more
-    path2[PATH_MAX+8] = '\0';
+    path2[PYI_PATH_MAX+8] = '\0';
     assert_int_equal(-1, pyi_multipkg_split_dependency_string(path, filename, path2));
     // exact length
-    path2[PATH_MAX] = '\0';
+    path2[PYI_PATH_MAX] = '\0';
     assert_int_equal(-1, pyi_multipkg_split_dependency_string(path, filename, path2));
     // one byte less
-    path2[PATH_MAX-1] = '\0';
+    path2[PYI_PATH_MAX-1] = '\0';
     assert_int_equal(0, pyi_multipkg_split_dependency_string(path, filename, path2));
     assert_string_equal(path, "aaaaaaaaaa");
 }

@@ -48,30 +48,30 @@
 int
 pyi_create_parent_directory_tree(const PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename)
 {
-    char path[PATH_MAX];
+    char path[PYI_PATH_MAX];
     char *subpath_cursor;
     size_t path_length;
 
     /* Ensure that combined path length does not exceed max path. */
-    if (strlen(prefix_path) + strlen(filename) + 1 >= PATH_MAX) {
+    if (strlen(prefix_path) + strlen(filename) + 1 >= PYI_PATH_MAX) {
         return -1;
     }
 
     /* Write prefix path, append separator, and store length; so we
      * can keep appending sub-paths at the end */
-    path_length = snprintf(path, PATH_MAX, "%s%c", prefix_path, PYI_SEP);
+    path_length = snprintf(path, PYI_PATH_MAX, "%s%c", prefix_path, PYI_SEP);
 
     /* Process directory components in filename */
     for (subpath_cursor = strchr(filename, PYI_SEP); subpath_cursor != NULL; subpath_cursor = strchr(++subpath_cursor, PYI_SEP)) {
         int subpath_length = (int)(subpath_cursor - filename);
 
-        snprintf(path + path_length, PATH_MAX - path_length, "%.*s", subpath_length, filename);
+        snprintf(path + path_length, PYI_PATH_MAX - path_length, "%.*s", subpath_length, filename);
 
         /* Create path if necessary */
         if (pyi_path_exists(path) == 0) {
 #ifdef _WIN32
-            wchar_t path_w[PATH_MAX];
-            pyi_win32_utf8_to_wcs(path, path_w, PATH_MAX);
+            wchar_t path_w[PYI_PATH_MAX];
+            pyi_win32_utf8_to_wcs(path, path_w, PYI_PATH_MAX);
 
             /* CreateDirectoryW returns 0 on failure. */
             if (CreateDirectoryW(path_w, pyi_ctx->security_attr) == 0) {

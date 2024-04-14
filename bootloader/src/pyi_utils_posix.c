@@ -133,12 +133,12 @@ mkdtemp(char *template)
 static char *
 _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
 {
-    char directory_tree_path[PATH_MAX];
+    char directory_tree_path[PYI_PATH_MAX];
     char *subpath_cursor;
 
     /* Ensure runtime_tmpdir (and thus also its sub-path components)
      * do not exceed path limit. */
-    if (strlen(runtime_tmpdir) >= PATH_MAX) {
+    if (strlen(runtime_tmpdir) >= PYI_PATH_MAX) {
         OTHERERROR("LOADER: length of runtime-tmpdir exceeds maximum path length!\n");
         return NULL;
     }
@@ -162,7 +162,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
             continue;
         }
 
-        snprintf(directory_tree_path, PATH_MAX, "%.*s", subpath_length, runtime_tmpdir);
+        snprintf(directory_tree_path, PYI_PATH_MAX, "%.*s", subpath_length, runtime_tmpdir);
         VS("LOADER: creating runtime-tmpdir path component: %s\n", directory_tree_path);
         mkdir(directory_tree_path, 0777);
     }
@@ -195,7 +195,7 @@ _pyi_format_and_create_tmpdir(char *tmpdir_path)
 
     /* Add separator , _MEI, and six X characters required by mkdtemp */
     path_len += needs_separator + 4 + 6;
-    if (path_len >= PATH_MAX) {
+    if (path_len >= PYI_PATH_MAX) {
         return -1;
     }
 
@@ -241,9 +241,9 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
             return -1;
         }
 
-        ret = snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", resolved_runtime_tmpdir);
+        ret = snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", resolved_runtime_tmpdir);
         free(resolved_runtime_tmpdir);
-        if (ret >= PATH_MAX) {
+        if (ret >= PYI_PATH_MAX) {
             OTHERERROR("Length of resolved runtime_tmpdir exceeds maximum path length!\n");
             return -1;
         }
@@ -261,10 +261,10 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
             continue;
         }
 
-        ret = snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", env_var_value);
+        ret = snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", env_var_value);
         free(env_var_value);
 
-        if (ret >= PATH_MAX) {
+        if (ret >= PYI_PATH_MAX) {
             continue;
         }
 
@@ -275,7 +275,7 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
 
     /* Check the standard temporary directory paths */
     for (i = 0; i < sizeof(candidate_tmp_dirs)/sizeof(candidate_tmp_dirs[0]); i++) {
-         snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", candidate_tmp_dirs[i]);
+         snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", candidate_tmp_dirs[i]);
          if (_pyi_format_and_create_tmpdir(pyi_ctx->application_home_dir) == 0) {
             return 0;
         }
@@ -296,18 +296,18 @@ pyi_recursive_rmdir(const char *dir_path)
     struct stat stat_buf;
     int dir_path_length;
     int buffer_size;
-    char entry_path[PATH_MAX];
+    char entry_path[PYI_PATH_MAX];
 
     /* Make a copy of directory path (and append a path separator), into
      * mutable buffer that we will use to construct entries' full paths.
      * Store the length of the directory path string; this allows us to
      * overwrite only the sub-component part of the string, without having
      * to copy the directory path each time. */
-    dir_path_length = snprintf(entry_path, PATH_MAX, "%s%c", dir_path, PYI_SEP);
-    if (dir_path_length >= PATH_MAX) {
+    dir_path_length = snprintf(entry_path, PYI_PATH_MAX, "%s%c", dir_path, PYI_SEP);
+    if (dir_path_length >= PYI_PATH_MAX) {
         return -1;
     }
-    buffer_size = PATH_MAX - dir_path_length; /* Remaining buffer size */
+    buffer_size = PYI_PATH_MAX - dir_path_length; /* Remaining buffer size */
 
     /* Open the directory */
     dir_handle = opendir(dir_path);

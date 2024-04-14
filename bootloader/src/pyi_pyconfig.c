@@ -64,11 +64,11 @@ pyi_runtime_options_free(PyiRuntimeOptions *options)
 static int
 _pyi_copy_xwflag(const char *flag, wchar_t **pdest_buf)
 {
-    wchar_t flag_w[PATH_MAX + 1];
+    wchar_t flag_w[PYI_PATH_MAX + 1];
 
     /* Convert multi-byte string to wide-char. The multibyte encoding in PKG is UTF-8,
      * but W and X options should consist only of ASCII characters. */
-    if (mbstowcs(flag_w, flag, PATH_MAX) < 0) {
+    if (mbstowcs(flag_w, flag, PYI_PATH_MAX) < 0) {
         return -1;
     }
 
@@ -437,8 +437,8 @@ pyi_pyconfig_set_module_search_paths(PyConfig *config, const PYI_CONTEXT *pyi_ct
     /* TODO: instead of stitching together char strings and converting
      * them, we could probably stitch together wide-char strings directly,
      * as `home` field in config structure has already been converted. */
-    char base_library_path[PATH_MAX + 1];
-    char lib_dynload_path[PATH_MAX + 1];
+    char base_library_path[PYI_PATH_MAX + 1];
+    char lib_dynload_path[PYI_PATH_MAX + 1];
 
     const char *module_search_paths[3];
     wchar_t *module_search_paths_w[3];
@@ -447,12 +447,12 @@ pyi_pyconfig_set_module_search_paths(PyConfig *config, const PYI_CONTEXT *pyi_ct
     int i;
 
     /* home/base_library.zip */
-    if (snprintf(base_library_path, PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, "base_library.zip") >= PATH_MAX) {
+    if (snprintf(base_library_path, PYI_PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, "base_library.zip") >= PYI_PATH_MAX) {
         return -1;
     }
 
     /* home/lib-dynload */
-    if (snprintf(lib_dynload_path, PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, "lib-dynload") >= PATH_MAX) {
+    if (snprintf(lib_dynload_path, PYI_PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, "lib-dynload") >= PYI_PATH_MAX) {
         return -1;
     }
 
