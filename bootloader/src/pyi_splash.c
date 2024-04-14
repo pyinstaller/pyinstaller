@@ -121,7 +121,7 @@ pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
     if (data_header == NULL) {
         return -1; /* No splash resources */
     }
-    VS("SPLASH: found splash screen resources.\n");
+    PYI_DEBUG("SPLASH: found splash screen resources.\n");
 
     /* In onedir mode, Tcl/Tk dependencies (shared libraries, .tcl files)
      * are located directly in top-level application directory. In onefile
@@ -135,21 +135,21 @@ pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
 
     /* Tcl shared library */
     if (pyi_path_join(splash->tcl_libpath, pyi_ctx->application_home_dir, data_header->tcl_libname) == NULL) {
-        OTHERERROR("SPLASH: length of Tcl shared library path exceeds maximum path length!\n");
+        PYI_WARNING("SPLASH: length of Tcl shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }
 
     /* Tk shared library */
     if (pyi_path_join(splash->tk_libpath, pyi_ctx->application_home_dir, data_header->tk_libname) == NULL) {
-        OTHERERROR("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
+        PYI_WARNING("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }
 
     /* Tk modules directory */
     if (pyi_path_join(splash->tk_lib, pyi_ctx->application_home_dir, data_header->tk_lib) == NULL) {
-        OTHERERROR("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
+        PYI_WARNING("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }
@@ -167,7 +167,7 @@ pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
     splash->requirements = (char *)malloc(splash->requirements_len);
 
     if (splash->script == NULL || splash->image == NULL || splash->requirements == NULL) {
-        FATALERROR("Could not allocate memory for splash screen resources.\n");
+        PYI_ERROR("Could not allocate memory for splash screen resources.\n");
         free(data_header);
         return -1;
     }
@@ -242,7 +242,7 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
         0, /* use default stack size */
         0 /* no flags */
     ) != TCL_OK) {
-        FATALERROR("SPLASH: Tcl is not threaded. Only threaded Tcl is supported.\n");
+        PYI_ERROR("SPLASH: Tcl is not threaded. Only threaded Tcl is supported.\n");
         PI_Tcl_MutexUnlock(&status_mutex);
         pyi_splash_finalize(splash);
         return -1;
@@ -250,7 +250,7 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
     PI_Tcl_MutexLock(&start_mutex);
     PI_Tcl_MutexUnlock(&status_mutex);
 
-    VS("SPLASH: created thread for Tcl interpreter.\n");
+    PYI_DEBUG("SPLASH: created thread for Tcl interpreter.\n");
 
     /* To avoid a race condition between the tcl and python interpreter
      * we need to wait until the splash screen has been started. We lock
@@ -259,7 +259,7 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
     PI_Tcl_ConditionWait(&start_cond, &start_mutex, NULL);
     PI_Tcl_MutexUnlock(&start_mutex);
     PI_Tcl_ConditionFinalize(&start_cond);
-    VS("SPLASH: splash screen started.\n");
+    PYI_DEBUG("SPLASH: splash screen started.\n");
 
     return 0;
 }
@@ -296,35 +296,35 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
         /* Look-up entry in archive's TOC */
         toc_entry = pyi_archive_find_entry_by_name(archive, requirement_filename);
         if (toc_entry == NULL) {
-            FATALERROR("SPLASH: could not find requirement %s in archive.\n", requirement_filename);
+            PYI_ERROR("SPLASH: could not find requirement %s in archive.\n", requirement_filename);
             return -1;
         }
 
         /* Construct output filename */
         if (snprintf(output_filename, PYI_PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, requirement_filename) >= PYI_PATH_MAX) {
-            FATALERROR("SPLASH: extraction path length exceeds maximum path length!\n");
+            PYI_ERROR("SPLASH: extraction path length exceeds maximum path length!\n");
             return -1;
         }
 
         /* Check if file already exists (it should not) */
         if (pyi_path_exists(output_filename) == 1) {
             if (pyi_ctx->strict_unpack_mode) {
-                FATALERROR("SPLASH: file already exists but should not: %s\n", output_filename);
+                PYI_ERROR("SPLASH: file already exists but should not: %s\n", output_filename);
                 return -1;
             } else {
-                OTHERERROR("SPLASH: WARNING: file already exists but should not: %s\n", output_filename);
+                PYI_WARNING("SPLASH: WARNING: file already exists but should not: %s\n", output_filename);
             }
         }
 
         /* Create parent directory tree */
         if (pyi_create_parent_directory_tree(pyi_ctx, pyi_ctx->application_home_dir, requirement_filename) < 0) {
-            FATALERROR("SPLASH: failed to create parent directory structure.\n");
+            PYI_ERROR("SPLASH: failed to create parent directory structure.\n");
             return -1;
         }
 
         /* Extract file into the splash dependencies directory */
         if (pyi_archive_extract2fs(archive, toc_entry, output_filename)) {
-            FATALERROR("SPLASH: could not extract requirement %s.\n", toc_entry->name);
+            PYI_ERROR("SPLASH: could not extract requirement %s.\n", toc_entry->name);
             return -2;
         }
     }
@@ -371,14 +371,14 @@ pyi_splash_load_shared_libaries(SPLASH_CONTEXT *splash)
 {
     splash->dlls_fully_loaded = false;
 
-    VS("SPLASH: loading Tcl library from: %s\n", splash->tcl_libpath);
-    VS("SPLASH: loading Tk library from: %s\n", splash->tk_libpath);
+    PYI_DEBUG("SPLASH: loading Tcl library from: %s\n", splash->tcl_libpath);
+    PYI_DEBUG("SPLASH: loading Tk library from: %s\n", splash->tk_libpath);
 
     splash->dll_tcl = pyi_utils_dlopen(splash->tcl_libpath);
     splash->dll_tk = pyi_utils_dlopen(splash->tk_libpath);
 
     if (splash->dll_tcl == 0 || splash->dll_tk == 0) {
-        FATALERROR("SPLASH: failed to load Tcl/Tk shared libraries!\n");
+        PYI_ERROR("SPLASH: failed to load Tcl/Tk shared libraries!\n");
         return -1;
     }
 
@@ -485,7 +485,7 @@ pyi_splash_context_new()
     splash = (SPLASH_CONTEXT *)calloc(1, sizeof(SPLASH_CONTEXT));
 
     if (splash == NULL) {
-        FATAL_PERROR("calloc", "Could not allocate memory for SPLASH_CONTEXT.\n");
+        PYI_PERROR("calloc", "Could not allocate memory for SPLASH_CONTEXT.\n");
     }
 
     return splash;
@@ -906,7 +906,7 @@ _splash_init(ClientData client_data)
      * if one of them fails, the splash screen should be aborted (and
      * generally, if one fails, all of them should fail). */
     if (err) {
-        VS("TCL: failed to create setup commands. Error: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
+        PYI_DEBUG("TCL: failed to create setup commands. Error: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
         goto cleanup;
     }
 
@@ -914,13 +914,13 @@ _splash_init(ClientData client_data)
     err |= PI_Tcl_Init(splash->interp);
 
     if (err) {
-        VS("SPLASH: error while initializing Tcl: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
+        PYI_DEBUG("SPLASH: error while initializing Tcl: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
     }
 
     err |= PI_Tk_Init(splash->interp);
 
     if (err) {
-        VS("SPLASH: error while initializing Tk: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
+        PYI_DEBUG("SPLASH: error while initializing Tk: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
     }
 
     if (err) {
@@ -928,7 +928,7 @@ _splash_init(ClientData client_data)
     }
 
     /* Display version of Tcl and Tk for debugging purposes. */
-    VS(
+    PYI_DEBUG(
         "SPLASH: running Tcl version %s and Tk version %s.\n",
         PI_Tcl_GetVar2(splash->interp, "tcl_patchLevel", NULL, TCL_GLOBAL_ONLY),
         PI_Tcl_GetVar2(splash->interp, "tk_patchLevel", NULL, TCL_GLOBAL_ONLY)
@@ -946,7 +946,7 @@ _splash_init(ClientData client_data)
     err = PI_Tcl_EvalEx(splash->interp, splash->script, splash->script_len, TCL_GLOBAL_ONLY);
 
     if (err) {
-        VS("SPLASH: Tcl error: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
+        PYI_DEBUG("SPLASH: Tcl error: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
     }
 
     /* We need to notify the bootloader main thread that the splash screen

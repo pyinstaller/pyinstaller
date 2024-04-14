@@ -15,16 +15,6 @@
  * Global shared functions used in many bootloader files.
  */
 
-/*
- * Enable use of Sean's Tool Box -- public domain -- http://nothings.org/stb.h.
- * File stb.h.
- * All functions starting with 'stb_' prefix are from this toolbox.
- *
- * This define has to be only in one C source file!
- */
-/* #define STB_DEFINE  1/ * * / */
-/* #define STB_NO_REGISTRY 1 / * No need for Windows registry functions in stb.h. * / */
-
 #include <stdarg.h>  /* va_list, va_start(), va_end() */
 #include <stdio.h>
 
@@ -46,18 +36,19 @@
 /* PyInstaller headers. */
 #include "pyi_global.h"
 #include "pyi_utils.h"
+
 /* Text length of MessageBox(). */
 #define MBTXTLEN 1024
 
 
+#if defined(_WIN32) && defined(WINDOWED)
+
 /*
- * On Windows and with windowed mode (no console) show error messages
- * in message boxes. In windowed mode nothing is written to console.
+ * Dialogs used in Windows windowed/noconsole builds.
  */
 
-#if defined(_WIN32) && defined(WINDOWED)
-void
-show_message_box(const char *msg, const char *caption, UINT uType)
+static void
+_pyi_show_message_box(const char *msg, const char *caption, UINT uType)
 {
     wchar_t wmsg[MBTXTLEN];
     wchar_t wcaption[MBTXTLEN] = L"";
@@ -76,9 +67,8 @@ show_message_box(const char *msg, const char *caption, UINT uType)
     }
 }
 
-
 void
-mbfatalerror(const char *fmt, ...)
+pyi_debug_dialog_error(const char *fmt, ...)
 {
     char msg[MBTXTLEN];
     va_list args;
@@ -87,11 +77,11 @@ mbfatalerror(const char *fmt, ...)
     vsnprintf(msg, MBTXTLEN, fmt, args);
     va_end(args);
 
-    show_message_box(msg, "Fatal error detected", MB_ICONEXCLAMATION);
+    _pyi_show_message_box(msg, "Error", MB_ICONEXCLAMATION);
 }
 
 void
-mbothererror(const char *fmt, ...)
+pyi_debug_dialog_warning(const char *fmt, ...)
 {
     char msg[MBTXTLEN];
     va_list args;
@@ -100,10 +90,11 @@ mbothererror(const char *fmt, ...)
     vsnprintf(msg, MBTXTLEN, fmt, args);
     va_end(args);
 
-    show_message_box(msg, "Error detected", MB_ICONWARNING);
+    _pyi_show_message_box(msg, "Warning", MB_ICONWARNING);
 }
 
-void mbfatal_winerror(const char * funcname, const char *fmt, ...)
+void
+pyi_debug_dialog_winerror(const char * funcname, const char *fmt, ...)
 {
     char fullmsg[MBTXTLEN];
     char msg[MBTXTLEN];
@@ -121,10 +112,11 @@ void mbfatal_winerror(const char * funcname, const char *fmt, ...)
     snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, pyi_win32_get_winerror_string(error_code));
     #pragma GCC diagnostic pop
 
-    show_message_box(fullmsg, "Fatal error detected", MB_ICONEXCLAMATION);
+    _pyi_show_message_box(fullmsg, "Error", MB_ICONEXCLAMATION);
 }
 
-void mbfatal_perror(const char * funcname, const char *fmt, ...)
+void
+pyi_debug_dialog_perror(const char * funcname, const char *fmt, ...)
 {
     char fullmsg[MBTXTLEN];
     char msg[MBTXTLEN];
@@ -141,16 +133,15 @@ void mbfatal_perror(const char * funcname, const char *fmt, ...)
     snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, strerror(errno));
     #pragma GCC diagnostic pop
 
-    show_message_box(fullmsg, "Fatal error detected", MB_ICONEXCLAMATION);
+    _pyi_show_message_box(fullmsg, "Error", MB_ICONEXCLAMATION);
 }
-#endif  /* _WIN32 and WINDOWED */
 
-/* Enable or disable debug output. */
-
+/* Emit debug messages (in debug-enabled builds) via OutputDebugString
+ * win32 API. */
 #ifdef LAUNCH_DEBUG
-    #if defined(_WIN32) && defined(WINDOWED)
+
 void
-mbvs(const char *fmt, ...)
+pyi_debug_win32debug(const char *fmt, ...)
 {
     char msg[MBTXTLEN];
     va_list args;
@@ -167,11 +158,21 @@ mbvs(const char *fmt, ...)
 
     OutputDebugStringA(msg);
 }
-    #endif /* if defined(_WIN32) && defined(WINDOWED) */
+
 #endif /* ifdef LAUNCH_DEBUG */
 
+#else /* defined(_WIN32) && defined(WINDOWED) */
+
+
+/*
+ * Output error and debug messages to console via stderr.
+ */
+
 #define VPRINTF_TO_STDERR_BUFSIZE (MBTXTLEN * 2)
-void vprintf_to_stderr(const char *fmt, va_list v) {
+
+static void
+_pyi_vprintf_to_stderr(const char *fmt, va_list v)
+{
 #if defined(_WIN32)
     char utf8_buffer[VPRINTF_TO_STDERR_BUFSIZE];
     char mbcs_buffer[VPRINTF_TO_STDERR_BUFSIZE];
@@ -190,28 +191,26 @@ void vprintf_to_stderr(const char *fmt, va_list v) {
 #endif /* if defined(_WIN32) */
 }
 
-void printf_to_stderr(const char* fmt, ...) {
-    va_list v;
-    va_start(v, fmt);
-    vprintf_to_stderr(fmt, v);
-    va_end(v);
-}
 
 /*
  * Wrap printing debug messages to console.
  */
 void
-pyi_global_printf(const char *fmt, ...)
+pyi_debug_printf(const char *fmt, ...)
 {
     va_list v;
 
-    /* Sent 'LOADER text' messages to stderr. */
+    /* Print the [PID] prefix */
     fprintf(stderr, "[%d] ", getpid());
+
+    /* Print the message */
     va_start(v, fmt);
-    vprintf_to_stderr(fmt, v);
+    _pyi_vprintf_to_stderr(fmt, v);
     va_end(v);
-    /* For Gui apps on Mac OS X send debug messages also to syslog. */
-    /* This allows to see bootloader debug messages in the Console.app log viewer. */
+
+    /* In macOS .app bundle bootloaders, send a copy of debug message
+     * to syslog. This allows to see bootloader debug messages in the
+     * Console.app log viewer. */
     /* https://en.wikipedia.org/wiki/Console_(OS_X) */
     /* Levels DEBUG and INFO are ignored so use level NOTICE. */
 #if defined(__APPLE__) && defined(WINDOWED)
@@ -222,38 +221,61 @@ pyi_global_printf(const char *fmt, ...)
 }
 
 /*
- * Print a debug message followed by the name of the function that resulted in an error
- * and a textual description of the error, as with perror().
+ * Print a debug message, followed by the name of the function that
+ * resulted in an error and a textual description of the error, obtained
+ * via perror().
  */
-void pyi_global_perror(const char *funcname, const char *fmt, ...) {
+void
+pyi_debug_perror(const char *funcname, const char *fmt, ...)
+{
     va_list v;
 
+    /* Formatted message */
     va_start(v, fmt);
-    vprintf_to_stderr(fmt, v);
+    _pyi_vprintf_to_stderr(fmt, v);
     va_end(v);
-    perror(funcname);  // perror() writes to stderr
 
-    #if defined(__APPLE__) && defined(WINDOWED)
-        va_start(v, fmt);
-            vsyslog(LOG_NOTICE, fmt, v);
-            vsyslog(LOG_NOTICE, "%m\n", NULL);  // %m emits the result of strerror()
-        va_end(v);
-    #endif
+    /* Perror-formatted error message */
+    perror(funcname);  /* perror() writes to stderr */
+
+#if defined(__APPLE__) && defined(WINDOWED)
+    va_start(v, fmt);
+    vsyslog(LOG_NOTICE, fmt, v);
+    vsyslog(LOG_NOTICE, "%m\n", NULL);  /* %m emits the result of strerror() */
+    va_end(v);
+#endif
 }
 
 /*
- * Windows errors.
- *
- * Print a debug message followed by the name of the function that resulted in an error
- * and a textual description of the error, as returned by FormatMessage.
+ * Print a debug message, followed by the name of the function that
+ * resulted in an error and a textual description of the error, obtained
+ * via FormatMessage win32 API.
  */
 #ifdef _WIN32
-void pyi_global_winerror(const char *funcname, const char *fmt, ...) {
+
+static void
+_pyi_printf_to_stderr(const char* fmt, ...)
+{
     va_list v;
 
     va_start(v, fmt);
-    vprintf_to_stderr(fmt, v);
+    _pyi_vprintf_to_stderr(fmt, v);
     va_end(v);
-    printf_to_stderr("%s: %s", funcname, pyi_win32_get_winerror_string(GetLastError()));
 }
-#endif
+
+void
+pyi_debug_winerror(const char *funcname, const char *fmt, ...)
+{
+    va_list v;
+
+    va_start(v, fmt);
+    _pyi_vprintf_to_stderr(fmt, v);
+    va_end(v);
+
+    _pyi_printf_to_stderr("%s: %s", funcname, pyi_win32_get_winerror_string(GetLastError()));
+}
+
+#endif  /* ifdef _WIN32 */
+
+
+#endif  /* defined(_WIN32) && defined(WINDOWED) */

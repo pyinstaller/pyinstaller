@@ -105,7 +105,7 @@ pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
 
         /* Construct output filename */
         if (snprintf(output_filename, PYI_PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, entry_filename) >= PYI_PATH_MAX) {
-            FATALERROR("Extraction path length exceeds maximum path length!\n");
+            PYI_ERROR("Extraction path length exceeds maximum path length!\n");
             retcode = -1;
             break;
         }
@@ -119,17 +119,17 @@ pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
                  * overwriting it. */
                 continue;
             } else if (pyi_ctx->strict_unpack_mode) {
-                FATALERROR("File already exists but should not: %s\n", output_filename);
+                PYI_ERROR("File already exists but should not: %s\n", output_filename);
                 retcode = -1;
                 break;
             } else {
-                OTHERERROR("WARNING: file already exists but should not: %s\n", output_filename);
+                PYI_WARNING("WARNING: file already exists but should not: %s\n", output_filename);
             }
         }
 
         /* Create parent directory tree */
         if (pyi_create_parent_directory_tree(pyi_ctx, pyi_ctx->application_home_dir, entry_filename) < 0) {
-            FATALERROR("Failed to create parent directory structure.\n");
+            PYI_ERROR("Failed to create parent directory structure.\n");
             retcode = -1;
             break;
         }
@@ -149,7 +149,7 @@ pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
 
         /* If extraction failed, there is no need to continue. */
         if (retcode != 0) {
-            FATALERROR("Failed to extract entry: %s.\n", toc_entry->name);
+            PYI_ERROR("Failed to extract entry: %s.\n", toc_entry->name);
             break;
         }
     }
@@ -289,14 +289,14 @@ _pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
     __main__ = PI_PyImport_AddModule("__main__");
 
     if (!__main__) {
-        FATALERROR("Could not get __main__ module.\n");
+        PYI_ERROR("Could not get __main__ module.\n");
         return -1;
     }
 
     main_dict = PI_PyModule_GetDict(__main__);
 
     if (!main_dict) {
-        FATALERROR("Could not get __main__ module's dict.\n");
+        PYI_ERROR("Could not get __main__ module's dict.\n");
         return -1;
     }
 
@@ -309,18 +309,18 @@ _pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
         /* Get data out of the archive.  */
         data = pyi_archive_extract(archive, toc_entry);
         if (data == NULL) {
-            FATALERROR("Failed to extract script from archive!\n");
+            PYI_ERROR("Failed to extract script from archive!\n");
             return -1;
         }
 
         /* Set the __file__ attribute within the __main__ module, for
          * full compatibility with normal execution. */
         if (snprintf(buf, PYI_PATH_MAX, "%s%c%s.py", pyi_ctx->application_home_dir, PYI_SEP, toc_entry->name) >= PYI_PATH_MAX) {
-            FATALERROR("Absolute path to script exceeds PYI_PATH_MAX\n");
+            PYI_ERROR("Absolute path to script exceeds PYI_PATH_MAX\n");
             return -1;
         }
 
-        VS("LOADER: running %s.py\n", toc_entry->name);
+        PYI_DEBUG("LOADER: running %s.py\n", toc_entry->name);
 
         __file__ = PI_PyUnicode_FromString(buf);
         PI_PyObject_SetAttrString(__main__, "__file__", __file__);
@@ -330,7 +330,7 @@ _pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
         code = PI_PyMarshal_ReadObjectFromString((const char *)data, toc_entry->uncompressed_length);
         free(data);
         if (!code) {
-            FATALERROR("Failed to unmarshal code object for %s\n", toc_entry->name);
+            PYI_ERROR("Failed to unmarshal code object for %s\n", toc_entry->name);
             PI_PyErr_Print();
             return -1;
         }
@@ -389,17 +389,17 @@ _pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
             /* Non-windowed mode; PyErr_print() above dumps the
              * traceback, so the only thing we need to do here
              * is provide a summary */
-            FATALERROR("Failed to execute script '%s' due to unhandled exception!\n", toc_entry->name);
+            PYI_ERROR("Failed to execute script '%s' due to unhandled exception!\n", toc_entry->name);
 #else /* !defined(WINDOWED) */
 #if defined(_WIN32)
             /* Windows; use custom dialog */
             pyi_unhandled_exception_dialog(toc_entry->name, msg_exc, msg_tb);
 #elif defined(__APPLE__)
-            /* macOS .app bundle; use FATALERROR(), which
+            /* macOS .app bundle; use PYI_ERROR(), which
              * prints to stderr (invisible) as well as sends
              * the message to syslog */
-            FATALERROR("Failed to execute script '%s' due to unhandled exception: %s\n", toc_entry->name, msg_exc);
-            FATALERROR("Traceback:\n%s\n", msg_tb);
+            PYI_ERROR("Failed to execute script '%s' due to unhandled exception: %s\n", toc_entry->name, msg_exc);
+            PYI_ERROR("Traceback:\n%s\n", msg_tb);
 #endif /* defined(_WIN32) */
 
             /* Clean up exception information strings */
@@ -462,9 +462,9 @@ pyi_launch_execute(PYI_CONTEXT *pyi_ctx)
     rc = _pyi_launch_run_scripts(pyi_ctx);
 
     if (rc == 0) {
-        VS("LOADER: OK.\n");
+        PYI_DEBUG("LOADER: OK.\n");
     } else {
-        VS("LOADER: ERROR.\n");
+        PYI_DEBUG("LOADER: ERROR.\n");
     }
 
     return rc;
@@ -478,7 +478,7 @@ pyi_launch_finalize(PYI_CONTEXT *pyi_ctx)
 
     /* Unload python shared library */
     if (pyi_ctx->python_dll) {
-        VS("LOADER: unloading Python shared library...\n");
+        PYI_DEBUG("LOADER: unloading Python shared library...\n");
         pyi_utils_dlclose(pyi_ctx->python_dll);
         pyi_ctx->python_dll = NULL;
     }

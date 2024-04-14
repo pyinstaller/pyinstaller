@@ -115,6 +115,6 @@ pyi_splashlib_bind_functions(pyi_dylib_t dll_tcl, pyi_dylib_t dll_tk)
     PYI_GETPROC(dll_tk, Tk_Init);
     PYI_GETPROC(dll_tk, Tk_GetNumMainWindows);
 
-    VS("LOADER: loaded functions from Tcl/Tk shared libraries.\n");
+    PYI_DEBUG("LOADER: loaded functions from Tcl/Tk shared libraries.\n");
     return 0;
 }

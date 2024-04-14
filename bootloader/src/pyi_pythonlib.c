@@ -84,7 +84,7 @@ pyi_pylib_load(PYI_CONTEXT *pyi_ctx)
 #endif
 
     if (dll_name_len >= MAX_DLL_NAME_LEN) {
-        FATALERROR(
+        PYI_ERROR(
             "Reported length (%d) of Python shared library name (%s) exceeds buffer size (%d)\n",
             dll_name_len,
             archive->python_libname,
@@ -101,10 +101,10 @@ pyi_pylib_load(PYI_CONTEXT *pyi_ctx)
     if (1) {
         char ucrtpath[PYI_PATH_MAX];
         if (pyi_path_join(ucrtpath, pyi_ctx->application_home_dir, "ucrtbase.dll") == NULL) {
-            FATALERROR("Path of ucrtbase.dll (%s) and its name exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PYI_PATH_MAX);
+            PYI_ERROR("Path of ucrtbase.dll (%s) and its name exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PYI_PATH_MAX);
         }
         if (pyi_path_exists(ucrtpath)) {
-            VS("LOADER: ucrtbase.dll found: %s\n", ucrtpath);
+            PYI_DEBUG("LOADER: ucrtbase.dll found: %s\n", ucrtpath);
             pyi_utils_dlopen(ucrtpath);
         }
     }
@@ -112,19 +112,19 @@ pyi_pylib_load(PYI_CONTEXT *pyi_ctx)
 
     /* Look for python shared library in top-level application directory */
     if (pyi_path_join(dll_fullpath, pyi_ctx->application_home_dir, dll_name) == NULL) {
-        FATALERROR("Path of Python shared library (%s) and its name (%s) exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PYI_PATH_MAX);
+        PYI_ERROR("Path of Python shared library (%s) and its name (%s) exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PYI_PATH_MAX);
     };
 
-    VS("LOADER: loading Python shared library: %s\n", dll_fullpath);
+    PYI_DEBUG("LOADER: loading Python shared library: %s\n", dll_fullpath);
 
     /* Load the shared libary */
     pyi_ctx->python_dll = pyi_utils_dlopen(dll_fullpath);
 
     if (pyi_ctx->python_dll == 0) {
 #ifdef _WIN32
-        FATAL_WINERROR("LoadLibrary", "Failed to load Python DLL '%s'.\n", dll_fullpath);
+        PYI_WINERROR("LoadLibrary", "Failed to load Python DLL '%s'.\n", dll_fullpath);
 #else
-        FATALERROR("Failed to load Python shared library '%s': dlopen: %s\n", dll_fullpath, dlerror());
+        PYI_ERROR("Failed to load Python shared library '%s': dlopen: %s\n", dll_fullpath, dlerror());
 #endif
         return -1;
     }
@@ -147,68 +147,68 @@ pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx)
     /* Read run-time options */
     runtime_options = pyi_runtime_options_read(pyi_ctx);
     if (runtime_options == NULL) {
-        FATALERROR("Failed to parse run-time options!\n");
+        PYI_ERROR("Failed to parse run-time options!\n");
         goto end;
     }
 
     /* Pre-initialize python. This ensures that PEP 540 UTF-8 mode is enabled
      * if necessary. */
-    VS("LOADER: Pre-initializing embedded python interpreter...\n");
+    PYI_DEBUG("LOADER: pre-initializing embedded python interpreter...\n");
     if (pyi_pyconfig_preinit_python(runtime_options) < 0) {
-        FATALERROR("Failed to pre-initialize embedded python interpreter!\n");
+        PYI_ERROR("Failed to pre-initialize embedded python interpreter!\n");
         goto end;
     }
 
     /* Allocate the config structure. Since underlying layout is specific to
      * python version, this also verifies that python version is supported. */
-    VS("LOADER: Creating PyConfig structure...\n");
+    PYI_DEBUG("LOADER: creating PyConfig structure...\n");
     config = pyi_pyconfig_create(python_version);
     if (config == NULL) {
-        FATALERROR("Failed to allocate PyConfig structure! Unsupported python version?\n");
+        PYI_ERROR("Failed to allocate PyConfig structure! Unsupported python version?\n");
         goto end;
     }
 
     /* Initialize isolated configuration */
-    VS("LOADER: Initializing interpreter configuration...\n");
+    PYI_DEBUG("LOADER: initializing interpreter configuration...\n");
     PI_PyConfig_InitIsolatedConfig(config);
 
     /* Set program name */
-    VS("LOADER: Setting program name...\n");
+    PYI_DEBUG("LOADER: setting program name...\n");
     if (pyi_pyconfig_set_program_name(config, pyi_ctx) < 0) {
-        FATALERROR("Failed to set program name!\n");
+        PYI_ERROR("Failed to set program name!\n");
         goto end;
     }
 
     /* Set python home */
-    VS("LOADER: Setting python home path...\n");
+    PYI_DEBUG("LOADER: setting python home path...\n");
     if (pyi_pyconfig_set_python_home(config, pyi_ctx) < 0) {
-        FATALERROR("Failed to set python home path!\n");
+        PYI_ERROR("Failed to set python home path!\n");
         goto end;
     }
 
     /* Set module search paths */
-    VS("LOADER: Setting module search paths...\n");
+    PYI_DEBUG("LOADER: setting module search paths...\n");
     if (pyi_pyconfig_set_module_search_paths(config, pyi_ctx) < 0) {
-        FATALERROR("Failed to set module search paths!\n");
+        PYI_ERROR("Failed to set module search paths!\n");
         goto end;
     }
 
     /* Set arguments (sys.argv) */
-    VS("LOADER: Setting sys.argv...\n");
+    PYI_DEBUG("LOADER: setting sys.argv...\n");
     if (pyi_pyconfig_set_argv(config, pyi_ctx) < 0) {
-        FATALERROR("Failed to set sys.argv!\n");
+        PYI_ERROR("Failed to set sys.argv!\n");
         goto end;
     }
 
     /* Apply run-time options */
-    VS("LOADER: Applying run-time options...\n");
+    PYI_DEBUG("LOADER: applying run-time options...\n");
     if (pyi_pyconfig_set_runtime_options(config, python_version, runtime_options) < 0) {
-        FATALERROR("Failed to set run-time options!\n");
+        PYI_ERROR("Failed to set run-time options!\n");
         goto end;
     }
 
     /* Start the interpreter */
-    VS("LOADER: Starting embedded python interpreter...\n");
+    PYI_DEBUG("LOADER: starting embedded python interpreter...\n");
 
     /* In unbuffered mode, flush stdout/stderr before python configuration
      * removes the buffer (changing the buffer should probably flush the
@@ -239,7 +239,7 @@ pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx)
 #endif
 
     if (PI_PyStatus_Exception(status)) {
-        FATALERROR("Failed to start embedded python interpreter!\n");
+        PYI_ERROR("Failed to start embedded python interpreter!\n");
         /* Dump exception information to stderr and exit the process with error code. */
         PI_Py_ExitStatusException(status);
     } else {
@@ -265,7 +265,7 @@ pyi_pylib_import_modules(const PYI_CONTEXT *pyi_ctx)
     PyObject *mod;
     PyObject *meipass_obj;
 
-    VS("LOADER: setting sys._MEIPASS\n");
+    PYI_DEBUG("LOADER: setting sys._MEIPASS\n");
 
     /* TODO extract function pyi_char_to_pyobject */
 #ifdef _WIN32
@@ -275,13 +275,13 @@ pyi_pylib_import_modules(const PYI_CONTEXT *pyi_ctx)
 #endif
 
     if (!meipass_obj) {
-        FATALERROR("Failed to get _MEIPASS as PyObject.\n");
+        PYI_ERROR("Failed to get _MEIPASS as PyObject.\n");
         return -1;
     }
 
     PI_PySys_SetObject("_MEIPASS", meipass_obj);
 
-    VS("LOADER: importing modules from PKG/CArchive\n");
+    PYI_DEBUG("LOADER: importing modules from PKG/CArchive\n");
 
     /* Iterate through toc looking for module entries (type 'm')
      * this is normally just bootstrap stuff (archive and iu) */
@@ -291,20 +291,20 @@ pyi_pylib_import_modules(const PYI_CONTEXT *pyi_ctx)
         }
 
         data = pyi_archive_extract(archive, toc_entry);
-        VS("LOADER: extracted %s\n", toc_entry->name);
+        PYI_DEBUG("LOADER: extracted %s\n", toc_entry->name);
 
         /* Unmarshal the stored code object */
         co = PI_PyMarshal_ReadObjectFromString((const char *)data, toc_entry->uncompressed_length);
         free(data);
 
         if (co == NULL) {
-            FATALERROR("Failed to unmarshal code object for module %s!\n", toc_entry->name);
+            PYI_ERROR("Failed to unmarshal code object for module %s!\n", toc_entry->name);
             mod = NULL;
         } else {
-            VS("LOADER: running unmarshalled code object for module %s...\n", toc_entry->name);
+            PYI_DEBUG("LOADER: running unmarshalled code object for module %s...\n", toc_entry->name);
             mod = PI_PyImport_ExecCodeModule(toc_entry->name, co);
             if (mod == NULL) {
-                FATALERROR("Module object for %s is NULL!\n", toc_entry->name);
+                PYI_ERROR("Module object for %s is NULL!\n", toc_entry->name);
             }
         }
 
@@ -346,7 +346,7 @@ _pyi_pylib_install_pyz_entry(const PYI_CONTEXT *pyi_ctx, const TOC_ENTRY *toc_en
     /* Retrieve sys.path object; this returns borrowed reference! */
     sys_path = PI_PySys_GetObject("path");
     if (sys_path == NULL) {
-        FATALERROR("Installing PYZ: could not get sys.path object!\n");
+        PYI_ERROR("Installing PYZ: could not get sys.path object!\n");
         return -1;
     }
 
@@ -368,7 +368,7 @@ _pyi_pylib_install_pyz_entry(const PYI_CONTEXT *pyi_ctx, const TOC_ENTRY *toc_en
     PI_Py_DecRef(zlib_entry);
 
     if (rc != 0) {
-        FATALERROR("Failed to append PYZ entry to sys.path!\n");
+        PYI_ERROR("Failed to append PYZ entry to sys.path!\n");
     }
 
     return rc;
@@ -384,7 +384,7 @@ pyi_pylib_install_pyz(const PYI_CONTEXT *pyi_ctx)
     const ARCHIVE *archive = pyi_ctx->archive;
     const TOC_ENTRY *toc_entry;
 
-    VS("LOADER: installing PYZ archive with Python modules.\n");
+    PYI_DEBUG("LOADER: installing PYZ archive with Python modules.\n");
 
     /* Iterate through TOC looking for PYZ (type 'z') */
     for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
@@ -392,7 +392,7 @@ pyi_pylib_install_pyz(const PYI_CONTEXT *pyi_ctx)
             continue;
         }
 
-        VS("LOADER: PYZ archive: %s\n", toc_entry->name);
+        PYI_DEBUG("LOADER: PYZ archive: %s\n", toc_entry->name);
         if (_pyi_pylib_install_pyz_entry(pyi_ctx, toc_entry) < 0) {
             return -1;
         }
@@ -421,7 +421,7 @@ pyi_pylib_finalize(const PYI_CONTEXT *pyi_ctx)
     /* We need to manually flush the buffers because otherwise there can be errors.
      * The native python interpreter flushes buffers before calling Py_Finalize,
      * so we need to manually do the same. See isse #4908. */
-    VS("LOADER: manually flushing stdout and stderr...\n");
+    PYI_DEBUG("LOADER: manually flushing stdout and stderr...\n");
 
     /* sys.stdout.flush() */
     PI_PyRun_SimpleStringFlags(
@@ -438,6 +438,6 @@ pyi_pylib_finalize(const PYI_CONTEXT *pyi_ctx)
 #endif
 
     /* Finalize the interpreter. This calls all of the atexit functions. */
-    VS("LOADER: cleaning up Python interpreter...\n");
+    PYI_DEBUG("LOADER: cleaning up Python interpreter...\n");
     PI_Py_Finalize();
 }

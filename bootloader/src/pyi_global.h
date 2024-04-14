@@ -91,7 +91,7 @@
 #define PYI_GETPROC(dll, name) \
     PYI_GETPROCOPT(dll, name, name); \
     if (!PI_ ## name) { \
-        FATAL_WINERROR("GetProcAddress", "Failed to get address for " #name "\n"); \
+        PYI_WINERROR("GetProcAddress", "Failed to get address for " #name "\n"); \
         return -1; \
     }
 
@@ -106,7 +106,7 @@
 #define PYI_GETPROC(dll, name) \
     PYI_GETPROCOPT(dll, name, name); \
     if (!PI_ ## name) { \
-        FATALERROR("Cannot dlsym for " #name "\n"); \
+        PYI_ERROR("Cannot dlsym for " #name "\n"); \
         return -1; \
     }
 
@@ -117,66 +117,71 @@
  * Debug and error macros.
  */
 
-void pyi_global_printf(const char *fmt, ...);
-void pyi_global_perror(const char *funcname, const char *fmt, ...);
+#if defined(_WIN32) && defined(WINDOWED)
+
+/* On Windows in windowed/noconsole mode, we display error messages via
+ * message box, due to lack of console. */
+void pyi_debug_dialog_error(const char *fmt, ...);
+void pyi_debug_dialog_warning(const char *fmt, ...);
+void pyi_debug_dialog_perror(const char *funcname, const char *fmt, ...);
+void pyi_debug_dialog_winerror(const char *funcname, const char *fmt, ...);
+
+#define PYI_ERROR pyi_debug_dialog_error
+#define PYI_WARNING pyi_debug_dialog_warning
+#define PYI_PERROR pyi_debug_dialog_perror
+#define PYI_WINERROR pyi_debug_dialog_winerror
+
+#else /* defined(_WIN32) && defined(WINDOWED) */
+
+/* POSIX and Windows console mode; display error messages to stderr. */
+void pyi_debug_printf(const char *fmt, ...);
+void pyi_debug_perror(const char *funcname, const char *fmt, ...);
+
+#define PYI_ERROR pyi_debug_printf
+#define PYI_WARNING pyi_debug_printf
+#define PYI_PERROR pyi_debug_perror
+
 #ifdef _WIN32
-    void pyi_global_winerror(const char *funcname, const char *fmt, ...);
-#endif
-/*
- * On Windows and with windowed mode (no console) show error messages
- * in message boxes. In windowed mode nothing is written to console.
- */
+void pyi_debug_winerror(const char *funcname, const char *fmt, ...);
+#define PYI_WINERROR pyi_debug_winerror
+#endif /* ifdef _WIN32 */
+
+#endif /* defined(_WIN32) && defined(WINDOWED) */
+
+/* Debug messages */
+#ifdef LAUNCH_DEBUG
 
 #if defined(_WIN32) && defined(WINDOWED)
-void mbfatalerror(const char *fmt, ...);
-    #define FATALERROR mbfatalerror
-
-void mbothererror(const char *fmt, ...);
-    #define OTHERERROR mbothererror
-
-    void mbfatal_perror(const char *funcname, const char *fmt, ...);
-    #define FATAL_PERROR mbfatal_perror
-
-    void mbfatal_winerror(const char *funcname, const char *fmt, ...);
-    #define FATAL_WINERROR mbfatal_winerror
-
+    /* We do not have console; emit messages via OutputDebugString
+     * win32 API */
+    void pyi_debug_win32debug(const char *fmt, ...);
+    #define PYI_DEBUG pyi_debug_win32debug
 #else
-/* TODO copy over stbprint to bootloader. */
-    #define FATALERROR pyi_global_printf
-    #define OTHERERROR pyi_global_printf
-    #define FATAL_PERROR pyi_global_perror
-    #define FATAL_WINERROR pyi_global_winerror
-#endif  /* WIN32 and WINDOWED */
+    /* We have console; emit messages to stderr */
+    #define PYI_DEBUG pyi_debug_printf
+#endif /* defined(_WIN32) && defined(WINDOWED) */
 
-/* Enable or disable debug output. */
+#else /* ifdef LAUNCH_DEBUG */
 
-#ifdef LAUNCH_DEBUG
-    #if defined(_WIN32) && defined(WINDOWED)
-        /* Don't have console, resort to debugger output */
-        #define VS mbvs
-void mbvs(const char *fmt, ...);
-    #else
-        /* Have console, printf works */
-        #define VS pyi_global_printf
-    #endif
+/* MSVC does not allow empty vararg macro... */
+#if defined(_WIN32) && defined(_MSC_VER)
+    #define PYI_DEBUG
 #else
-    #if defined(_WIN32) && defined(_MSC_VER)
-        #define VS
-    #else
-        #define VS(...)
-    #endif
-#endif
+    #define PYI_DEBUG(...)
+#endif /* defined(_WIN32) && defined(_MSC_VER) */
 
-/* Path and string macros. */
+#endif /* ifdef LAUNCH_DEBUG */
 
+
+/*
+ * Path and string macros.
+ */
 #ifdef _WIN32
     #define PYI_PATHSEP    ';'
     #define PYI_CURDIR     '.'
     #define PYI_SEP        '\\'
-/*
- * For some functions like strcat() we need to pass
- * string and not only char.
- */
+    /* For some functions like strcat() we need to pass
+     * string and not only char. */
     #define PYI_SEPSTR     "\\"
     #define PYI_PATHSEPSTR ";"
     #define PYI_CURDIRSTR  "."

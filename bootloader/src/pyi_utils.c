@@ -188,20 +188,20 @@ pyi_utils_find_magic_pattern(FILE *fp, const unsigned char *magic, size_t magic_
     /* Allocate the read buffer */
     buffer = malloc(SEARCH_CHUNK_SIZE);
     if (!buffer) {
-        VS("LOADER: failed to allocate read buffer (%d bytes)!\n", SEARCH_CHUNK_SIZE);
+        PYI_DEBUG("LOADER: failed to allocate read buffer (%d bytes)!\n", SEARCH_CHUNK_SIZE);
         goto cleanup;
     }
 
     /* Determine file size */
     if (pyi_fseek(fp, 0, SEEK_END) < 0) {
-        VS("LOADER: failed to seek to the end of the file!\n");
+        PYI_DEBUG("LOADER: failed to seek to the end of the file!\n");
         goto cleanup;
     }
     end_pos = pyi_ftell(fp);
 
     /* Sanity check */
     if (end_pos < magic_len) {
-        VS("LOADER: file is too short to contain magic pattern!\n");
+        PYI_DEBUG("LOADER: file is too short to contain magic pattern!\n");
         goto cleanup;
     }
 
@@ -219,11 +219,11 @@ pyi_utils_find_magic_pattern(FILE *fp, const unsigned char *magic, size_t magic_
 
         /* Read the chunk */
         if (pyi_fseek(fp, start_pos, SEEK_SET) < 0) {
-            VS("LOADER: failed to seek to the offset 0x%" PRIX64 "!\n", start_pos);
+            PYI_DEBUG("LOADER: failed to seek to the offset 0x%" PRIX64 "!\n", start_pos);
             goto cleanup;
         }
         if (fread(buffer, 1, chunk_size, fp) != chunk_size) {
-            VS("LOADER: failed to read chunk (%zd bytes)!\n", chunk_size);
+            PYI_DEBUG("LOADER: failed to read chunk (%zd bytes)!\n", chunk_size);
             goto cleanup;
         }
 
