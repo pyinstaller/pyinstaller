@@ -630,7 +630,10 @@ def configure(ctx):
 
     ctx.recurse("tests")
 
-    # ** Functions **
+    # ** Functions and headers **
+
+    # Check for presence of stdbool.h
+    ctx.check(header_name='stdbool.h', mandatory=False)
 
     # The old ``function_name`` parameter to ``check_cc`` is no longer supported. This code is based on old waf
     # source at

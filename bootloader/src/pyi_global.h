@@ -18,24 +18,15 @@
 #ifndef PYI_GLOBAL_H
 #define PYI_GLOBAL_H
 
-/*
- * Definition of type boolean. On OSX boolean type is available
- * in header <stdbool.h>.
- */
-#ifdef __APPLE__
-    #include <stdbool.h>  /* bool, true, false */
+
+/* In the unlikely event that stdbool.h is not available, use our own
+ * definitions of bool, true, and false. */
+#ifdef HAVE_STDBOOL_H
+    #include <stdbool.h>
 #else
-/*
- * It looks like more recent versions of MSVC complains about 'typedef int bool'.
- * They probably have the type 'bool' defined.
- * TODO find out more info.
- */
-    #undef bool
-    #undef true
-    #undef false
-typedef int bool;
-    #define true    1
-    #define false   0
+    #define bool int
+    #define true 1
+    #define false 0
 #endif
 
 /* Type for dynamic library. */
