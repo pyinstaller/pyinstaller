@@ -83,8 +83,6 @@ const char *pyi_win32_get_winerror_string(DWORD error_code);
 char *pyi_win32_wcs_to_utf8(const wchar_t *src, char *dest, size_t buflen);
 wchar_t *pyi_win32_utf8_to_wcs(const char *src, wchar_t *dest, size_t buflen);
 
-char *pyi_win32_utf8_to_mbs(const char *src, char *dest, size_t buflen);
-
 int pyi_win32_is_symlink(const wchar_t *path);
 
 int pyi_win32_realpath(const wchar_t *path, wchar_t *resolved_path);
