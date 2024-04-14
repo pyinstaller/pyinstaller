@@ -72,9 +72,9 @@ typedef struct _splash_context
     /* The paths to Tcl/Tk shared libraries and Tk module library directory.
      * These are anchored to application's top-level directory (static
      * or temporary, depending on onedir vs. onefile mode). */
-    char tcl_libpath[PATH_MAX];
-    char tk_libpath[PATH_MAX];
-    char tk_lib[PATH_MAX];
+    char tcl_libpath[PYI_PATH_MAX];
+    char tk_libpath[PYI_PATH_MAX];
+    char tk_lib[PYI_PATH_MAX];
 
     /* The Tcl script that creates splash screen and the IPC mechanism
      * to communicate with python code. */

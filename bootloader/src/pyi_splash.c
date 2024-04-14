@@ -280,7 +280,7 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
     const ARCHIVE *archive = pyi_ctx->archive;
     const TOC_ENTRY *toc_entry;
     const char *requirement_filename = NULL;
-    char output_filename[PATH_MAX];
+    char output_filename[PYI_PATH_MAX];
     size_t pos;
 
     /* No-op in onedir mode */
@@ -301,7 +301,7 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
         }
 
         /* Construct output filename */
-        if (snprintf(output_filename, PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, requirement_filename) >= PATH_MAX) {
+        if (snprintf(output_filename, PYI_PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, requirement_filename) >= PYI_PATH_MAX) {
             FATALERROR("SPLASH: extraction path length exceeds maximum path length!\n");
             return -1;
         }
@@ -746,7 +746,7 @@ _tcl_findLibrary_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tc
      */
     int rc;
     SPLASH_CONTEXT *splash;
-    char initScriptPath[PATH_MAX];
+    char initScriptPath[PYI_PATH_MAX];
 
     splash = (SPLASH_CONTEXT *)clientData;
 

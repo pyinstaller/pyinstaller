@@ -34,7 +34,7 @@ _format_and_check_path(char *path, const char *fmt, ...)
     va_list args;
 
     va_start(args, fmt);
-    if (vsnprintf(path, PATH_MAX, fmt, args) >= PATH_MAX) {
+    if (vsnprintf(path, PYI_PATH_MAX, fmt, args) >= PYI_PATH_MAX) {
         return -1;
     };
     va_end(args);
@@ -52,7 +52,7 @@ pyi_multipkg_split_dependency_string(char *path, char *filename, const char *dep
     char *p;
 
     /* Copy directly into destination buffer and manipulate there, */
-    if (snprintf(path, PATH_MAX, "%s", dependency_string) >= PATH_MAX) {
+    if (snprintf(path, PYI_PATH_MAX, "%s", dependency_string) >= PYI_PATH_MAX) {
         return -1;
     }
 
@@ -62,7 +62,7 @@ pyi_multipkg_split_dependency_string(char *path, char *filename, const char *dep
     }
     p[0] = 0; /* Terminate path part */
 
-    /* `path` fits into PATH_MAX, so will all substrings. */
+    /* `path` fits into PYI_PATH_MAX, so will all substrings. */
     strcpy(filename, ++p);
     if (path[0] == 0 || filename[0] == 0) {
         return -1;
@@ -124,9 +124,9 @@ pyi_multipkg_extract_dependency(
     const char *output_filename
 )
 {
-    char other_executable_dir[PATH_MAX];
-    char this_executable_dir[PATH_MAX];
-    char full_srcpath[PATH_MAX];
+    char other_executable_dir[PYI_PATH_MAX];
+    char this_executable_dir[PYI_PATH_MAX];
+    char full_srcpath[PYI_PATH_MAX];
     int ret;
 
     /* Dependency reference consists of two parts, separated by a colon, for example
@@ -190,7 +190,7 @@ pyi_multipkg_extract_dependency(
         }
     } else {
         ARCHIVE *other_archive = NULL;
-        char other_archive_path[PATH_MAX];
+        char other_archive_path[PYI_PATH_MAX];
         const TOC_ENTRY *toc_entry;
 
         VS("LOADER: file %s not found on filesystem, assuming onefile reference.\n", dependency_name);

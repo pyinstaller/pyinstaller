@@ -55,11 +55,11 @@ pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
     const TOC_ENTRY *toc_entry;
     ptrdiff_t index;
     int retcode = 0;
-    char output_filename[PATH_MAX];
+    char output_filename[PYI_PATH_MAX];
 
     ARCHIVE *multipkg_archive_pool[PYI_MULTIPKG_ARCHIVE_POOL_SIZE];
-    char multipkg_ref[PATH_MAX];
-    char multipkg_name[PATH_MAX];
+    char multipkg_ref[PYI_PATH_MAX];
+    char multipkg_name[PYI_PATH_MAX];
 
     const char *entry_filename;
 
@@ -104,7 +104,7 @@ pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
         }
 
         /* Construct output filename */
-        if (snprintf(output_filename, PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, entry_filename) >= PATH_MAX) {
+        if (snprintf(output_filename, PYI_PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, entry_filename) >= PYI_PATH_MAX) {
             FATALERROR("Extraction path length exceeds maximum path length!\n");
             retcode = -1;
             break;
@@ -279,7 +279,7 @@ _pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
 {
     const ARCHIVE *archive = pyi_ctx->archive;
     unsigned char *data;
-    char buf[PATH_MAX];
+    char buf[PYI_PATH_MAX];
     const TOC_ENTRY *toc_entry;
     PyObject *__main__;
     PyObject *__file__;
@@ -315,8 +315,8 @@ _pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
 
         /* Set the __file__ attribute within the __main__ module, for
          * full compatibility with normal execution. */
-        if (snprintf(buf, PATH_MAX, "%s%c%s.py", pyi_ctx->application_home_dir, PYI_SEP, toc_entry->name) >= PATH_MAX) {
-            FATALERROR("Absolute path to script exceeds PATH_MAX\n");
+        if (snprintf(buf, PYI_PATH_MAX, "%s%c%s.py", pyi_ctx->application_home_dir, PYI_SEP, toc_entry->name) >= PYI_PATH_MAX) {
+            FATALERROR("Absolute path to script exceeds PYI_PATH_MAX\n");
             return -1;
         }
 

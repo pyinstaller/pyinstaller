@@ -35,7 +35,7 @@
 
 /* PyInstaller headers. */
 #include "pyi_path.h"
-#include "pyi_global.h"  /* PATH_MAX */
+#include "pyi_global.h"  /* PYI_PATH_MAX */
 #include "pyi_utils.h"
 
 /*
@@ -50,7 +50,7 @@ pyi_path_dirname(char *result, const char *path)
     char *match = NULL;
 
     /* Copy path to result and then just write '\0' to the place with path separator. */
-    if (snprintf(result, PATH_MAX, "%s", path) >= PATH_MAX) {
+    if (snprintf(result, PYI_PATH_MAX, "%s", path) >= PYI_PATH_MAX) {
         return false;
     }
 
@@ -73,13 +73,13 @@ pyi_path_dirname(char *result, const char *path)
 #else /* ifndef HAVE_DIRNAME */
       /* Use dirname() for other platforms. */
     char *dirpart = NULL;
-    char tmp[PATH_MAX];
+    char tmp[PYI_PATH_MAX];
     /* Copy path to 'tmp' because dirname() modifies the original string! */
-    if (snprintf(tmp, PATH_MAX, "%s", path) >= PATH_MAX) {
+    if (snprintf(tmp, PYI_PATH_MAX, "%s", path) >= PYI_PATH_MAX) {
         return false;
     }
     dirpart = (char *) dirname((char *) tmp);  /* _XOPEN_SOURCE - no 'const'. */
-    if (snprintf(result, PATH_MAX, "%s", dirpart) >= PATH_MAX) {
+    if (snprintf(result, PYI_PATH_MAX, "%s", dirpart) >= PYI_PATH_MAX) {
         return false;
     }
 #endif /* ifndef HAVE_DIRNAME */
@@ -118,7 +118,7 @@ pyi_path_basename(char *result, const char *path)
  *
  * If result is NULL, allocates and returns a new buffer which the caller
  * is responsible for freeing. Otherwise, result should be a buffer of at
- * least PATH_MAX characters.
+ * least PYI_PATH_MAX characters.
  *
  * Returns NULL on failure.
  */
@@ -129,8 +129,8 @@ pyi_path_join(char *result, const char *path1, const char *path2)
 {
     size_t len, len2;
     /* Copy path1 to result */
-    len = snprintf(result, PATH_MAX, "%s", path1);
-    if (len >= PATH_MAX-1) {
+    len = snprintf(result, PYI_PATH_MAX, "%s", path1);
+    if (len >= PYI_PATH_MAX-1) {
         return NULL;
     }
     /* Append trailing slash if missing. */
@@ -138,7 +138,7 @@ pyi_path_join(char *result, const char *path1, const char *path2)
         result[len++] = PYI_SEP;
         result[len++] = 0;
     }
-    len = PATH_MAX - len;
+    len = PYI_PATH_MAX - len;
     len2 = strlen(path2);
     if (len2 >= len) {
         return NULL;
@@ -160,9 +160,9 @@ int
 pyi_path_exists(char * path)
 {
 #ifdef _WIN32
-    wchar_t wpath[PATH_MAX + 1];
+    wchar_t wpath[PYI_PATH_MAX + 1];
     struct _stat result;
-    pyi_win32_utf8_to_wcs(path, wpath, PATH_MAX);
+    pyi_win32_utf8_to_wcs(path, wpath, PYI_PATH_MAX);
     return _wstat(wpath, &result) == 0;
 #else
     struct stat result;
@@ -177,10 +177,10 @@ pyi_path_exists(char * path)
 FILE*
 pyi_path_fopen(const char* filename, const char* mode)
 {
-    wchar_t wfilename[PATH_MAX];
+    wchar_t wfilename[PYI_PATH_MAX];
     wchar_t wmode[10];
 
-    pyi_win32_utf8_to_wcs(filename, wfilename, PATH_MAX);
+    pyi_win32_utf8_to_wcs(filename, wfilename, PYI_PATH_MAX);
     pyi_win32_utf8_to_wcs(mode, wmode, 10);
     return _wfopen(wfilename, wmode);
 }
@@ -190,8 +190,8 @@ bool
 pyi_path_is_symlink(const char *path)
 {
 #ifdef _WIN32
-    wchar_t wpath[PATH_MAX + 1];
-    pyi_win32_utf8_to_wcs(path, wpath, PATH_MAX);
+    wchar_t wpath[PYI_PATH_MAX + 1];
+    pyi_win32_utf8_to_wcs(path, wpath, PYI_PATH_MAX);
     return pyi_win32_is_symlink(wpath);
 #else
     struct stat buf;
@@ -210,14 +210,14 @@ pyi_path_mksymlink(const char *link_target, const char *link_name)
 {
 #ifdef _WIN32
     static int unprivileged_create_available = 1;
-    wchar_t wlink_target[PATH_MAX];
-    wchar_t wlink_name[PATH_MAX];
+    wchar_t wlink_target[PYI_PATH_MAX];
+    wchar_t wlink_name[PYI_PATH_MAX];
     DWORD flags = 0;
 
-    if (!pyi_win32_utf8_to_wcs(link_target, wlink_target, PATH_MAX)) {
+    if (!pyi_win32_utf8_to_wcs(link_target, wlink_target, PYI_PATH_MAX)) {
         return -1;
     }
-    if (!pyi_win32_utf8_to_wcs(link_name, wlink_name, PATH_MAX)) {
+    if (!pyi_win32_utf8_to_wcs(link_name, wlink_name, PYI_PATH_MAX)) {
         return -1;
     }
     /* Creation of symbolic links in unprivileged mode was introduced

@@ -43,7 +43,7 @@
 
 /* PyInstaller headers. */
 #include "pyi_main.h"
-#include "pyi_global.h"  /* PATH_MAX */
+#include "pyi_global.h"  /* PYI_PATH_MAX */
 #include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
@@ -188,8 +188,8 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             pyi_ctx->needs_to_extract = 0;
 
             /* Copy the application's top-level directory from environment */
-            if (snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", meipass2_value) >= PATH_MAX) {
-                FATALERROR("Path exceeds PATH_MAX limit.\n");
+            if (snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", meipass2_value) >= PYI_PATH_MAX) {
+                FATALERROR("Path exceeds PYI_PATH_MAX limit.\n");
                 return -1;
             }
 
@@ -221,7 +221,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             VS("LOADER: created temporary directory: %s\n", pyi_ctx->application_home_dir);
         }
     } else {
-        char executable_dir[PATH_MAX];
+        char executable_dir[PYI_PATH_MAX];
         bool is_macos_app_bundle = false;
 #if defined(__APPLE__)
         size_t executable_dir_len;
@@ -234,21 +234,21 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         pyi_path_dirname(executable_dir, pyi_ctx->executable_filename);
 
 #if defined(__APPLE__)
-        executable_dir_len = strnlen(executable_dir, PATH_MAX);
+        executable_dir_len = strnlen(executable_dir, PYI_PATH_MAX);
         is_macos_app_bundle = executable_dir_len > 19 && strncmp(executable_dir + executable_dir_len - 19, ".app/Contents/MacOS", 19) == 0;
 #endif
 
         if (is_macos_app_bundle) {
             /* macOS .app bundle; relocate top-level application directory
              * from Contents/MacOS directory to Contents/Frameworks */
-            char contents_dir[PATH_MAX]; /* the parent Contents directory */
+            char contents_dir[PYI_PATH_MAX]; /* the parent Contents directory */
             pyi_path_dirname(contents_dir, executable_dir);
             pyi_path_join(pyi_ctx->application_home_dir, contents_dir, "Frameworks");
         } else {
             if (pyi_ctx->contents_subdirectory) {
                 pyi_path_join(pyi_ctx->application_home_dir, executable_dir, pyi_ctx->contents_subdirectory);
             } else {
-                snprintf(pyi_ctx->application_home_dir, PATH_MAX, "%s", executable_dir);
+                snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", executable_dir);
             }
         }
 
@@ -267,18 +267,18 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
      * to DLL search path.  */
 #if defined(_WIN32) || defined(__CYGWIN__)
     if (1) {
-        wchar_t dllpath_w[PATH_MAX];
+        wchar_t dllpath_w[PYI_PATH_MAX];
 
 #if defined(__CYGWIN__)
         /* Cygwin */
-        ret = cygwin_conv_path(CCP_POSIX_TO_WIN_W | CCP_RELATIVE, pyi_ctx->application_home_dir, dllpath_w, PATH_MAX);
+        ret = cygwin_conv_path(CCP_POSIX_TO_WIN_W | CCP_RELATIVE, pyi_ctx->application_home_dir, dllpath_w, PYI_PATH_MAX);
         if (ret != 0) {
             FATAL_PERROR("cygwin_conv_path", "Failed to convert DLL search path!\n");
             return -1;
         }
 #else
         /* Windows */
-        if (pyi_win32_utf8_to_wcs(pyi_ctx->application_home_dir, dllpath_w, PATH_MAX) == NULL) {
+        if (pyi_win32_utf8_to_wcs(pyi_ctx->application_home_dir, dllpath_w, PYI_PATH_MAX) == NULL) {
             FATALERROR("Failed to convert DLL search path!\n");
             return -1;
         }
@@ -677,17 +677,17 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
 static int
 _pyi_resolve_executable_win32(char *executable_filename)
 {
-    wchar_t modulename_w[PATH_MAX];
+    wchar_t modulename_w[PYI_PATH_MAX];
 
     /* GetModuleFileNameW returns an absolute, fully qualified path */
-    if (!GetModuleFileNameW(NULL, modulename_w, PATH_MAX)) {
+    if (!GetModuleFileNameW(NULL, modulename_w, PYI_PATH_MAX)) {
         FATAL_WINERROR("GetModuleFileNameW", "Failed to obtain executable path.\n");
         return -1;
     }
 
     /* If path is a symbolic link, resolve it */
     if (pyi_win32_is_symlink(modulename_w)) {
-        wchar_t executable_filename_w[PATH_MAX];
+        wchar_t executable_filename_w[PYI_PATH_MAX];
         int offset = 0;
 
         VS("LOADER: executable file %S is a symbolic link - resolving...\n", modulename_w);
@@ -705,13 +705,13 @@ _pyi_resolve_executable_win32(char *executable_filename)
         }
 
         /* Convert to UTF-8 */
-        if (!pyi_win32_wcs_to_utf8(executable_filename_w + offset, executable_filename, PATH_MAX)) {
+        if (!pyi_win32_wcs_to_utf8(executable_filename_w + offset, executable_filename, PYI_PATH_MAX)) {
             FATALERROR("Failed to convert executable path to UTF-8.\n");
             return -1;
         }
     } else {
         /* Convert to UTF-8 */
-        if (!pyi_win32_wcs_to_utf8(modulename_w, executable_filename, PATH_MAX)) {
+        if (!pyi_win32_wcs_to_utf8(modulename_w, executable_filename, PYI_PATH_MAX)) {
             FATALERROR("Failed to convert executable path to UTF-8.\n");
             return -1;
         }
@@ -725,7 +725,7 @@ _pyi_resolve_executable_win32(char *executable_filename)
 static int
 _pyi_resolve_executable_macos(char *executable_filename)
 {
-    char program_path[PATH_MAX];
+    char program_path[PYI_PATH_MAX];
     uint32_t name_length = sizeof(program_path);
 
     /* Mac OS X has special function to obtain path to executable.
@@ -752,7 +752,7 @@ _pyi_resolve_executable_macos(char *executable_filename)
 static bool
 _pyi_is_ld_linux_so(const char *filename)
 {
-    char basename[PATH_MAX];
+    char basename[PYI_PATH_MAX];
     int status;
     char loader_name[65] = "";
     int soversion = 0;
@@ -816,11 +816,11 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename)
     ssize_t name_len = -1;
 
 #if defined(__linux__) || defined(__CYGWIN__)
-    name_len = readlink("/proc/self/exe", executable_filename, PATH_MAX - 1);  /* Linux, Cygwin */
+    name_len = readlink("/proc/self/exe", executable_filename, PYI_PATH_MAX - 1);  /* Linux, Cygwin */
 #elif defined(__FreeBSD__)
-    name_len = readlink("/proc/curproc/file", executable_filename, PATH_MAX - 1);  /* FreeBSD */
+    name_len = readlink("/proc/curproc/file", executable_filename, PYI_PATH_MAX - 1);  /* FreeBSD */
 #elif defined(__sun)
-    name_len = readlink("/proc/self/path/a.out", executable_filename, PATH_MAX - 1);  /* Solaris */
+    name_len = readlink("/proc/self/path/a.out", executable_filename, PYI_PATH_MAX - 1);  /* Solaris */
 #endif
 
     if (name_len != -1) {
@@ -856,7 +856,7 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename)
     } else {
         /* No path, just program name. Search $PATH for executable with
          * matching name. */
-        char program_path[PATH_MAX];
+        char program_path[PYI_PATH_MAX];
 
         if (_pyi_find_progam_in_search_path(argv0, program_path)) {
             /* Program found in $PATH; resolve full path */
@@ -939,8 +939,8 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
     VS("LOADER: trying to load executable-embedded archive...\n");
     pyi_ctx->archive = pyi_archive_open(pyi_ctx->executable_filename);
     if (pyi_ctx->archive != NULL) {
-        /* Copy executable filename to archive filename; we know it does not exceed PATH_MAX */
-        snprintf(pyi_ctx->archive_filename, PATH_MAX, "%s", pyi_ctx->executable_filename);
+        /* Copy executable filename to archive filename; we know it does not exceed PYI_PATH_MAX */
+        snprintf(pyi_ctx->archive_filename, PYI_PATH_MAX, "%s", pyi_ctx->executable_filename);
         return 0;
     }
 
@@ -961,10 +961,10 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
      * suffix is replaced with .pkg, while elsewhere, .pkg suffix is
      * appended to the executable file name. */
 #ifdef _WIN32
-    snprintf(pyi_ctx->archive_filename, PATH_MAX, "%s", pyi_ctx->executable_filename);
+    snprintf(pyi_ctx->archive_filename, PYI_PATH_MAX, "%s", pyi_ctx->executable_filename);
     strcpy(pyi_ctx->archive_filename + strlen(pyi_ctx->archive_filename) - 3, "pkg");
 #else
-    if (snprintf(pyi_ctx->archive_filename, PATH_MAX, "%s.pkg", pyi_ctx->executable_filename) >= PATH_MAX) {
+    if (snprintf(pyi_ctx->archive_filename, PYI_PATH_MAX, "%s.pkg", pyi_ctx->executable_filename) >= PYI_PATH_MAX) {
         return -1;
     }
 #endif

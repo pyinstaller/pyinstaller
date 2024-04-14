@@ -46,7 +46,7 @@ pyi_pylib_load(PYI_CONTEXT *pyi_ctx)
     const ARCHIVE *archive = pyi_ctx->archive;
     char dll_name[MAX_DLL_NAME_LEN];
     size_t dll_name_len;
-    char dll_fullpath[PATH_MAX];
+    char dll_fullpath[PYI_PATH_MAX];
 
     /* On AIX, the name of shared library path might be an archive, because
      * the 'ar' archives can be used for both static and shared objects.
@@ -99,9 +99,9 @@ pyi_pylib_load(PYI_CONTEXT *pyi_ctx)
      * loading failure (unresolved symbol errors) on systems with Universal
      * CRT update not installed. */
     if (1) {
-        char ucrtpath[PATH_MAX];
+        char ucrtpath[PYI_PATH_MAX];
         if (pyi_path_join(ucrtpath, pyi_ctx->application_home_dir, "ucrtbase.dll") == NULL) {
-            FATALERROR("Path of ucrtbase.dll (%s) and its name exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PATH_MAX);
+            FATALERROR("Path of ucrtbase.dll (%s) and its name exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PYI_PATH_MAX);
         }
         if (pyi_path_exists(ucrtpath)) {
             VS("LOADER: ucrtbase.dll found: %s\n", ucrtpath);
@@ -112,7 +112,7 @@ pyi_pylib_load(PYI_CONTEXT *pyi_ctx)
 
     /* Look for python shared library in top-level application directory */
     if (pyi_path_join(dll_fullpath, pyi_ctx->application_home_dir, dll_name) == NULL) {
-        FATALERROR("Path of Python shared library (%s) and its name (%s) exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PATH_MAX);
+        FATALERROR("Path of Python shared library (%s) and its name (%s) exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PYI_PATH_MAX);
     };
 
     VS("LOADER: loading Python shared library: %s\n", dll_fullpath);

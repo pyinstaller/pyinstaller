@@ -20,7 +20,7 @@
 
 
 /* PyInstaller headers. */
-#include "pyi_global.h"  /* PATH_MAX */
+#include "pyi_global.h"  /* PYI_PATH_MAX */
 #include "pyi_utils.h"
 
 #ifndef IO_REPARSE_TAG_SYMLINK
@@ -358,13 +358,13 @@ int pyi_win32_realpath(const wchar_t *path, wchar_t *resolved_path)
     ret = GetFinalPathNameByHandleW(
         handle,  /* hFile */
         resolved_path, /* lpszFilePath */
-        PATH_MAX, /* cchFilePath */
+        PYI_PATH_MAX, /* cchFilePath */
         FILE_NAME_NORMALIZED /* dwFlags */
     );
 
     CloseHandle(handle);
 
-    if (ret == 0 || ret >= PATH_MAX) {
+    if (ret == 0 || ret >= PYI_PATH_MAX) {
         /* Failure or insufficient buffer size */
         return  -1;
     }
