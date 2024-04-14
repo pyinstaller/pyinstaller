@@ -130,7 +130,7 @@ typedef struct _pyi_context
     char application_home_dir[PATH_MAX];
 
     /* Handle to loaded python shared library. */
-    dylib_t python_dll;
+    pyi_dylib_t python_dll;
 
     /* Flag indicating whether symbols from Python shared library have
      * been successfully loaded. Used to gracefully handle cleanup in

@@ -41,8 +41,8 @@ int pyi_create_parent_directory_tree(const PYI_CONTEXT *pyi_ctx, const char *pre
 int pyi_copy_file(const char *src_filename, const char *dest_filename);
 
 /* Shared library loading. */
-dylib_t pyi_utils_dlopen(const char *filename);
-int pyi_utils_dlclose(dylib_t handle);
+pyi_dylib_t pyi_utils_dlopen(const char *filename);
+int pyi_utils_dlclose(pyi_dylib_t handle);
 
 /* Child process */
 int pyi_utils_create_child(PYI_CONTEXT *pyi_ctx);

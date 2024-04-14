@@ -353,7 +353,7 @@ pyi_recursive_rmdir(const char *dir_path)
 /**********************************************************************\
  *                  Shared library loading/unloading                  *
 \**********************************************************************/
-dylib_t
+pyi_dylib_t
 pyi_utils_dlopen(const char *filename)
 {
     int flags = RTLD_NOW | RTLD_GLOBAL;
@@ -368,7 +368,7 @@ pyi_utils_dlopen(const char *filename)
 }
 
 int
-pyi_utils_dlclose(dylib_t handle)
+pyi_utils_dlclose(pyi_dylib_t handle)
 {
     return dlclose(handle);
 }

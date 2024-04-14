@@ -103,8 +103,8 @@ typedef struct _splash_context
 
     /* Keep the handles to loaded shared libraries, in order to close them
      * during finalization. */
-    dylib_t dll_tcl;
-    dylib_t dll_tk;
+    pyi_dylib_t dll_tcl;
+    pyi_dylib_t dll_tk;
 } SPLASH_CONTEXT;
 
 typedef int (pyi_splash_event_proc)(SPLASH_CONTEXT *, const void *);
