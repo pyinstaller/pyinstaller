@@ -139,7 +139,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
     /* Ensure runtime_tmpdir (and thus also its sub-path components)
      * do not exceed path limit. */
     if (strlen(runtime_tmpdir) >= PYI_PATH_MAX) {
-        OTHERERROR("LOADER: length of runtime-tmpdir exceeds maximum path length!\n");
+        PYI_WARNING("LOADER: length of runtime-tmpdir exceeds maximum path length!\n");
         return NULL;
     }
 
@@ -163,13 +163,13 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
         }
 
         snprintf(directory_tree_path, PYI_PATH_MAX, "%.*s", subpath_length, runtime_tmpdir);
-        VS("LOADER: creating runtime-tmpdir path component: %s\n", directory_tree_path);
+        PYI_DEBUG("LOADER: creating runtime-tmpdir path component: %s\n", directory_tree_path);
         mkdir(directory_tree_path, 0777);
     }
 
     /* Create full path; necessary if runtime_tmpdir did not end with
      * path separator. */
-    VS("LOADER: creating runtime-tmpdir path: %s\n", runtime_tmpdir);
+    PYI_DEBUG("LOADER: creating runtime-tmpdir path: %s\n", runtime_tmpdir);
     mkdir(runtime_tmpdir, 0777);
 
     /* Now that directory exists, try to resolve full path to it. */
@@ -237,14 +237,14 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
         /* Ensure runtime_tmpdir exists, and resolve full path to it */
         resolved_runtime_tmpdir = _pyi_create_runtime_tmpdir(pyi_ctx->runtime_tmpdir);
         if (resolved_runtime_tmpdir == NULL) {
-            OTHERERROR("Failed to create or resolve runtime_tmpdir from given path: %s\n", pyi_ctx->runtime_tmpdir);
+            PYI_WARNING("Failed to create or resolve runtime_tmpdir from given path: %s\n", pyi_ctx->runtime_tmpdir);
             return -1;
         }
 
         ret = snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", resolved_runtime_tmpdir);
         free(resolved_runtime_tmpdir);
         if (ret >= PYI_PATH_MAX) {
-            OTHERERROR("Length of resolved runtime_tmpdir exceeds maximum path length!\n");
+            PYI_WARNING("Length of resolved runtime_tmpdir exceeds maximum path length!\n");
             return -1;
         }
 
@@ -405,7 +405,7 @@ pyi_utils_set_library_search_path(const char *path)
 
         /* Variable is set; store a copy (*_ORIG environment variable),
          * so that it can be restored, if necessary. */
-        VS("LOADER: setting %s=%s\n", variable_name_copy, orig_library_path);
+        PYI_DEBUG("LOADER: setting %s=%s\n", variable_name_copy, orig_library_path);
         pyi_setenv(variable_name_copy, orig_library_path);
 
         /* Compute the length of the new environment variable value:
@@ -416,7 +416,7 @@ pyi_utils_set_library_search_path(const char *path)
             rc = -1; /* Allocation failed */
         } else {
             snprintf(new_library_path, new_library_path_length, "%s:%s", path, orig_library_path);
-            VS("LOADER: setting %s=%s\n", variable_name, new_library_path);
+            PYI_DEBUG("LOADER: setting %s=%s\n", variable_name, new_library_path);
             rc = pyi_setenv(variable_name, new_library_path);
             free(new_library_path);
         }
@@ -425,7 +425,7 @@ pyi_utils_set_library_search_path(const char *path)
     } else {
         /* Variable not set; the new search path should contain just the
          * given path. */
-        VS("LOADER: setting %s=%s\n", variable_name, path);
+        PYI_DEBUG("LOADER: setting %s=%s\n", variable_name, path);
         rc = pyi_setenv(variable_name, path);
     }
 
@@ -530,7 +530,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
 
     pid = fork();
     if (pid < 0) {
-        VS("LOADER: failed to fork child process: %s\n", strerror(errno));
+        PYI_WARNING("LOADER: failed to fork child process: %s\n", strerror(errno));
         goto cleanup;
     }
 
@@ -542,11 +542,11 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
         char *const *argv = (pyi_ctx->pyi_argv != NULL) ? pyi_ctx->pyi_argv : pyi_ctx->argv;
 
         if (_pyi_set_systemd_env() != 0) {
-            VS("WARNING: application is started by systemd socket, but we cannot set proper LISTEN_PID on it.\n");
+            PYI_WARNING("WARNING: application is started by systemd socket, but we cannot set proper LISTEN_PID on it.\n");
         }
 
         if (execvp(pyi_ctx->executable_filename, argv) < 0) {
-            VS("Failed to exec: %s\n", strerror(errno));
+            PYI_WARNING("LOADER: failed to exec: %s\n", strerror(errno));
             goto cleanup;
         }
 
@@ -562,9 +562,9 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
 
     /* Redirect all signals received by parent to child process. */
     if (pyi_ctx->ignore_signals) {
-        VS("LOADER: Ignoring all signals in parent\n");
+        PYI_DEBUG("LOADER: ignoring all signals in parent\n");
     } else {
-        VS("LOADER: Registering signal handlers\n");
+        PYI_DEBUG("LOADER: registering signal handlers\n");
     }
 
     for (signum = 0; signum < num_signals; ++signum) {
@@ -600,7 +600,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
 
     /* Check if we have a pending event to forward (for diagnostics) */
     if (pyi_apple_has_pending_event(pyi_ctx->ae_ctx)) {
-        VS("LOADER [AppleEvent]: Child terminated before pending event could be forwarded!\n");
+        PYI_DEBUG("LOADER [AppleEvent]: child terminated before pending event could be forwarded!\n");
         pyi_apple_cleanup_pending_event(pyi_ctx->ae_ctx);
     }
 
@@ -611,11 +611,11 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
 #endif
 
     if (wait_rc < 0) {
-        VS("LOADER: failed to wait for child process: %s\n", strerror(errno));
+        PYI_WARNING("LOADER: failed to wait for child process: %s\n", strerror(errno));
     }
 
     /* When child process exited, reset signal handlers to default values. */
-    VS("LOADER: restoring signal handlers\n");
+    PYI_DEBUG("LOADER: restoring signal handlers\n");
     for (signum = 0; signum < num_signals; ++signum) {
         signal(signum, SIG_DFL);
     }
@@ -631,12 +631,12 @@ cleanup:
      * didn't wait() at all. Either way, exit with error,
      * because rc does not contain a valid process exit code. */
     if (wait_rc < 0) {
-        VS("LOADER: exiting early\n");
+        PYI_DEBUG("LOADER: exiting early\n");
         return 1;
     }
 
     if (WIFEXITED(rc)) {
-        VS("LOADER: returning child exit status %d\n", WEXITSTATUS(rc));
+        PYI_DEBUG("LOADER: returning child exit status %d\n", WEXITSTATUS(rc));
         return WEXITSTATUS(rc);
     }
 
@@ -644,7 +644,7 @@ cleanup:
     pyi_ctx->child_signalled = WIFSIGNALED(rc);
     if (pyi_ctx->child_signalled) {
         pyi_ctx->child_signal = WTERMSIG(rc);
-        VS("LOADER: child received signal %d; storing for re-raise after cleanup...\n", pyi_ctx->child_signal);
+        PYI_DEBUG("LOADER: child received signal %d; storing for re-raise after cleanup...\n", pyi_ctx->child_signal);
     }
     return 1;
 }
@@ -673,7 +673,7 @@ int pyi_utils_initialize_args(PYI_CONTEXT *pyi_ctx, const int argc, char *const 
     pyi_ctx->pyi_argc = 0;
     pyi_ctx->pyi_argv = (char**)calloc(argc + 1, sizeof(char*));
     if (!pyi_ctx->pyi_argv) {
-        FATALERROR("LOADER: failed to allocate pyi_argv: %s\n", strerror(errno));
+        PYI_ERROR("LOADER: failed to allocate pyi_argv: %s\n", strerror(errno));
         return -1;
     }
 
@@ -692,7 +692,7 @@ int pyi_utils_initialize_args(PYI_CONTEXT *pyi_ctx, const int argc, char *const 
         /* Copy the argument */
         tmp = strdup(argv[i]);
         if (!tmp) {
-            FATALERROR("LOADER: failed to strdup argv[%d]: %s\n", i, strerror(errno));
+            PYI_ERROR("LOADER: failed to strdup argv[%d]: %s\n", i, strerror(errno));
             /* If we cannot allocate basic amounts of memory at this critical point,
              * we should probably just give up. */
             return -1;

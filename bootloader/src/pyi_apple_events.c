@@ -90,22 +90,22 @@ generic_forward_apple_event(
     Size actualSize = 0;
     pid_t child_pid;
 
-    VS("LOADER [AppleEvent]: forwarder called for \"%s\".\n", descStr);
+    PYI_DEBUG("LOADER [AppleEvent]: forwarder called for \"%s\".\n", descStr);
 
     child_pid = pyi_ctx->child_pid; /* Copy from PYI_CONTEXT */
     if (!child_pid) {
         /* Child not up yet -- there is no way to "forward" this before child started!. */
-         VS("LOADER [AppleEvent]: child not up yet (child PID is 0)\n");
+         PYI_DEBUG("LOADER [AppleEvent]: child not up yet (child PID is 0)\n");
          return errAEEventNotHandled;
     }
 
-    VS("LOADER [AppleEvent]: forwarding '%c%c%c%c' event.\n", _FOURCC_CHARS(evtID));
+    PYI_DEBUG("LOADER [AppleEvent]: forwarding '%c%c%c%c' event.\n", _FOURCC_CHARS(evtID));
     err = AECreateDesc(typeKernelProcessID, &child_pid, sizeof(child_pid), &target);
     if (err != noErr) {
-        OTHERERROR("LOADER [AppleEvent]: failed to create AEAddressDesc: %d\n", (int)err);
+        PYI_WARNING("LOADER [AppleEvent]: failed to create AEAddressDesc: %d\n", (int)err);
         goto out;
     }
-    VS("LOADER [AppleEvent]: created AEAddressDesc.\n");
+    PYI_DEBUG("LOADER [AppleEvent]: created AEAddressDesc.\n");
     err = AECreateAppleEvent(
         eventClass,
         evtID,
@@ -115,16 +115,16 @@ generic_forward_apple_event(
         &childEvent
     );
     if (err != noErr) {
-        OTHERERROR("LOADER [AppleEvent]: failed to create event copy: %d\n", (int)err);
+        PYI_WARNING("LOADER [AppleEvent]: failed to create event copy: %d\n", (int)err);
         goto release_desc;
     }
-    VS("LOADER [AppleEvent]: created AppleEvent instance for child process.\n");
+    PYI_DEBUG("LOADER [AppleEvent]: created AppleEvent instance for child process.\n");
 
     if (!theAppleEvent) {
         /* Calling code wants a new event created from scratch, we do so
          * here and it will have 0 params. Assumption: caller knows that
          * the event type in question normally has 0 params. */
-        VS(
+        PYI_DEBUG(
             "LOADER [AppleEvent]: new AppleEvent class: '%c%c%c%c' code: '%c%c%c%c'\n",
             _FOURCC_CHARS(eventClass),
             _FOURCC_CHARS(evtID)
@@ -133,27 +133,27 @@ generic_forward_apple_event(
         err = AESizeOfParam(theAppleEvent, keyDirectObject, &typeCode, &bufSize);
         if (err != noErr) {
             /* No params for this event */
-            VS(
+            PYI_DEBUG(
                 "LOADER [AppleEvent]: failed to get size of param (error=%d) -- event '%c%c%c%c' may lack params.\n",
                 (int)err,
                 _FOURCC_CHARS(evtID)
             );
         } else  {
             /* This event has a param object, copy it. */
-            VS("LOADER [AppleEvent]: event has param object of size: %ld\n", (long)bufSize);
+            PYI_DEBUG("LOADER [AppleEvent]: event has param object of size: %ld\n", (long)bufSize);
             buf = malloc(bufSize);
             if (!buf) {
                 /* Failed to allocate buffer! */
-                OTHERERROR(
+                PYI_WARNING(
                     "LOADER [AppleEvent]: failed to allocate buffer of size %ld: %s\n",
                     (long)bufSize,
                     strerror(errno)
                 );
                 goto release_evt;
             }
-            VS("LOADER [AppleEvent]: allocated buffer of size: %ld\n", (long)bufSize);
+            PYI_DEBUG("LOADER [AppleEvent]: allocated buffer of size: %ld\n", (long)bufSize);
 
-            VS("LOADER [AppleEvent]: retrieving param...\n");
+            PYI_DEBUG("LOADER [AppleEvent]: retrieving param...\n");
             err = AEGetParamPtr(
                 theAppleEvent,
                 keyDirectObject,
@@ -164,14 +164,14 @@ generic_forward_apple_event(
                 &actualSize
             );
             if (err != noErr) {
-                OTHERERROR("LOADER [AppleEvent]: failed to get param data.\n");
+                PYI_WARNING("LOADER [AppleEvent]: failed to get param data.\n");
                 goto release_evt;
             }
 
             if (actualSize > bufSize) {
                 /* From reading the Apple API docs, this should never
                  * happen, but it pays to program defensively here. */
-                OTHERERROR(
+                PYI_WARNING(
                     "LOADER [AppleEvent]: got param size=%ld > bufSize=%ld, error!\n",
                     (long)actualSize,
                     (long)bufSize
@@ -179,25 +179,25 @@ generic_forward_apple_event(
                 goto release_evt;
             }
 
-            VS(
+            PYI_DEBUG(
                 "LOADER [AppleEvent]: got param type=%x ('%c%c%c%c') size=%ld\n",
                 (UInt32)actualType,
                 _FOURCC_CHARS(actualType),
                 (long)actualSize
             );
 
-            VS("LOADER [AppleEvent]: putting param.\n");
+            PYI_DEBUG("LOADER [AppleEvent]: putting param.\n");
             err = AEPutParamPtr(&childEvent, keyDirectObject, actualType, buf, actualSize);
             if (err != noErr) {
-                OTHERERROR("LOADER [AppleEvent]: failed to put param data.\n");
+                PYI_WARNING("LOADER [AppleEvent]: failed to put param data.\n");
                 goto release_evt;
             }
         }
     }
 
-    VS("LOADER [AppleEvent]: sending message...\n");
+    PYI_DEBUG("LOADER [AppleEvent]: sending message...\n");
     err = AESendMessage(&childEvent, NULL, kAENoReply, kAEDefaultTimeout);
-    VS("LOADER [AppleEvent]: handler sent \"%s\" message to child pid %ld.\n", descStr, (long)child_pid);
+    PYI_DEBUG("LOADER [AppleEvent]: handler sent \"%s\" message to child pid %ld.\n", descStr, (long)child_pid);
 
     /* In a onefile build, we may encounter a race condition between the
      * parent and the child process, because child PID becomes valid
@@ -210,14 +210,14 @@ generic_forward_apple_event(
     if (err == procNotFound) {
         APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = pyi_ctx->ae_ctx;
 
-        VS("LOADER [AppleEvent]: sending failed with procNotFound; storing the pending event...\n");
+        PYI_DEBUG("LOADER [AppleEvent]: sending failed with procNotFound; storing the pending event...\n");
 
         err = AEDuplicateDesc(&childEvent, &ae_ctx->pending_event);
         if (err == noErr) {
             ae_ctx->retry_count = 0;
             ae_ctx->has_pending_event = true;
         } else {
-            VS("LOADER [AppleEvent]: failed to copy the pending event: %d\n", (int)err);
+            PYI_DEBUG("LOADER [AppleEvent]: failed to copy the pending event: %d\n", (int)err);
             ae_ctx->has_pending_event = false;
             ae_ctx->retry_count = 0;
         }
@@ -237,10 +237,10 @@ realloc_checked(void **bufptr, Size size)
 {
     void *tmp = realloc(*bufptr, size);
     if (!tmp) {
-        OTHERERROR("LOADER [AppleEvents]: failed to allocate a buffer of size %ld.\n", (long)size);
+        PYI_WARNING("LOADER [AppleEvents]: failed to allocate a buffer of size %ld.\n", (long)size);
         return false;
     }
-    VS("LOADER [AppleEvents]: (re)allocated a buffer of size %ld\n", (long)size);
+    PYI_DEBUG("LOADER [AppleEvents]: (re)allocated a buffer of size %ld\n", (long)size);
     *bufptr = tmp;
     return true;
 }
@@ -257,7 +257,7 @@ convert_event_to_argv(const AppleEvent *theAppleEvent, const AEEventID evtID, PY
     long count = 0;
     char *buf = NULL; /* Dynamically (re)allocated buffer for URL/file path entries */
 
-    VS("LOADER [AppleEvent ARGV_EMU]: converting %s event to command-line arguments...\n", is_odoc_event ? "OpenDoc" : "GetURL");
+    PYI_DEBUG("LOADER [AppleEvent ARGV_EMU]: converting %s event to command-line arguments...\n", is_odoc_event ? "OpenDoc" : "GetURL");
 
     /* Retrieve event parameters/arguments */
     err = AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList);
@@ -281,14 +281,14 @@ convert_event_to_argv(const AppleEvent *theAppleEvent, const AEEventID evtID, PY
         /* Query data length */
         err = AESizeOfNthItem(&docList, index, &typeCode, &bufSize);
         if (err != noErr) {
-            OTHERERROR("LOADER [AppleEvent ARGV_EMU]: item #%ld: failed to retrieve item size, error code: %d\n", index, (int)err);
+            PYI_WARNING("LOADER [AppleEvent ARGV_EMU]: item #%ld: failed to retrieve item size, error code: %d\n", index, (int)err);
             continue;
         }
 
         /* Reallocate the buffer to required size */
         if (!realloc_checked((void **)&buf, bufSize + 1)) {
             /* Not enough memory -- very unlikely but if so keep going */
-            OTHERERROR("LOADER [AppleEvent ARGV_EMU]: item #%ld: insufficient memory - skipping!\n", index);
+            PYI_WARNING("LOADER [AppleEvent ARGV_EMU]: item #%ld: insufficient memory - skipping!\n", index);
             continue;
         }
 
@@ -305,10 +305,10 @@ convert_event_to_argv(const AppleEvent *theAppleEvent, const AEEventID evtID, PY
         );
 
         if (err != noErr) {
-            OTHERERROR("LOADER [AppleEvent ARGV_EMU]: item #%ld: failed to retrieve item, error code: %d\n", index, (int)err);
+            PYI_WARNING("LOADER [AppleEvent ARGV_EMU]: item #%ld: failed to retrieve item, error code: %d\n", index, (int)err);
         } else if (actualSize > bufSize) {
             /* This should never happen but is here for thoroughness */
-            OTHERERROR(
+            PYI_WARNING(
                 "LOADER [AppleEvent ARGV_EMU]: item #%ld: not enough space in buffer (%ld > %ld)\n",
                 index,
                 (long)actualSize,
@@ -344,7 +344,7 @@ convert_event_to_argv(const AppleEvent *theAppleEvent, const AEEventID evtID, PY
                     }
                     CFRelease(url); /* free */
                     if (!ok) {
-                        OTHERERROR(
+                        PYI_WARNING(
                             "LOADER [AppleEvent ARGV_EMU]: item #%ld: failed to convert file:/// path to POSIX filesystem representation!\n",
                             index
                         );
@@ -354,15 +354,15 @@ convert_event_to_argv(const AppleEvent *theAppleEvent, const AEEventID evtID, PY
             }
 
             /* Append URL to argv_pyi array, reallocating as necessary */
-            VS("LOADER [AppleEvent ARGV_EMU]: appending '%s' to argv_pyi\n", buf);
+            PYI_DEBUG("LOADER [AppleEvent ARGV_EMU]: appending '%s' to argv_pyi\n", buf);
             if (pyi_utils_append_to_args(pyi_ctx, buf) < 0) {
-                OTHERERROR(
+                PYI_WARNING(
                     "LOADER [AppleEvent ARGV_EMU]: failed to append to argv_pyi: %s\n",
                     buf,
                     strerror(errno)
                 );
             } else {
-                VS("LOADER [AppleEvent ARGV_EMU]: argv entry appended.\n");
+                PYI_DEBUG("LOADER [AppleEvent ARGV_EMU]: argv entry appended.\n");
             }
         }
     }
@@ -386,7 +386,7 @@ handle_oapp_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon ha
     (void)reply; /* unused */
     (void)handlerRefCon; /* unused */
 
-    VS("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
+    PYI_DEBUG("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
     return noErr;
 }
 
@@ -397,7 +397,7 @@ handle_odoc_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon ha
     PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
     (void)reply; /* unused */
 
-    VS("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
+    PYI_DEBUG("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
 
     /* If child process is running, forward the event */
     if (pyi_ctx->child_pid != 0) {
@@ -421,7 +421,7 @@ handle_gurl_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon ha
     PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
     (void)reply; /* unused */
 
-    VS("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
+    PYI_DEBUG("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
 
     /* If child process is running, forward the event */
     if (pyi_ctx->child_pid != 0) {
@@ -451,7 +451,7 @@ handle_rapp_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon ha
     PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
     (void)reply; /* unused */
 
-    VS("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
+    PYI_DEBUG("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
 
     /* First, forward the 'rapp' event to the child */
     err = generic_forward_apple_event(
@@ -494,7 +494,7 @@ handle_actv_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon ha
     PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
     (void)reply; /* unused */
 
-    VS("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
+    PYI_DEBUG("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
 
     return generic_forward_apple_event(
         theAppleEvent,
@@ -516,14 +516,14 @@ evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *data)
     EventRecord eventRecord;
     OSStatus err;
 
-    VS("LOADER [AppleEvent]: app event handler proc called.\n");
+    PYI_DEBUG("LOADER [AppleEvent]: app event handler proc called.\n");
 
     /* Events of type kEventAppleEvent must be removed from the queue
      * before being passed to AEProcessAppleEvent. */
     if (IsEventInQueue(GetMainEventQueue(), eref)) {
         /* RemoveEventFromQueue will release the event, which will
          * destroy it if we do not retain it first. */
-        VS("LOADER [AppleEvent]: event was in queue, will release.\n");
+        PYI_DEBUG("LOADER [AppleEvent]: event was in queue, will release.\n");
         RetainEvent(eref);
         release = true;
         RemoveEventFromQueue(GetMainEventQueue(), eref);
@@ -531,7 +531,7 @@ evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *data)
 
     /* Convert the event ref to the type AEProcessAppleEvent expects. */
     ConvertEventRefToEventRecord(eref, &eventRecord);
-    VS(
+    PYI_DEBUG(
         "LOADER [AppleEvent]: what=%hu message=%lx ('%c%c%c%c') modifiers=%hu\n",
         eventRecord.what,
         eventRecord.message,
@@ -543,11 +543,11 @@ evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *data)
      * that we installed in pyi_apple_install_event_handlers() */
     err = AEProcessAppleEvent(&eventRecord);
     if (err == noErr) {
-        VS("LOADER [AppleEvent]: event handled.\n");
+        PYI_DEBUG("LOADER [AppleEvent]: event handled.\n");
     } else if (err == errAEEventNotHandled) {
-        VS("LOADER [AppleEvent]: ignored event.\n");
+        PYI_DEBUG("LOADER [AppleEvent]: ignored event.\n");
     } else {
-        VS("LOADER [AppleEvent]: error processing event: %d\n", (int)err);
+        PYI_DEBUG("LOADER [AppleEvent]: error processing event: %d\n", (int)err);
     }
 
     if (release) {
@@ -568,12 +568,12 @@ pyi_apple_install_event_handlers(PYI_CONTEXT *pyi_ctx)
     APPLE_EVENT_HANDLER_CONTEXT *ae_ctx;
     OSStatus err;
 
-    VS("LOADER [AppleEvent]: installing event handlers...\n");
+    PYI_DEBUG("LOADER [AppleEvent]: installing event handlers...\n");
 
     /* Allocate the context structure */
     ae_ctx = (APPLE_EVENT_HANDLER_CONTEXT *)calloc(1, sizeof(APPLE_EVENT_HANDLER_CONTEXT));
     if (ae_ctx == NULL) {
-        FATAL_PERROR("calloc", "Could not allocate memory for APPLE_EVENT_HANDLER_CONTEXT.\n");
+        PYI_PERROR("calloc", "Could not allocate memory for APPLE_EVENT_HANDLER_CONTEXT.\n");
         return NULL;
     }
 
@@ -639,11 +639,11 @@ end:
 
         free(ae_ctx);
 
-        OTHERERROR("LOADER [AppleEvent]: failed to install event handlers!\n");
+        PYI_ERROR("LOADER [AppleEvent]: failed to install event handlers!\n");
         return NULL;
     }
 
-    VS("LOADER [AppleEvent]: installed event handlers.\n");
+    PYI_DEBUG("LOADER [AppleEvent]: installed event handlers.\n");
 
     return ae_ctx;
 }
@@ -663,7 +663,7 @@ pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT **ae_ctx_ref)
         return;
     }
 
-    VS("LOADER [AppleEvent]: uninstalling event handlers...\n");
+    PYI_DEBUG("LOADER [AppleEvent]: uninstalling event handlers...\n");
 
     /* Remove application event handler */
     RemoveEventHandler(ae_ctx->handler_ref);
@@ -686,7 +686,7 @@ pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT **ae_ctx_ref)
     /* Free the context structure */
     free(ae_ctx);
 
-    VS("LOADER [AppleEvent]: uninstalled event handlers.\n");
+    PYI_DEBUG("LOADER [AppleEvent]: uninstalled event handlers.\n");
 }
 
 
@@ -697,7 +697,7 @@ pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT **ae_ctx_ref)
 void
 pyi_apple_process_events(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float timeout)
 {
-    VS("LOADER [AppleEvent]: processing Apple Events...\n");
+    PYI_DEBUG("LOADER [AppleEvent]: processing Apple Events...\n");
 
     /* Event pump: process events until timeout (in seconds) or error */
     for (;;) {
@@ -706,37 +706,37 @@ pyi_apple_process_events(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float timeout)
 
         /* If we have a pending event to forward, stop any further processing. */
         if (pyi_apple_has_pending_event(ae_ctx)) {
-            VS("LOADER [AppleEvent]: breaking event loop due to pending event.\n");
+            PYI_DEBUG("LOADER [AppleEvent]: breaking event loop due to pending event.\n");
             break;
         }
 
-        VS("LOADER [AppleEvent]: calling ReceiveNextEvent\n");
+        PYI_DEBUG("LOADER [AppleEvent]: calling ReceiveNextEvent\n");
         status = ReceiveNextEvent(1, ae_ctx->event_types, timeout, kEventRemoveFromQueue, &event_ref);
 
         if (status == eventLoopTimedOutErr) {
-            VS("LOADER [AppleEvent]: ReceiveNextEvent timed out\n");
+            PYI_DEBUG("LOADER [AppleEvent]: ReceiveNextEvent timed out\n");
             break;
         } else if (status != 0) {
-            VS("LOADER [AppleEvent]: ReceiveNextEvent fetching events failed\n");
+            PYI_DEBUG("LOADER [AppleEvent]: ReceiveNextEvent fetching events failed\n");
             break;
         } else {
             /* We actually pulled an event off the queue, so process it.
                We now 'own' the event_ref and must release it. */
-            VS("LOADER [AppleEvent]: ReceiveNextEvent got an EVENT\n");
+            PYI_DEBUG("LOADER [AppleEvent]: ReceiveNextEvent got an EVENT\n");
 
-            VS("LOADER [AppleEvent]: dispatching event...\n");
+            PYI_DEBUG("LOADER [AppleEvent]: dispatching event...\n");
             status = SendEventToEventTarget(event_ref, GetEventDispatcherTarget());
 
             ReleaseEvent(event_ref);
             event_ref = NULL;
             if (status != 0) {
-                VS("LOADER [AppleEvent]: processing events failed\n");
+                PYI_DEBUG("LOADER [AppleEvent]: processing events failed\n");
                 break;
             }
         }
     }
 
-    VS("LOADER [AppleEvent]: out of the event loop.\n");
+    PYI_DEBUG("LOADER [AppleEvent]: out of the event loop.\n");
 }
 
 
@@ -763,7 +763,7 @@ pyi_apple_submit_oapp_event()
         {kEventClassAppleEvent, kEventAppleEvent}
     };
 
-    VS("LOADER [AppleEvent]: submitting 'oapp' event...\n");
+    PYI_DEBUG("LOADER [AppleEvent]: submitting 'oapp' event...\n");
 
     // Get PSN via GetCurrentProcess. This function is deprecated, but
     // we cannot use {0, kCurrentProcess} because we need our event
@@ -777,42 +777,42 @@ pyi_apple_submit_oapp_event()
 #pragma clang diagnostic pop
 #endif
     if (err != noErr) {
-        OTHERERROR("LOADER [AppleEvent]: failed to obtain PSN: %d\n", (int)err);
+        PYI_WARNING("LOADER [AppleEvent]: failed to obtain PSN: %d\n", (int)err);
         goto cleanup;
     }
 
     // Create target address using the PSN, ...
     err = AECreateDesc(typeProcessSerialNumber, &psn, sizeof(psn), &target);
     if (err != noErr) {
-        OTHERERROR("LOADER [AppleEvent]: failed to create AEAddressDesc: %d\n", (int)err);
+        PYI_WARNING("LOADER [AppleEvent]: failed to create AEAddressDesc: %d\n", (int)err);
         goto cleanup;
     }
 
     // ... create OAPP event, ...
     err = AECreateAppleEvent(kCoreEventClass, kAEOpenApplication, &target, kAutoGenerateReturnID, kAnyTransactionID, &event);
     if (err != noErr) {
-        OTHERERROR("LOADER [AppleEvent]: failed to create OAPP event: %d\n", (int)err);
+        PYI_WARNING("LOADER [AppleEvent]: failed to create OAPP event: %d\n", (int)err);
         goto cleanup;
     }
 
     // ... and send it
     err = AESendMessage(&event, NULL, kAENoReply, kAEDefaultTimeout);
     if (err != noErr) {
-        OTHERERROR("LOADER [AppleEvent]: failed to send event: %d\n", (int)err);
+        PYI_WARNING("LOADER [AppleEvent]: failed to send event: %d\n", (int)err);
         goto cleanup;
     } else {
-        VS("LOADER [AppleEvent]: submitted 'oapp' event.\n");
+        PYI_DEBUG("LOADER [AppleEvent]: submitted 'oapp' event.\n");
     }
 
     // Now wait for the event to show up in event queue (this implicitly
     // assumes that no other activation event shows up, but those would
     // also solve the problem we are trying to mitigate).
-    VS("LOADER [AppleEvent]: waiting for 'oapp' event to show up in queue...\n");
+    PYI_DEBUG("LOADER [AppleEvent]: waiting for 'oapp' event to show up in queue...\n");
     err = ReceiveNextEvent(1, event_types, 10.0, kEventLeaveInQueue, &event_ref);
     if (err != noErr) {
-        OTHERERROR("LOADER [AppleEvent]: timed out while waiting for submitted 'oapp' event to show up in queue!\n");
+        PYI_WARNING("LOADER [AppleEvent]: timed out while waiting for submitted 'oapp' event to show up in queue!\n");
     } else {
-        VS("LOADER [AppleEvent]: submitted 'oapp' event is available in the queue.\n");
+        PYI_DEBUG("LOADER [AppleEvent]: submitted 'oapp' event is available in the queue.\n");
     }
 
 cleanup:
@@ -859,13 +859,13 @@ pyi_apple_send_pending_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float delay)
 
     /* Sleep for the specified delay, then attempt to send the event. */
     ae_ctx->retry_count++;
-    VS("LOADER [AppleEvent]: trying to forward pending event in %f second(s) (attempt %u)\n", delay, ae_ctx->retry_count);
+    PYI_DEBUG("LOADER [AppleEvent]: trying to forward pending event in %f second(s) (attempt %u)\n", delay, ae_ctx->retry_count);
     usleep(delay*1000000);  /* sec to usec */
     err = AESendMessage(&ae_ctx->pending_event, NULL, kAENoReply, kAEDefaultTimeout);
 
     /* If error is procNotFound (again), continue deferring the event. */
     if (err == procNotFound) {
-        VS("LOADER [AppleEvent]: sending failed with procNotFound; deferring event!\n");
+        PYI_DEBUG("LOADER [AppleEvent]: sending failed with procNotFound; deferring event!\n");
         return 1;
     }
 
@@ -874,10 +874,10 @@ pyi_apple_send_pending_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float delay)
 
     /* Signal status. */
     if (err == noErr) {
-        VS("LOADER [AppleEvent]: successfully forwarded pending event\n");
+        PYI_DEBUG("LOADER [AppleEvent]: successfully forwarded pending event\n");
         return 0;
     } else {
-        VS("LOADER [AppleEvent]: failed to forward pending event: %d\n", (int)err);
+        PYI_DEBUG("LOADER [AppleEvent]: failed to forward pending event: %d\n", (int)err);
         return -1;
     }
 }

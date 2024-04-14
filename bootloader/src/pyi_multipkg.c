@@ -85,22 +85,22 @@ _get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *archive_f
     ARCHIVE *archive = NULL;
     int index = 0;
 
-    VS("LOADER: retrieving archive for path %s.\n", archive_filename);
+    PYI_DEBUG("LOADER: retrieving archive for path %s.\n", archive_filename);
 
     for (index = 0; archive_pool[index] != NULL; index++) {
         if (strcmp(archive_pool[index]->filename, archive_filename) == 0) {
-            VS("LOADER: archive found in pool: %s\n", archive_filename);
+            PYI_DEBUG("LOADER: archive found in pool: %s\n", archive_filename);
             return archive_pool[index];
         }
     }
 
     /* Enforce maximum pool size */
     if (index >= PYI_MULTIPKG_ARCHIVE_POOL_SIZE) {
-        FATALERROR("Maximum archive pool size reached!");
+        PYI_ERROR("Maximum archive pool size reached!");
         return NULL;
     }
 
-    VS("LOADER: archive not found in pool. Creating new entry...\n");
+    PYI_DEBUG("LOADER: archive not found in pool. Creating new entry...\n");
 
     archive = pyi_archive_open(archive_filename);
     if (archive) {
@@ -109,7 +109,7 @@ _get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *archive_f
         return archive;
     }
 
-    FATALERROR("Failed to open archive %s!\n", archive_filename);
+    PYI_ERROR("Failed to open archive %s!\n", archive_filename);
     return NULL;
 }
 
@@ -146,7 +146,7 @@ pyi_multipkg_extract_dependency(
      * arguments.
      */
 
-    VS("LOADER: processing multi-package reference: %s %s\n", other_executable, dependency_name);
+    PYI_DEBUG("LOADER: processing multi-package reference: %s %s\n", other_executable, dependency_name);
 
     /* Determine parent directories of this executable (absolute path) and the other
      * executable (relative to this executable). If executables are co-located
@@ -183,9 +183,9 @@ pyi_multipkg_extract_dependency(
         ret = _format_and_check_path(full_srcpath, "%s%c%s%c%s", this_executable_dir, PYI_SEP, other_executable_dir, PYI_SEP, dependency_name);
     }
     if (ret == true) {
-        VS("LOADER: file %s found on filesystem (%s), assuming onedir reference.\n", dependency_name, full_srcpath);
+        PYI_DEBUG("LOADER: file %s found on filesystem (%s), assuming onedir reference.\n", dependency_name, full_srcpath);
         if (pyi_copy_file(full_srcpath, output_filename) == -1) {
-            FATALERROR("Failed to copy file %s from %s!\n", dependency_name, full_srcpath);
+            PYI_ERROR("Failed to copy file %s from %s!\n", dependency_name, full_srcpath);
             return -1;
         }
     } else {
@@ -193,20 +193,20 @@ pyi_multipkg_extract_dependency(
         char other_archive_path[PYI_PATH_MAX];
         const TOC_ENTRY *toc_entry;
 
-        VS("LOADER: file %s not found on filesystem, assuming onefile reference.\n", dependency_name);
+        PYI_DEBUG("LOADER: file %s not found on filesystem, assuming onefile reference.\n", dependency_name);
 
         /* First check for the presence of external .pkg archive, located
          * next to the executable, to account for side-loading mode. */
         if (_format_and_check_path(other_archive_path, "%s%c%s.pkg", this_executable_dir, PYI_SEP, other_executable) != true &&
             _format_and_check_path(other_archive_path, "%s%c%s.exe", this_executable_dir, PYI_SEP, other_executable) != true &&
             _format_and_check_path(other_archive_path, "%s%c%s", this_executable_dir, PYI_SEP, other_executable) != true) {
-            FATALERROR("Referenced dependency archive %s not found.\n", other_executable);
+            PYI_ERROR("Referenced dependency archive %s not found.\n", other_executable);
             return -1;
         }
 
         /* Retrieve the referenced archive */
         if ((other_archive = _get_archive(pyi_ctx, archive_pool, other_archive_path)) == NULL) {
-            FATALERROR("Failed to open referenced dependency archive %s.\n", other_archive_path);
+            PYI_ERROR("Failed to open referenced dependency archive %s.\n", other_archive_path);
             return -1;
         }
 
@@ -217,13 +217,13 @@ pyi_multipkg_extract_dependency(
         /* Look-up entry in archive's TOC */
         toc_entry = pyi_archive_find_entry_by_name(other_archive, dependency_name);
         if (toc_entry == NULL) {
-            FATALERROR("Dependency %s not found in the referenced dependency archive.\n", dependency_name, other_archive_path);
+            PYI_ERROR("Dependency %s not found in the referenced dependency archive.\n", dependency_name, other_archive_path);
             return -1; /* Entry not found */
         }
 
         /* Extract */
         if (pyi_archive_extract2fs(other_archive, toc_entry, output_filename) < 0) {
-            FATALERROR("Failed to extract %s from referenced dependency archive %s.\n", dependency_name, other_archive_path);
+            PYI_ERROR("Failed to extract %s from referenced dependency archive %s.\n", dependency_name, other_archive_path);
             return -1;
         }
     }

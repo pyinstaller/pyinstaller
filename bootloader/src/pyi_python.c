@@ -149,7 +149,7 @@ pyi_python_bind_functions(pyi_dylib_t dll, int python_version)
     PYI_GETPROC(dll, PyUnicode_Join);
     PYI_GETPROC(dll, PyUnicode_Replace);
 
-    VS("LOADER: loaded functions from Python shared library.\n");
+    PYI_DEBUG("LOADER: loaded functions from Python shared library.\n");
 
     return 0;
 }

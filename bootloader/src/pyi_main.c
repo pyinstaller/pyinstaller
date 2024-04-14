@@ -100,19 +100,19 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     setbuf(stderr, (char *)NULL);
 #endif  /* _WIN32 */
 
-    VS("PyInstaller Bootloader 6.x\n");
+    PYI_DEBUG("PyInstaller Bootloader 6.x\n");
 
     /* Fully resolve the executable name. */
     if (_pyi_main_resolve_executable(pyi_ctx) < 0) {
         return -1;
     }
-    VS("LOADER: executable file: %s\n", pyi_ctx->executable_filename);
+    PYI_DEBUG("LOADER: executable file: %s\n", pyi_ctx->executable_filename);
 
     /* Resolve main PKG archive - embedded or side-loaded. */
     if (_pyi_main_resolve_pkg_archive(pyi_ctx) < 0) {
         return -1;
     }
-    VS("LOADER: archive file: %s\n", pyi_ctx->archive_filename);
+    PYI_DEBUG("LOADER: archive file: %s\n", pyi_ctx->archive_filename);
 
     /* We can now access PKG archive via pyi_ctx->archive; for example,
      * to read run-time options */
@@ -150,7 +150,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     if (1) {
         char *processname = pyi_getenv("_PYI_LINUX_PROCESS_NAME");
         if (processname) {
-            VS("LOADER: restoring process name: %s\n", processname);
+            PYI_DEBUG("LOADER: restoring process name: %s\n", processname);
             prctl(PR_SET_NAME, processname, 0, 0); /* Ignore failures */
         }
         free(processname);
@@ -163,7 +163,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     if (pyi_ctx->is_onefile) {
         char *meipass2_value = NULL;
 
-        VS("LOADER: application has onefile semantics...\n");
+        PYI_DEBUG("LOADER: application has onefile semantics...\n");
 
         /* Check if PyInstaller's environment has already been set. This
          * indicates that we are in the child process, and we do not need
@@ -174,7 +174,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
          * here is unicode. On POSIX systems, the local 8-bit encoding
          * is used. */
         meipass2_value = pyi_getenv("_MEIPASS2");
-        VS("LOADER: _MEIPASS2 is %s\n", (meipass2_value ? meipass2_value : "not set"));
+        PYI_DEBUG("LOADER: _MEIPASS2 is %s\n", (meipass2_value ? meipass2_value : "not set"));
 
         /* Clear the _MEIPASS2 variable; if application were to spawn
          * another PyInstaller onefile application as a subprocess, that
@@ -184,41 +184,41 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
         if (meipass2_value && meipass2_value[0]) {
             /* This is a child process; reset the needs-to-extract flag */
-            VS("LOADER: this is child process of onefile application.\n");
+            PYI_DEBUG("LOADER: this is child process of onefile application.\n");
             pyi_ctx->needs_to_extract = 0;
 
             /* Copy the application's top-level directory from environment */
             if (snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", meipass2_value) >= PYI_PATH_MAX) {
-                FATALERROR("Path exceeds PYI_PATH_MAX limit.\n");
+                PYI_ERROR("Path exceeds PYI_PATH_MAX limit.\n");
                 return -1;
             }
 
             free(meipass2_value);
         } else {
-            VS("LOADER: this is parent process of onefile application.\n");
+            PYI_DEBUG("LOADER: this is parent process of onefile application.\n");
 
             /* On Windows, initialize security descriptor for temporary
              * directory. This is required by `CreateDirectoryW()` calls
              * made when creating application's temporary directory and
              * its sub-directories during file extration. */
 #if defined(_WIN32)
-            VS("LOADER: initializing security descriptor for temporary directory...\n");
+            PYI_DEBUG("LOADER: initializing security descriptor for temporary directory...\n");
             pyi_ctx->security_attr = pyi_win32_initialize_security_descriptor();
             if (pyi_ctx->security_attr == NULL) {
-                FATALERROR("Failed to initialize security descriptor for temporary directory!\n");
+                PYI_ERROR("Failed to initialize security descriptor for temporary directory!\n");
                 return -1;
             }
 #endif
 
             /* Create temporary directory */
-            VS("LOADER: creating temporary directory (runtime_tmpdir=%s)...\n", pyi_ctx->runtime_tmpdir);
+            PYI_DEBUG("LOADER: creating temporary directory (runtime_tmpdir=%s)...\n", pyi_ctx->runtime_tmpdir);
 
             if (pyi_create_temporary_application_directory(pyi_ctx) < 0) {
-                FATALERROR("Could not create temporary directory!\n");
+                PYI_ERROR("Could not create temporary directory!\n");
                 return -1;
             }
 
-            VS("LOADER: created temporary directory: %s\n", pyi_ctx->application_home_dir);
+            PYI_DEBUG("LOADER: created temporary directory: %s\n", pyi_ctx->application_home_dir);
         }
     } else {
         char executable_dir[PYI_PATH_MAX];
@@ -227,7 +227,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         size_t executable_dir_len;
 #endif
 
-        VS("LOADER: application has onedir semantics...\n");
+        PYI_DEBUG("LOADER: application has onedir semantics...\n");
 
         /* Determine application's top-level directory based on the
          * executable's location. */
@@ -257,11 +257,13 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
          * library search path and restart the current process. This is
          * handled by the following helper function. */
 #if !defined(_WIN32) && !defined(__APPLE__)
-        _pyi_main_handle_posix_onedir(pyi_ctx);
+        if (_pyi_main_handle_posix_onedir(pyi_ctx) < 0) {
+            return -1;
+        }
 #endif
     }
 
-    VS("LOADER: application's top-level directory: %s\n", pyi_ctx->application_home_dir);
+    PYI_DEBUG("LOADER: application's top-level directory: %s\n", pyi_ctx->application_home_dir);
 
     /* On Windows and under cygwin, add application's top-level directory
      * to DLL search path.  */
@@ -273,18 +275,18 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         /* Cygwin */
         ret = cygwin_conv_path(CCP_POSIX_TO_WIN_W | CCP_RELATIVE, pyi_ctx->application_home_dir, dllpath_w, PYI_PATH_MAX);
         if (ret != 0) {
-            FATAL_PERROR("cygwin_conv_path", "Failed to convert DLL search path!\n");
+            PYI_PERROR("cygwin_conv_path", "Failed to convert DLL search path!\n");
             return -1;
         }
 #else
         /* Windows */
         if (pyi_win32_utf8_to_wcs(pyi_ctx->application_home_dir, dllpath_w, PYI_PATH_MAX) == NULL) {
-            FATALERROR("Failed to convert DLL search path!\n");
+            PYI_ERROR("Failed to convert DLL search path!\n");
             return -1;
         }
 #endif  /* defined(__CYGWIN__) */
 
-        VS("LOADER: calling SetDllDirectory: %S\n", dllpath_w);
+        PYI_DEBUG("LOADER: calling SetDllDirectory: %S\n", dllpath_w);
         SetDllDirectoryW(dllpath_w);
     }
 #endif  /* defined(_WIN32) || defined(__CYGWIN__) */
@@ -294,21 +296,21 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
      * and in onedir process. In other words, everywhere but in onefile
      * child process. */
     if (!(pyi_ctx->is_onefile && !pyi_ctx->needs_to_extract)) {
-        VS("LOADER: looking for splash screen resources...\n");
+        PYI_DEBUG("LOADER: looking for splash screen resources...\n");
         pyi_ctx->splash = pyi_splash_context_new();
         if (pyi_splash_setup(pyi_ctx->splash, pyi_ctx) == 0) {
             int ret = 0;
 
             /* Splash screen resources found; setup up splash screen */
-            VS("LOADER: setting up splash screen...\n");
+            PYI_DEBUG("LOADER: setting up splash screen...\n");
 
             /* In onefile mode, we need to extract dependencies (shared
              * libraries, .tcl files, etc.) from PKG archive. */
             if (pyi_ctx->is_onefile) {
-                VS("LOADER: extracting splash screen dependencies...\n");
+                PYI_DEBUG("LOADER: extracting splash screen dependencies...\n");
                 ret = pyi_splash_extract(pyi_ctx->splash, pyi_ctx);
                 if (ret != 0) {
-                    OTHERERROR("Failed to unpack splash screen dependencies from PKG archive!\n");
+                    PYI_WARNING("Failed to unpack splash screen dependencies from PKG archive!\n");
                 }
             }
 
@@ -316,7 +318,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             if (ret == 0) {
                 ret = pyi_splash_load_shared_libaries(pyi_ctx->splash);
                 if (ret != 0) {
-                    OTHERERROR("Failed to load Tcl/Tk shared libraries for splash screen!\n");
+                    PYI_WARNING("Failed to load Tcl/Tk shared libraries for splash screen!\n");
                 }
             }
 
@@ -324,7 +326,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             if (ret == 0) {
                 ret = pyi_splash_start(pyi_ctx->splash, pyi_ctx->executable_filename);
                 if (ret != 0) {
-                    OTHERERROR("Failed to start splash screen!\n");
+                    PYI_WARNING("Failed to start splash screen!\n");
                 }
             }
 
@@ -338,7 +340,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             }
         } else {
             /* Splash screen resources not found */
-            VS("LOADER: splash screen resources not found.\n");
+            PYI_DEBUG("LOADER: splash screen resources not found.\n");
             pyi_splash_context_free(&pyi_ctx->splash);
         }
     }
@@ -466,7 +468,7 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
             /* Install event handlers */
             pyi_ctx->ae_ctx = pyi_apple_install_event_handlers(pyi_ctx);
             if (pyi_ctx->ae_ctx == NULL) {
-                FATALERROR("Failed to install AppleEvent handlers!\n");
+                PYI_ERROR("Failed to install AppleEvent handlers!\n");
                 return -1;
             }
             /* Process Apple events; this updates argc_pyi/argv_pyi
@@ -541,9 +543,9 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
     int ret;
 
     /* Extract files to temporary directory */
-    VS("LOADER: extracting files to temporary directory...\n");
+    PYI_DEBUG("LOADER: extracting files to temporary directory...\n");
     if (pyi_launch_extract_files_from_archive(pyi_ctx) < 0) {
-        VS("LOADER: failed to extract files!\n");
+        PYI_DEBUG("LOADER: failed to extract files!\n");
         return -1;
     }
 
@@ -571,7 +573,7 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
 
         /* Pass the process name to child via environment variable. */
         if (!prctl(PR_GET_NAME, processname, 0, 0)) {
-            VS("LOADER: storing process name: %s\n", processname);
+            PYI_DEBUG("LOADER: storing process name: %s\n", processname);
             pyi_setenv("_PYI_LINUX_PROCESS_NAME", processname);
         }
     }
@@ -625,16 +627,16 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
     /* Pass top-level application directory (the temporary directory
      * where files were extracted) to the child process via
      * corresponding environment variable. */
-    VS("LOADER: setting _MEIPASS2 to %s\n", pyi_ctx->application_home_dir);
+    PYI_DEBUG("LOADER: setting _MEIPASS2 to %s\n", pyi_ctx->application_home_dir);
     pyi_setenv("_MEIPASS2", pyi_ctx->application_home_dir);
 
     /* Start the child process that will execute user's program. */
-    VS("LOADER: starting the child process...\n");
+    PYI_DEBUG("LOADER: starting the child process...\n");
     ret = pyi_utils_create_child(pyi_ctx);
 
-    VS("LOADER: child process exited (return code: %d)\n", ret);
+    PYI_DEBUG("LOADER: child process exited (return code: %d)\n", ret);
 
-    VS("LOADER: performing cleanup...\n");
+    PYI_DEBUG("LOADER: performing cleanup...\n");
 
     /* Finalize splash screen before temp directory gets wiped, since the splash
      * screen might hold handles to shared libraries inside the temp dir. Those
@@ -647,10 +649,10 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
         /* Return error if we failed to remove temporary directory while
          * strict unpack mode is enabled. */
         if (pyi_ctx->strict_unpack_mode) {
-            OTHERERROR("ERROR: failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
+            PYI_ERROR("ERROR: failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
             ret = -1;
         } else {
-            OTHERERROR("WARNING: failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
+            PYI_WARNING("WARNING: failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
         }
     }
 
@@ -660,7 +662,7 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
     /* Re-raise child's signal, if necessary (POSIX only) */
 #ifndef _WIN32
     if (pyi_ctx->child_signalled) {
-        VS("LOADER: re-raising child signal %d\n", pyi_ctx->child_signal);
+        PYI_DEBUG("LOADER: re-raising child signal %d\n", pyi_ctx->child_signal);
         raise(pyi_ctx->child_signal);
     }
 #endif
@@ -681,7 +683,7 @@ _pyi_resolve_executable_win32(char *executable_filename)
 
     /* GetModuleFileNameW returns an absolute, fully qualified path */
     if (!GetModuleFileNameW(NULL, modulename_w, PYI_PATH_MAX)) {
-        FATAL_WINERROR("GetModuleFileNameW", "Failed to obtain executable path.\n");
+        PYI_WINERROR("GetModuleFileNameW", "Failed to obtain executable path.\n");
         return -1;
     }
 
@@ -690,11 +692,11 @@ _pyi_resolve_executable_win32(char *executable_filename)
         wchar_t executable_filename_w[PYI_PATH_MAX];
         int offset = 0;
 
-        VS("LOADER: executable file %S is a symbolic link - resolving...\n", modulename_w);
+        PYI_DEBUG("LOADER: executable file %S is a symbolic link - resolving...\n", modulename_w);
 
         /* Resolve */
         if (pyi_win32_realpath(modulename_w, executable_filename_w) < 0) {
-            VS("LOADER: failed to resolve full path for %s\n", modulename_w);
+            PYI_ERROR("LOADER: failed to resolve full path for %s\n", modulename_w);
             return -1;
         }
 
@@ -706,13 +708,13 @@ _pyi_resolve_executable_win32(char *executable_filename)
 
         /* Convert to UTF-8 */
         if (!pyi_win32_wcs_to_utf8(executable_filename_w + offset, executable_filename, PYI_PATH_MAX)) {
-            FATALERROR("Failed to convert executable path to UTF-8.\n");
+            PYI_ERROR("Failed to convert executable path to UTF-8.\n");
             return -1;
         }
     } else {
         /* Convert to UTF-8 */
         if (!pyi_win32_wcs_to_utf8(modulename_w, executable_filename, PYI_PATH_MAX)) {
-            FATALERROR("Failed to convert executable path to UTF-8.\n");
+            PYI_ERROR("Failed to convert executable path to UTF-8.\n");
             return -1;
         }
     }
@@ -731,13 +733,13 @@ _pyi_resolve_executable_macos(char *executable_filename)
     /* Mac OS X has special function to obtain path to executable.
      * This may return a symbolic link. */
     if (_NSGetExecutablePath(program_path, &name_length) != 0) {
-        FATALERROR("Failed to obtain executable path via _NSGetExecutablePath!\n");
+        PYI_ERROR("Failed to obtain executable path via _NSGetExecutablePath!\n");
         return -1;
     }
 
     /* Canonicalize the filename and resolve symbolic links */
     if (realpath(program_path, executable_filename) == NULL) {
-        VS("LOADER: failed to resolve full path for %s\n", program_path);
+        PYI_DEBUG("LOADER: failed to resolve full path for %s\n", program_path);
         return -1;
     }
 
@@ -833,7 +835,7 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename)
      * to ignore it. */
 #if defined(__linux__)
     if (_pyi_is_ld_linux_so(executable_filename) == true) {
-        VS("LOADER: resolved executable file %s is ld.so dynamic loader - ignoring it!\n", executable_filename);
+        PYI_DEBUG("LOADER: resolved executable file %s is ld.so dynamic loader - ignoring it!\n", executable_filename);
         name_len = -1;
     }
 #endif
@@ -848,9 +850,9 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename)
     if (strchr(argv0, PYI_SEP)) {
         /* Absolute or relative path was given. Canonicalize it, and
          * resolve symbolic links. */
-        VS("LOADER: resolving program path from argv[0]: %s\n", argv0);
+        PYI_DEBUG("LOADER: resolving program path from argv[0]: %s\n", argv0);
         if (realpath(argv0, executable_filename) == NULL) {
-            VS("LOADER: failed to resolve full path for %s\n", argv0);
+            PYI_DEBUG("LOADER: failed to resolve full path for %s\n", argv0);
             return -1;
         }
     } else {
@@ -860,18 +862,18 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename)
 
         if (_pyi_find_progam_in_search_path(argv0, program_path)) {
             /* Program found in $PATH; resolve full path */
-            VS("LOADER: program %s found in PATH: %s. Resolving full path...\n", argv0, program_path);
+            PYI_DEBUG("LOADER: program %s found in PATH: %s. Resolving full path...\n", argv0, program_path);
             if (realpath(program_path, executable_filename) == NULL) {
-                VS("LOADER: failed to resolve full path for %s\n", program_path);
+                PYI_DEBUG("LOADER: failed to resolve full path for %s\n", program_path);
                 return -1;
             }
         } else {
             /* Searching $PATH failed; try resolving the name as-is,
              * and hope for the best. NOTE: can we even reach this part?
              * How was the executable even launched in such case? */
-            VS("LOADER: could not find %s in $PATH! Attempting to resolve as-is...\n", argv0);
+            PYI_DEBUG("LOADER: could not find %s in $PATH! Attempting to resolve as-is...\n", argv0);
             if (realpath(argv0, executable_filename) == NULL) {
-                VS("LOADER: failed to resolve full path for %s\n", argv0);
+                PYI_DEBUG("LOADER: failed to resolve full path for %s\n", argv0);
                 return -1;
             }
         }
@@ -936,7 +938,7 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
     int status;
 
     /* Try opening embedded archive first */
-    VS("LOADER: trying to load executable-embedded archive...\n");
+    PYI_DEBUG("LOADER: trying to load executable-embedded archive...\n");
     pyi_ctx->archive = pyi_archive_open(pyi_ctx->executable_filename);
     if (pyi_ctx->archive != NULL) {
         /* Copy executable filename to archive filename; we know it does not exceed PYI_PATH_MAX */
@@ -944,13 +946,13 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
         return 0;
     }
 
-    VS("LOADER: failed to open executable-embedded archive!\n");
+    PYI_DEBUG("LOADER: failed to open executable-embedded archive!\n");
 
     /* Check if side-load is allowed */
     status = _pyi_allow_pkg_sideload(pyi_ctx->executable_filename);
     if (status != 0) {
-        VS("LOADER: side-load is disabled (code %d)!\n", status);
-        FATALERROR(
+        PYI_DEBUG("LOADER: side-load is disabled (code %d)!\n", status);
+        PYI_ERROR(
             "Could not load PyInstaller's embedded PKG archive from the executable (%s)\n",
             pyi_ctx->executable_filename
         );
@@ -969,11 +971,11 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
     }
 #endif
 
-    VS("LOADER: trying to load external PKG archive (%s)...\n", pyi_ctx->archive_filename);
+    PYI_DEBUG("LOADER: trying to load external PKG archive (%s)...\n", pyi_ctx->archive_filename);
 
     pyi_ctx->archive = pyi_archive_open(pyi_ctx->archive_filename);
     if (pyi_ctx->archive == NULL) {
-        FATALERROR(
+        PYI_ERROR(
             "Could not side-load PyInstaller's PKG archive from external file (%s)\n",
             pyi_ctx->archive_filename
         );
@@ -1012,11 +1014,11 @@ _pyi_main_handle_posix_onedir(PYI_CONTEXT *pyi_ctx)
     pyi_unsetenv("_PYI_POSIX_ONEDIR_MODE");
 
     if (already_restarted) {
-        VS("LOADER: POSIX onedir process has already restarted itself.\n");
+        PYI_DEBUG("LOADER: POSIX onedir process has already restarted itself.\n");
         return 0;
     }
 
-    VS("LOADER: POSIX onedir process needs to set library seach path and restart itself.\n");
+    PYI_DEBUG("LOADER: POSIX onedir process needs to set library seach path and restart itself.\n");
 
     /* Set up the library search path (by modifying LD_LIBRARY_PATH or
      * equivalent), so that the restarted process will be able to find
@@ -1034,7 +1036,7 @@ _pyi_main_handle_posix_onedir(PYI_CONTEXT *pyi_ctx)
      * argument modification, so we always use pyi_ctx->argv (as
      * pyi_ctx->pyi_argv is unavailable). */
     if (execvp(pyi_ctx->executable_filename, pyi_ctx->argv) < 0) {
-        OTHERERROR("LOADER: failed to restart process via execvp: %s\n", strerror(errno));
+        PYI_ERROR("LOADER: failed to restart process via execvp: %s\n", strerror(errno));
         return -1;
     }
 

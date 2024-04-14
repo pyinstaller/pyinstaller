@@ -136,7 +136,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
     /* Convert UTF-8 path to wide-char */
     runtime_tmpdir_w = pyi_win32_utf8_to_wcs(runtime_tmpdir, NULL, 0);
     if (!runtime_tmpdir_w) {
-        FATALERROR("LOADER: failed to convert runtime-tmpdir to a wide string.\n");
+        PYI_ERROR("LOADER: failed to convert runtime-tmpdir to a wide string.\n");
         return NULL;
     }
 
@@ -144,7 +144,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
     rc = ExpandEnvironmentStringsW(runtime_tmpdir_w, runtime_tmpdir_expanded, PYI_PATH_MAX);
     free(runtime_tmpdir_w);
     if (!rc) {
-        FATALERROR("LOADER: failed to expand environment variables in the runtime-tmpdir.\n");
+        PYI_ERROR("LOADER: failed to expand environment variables in the runtime-tmpdir.\n");
         return NULL;
     }
 
@@ -154,17 +154,17 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
          * using _wfullpath(), because it will return the current directory
          * on the current drive. We also have no path to create. So just
          * return a verbatim copy of the string. */
-        VS("LOADER: expanded runtime-tmpdir is a drive root: %ls\n", runtime_tmpdir_expanded);
+        PYI_DEBUG("LOADER: expanded runtime-tmpdir is a drive root: %ls\n", runtime_tmpdir_expanded);
         return _wcsdup(runtime_tmpdir_expanded);
     }
 
     runtime_tmpdir_abspath = _wfullpath(NULL, runtime_tmpdir_expanded, PYI_PATH_MAX);
     if (!runtime_tmpdir_abspath) {
-        FATALERROR("LOADER: failed to obtain the absolute path of the runtime-tmpdir.\n");
+        PYI_ERROR("LOADER: failed to obtain the absolute path of the runtime-tmpdir.\n");
         return NULL;
     }
 
-    VS("LOADER: absolute runtime-tmpdir is %ls\n", runtime_tmpdir_abspath);
+    PYI_DEBUG("LOADER: absolute runtime-tmpdir is %ls\n", runtime_tmpdir_abspath);
 
     /* Recursively create the directory structure
      *
@@ -183,13 +183,13 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
         int subpath_length = (int)(subpath_cursor - runtime_tmpdir_abspath);
 
         _snwprintf(directory_tree_path, PYI_PATH_MAX, L"%.*s", subpath_length, runtime_tmpdir_abspath);
-        VS("LOADER: creating runtime-tmpdir path component: %ls\n", directory_tree_path);
+        PYI_DEBUG("LOADER: creating runtime-tmpdir path component: %ls\n", directory_tree_path);
         CreateDirectoryW(directory_tree_path, NULL);
     }
 
     /* Run once more on full path, to handle cases when path did not end
      * with separator. */
-    VS("LOADER: creating runtime-tmpdir path: %ls\n", runtime_tmpdir_abspath);
+    PYI_DEBUG("LOADER: creating runtime-tmpdir path: %ls\n", runtime_tmpdir_abspath);
     CreateDirectoryW(runtime_tmpdir_abspath, NULL);
 
     return runtime_tmpdir_abspath;
@@ -227,12 +227,12 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
         rc = _wputenv_s(L"TMP", runtime_tmpdir_w);
         free(runtime_tmpdir_w);
         if (rc) {
-            FATALERROR("LOADER: failed to set the TMP environment variable.\n");
+            PYI_ERROR("LOADER: failed to set the TMP environment variable.\n");
             free(original_tmp_value);
             return -1;
         }
 
-        VS("LOADER: successfully resolved the specified runtime-tmpdir\n");
+        PYI_DEBUG("LOADER: successfully resolved the specified runtime-tmpdir\n");
     }
 
     /* Retrieve temporary directory */
@@ -256,7 +256,7 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
         } else {
             /* Convert path to UTF-8 and store it in main context structure */
             if (pyi_win32_wcs_to_utf8(application_home_dir_w, pyi_ctx->application_home_dir, PYI_PATH_MAX) == NULL) {
-                FATALERROR("LOADER: length of teporary directory path exceeds maximum path length!\n");
+                PYI_ERROR("LOADER: length of teporary directory path exceeds maximum path length!\n");
                 ret = -1;
             }
             free(application_home_dir_w);
@@ -400,11 +400,11 @@ pyi_utils_dlclose(pyi_dylib_t handle)
 static BOOL WINAPI
 _pyi_win32_console_ctrl(DWORD dwCtrlType)
 {
-    /* Due to different handling of VS() macro in MSVC and mingw gcc, the
-     * former requires the name variable below to be available even in
-     * non-debug builds (where VS() is no-op), while the latter complains
-     * about the unused variable. So put everything under ifdef guard to
-     * appease both. */
+    /* Due to different handling of PYI_DEBUG() macro in MSVC and mingw
+     * gcc, the former requires the name variable below to be available
+     * even in non-debug builds (where PYI_DEBUG() is no-op), while the
+     * latter complains about the unused variable. So put everything
+     * under ifdef guard to appease both. */
 #if defined(LAUNCH_DEBUG)
     /* https://docs.microsoft.com/en-us/windows/console/handlerroutine */
     static const char *name_map[] = {
@@ -424,7 +424,7 @@ _pyi_win32_console_ctrl(DWORD dwCtrlType)
      * might have already been executed, preventing console functions
      * from working reliably. See Remarks section at:
      * https://docs.microsoft.com/en-us/windows/console/setconsolectrlhandler */
-    VS("LOADER: received console control signal %d (%s)!\n", dwCtrlType, name ? name : "unknown");
+    PYI_DEBUG("LOADER: received console control signal %d (%s)!\n", dwCtrlType, name ? name : "unknown");
 #endif /* defined(LAUNCH_DEBUG) */
 
     /* Handle Ctrl+C and Ctrl+Break signals immediately. By returning TRUE,
@@ -487,10 +487,10 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
 
     /* Set up console ctrl handler; the call returns non-zero on success */
     if (SetConsoleCtrlHandler(_pyi_win32_console_ctrl, TRUE) == 0) {
-        VS("LOADER: failed to install console ctrl handler!\n");
+        PYI_DEBUG("LOADER: failed to install console ctrl handler!\n");
     }
 
-    VS("LOADER: setting up to run child\n");
+    PYI_DEBUG("LOADER: setting up to run child\n");
 
     security_attributes.nLength = sizeof(security_attributes);
     security_attributes.lpSecurityDescriptor = NULL;
@@ -506,7 +506,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     startup_info.hStdOutput = _pyi_get_stream_handle(stdout);
     startup_info.hStdError = _pyi_get_stream_handle(stderr);
 
-    VS("LOADER: creating child process\n");
+    PYI_DEBUG("LOADER: creating child process\n");
 
     succeeded = CreateProcessW(
         executable_filename_w, /* lpApplicationName */
@@ -521,13 +521,13 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
         &process_info /* lpProcessInformation */
     );
     if (succeeded) {
-        VS("LOADER: waiting for child process to finish...\n");
+        PYI_DEBUG("LOADER: waiting for child process to finish...\n");
         WaitForSingleObject(process_info.hProcess, INFINITE);
         GetExitCodeProcess(process_info.hProcess, &child_exitcode);
         return child_exitcode;
     }
 
-    FATAL_WINERROR("CreateProcessW", "Failed to create child process!\n");
+    PYI_WINERROR("CreateProcessW", "Failed to create child process!\n");
     return -1;
 }
 
@@ -656,13 +656,13 @@ pyi_win32_initialize_security_descriptor()
     LocalFree(app_container_sid); /* Must be freed using LocalFree() */
 
     if (ret >= PYI_PATH_MAX) {
-        OTHERERROR("Security descriptor string length exceeds PYI_PATH_MAX!\n");
+        PYI_WARNING("Security descriptor string length exceeds PYI_PATH_MAX!\n");
         return NULL;
     }
 
     /* Convert security descriptor string to security descriptor, and
      * store it in the SECURITY_ATTRIBUTES structure. */
-    VS("LOADER: initializing security descriptor from string: %S\n", security_descriptor_str);
+    PYI_DEBUG("LOADER: initializing security descriptor from string: %S\n", security_descriptor_str);
     ret = ConvertStringSecurityDescriptorToSecurityDescriptorW(
         security_descriptor_str,
         SDDL_REVISION_1,
