@@ -29,58 +29,6 @@
 
 
 /**********************************************************************\
- *                 WinError code to string conversion                 *
-\**********************************************************************/
-/* Return a pointer to a null-terminated string containing a textual
- * description of the given error code. If the error code is zero, the
- * result of GetLastError() is used. The text is localized and
- * UTF8-encoded. The caller is *NOT* responsible for freeing this
- * pointer.
- *
- * Returns a pointer to statically-allocated storage. Not thread safe.
- */
-const char *
-pyi_win32_get_winerror_string(DWORD error_code)
-{
-    #define ERROR_STRING_MAX 4096
-    static wchar_t local_buffer_w[ERROR_STRING_MAX];
-    static char local_buffer[ERROR_STRING_MAX];
-
-    DWORD result;
-
-    if (error_code == 0) {
-        error_code = GetLastError();
-    }
-
-    /* Note: Giving 0 to dwLanguageID means MAKELANGID(LANG_NEUTRAL,
-     * SUBLANG_NEUTRAL), but we should use SUBLANG_DEFAULT instead of
-     * SUBLANG_NEUTRAL. Please see the note written in "Language
-     * Identifier Constants and Strings" on MSDN.
-     * https://docs.microsoft.com/en-us/windows/desktop/intl/language-identifier-constants-and-strings
-     */
-    result = FormatMessageW(
-        FORMAT_MESSAGE_FROM_SYSTEM, /* dwFlags */
-        NULL, /* lpSource */
-        error_code, /* dwMessageId */
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
-        local_buffer_w, /* lpBuffer */
-        ERROR_STRING_MAX, /* nSize */
-        NULL /* Arguments */
-    );
-
-    if (!result) {
-        return "PyInstaller: FormatMessageW failed.";
-    }
-
-    if (pyi_win32_wcs_to_utf8(local_buffer_w, local_buffer, ERROR_STRING_MAX) == NULL) {
-        return "PyInstaller: pyi_win32_wcs_to_utf8 failed.";
-    }
-
-    return local_buffer;
-}
-
-
-/**********************************************************************\
  *                    Character encoding conversion                   *
 \**********************************************************************/
 /*
