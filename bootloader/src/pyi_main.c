@@ -278,15 +278,22 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             PYI_PERROR("cygwin_conv_path", "Failed to convert DLL search path!\n");
             return -1;
         }
+        /* On Cygwin, we do not have PYI_DEBUG_W macro available; so
+         * use %S format to try printing the wide-char string. We can
+         * be fairly certain that compiler is not MSVC, so %S does mean
+         * wide-char in this context; there might still be garbled text
+         * if string contains Unicode characters, but we will take the
+         * risk... */
+        PYI_DEBUG("LOADER: calling SetDllDirectory: %S\n", dllpath_w);
 #else
         /* Windows */
         if (pyi_win32_utf8_to_wcs(pyi_ctx->application_home_dir, dllpath_w, PYI_PATH_MAX) == NULL) {
             PYI_ERROR("Failed to convert DLL search path!\n");
             return -1;
         }
+        PYI_DEBUG_W(L"LOADER: calling SetDllDirectory: %ls\n", dllpath_w);
 #endif  /* defined(__CYGWIN__) */
 
-        PYI_DEBUG("LOADER: calling SetDllDirectory: %S\n", dllpath_w);
         SetDllDirectoryW(dllpath_w);
     }
 #endif  /* defined(_WIN32) || defined(__CYGWIN__) */
@@ -692,11 +699,11 @@ _pyi_resolve_executable_win32(char *executable_filename)
         wchar_t executable_filename_w[PYI_PATH_MAX];
         int offset = 0;
 
-        PYI_DEBUG("LOADER: executable file %S is a symbolic link - resolving...\n", modulename_w);
+        PYI_DEBUG_W(L"LOADER: executable file %ls is a symbolic link - resolving...\n", modulename_w);
 
         /* Resolve */
         if (pyi_win32_realpath(modulename_w, executable_filename_w) < 0) {
-            PYI_ERROR("LOADER: failed to resolve full path for %s\n", modulename_w);
+            PYI_ERROR("Failed to resolve full path to executable (symbolic link).\n");
             return -1;
         }
 
