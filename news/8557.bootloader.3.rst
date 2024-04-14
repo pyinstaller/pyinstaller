@@ -1,0 +1,5 @@
+(Windows) Instead of converting bootloader's debug and error messages
+from UTF-8 to local ANSI codepage and displaying them via ANSI API
+(e.g., ``fprintf``, ``DebugMessageA``), the bootloader now attempts to convert
+those messages to wide-character strings and displays them via wide-character
+API (e.g., ``fwprintf``, ``DebugMessageW``).
