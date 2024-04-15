@@ -123,7 +123,9 @@ pyi_pylib_load(PYI_CONTEXT *pyi_ctx)
 
     if (pyi_ctx->python_dll == 0) {
 #ifdef _WIN32
-        PYI_WINERROR("LoadLibrary", "Failed to load Python DLL '%s'.\n", dll_fullpath);
+        wchar_t dll_fullpath_w[PYI_PATH_MAX];
+        pyi_win32_utf8_to_wcs(dll_fullpath, dll_fullpath_w, PYI_PATH_MAX);
+        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Python DLL '%ls'.\n", dll_fullpath_w);
 #else
         PYI_ERROR("Failed to load Python shared library '%s': dlopen: %s\n", dll_fullpath, dlerror());
 #endif

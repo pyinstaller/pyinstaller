@@ -88,10 +88,14 @@
 #define PYI_GETPROCOPT(dll, name, sym) \
     PI_ ## name = (__PROC__ ## name)GetProcAddress (dll, #sym)
 
+/* Note: since function names are always in ASCII, we can safely use %hs
+ * to format ANSI string (obtained via stringification) into wide-char
+ * message string. This alleviates the need for set of macros that would
+ * achieve wide-char stringification of the function name. */
 #define PYI_GETPROC(dll, name) \
     PYI_GETPROCOPT(dll, name, name); \
     if (!PI_ ## name) { \
-        PYI_WINERROR("GetProcAddress", "Failed to get address for " #name "\n"); \
+        PYI_WINERROR_W(L"GetProcAddress", L"Failed to get address for %hs\n", #name); \
         return -1; \
     }
 
@@ -121,7 +125,7 @@
  *  - PYI_PERROR
  *
  * On Windows, additional macros are available:
- *  - PYI_WINERROR
+ *  - PYI_WINERROR_W
  *  - PYI_DEBUG_W
  */
 
@@ -132,23 +136,23 @@
         void pyi_debug_dialog_error(const char *fmt, ...);
         void pyi_debug_dialog_warning(const char *fmt, ...);
         void pyi_debug_dialog_perror(const char *funcname, const char *fmt, ...);
-        void pyi_debug_dialog_winerror(const char *funcname, const char *fmt, ...);
+        void pyi_debug_dialog_winerror_w(const wchar_t *funcname, const wchar_t *fmt, ...);
 
         #define PYI_ERROR pyi_debug_dialog_error
         #define PYI_WARNING pyi_debug_dialog_warning
         #define PYI_PERROR pyi_debug_dialog_perror
-        #define PYI_WINERROR pyi_debug_dialog_winerror
+        #define PYI_WINERROR_W pyi_debug_dialog_winerror_w
     #else
         /* We have console; emit messages to stderr. */
         void pyi_debug_printf(const char *fmt, ...);
         void pyi_debug_printf_w(const wchar_t *fmt, ...);
         void pyi_debug_perror(const char *funcname, const char *fmt, ...);
-        void pyi_debug_winerror(const char *funcname, const char *fmt, ...);
+        void pyi_debug_winerror_w(const wchar_t *funcname, const wchar_t *fmt, ...);
 
         #define PYI_ERROR pyi_debug_printf
         #define PYI_WARNING pyi_debug_printf
         #define PYI_PERROR pyi_debug_perror
-        #define PYI_WINERROR pyi_debug_winerror
+        #define PYI_WINERROR_W pyi_debug_winerror_w
     #endif /* defined(WINDOWED) */
 #else /* defined(_WIN32) */
     /* POSIX; display error messages to stderr. */

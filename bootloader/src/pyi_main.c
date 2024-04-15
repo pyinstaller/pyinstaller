@@ -690,7 +690,7 @@ _pyi_resolve_executable_win32(char *executable_filename)
 
     /* GetModuleFileNameW returns an absolute, fully qualified path */
     if (!GetModuleFileNameW(NULL, modulename_w, PYI_PATH_MAX)) {
-        PYI_WINERROR("GetModuleFileNameW", "Failed to obtain executable path.\n");
+        PYI_WINERROR_W(L"GetModuleFileNameW", L"Failed to obtain executable path.\n");
         return -1;
     }
 
