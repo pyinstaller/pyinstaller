@@ -20,12 +20,6 @@ from PyInstaller.utils.hooks import check_requirement, can_import_module
 from PyInstaller.utils.hooks.qt import get_qt_library_info
 from PyInstaller.utils.tests import importorskip, requires, skipif
 
-PYQT5_NEED_OPENGL = pytest.mark.skipif(
-    check_requirement('PyQt5 <= 5.10.1'),
-    reason='PyQt5 v5.10.1 and older does not package ``opengl32sw.dll``, '
-    'the OpenGL software renderer, which this test requires.'
-)
-
 
 def qt_param(qt_flavor, *args, **kwargs):
     """
@@ -95,7 +89,6 @@ def test_Qt_QtWidgets(pyi_builder, QtPyLib):
     )
 
 
-@PYQT5_NEED_OPENGL
 @QtPyLibs
 def test_Qt_QtQml(pyi_builder, QtPyLib):
     pyi_builder.test_source(
@@ -243,7 +236,6 @@ def test_Qt_QTranslate(pyi_builder, QtPyLib):
     )
 
 
-@PYQT5_NEED_OPENGL
 @QtPyLibs
 def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, QtPyLib):
     # Note that including the data_dir fixture copies files needed by this test.
