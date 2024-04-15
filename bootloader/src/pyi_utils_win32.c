@@ -527,7 +527,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
         return child_exitcode;
     }
 
-    PYI_WINERROR("CreateProcessW", "Failed to create child process!\n");
+    PYI_WINERROR_W(L"CreateProcessW", L"Failed to create child process!\n");
     return -1;
 }
 
