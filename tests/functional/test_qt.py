@@ -91,6 +91,17 @@ def test_Qt_QtWidgets(pyi_builder, QtPyLib):
 
 @QtPyLibs
 def test_Qt_QtQml(pyi_builder, QtPyLib):
+    # Qt6 6.6.3 split Qt Quick Controls 2 styles into separate shared libraries, and both PySide6 6.6.3 and PyQt6 6.6.3
+    # PyPI wheels failed to account for that. Skip this test if running with affected version.
+    if QtPyLib == 'PyQt6':
+        # With PyQt6, the shared libraries are missing on Windows and Linux, but not on macOS.
+        if not is_darwin and check_requirement('PyQt6-Qt6 == 6.6.3'):
+            pytest.skip('PyQt6-Qt6 6.6.3 is missing shared libraries required by Qt Quick Controls 2.')
+    if QtPyLib == 'PySide6':
+        # With PySide6, all OSes seem to be affected.
+        if check_requirement('PySide6-Essentials == 6.6.3'):
+            pytest.skip('PySide6-Essentials 6.6.3 is missing shared libraries required by Qt Quick Controls 2.')
+
     pyi_builder.test_source(
         """
         import sys
