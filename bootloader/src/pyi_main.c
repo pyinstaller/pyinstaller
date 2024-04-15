@@ -703,7 +703,7 @@ _pyi_resolve_executable_win32(char *executable_filename)
 
         /* Resolve */
         if (pyi_win32_realpath(modulename_w, executable_filename_w) < 0) {
-            PYI_ERROR("Failed to resolve full path to executable (symbolic link).\n");
+            PYI_ERROR_W(L"Failed to resolve full path to executable %ls.\n", modulename_w);
             return -1;
         }
 
@@ -715,13 +715,13 @@ _pyi_resolve_executable_win32(char *executable_filename)
 
         /* Convert to UTF-8 */
         if (!pyi_win32_wcs_to_utf8(executable_filename_w + offset, executable_filename, PYI_PATH_MAX)) {
-            PYI_ERROR("Failed to convert executable path to UTF-8.\n");
+            PYI_ERROR_W(L"Failed to convert executable path to UTF-8.\n");
             return -1;
         }
     } else {
         /* Convert to UTF-8 */
         if (!pyi_win32_wcs_to_utf8(modulename_w, executable_filename, PYI_PATH_MAX)) {
-            PYI_ERROR("Failed to convert executable path to UTF-8.\n");
+            PYI_ERROR_W(L"Failed to convert executable path to UTF-8.\n");
             return -1;
         }
     }

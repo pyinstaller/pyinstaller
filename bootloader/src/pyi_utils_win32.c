@@ -136,7 +136,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
     /* Convert UTF-8 path to wide-char */
     runtime_tmpdir_w = pyi_win32_utf8_to_wcs(runtime_tmpdir, NULL, 0);
     if (!runtime_tmpdir_w) {
-        PYI_ERROR("LOADER: failed to convert runtime-tmpdir to a wide string.\n");
+        PYI_ERROR_W(L"LOADER: failed to convert runtime-tmpdir to a wide string.\n");
         return NULL;
     }
 
@@ -144,7 +144,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
     rc = ExpandEnvironmentStringsW(runtime_tmpdir_w, runtime_tmpdir_expanded, PYI_PATH_MAX);
     free(runtime_tmpdir_w);
     if (!rc) {
-        PYI_ERROR("LOADER: failed to expand environment variables in the runtime-tmpdir.\n");
+        PYI_ERROR_W(L"LOADER: failed to expand environment variables in the runtime-tmpdir.\n");
         return NULL;
     }
 
@@ -160,7 +160,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
 
     runtime_tmpdir_abspath = _wfullpath(NULL, runtime_tmpdir_expanded, PYI_PATH_MAX);
     if (!runtime_tmpdir_abspath) {
-        PYI_ERROR("LOADER: failed to obtain the absolute path of the runtime-tmpdir.\n");
+        PYI_ERROR_W(L"LOADER: failed to obtain the absolute path of the runtime-tmpdir.\n");
         return NULL;
     }
 
@@ -227,12 +227,12 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
         rc = _wputenv_s(L"TMP", runtime_tmpdir_w);
         free(runtime_tmpdir_w);
         if (rc) {
-            PYI_ERROR("LOADER: failed to set the TMP environment variable.\n");
+            PYI_ERROR_W(L"LOADER: failed to set the TMP environment variable.\n");
             free(original_tmp_value);
             return -1;
         }
 
-        PYI_DEBUG("LOADER: successfully resolved the specified runtime-tmpdir\n");
+        PYI_DEBUG_W(L"LOADER: successfully resolved the specified runtime-tmpdir\n");
     }
 
     /* Retrieve temporary directory */
@@ -256,7 +256,7 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
         } else {
             /* Convert path to UTF-8 and store it in main context structure */
             if (pyi_win32_wcs_to_utf8(application_home_dir_w, pyi_ctx->application_home_dir, PYI_PATH_MAX) == NULL) {
-                PYI_ERROR("LOADER: length of teporary directory path exceeds maximum path length!\n");
+                PYI_ERROR_W(L"LOADER: length of teporary directory path exceeds maximum path length!\n");
                 ret = -1;
             }
             free(application_home_dir_w);
@@ -407,16 +407,16 @@ _pyi_win32_console_ctrl(DWORD dwCtrlType)
      * under ifdef guard to appease both. */
 #if defined(LAUNCH_DEBUG)
     /* https://docs.microsoft.com/en-us/windows/console/handlerroutine */
-    static const char *name_map[] = {
-        "CTRL_C_EVENT", // 0
-        "CTRL_BREAK_EVENT", // 1
-        "CTRL_CLOSE_EVENT", // 2
+    static const wchar_t *name_map[] = {
+        L"CTRL_C_EVENT", // 0
+        L"CTRL_BREAK_EVENT", // 1
+        L"CTRL_CLOSE_EVENT", // 2
         NULL,
         NULL,
-        "CTRL_LOGOFF_EVENT", // 5
-        "CTRL_SHUTDOWN_EVENT" // 6
+        L"CTRL_LOGOFF_EVENT", // 5
+        L"CTRL_SHUTDOWN_EVENT" // 6
     };
-    const char *name = (dwCtrlType >= 0 && dwCtrlType <= 6) ? name_map[dwCtrlType] : NULL;
+    const wchar_t *name = (dwCtrlType >= 0 && dwCtrlType <= 6) ? name_map[dwCtrlType] : NULL;
 
     /* NOTE: in case of CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, or
      * CTRL_SHUTDOWN_EVENT, the following message may not be printed to
@@ -424,7 +424,7 @@ _pyi_win32_console_ctrl(DWORD dwCtrlType)
      * might have already been executed, preventing console functions
      * from working reliably. See Remarks section at:
      * https://docs.microsoft.com/en-us/windows/console/setconsolectrlhandler */
-    PYI_DEBUG("LOADER: received console control signal %d (%s)!\n", dwCtrlType, name ? name : "unknown");
+    PYI_DEBUG_W(L"LOADER: received console control signal %d (%ls)!\n", dwCtrlType, name ? name : L"unknown");
 #endif /* defined(LAUNCH_DEBUG) */
 
     /* Handle Ctrl+C and Ctrl+Break signals immediately. By returning TRUE,
@@ -487,10 +487,10 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
 
     /* Set up console ctrl handler; the call returns non-zero on success */
     if (SetConsoleCtrlHandler(_pyi_win32_console_ctrl, TRUE) == 0) {
-        PYI_DEBUG("LOADER: failed to install console ctrl handler!\n");
+        PYI_DEBUG_W(L"LOADER: failed to install console ctrl handler!\n");
     }
 
-    PYI_DEBUG("LOADER: setting up to run child\n");
+    PYI_DEBUG_W(L"LOADER: setting up to run child\n");
 
     security_attributes.nLength = sizeof(security_attributes);
     security_attributes.lpSecurityDescriptor = NULL;
@@ -506,7 +506,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
     startup_info.hStdOutput = _pyi_get_stream_handle(stdout);
     startup_info.hStdError = _pyi_get_stream_handle(stderr);
 
-    PYI_DEBUG("LOADER: creating child process\n");
+    PYI_DEBUG_W(L"LOADER: creating child process\n");
 
     succeeded = CreateProcessW(
         executable_filename_w, /* lpApplicationName */
@@ -521,7 +521,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
         &process_info /* lpProcessInformation */
     );
     if (succeeded) {
-        PYI_DEBUG("LOADER: waiting for child process to finish...\n");
+        PYI_DEBUG_W(L"LOADER: waiting for child process to finish...\n");
         WaitForSingleObject(process_info.hProcess, INFINITE);
         GetExitCodeProcess(process_info.hProcess, &child_exitcode);
         return child_exitcode;
@@ -656,7 +656,7 @@ pyi_win32_initialize_security_descriptor()
     LocalFree(app_container_sid); /* Must be freed using LocalFree() */
 
     if (ret >= PYI_PATH_MAX) {
-        PYI_WARNING("Security descriptor string length exceeds PYI_PATH_MAX!\n");
+        PYI_WARNING_W(L"Security descriptor string length exceeds PYI_PATH_MAX!\n");
         return NULL;
     }
 
