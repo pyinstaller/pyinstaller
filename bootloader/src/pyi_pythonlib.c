@@ -113,7 +113,8 @@ pyi_pylib_load(PYI_CONTEXT *pyi_ctx)
     /* Look for python shared library in top-level application directory */
     if (pyi_path_join(dll_fullpath, pyi_ctx->application_home_dir, dll_name) == NULL) {
         PYI_ERROR("Path of Python shared library (%s) and its name (%s) exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PYI_PATH_MAX);
-    };
+        return -1;
+    }
 
     PYI_DEBUG("LOADER: loading Python shared library: %s\n", dll_fullpath);
 
