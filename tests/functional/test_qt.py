@@ -544,8 +544,12 @@ def test_Qt_QtWebEngineWidgets_PyQt6(pyi_builder):
 @requires('PyQt6 >= 6.2.2')
 @requires('PyQt6-WebEngine')  # NOTE: base Qt6 must be 6.2.2 or newer, QtWebEngine can be older
 @pytest.mark.skipif(
-    check_requirement('PyQt6 == 6.6.0'),
+    check_requirement('PyQt6-Qt6 == 6.6.0'),
     reason='PyQt6 6.6.0 PyPI wheels are missing Qt6WebChannelQuick shared library.'
+)
+@pytest.mark.skipif(
+    check_requirement('PyQt6-Qt6 == 6.6.3') and is_win,
+    reason='PyQt6 6.6.3 PyPI wheels for Windows are missing Qt6WebChannelQuick shared library.'
 )
 def test_Qt_QtWebEngineQuick_PyQt6(pyi_builder):
     _test_Qt_QtWebEngineQuick(pyi_builder, 'PyQt6')
