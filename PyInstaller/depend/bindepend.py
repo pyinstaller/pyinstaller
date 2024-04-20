@@ -693,18 +693,7 @@ def _resolve_library_path_unix(name):
             paths.append('/usr/local/lib')
         lib = lib_search_func(name, paths)
 
-    # Give up :(
-    if lib is None:
-        return None
-
-    # Resolve the file name into the soname
-    if compat.is_freebsd or compat.is_aix or compat.is_openbsd:
-        # On FreeBSD objdump does not show SONAME, and on AIX objdump does not exist, so we just return the lib we
-        # have found.
-        return lib
-    else:
-        dir = os.path.dirname(lib)
-        return os.path.join(dir, _get_so_name(lib))
+    return lib
 
 
 def _which_library(name, dirs):
@@ -732,22 +721,6 @@ def _library_matcher(name):
     Create a callable that matches libraries if **name** is a valid library prefix for input library full names.
     """
     return re.compile(name + r"[0-9]*\.").match
-
-
-def _get_so_name(filename):
-    """
-    Return the soname of a library.
-
-    Soname is useful when there are multiple symplinks to one library.
-    """
-    # TODO verify that objdump works on other unixes and not Linux only.
-    cmd = ["objdump", "-p", filename]
-    pattern = r'\s+SONAME\s+([^\s]+)'
-    if compat.is_solar:
-        cmd = ["elfdump", "-d", filename]
-        pattern = r'\s+SONAME\s+[^\s]+\s+([^\s]+)'
-    m = re.search(pattern, compat.exec_command(*cmd))
-    return m.group(1)
 
 
 #- Python shared library search
