@@ -626,6 +626,15 @@ def _resolve_library_path_unix(name):
     """
     assert compat.is_unix, "Current implementation for Unix only (Linux, Solaris, AIX, FreeBSD)"
 
+    if name.endswith('.so') or '.so.' in name:
+        # We have been given full library name that includes suffix. Use `_resolve_library_path_in_search_paths` to find
+        # the exact match.
+        lib_search_func = _resolve_library_path_in_search_paths
+    else:
+        # We have been given a library name without suffix. Use `_which_library` as search function, which will try to
+        # find library with matching basename.
+        lib_search_func = _which_library
+
     # Look in the LD_LIBRARY_PATH according to platform.
     if compat.is_aix:
         lp = compat.getenv('LIBPATH', '')
@@ -633,7 +642,7 @@ def _resolve_library_path_unix(name):
         lp = compat.getenv('DYLD_LIBRARY_PATH', '')
     else:
         lp = compat.getenv('LD_LIBRARY_PATH', '')
-    lib = _which_library(name, filter(None, lp.split(os.pathsep)))
+    lib = lib_search_func(name, filter(None, lp.split(os.pathsep)))
 
     # Look in /etc/ld.so.cache
     # Solaris does not have /sbin/ldconfig. Just check if this file exists.
@@ -682,7 +691,7 @@ def _resolve_library_path_unix(name):
                 paths.append('/usr/local/lib/hpux64')
         elif compat.is_freebsd or compat.is_openbsd:
             paths.append('/usr/local/lib')
-        lib = _which_library(name, paths)
+        lib = lib_search_func(name, paths)
 
     # Give up :(
     if lib is None:
