@@ -19,5 +19,6 @@ jobs:
     steps:
       - uses: dessant/lock-threads@v5
         with:
+          process-only: 'issues, prs'
           issue-inactive-days: 60
           pr-inactive-days: 60
