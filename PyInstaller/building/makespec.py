@@ -20,7 +20,7 @@ import sys
 from PyInstaller import DEFAULT_SPECPATH, HOMEPATH
 from PyInstaller import log as logging
 from PyInstaller.building.templates import bundleexetmplt, bundletmplt, onedirtmplt, onefiletmplt, splashtmpl
-from PyInstaller.compat import expand_path, is_darwin, is_win
+from PyInstaller.compat import is_darwin, is_win
 
 logger = logging.getLogger(__name__)
 
@@ -715,8 +715,9 @@ def main(
     if specpath is None:
         specpath = DEFAULT_SPECPATH
     else:
-        # Expand tilde to user's home directory.
-        specpath = expand_path(specpath)
+        # Expand starting tilde into user's home directory, as a work-around for tilde not being expanded by shell when
+        # using ˙--specpath=~/path/abc` instead of ˙--specpath ~/path/abc` (or when the path argument is quoted).
+        specpath = os.path.expanduser(specpath)
     # If cwd is the root directory of PyInstaller, generate the .spec file in ./appname/ subdirectory.
     if specpath == HOMEPATH:
         specpath = os.path.join(HOMEPATH, name)

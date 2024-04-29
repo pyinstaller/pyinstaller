@@ -469,10 +469,12 @@ class Analysis(Target):
         self.hiddenimports.extend(CONF.get('hiddenimports', []))
 
         self.hookspath = []
-        # Append directories in `hookspath` (`--additional-hooks-dir`) to take precedence over those from the entry
-        # points.
+        # Prepend directories in `hookspath` (`--additional-hooks-dir`) to take precedence over those from the entry
+        # points. Expand starting tilde into user's home directory, as a work-around for tilde not being expanded by
+        # shell when using ˙--additional-hooks-dir=~/path/abc` instead of ˙--additional-hooks-dir ~/path/abc` (or when
+        # the path argument is quoted).
         if hookspath:
-            self.hookspath.extend(hookspath)
+            self.hookspath.extend([os.path.expanduser(path) for path in hookspath])
 
         # Add hook directories from PyInstaller entry points.
         self.hookspath += discover_hook_directories()
@@ -1044,12 +1046,13 @@ def build(spec, distpath, workpath, clean_build):
     """
     from PyInstaller.config import CONF
 
-    # Ensure starting tilde and environment variables get expanded in distpath / workpath.
-    # '~/path/abc', '${env_var_name}/path/abc/def'
-    distpath = os.path.abspath(compat.expand_path(distpath))
-    workpath = os.path.abspath(compat.expand_path(workpath))
-    CONF['spec'] = os.path.abspath(compat.expand_path(spec))
+    # Ensure starting tilde in distpath / workpath is expanded into user's home directory. This is to work around for
+    # tilde not being expanded when using ˙--workpath=~/path/abc` instead of ˙--workpath ~/path/abc` (or when the path
+    # argument is quoted). See https://github.com/pyinstaller/pyinstaller/issues/696
+    distpath = os.path.abspath(os.path.expanduser(distpath))
+    workpath = os.path.abspath(os.path.expanduser(workpath))
 
+    CONF['spec'] = os.path.abspath(spec)
     CONF['specpath'], CONF['specnm'] = os.path.split(CONF['spec'])
     CONF['specnm'] = os.path.splitext(CONF['specnm'])[0]
 

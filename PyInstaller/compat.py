@@ -542,14 +542,6 @@ def exec_python_rc(*args: str, **kwargs: str | None):
 # Path handling.
 
 
-def expand_path(path: str | os.PathLike):
-    """
-    Replace initial tilde '~' in path with user's home directory, and also expand environment variables
-    (i.e., ${VARNAME} on Unix, %VARNAME% on Windows).
-    """
-    return os.path.expandvars(os.path.expanduser(path))
-
-
 # Site-packages functions - use native function if available.
 def getsitepackages(prefixes: list | None = None):
     """
