@@ -19,7 +19,7 @@ import weakref
 
 from PyInstaller import log as logging
 from PyInstaller.building.utils import format_binaries_and_datas
-from PyInstaller.compat import expand_path, importlib_load_source
+from PyInstaller.compat import importlib_load_source
 from PyInstaller.depend.imphookapi import PostGraphAPI
 from PyInstaller.exceptions import ImportErrorWhenRunningHook
 
@@ -104,7 +104,7 @@ class ModuleHookCache(dict):
 
         for hook_dir in hook_dirs:
             # Canonicalize this directory's path and validate its existence.
-            hook_dir = os.path.abspath(expand_path(hook_dir))
+            hook_dir = os.path.abspath(hook_dir)
             if not os.path.isdir(hook_dir):
                 raise FileNotFoundError('Hook directory "{}" not found.'.format(hook_dir))
 
