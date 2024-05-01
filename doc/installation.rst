@@ -2,10 +2,19 @@ How to Install PyInstaller
 ===============================
 
 PyInstaller is available as a regular Python package.
-The source archives for released versions are available from PyPi_,
+The source archives for released versions are available from PyPI_,
 but it is easier to install the latest version using pip_::
 
     pip install pyinstaller
+
+.. note::
+
+    PyInstaller is split into two packages ``pyinstaller`` and
+    ``pyinstaller-hooks-contrib``. These should be kept approimately (roughly
+    within a year of each other) in sync. To that end, if you choose to pin your
+    ``pyinstaller`` version, please also pin ``pyinstaller-hooks-contrib``. If
+    you upgrade ``pyinstaller``, you will also need to upgrade
+    ``pyinstaller-hooks-contrib``.
 
 To upgrade existing PyInstaller installation to the latest version, use::
 
