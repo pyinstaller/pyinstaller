@@ -10,7 +10,7 @@ but it is easier to install the latest version using pip_::
 .. note::
 
     PyInstaller is split into two packages ``pyinstaller`` and
-    ``pyinstaller-hooks-contrib``. These should be kept approimately (roughly
+    ``pyinstaller-hooks-contrib``. These should be kept approximately (roughly
     within a year of each other) in sync. To that end, if you choose to pin your
     ``pyinstaller`` version, please also pin ``pyinstaller-hooks-contrib``. If
     you upgrade ``pyinstaller``, you will also need to upgrade
@@ -71,30 +71,33 @@ After the bootloader has been built, use the ``pip install .`` command
 to complete the installation.
 
 
-Verifying the installation
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _`pyinstaller_not_in_path`:
 
-On all platforms, the command ``pyinstaller`` should now exist on the
-execution path. To verify this, enter the command::
+Troubleshooting missing PyInstaller command
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In a properly setup Python environment, the command ``pyinstaller`` should now
+exist on the execution path and the command below should display PyInstaller's
+version. ::
 
     pyinstaller --version
 
-The result should resemble ``4.n`` for a released version,
-and ``4.n.dev0-xxxxxx`` for a development branch.
+If the command is not found, make sure that the ``PATH`` (the executable search
+path) environment variable includes the directory that the ``pyinstaller``
+executable was installed into.
 
-If the command is not found, make sure the execution path includes
-the proper directory:
+* On Windows, this location is either of the paths returned by::
 
-* Windows: ``C:\PythonXY\Scripts`` where *XY* stands for the
-  major and minor Python version number,
-  for example ``C:\Python38\Scripts`` for Python 3.8)
-* GNU/Linux: ``/usr/bin/``
-* macOS (using the default Apple-supplied Python) ``/usr/bin``
-* macOS (using Python installed by homebrew) ``/usr/local/bin``
-* macOS (using Python installed by macports) ``/opt/local/bin``
+    import sysconfig; print(sysconfig.get_path("scripts"))
+    import site; print(site.USER_BASE + "\\Scripts")
 
-To display the current path in Windows the command is ``echo %path%``
-and in other systems, ``echo $PATH``.
+* On UNIX, this location is either of the paths returned by::
+
+    import sysconfig; print(sysconfig.get_path("scripts"))
+    import site; print(site.USER_BASE + "/bin")
+
+To display the current path in Windows the command is ``echo %PATH%`` and on
+other systems, ``echo $PATH``.
 
 .. Note::
     If you cannot use the ``pyinstaller`` command due to the scripts
