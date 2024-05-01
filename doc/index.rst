@@ -42,6 +42,11 @@ located, then build your app with the following command:
 
 Your bundled application should now be available in the `dist` folder.
 
+.. note::
+
+    See :ref:`pyinstaller_not_in_path` if you get some kind of *pyinstaller
+    command not found* error.
+
 
 Contents:
 _________
