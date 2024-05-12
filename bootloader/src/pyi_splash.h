@@ -57,6 +57,20 @@ typedef struct _splash_data_header
 /* Runtime context for the splash screen */
 typedef struct _splash_context
 {
+    /* Mutexes used for thread-safe access to context and its variables. */
+    Tcl_Mutex context_mutex;
+    Tcl_Mutex call_mutex;
+
+    /* This mutex/condition is to hold the bootloader until the splash screen
+     * has been started */
+    Tcl_Mutex start_mutex;
+    Tcl_Condition start_cond;
+
+    /* These are used to close the splash screen from the main thread. */
+    Tcl_Condition exit_wait;
+    Tcl_Mutex exit_mutex;
+    bool exit_main_loop;
+
     /* The Tcl interpreter in which the splash screen will run. Runs
      * in a secondary thread, as we cannot block the program's primary
      * thread (which in onedir mode needs to run user's python program
