@@ -54,7 +54,7 @@ PyQtWebEngine==5.15.6
 # thus the ABI is still changing.
 PyQt6==6.7.0
 PyQt6-Qt6==6.7.0
-PyQt6-3D==6.6.0
+PyQt6-3D==6.7.0
 PyQt6-3D-Qt6==6.6.3
 PyQt6-Charts==6.6.0
 PyQt6-Charts-Qt6==6.6.3
