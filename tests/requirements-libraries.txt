@@ -15,8 +15,8 @@ importlib_resources==6.4.0; python_version < '3.9'
 # Working
 # -------
 # These packages work with no (known) issues.
-babel==2.14.0
-Django==5.0.4; python_version >= '3.10'
+babel==2.15.0
+Django==5.0.6; python_version >= '3.10'
 future==1.0.0
 gevent==24.2.1
 ipython==8.24.0; python_version >= '3.10'
@@ -52,19 +52,24 @@ PyQtWebEngine==5.15.6
 # but in contrast to Qt5 and PyQt5 bindings, the versions here must usually be kept in sync with the
 # version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
 # thus the ABI is still changing.
-PyQt6==6.6.1
-PyQt6-Qt6==6.6.3
-PyQt6-3D==6.6.0
-PyQt6-3D-Qt6==6.6.3
-PyQt6-Charts==6.6.0
-PyQt6-Charts-Qt6==6.6.3
-PyQt6-DataVisualization==6.6.0
-PyQt6-DataVisualization-Qt6==6.6.3
-PyQt6-NetworkAuth==6.6.0
-PyQt6-NetworkAuth-Qt6==6.6.3
+PyQt6==6.7.0
+PyQt6-Qt6==6.7.0
+PyQt6-3D==6.7.0
+PyQt6-3D-Qt6==6.7.0
+PyQt6-Charts==6.7.0
+PyQt6-Charts-Qt6==6.7.0
+PyQt6-DataVisualization==6.7.0
+PyQt6-DataVisualization-Qt6==6.7.0
+PyQt6-NetworkAuth==6.7.0
+PyQt6-NetworkAuth-Qt6==6.7.0
 PyQt6-QScintilla==2.14.1  # Does not have a corresponding -Qt6 package
-PyQt6-WebEngine==6.6.0
-PyQt6-WebEngine-Qt6==6.6.3
+# At the time of writing, x86_64 macOS wheel for PyQt6-WebEngine-Qt6 6.7.0 is missing due to its size
+# exceeding the size limit on PyPI. Work around this by using 6.6.x series for macOS x86_64.
+# TODO: remove this split once the wheel situation is sorted out on PyPI.
+PyQt6-WebEngine==6.7.0; sys_platform != 'darwin' or platform_machine != 'x86_64'
+PyQt6-WebEngine-Qt6==6.7.0; sys_platform != 'darwin' or platform_machine != 'x86_64'
+PyQt6-WebEngine==6.6.0; sys_platform == 'darwin' and platform_machine == 'x86_64'  # pyup: ignore
+PyQt6-WebEngine-Qt6==6.6.3; sys_platform == 'darwin' and platform_machine == 'x86_64'  # pyup: ignore
 python-dateutil==2.9.0.post0
 pytz==2024.1
 requests==2.31.0
@@ -73,7 +78,7 @@ scipy==1.13.0; python_version >= '3.9'
 simplejson==3.19.2
 sphinx==7.3.7; python_version >= '3.9'
 # Required for test_namespace_package
-sqlalchemy==2.0.29
+sqlalchemy==2.0.30
 zope.interface==6.3
 Pillow==10.3.0
 
