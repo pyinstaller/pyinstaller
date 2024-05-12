@@ -61,20 +61,6 @@
  */
 
 
-/* Mutexes used for thread safe access to variables */
-static Tcl_Mutex status_mutex;
-static Tcl_Mutex call_mutex;
-
-/* This mutex/condition is to hold the bootloader until the splash screen
- * has been started */
-static Tcl_Mutex start_mutex;
-static Tcl_Condition start_cond;
-
-/* These are used to close the splash screen from the main thread. */
-static Tcl_Condition exit_wait;
-static Tcl_Mutex exit_mutex;
-static bool exitMainLoop;
-
 /* Forward declarations */
 static Tcl_ThreadCreateProc _splash_init;
 typedef struct Splash_Event Splash_Event;
@@ -219,7 +205,7 @@ pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
 int
 pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
 {
-    PI_Tcl_MutexLock(&status_mutex);
+    PI_Tcl_MutexLock(&splash->context_mutex);
 
     /* Make sure shared libraries have been loaded and their symbols
      * bound. */
@@ -243,22 +229,22 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
         0 /* no flags */
     ) != TCL_OK) {
         PYI_ERROR("SPLASH: Tcl is not threaded. Only threaded Tcl is supported.\n");
-        PI_Tcl_MutexUnlock(&status_mutex);
+        PI_Tcl_MutexUnlock(&splash->context_mutex);
         pyi_splash_finalize(splash);
         return -1;
     }
-    PI_Tcl_MutexLock(&start_mutex);
-    PI_Tcl_MutexUnlock(&status_mutex);
+    PI_Tcl_MutexLock(&splash->start_mutex);
+    PI_Tcl_MutexUnlock(&splash->context_mutex);
 
     PYI_DEBUG("SPLASH: created thread for Tcl interpreter.\n");
 
-    /* To avoid a race condition between the tcl and python interpreter
+    /* To avoid a race condition between the Tcl and python interpreter
      * we need to wait until the splash screen has been started. We lock
-     * here until the tcl thread notified us, that it has finished starting up.
-     * See discarded idea in pyi_splash python module */
-    PI_Tcl_ConditionWait(&start_cond, &start_mutex, NULL);
-    PI_Tcl_MutexUnlock(&start_mutex);
-    PI_Tcl_ConditionFinalize(&start_cond);
+     * here until the Tcl thread notified us that it has finished starting up.
+     * See discarded idea in pyi_splash python module. */
+    PI_Tcl_ConditionWait(&splash->start_cond, &splash->start_mutex, NULL);
+    PI_Tcl_MutexUnlock(&splash->start_mutex);
+    PI_Tcl_ConditionFinalize(&splash->start_cond);
     PYI_DEBUG("SPLASH: splash screen started.\n");
 
     return 0;
@@ -438,14 +424,14 @@ pyi_splash_finalize(SPLASH_CONTEXT *splash)
         if (splash->interp != NULL) {
             /* If the Tcl thread still exists, we notify it and wait
              * for it to exit. */
-            PI_Tcl_MutexLock(&exit_mutex);
-            exitMainLoop = true;
+            PI_Tcl_MutexLock(&splash->exit_mutex);
+            splash->exit_main_loop = true;
             /* We need to post a fake event into the event queue in order
              * to unblock Tcl_DoOneEvent, so the Tcl main loop can exit. */
             pyi_splash_send(splash, true, NULL, NULL);
-            PI_Tcl_ConditionWait(&exit_wait, &exit_mutex, NULL);
-            PI_Tcl_MutexUnlock(&exit_mutex);
-            PI_Tcl_ConditionFinalize(&exit_wait);
+            PI_Tcl_ConditionWait(&splash->exit_wait, &splash->exit_mutex, NULL);
+            PI_Tcl_MutexUnlock(&splash->exit_mutex);
+            PI_Tcl_ConditionFinalize(&splash->exit_wait);
         }
         /* This function should only be called after python has been
          * destroyed with Py_Finalize. Tcl/Tk/tkinter do **not** support
@@ -593,12 +579,12 @@ _splash_event_proc(Tcl_Event *ev, int flags)
     if (!splash_event->async) {
         /* In synchronous mode, the caller thread is waiting on the
          * wait condition. Notify it that the function call has finished. */
-        PI_Tcl_MutexLock(&call_mutex);
+        PI_Tcl_MutexLock(&splash_event->splash->call_mutex);
 
         *splash_event->result = rc;
 
         PI_Tcl_ConditionNotify(splash_event->done);
-        PI_Tcl_MutexUnlock(&call_mutex);
+        PI_Tcl_MutexUnlock(&splash_event->splash->call_mutex);
     }
 
     /* Not an error code; value 1 indicates that event has been processed. */
@@ -680,7 +666,7 @@ pyi_splash_send(SPLASH_CONTEXT *splash, bool async, const void *user_data, pyi_s
     ev->proc = proc;
     ev->user_data = user_data;
 
-    _splash_event_send(splash, (Tcl_Event *)ev, &cond, &call_mutex, async);
+    _splash_event_send(splash, (Tcl_Event *)ev, &cond, &splash->call_mutex, async);
 
     if (!async) {
         PI_Tcl_ConditionFinalize(&cond);
@@ -821,7 +807,8 @@ _tcl_source_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 static int
 _tcl_exit_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    exitMainLoop = true;
+    SPLASH_CONTEXT *splash = (SPLASH_CONTEXT *)clientData;
+    splash->exit_main_loop = true;
     return TCL_OK;
 }
 
@@ -832,10 +819,10 @@ _tcl_exit_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  * We create and initialize the Tcl interpreter in this thread since
  * threaded Tcl locks a interpreter to a specific thread at creation.
  * In order to be thread-safe during initialization, we use a Tcl_Mutex
- * called `status_mutex` to lock access to the SPLASH_CONTEXT. This mutex
+ * called `context_mutex` to lock access to the SPLASH_CONTEXT. This mutex
  * is initially acquired at the point where this thread is created (i.e.,
  * in the main thread, in `pyi_splash_start`). After the main thread
- * finished creating this thread, the `status_mutex` is released, and
+ * finished creating this thread, the `context_mutex` is released, and
  * this thread gets to hold it. It will only be unlocked after the splash
  * screen is closed. This means that all function called through
  * `pyi_splash_send` are called with mutex held, and therefore they are
@@ -850,10 +837,11 @@ _splash_init(ClientData client_data)
     SPLASH_CONTEXT *splash;
     Tcl_Obj *image_data_obj;
 
-    PI_Tcl_MutexLock(&status_mutex);
-
     splash = (SPLASH_CONTEXT *)client_data;
-    exitMainLoop = false;
+
+    PI_Tcl_MutexLock(&splash->context_mutex);
+
+    splash->exit_main_loop = false;
 
     splash->interp = PI_Tcl_CreateInterp();
 
@@ -951,15 +939,15 @@ _splash_init(ClientData client_data)
 
     /* We need to notify the bootloader main thread that the splash screen
      * has been started and fully setup */
-    PI_Tcl_MutexLock(&start_mutex);
-    PI_Tcl_ConditionNotify(&start_cond);
-    PI_Tcl_MutexUnlock(&start_mutex);
+    PI_Tcl_MutexLock(&splash->start_mutex);
+    PI_Tcl_ConditionNotify(&splash->start_cond);
+    PI_Tcl_MutexUnlock(&splash->start_mutex);
 
     /* Main loop.
      * we exit this loop from within tcl. */
-    while (PI_Tk_GetNumMainWindows() > 0 && !exitMainLoop) {
+    while (PI_Tk_GetNumMainWindows() > 0 && !splash->exit_main_loop) {
         /* Tcl_DoOneEvent blocks this loop until an event is posted into this threads
-         * event queue, only after that the condition exitMainLoop is checked again.
+         * event queue, only after that the condition exit_main_loop is checked again.
          * To unblock this loop while the splash screen is not visible (e.g. receives
          * no events) we post a fake event at finalization (in pyi_splash_finalize) */
         PI_Tcl_DoOneEvent(0);
@@ -967,13 +955,13 @@ _splash_init(ClientData client_data)
 
 cleanup:
     pyi_splash_finalize(splash);
-    PI_Tcl_MutexUnlock(&status_mutex);
+    PI_Tcl_MutexUnlock(&splash->context_mutex);
 
     /* In case the startup fails the main thread should continue; in
      * normal startup this segment will notify no waiting condition. */
-    PI_Tcl_MutexLock(&start_mutex);
-    PI_Tcl_ConditionNotify(&start_cond);
-    PI_Tcl_MutexUnlock(&start_mutex);
+    PI_Tcl_MutexLock(&splash->start_mutex);
+    PI_Tcl_ConditionNotify(&splash->start_cond);
+    PI_Tcl_MutexUnlock(&splash->start_mutex);
 
     /* Must be done before exit_wait condition is notified, because
      * we need to ensure that the main thread (which is waiting on it)
@@ -983,9 +971,9 @@ cleanup:
 
     /* We notify all conditions waiting for this thread to exit, if
      * there are any. */
-    PI_Tcl_MutexLock(&exit_mutex);
-    PI_Tcl_ConditionNotify(&exit_wait);
-    PI_Tcl_MutexUnlock(&exit_mutex);
+    PI_Tcl_MutexLock(&splash->exit_mutex);
+    PI_Tcl_ConditionNotify(&splash->exit_wait);
+    PI_Tcl_MutexUnlock(&splash->exit_mutex);
 
     TCL_THREAD_CREATE_RETURN;
 }
