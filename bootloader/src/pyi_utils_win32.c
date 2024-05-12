@@ -148,16 +148,38 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
         return NULL;
     }
 
-    /* Resolve absolute path */
+    /* Check if runtime-tmpdir is just a disk drive root (e.g., "c:\").
+     * If so, validate the drive's existence, and return the path as-is.
+     * There is no path to resolve (and calling `_wfullpath()` would end
+     * up returning current working directory on the current drive), and
+     * there is no directory structure to create */
     if (pyi_win32_is_drive_root(runtime_tmpdir_expanded)) {
-        /* Disk drive (e.g., "c:"); do not attempt to resolve full path
-         * using _wfullpath(), because it will return the current directory
-         * on the current drive. We also have no path to create. So just
-         * return a verbatim copy of the string. */
+        int drive_type = 0;
         PYI_DEBUG_W(L"LOADER: expanded runtime-tmpdir is a drive root: %ls\n", runtime_tmpdir_expanded);
+
+        /* Ensure the given volume name is valid, i.e., includes the
+         * backslash as per Windows path naming conventions:
+         * https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file
+         * The `pyi_win32_is_drive_root` check ensures that the path is
+         * either two or three characters long, so the third character
+         * is either the backslash or terminating NUL. */
+        if (runtime_tmpdir_expanded[2] != L'\\') {
+            PYI_DEBUG_W(L"LOADER: appending backslash to the given drive root %ls\n", runtime_tmpdir_expanded);
+            wcscat(runtime_tmpdir_expanded, L"\\");
+        }
+
+        /* Now ensure that the drive actually exists - raise error on
+         * DRIVE_UNKNOWN (0) and DRIVE_NO_ROOT_DIR (1) */
+        drive_type = GetDriveTypeW(runtime_tmpdir_expanded);
+        if (drive_type <= DRIVE_NO_ROOT_DIR) {
+            PYI_ERROR_W(L"LOADER: runtime-tmpdir points to non-existent drive %ls (type: %d)!\n", runtime_tmpdir_expanded, drive_type);
+            return NULL;
+        }
+
         return _wcsdup(runtime_tmpdir_expanded);
     }
 
+    /* Resolve absolute path */
     runtime_tmpdir_abspath = _wfullpath(NULL, runtime_tmpdir_expanded, PYI_PATH_MAX);
     if (!runtime_tmpdir_abspath) {
         PYI_ERROR_W(L"LOADER: failed to obtain the absolute path of the runtime-tmpdir.\n");
@@ -177,8 +199,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
      * NOTE2: we ignore errors returned by CreateDirectoryW; if we
      * actually fail to create (a part of) directory tree here, we will
      * catch the error in the caller when trying to create the final
-     * temporary directory component  (the actual _MEIXXXXXX directory).
-     */
+     * temporary directory component. */
     for(subpath_cursor = wcschr(runtime_tmpdir_abspath, L'\\'); subpath_cursor != NULL; subpath_cursor = wcschr(++subpath_cursor, L'\\')) {
         int subpath_length = (int)(subpath_cursor - runtime_tmpdir_abspath);
 
@@ -188,9 +209,17 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
     }
 
     /* Run once more on full path, to handle cases when path did not end
-     * with separator. */
+     * with separator. Here, we also explicitly check that the call
+     * succeeded or failed with ERROR_ALREADY_EXISTS, to properly report
+     * errors in creation of temporary directory tree. */
     PYI_DEBUG_W(L"LOADER: creating runtime-tmpdir path: %ls\n", runtime_tmpdir_abspath);
-    CreateDirectoryW(runtime_tmpdir_abspath, NULL);
+    if (CreateDirectoryW(runtime_tmpdir_abspath, NULL) == 0) {
+        if (GetLastError() != ERROR_ALREADY_EXISTS) {
+            PYI_WINERROR_W(L"CreateDirectory", L"LOADER: failed to create runtime-tmpdir path %ls!\n", runtime_tmpdir_abspath);
+            free(runtime_tmpdir_abspath);
+            return NULL;
+        }
+    }
 
     return runtime_tmpdir_abspath;
 }
@@ -237,6 +266,7 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
 
     /* Retrieve temporary directory */
     GetTempPathW(PYI_PATH_MAX, tempdir_path);
+    PYI_DEBUG_W(L"LOADER: attempting to create temporary application directory under %ls\n", tempdir_path);
 
     /* Create _MEI + PID prefix */
     swprintf(prefix, 16, L"_MEI%d", _getpid());
@@ -258,6 +288,8 @@ pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
             if (pyi_win32_wcs_to_utf8(application_home_dir_w, pyi_ctx->application_home_dir, PYI_PATH_MAX) == NULL) {
                 PYI_ERROR_W(L"LOADER: length of teporary directory path exceeds maximum path length!\n");
                 ret = -1;
+            } else {
+                ret = 0; /* Re-set to zero in case this is not first iteration. */
             }
             free(application_home_dir_w);
             break;
