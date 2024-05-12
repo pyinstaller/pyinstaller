@@ -59,7 +59,7 @@ PyQt6-3D-Qt6==6.7.0
 PyQt6-Charts==6.7.0
 PyQt6-Charts-Qt6==6.7.0
 PyQt6-DataVisualization==6.7.0
-PyQt6-DataVisualization-Qt6==6.6.3
+PyQt6-DataVisualization-Qt6==6.7.0
 PyQt6-NetworkAuth==6.6.0
 PyQt6-NetworkAuth-Qt6==6.6.3
 PyQt6-QScintilla==2.14.1  # Does not have a corresponding -Qt6 package
