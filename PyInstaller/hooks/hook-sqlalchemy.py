@@ -14,7 +14,9 @@ import importlib.util
 
 from PyInstaller import isolated
 from PyInstaller.lib.modulegraph.modulegraph import SourceModule
-from PyInstaller.utils.hooks import check_requirement, logger
+from PyInstaller.utils.hooks import check_requirement, collect_entry_point, logger
+
+datas = []
 
 # 'sqlalchemy.testing' causes bundling a lot of unnecessary modules.
 excludedimports = ['sqlalchemy.testing']
@@ -40,6 +42,13 @@ if check_requirement('sqlalchemy >= 0.6'):
     hiddenimports += _get_dialect_modules("sqlalchemy.dialects")
 else:
     hiddenimports += _get_dialect_modules("sqlalchemy.databases")
+
+# Collect additional dialects and plugins that are registered via entry-points, under assumption that they are available
+# in the build environment for a reason (i.e., they are used).
+for entry_point_name in ('sqlalchemy.dialects', 'sqlalchemy.plugins'):
+    ep_datas, ep_hiddenimports = collect_entry_point(entry_point_name)
+    datas += ep_datas
+    hiddenimports += ep_hiddenimports
 
 
 def hook(hook_api):
