@@ -55,8 +55,9 @@
 # stdlib (importlib_resources 5.7) and removed in python 3.13 stdlib (importlib_resources 6.0). We test these based on
 # their availability.
 #
-# NOTE: the afore-mentioned functions were brought back in importlib_resources 6.4.0. Their behavior is changed; if they
-# are given a sub-path as a resource name, they do not raise a ValueError.
+# NOTE: the afore-mentioned functions were brought back in importlib_resources 6.4.0 (and the change was backported to
+# python 3.13b1). Their behavior is changed; if they are given a sub-path as a resource name, they do not raise a
+# ValueError.
 
 import sys
 import pathlib
@@ -78,8 +79,11 @@ except ImportError:
 is_frozen = getattr(sys, 'frozen', False)
 
 # Try to determine the presence of new functional API, which was introduced in importlib_resources 6.4. As per note at
-# the top of the file, the new functional API allows sub-paths to be passed as resource names.
-new_functional_api = hasattr(importlib_resources, 'functional')
+# the top of the file, the new functional API allows sub-paths to be passed as resource names. In importlib_resources
+# 6.4, the module was named `functional`, although it will likely be renamed to `_functional` in subsequent versions
+# (see https://github.com/python/importlib_resources/pull/306). The functional API was also backported to python 3.13b1
+# stdlib, where the module is already called `_functional`.
+new_functional_api = hasattr(importlib_resources, 'functional') or hasattr(importlib_resources, '_functional')
 
 ########################################################################
 #          Validate behavior of importlib.resources.contents()         #
