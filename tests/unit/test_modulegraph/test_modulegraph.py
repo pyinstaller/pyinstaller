@@ -240,34 +240,25 @@ class TestNode (unittest.TestCase):
         n = modulegraph.Node('n1')
         self.assertEqual(n.infoTuple(), ('n1',))
 
-    def assertNoMethods(self, klass):
+    @staticmethod
+    def _cleanup_class_dict(klass):
         d = dict(klass.__dict__)
-        del d['__doc__']
-        del d['__module__']
-        if '__weakref__' in d:
-            del d['__weakref__']
-        if '__qualname__' in d:
-            # New in Python 3.3
-            del d['__qualname__']
-        if '__dict__' in d:
-            # New in Python 3.4
-            del d['__dict__']
-        if '__slotnames__' in d:
-            del d['__slotnames__']
+        d.pop('__doc__', None)
+        d.pop('__module__', None)
+        d.pop('__weakref__', None)
+        d.pop('__qualname__', None)  # New in Python 3.3
+        d.pop('__dict__', None) # New in Python 3.4
+        d.pop('__slotnames__', None)
+        d.pop('__firstlineno__', None)  # Python 3.13
+        d.pop('__static_attributes__', None)  # Python 3.13
+        return d
+
+    def assertNoMethods(self, klass):
+        d = self._cleanup_class_dict(klass)
         self.assertEqual(d, {})
 
     def assertHasExactMethods(self, klass, *methods):
-        d = dict(klass.__dict__)
-        del d['__doc__']
-        del d['__module__']
-        if '__weakref__' in d:
-            del d['__weakref__']
-        if '__qualname__' in d:
-            # New in Python 3.3
-            del d['__qualname__']
-        if '__dict__' in d:
-            # New in Python 3.4
-            del d['__dict__']
+        d = self._cleanup_class_dict(klass)
         for nm in methods:
             self.assertTrue(nm in d, "%s doesn't have attribute %r"%(klass, nm))
             del d[nm]
