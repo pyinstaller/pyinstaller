@@ -15,6 +15,7 @@ import logging
 import pytest
 
 from PyInstaller import isolated
+from PyInstaller import compat
 from PyInstaller.utils.tests import requires
 
 
@@ -179,7 +180,7 @@ def test_pipe_leakage():
     parent = Process()
 
     # Get this platform's *count open handles* method.
-    open_fds = parent.num_handles if os.name == "nt" else parent.num_fds
+    open_fds = parent.num_handles if compat.is_win else parent.num_fds
     old = open_fds()
 
     # Creating an isolated.Python() does nothing.
@@ -189,12 +190,28 @@ def test_pipe_leakage():
     # On POSIX systems, entering the context creates the child process and 4 handles for sending/receiving to/from it.
     # After creating the child process, we close the descriptors that were passed to the child, so the expected total
     # increase in the parent/main process is two file descriptors.
-    # On Windows, we monitor file handles; four are opened when both pipes are created. Additional two handles are
-    # opened when the sub-process is spawned. Then we close the two pipe end-points that were inherited by the child,
-    # which closes two handles. Finally, we open file descriptors on the remaining two pipe end-point handles, and
-    # perform os.fdopen() on those FDs to obtained buffered python "file" object. This adds two additional file
-    # handles, bringing us to the total of six.
-    EXPECTED_INCREASE_IN_FDS = (2 if os.name != "nt" else 6)
+    #
+    # On Windows, the overall setup is a bit more complicated. We create both pipes, spawn the child process, and close
+    # end-points (handles) of the pipes that were passed to the child. Then, we open file descriptors on top of the
+    # remaining two pipe handles, using `msvcrt.open_osfhandle`. These descriptors are then passed to `os.fdopen` to
+    # obtain buffered python `file` object.
+    #
+    # Instead of monitoring file descriptors, we monitor file handles.
+    #
+    # Under python 3.12 and earlier, four handles are opened when both pipes are created. Additional two handles are
+    # opened when the child process is spawned. Closing the two pipe end-points closes two handles. Opening file
+    # descriptors on top of pipe handles (`msvcrt.open_osfhandle`) does not open additional handles, but opening
+    # python file objects on top of those descriptors via `os.fdopen` does - one for each file object. This adds two
+    # additional file handles, bringing us to the total of six.
+    #
+    # With python 3.13, the behavior has changed. Creating both pipes still opens four handles. However, spawning the
+    # child process opens only one handle. Closing the two pipe end-points closes two handles. No additional handles
+    # are created when opening file descriptors on top of pipe handles (`msvcrt.open_osfhandle`), nor when opening
+    # python file objects on top of those (`os.fdopen`). So in this case, the total is three.
+    if compat.is_win:
+        EXPECTED_INCREASE_IN_FDS = 3 if compat.is_py313 else 6
+    else:
+        EXPECTED_INCREASE_IN_FDS = 2
 
     with child:
         assert open_fds() == old + EXPECTED_INCREASE_IN_FDS
