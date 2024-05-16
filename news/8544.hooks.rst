@@ -1,0 +1,7 @@
+The ``pywin32-ctypes`` hook now always collects the ``win32ctypes.core.ctypes``
+modules, so that the ``ctypes`` backend is always available (i.e., even
+if we also collect the ``cffi`` backend due to availability of ``cffi``
+in the build environment). This fixes issues when ``cffi`` ends up
+unavailable at run-time in spite of being available in the build environment
+at build time (for example, due to explicit exclusion via :option:`--exclude-module`
+option).
