@@ -335,6 +335,12 @@ class AppBuilder:
         if is_win:
             # Minimum Windows PATH is in most cases:   C:\Windows\system32;C:\Windows
             prog_env['PATH'] = os.pathsep.join(winutils.get_system_path())
+        # On macOS, we similarly set up minimal PATH with system directories, in case utilities from there are used by
+        # tested python code (for example, matplotlib >= 3.9.0 uses `system_profiler` that is found in /usr/sbin).
+        if is_darwin:
+            # The following paths are registered when application is launched via Finder, and are a subset of what is
+            # typically available in the shell.
+            prog_env['PATH'] = os.pathsep.join(['/usr/bin', '/bin', '/usr/sbin', '/sbin'])
 
         exe_path = prog
         if run_from_path:
