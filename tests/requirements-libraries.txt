@@ -22,8 +22,8 @@ gevent==24.2.1
 ipython==8.24.0; python_version >= '3.10'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
-keyring==25.2.0; sys_platform != 'darwin' or python_version >= '3.8.7'
-matplotlib==3.8.4; python_version >= '3.9'
+keyring==25.2.1; sys_platform != 'darwin' or python_version >= '3.8.7'
+matplotlib==3.9.0; python_version >= '3.9'
 numpy==1.26.4; python_version >= '3.9'
 pandas==2.2.2; python_version >= '3.9'
 pygments==2.18.0
@@ -79,7 +79,7 @@ simplejson==3.19.2
 sphinx==7.3.7; python_version >= '3.9'
 # Required for test_namespace_package
 sqlalchemy==2.0.30
-zope.interface==6.3
+zope.interface==6.4
 Pillow==10.3.0
 
 
