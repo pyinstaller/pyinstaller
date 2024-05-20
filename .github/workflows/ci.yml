@@ -220,3 +220,61 @@ jobs:
             pyinstaller test.py
             ./dist/test/test
           "
+
+  test-msys2:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - { sys: mingw64, env: x86_64 }
+          - { sys: mingw32, env: i686 }
+          - { sys: ucrt64,  env: ucrt-x86_64 }
+      fail-fast: false
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: ${{matrix.sys}}
+          # mingw-w64-${{matrix.env}}-python-pefile seems unavailable for i686, so omit it here and install it via pip. Same as altgraph, which does not seem to be packaged.
+          install: >-
+            mingw-w64-${{matrix.env}}-gcc
+            mingw-w64-${{matrix.env}}-python
+            mingw-w64-${{matrix.env}}-python-pip
+            mingw-w64-${{matrix.env}}-python-wheel
+            mingw-w64-${{matrix.env}}-python-setuptools
+            mingw-w64-${{matrix.env}}-python-pywin32-ctypes
+            mingw-w64-${{matrix.env}}-python-packaging
+            mingw-w64-${{matrix.env}}-python-pytest
+            mingw-w64-${{matrix.env}}-python-pytest-xdist
+            mingw-w64-${{matrix.env}}-python-pytest-timeout
+            mingw-w64-${{matrix.env}}-python-psutil
+            mingw-w64-${{matrix.env}}-python-pywin32
+            mingw-w64-${{matrix.env}}-python-numpy
+            mingw-w64-${{matrix.env}}-python-pillow
+
+      - uses: actions/checkout@v4
+
+      - run: |
+          uname -a
+          python --version
+
+      - name: Install PyInstaller
+        run: |
+          # Compile bootloader
+          cd bootloader
+          python waf --gcc --tests all
+          cd ..
+
+          # Install PyInstaller.
+          pip install --progress-bar=off .[completion]
+
+          # Make sure the help options print.
+          python -m PyInstaller -h
+
+      - name: Run tests
+        run: >
+            pytest
+            -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
