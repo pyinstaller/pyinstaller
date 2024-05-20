@@ -37,8 +37,8 @@ def _check_for_compiler():
     old_wd = os.getcwd()
     tmp = tempfile.mkdtemp()
     os.chdir(tmp)
-    cc = distutils.ccompiler.new_compiler()
-    if is_win:
+    cc = distutils.ccompiler.new_compiler()  # NOTE: Mingw32CCompiler on Windows does not have `initialize` method.
+    if is_win and hasattr(cc, 'initialize'):
         try:
             cc.initialize()
             has_compiler = True
