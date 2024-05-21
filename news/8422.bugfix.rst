@@ -1,6 +1,0 @@
-(POSIX) Fix ``PyInstaller.depend.bindepend.resolve_library_path`` for
-cases when ``ldconfig`` cache is not available (e.g., ``musl libc`` on
-Alpine Linux). In such cases, the search code now distinguishes between
-the case when fully suffixed library name is given (i.e., search for
-exact match) and the case when library name has no suffix (i.e., search
-for library with matching basename).

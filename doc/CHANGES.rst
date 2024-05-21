@@ -15,6 +15,58 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.7.0 (2024-05-21)
+------------------
+
+Bugfix
+~~~~~~
+
+* (POSIX) Fix ``PyInstaller.depend.bindepend.resolve_library_path`` for
+  cases when ``ldconfig`` cache is not available (e.g., ``musl libc`` on
+  Alpine Linux). In such cases, the search code now distinguishes between
+  the case when fully suffixed library name is given (i.e., search for
+  exact match) and the case when library name has no suffix (i.e., search
+  for library with matching basename). (:issue:`8422`)
+* (Windows) Fix mangling of path to the entry-point script when the script
+  is in the current working directory, and the path to this directory
+  contains two or more consecutive ``$`` or ``%`` characters. (:issue:`8434`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* PyInstaller does not attempt to expand environment variables in paths
+  given via :option:`--workpath`, :option:`--distpath`, :option:`--specpath`,
+  and :option:`--additional-hooks-dir` anymore (note that other paths were
+  never subject to environment variable expansion in the first place).
+  Expansion of the starting tilde (``~``) into user's home directory is
+  still performed, as a work-around for tilde not being expanded by the
+  shell when passing arguments as ``--workpath=~/path/abc`` instead of
+  ``--workpath ~/path/abc``. (:issue:`8441`)
+
+
+Hooks
+~~~~~
+
+* Have ``sqlalchemy`` hook collect all dialects and plugins that are
+  registered via ``sqlalchemy.dialects`` and ``sqlalchemy.plugins``
+  entry-points. This ensures collection of 3rd party dialects and plugins
+  that may be available in the build environment (e.g., ``ibm-db-sa``).
+  (:issue:`8465`)
+* The ``pywin32-ctypes`` hook now always collects the
+  ``win32ctypes.core.ctypes``
+  modules, so that the ``ctypes`` backend is always available (i.e., even
+  if we also collect the ``cffi`` backend due to availability of ``cffi``
+  in the build environment). This fixes issues when ``cffi`` ends up
+  unavailable at run-time in spite of being available in the build environment
+  at build time (for example, due to explicit exclusion via
+  :option:`--exclude-module`
+  option). (:issue:`8544`)
+* Update ``pkg_resources`` hook for compatibility with ``setuptools`` v70.0.0
+  and later (fix ``ModuleNotFoundError: No module named
+  'pkg_resources.extern'``). (:issue:`8554`)
+
+
 6.6.0 (2024-04-13)
 ------------------
 

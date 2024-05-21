@@ -134,7 +134,7 @@ either ``gcc`` or ``clang``) and zlib's development headers already installed.
 Support
 -------
 
-- Official debugging guide: https://pyinstaller.org/en/v6.6.0/when-things-go-wrong.html
+- Official debugging guide: https://pyinstaller.org/en/v6.7.0/when-things-go-wrong.html
 - Assorted user contributed help topics: https://github.com/pyinstaller/pyinstaller/wiki
 - Web based Q&A forums: https://github.com/pyinstaller/pyinstaller/discussions
 - Email based Q&A forums: https://groups.google.com/g/pyinstaller
@@ -146,5 +146,5 @@ Changes in this Release
 You can find a detailed list of changes in this release
 in the `Changelog`_ section of the manual.
 
-.. _`manual`: https://pyinstaller.org/en/v6.6.0/
-.. _`Changelog`: https://pyinstaller.org/en/v6.6.0/CHANGES.html
+.. _`manual`: https://pyinstaller.org/en/v6.7.0/
+.. _`Changelog`: https://pyinstaller.org/en/v6.7.0/CHANGES.html

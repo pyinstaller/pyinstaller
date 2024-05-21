@@ -1,3 +1,0 @@
-(Windows) Fix mangling of path to the entry-point script when the script
-is in the current working directory, and the path to this directory
-contains two or more consecutive ``$`` or ``%`` characters.

@@ -1,4 +1,0 @@
-Have ``sqlalchemy`` hook collect all dialects and plugins that are
-registered via ``sqlalchemy.dialects`` and ``sqlalchemy.plugins``
-entry-points. This ensures collection of 3rd party dialects and plugins
-that may be available in the build environment (e.g., ``ibm-db-sa``).

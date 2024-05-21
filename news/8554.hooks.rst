@@ -1,2 +1,0 @@
-Update ``pkg_resources`` hook for compatibility with ``setuptools`` v70.0.0
-and later (fix ``ModuleNotFoundError: No module named 'pkg_resources.extern'``).

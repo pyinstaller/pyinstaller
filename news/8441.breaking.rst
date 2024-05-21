@@ -1,8 +1,0 @@
-PyInstaller does not attempt to expand environment variables in paths
-given via :option:`--workpath`, :option:`--distpath`, :option:`--specpath`,
-and :option:`--additional-hooks-dir` anymore (note that other paths were
-never subject to environment variable expansion in the first place).
-Expansion of the starting tilde (``~``) into user's home directory is
-still performed, as a work-around for tilde not being expanded by the
-shell when passing arguments as ``--workpath=~/path/abc`` instead of
-``--workpath ~/path/abc``.
