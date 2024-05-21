@@ -100,10 +100,13 @@ pyi_main(int argc, char * argv[])
     int in_child = 0;
     char *extractionpath = NULL;
 
-#ifdef _MSC_VER
-    /* Visual C runtime incorrectly buffers stderr */
+#ifdef _WIN32
+    /* On Windows, both Visual C runtime and MinGW seem to buffer stderr
+     * when redirected. This might cause the output to not appear at all
+     * if the application crashes or is terminated, which in turn makes
+     * debugging difficult. So make sure that stderr is unbuffered. */
     setbuf(stderr, (char *)NULL);
-#endif  /* _MSC_VER */
+#endif  /* _WIN32 */
 
     VS("PyInstaller Bootloader 6.x\n");
 
