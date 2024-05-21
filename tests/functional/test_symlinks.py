@@ -62,9 +62,14 @@ def test_bootloader_symlinked_executable(pyi_builder, tmpdir):
 
 
 # Wrapper for os.symlink that skips the test if symlink cannot be created on Windows.
-def _create_symlink(*args, **kwargs):
+def _create_symlink(src, dst, *args, **kwargs):
+    # On Windows, symlinks need to use Windows-style backslashes, even if we are under msys2/mingw python that uses
+    # POSIX-style separators. `src` might be a Path-like object, so explicitly convert it to string.
+    if is_win and os.sep == '/':
+        src = str(src).replace(os.sep, '\\')
+
     try:
-        os.symlink(*args, **kwargs)
+        os.symlink(src, dst, **kwargs)
     except OSError:
         if is_win:
             pytest.skip("OS does not support creation of symbolic links.")
