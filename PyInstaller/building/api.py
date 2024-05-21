@@ -1162,6 +1162,11 @@ class COLLECT(Target):
                     strict_arch_validation=(typecode == 'EXTENSION'),
                 )
             if typecode == 'SYMLINK':
+                # On Windows, ensure that symlink target path (stored in src_name) is using Windows-style back slash
+                # separators.
+                if is_win and os.path.sep == '/':
+                    src_name = src_name.replace(os.path.sep, '\\')
+
                 os.symlink(src_name, dest_path)  # Create link at dest_path, pointing at (relative) src_name
             elif typecode != 'DEPENDENCY':
                 # At this point, `src_name` should be a valid file.
