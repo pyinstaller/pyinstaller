@@ -179,6 +179,11 @@ class CArchiveWriter:
             # manually.
             dest_name = dest_name.replace(os.path.sep, '\\')
 
+            # For symbolic link entries, also ensure that the symlink target path (stored in src_name) is using
+            # Windows-style back slash separators.
+            if typecode == 'n':
+                src_name = src_name.replace(os.path.sep, '\\')
+
         # Strict pack/collect mode: keep track of the destination names, and raise an error if we try to add a duplicate
         # (a file with same destination name, subject to OS case normalization rules).
         if strict_collect_mode:
