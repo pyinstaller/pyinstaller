@@ -25,6 +25,7 @@ import tkinter  # noqa: F401
 
 def compare(test_name, expect, frozen):
     expect = os.path.normpath(expect)
+    frozen = os.path.normpath(frozen)
     print(test_name)
     print(('  Expected: ' + expect))
     print(('  Current:  ' + frozen))
