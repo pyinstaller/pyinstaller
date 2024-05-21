@@ -15,12 +15,17 @@ def _pyi_rthook():
     import os
     import sys
 
+    # Use sys._MEIPASS with normalized path component separator. This is necessary on some platforms (i.e., msys2/mingw
+    # python on Windows), because we use string comparisons on the paths.
+    SYS_PREFIX = os.path.normpath(sys._MEIPASS)
+
     _orig_inspect_getsourcefile = inspect.getsourcefile
 
     # Provide custom implementation of inspect.getsourcefile() for frozen applications that properly resolves relative
     # filenames obtained from object (e.g., inspect stack-frames). See #5963.
     def _pyi_getsourcefile(object):
         filename = inspect.getfile(object)
+        filename = os.path.normpath(filename)  # Ensure path component separators are normalized.
         if not os.path.isabs(filename):
             # Check if given filename matches the basename of __main__'s __file__.
             main_file = getattr(sys.modules['__main__'], '__file__', None)
@@ -30,11 +35,11 @@ def _pyi_rthook():
             # If filename ends with .py suffix and does not correspond to frozen entry-point script, convert it to
             # corresponding .pyc in sys._MEIPASS.
             if filename.endswith('.py'):
-                filename = os.path.normpath(os.path.join(sys._MEIPASS, filename + 'c'))
+                filename = os.path.normpath(os.path.join(SYS_PREFIX, filename + 'c'))
                 # Ensure the relative path did not try to jump out of sys._MEIPASS, just in case...
-                if filename.startswith(sys._MEIPASS):
+                if filename.startswith(SYS_PREFIX):
                     return filename
-        elif filename.startswith(sys._MEIPASS) and filename.endswith('.pyc'):
+        elif filename.startswith(SYS_PREFIX) and filename.endswith('.pyc'):
             # If filename is already PyInstaller-compatible, prevent any further processing (i.e., with original
             # implementation).
             return filename
