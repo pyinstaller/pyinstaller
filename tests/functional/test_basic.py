@@ -851,8 +851,12 @@ def test_legacy_onedir_layout(pyi_builder):
         """
         import sys
         import os
-        assert sys._MEIPASS == os.path.dirname(sys.executable)
-        assert os.path.dirname(__file__) == os.path.dirname(sys.executable)
+
+        # NOTE: the paths set by bootloader (`sys._MEIPASS`, `__file__`) may end up using different separator than
+        # paths set by the python interpreter itself (e.g., `sys.executable`) - for example, under msys2/mingw
+        # python on Windows). Therefore, we normalize the separator via `os.path.normpath` before comparison.
+        assert os.path.normpath(sys._MEIPASS) == os.path.dirname(sys.executable)
+        assert os.path.normpath(os.path.dirname(__file__)) == os.path.dirname(sys.executable)
         """,
         pyi_args=["--contents-directory", "."]
     )
