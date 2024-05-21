@@ -55,3 +55,9 @@ elif check_requirement("setuptools >= 60.7.1"):
         'pkg_resources._vendor.jaraco.context',
         'pkg_resources._vendor.jaraco.text',
     ]
+
+# As of setuptools 70.0.0, we need pkg_resources.extern added to hidden imports.
+if check_requirement("setuptools >= 70.0.0"):
+    hiddenimports += [
+        'pkg_resources.extern',
+    ]
