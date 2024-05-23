@@ -194,7 +194,10 @@ class QtLibraryInfo:
 
             # Import the Qt-based package
             # equivalent to: from package.QtCore import QLibraryInfo, QCoreApplication
-            QtCore = importlib.import_module('.QtCore', package)
+            try:
+                QtCore = importlib.import_module('.QtCore', package)
+            except ModuleNotFoundError:
+                return None  # Signal that package is unavailable
             QLibraryInfo = QtCore.QLibraryInfo
             QCoreApplication = QtCore.QCoreApplication
 
@@ -234,6 +237,13 @@ class QtLibraryInfo:
             qt_info = _read_qt_library_info(self.namespace)
         except Exception as e:
             logger.warning("%s: failed to obtain Qt library info: %s", self, e)
+            return
+
+        # If package could not be imported, `_read_qt_library_info` returns None. In such cases, emit a debug message
+        # instead of a warning, because this initialization might be triggered by a helper function that is trying to
+        # determine availability of bindings by inspecting the `version` attribute of `QtLibraryInfo` for all bindings.
+        if qt_info is None:
+            logger.debug("%s: failed to obtain Qt library info: %s.QtCore could not be imported.", self, self.namespace)
             return
 
         for k, v in qt_info.items():
