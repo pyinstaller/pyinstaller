@@ -162,6 +162,7 @@ def run(pyi_args: list | None = None, pyi_config: dict | None = None):
     pyi_config   allows checking configuration once when running multiple tests
     """
     compat.check_requirements()
+    check_unsafe_privileges()
 
     import PyInstaller.log
 
@@ -226,6 +227,66 @@ def _console_script_run():
     if os.path.basename(sys.path[0]) in ("bin", "Scripts"):
         sys.path.pop(0)
     run()
+
+
+def check_unsafe_privileges():
+    """
+    Forbid dangerous usage of PyInstaller with escalated privileges
+    """
+    if compat.is_win:
+        # Discourage (with the intention to eventually block) people using *run as admin* with PyInstaller.
+        # There are 4 cases, block case 3 but be careful not to also block case 2.
+        #   1. User has no admin access: TokenElevationTypeDefault
+        #   2. User is an admin/UAC disabled (common on CI/VMs): TokenElevationTypeDefault
+        #   3. User has used *run as administrator* to elevate: TokenElevationTypeFull
+        #   4. User can escalate but hasn't: TokenElevationTypeLimited
+        # See https://techcommunity.microsoft.com/t5/windows-blog-archive/how-to-determine-if-a-user-is-a-member-of-the-administrators/ba-p/228476
+        import ctypes
+
+        advapi32 = ctypes.CDLL("Advapi32.dll")
+        kernel32 = ctypes.CDLL("kernel32.dll")
+
+        kernel32.GetCurrentProcess.restype = ctypes.c_void_p
+        process = kernel32.GetCurrentProcess()
+
+        token = ctypes.c_void_p()
+        try:
+            TOKEN_QUERY = 8
+            assert advapi32.OpenProcessToken(ctypes.c_void_p(process), TOKEN_QUERY, ctypes.byref(token))
+
+            elevation_type = ctypes.c_int()
+            TokenElevationType = 18
+            assert advapi32.GetTokenInformation(
+                token, TokenElevationType, ctypes.byref(elevation_type), ctypes.sizeof(elevation_type),
+                ctypes.byref(ctypes.c_int())
+            )
+        finally:
+            kernel32.CloseHandle(token)
+
+        if elevation_type.value == 2:  # TokenElevationTypeFull
+            logger.log(
+                logging.DEPRECATION,
+                "Running PyInstaller as admin is not necessary nor sensible. Run PyInstaller from a non-administrator "
+                "terminal. PyInstaller 7.0 will block this."
+            )
+
+    elif compat.is_darwin or compat.is_linux:
+        # Discourage (with the intention to eventually block) people using *sudo* with PyInstaller.
+        # Again there are 4 cases, block only case 4.
+        #   1. Non-root: os.getuid() != 0
+        #   2. Logged in as root (usually a VM): os.getlogin() == "root", os.getuid() == 0
+        #   3. No named users (e.g. most Docker containers): os.getlogin() fails
+        #   4. Regular user using escalation: os.getlogin() != "root", os.getuid() == 0
+        try:
+            user = os.getlogin()
+        except OSError:
+            user = ""
+        if os.getuid() == 0 and user and user != "root":
+            logger.log(
+                logging.DEPRECATION,
+                "Running PyInstaller as root is not necessary nor sensible. Do not use PyInstaller with sudo. "
+                "PyInstaller 7.0 will block this."
+            )
 
 
 if __name__ == '__main__':

@@ -1,0 +1,1 @@
+Running PyInstaller with escalated privileges (e.g. using sudo or in a *run as admin* terminal) will be blocked in v7.0. True admin users will be unaffected.
