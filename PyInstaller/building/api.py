@@ -31,7 +31,7 @@ from PyInstaller.building.utils import (
     compile_pymodule
 )
 from PyInstaller.building.splash import Splash  # argument type validation in EXE
-from PyInstaller.compat import is_cygwin, is_darwin, is_linux, is_win, strict_collect_mode
+from PyInstaller.compat import is_cygwin, is_darwin, is_linux, is_win, strict_collect_mode, is_nogil
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 import PyInstaller.utils.misc as miscutils
@@ -548,6 +548,11 @@ class EXE(Target):
                 self.toc.extend(arg)
             else:
                 raise TypeError(f"Invalid argument type for EXE: {type(arg)!r}")
+
+        if is_nogil:
+            # Signal to bootloader that python was built with Py_GIL_DISABLED, in order to select correct `PyConfig`
+            # structure layout at run-time.
+            self.toc.append(("pyi-python-flag Py_GIL_DISABLED", "", "OPTION"))
 
         if self.runtime_tmpdir is not None:
             self.toc.append(("pyi-runtime-tmpdir " + self.runtime_tmpdir, "", "OPTION"))

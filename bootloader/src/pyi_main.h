@@ -272,6 +272,13 @@ struct PYI_CONTEXT
 #endif
 
     /**
+     * Flag indicating that colleted python shared library was built
+     * with --disable-gil / Py_GIL_DISABLED. Used to select correct
+     * PyConfig structure layout, which contains additional `enable_gil`
+     * field. */
+    unsigned char nogil_enabled;
+
+    /**
      * Apple Events handling in macOS .app bundles
      */
 #if defined(__APPLE__) && defined(WINDOWED)

@@ -286,26 +286,33 @@ _pyi_pyconfig_set_string(PyConfig *config, wchar_t **dest_field, const char *str
 }
 
 
+/* Helper for creating ID from python version and flags value */
+#define _MAKE_VERSION_ID(version, flags) (version << 1 | flags)
+
 /*
- * Allocate the PyConfig structure, based on the python version.
+ * Allocate the PyConfig structure, based on the python version and
+ * build flags.
  */
 PyConfig *
-pyi_pyconfig_create(int python_version)
+pyi_pyconfig_create(const struct PYI_CONTEXT *pyi_ctx)
 {
+    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+
     /* Macro to avoid manual code repetition. */
-    #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
-    case PY_VERSION: { \
+    #define _IMPL_CASE(PY_VERSION, PY_FLAGS, PYCONFIG_IMPL) \
+    case _MAKE_VERSION_ID(PY_VERSION, PY_FLAGS): { \
         return (PyConfig *)calloc(1, sizeof(PYCONFIG_IMPL)); \
     }
     /* Macro end */
 
-    switch (python_version) {
-        _IMPL_CASE(308, PyConfig_v38)
-        _IMPL_CASE(309, PyConfig_v39)
-        _IMPL_CASE(310, PyConfig_v310)
-        _IMPL_CASE(311, PyConfig_v311)
-        _IMPL_CASE(312, PyConfig_v312)
-        _IMPL_CASE(313, PyConfig_v313)
+    switch (version_id) {
+        _IMPL_CASE(308, 0, PyConfig_v38)
+        _IMPL_CASE(309, 0, PyConfig_v39)
+        _IMPL_CASE(310, 0, PyConfig_v310)
+        _IMPL_CASE(311, 0, PyConfig_v311)
+        _IMPL_CASE(312, 0, PyConfig_v312)
+        _IMPL_CASE(313, 0, PyConfig_v313)
+        _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
         default: {
             break;
         }
@@ -340,9 +347,11 @@ pyi_pyconfig_free(PyConfig *config)
 int
 pyi_pyconfig_set_program_name(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
+    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+
     /* Macro to avoid manual code repetition. */
-    #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
-    case PY_VERSION: { \
+    #define _IMPL_CASE(PY_VERSION, PY_FLAGS, PYCONFIG_IMPL) \
+    case _MAKE_VERSION_ID(PY_VERSION, PY_FLAGS): { \
         PYCONFIG_IMPL *config_impl = (PYCONFIG_IMPL *)config; \
         if (_pyi_pyconfig_set_string(config, &config_impl->program_name, pyi_ctx->executable_filename) < 0) { \
             return -1; \
@@ -351,13 +360,14 @@ pyi_pyconfig_set_program_name(PyConfig *config, const struct PYI_CONTEXT *pyi_ct
     }
     /* Macro end */
 
-    switch (pyi_ctx->archive->python_version) {
-        _IMPL_CASE(308, PyConfig_v38)
-        _IMPL_CASE(309, PyConfig_v39)
-        _IMPL_CASE(310, PyConfig_v310)
-        _IMPL_CASE(311, PyConfig_v311)
-        _IMPL_CASE(312, PyConfig_v312)
-        _IMPL_CASE(313, PyConfig_v313)
+    switch (version_id) {
+        _IMPL_CASE(308, 0, PyConfig_v38)
+        _IMPL_CASE(309, 0, PyConfig_v39)
+        _IMPL_CASE(310, 0, PyConfig_v310)
+        _IMPL_CASE(311, 0, PyConfig_v311)
+        _IMPL_CASE(312, 0, PyConfig_v312)
+        _IMPL_CASE(313, 0, PyConfig_v313)
+        _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
         default: {
             break;
         }
@@ -374,21 +384,24 @@ pyi_pyconfig_set_program_name(PyConfig *config, const struct PYI_CONTEXT *pyi_ct
 int
 pyi_pyconfig_set_python_home(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
+    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+
     /* Macro to avoid manual code repetition. */
-    #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
-    case PY_VERSION: { \
+    #define _IMPL_CASE(PY_VERSION, PY_FLAGS, PYCONFIG_IMPL) \
+    case _MAKE_VERSION_ID(PY_VERSION, PY_FLAGS): { \
         PYCONFIG_IMPL *config_impl = (PYCONFIG_IMPL *)config; \
         return _pyi_pyconfig_set_string(config, &config_impl->home, pyi_ctx->application_home_dir); \
     }
     /* Macro end */
 
-    switch (pyi_ctx->archive->python_version) {
-        _IMPL_CASE(308, PyConfig_v38)
-        _IMPL_CASE(309, PyConfig_v39)
-        _IMPL_CASE(310, PyConfig_v310)
-        _IMPL_CASE(311, PyConfig_v311)
-        _IMPL_CASE(312, PyConfig_v312)
-        _IMPL_CASE(313, PyConfig_v313)
+    switch (version_id) {
+        _IMPL_CASE(308, 0, PyConfig_v38)
+        _IMPL_CASE(309, 0, PyConfig_v39)
+        _IMPL_CASE(310, 0, PyConfig_v310)
+        _IMPL_CASE(311, 0, PyConfig_v311)
+        _IMPL_CASE(312, 0, PyConfig_v312)
+        _IMPL_CASE(313, 0, PyConfig_v313)
+        _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
         default: {
             break;
         }
@@ -409,11 +422,13 @@ pyi_pyconfig_set_python_home(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx
  * sys.path.
  */
 static int
-_pyi_pyconfig_set_module_search_paths(PyConfig *config, int python_version, int num_paths, wchar_t **paths)
+_pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx, int num_paths, wchar_t **paths)
 {
+    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+
     /* Macro to avoid manual code repetition. */
-    #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
-    case PY_VERSION: { \
+    #define _IMPL_CASE(PY_VERSION, PY_FLAGS, PYCONFIG_IMPL) \
+    case _MAKE_VERSION_ID(PY_VERSION, PY_FLAGS): { \
         PyStatus status; \
         PYCONFIG_IMPL *config_impl = (PYCONFIG_IMPL *)config; \
         status = PI_PyConfig_SetWideStringList(config, &config_impl->module_search_paths, num_paths, paths); \
@@ -422,13 +437,14 @@ _pyi_pyconfig_set_module_search_paths(PyConfig *config, int python_version, int 
     }
     /* Macro end */
 
-    switch (python_version) {
-        _IMPL_CASE(308, PyConfig_v38)
-        _IMPL_CASE(309, PyConfig_v39)
-        _IMPL_CASE(310, PyConfig_v310)
-        _IMPL_CASE(311, PyConfig_v311)
-        _IMPL_CASE(312, PyConfig_v312)
-        _IMPL_CASE(313, PyConfig_v313)
+    switch (version_id) {
+        _IMPL_CASE(308, 0, PyConfig_v38)
+        _IMPL_CASE(309, 0, PyConfig_v39)
+        _IMPL_CASE(310, 0, PyConfig_v310)
+        _IMPL_CASE(311, 0, PyConfig_v311)
+        _IMPL_CASE(312, 0, PyConfig_v312)
+        _IMPL_CASE(313, 0, PyConfig_v313)
+        _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
         default: {
             break;
         }
@@ -487,7 +503,7 @@ pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT 
     /* Set */
     ret = _pyi_pyconfig_set_module_search_paths(
         config,
-        pyi_ctx->archive->python_version,
+        pyi_ctx,
         3,
         module_search_paths_w
     );
@@ -510,11 +526,13 @@ end:
  * Set program arguments (sys.argv).
  */
 static int
-_pyi_pyconfig_set_argv(PyConfig *config, int python_version, int argc, wchar_t **argv_w)
+_pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx, int argc, wchar_t **argv_w)
 {
+    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+
     /* Macro to avoid manual code repetition. */
-    #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
-    case PY_VERSION: { \
+    #define _IMPL_CASE(PY_VERSION, PY_FLAGS, PYCONFIG_IMPL) \
+    case _MAKE_VERSION_ID(PY_VERSION, PY_FLAGS): { \
         PyStatus status; \
         PYCONFIG_IMPL *config_impl = (PYCONFIG_IMPL *)config; \
         status = PI_PyConfig_SetWideStringList(config, &config_impl->argv, argc, argv_w); \
@@ -522,13 +540,14 @@ _pyi_pyconfig_set_argv(PyConfig *config, int python_version, int argc, wchar_t *
     }
     /* Macro end */
 
-    switch (python_version) {
-        _IMPL_CASE(308, PyConfig_v38)
-        _IMPL_CASE(309, PyConfig_v39)
-        _IMPL_CASE(310, PyConfig_v310)
-        _IMPL_CASE(311, PyConfig_v311)
-        _IMPL_CASE(312, PyConfig_v312)
-        _IMPL_CASE(313, PyConfig_v313)
+    switch (version_id) {
+        _IMPL_CASE(308, 0, PyConfig_v38)
+        _IMPL_CASE(309, 0, PyConfig_v39)
+        _IMPL_CASE(310, 0, PyConfig_v310)
+        _IMPL_CASE(311, 0, PyConfig_v311)
+        _IMPL_CASE(312, 0, PyConfig_v312)
+        _IMPL_CASE(313, 0, PyConfig_v313)
+        _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
         default: {
             break;
         }
@@ -550,7 +569,7 @@ pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
     return _pyi_pyconfig_set_argv(
         config,
-        pyi_ctx->archive->python_version,
+        pyi_ctx,
         pyi_ctx->argc,
         pyi_ctx->argv_w
     );
@@ -604,7 +623,7 @@ pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
     /* Set */
     ret = _pyi_pyconfig_set_argv(
         config,
-        pyi_ctx->archive->python_version,
+        pyi_ctx,
         argc,
         argv_w
     );
@@ -626,11 +645,14 @@ end:
  * Set run-time options.
  */
 int
-pyi_pyconfig_set_runtime_options(PyConfig *config, int python_version, const struct PyiRuntimeOptions *runtime_options)
+pyi_pyconfig_set_runtime_options(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx, const struct PyiRuntimeOptions *runtime_options)
 {
+    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+
+    /* *** Common options *** */
     /* Macro to avoid manual code repetition. */
-    #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
-    case PY_VERSION: { \
+    #define _IMPL_CASE(PY_VERSION, PY_FLAGS, PYCONFIG_IMPL) \
+    case _MAKE_VERSION_ID(PY_VERSION, PY_FLAGS): { \
         PyStatus status; \
         PYCONFIG_IMPL *config_impl = (PYCONFIG_IMPL *)config; \
         /* Extend the isolated config, which leaves site_import and write_bytecode on */ \
@@ -675,13 +697,14 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, int python_version, const str
     }
     /* Macro end */
 
-    switch (python_version) {
-        _IMPL_CASE(308, PyConfig_v38)
-        _IMPL_CASE(309, PyConfig_v39)
-        _IMPL_CASE(310, PyConfig_v310)
-        _IMPL_CASE(311, PyConfig_v311)
-        _IMPL_CASE(312, PyConfig_v312)
-        _IMPL_CASE(313, PyConfig_v313)
+    switch (version_id) {
+        _IMPL_CASE(308, 0, PyConfig_v38)
+        _IMPL_CASE(309, 0, PyConfig_v39)
+        _IMPL_CASE(310, 0, PyConfig_v310)
+        _IMPL_CASE(311, 0, PyConfig_v311)
+        _IMPL_CASE(312, 0, PyConfig_v312)
+        _IMPL_CASE(313, 0, PyConfig_v313)
+        _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
         default: {
             break;
         }

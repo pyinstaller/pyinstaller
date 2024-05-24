@@ -421,6 +421,10 @@ Further examples to illustrate the syntax::
         # Hash seed
         ('hash_seed=0', None, 'OPTION'),  # disable hash randomization; sys.flags.hash_randomization=0
         ('hash_seed=123', None, 'OPTION'),  # hash randomization with fixed seed value
+
+        # Force enable/disable GIL in python >= 3.13 built with Py_DISABLE_GIL / free-threading option (PEP-703)
+        ('X gil=1', None, 'OPTION),  # force-enable GIL
+        ('X gil=0', None, 'OPTION),  # force-disable GIL
     ]
 
 

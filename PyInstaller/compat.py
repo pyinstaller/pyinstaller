@@ -22,6 +22,7 @@ import platform
 import site
 import subprocess
 import sys
+import sysconfig
 import shutil
 import types
 
@@ -111,45 +112,70 @@ is_macos_11_compat = bool(_macos_ver) and _macos_ver[0:2] == (10, 16)  # Big Sur
 is_macos_11_native = bool(_macos_ver) and _macos_ver[0:2] >= (11, 0)  # Big Sur or newer in native mode
 is_macos_11 = is_macos_11_compat or is_macos_11_native  # Big Sur or newer
 
+# Check if python >= 3.13 was built with Py_GIL_DISABLED / free-threading (PEP703).
+#
+# This affects the shared library name, which has the "t" ABI suffix, as per:
+# https://github.com/python/steering-council/issues/221#issuecomment-1841593283
+#
+# It also affects the layout of PyConfig structure used by bootloader; consequently
+#  a) we need to inform bootloader what kind of build it is dealing with
+#  b) we must not mix up shared libraries, in case multiple builds are present on the system. Thus, strictly enforce the
+#     "t" ABI suffix in the PYDYLIB_NAMES, if applicable.
+is_nogil = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
+
+_py_suffix = "t" if is_nogil else ""
+
 # On different platforms is different file for dynamic python library.
-_pyver = sys.version_info[:2]
+_py_major, _py_minor = sys.version_info[:2]
 if is_win or is_cygwin:
     PYDYLIB_NAMES = {
-        'python%d%d.dll' % _pyver,
-        'libpython%d%d.dll' % _pyver,
-        'libpython%d.%d.dll' % _pyver,
+        f'python{_py_major}{_py_minor}{_py_suffix}.dll',
+        f'libpython{_py_major}{_py_minor}{_py_suffix}.dll',
+        f'libpython{_py_major}.{_py_minor}{_py_suffix}.dll',
     }  # For MSYS2 environment
 elif is_darwin:
-    # libpython%d.%dm.dylib for Conda virtual environment installations
+    # The suffix in .framework library name is capitalized, e.g., PythonT for freethreading-enabled build.
+    # The `libpython%d.%d%s.dylib` is there primarily for Anaconda installations, but it also serves as a fallback in
+    # .framework builds, where `/Library/Frameworks/Python.framework/Versions/3.X/lib/libpython3.13.dylib` is a symbolic
+    # link that points to `../Python`.
     PYDYLIB_NAMES = {
-        'Python',
-        '.Python',
-        'Python%d' % _pyver[0],
-        'libpython%d.%d.dylib' % _pyver,
+        f'Python{_py_suffix.upper()}',
+        f'.Python{_py_suffix.upper()}',
+        f'Python{_py_major}{_py_suffix.upper()}',
+        f'libpython{_py_major}.{_py_minor}{_py_suffix}.dylib',
     }
 elif is_aix:
     # Shared libs on AIX may be archives with shared object members, hence the ".a" suffix. However, starting with
     # python 2.7.11 libpython?.?.so and Python3 libpython?.?m.so files are produced.
     PYDYLIB_NAMES = {
-        'libpython%d.%d.a' % _pyver,
-        'libpython%d.%d.so' % _pyver,
+        f'libpython{_py_major}.{_py_minor}{_py_suffix}.a',
+        f'libpython{_py_major}.{_py_minor}{_py_suffix}.so',
     }
 elif is_freebsd:
     PYDYLIB_NAMES = {
-        'libpython%d.%d.so.1' % _pyver,
-        'libpython%d.%d.so.1.0' % _pyver,
+        f'libpython{_py_major}.{_py_minor}{_py_suffix}.so.1',
+        f'libpython{_py_major}.{_py_minor}{_py_suffix}.so.1.0',
     }
 elif is_openbsd:
-    PYDYLIB_NAMES = {'libpython%d.%d.so.0.0' % _pyver}
+    PYDYLIB_NAMES = {
+        f'libpython{_py_major}.{_py_minor}{_py_suffix}.so.0.0',
+    }
 elif is_hpux:
-    PYDYLIB_NAMES = {'libpython%d.%d.so' % _pyver}
+    PYDYLIB_NAMES = {
+        f'libpython{_py_major}.{_py_minor}{_py_suffix}.so',
+    }
 elif is_unix:
     # Other *nix platforms.
     # Python 2 .so library on Linux is: libpython2.7.so.1.0
     # Python 3 .so library on Linux is: libpython3.3.so.1.0
-    PYDYLIB_NAMES = {'libpython%d.%d.so.1.0' % _pyver, 'libpython%d.%d.so' % _pyver}
+    PYDYLIB_NAMES = {
+        f'libpython{_py_major}.{_py_minor}{_py_suffix}.so.1.0',
+        f'libpython{_py_major}.{_py_minor}{_py_suffix}.so',
+    }
 else:
     raise SystemExit('Your platform is not yet supported. Please define constant PYDYLIB_NAMES for your platform.')
+
+del _py_major, _py_minor, _py_suffix
 
 # In a virtual environment created by virtualenv (github.com/pypa/virtualenv) there exists sys.real_prefix with the path
 # to the base Python installation from which the virtual environment was created. This is true regardless of the version

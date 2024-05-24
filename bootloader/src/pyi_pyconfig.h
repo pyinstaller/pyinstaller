@@ -50,14 +50,14 @@ struct PyiRuntimeOptions *pyi_runtime_options_read(const struct PYI_CONTEXT *pyi
 void pyi_runtime_options_free(struct PyiRuntimeOptions *options);
 
 /* PEP 587 helpers */
-PyConfig *pyi_pyconfig_create(int python_version);
+PyConfig *pyi_pyconfig_create(const struct PYI_CONTEXT *pyi_ctx);
 void pyi_pyconfig_free(PyConfig *config);
 
 int pyi_pyconfig_set_program_name(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
 int pyi_pyconfig_set_python_home(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
 int pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
 int pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
-int pyi_pyconfig_set_runtime_options(PyConfig *config, int python_version, const struct PyiRuntimeOptions *runtime_options);
+int pyi_pyconfig_set_runtime_options(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx, const struct PyiRuntimeOptions *runtime_options);
 
 int pyi_pyconfig_preinit_python(const struct PyiRuntimeOptions *runtime_options);
 
