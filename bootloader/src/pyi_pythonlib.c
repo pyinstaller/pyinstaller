@@ -145,7 +145,6 @@ pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx)
     PyConfig *config = NULL;
     PyStatus status;
     int ret = -1;
-    const int python_version = pyi_ctx->archive->python_version;
 
     /* Read run-time options */
     runtime_options = pyi_runtime_options_read(pyi_ctx);
@@ -165,7 +164,7 @@ pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx)
     /* Allocate the config structure. Since underlying layout is specific to
      * python version, this also verifies that python version is supported. */
     PYI_DEBUG("LOADER: creating PyConfig structure...\n");
-    config = pyi_pyconfig_create(python_version);
+    config = pyi_pyconfig_create(pyi_ctx);
     if (config == NULL) {
         PYI_ERROR("Failed to allocate PyConfig structure! Unsupported python version?\n");
         goto end;
@@ -205,7 +204,7 @@ pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx)
 
     /* Apply run-time options */
     PYI_DEBUG("LOADER: applying run-time options...\n");
-    if (pyi_pyconfig_set_runtime_options(config, python_version, runtime_options) < 0) {
+    if (pyi_pyconfig_set_runtime_options(config, pyi_ctx, runtime_options) < 0) {
         PYI_ERROR("Failed to set run-time options!\n");
         goto end;
     }

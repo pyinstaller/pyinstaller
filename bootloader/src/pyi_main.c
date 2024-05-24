@@ -461,6 +461,24 @@ _pyi_main_read_runtime_options(struct PYI_CONTEXT *pyi_ctx)
          * lengths as well to avoid invoking strlen() on each
          * comparison. */
 
+        /* pyi-python-flag <value>
+         *
+         * Used to pass information about flags that collected python
+         * shared library was built with, which might for example affect
+         * the layout of PyConfig structure.
+         *
+         * Currently recongized flags:
+         * - Py_GIL_DISABLED
+         *
+         * Might be specified multiple times, for each such flag. */
+        if (strncmp(toc_entry->name, "pyi-python-flag", 15) == 0) {
+            const char *flag_name = toc_entry->name + 16;
+            if (strncmp(flag_name, "Py_GIL_DISABLED", 15) == 0) {
+                pyi_ctx->nogil_enabled = 1;
+            }
+            continue;
+        }
+
         /* pyi-runtime-tmpdir <value>
          *
          * Run-time temporary directory override for onefile programs. */
