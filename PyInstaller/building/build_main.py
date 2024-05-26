@@ -20,7 +20,7 @@ import pathlib
 import pprint
 import shutil
 import enum
-
+import re
 import sys
 
 from PyInstaller import DEFAULT_DISTPATH, DEFAULT_WORKPATH, HOMEPATH, compat
@@ -461,13 +461,27 @@ class Analysis(Target):
         # Django hook requires this variable to find the script manage.py.
         CONF['main_script'] = self.inputs[0]
 
+        site_packages_pathex = []
+        for path in (pathex or []):
+            if pathlib.Path(path).name == "site-packages":
+                site_packages_pathex.append(str(path))
+        if site_packages_pathex:
+            logger.log(
+                logging.DEPRECATION, "Foreign Python environment's site-packages paths added to --paths/pathex:\n%s\n"
+                "This is ALWAYS the wrong thing to do. If your environment's site-packages is not in PyInstaller's "
+                "module search path then you are running PyInstaller from a different environment to the one your "
+                "packages are in. Run print(sys.prefix) without PyInstaller to get the environment you should be using "
+                "then install and run PyInstaller from that environment instead of this one. This warning will become "
+                "an error in PyInstaller 7.0.", pprint.pformat(site_packages_pathex)
+            )
+
         self.pathex = self._extend_pathex(pathex, self.inputs)
         # Set global config variable 'pathex' to make it available for PyInstaller.utils.hooks and import hooks. Path
         # extensions for module search.
         CONF['pathex'] = self.pathex
         # Extend sys.path so PyInstaller could find all necessary modules.
-        logger.info('Extending PYTHONPATH with paths\n' + pprint.pformat(self.pathex))
         sys.path.extend(self.pathex)
+        logger.info('Module search paths (PYTHONPATH):\n' + pprint.pformat(sys.path))
 
         self.hiddenimports = hiddenimports or []
         # Include hidden imports passed via CONF['hiddenimports']; these might be populated if user has a wrapper script
