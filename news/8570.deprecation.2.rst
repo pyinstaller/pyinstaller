@@ -1,0 +1,1 @@
+Adding a Python environment's ``site-packages`` directory to ``pathex``/``--paths`` will be blocked in v7.0

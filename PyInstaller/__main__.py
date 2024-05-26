@@ -191,6 +191,7 @@ def run(pyi_args: list | None = None, pyi_config: dict | None = None):
         logger.info('PyInstaller: %s, contrib hooks: %s', __version__, contrib_hooks_version)
         logger.info('Python: %s%s', platform.python_version(), " (conda)" if compat.is_conda else "")
         logger.info('Platform: %s', platform.platform())
+        logger.info('Python environment: %s', sys.prefix)
 
         # Skip creating .spec when .spec file is supplied.
         if args.filenames[0].endswith('.spec'):
