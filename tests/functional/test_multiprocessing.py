@@ -106,3 +106,10 @@ def test_concurrent_features_process_pool_executor(pyi_builder):
             assert result == [x * x for x in values]
         """
     )
+
+
+# Test that application's top level directory (sys._MEIPASS) is properly inherited by multiprocessing child process.
+@pytest.mark.timeout(timeout=60)
+@pytest.mark.parametrize("start_method", START_METHODS)
+def test_multiprocessing_subprocess_environment(pyi_builder, start_method):
+    pyi_builder.test_script("pyi_multiprocessing_subprocess_environment.py", app_args=[start_method])
