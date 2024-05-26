@@ -17,6 +17,7 @@ import argparse
 import os
 import platform
 import sys
+import pathlib
 from collections import defaultdict
 
 from PyInstaller import __version__
@@ -286,6 +287,19 @@ def check_unsafe_privileges():
                 logging.DEPRECATION,
                 "Running PyInstaller as root is not necessary nor sensible. Do not use PyInstaller with sudo. "
                 "PyInstaller 7.0 will block this."
+            )
+
+    if compat.is_win:
+        # Do not let people run PyInstaller from admin cmd's default working directory (C:\Windows\system32)
+        try:
+            pathlib.Path().resolve().relative_to(r"C:\Windows")
+        except ValueError:
+            pass
+        else:
+            raise SystemExit(
+                f"Error: Do not run pyinstaller from {pathlib.Path().resolve()}. cd to where your code is and run "
+                "pyinstaller from there. Hint: You can open a terminal where your code is by going to the parent "
+                "folder in Windows file explorer then typing cmd into the address bar."
             )
 
 

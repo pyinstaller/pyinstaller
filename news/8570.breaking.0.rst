@@ -1,0 +1,1 @@
+Attempting to do a build whilst inside ``C:\Windows`` is now blocked.
