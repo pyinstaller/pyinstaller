@@ -92,6 +92,9 @@ static int _pyi_main_handle_posix_onedir(PYI_CONTEXT *pyi_ctx);
 int
 pyi_main(PYI_CONTEXT *pyi_ctx)
 {
+    char *env_archive_file;
+    bool reset_environment;
+
 #ifdef _WIN32
     /* On Windows, both Visual C runtime and MinGW seem to buffer stderr
      * when redirected. This might cause the output to not appear at all
@@ -117,10 +120,56 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     /* We can now access PKG archive via pyi_ctx->archive; for example,
      * to read run-time options */
 
-    /* First, check if archive contains extractable entries - this implies
+    /* Check if archive contains extractable entries - this implies
      * that we are running in onefile mode */
     pyi_ctx->is_onefile = pyi_ctx->archive->contains_extractable_entries;
     pyi_ctx->needs_to_extract = pyi_ctx->is_onefile;
+
+    PYI_DEBUG("LOADER: application has %s semantics...\n", pyi_ctx->is_onefile ? "onefile" : "onedir");
+
+    /* Check if existing PyInstaller run-time environment exists, and
+     * determine whether we should inherit it or not. This is done by
+     * checking _PYI_ARCHIVE_FILE environment variable:
+     *  - if it is not set, there is no environment to inherit. We will
+     *    still reset all PyInstaller-related environment variables, in
+     *    case whoever ran the process is trying to force the program to
+     *    run as independent instance by having unset _PYI_ARCHIVE_FILE.
+     *  - if it is set and the contents match our archive filename,
+     *    we are using the same archive/executable as the parent process,
+     *    and we should inherit its environment.
+     *  - if it is set and the contents differ from our archive filename,
+     *    then we are a different program from the parent process, and
+     *    should reset the environment. */
+    reset_environment = true;
+    env_archive_file = pyi_getenv("_PYI_ARCHIVE_FILE");
+    if (env_archive_file) {
+        PYI_DEBUG("LOADER: _PYI_ARCHIVE_FILE already defined: %s\n", env_archive_file);
+        if (strcmp(pyi_ctx->archive_filename, env_archive_file) == 0) {
+            PYI_DEBUG("LOADER: using same archive file as parent environment!\n");
+            reset_environment = false;
+        } else {
+            PYI_DEBUG("LOADER: using different archive file than parent environment!\n");
+        }
+    } else {
+        PYI_DEBUG("LOADER: _PYI_ARCHIVE_FILE not defined...\n");
+    }
+    free(env_archive_file);
+
+    if (reset_environment) {
+        /* Set the _PYI_ARCHIVE_FILE */
+        pyi_setenv("_PYI_ARCHIVE_FILE", pyi_ctx->archive_filename);
+
+        /* Clear PyInstaller environment variables */
+        pyi_unsetenv("_PYI_APPLICATION_HOME_DIR");
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+        pyi_unsetenv("_PYI_POSIX_ONEDIR_MODE"); /* POSIX (other than macOS) only */
+#endif
+
+#if defined(__linux__)
+        pyi_unsetenv("_PYI_LINUX_PROCESS_NAME"); /* Linux only */
+#endif
+    }
 
     /* Read all applicable run-time options from the PKG archive */
     _pyi_main_read_runtime_options(pyi_ctx);
@@ -154,16 +203,13 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             prctl(PR_SET_NAME, processname, 0, 0); /* Ignore failures */
         }
         free(processname);
-        pyi_unsetenv("_PYI_LINUX_PROCESS_NAME");
     }
 #endif  /* defined(__linux__) */
 
     /* Infer the process type (onefile parent, onefile child, onedir),
      * and based on that, determine the application's top-level directory. */
     if (pyi_ctx->is_onefile) {
-        char *meipass2_value = NULL;
-
-        PYI_DEBUG("LOADER: application has onefile semantics...\n");
+        char *env_app_home_dir = NULL;
 
         /* Check if PyInstaller's environment has already been set. This
          * indicates that we are in the child process, and we do not need
@@ -173,27 +219,21 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
          * wide-char API, and encoded/decoded to/from UTF8, so the path
          * here is unicode. On POSIX systems, the local 8-bit encoding
          * is used. */
-        meipass2_value = pyi_getenv("_MEIPASS2");
-        PYI_DEBUG("LOADER: _MEIPASS2 is %s\n", (meipass2_value ? meipass2_value : "not set"));
+        env_app_home_dir = pyi_getenv("_PYI_APPLICATION_HOME_DIR");
+        PYI_DEBUG("LOADER: _PYI_APPLICATION_HOME_DIR is %s\n", (env_app_home_dir ? env_app_home_dir : "not set"));
 
-        /* Clear the _MEIPASS2 variable; if application were to spawn
-         * another PyInstaller onefile application as a subprocess, that
-         * instance must not be fooled into thinking that it has already
-         * been unpacked. */
-        pyi_unsetenv("_MEIPASS2");
-
-        if (meipass2_value && meipass2_value[0]) {
+        if (env_app_home_dir && env_app_home_dir[0]) {
             /* This is a child process; reset the needs-to-extract flag */
             PYI_DEBUG("LOADER: this is child process of onefile application.\n");
             pyi_ctx->needs_to_extract = 0;
 
             /* Copy the application's top-level directory from environment */
-            if (snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", meipass2_value) >= PYI_PATH_MAX) {
+            if (snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", env_app_home_dir) >= PYI_PATH_MAX) {
                 PYI_ERROR("Path exceeds PYI_PATH_MAX limit.\n");
                 return -1;
             }
 
-            free(meipass2_value);
+            free(env_app_home_dir);
         } else {
             PYI_DEBUG("LOADER: this is parent process of onefile application.\n");
 
@@ -226,8 +266,6 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 #if defined(__APPLE__)
         size_t executable_dir_len;
 #endif
-
-        PYI_DEBUG("LOADER: application has onedir semantics...\n");
 
         /* Determine application's top-level directory based on the
          * executable's location. */
@@ -636,8 +674,8 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
     /* Pass top-level application directory (the temporary directory
      * where files were extracted) to the child process via
      * corresponding environment variable. */
-    PYI_DEBUG("LOADER: setting _MEIPASS2 to %s\n", pyi_ctx->application_home_dir);
-    pyi_setenv("_MEIPASS2", pyi_ctx->application_home_dir);
+    PYI_DEBUG("LOADER: setting _PYI_APPLICATION_HOME_DIR to %s\n", pyi_ctx->application_home_dir);
+    pyi_setenv("_PYI_APPLICATION_HOME_DIR", pyi_ctx->application_home_dir);
 
     /* Start the child process that will execute user's program. */
     PYI_DEBUG("LOADER: starting the child process...\n");

@@ -1,0 +1,22 @@
+Reworked the detection of inherited PyInstaller environments, which now
+has reversed logic compared to original implementation. Up until now, a
+process running the bootloader was considered a (new) top-level process
+of a frozen application unless the ``_MEIPASS2`` environment was set.
+Because bootloader was clearing the ``_MEIPASS2`` environment variable
+prior to running the python code in the main application process, this
+meant that application's responsibility to restore the ``_MEIPASS2``
+environment variable before spawning worker sub-process via ``sys.executable``
+to, for example, prevent a onefile application from unpacking itself again.
+In the new implementation, the default assumption is that the process
+is a worker sub-process of the same (instance of) application, unless
+the path to PKG/CArchive has changed (which implies that a different
+executable is used), as tracked by newly-introduced ``_PYI_ARCHIVE_FILE``
+environment variable. This means that no additional action is needed to
+spawn worker sub-processes via ``sys.executable`` in multiprocessing
+scenarios, but on the other hand, attempting to restart the application
+now requires ``_PYI_ARCHIVE_FILE`` to be unset before spawning the new
+application process. To prevent issues when launching applications built
+with older version of PyInstaller as subprocesses, the ``_MEIPASS2``
+environment variable was renamed to ``_PYI_APPLICATION_HOME_DIR``;
+note that this refers to the internally-used environment variable, and
+does **not** affect the PyInstaller-specific ``sys._MEIPASS`` attribute.
