@@ -1,0 +1,4 @@
+Clean up the ``multiprocessing`` run-time hook. Due to changes in detection
+of inherited PyInstaller environments, we do not need to restore (the now
+renamed) ``_MEIPASS2``  environment variable anymore, and we can remove
+all our custom ``Popen`` overrides.
