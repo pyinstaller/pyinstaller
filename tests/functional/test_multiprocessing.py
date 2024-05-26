@@ -11,6 +11,8 @@
 
 import os
 import sys
+import subprocess
+
 import pytest
 
 from PyInstaller.compat import is_win
@@ -113,3 +115,59 @@ def test_concurrent_features_process_pool_executor(pyi_builder):
 @pytest.mark.parametrize("start_method", START_METHODS)
 def test_multiprocessing_subprocess_environment(pyi_builder, start_method):
     pyi_builder.test_script("pyi_multiprocessing_subprocess_environment.py", app_args=[start_method])
+
+
+# Test the inheritance of application's top level directory (sys._MEIPASS) into sub-processes that are manually spawned
+# using `subprocess` module. If using the same executable (`sys.executable`), sys._MEIPASS should be inherited by the
+# child process (in onefile mode, this means no unpacking). If it is a different executable, sys._MEIPASS should not be
+# inherited (and a onefile child process should unpack itself).
+def test_subprocess_environment_inheritance(pyi_builder_spec, tmpdir):
+    # Build the spec. This will build a pair of identical onedir programs and a pair of identical onefile programs,
+    # which we can then use to test all pertinent combinations. The `pyi_builder_spec` fixture attempts to run the built
+    # executable, and for that part, we need to supply the executable name. Since no parameters are passed to the
+    # executable, this is essentially no-op and serves just as a sanity check.
+    pyi_builder_spec.test_spec('pyi_subprocess_environment_inheritance.spec', app_name='onedir_program_1')
+
+    print("------- Running custom test. -------", file=sys.stderr)
+
+    # "Manually" detertmine the executable paths, as `pyi_builder_spec._find_executables` cannot cope with custom names
+    # that are used in the .spec file.
+    dist_dir = os.path.join(tmpdir, 'dist')
+    exe_suffix = ".exe" if is_win else ""
+
+    onedir_program_1 = os.path.join(dist_dir, "onedir_program_1", f"onedir_program_1{exe_suffix}")
+    onedir_program_2 = os.path.join(dist_dir, "onedir_program_2", f"onedir_program_2{exe_suffix}")
+    onefile_program_1 = os.path.join(dist_dir, f"onefile_program_1{exe_suffix}")
+    onefile_program_2 = os.path.join(dist_dir, f"onefile_program_2{exe_suffix}")
+
+    assert os.path.isfile(onedir_program_1)
+    assert os.path.isfile(onedir_program_2)
+    assert os.path.isfile(onefile_program_1)
+    assert os.path.isfile(onefile_program_1)
+
+    # Test all relevant combinations; the programs in pairs are functionally identical, so we need to test only one
+    # combination (for example, onedir_program_2 exists only so that onedir_program_1 can use it as a child, but the
+    # two are otherwise identical).
+
+    print("--- Test: onedir program spawns child via sys.executable...", file=sys.stderr)
+    subprocess.check_call([onedir_program_1, 'parent', 'sys.executable'])
+
+    print("--- Test: onefile program spawns child via sys.executable...", file=sys.stderr)
+    subprocess.check_call([onefile_program_1, 'parent', 'sys.executable'])
+
+    print("--- Test: onedir program spawns the other onedir program...", file=sys.stderr)
+    subprocess.check_call([onedir_program_1, 'parent', onedir_program_2])
+
+    print("--- Test: onedir program spawns onefile program...", file=sys.stderr)
+    subprocess.check_call([onedir_program_1, 'parent', onefile_program_1])
+
+    print("--- Test: onefile program spawns the other onefile program...", file=sys.stderr)
+    subprocess.check_call([onefile_program_1, 'parent', onefile_program_2])
+
+    print("--- Test: onefile program spawns onedir program...", file=sys.stderr)
+    subprocess.check_call([onefile_program_1, 'parent', onedir_program_1])
+
+    # Test the scenarios where we explicitly force independent instance of the same application.
+    # NOTE: this applies only to onefile mode
+    print("--- Test: onefile program spawns independent instance via sys.executable...", file=sys.stderr)
+    subprocess.check_call([onefile_program_1, 'parent', 'sys.executable', '--force-independent'])
