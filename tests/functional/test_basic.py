@@ -217,10 +217,6 @@ def test_load_dll_using_ctypes(monkeypatch, pyi_builder, compiled_dylib):
     pyi_builder.test_script('pyi_load_dll_using_ctypes.py')
 
 
-def test_get_meipass_value(pyi_builder):
-    pyi_builder.test_script('pyi_get_meipass_value.py')
-
-
 def test_chdir_meipass(pyi_builder):
     # Ensure meipass dir exists.
     pyi_builder.test_source(

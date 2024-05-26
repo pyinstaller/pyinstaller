@@ -68,9 +68,8 @@ if __name__ == '__main__':
                 sys._MEIPASS,
             ]
 
-            # For now, we need to restore _MEIPASS2 environment variable for onefile variant of this test to work.
-            if not args.force_independent:
-                env["_MEIPASS2"] = sys._MEIPASS
+            if args.force_independent:
+                env.pop("_PYI_ARCHIVE_FILE", None)
         else:
             subprocess_args = [
                 args.child_executable,
