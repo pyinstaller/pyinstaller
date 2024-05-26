@@ -468,6 +468,13 @@ class Analysis(Target):
         # that calls `build_main.main()` with custom `pyi_config` dictionary that contains `hiddenimports`.
         self.hiddenimports.extend(CONF.get('hiddenimports', []))
 
+        for modnm in self.hiddenimports:
+            if re.search(r"[\\/-]", modnm):
+                raise SystemExit(
+                    f"Error: Invalid hiddenimport '{modnm}'. Hidden imports should be importable module names – not "
+                    "file paths. i.e. use --hiddenimport=foo.bar instead of --hiddenimport=.../site-packages/foo/bar.py"
+                )
+
         self.hookspath = []
         # Prepend directories in `hookspath` (`--additional-hooks-dir`) to take precedence over those from the entry
         # points. Expand starting tilde into user's home directory, as a work-around for tilde not being expanded by
