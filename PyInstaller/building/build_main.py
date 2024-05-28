@@ -141,6 +141,12 @@ def find_binary_dependencies(binaries, import_packages):
         # `python3X.dll`), regardless of other python installations that might be present in the PATH.
         extra_libdirs.append(compat.base_prefix)
 
+        # When using python built from source, `sys.base_prefix` does not point to the directory that contains python
+        # executable, `python3X.dll`, and `python3.dll`. To accommodate such case, also add the directory in which
+        # python executable is located to the extra search paths. On the off-chance that this is a combination of venv
+        # and python built from source, prefer `sys._base_executable` over `sys.executable`.
+        extra_libdirs.append(os.path.dirname(getattr(sys, '_base_executable', sys.executable)))
+
         # If `pywin32` is installed, resolve the path to the `pywin32_system32` directory. Most `pywin32` extensions
         # reference the `pywintypes3X.dll` in there. Based on resolved `pywin32_system32` directory, also add other
         # `pywin32` directory, in case extensions in different directories reference each other (the ones in the same
