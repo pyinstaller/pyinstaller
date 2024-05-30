@@ -63,7 +63,7 @@ set server_port [fconfigure $server_socket -sockname]
 
 # This environment variable is shared between the python and the tcl
 # interpreter and publishes the port the tcp server socket is available
-set env(_PYIBoot_SPLASH) [lindex $server_port 2]
+set env(_PYI_SPLASH_IPC) [lindex $server_port 2]
 """
 
 image_script = r"""

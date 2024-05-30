@@ -19,7 +19,7 @@ closing. This makes the users python program independent of how the communicatio
 since a consistent API is provided.
 
 To connect to the bootloader, it connects to a local tcp socket whose port is passed through the environment variable
-'_PYIBoot_SPLASH'. The bootloader creates a server socket and accepts every connection request. Since the os-module,
+'_PYI_SPLASH_IPC'. The bootloader creates a server socket and accepts every connection request. Since the os-module,
 which is needed to request the environment variable, is not available at boot time, the module does not establish the
 connection until initialization.
 
@@ -83,33 +83,43 @@ def _initialize():
     :return:
     """
     global _initialized, _ipc_socket, _ipc_socket_closed
+
+    # If _ipc_port is zero, the splash screen is intentionally suppressed (for example, we are in sub-process spawned
+    # via sys.executable). Mark the splash screen as initialized, but do not attempt to connect.
+    if _ipc_port == 0:
+        _initialized = True
+        return
+
+    # Attempt to connect to the splash screen process.
     try:
-        _ipc_socket.connect(("localhost", _ipc_port))
+        _ipc_socket.connect(("127.0.0.1", _ipc_port))
         _ipc_socket_closed = False
 
         _initialized = True
-        _log(20, "A connection to the splash screen was successfully established.")  # log-level: info
+        _log(20, "IPC connection to the splash screen was successfully established.")  # log-level: info
     except OSError as err:
-        raise ConnectionError("Unable to connect to the tcp server socket on port %d" % _ipc_port) from err
+        raise ConnectionError(f"Could not connect to TCP port {_ipc_port}.") from err
 
 
-# We expect a splash screen from the bootloader, but if _PYIBoot_SPLASH is not set, the module cannot connect to it.
+# We expect a splash screen from the bootloader, but if _PYI_SPLASH_IPC is not set, the module cannot connect to it.
+# _PYI_SPLASH_IPC being set to zero indicates that splash screen should be (gracefully) suppressed; i.e., the calls
+# in this module should become no-op without generating warning messages.
 try:
-    _ipc_port = int(os.environ['_PYIBoot_SPLASH'])
-    del os.environ['_PYIBoot_SPLASH']
+    _ipc_port = int(os.environ['_PYI_SPLASH_IPC'])
+    del os.environ['_PYI_SPLASH_IPC']
     # Initialize the connection upon importing this module. This will establish a connection to the bootloader's TCP
     # server socket.
     _initialize()
-except (KeyError, ValueError) as _err:
+except (KeyError, ValueError):
     # log-level: warning
     _log(
-        30, "The environment does not allow connecting to the splash screen. Are the splash resources attached to the "
-        "bootloader or did an error occur?",
-        exc_info=_err
+        30,
+        "The environment does not allow connecting to the splash screen. Did bootloader fail to initialize it?",
+        exc_info=True,
     )
-except ConnectionError as _err:
+except ConnectionError:
     # log-level: error
-    _log(40, "Cannot connect to the bootloaders ipc server socket", exc_info=_err)
+    _log(40, "Failed to connect to the bootloader's IPC server!", exc_info=True)
 
 
 def _check_connection(func):
@@ -127,9 +137,8 @@ def _check_connection(func):
         :raises RuntimeError: if the module was not initialized correctly.
         """
         if _initialized and _ipc_socket_closed:
-            _log(
-                20, "The module has been disabled, so the use of the splash screen is no longer supported."
-            )  # log-level: info
+            if _ipc_port != 0:
+                _log(20, "Connection to splash screen has already been closed.")  # log-level: info
             return
         elif not _initialized:
             raise RuntimeError("This module is not initialized; did it fail to load?")
@@ -158,7 +167,7 @@ def _send_command(cmd, args=None):
     try:
         _ipc_socket.sendall(full_cmd.encode("utf-8") + FLUSH_CHARACTER)
     except OSError as err:
-        raise ConnectionError("Unable to send '%s' to the bootloader" % full_cmd) from err
+        raise ConnectionError(f"Unable to send command {full_cmd!r} to the bootloader") from err
 
 
 def is_alive():

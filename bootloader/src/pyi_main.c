@@ -163,6 +163,8 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
         pyi_unsetenv("_PYI_PARENT_PROCESS_LEVEL");
 
+        pyi_unsetenv("_PYI_SPLASH_IPC");
+
 #if defined(__linux__)
         pyi_unsetenv("_PYI_LINUX_PROCESS_NAME"); /* Linux only */
 #endif
@@ -386,9 +388,14 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
     /* Check if splash screen is available and should be set up. It
      * should be set up by the parent process of onefile application,
-     * and in main process of onedir application. TODO: it should be
-     * gracefully suppressed in spawned subprocesses. */
-    if (
+     * and in main process of onedir application. It should be gracefully
+     * suppressed in spawned subprocesses. */
+    if (pyi_ctx->process_level >= PYI_PROCESS_LEVEL_SUBPROCESS) {
+        PYI_DEBUG("LOADER: spawned subprocess -  suppressing splash screen...\n");
+        /* Let `pyi_splash` module know that splash screen is intentionally
+         * suppressed, by setting _PYI_SPLASH_IPC to 0. */
+         pyi_setenv("_PYI_SPLASH_IPC", "0");
+    } else if (
         (pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) ||
         (!pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_MAIN)
     ) {

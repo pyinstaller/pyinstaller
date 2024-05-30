@@ -1,0 +1,4 @@
+The splash screen is now automatically suppressed in worker sub-processes
+spawned via ``sys.executable``. The splash screen is not shown, and
+functions from mod:`pyi_splash` become no-op without raising errors
+or displaying warning messages.
