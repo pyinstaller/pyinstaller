@@ -576,6 +576,12 @@ def test_Qt_QtWebEngineQuick_PySide6(pyi_builder):
 # QtMultimedia test that triggers error when the module's plugins are missing (#7352).
 @QtPyLibs
 def test_Qt_QtMultimedia_player_init(pyi_builder, QtPyLib):
+    # QtMultimedia in PyQt6-Qt6 6.7.1 does not seem to be compatible with PyQt6 6.7.0 (the PyQt6-Qt6 6.7.1 update was
+    # pushed on Jun 2 2024 without PyQt6 itself being updated).
+    if QtPyLib == 'PyQt6':
+        if check_requirement('PyQt6-Qt6 == 6.7.1') and check_requirement('PyQt6 == 6.7.0'):
+            pytest.skip('QtMultimedia is broken under PyQt6 6.7.0 and PyQt6-Qt6 6.7.1.')
+
     pyi_builder.test_source(
         """
         import sys
