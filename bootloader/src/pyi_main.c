@@ -93,6 +93,7 @@ int
 pyi_main(PYI_CONTEXT *pyi_ctx)
 {
     char *env_archive_file;
+    char *env_parent_process_level;
     bool reset_environment;
 
 #ifdef _WIN32
@@ -123,8 +124,6 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     /* Check if archive contains extractable entries - this implies
      * that we are running in onefile mode */
     pyi_ctx->is_onefile = pyi_ctx->archive->contains_extractable_entries;
-    pyi_ctx->needs_to_extract = pyi_ctx->is_onefile;
-
     PYI_DEBUG("LOADER: application has %s semantics...\n", pyi_ctx->is_onefile ? "onefile" : "onedir");
 
     /* Check if existing PyInstaller run-time environment exists, and
@@ -162,13 +161,59 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
         /* Clear PyInstaller environment variables */
         pyi_unsetenv("_PYI_APPLICATION_HOME_DIR");
 
-#if !defined(_WIN32) && !defined(__APPLE__)
-        pyi_unsetenv("_PYI_POSIX_ONEDIR_MODE"); /* POSIX (other than macOS) only */
-#endif
+        pyi_unsetenv("_PYI_PARENT_PROCESS_LEVEL");
 
 #if defined(__linux__)
         pyi_unsetenv("_PYI_LINUX_PROCESS_NAME"); /* Linux only */
 #endif
+    }
+
+    /* Use _PYI_PARENT_PROCESS_LEVEL environment variable to infer the
+     * level (type) of this process:
+     *  - parent (launcher) process
+     *  - main (application) process
+     *  - subprocess spawned from main application process. */
+    env_parent_process_level = pyi_getenv("_PYI_PARENT_PROCESS_LEVEL");
+    if (!env_parent_process_level || !env_parent_process_level[0]) {
+        /* We are either parent/launcher process of a onefile application,
+         * or main/application process of a onedir application.
+         *
+         * On POSIX systems other than macOS, our onedir executables
+         * restart ourselves after setting library search path; we mark
+         * the main process before restart as parent/launcher, in order
+         * to handle restart in `_pyi_main_handle_posix_onedir`. */
+        if (pyi_ctx->is_onefile) {
+            pyi_ctx->process_level = PYI_PROCESS_LEVEL_PARENT;
+        } else {
+#if !defined(_WIN32) && !defined(__APPLE__)
+            pyi_ctx->process_level = PYI_PROCESS_LEVEL_PARENT; /* POSIX */
+#else
+            pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN; /* Windows, macOS */
+#endif
+        }
+    } else if (strcmp(env_parent_process_level, "0") == 0) {
+        /* We are main application process of a onefile application,
+         * or main application process of a onedir application after
+         * restart (POSIX systems other than macOS). */
+        pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN;
+    } else if (strcmp(env_parent_process_level, "1") == 0) {
+        /* We are a sub-process spawned from the main application process,
+         * using the same executable (e.g., via sys.executable). */
+        pyi_ctx->process_level = PYI_PROCESS_LEVEL_SUBPROCESS;
+    } else {
+        PYI_ERROR("Invalid value in _PYI_PARENT_PROCESS_LEVEL: %s\n", env_parent_process_level);
+        return -1;
+    }
+    free(env_parent_process_level);
+
+    PYI_DEBUG("LOADER: process level = %d\n", pyi_ctx->process_level);
+
+    /* Store our process level in _PYI_PARENT_PROCESS_LEVEL for potential
+     * child processes. If we are already in a spawned child sub-process,
+     * leave the environment variable unchanged, as we do not keep track
+     * of levels beyond that. */
+    if (pyi_ctx->process_level < PYI_PROCESS_LEVEL_SUBPROCESS) {
+        pyi_setenv("_PYI_PARENT_PROCESS_LEVEL", pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT ? "0" : "1");
     }
 
     /* Read all applicable run-time options from the PKG archive */
@@ -209,32 +254,9 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     /* Infer the process type (onefile parent, onefile child, onedir),
      * and based on that, determine the application's top-level directory. */
     if (pyi_ctx->is_onefile) {
-        char *env_app_home_dir = NULL;
-
-        /* Check if PyInstaller's environment has already been set. This
-         * indicates that we are in the child process, and we do not need
-         * to extract files. */
-
-        /* On Windows, environment variables are set/retrieved via
-         * wide-char API, and encoded/decoded to/from UTF8, so the path
-         * here is unicode. On POSIX systems, the local 8-bit encoding
-         * is used. */
-        env_app_home_dir = pyi_getenv("_PYI_APPLICATION_HOME_DIR");
-        PYI_DEBUG("LOADER: _PYI_APPLICATION_HOME_DIR is %s\n", (env_app_home_dir ? env_app_home_dir : "not set"));
-
-        if (env_app_home_dir && env_app_home_dir[0]) {
-            /* This is a child process; reset the needs-to-extract flag */
-            PYI_DEBUG("LOADER: this is child process of onefile application.\n");
-            pyi_ctx->needs_to_extract = 0;
-
-            /* Copy the application's top-level directory from environment */
-            if (snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", env_app_home_dir) >= PYI_PATH_MAX) {
-                PYI_ERROR("Path exceeds PYI_PATH_MAX limit.\n");
-                return -1;
-            }
-
-            free(env_app_home_dir);
-        } else {
+        if (pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) {
+            /* Parent process of onefile application; we need to unpack
+             * into ephemeral application top-level directory. */
             PYI_DEBUG("LOADER: this is parent process of onefile application.\n");
 
             /* On Windows, initialize security descriptor for temporary
@@ -259,6 +281,32 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             }
 
             PYI_DEBUG("LOADER: created temporary directory: %s\n", pyi_ctx->application_home_dir);
+        } else {
+            /* Child process; the path to ephemeral application top-level
+             * directory should be available in _PYI_APPLICATION_HOME_DIR
+             * environment variable. */
+            char *env_app_home_dir;
+
+            PYI_DEBUG(
+                "LOADER: this is child process of onefile application (%s).\n",
+                pyi_ctx->process_level == PYI_PROCESS_LEVEL_MAIN ?
+                "main application process" : "spawned subprocess"
+            );
+
+            env_app_home_dir = pyi_getenv("_PYI_APPLICATION_HOME_DIR");
+            if (!env_app_home_dir || !env_app_home_dir[0]) {
+                PYI_ERROR("_PYI_APPLICATION_HOME_DIR not set for onefile child process!\n");
+                return -1;
+            }
+
+            /* Copy the application's top-level directory from environment */
+            if (snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", env_app_home_dir) >= PYI_PATH_MAX) {
+                PYI_ERROR("Path exceeds PYI_PATH_MAX limit.\n");
+                free(env_app_home_dir);
+                return -1;
+            }
+
+            free(env_app_home_dir);
         }
     } else {
         char executable_dir[PYI_PATH_MAX];
@@ -336,11 +384,14 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     }
 #endif  /* defined(_WIN32) || defined(__CYGWIN__) */
 
-    /* Check if splash screen is available and should be displayed. It
-     * should be displayed by the parent process of onefile application,
-     * and in onedir process. In other words, everywhere but in onefile
-     * child process. */
-    if (!(pyi_ctx->is_onefile && !pyi_ctx->needs_to_extract)) {
+    /* Check if splash screen is available and should be set up. It
+     * should be set up by the parent process of onefile application,
+     * and in main process of onedir application. TODO: it should be
+     * gracefully suppressed in spawned subprocesses. */
+    if (
+        (pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) ||
+        (!pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_MAIN)
+    ) {
         PYI_DEBUG("LOADER: looking for splash screen resources...\n");
         pyi_ctx->splash = pyi_splash_context_new();
         if (pyi_splash_setup(pyi_ctx->splash, pyi_ctx) == 0) {
@@ -388,11 +439,13 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             PYI_DEBUG("LOADER: splash screen resources not found.\n");
             pyi_splash_context_free(&pyi_ctx->splash);
         }
+    } else {
+        PYI_DEBUG("LOADER: process is not eligible for splash screen\n");
     }
 
     /* Split execution between onefile parent process vs. onefile child
      * process / onedir process. */
-    if (pyi_ctx->needs_to_extract) {
+    if (pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) {
         /* Onefile parent */
         return _pyi_main_onefile_parent(pyi_ctx);
     } else {
@@ -1081,18 +1134,9 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
 static int
 _pyi_main_handle_posix_onedir(PYI_CONTEXT *pyi_ctx)
 {
-    char *env_variable;
-    int already_restarted;
-
-    /* Check the environment variable */
-    env_variable = pyi_getenv("_PYI_POSIX_ONEDIR_MODE");
-    already_restarted = env_variable && strcmp(env_variable, "1") == 0;
-    free(env_variable);
-
-    pyi_unsetenv("_PYI_POSIX_ONEDIR_MODE");
-
-    if (already_restarted) {
-        PYI_DEBUG("LOADER: POSIX onedir process has already restarted itself.\n");
+    /* Check if we need to restart */
+    if (pyi_ctx->process_level > PYI_PROCESS_LEVEL_PARENT) {
+        PYI_DEBUG("LOADER: POSIX onedir process has already restarted itself (level = %d).\n", pyi_ctx->process_level);
         return 0;
     }
 
@@ -1104,10 +1148,6 @@ _pyi_main_handle_posix_onedir(PYI_CONTEXT *pyi_ctx)
     if (pyi_utils_set_library_search_path(pyi_ctx->application_home_dir) < 0) {
         return -1;
     }
-
-    /* Set environment variable to signal the bootloader that the process
-     * has already been restarted. */
-    pyi_setenv("_PYI_POSIX_ONEDIR_MODE", "1");
 
     /* Restart the process, by calling execvp() without fork(). */
     /* NOTE: the codepath that ended up here does not perform any

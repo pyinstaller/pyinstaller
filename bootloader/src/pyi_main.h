@@ -51,6 +51,27 @@ enum PYI_HIDE_CONSOLE
 #endif
 
 
+/* Process levels */
+enum PYI_PROCESS_LEVEL
+{
+    /* Parent / launcher process in onefile applications; unpacks the
+     * application, and starts the main application process. This value
+     * is also used to designate original main process of onedir
+     * applications on POSIX systems (other than macOS), before the
+     * executable restarts itself. */
+    PYI_PROCESS_LEVEL_PARENT = 0,
+    /* Main application process, which starts the python interpreter and
+     * runs user's program. In onefile builds, this is a child process
+     * of parent/launcher process. In onedir builds, this is "top-level"
+     * process. */
+    PYI_PROCESS_LEVEL_MAIN = 1,
+    /* A sub-process spawned from the main application process using the
+     * same executable (e.g., spawned using sys.executable; for example,
+     * a multiprocessing worker process). */
+    PYI_PROCESS_LEVEL_SUBPROCESS = 2,
+};
+
+
 typedef struct _pyi_context
 {
     /* Command line arguments passed to the application.
@@ -116,12 +137,11 @@ typedef struct _pyi_context
      * that used MERGE() for multi-package. */
     unsigned char is_onefile;
 
-    /* Flag indicating whether the process needs to extract files
-     * to temporary directory. In application with onefile semantics
-     * (`is_onefile = 1`), this flag should be set to 1 in the parent
-     * process and to 0 in the child process. In application without
-     * onefile semantics, it should always be 0. */
-    unsigned char needs_to_extract;
+    /* Process level of this process. See definitions of PYI_PROCESS_LEVEL
+     * enum. Used to determine whether onefile process should unpack
+     * itself or expect to already be unpacked, whether splash screen
+     * should be set up or not, etc. */
+    unsigned char process_level;
 
     /* Application's top-level directory (sys._MEIPASS), where the data
      * and shared libraries are. For applications with onefile semantics,

@@ -1,0 +1,7 @@
+Implemented explicit tracking of (sub)process level via newly-introduced
+``_PYI_PARENT_PROCESS_LEVEL`` environment variable. This allows us to
+reliably distinguish between different process types: in ``onedir``
+applications, between the main application process and worker sub-process(es)
+spawned via ``sys.executable``; in ``onefile`` applications, between the
+parent process, the main application process, and worker sub-process(es)
+spawned via ``sys.executable``.
