@@ -19,7 +19,7 @@ babel==2.15.0
 Django==5.0.6; python_version >= '3.10'
 future==1.0.0
 gevent==24.2.1
-ipython==8.24.0; python_version >= '3.10'
+ipython==8.25.0; python_version >= '3.10'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==25.2.1; sys_platform != 'darwin' or python_version >= '3.8.7'
@@ -53,26 +53,21 @@ PyQtWebEngine==5.15.6
 # version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
 # thus the ABI is still changing.
 PyQt6==6.7.0
-PyQt6-Qt6==6.7.0
+PyQt6-Qt6==6.7.1
 PyQt6-3D==6.7.0
-PyQt6-3D-Qt6==6.7.0
+PyQt6-3D-Qt6==6.7.1
 PyQt6-Charts==6.7.0
-PyQt6-Charts-Qt6==6.7.0
+PyQt6-Charts-Qt6==6.7.1
 PyQt6-DataVisualization==6.7.0
-PyQt6-DataVisualization-Qt6==6.7.0
+PyQt6-DataVisualization-Qt6==6.7.1
 PyQt6-NetworkAuth==6.7.0
-PyQt6-NetworkAuth-Qt6==6.7.0
+PyQt6-NetworkAuth-Qt6==6.7.1
 PyQt6-QScintilla==2.14.1  # Does not have a corresponding -Qt6 package
-# At the time of writing, x86_64 macOS wheel for PyQt6-WebEngine-Qt6 6.7.0 is missing due to its size
-# exceeding the size limit on PyPI. Work around this by using 6.6.x series for macOS x86_64.
-# TODO: remove this split once the wheel situation is sorted out on PyPI.
-PyQt6-WebEngine==6.7.0; sys_platform != 'darwin' or platform_machine != 'x86_64'
-PyQt6-WebEngine-Qt6==6.7.0; sys_platform != 'darwin' or platform_machine != 'x86_64'
-PyQt6-WebEngine==6.6.0; sys_platform == 'darwin' and platform_machine == 'x86_64'  # pyup: ignore
-PyQt6-WebEngine-Qt6==6.6.3; sys_platform == 'darwin' and platform_machine == 'x86_64'  # pyup: ignore
+PyQt6-WebEngine==6.7.0
+PyQt6-WebEngine-Qt6==6.7.1
 python-dateutil==2.9.0.post0
 pytz==2024.1
-requests==2.32.2
+requests==2.32.3
 scipy==1.13.1; python_version >= '3.9'
 # simplejson is used for text_c_extension
 simplejson==3.19.2
