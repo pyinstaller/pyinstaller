@@ -681,7 +681,7 @@ class BUNDLE(Target):
     @staticmethod
     def verify_bundle_signature(bundle_dir):
         # First, verify the bundle signature using codesign.
-        cmd_args = ['codesign', '--verify', '--all-architectures', '--deep', '--strict', bundle_dir]
+        cmd_args = ['/usr/bin/codesign', '--verify', '--all-architectures', '--deep', '--strict', bundle_dir]
         p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf8')
         if p.returncode:
             raise SystemError(
