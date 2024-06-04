@@ -91,3 +91,12 @@ def test_splash_screen_shutdown_manual(pyi_builder, script_dir):
         """,
         pyi_args=["--splash", splash_image],
     )
+
+
+# Check that splash screen is gracefully disabled in subprocesses spawned via sys.executable
+def test_pyi_splash_in_subprocess(pyi_builder, script_dir):
+    splash_image = os.path.join(script_dir, '..', 'data', 'splash', 'image.png')
+    pyi_builder.test_script(
+        "pyi_splash_in_subprocess.py",
+        pyi_args=["--splash", splash_image],
+    )
