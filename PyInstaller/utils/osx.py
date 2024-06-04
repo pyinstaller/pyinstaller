@@ -359,7 +359,7 @@ def remove_signature_from_binary(filename):
     Remove the signature from all architecture slices of the given binary file using the codesign utility.
     """
     logger.debug("Removing signature from file %r", filename)
-    cmd_args = ['codesign', '--remove', '--all-architectures', filename]
+    cmd_args = ['/usr/bin/codesign', '--remove', '--all-architectures', filename]
     p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8')
     if p.returncode:
         raise SystemError(f"codesign command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}")
@@ -381,7 +381,9 @@ def sign_binary(filename, identity=None, entitlements_file=None, deep=False):
         extra_args.append('--deep')
 
     logger.debug("Signing file %r", filename)
-    cmd_args = ['codesign', '-s', identity, '--force', '--all-architectures', '--timestamp', *extra_args, filename]
+    cmd_args = [
+        '/usr/bin/codesign', '-s', identity, '--force', '--all-architectures', '--timestamp', *extra_args, filename
+    ]
     p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8')
     if p.returncode:
         raise SystemError(f"codesign command ({cmd_args}) failed with error code {p.returncode}!\noutput: {p.stdout}")
