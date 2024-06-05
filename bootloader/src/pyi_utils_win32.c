@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sddl.h> /* ConvertStringSecurityDescriptorToSecurityDescriptorW */
+#include <psapi.h> /* K32EnumProcessModules, GetModuleFileNameExW */
 
 /* PyInstaller headers. */
 #include "pyi_utils.h"
@@ -782,6 +783,108 @@ void pyi_win32_minimize_console()
 }
 
 #endif /* !defined(WINDOWED) */
+
+
+/**********************************************************************\
+ *      Force-unload of bundled DLLs from onefile parent process      *
+\**********************************************************************/
+/* Our last resort in ensuring that onefile application can clean up
+ * its temporary directory... */
+void
+pyi_win32_force_unload_bundled_dlls(PYI_CONTEXT *pyi_ctx)
+{
+    HANDLE process_handle;
+    HMODULE *loaded_dlls = NULL;
+    DWORD loaded_dlls_size = 0;
+    int num_dlls;
+    int num_problematic_dlls;
+    wchar_t dll_filename[PYI_PATH_MAX];
+    wchar_t application_home_dir[PYI_PATH_MAX];
+    size_t application_home_dir_len;
+    int i;
+
+    process_handle = GetCurrentProcess(); /* Psedo-handle; does not need to be closed */
+
+    /* Query the required size for lpModules */
+    if (EnumProcessModules(process_handle, loaded_dlls, 0, &loaded_dlls_size) == 0) {
+        return;
+    }
+    if (loaded_dlls_size <= 0) {
+        return;
+    }
+
+    /* Allocate the array */
+    loaded_dlls = calloc(loaded_dlls_size, 1);
+    if (!loaded_dlls) {
+        return;
+    }
+
+    /* Read the loaded DLLs handles into array */
+    if (EnumProcessModules(process_handle, loaded_dlls, loaded_dlls_size, &loaded_dlls_size) == 0) {
+        goto cleanup;
+    }
+
+    /* Convert the application's temporary directory path to wide-char
+     * for path comparison */
+    if (!pyi_win32_utf8_to_wcs(pyi_ctx->application_home_dir, application_home_dir, PYI_PATH_MAX)) {
+        goto cleanup;
+    }
+    application_home_dir_len = wcslen(application_home_dir);
+
+    /* Go over loaded DLLs; display them for debug purposes, and identify
+     * the ones that originate from application's top level directory.
+     * The handles of such DLLs are pushed to the beginning of the
+     * array, so that we can iterate over problematic DLLs in subsequent
+     * loop. */
+    num_dlls = loaded_dlls_size / sizeof(HMODULE);
+    num_problematic_dlls = 0;
+    PYI_DEBUG_W(L"LOADER: found %d loaded DLLs...\n", num_dlls);
+    for (i = 0; i < num_dlls; i++) {
+        /* Query the DLL filename */
+        if (GetModuleFileNameExW(process_handle, loaded_dlls[i], dll_filename, PYI_PATH_MAX) == 0) {
+            PYI_DEBUG_W(L"LOADER: could not resolve DLL's name - skipping!\n");
+            continue;
+        }
+        PYI_DEBUG_W(L"LOADER: loaded DLL: %ls\n", dll_filename);
+
+        /* Check if the DLL comes from application's top-level directory */
+        if (_wcsnicmp(application_home_dir, dll_filename, application_home_dir_len) == 0) {
+            loaded_dlls[num_problematic_dlls++] = loaded_dlls[i]; /* Move to start of array */
+        }
+    }
+
+    PYI_DEBUG_W(L"LOADER: found %d DLL(s) loaded from application's temporary directory!\n", num_problematic_dlls);
+    for (i = 0; i < num_problematic_dlls; i++) {
+        int num_attempts = 0;
+
+        /* Query the DLL filename - a failure here indicates that the DLL
+         * might have been unloaded as result of force-unloading another
+         * DLL... */
+        if (GetModuleFileNameExW(process_handle, loaded_dlls[i], dll_filename, PYI_PATH_MAX) == 0) {
+            PYI_DEBUG_W(L"LOADER: could not resolve DLL's name (was it unloaded?) - skipping!\n");
+            continue;
+        }
+
+        /* Keep calling FreeLibrary() until it fails - which hopefully
+         * means that the offending DLL is gone for good. */
+        while (1) {
+            PYI_DEBUG_W(L"LOADER: forcing unload of %ls\n", dll_filename);
+            num_attempts++;
+            if (FreeLibrary(loaded_dlls[i]) == 0) {
+                PYI_DEBUG_W(L"LOADER: DLL unloaded after %d attempt(s)!\n", num_attempts);
+                break;
+            }
+            /* Make sure we don't loop forever, just in case. */
+            if (num_attempts >= 32) {
+                PYI_DEBUG_W(L"LOADER: giving up after %d attempts!\n", num_attempts);
+                break;
+            }
+        }
+    }
+
+cleanup:
+    free(loaded_dlls);
+}
 
 
 #endif /* ifdef _WIN32 */
