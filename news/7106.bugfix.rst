@@ -1,0 +1,3 @@
+(Windows) Work around the problem with ``VCRUNTIME140.dll`` DLL file not
+being removed from application's temporary directory when building
+splash-screen-enabled onefile application with UPX enabled.

@@ -548,6 +548,7 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
 static int
 _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
 {
+    int cleanup_status;
     int ret;
 
     /* Extract files to temporary directory */
@@ -652,8 +653,38 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
     pyi_splash_finalize(pyi_ctx->splash);
     pyi_splash_context_free(&pyi_ctx->splash);
 
-    /* Delete the application's temporary directory */
-    if (pyi_recursive_rmdir(pyi_ctx->application_home_dir) < 0) {
+    /* Remove the application's temporary directory */
+    PYI_DEBUG("LOADER: removing temporary directory: %s\n", pyi_ctx->application_home_dir);
+    cleanup_status = pyi_recursive_rmdir(pyi_ctx->application_home_dir);
+
+#ifdef _WIN32
+    /* On Windows, we might fail to remove temporary directory due to
+     * locked file. This might be due to snafu in the application code
+     * (for example, the applicaton code spawned another subprocess that
+     * is still alive and keeping files open), but it might also be
+     * due to Tcl/Tk shared libs pulling in dependencies and failing to
+     * release them when they are unloaded.
+     *
+     * For example, tcl86.dll from mingw-w64-i686-tcl 8.6.12-3 (32-bit
+     * msys2/mingw32 environment) pulls in libgcc_s_dw2-1.dll and
+     * libwinpthread-1.dll, and does not unload them when it is unloaded.
+     * Similar situation was observed in 64-bit builds with UPX-processed
+     * Tcl/Tk DLLs, which leak VCRUNTIME140.dll.
+     *
+     * So we go over DLLs loaded in the process, find the ones that
+     * originate from the application's temporary directory, and try
+     * to force-unload them, before repeating the directory removal
+     * attempt. Force-unloading DLLs is risky and might crash the process,
+     * but at this point, we have nothing left to lose... */
+    if (cleanup_status < 0) {
+        PYI_DEBUG_W(L"LOADER: failed to remove temporary directory - trying to force unload DLLs...\n");
+        pyi_win32_force_unload_bundled_dlls(pyi_ctx);
+        PYI_DEBUG_W(L"LOADER: trying to remove temporary directory again...\n");
+        cleanup_status = pyi_recursive_rmdir(pyi_ctx->application_home_dir);
+    }
+#endif
+
+    if (cleanup_status < 0) {
         /* Return error if we failed to remove temporary directory while
          * strict unpack mode is enabled. */
         if (pyi_ctx->strict_unpack_mode) {

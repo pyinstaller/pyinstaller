@@ -74,6 +74,10 @@ void pyi_win32_hide_console();
 void pyi_win32_minimize_console();
 #endif
 
+/* Force-unload of bundled DLLs from onefile parent process (Windows only) */
+#if defined(_WIN32)
+void pyi_win32_force_unload_bundled_dlls(PYI_CONTEXT *pyi_ctx);
+#endif
 
 /* Windows low-level helpers */
 #ifdef _WIN32
