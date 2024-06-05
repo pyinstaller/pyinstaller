@@ -387,6 +387,8 @@ pyi_splash_load_shared_libaries(SPLASH_CONTEXT *splash)
 int
 pyi_splash_finalize(SPLASH_CONTEXT *splash)
 {
+    bool in_tcl_thread;
+
     if (splash == NULL) {
         return 0;
     }
@@ -410,7 +412,11 @@ pyi_splash_finalize(SPLASH_CONTEXT *splash)
         return 0;
     }
 
-    if (splash->thread_id == PI_Tcl_GetCurrentThread()) {
+    /* Determine if we are called from Tcl thread or main thread */
+    in_tcl_thread = splash->thread_id == PI_Tcl_GetCurrentThread();
+    PYI_DEBUG("SPLASH: cleaning up splash screen resources (%s)...\n", in_tcl_thread ? "Tcl thread" : "main thread");
+
+    if (in_tcl_thread) {
         /* We are in the Tcl interpreter's thread. */
         if (splash->interp != NULL) {
             /* We can only call this function safely from the Tcl
@@ -447,11 +453,13 @@ pyi_splash_finalize(SPLASH_CONTEXT *splash)
         /* If the shared libraries are not yet unloaded, unload them here,
          * as otherwise their files cannot be deleted. */
         if (splash->dll_tcl != NULL) {
+            PYI_DEBUG("SPLASH: unloading Tcl shared library...\n");
             pyi_utils_dlclose(splash->dll_tcl);
             splash->dll_tcl = NULL;
         }
 
         if (splash->dll_tk != NULL) {
+            PYI_DEBUG("SPLASH: unloading Tk shared library...\n");
             pyi_utils_dlclose(splash->dll_tk);
             splash->dll_tk = NULL;
         }
