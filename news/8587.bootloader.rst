@@ -1,0 +1,3 @@
+Fix the order in which Tcl and Tk shared library are unloaded from the
+splash-screen enabled frozen application, to prevent the process from
+crashing during application cleanup (observed on Windows).

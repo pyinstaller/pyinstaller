@@ -399,14 +399,14 @@ pyi_splash_finalize(SPLASH_CONTEXT *splash)
      * bootloader thread, and we only need to clean up the shared libraries,
      * in case any of them were successfully loaded. */
     if (splash->dlls_fully_loaded != true) {
-        if (splash->dll_tcl != NULL) {
-            pyi_utils_dlclose(splash->dll_tcl);
-            splash->dll_tcl = NULL;
-        }
-
         if (splash->dll_tk != NULL) {
             pyi_utils_dlclose(splash->dll_tk);
             splash->dll_tk = NULL;
+        }
+
+        if (splash->dll_tcl != NULL) {
+            pyi_utils_dlclose(splash->dll_tcl);
+            splash->dll_tcl = NULL;
         }
 
         return 0;
@@ -452,16 +452,20 @@ pyi_splash_finalize(SPLASH_CONTEXT *splash)
 
         /* If the shared libraries are not yet unloaded, unload them here,
          * as otherwise their files cannot be deleted. */
-        if (splash->dll_tcl != NULL) {
-            PYI_DEBUG("SPLASH: unloading Tcl shared library...\n");
-            pyi_utils_dlclose(splash->dll_tcl);
-            splash->dll_tcl = NULL;
-        }
-
         if (splash->dll_tk != NULL) {
             PYI_DEBUG("SPLASH: unloading Tk shared library...\n");
-            pyi_utils_dlclose(splash->dll_tk);
+            if (pyi_utils_dlclose(splash->dll_tk) < 0) {
+                PYI_DEBUG("SPLASH: failed to unload Tk shared library!\n");
+            }
             splash->dll_tk = NULL;
+        }
+
+        if (splash->dll_tcl != NULL) {
+            PYI_DEBUG("SPLASH: unloading Tcl shared library...\n");
+            if (pyi_utils_dlclose(splash->dll_tcl) < 0) {
+                PYI_DEBUG("SPLASH: failed to unload Tcl shared library!\n");
+            }
+            splash->dll_tcl = NULL;
         }
     }
 
