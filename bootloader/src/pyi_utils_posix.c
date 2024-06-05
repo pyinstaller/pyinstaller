@@ -331,14 +331,21 @@ pyi_recursive_rmdir(const char *dir_path)
 
         /* Deteremine the type of entry, and remove it. Use lstat()
          * instead of stat() in order to prevent recursion into symlinked
-         * directories. Ignore errors here - if we fail to remove an entry
-         * here, we will also fail to remove the top-level directory.*/
+         * directories. On errors, emit debug messages to simplify
+         * debugging, and keep going on. We want to remove everything we
+         * can; if we fail to remove an entry here, we will also fail
+         * to remove the top-level directory, and will return error
+         * there and then. */
         if (lstat(entry_path, &stat_buf) == 0) {
             if (S_ISDIR(stat_buf.st_mode) ) {
                 /* Recurse into sub-directory */
-                pyi_recursive_rmdir(entry_path);
+                if (pyi_recursive_rmdir(entry_path) < 0) {
+                    PYI_DEBUG("LOADER: failed to remove directory: %s\n", entry_path);
+                }
             } else {
-                unlink(entry_path);
+                if (unlink(entry_path) < 0) {
+                    PYI_DEBUG("LOADER: failed to remove file: %s\n", entry_path);
+                }
             }
         }
     }

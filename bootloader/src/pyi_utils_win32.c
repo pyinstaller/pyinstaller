@@ -354,9 +354,14 @@ _pyi_recursive_rmdir(const wchar_t *dir_path)
             continue;
         }
 
-        /* Deteremine the type of entry, and remove it. Ignore errors
-         * here - if we fail to  remove an entry here, we will also fail
-         * to remove the top-level directory.*/
+        /* Deteremine the type of entry, and remove it. On errors, emit
+         * debug messages to simplify debugging, and keep going on. We
+         * want to remove everything we can; if we fail to remove an
+         * entry here, we will also fail to remove the top-level
+         * directory, and will return error there and then.
+         * NOTE: do NOT emit warning or error messages here, as those
+         * use dialogs in windowed/noconsole mode, and we don't want to
+         * spam user with those! */
         if (entry_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
             /* Avoid recursing into symlinked directories */
             unsigned char is_symlink = 0;
@@ -368,15 +373,24 @@ _pyi_recursive_rmdir(const wchar_t *dir_path)
             }
 
             if (is_symlink) {
-                /* Remove only the symlink itself */
-                RemoveDirectoryW(entry_path);
+                /* Remove only the symlink itself; return value is 1 on
+                 * success, 0 on failure. */
+                if (RemoveDirectoryW(entry_path) == 0) {
+                    PYI_DEBUG_W(L"LOADER: failed to remove directory symbolic link: %ls\n", entry_path);
+                }
             } else {
-                /* Recurse into directory */
-                _pyi_recursive_rmdir(entry_path);
+                /* Recurse into directory; return value is 0 on success,
+                 * -1 on failure. */
+                if (_pyi_recursive_rmdir(entry_path) < 0) {
+                    PYI_DEBUG_W(L"LOADER: failed to remove directory: %ls\n", entry_path);
+                }
             }
         } else {
-            /* Delete file (or symlink to a file) */
-            DeleteFileW(entry_path);
+            /* Delete file (or symlink to a file); return value is 1 on
+             * success, 0 on failure. */
+            if (DeleteFileW(entry_path) == 0) {
+                PYI_DEBUG_W(L"LOADER: failed to remove file: %ls\n", entry_path);
+            }
         }
     } while (FindNextFileW(handle, &entry_info) != 0);
 
