@@ -537,6 +537,7 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
     pyi_utils_free_args(pyi_ctx);
 #endif
 
+    PYI_DEBUG("LOADER: end of process reached!\n");
     return ret;
 }
 
@@ -674,6 +675,7 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
     }
 #endif
 
+    PYI_DEBUG("LOADER: end of process reached!\n");
     return ret;
 }
 
