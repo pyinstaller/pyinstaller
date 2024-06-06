@@ -40,6 +40,7 @@ PYI_DECLPROC(Tcl_CreateThread);
 PYI_DECLPROC(Tcl_GetCurrentThread);
 PYI_DECLPROC(Tcl_MutexLock);
 PYI_DECLPROC(Tcl_MutexUnlock);
+PYI_DECLPROC(Tcl_MutexFinalize);
 PYI_DECLPROC(Tcl_ConditionFinalize);
 PYI_DECLPROC(Tcl_ConditionNotify);
 PYI_DECLPROC(Tcl_ConditionWait);
@@ -88,6 +89,7 @@ pyi_splashlib_bind_functions(pyi_dylib_t dll_tcl, pyi_dylib_t dll_tk)
     PYI_GETPROC(dll_tcl, Tcl_GetCurrentThread);
     PYI_GETPROC(dll_tcl, Tcl_MutexLock);
     PYI_GETPROC(dll_tcl, Tcl_MutexUnlock);
+    PYI_GETPROC(dll_tcl, Tcl_MutexFinalize);
     PYI_GETPROC(dll_tcl, Tcl_ConditionFinalize);
     PYI_GETPROC(dll_tcl, Tcl_ConditionNotify);
     PYI_GETPROC(dll_tcl, Tcl_ConditionWait);
