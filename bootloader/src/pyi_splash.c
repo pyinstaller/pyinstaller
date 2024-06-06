@@ -382,22 +382,18 @@ pyi_splash_load_shared_libaries(SPLASH_CONTEXT *splash)
 
 /*
  * Finalizes the splash screen.
- * This function is normally called at exiting the splash screen.
  */
 int
 pyi_splash_finalize(SPLASH_CONTEXT *splash)
 {
-    bool in_tcl_thread;
-
     if (splash == NULL) {
         return 0;
     }
 
     /* If we failed to fully attach Tcl/Tk libraries (either because one
      * of the libraries failed to load, or because we failed to load one
-     * of the symbols from the libraries), we are guaranteed to be in the
-     * bootloader thread, and we only need to clean up the shared libraries,
-     * in case any of them were successfully loaded. */
+     * of the symbols from the libraries), we only need to clean up the
+     * shared libraries, in case any of them were successfully loaded. */
     if (splash->dlls_fully_loaded != true) {
         if (splash->dll_tk != NULL) {
             pyi_utils_dlclose(splash->dll_tk);
@@ -412,63 +408,65 @@ pyi_splash_finalize(SPLASH_CONTEXT *splash)
         return 0;
     }
 
-    /* Determine if we are called from Tcl thread or main thread */
-    in_tcl_thread = splash->thread_id == PI_Tcl_GetCurrentThread();
-    PYI_DEBUG("SPLASH: cleaning up splash screen resources (%s)...\n", in_tcl_thread ? "Tcl thread" : "main thread");
+    PYI_DEBUG("SPLASH: cleaning up splash screen resources...\n");
 
-    if (in_tcl_thread) {
-        /* We are in the Tcl interpreter's thread. */
-        if (splash->interp != NULL) {
-            /* We can only call this function safely from the Tcl
-             * interpreter's thread. */
-            PI_Tcl_DeleteInterp(splash->interp);
-            /* Prevent dangling pointers. */
-            splash->interp = NULL;
-        }
+    /* Ensure this block is completely executed either before cleanup
+     * code in _splash_init (in which case, splash->interp is still
+     * non-NULL, and we wait for splash screen thread to signal its
+     * exit) or after it (in which case, splash->interp is NULL, and
+     * we can skip this part). */
+    PI_Tcl_MutexLock(&splash->cleanup_mutex);
+    if (splash->interp != NULL) {
+        PYI_DEBUG("SPLASH: splash screen thread still running; signalling it to shut down...\n");
+
+        /* If the Tcl thread still exists, we notify it and wait for it
+         * to exit. */
+        PI_Tcl_MutexLock(&splash->exit_mutex);
+        splash->exit_main_loop = true;
+
+        /* We need to post a fake event into the event queue in order
+         * to unblock Tcl_DoOneEvent, so the Tcl main loop can exit. */
+        pyi_splash_send(splash, true, NULL, NULL);
+        PI_Tcl_MutexUnlock(&splash->cleanup_mutex); /* Allow cleanup code in _splash_init to proceed */
+        PI_Tcl_ConditionWait(&splash->exit_wait, &splash->exit_mutex, NULL);
+        PI_Tcl_MutexUnlock(&splash->exit_mutex);
+        PI_Tcl_ConditionFinalize(&splash->exit_wait);
+
+        PYI_DEBUG("SPLASH: splash screen thread has shut down.\n");
     } else {
-        /* We are in the bootloader's main thread. */
-        if (splash->interp != NULL) {
-            /* If the Tcl thread still exists, we notify it and wait
-             * for it to exit. */
-            PI_Tcl_MutexLock(&splash->exit_mutex);
-            splash->exit_main_loop = true;
-            /* We need to post a fake event into the event queue in order
-             * to unblock Tcl_DoOneEvent, so the Tcl main loop can exit. */
-            pyi_splash_send(splash, true, NULL, NULL);
-            PI_Tcl_ConditionWait(&splash->exit_wait, &splash->exit_mutex, NULL);
-            PI_Tcl_MutexUnlock(&splash->exit_mutex);
-            PI_Tcl_ConditionFinalize(&splash->exit_wait);
-        }
-        /* This function should only be called after python has been
-         * destroyed with Py_Finalize. Tcl/Tk/tkinter do **not** support
-         * multiple instances of themselves due to restrictions of Tcl
-         * (for reference see _tkinter PyMethodDef m_size field or
-         * disabled registration of Tcl_Finalize inside _tkinter.c)
-         * The python program may have imported tkinter, which keeps
-         * its own tcl interpreter. If we finalized Tcl here, the
-         * Tcl interpreter of tkinter would also be finalized, resulting
-         * in a weird state of tkinter. */
-        PI_Tcl_Finalize();
-
-        /* If the shared libraries are not yet unloaded, unload them here,
-         * as otherwise their files cannot be deleted. */
-        if (splash->dll_tk != NULL) {
-            PYI_DEBUG("SPLASH: unloading Tk shared library...\n");
-            if (pyi_utils_dlclose(splash->dll_tk) < 0) {
-                PYI_DEBUG("SPLASH: failed to unload Tk shared library!\n");
-            }
-            splash->dll_tk = NULL;
-        }
-
-        if (splash->dll_tcl != NULL) {
-            PYI_DEBUG("SPLASH: unloading Tcl shared library...\n");
-            if (pyi_utils_dlclose(splash->dll_tcl) < 0) {
-                PYI_DEBUG("SPLASH: failed to unload Tcl shared library!\n");
-            }
-            splash->dll_tcl = NULL;
-        }
+        PI_Tcl_MutexUnlock(&splash->cleanup_mutex);
+        PYI_DEBUG("SPLASH: splash screen thread has already shut down.\n");
     }
 
+    /* This function should only be called after python has been
+     * destroyed with Py_Finalize. Tcl/Tk/tkinter do **not** support
+     * multiple instances of themselves due to restrictions of Tcl
+     * (for reference see _tkinter PyMethodDef m_size field or
+     * disabled registration of Tcl_Finalize inside _tkinter.c)
+     * The python program may have imported tkinter, which keeps
+     * its own tcl interpreter. If we finalized Tcl here, the
+     * Tcl interpreter of tkinter would also be finalized, resulting
+     * in a weird state of tkinter. */
+    PI_Tcl_Finalize();
+
+    /* If the shared libraries are not yet unloaded, unload them here,
+     * as otherwise their files cannot be deleted. */
+    if (splash->dll_tk != NULL) {
+        PYI_DEBUG("SPLASH: unloading Tk shared library...\n");
+        if (pyi_utils_dlclose(splash->dll_tk) < 0) {
+            PYI_DEBUG("SPLASH: failed to unload Tk shared library!\n");
+        }
+        splash->dll_tk = NULL;
+    }
+    if (splash->dll_tcl != NULL) {
+        PYI_DEBUG("SPLASH: unloading Tcl shared library...\n");
+        if (pyi_utils_dlclose(splash->dll_tcl) < 0) {
+            PYI_DEBUG("SPLASH: failed to unload Tcl shared library!\n");
+        }
+        splash->dll_tcl = NULL;
+    }
+
+    PYI_DEBUG("SPLASH: cleanup complete!\n");
     return 0;
 }
 
@@ -966,7 +964,16 @@ _splash_init(ClientData client_data)
     }
 
 cleanup:
-    pyi_splash_finalize(splash);
+    /* Synchronize with shutdown/cleanup part in pyi_splash_finalize()
+     * to prevent racing against it. */
+    PI_Tcl_MutexLock(&splash->cleanup_mutex);
+
+    PYI_DEBUG("SPLASH: starting clean-up in splash screen thread...\n");
+
+    /* Delete the Tcl interpreter. */
+    PI_Tcl_DeleteInterp(splash->interp);
+    splash->interp = NULL;
+
     PI_Tcl_MutexUnlock(&splash->context_mutex);
 
     /* In case the startup fails the main thread should continue; in
@@ -986,6 +993,9 @@ cleanup:
     PI_Tcl_MutexLock(&splash->exit_mutex);
     PI_Tcl_ConditionNotify(&splash->exit_wait);
     PI_Tcl_MutexUnlock(&splash->exit_mutex);
+
+    PYI_DEBUG("SPLASH: clean-up in splash screen thread complete!\n");
+    PI_Tcl_MutexUnlock(&splash->cleanup_mutex);
 
     TCL_THREAD_CREATE_RETURN;
 }
