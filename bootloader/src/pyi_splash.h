@@ -61,6 +61,8 @@ typedef struct _splash_context
     Tcl_Mutex context_mutex;
     Tcl_Mutex call_mutex;
 
+    Tcl_Mutex cleanup_mutex;
+
     /* This mutex/condition is to hold the bootloader until the splash screen
      * has been started */
     Tcl_Mutex start_mutex;
