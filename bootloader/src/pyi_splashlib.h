@@ -89,6 +89,7 @@ PYI_EXTDECLPROC(int, Tcl_CreateThread, (Tcl_ThreadId *, Tcl_ThreadCreateProc *, 
 PYI_EXTDECLPROC(Tcl_ThreadId, Tcl_GetCurrentThread, (void));
 PYI_EXTDECLPROC(void, Tcl_MutexLock, (Tcl_Mutex *));
 PYI_EXTDECLPROC(void, Tcl_MutexUnlock, (Tcl_Mutex *));
+PYI_EXTDECLPROC(void, Tcl_MutexFinalize, (Tcl_Mutex *));
 PYI_EXTDECLPROC(void, Tcl_ConditionFinalize, (Tcl_Condition *));
 PYI_EXTDECLPROC(void, Tcl_ConditionNotify, (Tcl_Condition *));
 PYI_EXTDECLPROC(void, Tcl_ConditionWait, (Tcl_Condition *, Tcl_Mutex *, const Tcl_Time *));

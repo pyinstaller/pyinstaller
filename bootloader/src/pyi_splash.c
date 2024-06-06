@@ -438,6 +438,13 @@ pyi_splash_finalize(SPLASH_CONTEXT *splash)
         PYI_DEBUG("SPLASH: splash screen thread has already shut down.\n");
     }
 
+    /* Cleanup mutexes */
+    PI_Tcl_MutexFinalize(&splash->context_mutex);
+    PI_Tcl_MutexFinalize(&splash->call_mutex);
+    PI_Tcl_MutexFinalize(&splash->cleanup_mutex);
+    PI_Tcl_MutexFinalize(&splash->start_mutex);
+    PI_Tcl_MutexFinalize(&splash->exit_mutex);
+
     /* This function should only be called after python has been
      * destroyed with Py_Finalize. Tcl/Tk/tkinter do **not** support
      * multiple instances of themselves due to restrictions of Tcl
