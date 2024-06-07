@@ -415,33 +415,30 @@ pyi_splash_finalize(SPLASH_CONTEXT *splash)
      * non-NULL, and we wait for splash screen thread to signal its
      * exit) or after it (in which case, splash->interp is NULL, and
      * we can skip this part). */
-    PI_Tcl_MutexLock(&splash->cleanup_mutex);
+    PI_Tcl_MutexLock(&splash->exit_mutex);
     if (splash->interp != NULL) {
         PYI_DEBUG("SPLASH: splash screen thread still running; signalling it to shut down...\n");
 
         /* If the Tcl thread still exists, we notify it and wait for it
          * to exit. */
-        PI_Tcl_MutexLock(&splash->exit_mutex);
         splash->exit_main_loop = true;
 
         /* We need to post a fake event into the event queue in order
          * to unblock Tcl_DoOneEvent, so the Tcl main loop can exit. */
         pyi_splash_send(splash, true, NULL, NULL);
-        PI_Tcl_MutexUnlock(&splash->cleanup_mutex); /* Allow cleanup code in _splash_init to proceed */
         PI_Tcl_ConditionWait(&splash->exit_wait, &splash->exit_mutex, NULL);
         PI_Tcl_MutexUnlock(&splash->exit_mutex);
         PI_Tcl_ConditionFinalize(&splash->exit_wait);
 
         PYI_DEBUG("SPLASH: splash screen thread has shut down.\n");
     } else {
-        PI_Tcl_MutexUnlock(&splash->cleanup_mutex);
+        PI_Tcl_MutexUnlock(&splash->exit_mutex);
         PYI_DEBUG("SPLASH: splash screen thread has already shut down.\n");
     }
 
     /* Cleanup mutexes */
     PI_Tcl_MutexFinalize(&splash->context_mutex);
     PI_Tcl_MutexFinalize(&splash->call_mutex);
-    PI_Tcl_MutexFinalize(&splash->cleanup_mutex);
     PI_Tcl_MutexFinalize(&splash->start_mutex);
     PI_Tcl_MutexFinalize(&splash->exit_mutex);
 
@@ -973,7 +970,7 @@ _splash_init(ClientData client_data)
 cleanup:
     /* Synchronize with shutdown/cleanup part in pyi_splash_finalize()
      * to prevent racing against it. */
-    PI_Tcl_MutexLock(&splash->cleanup_mutex);
+    PI_Tcl_MutexLock(&splash->exit_mutex);
 
     PYI_DEBUG("SPLASH: starting clean-up in splash screen thread...\n");
 
@@ -997,12 +994,9 @@ cleanup:
 
     /* We notify all conditions waiting for this thread to exit, if
      * there are any. */
-    PI_Tcl_MutexLock(&splash->exit_mutex);
     PI_Tcl_ConditionNotify(&splash->exit_wait);
-    PI_Tcl_MutexUnlock(&splash->exit_mutex);
-
     PYI_DEBUG("SPLASH: clean-up in splash screen thread complete!\n");
-    PI_Tcl_MutexUnlock(&splash->cleanup_mutex);
+    PI_Tcl_MutexUnlock(&splash->exit_mutex);
 
     TCL_THREAD_CREATE_RETURN;
 }
