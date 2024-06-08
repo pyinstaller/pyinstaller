@@ -217,6 +217,22 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
      * with Tcl, otherwise the behavior of Tcl is undefined. */
     PI_Tcl_FindExecutable(executable);
 
+    /* At the time of writing, Tcl on Windows does not support joinable
+     * threads. As per https://www.tcl.tk/man/tcl/TclLib/Thread.htm:
+     * "Windows currently does not support joinable threads. This flag
+     * value is therefore ignored on this platform."
+     * The same page further states "Trying to wait for the exit of a
+     * non-joinable thread or a thread which is already waited upon will
+     * result in an error." but trying to call Tcl_JoinThread() on windows
+     * seems to block forever. For now, disable joinable threads on
+     * Windows, and if https://github.com/tcltk/tcl/tree/windows-thread-join
+     * gets merged, implement version-based check. */
+#if defined(_WIN32)
+    splash->thread_joinable = false;
+#else
+    splash->thread_joinable = true;
+#endif
+
     /* We try to create a new thread (in which the Tcl interpreter will run) with
      * methods provided by Tcl. This function will return TCL_ERROR if it is
      * either not implemented (Tcl is not threaded) or an error occurs.
@@ -226,7 +242,7 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
         _splash_init, /* procedure/function to run in the new thread */
         splash, /* parameters to pass to procedure */
         0, /* use default stack size */
-        TCL_THREAD_JOINABLE /* create joinable thread, so we can wait for its exit with Tcl_JoinThread */
+        splash->thread_joinable ? TCL_THREAD_JOINABLE : TCL_THREAD_NOFLAGS /* flags */
     ) != TCL_OK) {
         PYI_ERROR("SPLASH: Tcl is not threaded. Only threaded Tcl is supported.\n");
         PI_Tcl_MutexUnlock(&splash->context_mutex);
@@ -437,11 +453,14 @@ pyi_splash_finalize(SPLASH_CONTEXT *splash)
     }
 
     /* Join the splash screen thread, to ensure it is fully finished */
-    if (splash->thread_id) {
+    if (splash->thread_joinable && splash->thread_id) {
         int ret;
         PYI_DEBUG("SPLASH: joining the splash screen thread...\n");
-        ret = PI_Tcl_JoinThread(splash->thread_id, NULL); /* We do not need thread's return status */
+        ret = PI_Tcl_JoinThread(splash->thread_id, NULL); /* We do not need thread's return code */
         PYI_DEBUG("SPLASH: splash screen thread join %s\n", ret == TCL_OK ? "succeeded." : "failed!");
+        /* ret is used only in debug messages; suppress variable-set-but-unused
+         * gcc warning in non-debug build */
+        (void)ret;
     }
 
     /* Cleanup mutexes */

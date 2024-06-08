@@ -30,6 +30,7 @@
 
 #define TCL_GLOBAL_ONLY 1
 
+#define TCL_THREAD_NOFLAGS 0
 #define TCL_THREAD_JOINABLE 1
 
 /* Opaque Tcl/Tk types */
