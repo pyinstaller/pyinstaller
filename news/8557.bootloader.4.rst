@@ -1,5 +1,0 @@
-(Windows) Bootloader now verifies the run-time temporary directory
-given via :option:`--runtime-tmpdir` option, and raises an error if
-either the drive is invalid or if the directory cannot be created
-(instead of creating the application's temporary directory in the root
-of the current drive).

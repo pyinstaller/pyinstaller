@@ -1,1 +1,0 @@
-Invalid hiddenimports (e.g. filenames instead of module names) are now a build error.

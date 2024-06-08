@@ -1,7 +1,0 @@
-(Windows) When setting up DLL search paths for binary dependency analysis,
-consider the directory where python executable is located 
-(i.e., ``os.path.dirname(sys._base_executable)``) in addition to 
-directory pointed to by ``sys.base_prefix``, in case the two differ. 
-This fixes discovery of ``python3.dll`` when using python that was
-locally built from source (i.e., using ``PCbuild\build.bat`` script
-that comes with python's source code).

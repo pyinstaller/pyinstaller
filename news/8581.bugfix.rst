@@ -1,3 +1,0 @@
-(macOS) When running ``codesign`` utility on macOS, use hard-coded absolute
-path (``/usr/bin/codesign``) to avoid errors when user has the ``codesign``
-from ``sigtool`` (https://github.com/thefloweringash/sigtool) in their ``PATH``.

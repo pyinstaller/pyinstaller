@@ -15,6 +15,71 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.8.0 (2024-06-08)
+------------------
+
+Bugfix
+~~~~~~
+
+* (macOS) When running ``codesign`` utility on macOS, use hard-coded absolute
+  path (``/usr/bin/codesign``) to avoid errors when user has the ``codesign``
+  from `sigtool <https://github.com/thefloweringash/sigtool>`_ in their
+  ``PATH``. (:issue:`8581`)
+* (Windows) When setting up DLL search paths for binary dependency analysis,
+  consider the directory where python executable is located (i.e.,
+  ``os.path.dirname(sys._base_executable)``) in addition to directory pointed to
+  by ``sys.base_prefix``, in case the two differ. This fixes discovery of
+  ``python3.dll`` when using python that was locally built from source (i.e.,
+  using ``PCbuild\build.bat`` script that comes with python's source code).
+  (:issue:`8569`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* Attempting to do a build whilst inside ``C:\Windows`` is now blocked.
+  (:issue:`8570`)
+* Invalid hiddenimports (e.g. filenames instead of module names) are now a build
+  error. (:issue:`8570`)
+
+
+Deprecations
+~~~~~~~~~~~~
+
+* Adding a Python environment's ``site-packages`` directory to
+  ``pathex``/``--paths`` will be blocked in v7.0 (:issue:`8570`)
+* Running PyInstaller with escalated privileges (e.g. using sudo or in a *run as
+  admin* terminal) will be blocked in v7.0. True admin users will be unaffected.
+  (:issue:`8570`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (POSIX) Bootloader now attempts to create the run-time temporary directory
+  given via :option:`--runtime-tmpdir` option (instead of requiring the
+  directory to already exist), in order to match the behavior on Windows. A
+  relative run-time temporary directory is now resolved to an absolute full path
+  before being used to construct the application's temporary directory path.
+  (:issue:`8557`)
+* (Windows) Bootloader now verifies the run-time temporary directory given via
+  :option:`--runtime-tmpdir` option, and raises an error if either the drive is
+  invalid or if the directory cannot be created (instead of creating the
+  application's temporary directory in the root of the current drive).
+  (:issue:`8557`)
+* (Windows) Instead of converting bootloader's debug and error messages from
+  UTF-8 to local ANSI codepage and displaying them via ANSI API (e.g.,
+  ``fprintf``, ``DebugMessageA``), the bootloader now attempts to convert those
+  messages to wide-character strings and displays them via wide-character API
+  (e.g., ``fwprintf``, ``DebugMessageW``). (:issue:`8557`)
+* A major refactor and cleanup of bootloader's code. (:issue:`8557`)
+* The splash screen resources in ``onefile`` builds are now extracted
+  into the application's temporary directory (instead of being extracted into a
+  sub-directory within the application's temporary directory); therefore, they
+  are now extracted only once, and are shared with the application itself, if
+  necessary. (:issue:`8557`)
+
+
 6.7.0 (2024-05-21)
 ------------------
 

@@ -158,7 +158,7 @@ order of operation if splash screen is enabled:
 
 2. If running in onefile mode, extract the splash screen dependencies
    (Tcl/Tk shared libraries and resources). The files are extracted to
-   the application's temporary directory (:file:`{temppath}/_MEI{xxxxxx}).
+   the application's temporary directory (:file:`{temppath}/_MEI{xxxxxx}`).
 
 3. Tcl and Tk shared libraries are loaded into the booloader, and required
    Tcl/Tk symbols are bound.
