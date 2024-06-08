@@ -257,7 +257,10 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
     /* To avoid a race condition between the Tcl and python interpreter
      * we need to wait until the splash screen has been started. We lock
      * here until the Tcl thread notified us that it has finished starting up.
-     * See discarded idea in pyi_splash python module. */
+     * This is necessary to ensure that the `_PYI_SPLASH_IPC` environment
+     * variable that is set by the Tcl splash screen script is always
+     * propagated into python's `os.environ`, which reflects the state
+     * of environment when python interpreter is initialized. */
     PI_Tcl_ConditionWait(&splash->start_cond, &splash->start_mutex, NULL);
     PI_Tcl_MutexUnlock(&splash->start_mutex);
     PI_Tcl_ConditionFinalize(&splash->start_cond);

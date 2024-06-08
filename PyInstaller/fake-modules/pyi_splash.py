@@ -209,24 +209,3 @@ def close():
 @atexit.register
 def _exit():
     close()
-
-
-# Discarded idea:
-# Problem:
-# There was a race condition between the tcl (splash screen) and python interpreter. Initially the tcl was started as a
-# separate thread next to the bootloader thread, which starts python. Tcl sets the environment variable
-# '_PYIBoot_SPLASH' with a port to connect to. If the python interpreter is faster initialized than the tcl interpreter
-# (sometimes the case in onedir mode) the environment variable does not yet exist. Since python caches the environment
-# variables at startup, updating the environ from tcl does not update the python environ.
-#
-# Considered Solution:
-# Dont rely on python itself to look up the environment variables. We could implement via ctypes functions to look up
-# the latest environ. See https://stackoverflow.com/a/33642551/5869139 for a possible implementation.
-#
-# Discarded because:
-# This module would need to implement for every supported OS a dll hook to link to the environ variable, technically
-# reimplementing the C function 'convertenviron' from posixmodule.c_ in python. The implemented solution now waits for
-# the tcl interpreter to finish before starting python.
-#
-# .. _posixmodule.c:
-#  https://github.com/python/cpython/blob/3.7/Modules/posixmodule.c#L1315-L1393
