@@ -30,6 +30,8 @@
 
 #define TCL_GLOBAL_ONLY 1
 
+#define TCL_THREAD_JOINABLE 1
+
 /* Opaque Tcl/Tk types */
 typedef struct Tcl_Interp_ Tcl_Interp;
 typedef struct Tcl_ThreadId_ *Tcl_ThreadId;
@@ -87,6 +89,7 @@ PYI_EXTDECLPROC(void, Tcl_DeleteInterp, (Tcl_Interp *));
 /* Threading */
 PYI_EXTDECLPROC(int, Tcl_CreateThread, (Tcl_ThreadId *, Tcl_ThreadCreateProc *, ClientData, int, int));
 PYI_EXTDECLPROC(Tcl_ThreadId, Tcl_GetCurrentThread, (void));
+PYI_EXTDECLPROC(int, Tcl_JoinThread, (Tcl_ThreadId, int *));
 PYI_EXTDECLPROC(void, Tcl_MutexLock, (Tcl_Mutex *));
 PYI_EXTDECLPROC(void, Tcl_MutexUnlock, (Tcl_Mutex *));
 PYI_EXTDECLPROC(void, Tcl_MutexFinalize, (Tcl_Mutex *));

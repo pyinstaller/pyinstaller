@@ -38,6 +38,7 @@ PYI_DECLPROC(Tcl_DeleteInterp);
 /* Threading */
 PYI_DECLPROC(Tcl_CreateThread);
 PYI_DECLPROC(Tcl_GetCurrentThread);
+PYI_DECLPROC(Tcl_JoinThread);
 PYI_DECLPROC(Tcl_MutexLock);
 PYI_DECLPROC(Tcl_MutexUnlock);
 PYI_DECLPROC(Tcl_MutexFinalize);
@@ -87,6 +88,7 @@ pyi_splashlib_bind_functions(pyi_dylib_t dll_tcl, pyi_dylib_t dll_tk)
     /* Threading */
     PYI_GETPROC(dll_tcl, Tcl_CreateThread);
     PYI_GETPROC(dll_tcl, Tcl_GetCurrentThread);
+    PYI_GETPROC(dll_tcl, Tcl_JoinThread);
     PYI_GETPROC(dll_tcl, Tcl_MutexLock);
     PYI_GETPROC(dll_tcl, Tcl_MutexUnlock);
     PYI_GETPROC(dll_tcl, Tcl_MutexFinalize);
