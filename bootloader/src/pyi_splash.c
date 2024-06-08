@@ -226,7 +226,7 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
         _splash_init, /* procedure/function to run in the new thread */
         splash, /* parameters to pass to procedure */
         0, /* use default stack size */
-        0 /* no flags */
+        TCL_THREAD_JOINABLE /* create joinable thread, so we can wait for its exit with Tcl_JoinThread */
     ) != TCL_OK) {
         PYI_ERROR("SPLASH: Tcl is not threaded. Only threaded Tcl is supported.\n");
         PI_Tcl_MutexUnlock(&splash->context_mutex);
@@ -434,6 +434,14 @@ pyi_splash_finalize(SPLASH_CONTEXT *splash)
     } else {
         PI_Tcl_MutexUnlock(&splash->exit_mutex);
         PYI_DEBUG("SPLASH: splash screen thread has already shut down.\n");
+    }
+
+    /* Join the splash screen thread, to ensure it is fully finished */
+    if (splash->thread_id) {
+        int ret;
+        PYI_DEBUG("SPLASH: joining the splash screen thread...\n");
+        ret = PI_Tcl_JoinThread(splash->thread_id, NULL); /* We do not need thread's return status */
+        PYI_DEBUG("SPLASH: splash screen thread join %s\n", ret == TCL_OK ? "succeeded." : "failed!");
     }
 
     /* Cleanup mutexes */
