@@ -83,6 +83,11 @@ typedef struct _splash_context
      * the Tcl interpreter's (i.e., secondary) thread. */
     Tcl_ThreadId thread_id;
 
+    /* Flag indicating whether thread was created in joinable mode or
+     * not. At the time of writing, Tcl on Windows does not support
+     * joinable threads. */
+    bool thread_joinable;
+
     /* The paths to Tcl/Tk shared libraries and Tk module library directory.
      * These are anchored to application's top-level directory (static
      * or temporary, depending on onedir vs. onefile mode). */
