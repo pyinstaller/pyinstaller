@@ -671,11 +671,10 @@ def configure(ctx):
             # Use Unicode entry point wmain/wWinMain and wchar_t WinAPI
             ctx.env.append_value('CFLAGS', '-DUNICODE')
             ctx.env.append_value('CFLAGS', '-D_UNICODE')
-            # Set XP target as the minimum target OS version when using Windows and MSVC
-            # https://blogs.msdn.microsoft.com/vcblog/2012/10/08/windows-xp-targeting-with-c-in-visual-studio-2012/
-            ctx.env.append_value(
-                'LINKFLAGS', '/SUBSYSTEM:CONSOLE,%s' % ('5.01' if ctx.env.PYI_ARCH == '32bit' else '5.02')
-            )
+
+            # Specify CONSOLE subsystem, without major/minor version. At the time of writing, the compiler's default
+            # 6.00 (x86, x64) and 6.02 (ARM) should be fine for our purposes.
+            ctx.env.append_value('LINKFLAGS', '/SUBSYSTEM:CONSOLE')
 
             # Enable support for Control Flow Guard
             # https://docs.microsoft.com/en-us/windows/win32/secbp/control-flow-guard
@@ -747,13 +746,15 @@ def configure(ctx):
                 # redundant.
                 ctx.env.append_value('LINKFLAGS', '-mwindows')
             else:
+                # Remove any /SUBSYSTEM flag already present in LINKFLAGS
                 _link_flags = ctx.env._get_list_value_for_modification('LINKFLAGS')
                 _subsystem = [x for x in _link_flags if x.startswith('/SUBSYSTEM:')]
                 for parameter in _subsystem:
                     _link_flags.remove(parameter)
-                ctx.env.append_value(
-                    'LINKFLAGS', '/SUBSYSTEM:WINDOWS,%s' % ('5.01' if ctx.env.PYI_ARCH == '32bit' else '5.02')
-                )
+
+                # Specify WINDOWS subsystem, without major/minor version. At the time of writing, the compiler's
+                # default 6.00 (x86, x64) and 6.02 (ARM) should be fine for our purposes.
+                ctx.env.append_value('LINKFLAGS', '/SUBSYSTEM:WINDOWS')
         elif ctx.env.DEST_OS == 'darwin':
             # To support catching AppleEvents and running as ordinary Mac OS GUI app, we have to link against the
             # Carbon framework. This linkage only needs to be there for the windowed bootloaders.
