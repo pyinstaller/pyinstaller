@@ -693,6 +693,14 @@ def configure(ctx):
             # Define UNICODE and _UNICODE for wchar_t WinAPI
             ctx.env.append_value('CFLAGS', '-municode')
 
+            # NOTE: the following two defines are added on the off-chance
+            # that we are building with clang + MSVC. For pure MSVC, they
+            # are specified in `set_arch_flags()`.
+            # Disable warnings about deprecated POSIX function names.
+            ctx.env.append_value('CFLAGS', '-D_CRT_NONSTDC_NO_WARNINGS')
+            # Disable warnings about unsafe CRT functions.
+            ctx.env.append_value('CFLAGS', '-D_CRT_SECURE_NO_WARNINGS')
+
             # Use Unicode entry point wmain/wWinMain
             ctx.env.append_value('LINKFLAGS', '-municode')
 
