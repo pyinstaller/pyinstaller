@@ -721,10 +721,23 @@ def configure(ctx):
 
         if ctx.env.DEST_OS == 'win32':
             if ctx.env.CC_NAME != 'msvc':
-                # For MinGW disable console window on Windows - MinGW option
-                # TODO Is it necessary to have -mwindows for C and LINK flags?
+                # For MinGW disable console window on Windows - MinGW option.
+                # This option is for linker, and thus needs to be specified under
+                # LINKFLAGS.
+                #
+                # While gcc does not seem to mind having it under CFLAGS
+                # as well, clang seems to complain about it:
+                # `clang: warning: argument unused during compilation:
+                # '-mwindows' [-Wunused-command-line-argument]`. Recent
+                # versions, when coupled with MSVC linker, raise an error:
+                # `clang: error: unsupported option '-mwindows' for target
+                # 'x86_64-pc-windows-msvc'`.
+                #
+                # NOTE: under both contemporary gcc and clang, the
+                # subsystem seems automatically inferred from available
+                # entry-point, so explicitly specifiying it here is likely
+                # redundant.
                 ctx.env.append_value('LINKFLAGS', '-mwindows')
-                ctx.env.append_value('CFLAGS', '-mwindows')
             else:
                 _link_flags = ctx.env._get_list_value_for_modification('LINKFLAGS')
                 _subsystem = [x for x in _link_flags if x.startswith('/SUBSYSTEM:')]
