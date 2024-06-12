@@ -205,8 +205,9 @@
 #else /* ifdef LAUNCH_DEBUG */
     /* Release mode - disable PYI_DEBUG macro (no-op) */
     #if defined(_WIN32)
-        /* Windows; MSVC does not allow empty vararg macro... */
-        #if defined(_MSC_VER)
+        /* Windows; MSVC does not allow empty vararg macro...
+         * (but clang + MSVC does) */
+        #if defined(_MSC_VER) && !defined(__clang__)
             #define PYI_DEBUG
             #define PYI_DEBUG_W
         #else
