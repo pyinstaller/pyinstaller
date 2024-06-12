@@ -35,7 +35,8 @@
  * wildcard expansion of command-line arguments. This keeps behavior
  * consistent between applications that use MinGW-compiled and MSVC-compiled
  * bootloader. */
-extern int _CRT_glob = 0;
+extern int _CRT_glob;
+int _CRT_glob = 0;
 
 #if defined(WINDOWED)
 
