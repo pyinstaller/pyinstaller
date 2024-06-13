@@ -489,7 +489,7 @@ class Analysis(Target):
         self.hiddenimports.extend(CONF.get('hiddenimports', []))
 
         for modnm in self.hiddenimports:
-            if re.search(r"[\\/-]", modnm):
+            if re.search(r"[\\/]", modnm):
                 raise SystemExit(
                     f"Error: Invalid hiddenimport '{modnm}'. Hidden imports should be importable module names – not "
                     "file paths. i.e. use --hiddenimport=foo.bar instead of --hiddenimport=.../site-packages/foo/bar.py"
