@@ -651,6 +651,18 @@ def test_several_scripts2(pyi_builder_spec):
     pyi_builder_spec.test_spec('several-scripts2.spec')
 
 
+def test_hyphenated_hiddenimport(pyi_builder):
+    """
+    Verify that a spec whose hiddenimports include a hyphenated module name is valid
+    See issue #8591
+    """
+    pyi_builder.test_source(
+        """
+        print("hello!")
+        """, pyi_args=['--hiddenimport', 'fake-hyphenated-module']
+    )
+
+
 @pytest.mark.win32
 def test_pe_checksum(pyi_builder):
     import ctypes
