@@ -207,7 +207,7 @@ Building the Bootloader
 Again, simply use the Vagrantfile to automatically build the macOS bootloaders::
 
      export TARGET=OSX  # make the Vagrantfile build for macOS
-     vagrant up linux64 && vagrant halt linux
+     vagrant up linux64 && vagrant halt linux64
 
 This should create the bootloaders in
 * :file:`../PyInstaller/bootloader/Darwin-{*}/`.
