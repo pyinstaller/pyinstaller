@@ -390,6 +390,57 @@ divert the program flow into corresponding framework's function instead
 of letting it reach your main program code.
 
 
+Using ``sys.executable`` to spawn subprocesses that outlive the application process / Implementing application restart
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In some scenarios, you might want your frozen application to spawn
+an independent instance of itself. This includes the pattern of
+application "restarting itself" by spawning a subprocess via
+:data:`sys.executable` and exiting the current process.
+
+In such scenario, the spawned process is expected to outlive the current
+application process, in spite of being its subprocess. This is different
+from various multi-processing scenarios, where worker subprocesses spawned
+using :data:`sys.executable` usually do not outlive the main application
+process.
+
+This distinction is important especially in the context of ``onefile``
+builds, where the application process is spawned from a parent process
+that performs the cleanup of the application's temporary files when the
+application process exits. When subprocesses are spawned from application
+process via :data:`sys.executable` and are not expected to outlive the
+application process (e.g., multiprocessing scenario), they can safely
+re-use the already-unpacked temporary files.
+
+In contrast, if the spawned subprocess is expected to outlive the application
+process that spawned it (e.g., a "restart scenario"), the temporary files
+cannot be re-used, as they would be removed once the current process exits;
+the spawned subprocess would end up missing files and, on Windows, it might
+also interfere with the cleanup itself due to attempts at accessing the files.
+
+Therefore, if you need to spawn a subprocess using :data:`sys.executable`
+that will outlive the current application process, you need to ensure
+that is spawned as an independent instance. This is done by by clearing
+the ``_PYI_ARCHIVE_FILE`` environment variable before spawning the
+process, for example::
+
+    # Restart the application
+    del os.environ['_PYI_ARCHIVE_FILE']
+    subprocess.Popen([sys.executable])
+    sys.exit(0)
+
+.. versionchanged:: 6.9
+    The above requirement was introduced in PyInstaller 6.9, which changed
+    the way the bootloader treats a process spawned via the same executable
+    as its parent process. Whereas previously the default assumption was that
+    it is running a new instance of (the same) program, the new assumption
+    is that the spawned process is some sort of a worker subprocess that can
+    reuse the already-unpacked resources. This change was done because the
+    worker-process scenarios are more common, and more difficult to explicitly
+    accommodate across various multiprocessing frameworks and other code
+    that spawns worker processes via ``sys.executable``.
+
+
 ``sys.stdin``, ``sys.stdout``, and ``sys.stderr`` in ``noconsole``/``windowed`` Applications (Windows only)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
