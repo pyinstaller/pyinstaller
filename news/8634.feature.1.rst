@@ -1,0 +1,6 @@
+The splash screen in splash-screen enabled frozen application can now
+be disabled by the user at run-time, using the new
+``PYINSTALLER_SUPPRESS_SPLASH_SCREEN`` environment variable. If the
+environment variable is set to ``1``, the splash screen is not shown,
+and functions from mod:`pyi_splash` become no-op without raising errors
+or displaying warning messages.
