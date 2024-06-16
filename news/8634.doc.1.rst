@@ -1,0 +1,1 @@
+Add a note about splash screen suppression to the splash screen documentation.
