@@ -69,7 +69,7 @@ if __name__ == '__main__':
             ]
 
             if args.force_independent:
-                env.pop("_PYI_ARCHIVE_FILE", None)
+                env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
         else:
             subprocess_args = [
                 args.child_executable,

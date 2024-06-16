@@ -14,9 +14,10 @@ executable is used), as tracked by newly-introduced ``_PYI_ARCHIVE_FILE``
 environment variable. This means that no additional action is needed to
 spawn worker sub-processes via ``sys.executable`` in multiprocessing
 scenarios, but on the other hand, attempting to restart the application
-now requires ``_PYI_ARCHIVE_FILE`` to be unset before spawning the new
-application process. To prevent issues when launching applications built
-with older version of PyInstaller as subprocesses, the ``_MEIPASS2``
-environment variable was renamed to ``_PYI_APPLICATION_HOME_DIR``;
-note that this refers to the internally-used environment variable, and
-does **not** affect the PyInstaller-specific ``sys._MEIPASS`` attribute.
+now requires ``PYINSTALLER_RESET_ENVIRONMENT`` environment variable to be
+set before spawning the new application process. To prevent issues when
+launching applications built with older version of PyInstaller as
+subprocesses, the ``_MEIPASS2`` environment variable was renamed to
+``_PYI_APPLICATION_HOME_DIR``; note that this refers to the internally-used
+environment variable, and does **not** affect the PyInstaller-specific
+``sys._MEIPASS`` attribute.

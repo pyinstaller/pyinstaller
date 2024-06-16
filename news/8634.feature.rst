@@ -1,0 +1,7 @@
+Introduce new ``PYINSTALLER_RESET_ENVIRONMENT`` environment variable,
+to be used by application developers when trying to launch
+``sys.executable``-based process that is supposed to outlive the
+current application process (which includes the application restart scenario).
+This is considered the official and preferred approach at spawning
+new independent instances of the same application (as opposed to
+modifying the private ``_PYI_ARCHIVE_FILE`` environment variable).
