@@ -100,3 +100,47 @@ def test_pyi_splash_in_subprocess(pyi_builder, script_dir):
         "pyi_splash_in_subprocess.py",
         pyi_args=["--splash", splash_image],
     )
+
+
+# Check that splash screen is gracefully disabled via PYINSTALLER_SUPPRESS_SPLASH_SCREEN environment variable.
+# The test procedure is adapted from pyi_splash_in_subprocess.py script of `test_pyi_splash_in_subprocess`.
+def test_pyi_splash_suppress(pyi_builder, script_dir, monkeypatch):
+    monkeypatch.setenv("PYINSTALLER_SUPPRESS_SPLASH_SCREEN", "1")
+    splash_image = os.path.join(script_dir, '..', 'data', 'splash', 'image.png')
+    pyi_builder.test_source(
+        """
+        import time
+
+        # The pyi_splash module must be importable
+        print("Importing pyi_splash...")
+        import pyi_splash
+
+        # Check module's guts to validate its state. Not for public use...
+
+        # Module must be marked as initialized, regardless of whether splash screen is active or suppressed.
+        assert pyi_splash._initialized, "Module is not marked as initialized!"
+
+        # IPC port must be zero
+        assert pyi_splash._ipc_port == 0, f"Unexpected IPC port value: {pyi_splash._ipc_port}"
+
+        # Connection must be left closed
+        assert pyi_splash._ipc_socket_closed, \
+            "Unexpected splash screen socket state - expected it to be closed, but it is open!"
+
+        # Test of public API
+
+        # is_alive() should return false
+        assert not pyi_splash.is_alive(), "Unexpected splash screen status!"
+
+        # update_text() should be a no-op. Most importantly, it should not raise an error.
+        pyi_splash.update_text("Updated text")
+        time.sleep(1)
+
+        # Same goes for close().
+        pyi_splash.close()
+
+        # After close, splash screen should be (still) inactive
+        assert not pyi_splash.is_alive(), "Splash screen is not inactive!"
+        """,
+        pyi_args=["--splash", splash_image],
+    )
