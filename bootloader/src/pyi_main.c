@@ -125,6 +125,26 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     pyi_ctx->is_onefile = pyi_ctx->archive->contains_extractable_entries;
     PYI_DEBUG("LOADER: application has %s semantics...\n", pyi_ctx->is_onefile ? "onefile" : "onedir");
 
+    /* Check if user explicitly requested environment reset via the
+     * PYINSTALLER_RESET_ENVIRONMENT environment variable. In this case,
+     * we unconditionally reset the environment and make this process
+     * a (new) top-level process. */
+    reset_environment = false;
+
+    env_var_value = pyi_getenv("PYINSTALLER_RESET_ENVIRONMENT");
+    if (env_var_value) {
+        /* Only valid value is 1; anything else is ignored */
+        if (strcmp(env_var_value, "1") == 0) {
+            PYI_DEBUG("LOADER: explicit environment reset enabled via environment variable!\n");
+            reset_environment = true;
+        }
+
+        /* Clear the environment variable, to avoid affecting child
+         * processes of this process. */
+        pyi_unsetenv("PYINSTALLER_RESET_ENVIRONMENT");
+    }
+    free(env_var_value);
+
     /* Check if existing PyInstaller run-time environment exists, and
      * determine whether we should inherit it or not. This is done by
      * checking _PYI_ARCHIVE_FILE environment variable:
@@ -138,21 +158,24 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
      *  - if it is set and the contents differ from our archive filename,
      *    then we are a different program from the parent process, and
      *    should reset the environment. */
-    reset_environment = true;
-    env_var_value = pyi_getenv("_PYI_ARCHIVE_FILE");
-    if (env_var_value) {
-        PYI_DEBUG("LOADER: _PYI_ARCHIVE_FILE already defined: %s\n", env_var_value);
-        if (strcmp(pyi_ctx->archive_filename, env_var_value) == 0) {
-            PYI_DEBUG("LOADER: using same archive file as parent environment!\n");
-            reset_environment = false;
+    if (!reset_environment) {
+        reset_environment = true;
+        env_var_value = pyi_getenv("_PYI_ARCHIVE_FILE");
+        if (env_var_value) {
+            PYI_DEBUG("LOADER: _PYI_ARCHIVE_FILE already defined: %s\n", env_var_value);
+            if (strcmp(pyi_ctx->archive_filename, env_var_value) == 0) {
+                PYI_DEBUG("LOADER: using same archive file as parent environment!\n");
+                reset_environment = false;
+            } else {
+                PYI_DEBUG("LOADER: using different archive file than parent environment!\n");
+            }
         } else {
-            PYI_DEBUG("LOADER: using different archive file than parent environment!\n");
+            PYI_DEBUG("LOADER: _PYI_ARCHIVE_FILE not defined...\n");
         }
-    } else {
-        PYI_DEBUG("LOADER: _PYI_ARCHIVE_FILE not defined...\n");
+        free(env_var_value);
     }
-    free(env_var_value);
 
+    /* Perform the actual environment reset, if necessary */
     if (reset_environment) {
         /* Set the _PYI_ARCHIVE_FILE */
         pyi_setenv("_PYI_ARCHIVE_FILE", pyi_ctx->archive_filename);

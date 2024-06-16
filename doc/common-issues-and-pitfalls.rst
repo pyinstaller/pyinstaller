@@ -420,13 +420,12 @@ also interfere with the cleanup itself due to attempts at accessing the files.
 
 Therefore, if you need to spawn a subprocess using :data:`sys.executable`
 that will outlive the current application process, you need to ensure
-that is spawned as an independent instance. This is done by by clearing
-the ``_PYI_ARCHIVE_FILE`` environment variable before spawning the
-process, for example::
+that is spawned as an independent instance. This is done by setting
+the ``PYINSTALLER_RESET_ENVIRONMENT`` environment variable to ``1``
+when spawning the process, for example::
 
     # Restart the application
-    del os.environ['_PYI_ARCHIVE_FILE']
-    subprocess.Popen([sys.executable])
+    subprocess.Popen([sys.executable], env={**os.environ, "PYINSTALLER_RESET_ENVIRONMENT": "1"})
     sys.exit(0)
 
 .. versionchanged:: 6.9

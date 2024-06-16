@@ -1,4 +1,4 @@
 Attempting to restart the application by spawning new process via
 ``sys.executable`` and exiting the current process now requires the
-``_PYI_ARCHIVE_FILE`` environment variable to be unset prior to spawning
-the process.
+``PYINSTALLER_RESET_ENVIRONMENT`` environment variable to be set prior
+to spawning the process.
