@@ -78,6 +78,8 @@ PYI_CONTEXT *global_pyi_ctx = &_pyi_ctx;
  * declarations here */
 static void _pyi_main_read_runtime_options(PYI_CONTEXT *pyi_ctx);
 
+static void _pyi_main_setup_splash_screen(PYI_CONTEXT *pyi_ctx);
+
 static int _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx);
 static int _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx);
 
@@ -94,7 +96,6 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 {
     char *env_var_value;
     bool reset_environment;
-    bool suppress_splash_screen;
 
 #ifdef _WIN32
     /* On Windows, both Visual C runtime and MinGW seem to buffer stderr
@@ -403,84 +404,8 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     }
 #endif  /* defined(_WIN32) || defined(__CYGWIN__) */
 
-    /* Check if splash screen is available and should be set up. It
-     * should be set up by the parent process of onefile application,
-     * and in main process of onedir application. It should be gracefully
-     * suppressed in spawned subprocesses. It should also be gracefully
-     * suppressed if user requests this by setting the
-     * PYINSTALLER_SUPPRESS_SPLASH_SCREEN environment variable. */
-    suppress_splash_screen = false;
-    env_var_value = pyi_getenv("PYINSTALLER_SUPPRESS_SPLASH_SCREEN");
-    if (env_var_value) {
-        /* Only valid value is 1; anything else is ignored */
-        if (strcmp(env_var_value, "1") == 0) {
-            suppress_splash_screen = true;
-        }
-    }
-    free(env_var_value);
-
-    if (suppress_splash_screen) {
-        PYI_DEBUG("LOADER: splash screen is explicitly suppressed via environment variable!\n");
-        /* Let `pyi_splash` module know that splash screen is intentionally
-         * suppressed, by setting _PYI_SPLASH_IPC to 0. */
-        pyi_setenv("_PYI_SPLASH_IPC", "0");
-    } else if (pyi_ctx->process_level >= PYI_PROCESS_LEVEL_SUBPROCESS) {
-        PYI_DEBUG("LOADER: spawned subprocess -  suppressing splash screen...\n");
-        pyi_setenv("_PYI_SPLASH_IPC", "0");
-    } else if (
-        (pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) ||
-        (!pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_MAIN)
-    ) {
-        PYI_DEBUG("LOADER: looking for splash screen resources...\n");
-        pyi_ctx->splash = pyi_splash_context_new();
-        if (pyi_splash_setup(pyi_ctx->splash, pyi_ctx) == 0) {
-            int ret = 0;
-
-            /* Splash screen resources found; setup up splash screen */
-            PYI_DEBUG("LOADER: setting up splash screen...\n");
-
-            /* In onefile mode, we need to extract dependencies (shared
-             * libraries, .tcl files, etc.) from PKG archive. */
-            if (pyi_ctx->is_onefile) {
-                PYI_DEBUG("LOADER: extracting splash screen dependencies...\n");
-                ret = pyi_splash_extract(pyi_ctx->splash, pyi_ctx);
-                if (ret != 0) {
-                    PYI_WARNING("Failed to unpack splash screen dependencies from PKG archive!\n");
-                }
-            }
-
-            /* Load Tcl/Tk shared libraries */
-            if (ret == 0) {
-                ret = pyi_splash_load_shared_libaries(pyi_ctx->splash);
-                if (ret != 0) {
-                    PYI_WARNING("Failed to load Tcl/Tk shared libraries for splash screen!\n");
-                }
-            }
-
-            /* Finally, start the splash screen */
-            if (ret == 0) {
-                ret = pyi_splash_start(pyi_ctx->splash, pyi_ctx->executable_filename);
-                if (ret != 0) {
-                    PYI_WARNING("Failed to start splash screen!\n");
-                }
-            }
-
-            if (ret != 0) {
-                /* Either we failed to extract splash resources, or
-                 * failed to load Tcl/Tk shared libraries. Clean up
-                 * the state by finalizing it, and free the allocated
-                 * structure. */
-                pyi_splash_finalize(pyi_ctx->splash);
-                pyi_splash_context_free(&pyi_ctx->splash);
-            }
-        } else {
-            /* Splash screen resources not found */
-            PYI_DEBUG("LOADER: splash screen resources not found.\n");
-            pyi_splash_context_free(&pyi_ctx->splash);
-        }
-    } else {
-        PYI_DEBUG("LOADER: process is not eligible for splash screen\n");
-    }
+    /* Setup splash screen, if applicable */
+    _pyi_main_setup_splash_screen(pyi_ctx);
 
     /* Split execution between onefile parent process vs. onefile child
      * process / onedir process. */
@@ -579,6 +504,99 @@ _pyi_main_read_runtime_options(PYI_CONTEXT *pyi_ctx)
     }
 }
 
+
+/**********************************************************************\
+ *                        Splash screen setup                         *
+\**********************************************************************/
+static void
+_pyi_main_setup_splash_screen(PYI_CONTEXT *pyi_ctx)
+{
+    char *env_suppress_splash;
+    bool suppressed = false;
+    bool is_eligible = false;
+
+    /* Check if user requested splash screen to be suppressed by setting
+     * the PYINSTALLER_SUPPRESS_SPLASH_SCREEN environment variable to 1 */
+    env_suppress_splash = pyi_getenv("PYINSTALLER_SUPPRESS_SPLASH_SCREEN");
+    if (env_suppress_splash) {
+        suppressed = strcmp(env_suppress_splash, "1") == 0;
+    }
+    free(env_suppress_splash);
+
+    if (suppressed) {
+        PYI_DEBUG("LOADER: splash screen is explicitly suppressed via environment variable!\n");
+        /* Let `pyi_splash` module know that splash screen is intentionally
+         * suppressed, by setting _PYI_SPLASH_IPC to 0. */
+        pyi_setenv("_PYI_SPLASH_IPC", "0");
+        return;
+    }
+
+    /* Splash screen should also be gracefully suppressed in sub-processes
+     * spawned by the main application process. */
+    if (pyi_ctx->process_level >= PYI_PROCESS_LEVEL_SUBPROCESS) {
+        PYI_DEBUG("LOADER: spawned subprocess -  suppressing splash screen...\n");
+        pyi_setenv("_PYI_SPLASH_IPC", "0");
+        return;
+    }
+
+    /* Splash screen should be set up by the parent process of a onefile
+     * application, and in the main process of a onedir application. */
+    is_eligible = (
+        (pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) ||
+        (!pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_MAIN)
+    );
+    if (!is_eligible) {
+        PYI_DEBUG("LOADER: process is not eligible for splash screen\n");
+        return;
+    }
+
+    /* Check if splash screen resources are available. TODO: it would
+     * be nice if we did this at the start of this function, but without
+     * fully loading the resources... */
+    PYI_DEBUG("LOADER: looking for splash screen resources...\n");
+    pyi_ctx->splash = pyi_splash_context_new();
+    if (pyi_splash_setup(pyi_ctx->splash, pyi_ctx) != 0) {
+        /* Splash screen resources not found */
+        PYI_DEBUG("LOADER: splash screen resources not found.\n");
+        goto cleanup;
+    }
+
+    /* Splash screen resources found; setup up splash screen */
+    PYI_DEBUG("LOADER: setting up splash screen...\n");
+
+    /* In onefile mode, we need to extract dependencies (shared
+     * libraries, .tcl files, etc.) from PKG archive. */
+    if (pyi_ctx->is_onefile) {
+        PYI_DEBUG("LOADER: extracting splash screen dependencies...\n");
+        if (pyi_splash_extract(pyi_ctx->splash, pyi_ctx) != 0) {
+            PYI_WARNING("Failed to unpack splash screen dependencies from PKG archive!\n");
+            goto cleanup;
+        }
+    }
+
+    /* Load Tcl/Tk shared libraries */
+    if (pyi_splash_load_shared_libaries(pyi_ctx->splash) != 0) {
+        PYI_WARNING("Failed to load Tcl/Tk shared libraries for splash screen!\n");
+        goto cleanup;
+    }
+
+    /* Finally, start the splash screen */
+    if (pyi_splash_start(pyi_ctx->splash, pyi_ctx->executable_filename) != 0) {
+        PYI_WARNING("Failed to start splash screen!\n");
+        goto cleanup;
+    }
+
+    /* Done! */
+    return;
+
+cleanup:
+    /* A part of setup failed; clean up the state by finalizing it, and
+     * free the allocated structure. */
+    pyi_splash_finalize(pyi_ctx->splash);
+    pyi_splash_context_free(&pyi_ctx->splash);
+
+    return;
+}
 
 /**********************************************************************\
  *                  Onedir or onefile child codepath                  *
