@@ -226,6 +226,14 @@ it cannot be reloaded (such as by :func:`importlib.reload`), because the splash
 screen closes automatically when the connection to this instance of the
 module is lost.
 
+.. Note::
+    The splash screen might be gracefully disabled in some types of processes
+    (for example, worker sub-processes spawned by the main application process).
+    In addition, user can explicitly request splash screen to be suppressed
+    at run-time by setting the ``PYINSTALLER_SUPPRESS_SPLASH_SCREEN`` environment
+    variable to ``1``. In such cases, the ``pyi_splash`` module can still be
+    imported but its functions are all no-op.
+
 Functions
 ---------
 
