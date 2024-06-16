@@ -94,6 +94,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 {
     char *env_var_value;
     bool reset_environment;
+    bool suppress_splash_screen;
 
 #ifdef _WIN32
     /* On Windows, both Visual C runtime and MinGW seem to buffer stderr
@@ -405,12 +406,27 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     /* Check if splash screen is available and should be set up. It
      * should be set up by the parent process of onefile application,
      * and in main process of onedir application. It should be gracefully
-     * suppressed in spawned subprocesses. */
-    if (pyi_ctx->process_level >= PYI_PROCESS_LEVEL_SUBPROCESS) {
-        PYI_DEBUG("LOADER: spawned subprocess -  suppressing splash screen...\n");
+     * suppressed in spawned subprocesses. It should also be gracefully
+     * suppressed if user requests this by setting the
+     * PYINSTALLER_SUPPRESS_SPLASH_SCREEN environment variable. */
+    suppress_splash_screen = false;
+    env_var_value = pyi_getenv("PYINSTALLER_SUPPRESS_SPLASH_SCREEN");
+    if (env_var_value) {
+        /* Only valid value is 1; anything else is ignored */
+        if (strcmp(env_var_value, "1") == 0) {
+            suppress_splash_screen = true;
+        }
+    }
+    free(env_var_value);
+
+    if (suppress_splash_screen) {
+        PYI_DEBUG("LOADER: splash screen is explicitly suppressed via environment variable!\n");
         /* Let `pyi_splash` module know that splash screen is intentionally
          * suppressed, by setting _PYI_SPLASH_IPC to 0. */
-         pyi_setenv("_PYI_SPLASH_IPC", "0");
+        pyi_setenv("_PYI_SPLASH_IPC", "0");
+    } else if (pyi_ctx->process_level >= PYI_PROCESS_LEVEL_SUBPROCESS) {
+        PYI_DEBUG("LOADER: spawned subprocess -  suppressing splash screen...\n");
+        pyi_setenv("_PYI_SPLASH_IPC", "0");
     } else if (
         (pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) ||
         (!pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_MAIN)
