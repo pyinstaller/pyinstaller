@@ -92,8 +92,7 @@ static int _pyi_main_handle_posix_onedir(PYI_CONTEXT *pyi_ctx);
 int
 pyi_main(PYI_CONTEXT *pyi_ctx)
 {
-    char *env_archive_file;
-    char *env_parent_process_level;
+    char *env_var_value;
     bool reset_environment;
 
 #ifdef _WIN32
@@ -140,10 +139,10 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
      *    then we are a different program from the parent process, and
      *    should reset the environment. */
     reset_environment = true;
-    env_archive_file = pyi_getenv("_PYI_ARCHIVE_FILE");
-    if (env_archive_file) {
-        PYI_DEBUG("LOADER: _PYI_ARCHIVE_FILE already defined: %s\n", env_archive_file);
-        if (strcmp(pyi_ctx->archive_filename, env_archive_file) == 0) {
+    env_var_value = pyi_getenv("_PYI_ARCHIVE_FILE");
+    if (env_var_value) {
+        PYI_DEBUG("LOADER: _PYI_ARCHIVE_FILE already defined: %s\n", env_var_value);
+        if (strcmp(pyi_ctx->archive_filename, env_var_value) == 0) {
             PYI_DEBUG("LOADER: using same archive file as parent environment!\n");
             reset_environment = false;
         } else {
@@ -152,7 +151,7 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
     } else {
         PYI_DEBUG("LOADER: _PYI_ARCHIVE_FILE not defined...\n");
     }
-    free(env_archive_file);
+    free(env_var_value);
 
     if (reset_environment) {
         /* Set the _PYI_ARCHIVE_FILE */
@@ -175,8 +174,8 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
      *  - parent (launcher) process
      *  - main (application) process
      *  - subprocess spawned from main application process. */
-    env_parent_process_level = pyi_getenv("_PYI_PARENT_PROCESS_LEVEL");
-    if (!env_parent_process_level || !env_parent_process_level[0]) {
+    env_var_value = pyi_getenv("_PYI_PARENT_PROCESS_LEVEL");
+    if (!env_var_value || !env_var_value[0]) {
         /* We are either parent/launcher process of a onefile application,
          * or main/application process of a onedir application.
          *
@@ -193,20 +192,20 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN; /* Windows, macOS */
 #endif
         }
-    } else if (strcmp(env_parent_process_level, "0") == 0) {
+    } else if (strcmp(env_var_value, "0") == 0) {
         /* We are main application process of a onefile application,
          * or main application process of a onedir application after
          * restart (POSIX systems other than macOS). */
         pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN;
-    } else if (strcmp(env_parent_process_level, "1") == 0) {
+    } else if (strcmp(env_var_value, "1") == 0) {
         /* We are a sub-process spawned from the main application process,
          * using the same executable (e.g., via sys.executable). */
         pyi_ctx->process_level = PYI_PROCESS_LEVEL_SUBPROCESS;
     } else {
-        PYI_ERROR("Invalid value in _PYI_PARENT_PROCESS_LEVEL: %s\n", env_parent_process_level);
+        PYI_ERROR("Invalid value in _PYI_PARENT_PROCESS_LEVEL: %s\n", env_var_value);
         return -1;
     }
-    free(env_parent_process_level);
+    free(env_var_value);
 
     PYI_DEBUG("LOADER: process level = %d\n", pyi_ctx->process_level);
 
@@ -232,25 +231,21 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 
     /* Read the setting for strict unpack mode from corresponding
      * environment variable. */
-    if (1) {
-        char *env_strict = pyi_getenv("PYINSTALLER_STRICT_UNPACK_MODE"); /* strdup'd copy or NULL */
-        if (env_strict) {
-            pyi_ctx->strict_unpack_mode = strcmp(env_strict, "0") != 0;
-            free(env_strict);
-        }
+    env_var_value = pyi_getenv("PYINSTALLER_STRICT_UNPACK_MODE"); /* strdup'd copy or NULL */
+    if (env_var_value) {
+        pyi_ctx->strict_unpack_mode = strcmp(env_var_value, "0") != 0;
     }
+    free(env_var_value);
 
     /* On Linux, restore process name (passed from parent process via
      * environment variable. */
 #if defined(__linux__)
-    if (1) {
-        char *processname = pyi_getenv("_PYI_LINUX_PROCESS_NAME");
-        if (processname) {
-            PYI_DEBUG("LOADER: restoring process name: %s\n", processname);
-            prctl(PR_SET_NAME, processname, 0, 0); /* Ignore failures */
-        }
-        free(processname);
+    env_var_value = pyi_getenv("_PYI_LINUX_PROCESS_NAME");
+    if (env_var_value) {
+        PYI_DEBUG("LOADER: restoring process name: %s\n", env_var_value);
+        prctl(PR_SET_NAME, env_var_value, 0, 0); /* Ignore failures */
     }
+    free(env_var_value);
 #endif  /* defined(__linux__) */
 
     /* Infer the process type (onefile parent, onefile child, onedir),
@@ -287,28 +282,26 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
             /* Child process; the path to ephemeral application top-level
              * directory should be available in _PYI_APPLICATION_HOME_DIR
              * environment variable. */
-            char *env_app_home_dir;
-
             PYI_DEBUG(
                 "LOADER: this is child process of onefile application (%s).\n",
                 pyi_ctx->process_level == PYI_PROCESS_LEVEL_MAIN ?
                 "main application process" : "spawned subprocess"
             );
 
-            env_app_home_dir = pyi_getenv("_PYI_APPLICATION_HOME_DIR");
-            if (!env_app_home_dir || !env_app_home_dir[0]) {
+            env_var_value = pyi_getenv("_PYI_APPLICATION_HOME_DIR");
+            if (!env_var_value || !env_var_value[0]) {
                 PYI_ERROR("_PYI_APPLICATION_HOME_DIR not set for onefile child process!\n");
                 return -1;
             }
 
             /* Copy the application's top-level directory from environment */
-            if (snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", env_app_home_dir) >= PYI_PATH_MAX) {
+            if (snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", env_var_value) >= PYI_PATH_MAX) {
                 PYI_ERROR("Path exceeds PYI_PATH_MAX limit.\n");
-                free(env_app_home_dir);
+                free(env_var_value);
                 return -1;
             }
 
-            free(env_app_home_dir);
+            free(env_var_value);
         }
     } else {
         char executable_dir[PYI_PATH_MAX];
