@@ -18,6 +18,7 @@ is a way how PyInstaller does the dependency analysis and creates executable.
 import os
 import subprocess
 import time
+import pathlib
 import shutil
 from operator import itemgetter
 
@@ -270,6 +271,8 @@ class PKG(Target):
     def assemble(self):
         logger.info("Building PKG (CArchive) %s", os.path.basename(self.name))
 
+        pkg_file = pathlib.Path(self.name).resolve()  # Used to detect attempts at PKG feeding itself
+
         bootstrap_toc = []  # TOC containing bootstrap scripts and modules, which must not be sorted.
         archive_toc = []  # TOC containing all other elements. Sorted to enable reproducible builds.
 
@@ -277,14 +280,21 @@ class PKG(Target):
             # Ensure that the source file exists, if necessary. Skip the check for OPTION entries, where 'src_name' is
             # None. Also skip DEPENDENCY entries due to special contents of 'dest_name' and/or 'src_name'. Same for the
             # SYMLINK entries, where 'src_name' is relative target name for symbolic link.
-            if typecode not in {'OPTION', 'DEPENDENCY', 'SYMLINK'} and not os.path.exists(src_name):
-                if strict_collect_mode:
-                    raise ValueError(f"Non-existent resource {src_name}, meant to be collected as {dest_name}!")
-                else:
-                    logger.warning(
-                        "Ignoring non-existent resource %s, meant to be collected as %s", src_name, dest_name
-                    )
-                    continue
+            if typecode not in {'OPTION', 'DEPENDENCY', 'SYMLINK'}:
+                if not os.path.exists(src_name):
+                    if strict_collect_mode:
+                        raise ValueError(f"Non-existent resource {src_name}, meant to be collected as {dest_name}!")
+                    else:
+                        logger.warning(
+                            "Ignoring non-existent resource %s, meant to be collected as %s", src_name, dest_name
+                        )
+                        continue
+
+                # Detect attempt at collecting PKG into itself, as it results in and endless feeding loop and exhaustion
+                # of all available storage space.
+                if pathlib.Path(src_name).resolve() == pkg_file:
+                    raise ValueError(f"Trying to collect PKG file {src_name} into itself!")
+
             if typecode in ('BINARY', 'EXTENSION'):
                 if self.exclude_binaries:
                     # This is onedir-specific codepath - the EXE and consequently PKG should not be passed the Analysis'
