@@ -965,6 +965,41 @@ def copy_metadata(package_name: str, recursive: bool = False):
             )
         src_path = dist._path
 
+        # We expect the `_path` attribute to be an instance of `pathlib.Path`. This assumption is violated when the
+        # package happens to be installed as a zipped egg. In such case, `_path` is an instance of either `zipp.Path`
+        # (when using `importlib.metadata` from `importlib-metadata`, which in turn uses 3rd party `zipp` package) or
+        # `zipfile.Path` (when using stdlib's `importlib.metadata`). While we could attempt to read the metadata
+        # from the zip, we dropped geberal support for zipped eggs from PyInstaller in 6.0, so raise an error.
+        if not isinstance(src_path, Path):
+            # NOTE: `src_path.parent` is also an instance of `zipfile.Path` or `zipp.Path`, and calling its `is_file()`
+            # method returns False, because the root of zip file is (rightfully) considered a directory. Therefore, we
+            # convert the path to `pathlib.Path˙ by taking the parent of `src_path.parent` (which turns out to be a
+            # `pathlib.Path`) and add to it the name of the `src_path.parent` (the name of .egg file).
+            try:
+                src_parent = src_path.parent.parent / src_path.parent.name
+            except Exception:
+                src_parent = src_path.parent
+
+            if src_parent.is_file() and src_parent.name.endswith('.egg'):
+                raise RuntimeError(
+                    f"Cannot collect metadata from path {str(src_path)!r}, which appears to be inside a zipped egg. "
+                    f"PyInstaller >= 6.0 does not support zipped eggs anymore. Please reinstall {package_name!r} "
+                    "using modern package installation method instead of deprecated 'python setup.py install'. "
+                    "For example, if you are using pip package manager:\n"
+                    "1. uninstall the zipped egg:\n"
+                    f"  pip uninstall {package_name}\n"
+                    "2. make sure pip and its dependencies are up-to-date:\n"
+                    "  python -m pip install --upgrade pip wheel setuptools\n"
+                    "3. install the package:\n"
+                    f"  pip install {package_name}\n"
+                    "To install a package from source, pass the path to the source directory to 'pip install' command."
+                )
+            else:
+                # Generic message for unforeseen cases.
+                raise RuntimeError(
+                    f"Cannot collect metadata from path {src_path!r}, which is of unsupported type {type(src_path)}."
+                )
+
         if src_path.is_dir():
             # The metadata is stored in a directory (.egg-info, .dist-info), so collect the whole directory. If the
             # package is installed as an egg, the metadata directory is ([...]/package_name-version.egg/EGG-INFO),
