@@ -34,7 +34,7 @@ PySide2==5.15.2.1; python_version < '3.11'
 # usually kept in sync.
 PySide6==6.7.2; python_version >= '3.9'
 PySide6-Addons==6.7.2; python_version >= '3.9'
-PySide6-Essentials==6.7.1; python_version >= '3.9'
+PySide6-Essentials==6.7.2; python_version >= '3.9'
 # PyQt5 and add-on packages
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
