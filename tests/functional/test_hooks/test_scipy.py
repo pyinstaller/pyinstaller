@@ -14,6 +14,8 @@ Functional tests for SciPy.
 
 import sys
 
+import pytest
+
 from PyInstaller.utils.tests import importorskip, xfail
 
 pytestmark = [
@@ -25,39 +27,33 @@ pytestmark = [
 ]
 
 
-def test_scipy_toplevel(pyi_builder):
+# Basic import test for each scipy module, to ensure that each module is importable on its own. Due to amount of tests,
+# run them only in onedir mode.
+@pytest.mark.parametrize(
+    'module', [
+        'scipy',
+        'scipy.cluster',
+        'scipy.constants',
+        'scipy.datasets',
+        'scipy.fft',
+        'scipy.fftpack',
+        'scipy.integrate',
+        'scipy.interpolate',
+        'scipy.io',
+        'scipy.linalg',
+        'scipy.misc',
+        'scipy.ndimage',
+        'scipy.odr',
+        'scipy.optimize',
+        'scipy.signal',
+        'scipy.sparse',
+        'scipy.spatial',
+        'scipy.special',
+        'scipy.stats',
+    ]
+)
+@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+def test_scipy(pyi_builder, module):
     pyi_builder.test_source("""
-        import scipy
-    """)
-
-
-def test_scipy(pyi_builder):
-    pyi_builder.test_source(
-        """
-        # Test top-level SciPy importability.
-        import scipy
-
-        # Test hooked SciPy modules.
-        import scipy.io.matlab
-        import scipy.sparse.csgraph
-
-        # Test problematic SciPy modules.
-        import scipy.linalg
-        import scipy.signal
-
-        # SciPy >= 0.16 privatized the previously public "scipy.lib" package as "scipy._lib".
-        # Since this package is problematic, test its importability regardless of its private status.
-        import scipy._lib
-        """
-    )
-
-
-def test_scipy_special(pyi_builder):
-    """
-    Test the importability of the `scipy.special` package and related hooks.
-
-    This importation _must_ be tested independent of the importation of all other problematic SciPy packages
-    and modules. Combining this test with other SciPy tests (e.g., `test_scipy()`) fails to properly exercise
-    the hidden imports required by this package.
-    """
-    pyi_builder.test_source("""import scipy.special""")
+        import {0}
+        """.format(module))
