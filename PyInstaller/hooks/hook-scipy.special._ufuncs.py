@@ -19,3 +19,7 @@ hiddenimports = ['scipy.special._ufuncs_cxx']
 # `scipy.special._ufuncs` extension, and thus we need a hidden import here.
 if is_module_satisfies('scipy >= 1.13.0'):
     hiddenimports += ['scipy.special._cdflib']
+
+# SciPy 1.14.0 introduced `scipy.special._special_ufuncs`, which is imported from `scipy.special._ufuncs` extension.
+if is_module_satisfies('scipy >= 1.14.0'):
+    hiddenimports += ['scipy.special._special_ufuncs']
