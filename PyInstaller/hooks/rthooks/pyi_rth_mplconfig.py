@@ -27,11 +27,12 @@ def _pyi_rthook():
     import atexit
     import os
     import shutil
-    from PyInstaller.utils.hooks import is_module_satisfies
-    
+    from importlib.metadata import version
+    from packaging.version import Version
+
     import _pyi_rth_utils.tempfile  # PyInstaller's run-time hook utilities module
 
-    if is_module_satisfies('matplotlib < 3.0.0'):
+    if Version(version('matplotlib')).major < 3:
         # Isolate matplotlib's config dir into temporary directory.
         # Use our replacement for `tempfile.mkdtemp` function that properly restricts access to directory on all platforms.
         configdir = _pyi_rth_utils.tempfile.secure_mkdtemp()
