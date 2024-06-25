@@ -12,20 +12,25 @@
 Functional tests for SciPy.
 """
 
-from PyInstaller.compat import is_py312
+import sys
+
 from PyInstaller.utils.tests import importorskip, xfail
 
+pytestmark = [
+    importorskip('scipy'),
+    xfail(
+        sys.version_info[:3] == (3, 12, 0),
+        reason='SciPy is broken with PyInstaller and python 3.12.0 (#7992).',
+    ),
+]
 
-@importorskip('scipy')
-@xfail(is_py312, reason='SciPy is broken with PyInstaller and python 3.12 (#7992).')
+
 def test_scipy_toplevel(pyi_builder):
     pyi_builder.test_source("""
         import scipy
     """)
 
 
-@importorskip('scipy')
-@xfail(is_py312, reason='SciPy is broken with PyInstaller and python 3.12 (#7992).')
 def test_scipy(pyi_builder):
     pyi_builder.test_source(
         """
@@ -47,8 +52,6 @@ def test_scipy(pyi_builder):
     )
 
 
-@importorskip('scipy')
-@xfail(is_py312, reason='SciPy is broken with PyInstaller and python 3.12 (#7992).')
 def test_scipy_special(pyi_builder):
     """
     Test the importability of the `scipy.special` package and related hooks.
