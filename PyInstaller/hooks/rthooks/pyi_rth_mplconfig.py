@@ -27,7 +27,8 @@ def _pyi_rthook():
     import atexit
     import os
     import shutil
-
+    from PyInstaller.utils.hooks import is_module_satisfies
+    
     import _pyi_rth_utils.tempfile  # PyInstaller's run-time hook utilities module
 
     if is_module_satisfies('matplotlib < 3.0.0'):
