@@ -13,7 +13,12 @@ import glob
 import os
 
 from PyInstaller.compat import is_win
-from PyInstaller.utils.hooks import get_module_file_attribute, check_requirement, collect_delvewheel_libs_directory
+from PyInstaller.utils.hooks import (
+    get_module_file_attribute,
+    check_requirement,
+    collect_delvewheel_libs_directory,
+    collect_submodules,
+)
 
 binaries = []
 datas = []
@@ -38,3 +43,10 @@ hiddenimports = ['scipy._lib.%s' % m for m in ['messagestream', "_ccallback_c", 
 # to be added to hiddenimports.
 if check_requirement("scipy >= 1.14.0"):
     hiddenimports += ['scipy._lib.array_api_compat.numpy.fft']
+
+# The `scipy._lib.array_api_compat.numpy` module performs a `from numpy import *`; in numpy 2.0.0, `numpy.f2py` was
+# added to `numpy.__all__` attribute, but at the same time, the upstream numpy hook adds `numpy.f2py` to
+# `excludedimports`. Therefore, the `numpy.f2py` sub-package ends up missing. Due to the way exclusion mechanism works,
+# we need to add both `numpy.f2py` and all its submodules to hiddenimports here.
+if check_requirement("numpy >= 2.0.0"):
+    hiddenimports += collect_submodules('numpy.f2py', filter=lambda name: name != 'numpy.f2py.tests')
