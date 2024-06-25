@@ -30,16 +30,17 @@ def _pyi_rthook():
 
     import _pyi_rth_utils.tempfile  # PyInstaller's run-time hook utilities module
 
-    # Isolate matplotlib's config dir into temporary directory.
-    # Use our replacement for `tempfile.mkdtemp` function that properly restricts access to directory on all platforms.
-    configdir = _pyi_rth_utils.tempfile.secure_mkdtemp()
-    os.environ['MPLCONFIGDIR'] = configdir
+    if is_module_satisfies('matplotlib < 3.0.0'):
+        # Isolate matplotlib's config dir into temporary directory.
+        # Use our replacement for `tempfile.mkdtemp` function that properly restricts access to directory on all platforms.
+        configdir = _pyi_rth_utils.tempfile.secure_mkdtemp()
+        os.environ['MPLCONFIGDIR'] = configdir
 
-    try:
-        # Remove temp directory at application exit and ignore any errors.
-        atexit.register(shutil.rmtree, configdir, ignore_errors=True)
-    except OSError:
-        pass
+        try:
+            # Remove temp directory at application exit and ignore any errors.
+            atexit.register(shutil.rmtree, configdir, ignore_errors=True)
+        except OSError:
+            pass
 
 
 _pyi_rthook()
