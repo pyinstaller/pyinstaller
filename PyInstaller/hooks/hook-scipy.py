@@ -33,3 +33,8 @@ if check_requirement("scipy >= 1.9.2") and is_win:
 
 # collect library-wide utility extension modules
 hiddenimports = ['scipy._lib.%s' % m for m in ['messagestream', "_ccallback_c", "_fpumode"]]
+
+# In scipy 1.14.0, `scipy._lib.array_api_compat.numpy` added a programmatic import of its `.fft` submodule, which needs
+# to be added to hiddenimports.
+if check_requirement("scipy >= 1.14.0"):
+    hiddenimports += ['scipy._lib.array_api_compat.numpy.fft']
