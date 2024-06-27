@@ -201,19 +201,6 @@ raise .
 """
 
 
-# Assuming these are the placeholder scripts
-ipc_script = "ipc_script"
-image_script = "image_script"
-splash_canvas_setup = "splash_canvas_setup"
-splash_canvas_default_font = "default_font {font} {font_size}"
-splash_canvas_custom_font = "custom_font {font} {font_size}"
-splash_canvas_text = "canvas_text {text} {x} {y}"
-transparent_setup = "transparent_setup"
-pack_widgets = "pack_widgets"
-position_window_on_top = "position_window_on_top"
-position_window = "position_window"
-raise_window = "raise_window"
-
 def build_script(text_options=None, always_on_top=False):
     """
     This function builds the tcl script for the splash screen.
@@ -226,53 +213,17 @@ def build_script(text_options=None, always_on_top=False):
     ]
 
     if text_options:
-        branch_coverage["branch_1"] = True
-        print("BRANCH 1")
         # If the default font is used we need a different syntax
         if text_options['font'] == "TkDefaultFont":
-            script.append(splash_canvas_default_font.format(**text_options))
-            branch_coverage["branch_2"] = True
-            print("BRANCH 2")
+            script.append(splash_canvas_default_font % text_options)
         else:
-            script.append(splash_canvas_custom_font.format(**text_options))
-            branch_coverage["branch_3"] = True
-            print("BRANCH 3")
-        script.append(splash_canvas_text.format(**text_options))
+            script.append(splash_canvas_custom_font % text_options)
+        script.append(splash_canvas_text % text_options)
 
     script.append(transparent_setup)
+
     script.append(pack_widgets)
     script.append(position_window_on_top if always_on_top else position_window)
     script.append(raise_window)
 
     return '\n'.join(script)
-
-branch_coverage = {
-    "branch_1": False,  # big if branch
-    "branch_2": False,   # sub if branch
-    "branch_3": False   # else branch
-}
-
-# Parameters to hit the second branch
-text_options_1 = {
-    "font": "TkDefaultFont",
-    "font_size": 12,  # Include the font_size key
-    "text": "Welcome to the splash screen",
-    "x": 10,
-    "y": 10
-}
-text_options_2 = {
-    "font": "Helvetica",
-    "font_size": 12,  # Include the font_size key
-    "text": "Welcome to the splash screen",
-    "x": 10,
-    "y": 10
-}
-
-def print_coverage():
-    for branch, hit in branch_coverage.items():
-        print(f"{branch} was {'hit' if hit else 'not hit'}")
-
-result = build_script(text_options=text_options_1)
-print_coverage()
-result = build_script(text_options=text_options_2)
-print_coverage()
