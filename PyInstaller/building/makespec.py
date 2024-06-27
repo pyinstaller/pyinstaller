@@ -15,7 +15,7 @@ Automatically build spec files containing a description of the project.
 import argparse
 import os
 import re
-import sys
+import sys 
 
 from PyInstaller import DEFAULT_SPECPATH, HOMEPATH
 from PyInstaller import log as logging
