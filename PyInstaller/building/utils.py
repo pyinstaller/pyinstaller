@@ -50,8 +50,29 @@ def _check_guts_eq(attr_name, old_value, new_value, last_build):
     """
     if old_value != new_value:
         logger.info("Building because %s changed", attr_name)
+        branch_coverage["branch_1"] = True
         return True
+    branch_coverage["branch_2"] = True
     return False
+
+branch_coverage = {
+    "branch_1": False,  #  if branch
+    "branch_2": False,   #  elif branch
+}
+
+def print_coverage():
+    for branch, hit in branch_coverage.items():
+        print(f"{branch} was {'hit' if hit else 'not hit'}")
+
+attr_test = "test_attr"
+old = "guts1"
+new = "guts2"
+last = None
+
+result = _check_guts_eq(attr_test, old, new, last)
+print_coverage()
+result = _check_guts_eq(attr_test, old, old, last)
+print_coverage()
 
 
 def _check_guts_toc_mtime(attr_name, old_toc, new_toc, last_build):
@@ -65,6 +86,8 @@ def _check_guts_toc_mtime(attr_name, old_toc, new_toc, last_build):
             logger.info("Building because %s changed", src_name)
             return True
     return False
+
+
 
 
 def _check_guts_toc(attr_name, old_toc, new_toc, last_build):
