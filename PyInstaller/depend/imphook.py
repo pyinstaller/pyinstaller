@@ -152,12 +152,28 @@ class ModuleHookCache(dict):
 def _module_collection_mode_sanitizer(value):
     if isinstance(value, dict):
         # Hook set a dictionary; use it as-is
+        branch_coverage["branch_1"] = True
         return value
     elif isinstance(value, str):
         # Hook set a mode string; convert to a dictionary and assign the string to `None` (= the hooked module).
+        branch_coverage["branch_2"] = True
         return {None: value}
 
     raise ValueError(f"Invalid module collection mode setting value: {value!r}")
+
+branch_coverage = {
+    "branch_1": False,  #  if branch
+    "branch_2": False,   #  elif branch 
+}
+
+def print_coverage():
+    for branch, hit in branch_coverage.items():
+        print(f"{branch} was {'hit' if hit else 'not hit'}")
+
+result = _module_collection_mode_sanitizer({})
+print_coverage()
+result = _module_collection_mode_sanitizer("")
+print_coverage()
 
 
 # Dictionary mapping the names of magic attributes required by the "ModuleHook" class to 2-tuples "(default_type,
