@@ -41,12 +41,31 @@ def make_path_spec_relative(filename, spec_dir):
     Otherwise keep filename untouched.
     """
     if os.path.isabs(filename):
+        branch_coverage["branch_1"] = True
         return filename
     else:
+        branch_coverage["branch_2"] = True
         filename = os.path.abspath(filename)
         # Make it relative.
         filename = os.path.relpath(filename, start=spec_dir)
         return filename
+
+branch_coverage = {
+    "branch_1": False,  #  if branch
+    "branch_2": False,   #  elif branch
+}
+
+def print_coverage():
+    for branch, hit in branch_coverage.items():
+        print(f"{branch} was {'hit' if hit else 'not hit'}")
+
+filename = "//"  # Replace with your actual filename
+spec_dir = "//"   # Replace with the directory containing your .spec file
+
+result = make_path_spec_relative(filename, spec_dir)
+print_coverage()
+result = make_path_spec_relative("C:", spec_dir)
+print_coverage()
 
 
 # Support for trying to avoid hard-coded paths in the .spec files. Eg, all files rooted in the Installer directory tree
