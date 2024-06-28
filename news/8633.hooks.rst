@@ -1,0 +1,2 @@
+Update ``django`` hook to account for possibility of the deprecated
+``DEFAULT_FILE_STORAGE`` setting being set to ``None``.
