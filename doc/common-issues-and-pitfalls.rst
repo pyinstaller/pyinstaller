@@ -390,6 +390,8 @@ divert the program flow into corresponding framework's function instead
 of letting it reach your main program code.
 
 
+.. _independent subprocess:
+
 Using ``sys.executable`` to spawn subprocesses that outlive the application process / Implementing application restart
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -421,7 +423,7 @@ also interfere with the cleanup itself due to attempts at accessing the files.
 Therefore, if you need to spawn a subprocess using :data:`sys.executable`
 that will outlive the current application process, you need to ensure
 that is spawned as an independent instance. This is done by setting
-the ``PYINSTALLER_RESET_ENVIRONMENT`` environment variable to ``1``
+the :envvar:`PYINSTALLER_RESET_ENVIRONMENT` environment variable to ``1``
 when spawning the process, for example::
 
     # Restart the application
