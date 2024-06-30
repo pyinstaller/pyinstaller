@@ -55,7 +55,7 @@ PyQtWebEngine==5.15.6
 PyQt6==6.7.0
 PyQt6-Qt6==6.7.2
 PyQt6-3D==6.7.0
-PyQt6-3D-Qt6==6.7.1
+PyQt6-3D-Qt6==6.7.2
 PyQt6-Charts==6.7.0
 PyQt6-Charts-Qt6==6.7.1
 PyQt6-DataVisualization==6.7.0
