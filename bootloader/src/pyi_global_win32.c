@@ -127,11 +127,10 @@ pyi_debug_dialog_warning(const char *fmt, ...)
 }
 
 void
-pyi_debug_dialog_perror(const char *funcname, const char *fmt, ...)
+pyi_debug_dialog_perror(const char *funcname, int error_code, const char *fmt, ...)
 {
     char fullmsg[MBTXTLEN];
     char msg[MBTXTLEN];
-    int error_code = errno; /* Store a copy before calling other functions */
     va_list args;
 
     va_start(args, fmt);
@@ -176,11 +175,10 @@ pyi_debug_dialog_warning_w(const wchar_t *fmt, ...)
 }
 
 void
-pyi_debug_dialog_perror_w(const wchar_t *funcname, const wchar_t *fmt, ...)
+pyi_debug_dialog_perror_w(const wchar_t *funcname, int error_code, const wchar_t *fmt, ...)
 {
     wchar_t fullmsg[MBTXTLEN];
     wchar_t msg[MBTXTLEN];
-    int error_code = errno; /* Store a copy before calling other functions */
     va_list args;
 
     va_start(args, fmt);
@@ -198,11 +196,10 @@ pyi_debug_dialog_perror_w(const wchar_t *funcname, const wchar_t *fmt, ...)
 }
 
 void
-pyi_debug_dialog_winerror_w(const wchar_t *funcname, const wchar_t *fmt, ...)
+pyi_debug_dialog_winerror_w(const wchar_t *funcname, DWORD error_code, const wchar_t *fmt, ...)
 {
     wchar_t fullmsg[MBTXTLEN];
     wchar_t msg[MBTXTLEN];
-    DWORD error_code = GetLastError();
     va_list args;
 
     va_start(args, fmt);
@@ -303,8 +300,8 @@ _pyi_vprintf_to_stderr(const char *fmt, va_list v)
     }
 }
 
-/* Print a message. Used by PYI_ERROR and PYI_WARNING macros, and by
- * PYI_DEBUG macro in debug-enabled builds. */
+/* Print a formatted message. Used by PYI_ERROR and PYI_WARNING macros,
+ * and by PYI_DEBUG macro in debug-enabled builds. */
 void
 pyi_debug_printf(const char *fmt, ...)
 {
@@ -335,12 +332,13 @@ pyi_debug_printf_w(const wchar_t *fmt, ...)
 }
 
 
-/* Print a message, followed by the name of the function that resulted
- * in an error and a textual description of the error, obtained via
- * perror(). Used by PYI_PERROR macro. */
+/* Print a formatted message, followed by the name of the function that
+ * resulted in an error and a textual description of the error, obtained
+ * via strerror(). Used by PYI_PERROR macro. */
 void
-pyi_debug_perror(const char *funcname, const char *fmt, ...)
+pyi_debug_perror(const char *funcname, int error_code, const char *fmt, ...)
 {
+    (void)error_code; /* FIXME: replace perror() call with strerror() */
     va_list v;
 
     /* Formatted message */
@@ -356,8 +354,9 @@ pyi_debug_perror(const char *funcname, const char *fmt, ...)
 }
 
 void
-pyi_debug_perror_w(const wchar_t *funcname, const wchar_t *fmt, ...)
+pyi_debug_perror_w(const wchar_t *funcname, int error_code, const wchar_t *fmt, ...)
 {
+    (void)error_code; /* FIXME: replace _wperror() call with _wcserror() */
     va_list v;
 
     /* Formatted message */
@@ -370,14 +369,13 @@ pyi_debug_perror_w(const wchar_t *funcname, const wchar_t *fmt, ...)
 }
 
 
-/* Print a message, followed by the name of the function that resulted
- * in an error and a textual description of the error, obtained via
- * FormatMessage win32 API. Used by PYI_WINERROR macro. */
+/* Print a formatted message, followed by the name of the function that
+ * resulted in an error and a textual description of the error, obtained
+ * via FormatMessage() win32 API. Used by PYI_WINERROR macro. */
 void
-pyi_debug_winerror_w(const wchar_t *funcname, const wchar_t *fmt, ...)
+pyi_debug_winerror_w(const wchar_t *funcname, DWORD error_code, const wchar_t *fmt, ...)
 {
     va_list v;
-    DWORD error_code = GetLastError();
 
     va_start(v, fmt);
     vfwprintf(stderr, fmt, v);
