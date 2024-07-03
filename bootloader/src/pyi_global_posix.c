@@ -39,8 +39,8 @@
 /* On POSIX platforms, these are straight-forward. We have console
  * available, so print messages to stderr. */
 
-/* Print a message. Used by PYI_ERROR and PYI_WARNING macros, and by
- * PYI_DEBUG macro in debug-enabled builds. */
+/* Print a formatted message. Used by PYI_ERROR and PYI_WARNING macros,
+ * and by PYI_DEBUG macro in debug-enabled builds. */
 void
 pyi_debug_printf(const char *fmt, ...)
 {
@@ -66,12 +66,14 @@ pyi_debug_printf(const char *fmt, ...)
 #endif
 }
 
-/* Print a debug message, followed by the name of the function that
+/* Print a formatted message, followed by the name of the function that
  * resulted in an error and a textual description of the error, obtained
- * via perror(). Used by PYI_PERROR macro. */
+ * via strerror(). Used by PYI_PERROR macro. */
 void
-pyi_debug_perror(const char *funcname, const char *fmt, ...)
+pyi_debug_perror(const char *funcname, int error_code, const char *fmt, ...)
 {
+    (void)error_code; /* FIXME: replace perror() call with strerror() */
+
     va_list v;
 
     /* Formatted message */
