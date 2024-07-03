@@ -146,14 +146,14 @@
         void pyi_debug_dialog_perror_w(const wchar_t *funcname, const wchar_t *fmt, ...);
         void pyi_debug_dialog_winerror_w(const wchar_t *funcname, const wchar_t *fmt, ...);
 
-        #define PYI_ERROR pyi_debug_dialog_error
-        #define PYI_WARNING pyi_debug_dialog_warning
-        #define PYI_PERROR pyi_debug_dialog_perror
+        #define PYI_ERROR(...) pyi_debug_dialog_error(__VA_ARGS__)
+        #define PYI_WARNING(...) pyi_debug_dialog_warning(__VA_ARGS__)
+        #define PYI_PERROR(funcname, ...) pyi_debug_dialog_perror(funcname, __VA_ARGS__)
 
-        #define PYI_ERROR_W pyi_debug_dialog_error_w
-        #define PYI_WARNING_W pyi_debug_dialog_warning_w
-        #define PYI_PERROR_W pyi_debug_dialog_perror_w
-        #define PYI_WINERROR_W pyi_debug_dialog_winerror_w
+        #define PYI_ERROR_W(...) pyi_debug_dialog_error_w(__VA_ARGS__)
+        #define PYI_WARNING_W(...) pyi_debug_dialog_warning_w(__VA_ARGS__)
+        #define PYI_PERROR_W(funcname, ...) pyi_debug_dialog_perror_w(funcname, __VA_ARGS__)
+        #define PYI_WINERROR_W(funcname, ...) pyi_debug_dialog_winerror_w(funcname, __VA_ARGS__)
     #else
         /* We have console; emit messages to stderr. */
         void pyi_debug_printf(const char *fmt, ...);
@@ -163,23 +163,23 @@
         void pyi_debug_perror_w(const wchar_t *funcname, const wchar_t *fmt, ...);
         void pyi_debug_winerror_w(const wchar_t *funcname, const wchar_t *fmt, ...);
 
-        #define PYI_ERROR pyi_debug_printf
-        #define PYI_WARNING pyi_debug_printf
-        #define PYI_PERROR pyi_debug_perror
+        #define PYI_ERROR(...) pyi_debug_printf(__VA_ARGS__)
+        #define PYI_WARNING(...) pyi_debug_printf(__VA_ARGS__)
+        #define PYI_PERROR(funcname, ...) pyi_debug_perror(funcname, __VA_ARGS__)
 
-        #define PYI_ERROR_W pyi_debug_printf_w
-        #define PYI_WARNING_W pyi_debug_printf_w
-        #define PYI_PERROR_W pyi_debug_perror_w
-        #define PYI_WINERROR_W pyi_debug_winerror_w
+        #define PYI_ERROR_W(...) pyi_debug_printf_w(__VA_ARGS__)
+        #define PYI_WARNING_W(...) pyi_debug_printf_w(__VA_ARGS__)
+        #define PYI_PERROR_W(funcname, ...) pyi_debug_perror_w(funcname, __VA_ARGS__)
+        #define PYI_WINERROR_W(funcname, ...) pyi_debug_winerror_w(funcname, __VA_ARGS__)
     #endif /* defined(WINDOWED) */
 #else /* defined(_WIN32) */
     /* POSIX; display error messages to stderr. */
     void pyi_debug_printf(const char *fmt, ...);
     void pyi_debug_perror(const char *funcname, const char *fmt, ...);
 
-    #define PYI_ERROR pyi_debug_printf
-    #define PYI_WARNING pyi_debug_printf
-    #define PYI_PERROR pyi_debug_perror
+    #define PYI_ERROR(...) pyi_debug_printf(__VA_ARGS__)
+    #define PYI_WARNING(...) pyi_debug_printf(__VA_ARGS__)
+    #define PYI_PERROR(funcname, ...) pyi_debug_perror(funcname, __VA_ARGS__)
 #endif /* defined(_WIN32) && defined(WINDOWED) */
 
 #ifdef LAUNCH_DEBUG
@@ -191,16 +191,16 @@
             void pyi_debug_win32debug(const char *fmt, ...);
             void pyi_debug_win32debug_w(const wchar_t *fmt, ...);
 
-            #define PYI_DEBUG pyi_debug_win32debug
-            #define PYI_DEBUG_W pyi_debug_win32debug_w
+            #define PYI_DEBUG(...) pyi_debug_win32debug(__VA_ARGS__)
+            #define PYI_DEBUG_W(...) pyi_debug_win32debug_w(__VA_ARGS__)
         #else
             /* We have console; emit messages to stderr */
-            #define PYI_DEBUG pyi_debug_printf
-            #define PYI_DEBUG_W pyi_debug_printf_w
+            #define PYI_DEBUG(...) pyi_debug_printf(__VA_ARGS__)
+            #define PYI_DEBUG_W(...) pyi_debug_printf_w(__VA_ARGS__)
         #endif /* defined(WINDOWED) */
     #else
         /* POSIX; display messages to stderr */
-        #define PYI_DEBUG pyi_debug_printf
+        #define PYI_DEBUG(...) pyi_debug_printf(__VA_ARGS__)
     #endif /* defined(_WIN32) */
 #else /* ifdef LAUNCH_DEBUG */
     /* Release mode - disable PYI_DEBUG macro (no-op) */
