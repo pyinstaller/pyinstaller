@@ -836,10 +836,10 @@ _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
         /* Return error if we failed to remove temporary directory while
          * strict unpack mode is enabled. */
         if (pyi_ctx->strict_unpack_mode) {
-            PYI_ERROR("ERROR: failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
+            PYI_ERROR("Failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
             ret = -1;
         } else {
-            PYI_WARNING("WARNING: failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
+            PYI_WARNING("Failed to remove temporary directory: %s\n", pyi_ctx->application_home_dir);
         }
     }
 

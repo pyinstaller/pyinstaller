@@ -123,7 +123,7 @@ pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
                 retcode = -1;
                 break;
             } else {
-                PYI_WARNING("WARNING: file already exists but should not: %s\n", output_filename);
+                PYI_WARNING("File already exists but should not: %s\n", output_filename);
             }
         }
 
