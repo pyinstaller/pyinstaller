@@ -496,6 +496,14 @@ _pyi_win32_console_ctrl(DWORD dwCtrlType)
      * main thread of the process finishes and the program exits
      * (gracefully), or when the time runs out and the OS kills everything (see
      * https://docs.microsoft.com/en-us/windows/console/handlerroutine#timeouts). */
+
+    /* ... and then came the new shiny Windows Terminal and replaced
+     * conhost.exe. In Windows terminal, the child process does not
+     * seem to receive the event (until after the parent is terminated).
+     * So we set a flag here that lets the main thread know that it
+     * should terminate the child after a very short grace period. */
+    global_pyi_ctx->console_shutdown = 1;
+
     Sleep(20000);
     return TRUE;
 }
@@ -568,15 +576,63 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
         &startup_info, /* lpStartupInfo */
         &process_info /* lpProcessInformation */
     );
-    if (succeeded) {
-        PYI_DEBUG_W(L"LOADER: waiting for child process to finish...\n");
-        WaitForSingleObject(process_info.hProcess, INFINITE);
-        GetExitCodeProcess(process_info.hProcess, &child_exitcode);
-        return child_exitcode;
+    if (!succeeded) {
+        PYI_WINERROR_W(L"CreateProcessW", L"Failed to create child process!\n");
+        return -1;
     }
 
-    PYI_WINERROR_W(L"CreateProcessW", L"Failed to create child process!\n");
-    return -1;
+    PYI_DEBUG_W(L"LOADER: waiting for child process to finish...\n");
+
+    while (1) {
+        DWORD ret;
+
+         /* 10 Hz polling */
+        ret = WaitForSingleObject(process_info.hProcess, 100);
+        if (ret == WAIT_OBJECT_0) {
+            break; /* Child process has finished, for one reason or another. */
+        }
+
+        if (ret == WAIT_FAILED) {
+            PYI_DEBUG_W(L"LOADER: WaitForSingleObject() failed with error code %d!\n", GetLastError());
+        }
+
+        /* Check if we received CTRL_CLOSE_EVENT, CTRL_SHUTDOWN_EVENT,
+         * or CTRL_LOGOFF_EVENT from the installed console handler.
+         * If we did, give the child process a short grace period to
+         * exit on its own (or be terminated by the same event), before
+         * terminating it ourselves. This seems to be required with
+         * the new Windows Terminal, where (in contrast to conhost.exe),
+         * the child process does not seem to receive the event until
+         * after the OS terminates the parent. */
+        if (pyi_ctx->console_shutdown) {
+            const int timeout = 500; /* 500 ms grace period */
+            PYI_DEBUG_W(L"LOADER: received console shutdown - waiting %d ms for child to exit...\n", timeout);
+            ret = WaitForSingleObject(process_info.hProcess, timeout);
+            if (ret != WAIT_OBJECT_0) {
+                PYI_DEBUG_W(L"LOADER: terminating the child process...\n");
+                if (!TerminateProcess(process_info.hProcess, -1)) {
+                    PYI_DEBUG_W(L"LOADER: TerminateProcess call failed (%d)\n", GetLastError());
+                }
+
+                /* If things don't play out as expected here, there is
+                 * not really much we can do anyway */
+                if (WaitForSingleObject(process_info.hProcess, INFINITE) == WAIT_OBJECT_0) {
+                    PYI_DEBUG_W(L"LOADER: child process terminated!\n");
+                } else {
+                    PYI_DEBUG_W(L"LOADER: child process not terminated!\n");
+                }
+            }
+            /* The child process is presumed dead at this point */
+            break;
+        }
+    }
+
+    GetExitCodeProcess(process_info.hProcess, &child_exitcode);
+
+    CloseHandle(process_info.hProcess);
+    CloseHandle(process_info.hThread);
+
+    return child_exitcode;
 }
 
 
