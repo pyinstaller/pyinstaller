@@ -136,79 +136,34 @@
 #include <errno.h>  /* errno */
 
 #if defined(_WIN32)
-    #if defined(WINDOWED)
-        /* On Windows in windowed/noconsole mode, we display error
-         * messages  via message box, due to lack of console. */
-        void pyi_debug_dialog_error(const char *fmt, ...);
-        void pyi_debug_dialog_warning(const char *fmt, ...);
-        void pyi_debug_dialog_perror(const char *funcname, int error_code, const char *fmt, ...);
+    /* On Windows, we have separate implementations of these functions
+     * for console and for windowed/noconsole mode. */
+    void pyi_error_message(const char *fmt, ...);
+    void pyi_warning_message(const char *fmt, ...);
+    void pyi_perror_message(const char *funcname, int error_code, const char *fmt, ...);
 
-        void pyi_debug_dialog_error_w(const wchar_t *fmt, ...);
-        void pyi_debug_dialog_warning_w(const wchar_t *fmt, ...);
-        void pyi_debug_dialog_perror_w(const wchar_t *funcname, int error_code, const wchar_t *fmt, ...);
-        void pyi_debug_dialog_winerror_w(const wchar_t *funcname, DWORD error_code, const wchar_t *fmt, ...);
+    void pyi_error_message_w(const wchar_t *fmt, ...);
+    void pyi_warning_message_w(const wchar_t *fmt, ...);
+    void pyi_perror_message_w(const wchar_t *funcname, int error_code, const wchar_t *fmt, ...);
+    void pyi_winerror_message_w(const wchar_t *funcname, DWORD error_code, const wchar_t *fmt, ...);
 
-        #define PYI_ERROR(...) pyi_debug_dialog_error(__VA_ARGS__)
-        #define PYI_WARNING(...) pyi_debug_dialog_warning(__VA_ARGS__)
-        #define PYI_PERROR(funcname, ...) pyi_debug_dialog_perror(funcname, errno, __VA_ARGS__)
+    #define PYI_ERROR(...) pyi_error_message(__VA_ARGS__)
+    #define PYI_WARNING(...) pyi_warning_message(__VA_ARGS__)
+    #define PYI_PERROR(funcname, ...) pyi_perror_message(funcname, errno, __VA_ARGS__)
 
-        #define PYI_ERROR_W(...) pyi_debug_dialog_error_w(__VA_ARGS__)
-        #define PYI_WARNING_W(...) pyi_debug_dialog_warning_w(__VA_ARGS__)
-        #define PYI_PERROR_W(funcname, ...) pyi_debug_dialog_perror_w(funcname, errno, __VA_ARGS__)
-        #define PYI_WINERROR_W(funcname, ...) pyi_debug_dialog_winerror_w(funcname, GetLastError(), __VA_ARGS__)
+    #define PYI_ERROR_W(...) pyi_error_message_w(__VA_ARGS__)
+    #define PYI_WARNING_W(...) pyi_warning_message_w(__VA_ARGS__)
+    #define PYI_PERROR_W(funcname, ...) pyi_perror_message_w(funcname, errno, __VA_ARGS__)
+    #define PYI_WINERROR_W(funcname, ...) pyi_winerror_message_w(funcname, GetLastError(), __VA_ARGS__)
+
+    #if defined(LAUNCH_DEBUG)
+        void pyi_debug_message(const char *fmt, ...);
+        void pyi_debug_message_w(const wchar_t *fmt, ...);
+
+        #define PYI_DEBUG(...) pyi_debug_message(__VA_ARGS__)
+        #define PYI_DEBUG_W(...) pyi_debug_message_w(__VA_ARGS__)
     #else
-        /* We have console; emit messages to stderr. */
-        void pyi_debug_printf(const char *fmt, ...);
-        void pyi_debug_perror(const char *funcname, int error_code, const char *fmt, ...);
-
-        void pyi_debug_printf_w(const wchar_t *fmt, ...);
-        void pyi_debug_perror_w(const wchar_t *funcname, int error_code, const wchar_t *fmt, ...);
-        void pyi_debug_winerror_w(const wchar_t *funcname, DWORD error_code, const wchar_t *fmt, ...);
-
-        #define PYI_ERROR(...) pyi_debug_printf(__VA_ARGS__)
-        #define PYI_WARNING(...) pyi_debug_printf(__VA_ARGS__)
-        #define PYI_PERROR(funcname, ...) pyi_debug_perror(funcname, errno, __VA_ARGS__)
-
-        #define PYI_ERROR_W(...) pyi_debug_printf_w(__VA_ARGS__)
-        #define PYI_WARNING_W(...) pyi_debug_printf_w(__VA_ARGS__)
-        #define PYI_PERROR_W(funcname, ...) pyi_debug_perror_w(funcname, errno, __VA_ARGS__)
-        #define PYI_WINERROR_W(funcname, ...) pyi_debug_winerror_w(funcname, GetLastError(), __VA_ARGS__)
-    #endif /* defined(WINDOWED) */
-#else /* defined(_WIN32) */
-    /* POSIX; display error messages to stderr. */
-    void pyi_debug_printf(const char *fmt, ...);
-    void pyi_debug_perror(const char *funcname, int error_code, const char *fmt, ...);
-
-    #define PYI_ERROR(...) pyi_debug_printf(__VA_ARGS__)
-    #define PYI_WARNING(...) pyi_debug_printf(__VA_ARGS__)
-    #define PYI_PERROR(funcname, ...) pyi_debug_perror(funcname, errno, __VA_ARGS__)
-#endif /* defined(_WIN32) && defined(WINDOWED) */
-
-#ifdef LAUNCH_DEBUG
-    /* Debug mode - enable PYI_DEBUG macro */
-    #if defined(_WIN32)
-        #if defined(WINDOWED)
-            /* We do not have console; emit messages via OutputDebugString
-             * win32 API */
-            void pyi_debug_win32debug(const char *fmt, ...);
-            void pyi_debug_win32debug_w(const wchar_t *fmt, ...);
-
-            #define PYI_DEBUG(...) pyi_debug_win32debug(__VA_ARGS__)
-            #define PYI_DEBUG_W(...) pyi_debug_win32debug_w(__VA_ARGS__)
-        #else
-            /* We have console; emit messages to stderr */
-            #define PYI_DEBUG(...) pyi_debug_printf(__VA_ARGS__)
-            #define PYI_DEBUG_W(...) pyi_debug_printf_w(__VA_ARGS__)
-        #endif /* defined(WINDOWED) */
-    #else
-        /* POSIX; display messages to stderr */
-        #define PYI_DEBUG(...) pyi_debug_printf(__VA_ARGS__)
-    #endif /* defined(_WIN32) */
-#else /* ifdef LAUNCH_DEBUG */
-    /* Release mode - disable PYI_DEBUG macro (no-op) */
-    #if defined(_WIN32)
-        /* Windows; MSVC does not allow empty vararg macro...
-         * (but clang + MSVC does) */
+        /* MSVC does not allow empty vararg macro; but clang + MSVC does */
         #if defined(_MSC_VER) && !defined(__clang__)
             #define PYI_DEBUG
             #define PYI_DEBUG_W
@@ -216,11 +171,24 @@
             #define PYI_DEBUG(...)
             #define PYI_DEBUG_W(...)
         #endif
+    #endif /* defined(LAUNCH_DEBUG) */
+#else /* defined(_WIN32) */
+    /* POSIX; display error messages to stderr. */
+    void pyi_error_message(const char *fmt, ...);
+    void pyi_warning_message(const char *fmt, ...);
+    void pyi_perror_message(const char *funcname, int error_code, const char *fmt, ...);
+
+    #define PYI_ERROR(...) pyi_error_message(__VA_ARGS__)
+    #define PYI_WARNING(...) pyi_warning_message(__VA_ARGS__)
+    #define PYI_PERROR(funcname, ...) pyi_perror_message(funcname, errno, __VA_ARGS__)
+
+    #if defined(LAUNCH_DEBUG)
+        void pyi_debug_message(const char *fmt, ...);
+        #define PYI_DEBUG(...) pyi_debug_message(__VA_ARGS__)
     #else
-        /* POSIX */
         #define PYI_DEBUG(...)
-    #endif /* defined(_WIN32) */
-#endif /* ifdef LAUNCH_DEBUG */
+    #endif
+#endif /* defined(_WIN32) */
 
 
 /*

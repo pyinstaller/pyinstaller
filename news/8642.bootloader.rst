@@ -1,0 +1,3 @@
+Change the prefix of debug/warning/error messages from `[{PID}]` to
+`[PYI-{PID}:{SEVERITY}]`, and apply it consistently across all
+bootloader-generated messages.

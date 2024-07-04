@@ -36,22 +36,175 @@
 \**********************************************************************/
 /* On Windows, we print messages to stderr if console is available. If
  * not, we use message box for error/warning messages, and
- * OutputDebugStringW function for debug messages. */
+ * OutputDebugString function for debug messages. */
 
-/* Maximum length of text displayed in a message box. */
-#define MBTXTLEN 1024
+/* Maximum length of debug/warning/error messages */
+#define PYI_MESSAGE_LEN 4096
 
 
-/* Return a pointer to a null-terminated wide-char string containing a
- * textual description of the given error code. Used by helper functions
- * such as pyi_debug_dialog_winerror_w and pyi_debug_winerror_w. */
-static const wchar_t *
-_pyi_get_winerror_string(DWORD error_code)
+/* Common message formatting helpers used by both console and
+ * noconsole/windowed codepath. The passed buffers are assumed to be
+ * of PYI_MESSAGE_LEN size. The functions return the length of message
+ * prefix, which allows the prefix to be skipped in the error dialogs
+ * (while having it included in message passed to OutputDebugString). */
+static int
+_pyi_format_message_utf8(char *message_buffer, const char *severity, const char *fmt, va_list args)
 {
-    #define ERROR_STRING_MAX 4096
-    static wchar_t local_buffer[ERROR_STRING_MAX];
+    char *msg_ptr = message_buffer;
+    int buflen = PYI_MESSAGE_LEN;
+    int prefix_len = 0;
+    int ret;
 
-    DWORD result;
+    /* Prefix: [PYI-{PID}:{SEVERITY}]. */
+    ret = snprintf(msg_ptr, buflen, "[PYI-%d:%s] ", _getpid(), severity);
+    if (ret >= 0) {
+        msg_ptr += ret;
+        buflen -= ret;
+        if (buflen < 0) {
+            buflen = 0;
+        }
+        prefix_len = ret; /* Store prefix length so we can return it */
+    }
+
+    /* Formatted message */
+    vsnprintf(msg_ptr, buflen, fmt, args);
+
+    return prefix_len;
+}
+
+static int
+_pyi_format_message_w(wchar_t *message_buffer, const wchar_t *severity, const wchar_t *fmt, va_list args)
+{
+    wchar_t *msg_ptr = message_buffer;
+    int buflen = PYI_MESSAGE_LEN;
+    int prefix_len = 0;
+    int ret;
+
+    /* Prefix: [PYI-{PID}:{SEVERITY}]. */
+    ret = _snwprintf(msg_ptr, buflen, L"[PYI-%d:%ls] ", _getpid(), severity);
+    if (ret >= 0) {
+        msg_ptr += ret;
+        buflen -= ret;
+        if (buflen < 0) {
+            buflen = 0;
+        }
+        prefix_len = ret; /* Store prefix length so we can return it */
+    }
+
+    /* Formatted message */
+    _vsnwprintf(msg_ptr, buflen, fmt, args);
+
+    return prefix_len;
+}
+
+static int
+_pyi_format_perror_message_utf8(char *message_buffer, const char *funcname, int error_code, const char *fmt, va_list args)
+{
+    char *msg_ptr = message_buffer;
+    int buflen = PYI_MESSAGE_LEN;
+    int prefix_len = 0;
+    int ret;
+
+    /* Prefix: [PYI-{PID}:{SEVERITY}]. */
+    ret = snprintf(msg_ptr, buflen, "[PYI-%d:ERROR] ", _getpid());
+    if (ret >= 0) {
+        msg_ptr += ret;
+        buflen -= ret;
+        if (buflen < 0) {
+            buflen = 0;
+        }
+        prefix_len = ret; /* Store prefix length so we can return it */
+    }
+
+    /* Formatted message */
+    ret = vsnprintf(msg_ptr, buflen, fmt, args);
+    if (ret >= 0) {
+        msg_ptr += ret;
+        buflen -= ret;
+        if (buflen < 0) {
+            buflen = 0;
+        }
+    }
+
+    /* Function name and error message (perror equivalent) */
+    snprintf(msg_ptr, buflen, "%s: %s\n", funcname, strerror(error_code));
+
+    return prefix_len;
+}
+
+static int
+_pyi_format_perror_message_w(wchar_t *message_buffer, const wchar_t *funcname, int error_code, const wchar_t *fmt, va_list args)
+{
+    wchar_t *msg_ptr = message_buffer;
+    int buflen = PYI_MESSAGE_LEN;
+    int prefix_len = 0;
+    int ret;
+
+    /* Prefix: [PYI-{PID}:{SEVERITY}]. */
+    ret = _snwprintf(msg_ptr, buflen, L"[PYI-%d:ERROR] ", _getpid());
+    if (ret >= 0) {
+        msg_ptr += ret;
+        buflen -= ret;
+        if (buflen < 0) {
+            buflen = 0;
+        }
+        prefix_len = ret; /* Store prefix length so we can return it */
+    }
+
+    /* Formatted message */
+    ret = _vsnwprintf(msg_ptr, buflen, fmt, args);
+    if (ret >= 0) {
+        msg_ptr += ret;
+        buflen -= ret;
+        if (buflen < 0) {
+            buflen = 0;
+        }
+    }
+
+    /* Function name and error message (perror equivalent) */
+    _snwprintf(msg_ptr, buflen, L"%ls: %ls\n", funcname, _wcserror(error_code));
+
+    return prefix_len;
+}
+
+static int
+_pyi_format_winerror_message_w(wchar_t *message_buffer, const wchar_t *funcname, DWORD error_code, const wchar_t *fmt, va_list args)
+{
+    wchar_t *msg_ptr = message_buffer;
+    int buflen = PYI_MESSAGE_LEN;
+    int prefix_len = 0;
+    int ret;
+
+    /* Prefix: [PYI-{PID}:{SEVERITY}]. */
+    ret = _snwprintf(msg_ptr, buflen, L"[PYI-%d:ERROR] ", _getpid());
+    if (ret >= 0) {
+        msg_ptr += ret;
+        buflen -= ret;
+        if (buflen < 0) {
+            buflen = 0;
+        }
+        prefix_len = ret; /* Store prefix length so we can return it */
+    }
+
+    /* Formatted message */
+    ret = _vsnwprintf(msg_ptr, buflen, fmt, args);
+    if (ret >= 0) {
+        msg_ptr += ret;
+        buflen -= ret;
+        if (buflen < 0) {
+            buflen = 0;
+        }
+    }
+
+    /* Function name and error message*/
+    ret = _snwprintf(msg_ptr, buflen, L"%ls: ", funcname);
+    if (ret >= 0) {
+        msg_ptr += ret;
+        buflen -= ret;
+        if (buflen < 0) {
+            buflen = 0;
+        }
+    }
 
     /* Note: Giving 0 to dwLanguageID means MAKELANGID(LANG_NEUTRAL,
      * SUBLANG_NEUTRAL), but we should use SUBLANG_DEFAULT instead of
@@ -59,236 +212,264 @@ _pyi_get_winerror_string(DWORD error_code)
      * Identifier Constants and Strings" on MSDN.
      * https://docs.microsoft.com/en-us/windows/desktop/intl/language-identifier-constants-and-strings
      */
-    result = FormatMessageW(
+    ret = FormatMessageW(
         FORMAT_MESSAGE_FROM_SYSTEM, /* dwFlags */
         NULL, /* lpSource */
         error_code, /* dwMessageId */
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
-        local_buffer, /* lpBuffer */
-        ERROR_STRING_MAX, /* nSize */
+        msg_ptr, /* lpBuffer */
+        buflen, /* nSize */
         NULL /* Arguments */
     );
-
-    if (!result) {
-        return L"<FormatMessageW failed.>";
+    if (ret == 0) {
+        _snwprintf(msg_ptr, buflen, L"<FormatMessageW failed.>\n");
     }
 
-    return local_buffer;
+    return prefix_len;
 }
 
 
 #if defined(WINDOWED)
 
 /*
- * Dialogs used in Windows windowed/noconsole builds.
+ * Implementation used in Windows windowed/noconsole builds. Errors and
+ * warnings are signaled via dialogs (as well as written to OutputDebugString
+ * in debug-enabled builds). In debug-enabled builds, debug messages are
+ * written to OutputDebugString.
  */
 
+/*
+ * Narrow-char/UTF-8 version of functions.
+ */
+
+/* Helper used by functions that display dialog */
 static void
-_pyi_show_message_box(const char *msg, const wchar_t *caption, UINT uType)
+_pyi_output_message_utf8(const char *message_buffer_utf8, int prefix_length, const wchar_t *caption, const char *fallback_caption, UINT icon_type)
 {
-    wchar_t msg_w[MBTXTLEN];
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
 
-    /* The original message is formatted in UTF-8; convert it to
-     * wide-char for MessageBoxW. */
-    if (pyi_win32_utf8_to_wcs(msg, msg_w, MBTXTLEN)) {
-        MessageBoxW(NULL, msg_w, caption, MB_OK | uType);
-    } else {
-        /* Conversion failed. Try displaying the original UTF-8 string
-         * via the ANSI method. This will produce garbled text if Unicode
-         * characters are present, but it is better than nothing. */
-        MessageBoxA(NULL, msg, "Error/warning (ANSI fallback)", MB_OK | uType);
-    }
-}
+    /* Convert UTF-8 message to wide-char */
+    if (pyi_win32_utf8_to_wcs(message_buffer_utf8, message_buffer, PYI_MESSAGE_LEN)) {
+        /* In debug-enabled builds, submit a copy via OutputDebugString */
+#if defined(LAUNCH_DEBUG)
+        OutputDebugStringW(message_buffer);
+#endif
 
-void
-pyi_debug_dialog_error(const char *fmt, ...)
-{
-    char msg[MBTXTLEN];
-    va_list args;
-
-    va_start(args, fmt);
-    vsnprintf(msg, MBTXTLEN, fmt, args);
-    va_end(args);
-
-    _pyi_show_message_box(msg, L"Error", MB_ICONEXCLAMATION);
-}
-
-void
-pyi_debug_dialog_warning(const char *fmt, ...)
-{
-    char msg[MBTXTLEN];
-    va_list args;
-
-    va_start(args, fmt);
-    vsnprintf(msg, MBTXTLEN, fmt, args);
-    va_end(args);
-
-    _pyi_show_message_box(msg, L"Warning", MB_ICONWARNING);
-}
-
-void
-pyi_debug_dialog_perror(const char *funcname, int error_code, const char *fmt, ...)
-{
-    char fullmsg[MBTXTLEN];
-    char msg[MBTXTLEN];
-    va_list args;
-
-    va_start(args, fmt);
-    vsnprintf(msg, MBTXTLEN, fmt, args);
-    va_end(args);
-
-    /* Suppress warnings generated by some mingw64 gcc toolchains;
-     * we do not care about truncation here. */
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wformat-truncation"
-    snprintf(fullmsg, MBTXTLEN, "%s%s: %s", msg, funcname, strerror(error_code));
-    #pragma GCC diagnostic pop
-
-    _pyi_show_message_box(fullmsg, L"Error", MB_ICONEXCLAMATION);
-}
-
-/* Pure wide-char variants */
-void
-pyi_debug_dialog_error_w(const wchar_t *fmt, ...)
-{
-    wchar_t msg[MBTXTLEN];
-    va_list args;
-
-    va_start(args, fmt);
-    _vsnwprintf(msg, MBTXTLEN, fmt, args);
-    va_end(args);
-
-    MessageBoxW(NULL, msg, L"Error", MB_OK | MB_ICONEXCLAMATION);
-}
-
-void
-pyi_debug_dialog_warning_w(const wchar_t *fmt, ...)
-{
-    wchar_t msg[MBTXTLEN];
-    va_list args;
-
-    va_start(args, fmt);
-    _vsnwprintf(msg, MBTXTLEN, fmt, args);
-    va_end(args);
-
-    MessageBoxW(NULL, msg, L"Warning", MB_OK | MB_ICONEXCLAMATION);
-}
-
-void
-pyi_debug_dialog_perror_w(const wchar_t *funcname, int error_code, const wchar_t *fmt, ...)
-{
-    wchar_t fullmsg[MBTXTLEN];
-    wchar_t msg[MBTXTLEN];
-    va_list args;
-
-    va_start(args, fmt);
-    _vsnwprintf(msg, MBTXTLEN, fmt, args);
-    va_end(args);
-
-    /* Suppress warnings generated by some mingw64 gcc toolchains;
-     * we do not care about truncation here. */
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wformat-truncation"
-    _snwprintf(fullmsg, MBTXTLEN, L"%ls%ls: %ls", msg, funcname, _wcserror(error_code));
-    #pragma GCC diagnostic pop
-
-    MessageBoxW(NULL, fullmsg, L"Error", MB_OK | MB_ICONEXCLAMATION);
-}
-
-void
-pyi_debug_dialog_winerror_w(const wchar_t *funcname, DWORD error_code, const wchar_t *fmt, ...)
-{
-    wchar_t fullmsg[MBTXTLEN];
-    wchar_t msg[MBTXTLEN];
-    va_list args;
-
-    va_start(args, fmt);
-    _vsnwprintf(msg, MBTXTLEN, fmt, args);
-    va_end(args);
-
-    /* Suppress warnings generated by some mingw64 gcc toolchains;
-     * we do not care about truncation here. */
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wformat-truncation"
-    _snwprintf(fullmsg, MBTXTLEN, L"%ls%ls: %ls", msg, funcname, _pyi_get_winerror_string(error_code));
-    #pragma GCC diagnostic pop
-
-    MessageBoxW(NULL, fullmsg, L"Error", MB_OK | MB_ICONEXCLAMATION);
-}
-
-/* Emit debug messages (in debug-enabled builds) via OutputDebugString
- * win32 API. */
-#ifdef LAUNCH_DEBUG
-
-void
-pyi_debug_win32debug(const char *fmt, ...)
-{
-    char msg[MBTXTLEN];
-    wchar_t msg_w[MBTXTLEN];
-    va_list args;
-    int pid_len;
-
-    /* Add pid to the message */
-    pid_len = sprintf(msg, "[%d] ", getpid());
-
-    /* Format message */
-    va_start(args, fmt);
-    vsnprintf(&msg[pid_len], MBTXTLEN-pid_len, fmt, args);
-    va_end(args);
-
-    /* Convert message from UTF-8 to wide-char for OutputDebugStringW */
-    if (pyi_win32_utf8_to_wcs(msg, msg_w, MBTXTLEN)) {
-        OutputDebugStringW(msg_w);
+        /* Show dialog */
+        /* NOTE: here, we implicitly assume that the prefix length that
+         * was computed on UTF-8 buffer is also valid for the wide-char
+         * buffer. Which should be the case, as prefix should contain
+         * only ASCII characters. */
+        MessageBoxW(NULL, message_buffer + prefix_length, caption, MB_OK | icon_type);
     } else {
         /* Conversion failed; try displaying the original UTF-8 string
          * via the ANSI method. This will produce garbled text if Unicode
          * characters are present, but it is better than nothing. */
-        OutputDebugStringA(msg);
+
+        /* In debug-enabled builds, submit a copy via OutputDebugString */
+#if defined(LAUNCH_DEBUG)
+        OutputDebugStringA(message_buffer_utf8);
+#endif
+
+        /* Show dialog */
+        MessageBoxA(NULL, message_buffer_utf8 + prefix_length, fallback_caption, MB_OK | icon_type);
     }
 }
 
+/* Used by PYI_DEBUG macro. */
+#if defined(LAUNCH_DEBUG)
+
 void
-pyi_debug_win32debug_w(const wchar_t *fmt, ...)
+pyi_debug_message(const char *fmt, ...)
 {
-    wchar_t msg[MBTXTLEN];
+    char message_buffer_utf8[PYI_MESSAGE_LEN];
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
     va_list args;
-    int pid_len;
 
-    /* Add pid to the message */
-    pid_len = _swprintf(msg, L"[%d] ", getpid());
-
-    /* Format message */
     va_start(args, fmt);
-    _vsnwprintf(&msg[pid_len], MBTXTLEN-pid_len, fmt, args);
+    _pyi_format_message_utf8(message_buffer_utf8, "DEBUG", fmt, args);
     va_end(args);
 
-    /* Submit to OutputDebugStringW */
-    OutputDebugStringW(msg);
+    /* Convert UTF-8 message to wide-char */
+    if (pyi_win32_utf8_to_wcs(message_buffer_utf8, message_buffer, PYI_MESSAGE_LEN)) {
+        OutputDebugStringW(message_buffer);
+    } else {
+        /* Conversion failed; try displaying the original UTF-8 string
+         * via the ANSI method. This will produce garbled text if Unicode
+         * characters are present, but it is better than nothing. */
+        OutputDebugStringA(message_buffer_utf8);
+    }
 }
 
-#endif /* ifdef LAUNCH_DEBUG */
+#endif
+
+void
+pyi_warning_message(const char *fmt, ...)
+{
+    char message_buffer[PYI_MESSAGE_LEN];
+    int prefix_length;
+    va_list args;
+
+    va_start(args, fmt);
+    prefix_length = _pyi_format_message_utf8(message_buffer, "WARNING", fmt, args);
+    va_end(args);
+
+    _pyi_output_message_utf8(message_buffer, prefix_length, L"Warning", "Warning [ANSI Fallback]", MB_ICONWARNING);
+}
+
+
+void
+pyi_error_message(const char *fmt, ...)
+{
+    char message_buffer[PYI_MESSAGE_LEN];
+    int prefix_length;
+    va_list args;
+
+    va_start(args, fmt);
+    prefix_length = _pyi_format_message_utf8(message_buffer, "ERROR", fmt, args);
+    va_end(args);
+
+    _pyi_output_message_utf8(message_buffer, prefix_length, L"Error", "Error [ANSI Fallback]", MB_ICONERROR);
+}
+
+void
+pyi_perror_message(const char *funcname, int error_code, const char *fmt, ...)
+{
+    char message_buffer[PYI_MESSAGE_LEN];
+    int prefix_length;
+    va_list args;
+
+    va_start(args, fmt);
+    prefix_length = _pyi_format_perror_message_utf8(message_buffer, funcname, error_code, fmt, args);
+    va_end(args);
+
+    _pyi_output_message_utf8(message_buffer, prefix_length, L"Error", "Error [ANSI Fallback]", MB_ICONERROR);
+}
+
+/*
+ * Native wide-char version of functions.
+ */
+
+/* Used by PYI_DEBUG_W macro. */
+#if defined(LAUNCH_DEBUG)
+
+void
+pyi_debug_message_w(const wchar_t *fmt, ...)
+{
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
+    va_list args;
+
+    va_start(args, fmt);
+    _pyi_format_message_w(message_buffer, L"DEBUG", fmt, args);
+    va_end(args);
+
+    OutputDebugStringW(message_buffer);
+}
+
+#endif
+
+/* Used by PYI_WARNING_W macro. */
+void
+pyi_warning_message_w(const wchar_t *fmt, ...)
+{
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
+    int prefix_length;
+    va_list args;
+
+    va_start(args, fmt);
+    prefix_length = _pyi_format_message_w(message_buffer, L"WARNING", fmt, args);
+    va_end(args);
+
+#if defined(LAUNCH_DEBUG)
+    OutputDebugStringW(message_buffer);
+#endif
+
+    MessageBoxW(NULL, message_buffer + prefix_length, L"Warning", MB_OK | MB_ICONWARNING);
+}
+
+/* Used by PYI_ERROR_W macro. */
+void
+pyi_error_message_w(const wchar_t *fmt, ...)
+{
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
+    int prefix_length;
+    va_list args;
+
+    va_start(args, fmt);
+    prefix_length = _pyi_format_message_w(message_buffer, L"ERROR", fmt, args);
+    va_end(args);
+
+#if defined(LAUNCH_DEBUG)
+    OutputDebugStringW(message_buffer);
+#endif
+
+    MessageBoxW(NULL, message_buffer + prefix_length, L"Error", MB_OK | MB_ICONERROR);
+}
+
+/* Used by PYI_PERROR_W macro. */
+void
+pyi_perror_message_w(const wchar_t *funcname, int error_code, const wchar_t *fmt, ...)
+{
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
+    int prefix_length;
+    va_list args;
+
+    va_start(args, fmt);
+    prefix_length = _pyi_format_perror_message_w(message_buffer, funcname, error_code, fmt, args);
+    va_end(args);
+
+#if defined(LAUNCH_DEBUG)
+    OutputDebugStringW(message_buffer);
+#endif
+
+    MessageBoxW(NULL, message_buffer + prefix_length, L"Error", MB_OK | MB_ICONERROR);
+}
+
+/* Used by PYI_WINERROR_W macro. */
+void
+pyi_winerror_message_w(const wchar_t *funcname, DWORD error_code, const wchar_t *fmt, ...)
+{
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
+    int prefix_length;
+    va_list args;
+
+    va_start(args, fmt);
+    prefix_length = _pyi_format_winerror_message_w(message_buffer, funcname, error_code, fmt, args);
+    va_end(args);
+
+#if defined(LAUNCH_DEBUG)
+    OutputDebugStringW(message_buffer);
+#endif
+
+    MessageBoxW(NULL, message_buffer + prefix_length, L"Error", MB_OK | MB_ICONERROR);
+}
+
 
 #else /* defined(WINDOWED) */
 
-
 /*
- * Print messages to stderr.
+ * Implementation used in Windows noconsole builds. All messages are
+ * written to stderr. In debug-enabled builds, a copy of each message
+ * is also written to OutputDebugString.
  */
 
-/* Format string in UTF-8, then convert to wide-char and display using
- * fwprintf(). Used by pyi_debug_printf, pyi_debug_perror, and
- * pyi_debug_winerror helpers. */
+/*
+ * Narrow-char/UTF-8 version of functions.
+ */
 static void
-_pyi_vprintf_to_stderr(const char *fmt, va_list v)
+_pyi_output_message_utf8(const char *message_buffer_utf8)
 {
-    #define BUFSIZE (MBTXTLEN * 2)
-    char msg[BUFSIZE];
-    wchar_t msg_w[BUFSIZE];
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
 
-    vsnprintf(msg, BUFSIZE, fmt, v);
+    /* Convert UTF-8 message to wide-char */
+    if (pyi_win32_utf8_to_wcs(message_buffer_utf8, message_buffer, PYI_MESSAGE_LEN)) {
+        /* Write to stderr */
+        fwprintf(stderr, L"%ls", message_buffer);
 
-    if (pyi_win32_utf8_to_wcs(msg, msg_w, BUFSIZE)) {
-        fwprintf(stderr, L"%ls", msg_w);
+        /* In debug-enabled builds, also submit a copy via OutputDebugString */
+#if defined(LAUNCH_DEBUG)
+        OutputDebugStringW(message_buffer);
+#endif
     } else {
         /* Conversion failed; try displaying the original UTF-8 string
          * via the ANSI method. This will produce garbled text if Unicode
@@ -296,92 +477,171 @@ _pyi_vprintf_to_stderr(const char *fmt, va_list v)
          * we should not be mixing ANSI and wide-char I/O, although
          * Windows seems to be quite forgiving in this regard (i.e.,
          * stream orientation does not seem to matter). */
-        fprintf(stderr, "[ANSI fallback]: %s", msg);
+
+         /* Write to stderr */
+        fprintf(stderr, "%s [ANSI fallback]", message_buffer_utf8);
+
+        /* In debug-enabled builds, also submit a copy via OutputDebugString */
+#if defined(LAUNCH_DEBUG)
+        OutputDebugStringA(message_buffer_utf8);
+#endif
     }
 }
 
-/* Print a formatted message. Used by PYI_ERROR and PYI_WARNING macros,
- * and by PYI_DEBUG macro in debug-enabled builds. */
-void
-pyi_debug_printf(const char *fmt, ...)
+/* Print a formatted debug/warning/error message to stderr. The message
+ * is formatted in UTF-8, then converted to wide-char and written to stderr
+ * using fwprintf(). */
+
+/* Used by PYI_DEBUG macro. */
+#if defined(LAUNCH_DEBUG)
+
+void pyi_debug_message(const char *fmt, ...)
 {
-    va_list v;
+    char message_buffer[PYI_MESSAGE_LEN];
+    va_list args;
 
-    /* Print the [PID] prefix. */
-    fwprintf(stderr, L"[%d] ", getpid());
+    va_start(args, fmt);
+    _pyi_format_message_utf8(message_buffer, "DEBUG", fmt, args);
+    va_end(args);
 
-    /* Print the message */
-    va_start(v, fmt);
-    _pyi_vprintf_to_stderr(fmt, v);
-    va_end(v);
+    _pyi_output_message_utf8(message_buffer);
 }
 
-/* Wide-char variant of pyi_debug_printf. Used by PYI_DEBUG_W macro. */
-void
-pyi_debug_printf_w(const wchar_t *fmt, ...)
+#endif /* defined(LAUNCH_DEBUG) */
+
+/* Used by PYI_WARNING macro. */
+void pyi_warning_message(const char *fmt, ...)
 {
-    va_list v;
+    char message_buffer[PYI_MESSAGE_LEN];
+    va_list args;
 
-    /* Print the [PID] prefix */
-    fwprintf(stderr, L"[%d] ", getpid());
+    va_start(args, fmt);
+    _pyi_format_message_utf8(message_buffer, "WARNING", fmt, args);
+    va_end(args);
 
-    /* Print the message */
-    va_start(v, fmt);
-    vfwprintf(stderr, fmt, v);
-    va_end(v);
+    _pyi_output_message_utf8(message_buffer);
 }
 
+/* Used by PYI_ERROR macro. */
+void pyi_error_message(const char *fmt, ...)
+{
+    char message_buffer[PYI_MESSAGE_LEN];
+    va_list args;
+
+    va_start(args, fmt);
+    _pyi_format_message_utf8(message_buffer, "ERROR", fmt, args);
+    va_end(args);
+
+    _pyi_output_message_utf8(message_buffer);
+}
 
 /* Print a formatted message, followed by the name of the function that
  * resulted in an error and a textual description of the error, obtained
  * via strerror(). Used by PYI_PERROR macro. */
 void
-pyi_debug_perror(const char *funcname, int error_code, const char *fmt, ...)
+pyi_perror_message(const char *funcname, int error_code, const char *fmt, ...)
 {
-    (void)error_code; /* FIXME: replace perror() call with strerror() */
-    va_list v;
+    char message_buffer[PYI_MESSAGE_LEN];
+    va_list args;
 
-    /* Formatted message */
-    va_start(v, fmt);
-    _pyi_vprintf_to_stderr(fmt, v);
-    va_end(v);
+    va_start(args, fmt);
+    _pyi_format_perror_message_utf8(message_buffer, funcname, error_code, fmt, args);
+    va_end(args);
 
-    /* Perror-formatted error message */
-    /* TODO: we should be using _wperror() here! However, Windows seems
-     * to be quite forgiving about mixing ANSI and wide-char I/O (i.e.,
-     * stream orientation does not seem to matter). */
-    perror(funcname); /* perror() writes to stderr */
+    _pyi_output_message_utf8(message_buffer);
 }
 
-void
-pyi_debug_perror_w(const wchar_t *funcname, int error_code, const wchar_t *fmt, ...)
+
+/*
+ * Native wide-char version of functions.
+ */
+static void
+_pyi_output_message_w(const wchar_t *message_buffer)
 {
-    (void)error_code; /* FIXME: replace _wperror() call with _wcserror() */
-    va_list v;
+    /* Write to stderr */
+    fwprintf(stderr, L"%ls", message_buffer);
 
-    /* Formatted message */
-    va_start(v, fmt);
-    vfwprintf(stderr, fmt, v);
-    va_end(v);
+    /* In debug-enabled builds, also submit a copy via OutputDebugString */
+#if defined(LAUNCH_DEBUG)
+    OutputDebugStringW(message_buffer);
+#endif
+}
 
-    /* Perror-formatted error message */
-    _wperror(funcname); /* _wperror() writes to stderr */
+/* Used by PYI_DEBUG_W macro. */
+#if defined(LAUNCH_DEBUG)
+
+void pyi_debug_message_w(const wchar_t *fmt, ...)
+{
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
+    va_list args;
+
+    va_start(args, fmt);
+    _pyi_format_message_w(message_buffer, L"DEBUG", fmt, args);
+    va_end(args);
+
+    _pyi_output_message_w(message_buffer);
+}
+
+#endif /* defined(LAUNCH_DEBUG) */
+
+/* Used by PYI_WARNING_W macro. */
+void pyi_warning_message_w(const wchar_t *fmt, ...)
+{
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
+    va_list args;
+
+    va_start(args, fmt);
+    _pyi_format_message_w(message_buffer, L"WARNING", fmt, args);
+    va_end(args);
+
+    _pyi_output_message_w(message_buffer);
+}
+
+/* Used by PYI_ERROR macro. */
+void pyi_error_message_w(const wchar_t *fmt, ...)
+{
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
+    va_list args;
+
+    va_start(args, fmt);
+    _pyi_format_message_w(message_buffer, L"ERROR", fmt, args);
+    va_end(args);
+
+    _pyi_output_message_w(message_buffer);
 }
 
 
 /* Print a formatted message, followed by the name of the function that
  * resulted in an error and a textual description of the error, obtained
- * via FormatMessage() win32 API. Used by PYI_WINERROR macro. */
+ * via _wcserror(). Used by PYI_PERROR_W macro. */
 void
-pyi_debug_winerror_w(const wchar_t *funcname, DWORD error_code, const wchar_t *fmt, ...)
+pyi_perror_message_w(const wchar_t *funcname, int error_code, const wchar_t *fmt, ...)
 {
-    va_list v;
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
+    va_list args;
 
-    va_start(v, fmt);
-    vfwprintf(stderr, fmt, v);
-    va_end(v);
+    va_start(args, fmt);
+    _pyi_format_perror_message_w(message_buffer, funcname, error_code, fmt, args);
+    va_end(args);
 
-    fwprintf(stderr, L"%ls: %ls", funcname, _pyi_get_winerror_string(error_code));
+    _pyi_output_message_w(message_buffer);
+}
+
+
+/* Print a formatted message, followed by the name of the function that
+ * resulted in an error and a textual description of the error, obtained
+ * via FormatMessage() win32 API. Used by PYI_WINERROR_W macro. */
+void
+pyi_winerror_message_w(const wchar_t *funcname, DWORD error_code, const wchar_t *fmt, ...)
+{
+    wchar_t message_buffer[PYI_MESSAGE_LEN];
+    va_list args;
+
+    va_start(args, fmt);
+    _pyi_format_winerror_message_w(message_buffer, funcname, error_code, fmt, args);
+    va_end(args);
+
+    _pyi_output_message_w(message_buffer);
 }
 
 
