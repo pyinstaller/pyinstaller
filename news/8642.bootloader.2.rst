@@ -1,0 +1,7 @@
+(Windows) In debug-enabled bootloader variants, copies of debug/warning/error
+messages are now submitted to ``OutputDebugString`` win32 API in addition
+to their primary output mechanism (i.e., ``stderr`` or message dialog).
+This applies to both console and noconsole/windowed bootloader variants.
+(Previously, ``OutputDebugString`` was used only for debug messages in
+debug-enabled noconsole/windowed bootloader variant, where it serves as
+the primary output mechanism.)

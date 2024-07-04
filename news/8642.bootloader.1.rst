@@ -1,0 +1,4 @@
+Bootloader's debug/error/warning messages are now always formatted in
+the temporary buffer (even when they are written to ``stderr``), in
+order to ensure their atomicity and avoid interleaving of message parts
+in multi-process scenarios.
