@@ -549,7 +549,7 @@ pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
         char *const *argv = (pyi_ctx->pyi_argv != NULL) ? pyi_ctx->pyi_argv : pyi_ctx->argv;
 
         if (_pyi_set_systemd_env() != 0) {
-            PYI_WARNING("WARNING: application is started by systemd socket, but we cannot set proper LISTEN_PID on it.\n");
+            PYI_WARNING("LOADER: application is started by systemd socket, but we cannot set proper LISTEN_PID on it.\n");
         }
 
         if (execvp(pyi_ctx->executable_filename, argv) < 0) {

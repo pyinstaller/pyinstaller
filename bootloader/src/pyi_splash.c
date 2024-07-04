@@ -314,7 +314,7 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
                 PYI_ERROR("SPLASH: file already exists but should not: %s\n", output_filename);
                 return -1;
             } else {
-                PYI_WARNING("SPLASH: WARNING: file already exists but should not: %s\n", output_filename);
+                PYI_WARNING("SPLASH: file already exists but should not: %s\n", output_filename);
             }
         }
 
