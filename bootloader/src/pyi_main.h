@@ -193,6 +193,15 @@ struct PYI_CONTEXT
     int child_signal;
 #endif
 
+    /* Flags used on Windows to signal various circumstances under which
+     * the application should shut itself down (i.e., in onefile mode,
+     * it should terminate the child process and perform the cleanup) */
+#if defined(_WIN32)
+    /* CTRL_CLOSE_EVENT, CTRL_SHUTDOWN_EVENT, or CTRL_LOGOFF_EVENT
+     * received via installed console handler. */
+    unsigned char console_shutdown;
+#endif
+
     /**
      * Runtime options
      */
