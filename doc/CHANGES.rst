@@ -15,6 +15,51 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.9.0 (2024-07-06)
+------------------
+
+Bugfix
+~~~~~~
+
+* (Windows) Work around the problem with ``libgcc_s_dw2-1.dll`` and
+  ``libwinpthread-1.dll`` DLLs files not being removed from application's
+  temporary directory when building splash-screen-enabled onefile
+  application with 32-bit msys2/mingw32 environment. (:issue:`8587`)
+* (Windows) Work around the problem with ``VCRUNTIME140.dll`` DLL file not
+  being removed from application's temporary directory when building
+  splash-screen-enabled onefile application with UPX enabled. (:issue:`7106`)
+* Re-allow ``hiddenimports`` with hyphenated names during Analysis (was blocked
+  in v6.8.0) (:issue:`8601`)
+
+
+Hooks
+~~~~~
+
+* Add work-around for incompatibility between ``scipy`` and ``numpy`` 2.0.0
+  (the ``ModuleNotFoundError: No module named 'numpy.f2py'`` error).
+  (:issue:`8622`)
+* Update ``django`` hook to account for possibility of the deprecated
+  ``DEFAULT_FILE_STORAGE`` setting being set to ``None``. (:issue:`8633`)
+* Update ``scipy`` hooks for compatibility with ``scipy`` 1.14.0.
+  (:issue:`8622`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Windows) Implement last-ditch attempt at force-unloading bundled DLLs
+  from onefile parent process: if onefile application fails to remove its
+  temporary directory, it now iterates over all DLLs loaded in the process,
+  identifies the ones that originate from its temporary directory, and
+  attempts to force-unload them, before trying to remove the temporary
+  directory again. This should work around for issues with Tcl/Tk DLLs
+  used by splash screen, which may load additional DLLs, and fail to
+  automatically unload them when they are unloaded themselves. (:issue:`8587`)
+* Fix the order in which Tcl and Tk shared library are unloaded from the
+  splash-screen enabled frozen application, to prevent the process from
+  crashing during application cleanup (observed on Windows). (:issue:`8587`)
+
+
 6.8.0 (2024-06-08)
 ------------------
 

@@ -1,1 +1,0 @@
-Update ``scipy`` hooks for compatibility with ``scipy`` 1.14.0.

@@ -1,2 +1,0 @@
-Add work-around for incompatibility between ``scipy`` and ``numpy`` 2.0.0
-(the ``ModuleNotFoundError: No module named 'numpy.f2py'`` error).

@@ -1,1 +1,0 @@
-Re-allow ``hiddenimports`` with hyphenated names during Analysis (was blocked in v6.8.0) 

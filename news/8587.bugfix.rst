@@ -1,4 +1,0 @@
-(Windows) Work around the problem with ``libgcc_s_dw2-1.dll`` and
-``libwinpthread-1.dll`` DLLs files not being removed from application's
-temporary directory when building splash-screen-enabled onefile
-application with 32-bit msys2/mingw32 environment.

@@ -1,8 +1,0 @@
-(Windows) Implement last-ditch attempt at force-unloading bundled DLLs
-from onefile parent process: if onefile application fails to remove its
-temporary directory, it now iterates over all DLLs loaded in the process,
-identifies the ones that originate from its temporary directory, and
-attempts to force-unload them, before trying to remove the temporary
-directory again. This should work around for issues with Tcl/Tk DLLs
-used by splash screen, which may load additional DLLs, and fail to
-automatically unload them when they are unloaded themselves.
