@@ -1,0 +1,12 @@
+(Windows) Fix regression in PyInstaller 6.x that caused console-enabled
+onefile applications fail to clean up their temporary directory during
+system session shutdown (i.e., when user logs off or initiates system
+shutdown or restart). For console-enabled onefile applications, this
+used to work up until PyInstaller 6.0 by means of installed console
+handler; however, due to contemporary bootloader executables being linked
+against ``user32.dll``, the console handler does not receive ``CTRL_LOGOFF_EVENT``
+and ``CTRL_SHUTDOWN_EVENT`` console events anymore (for the same reason,
+this did not work for builds with splash screen, even between v5.3 and
+6.0). Instead, session shutdown needs to be handled by means of hidden
+window and handling of ``WM_QUERYENDSESSION`` and ``WM_ENDSESSION`` event
+messages.

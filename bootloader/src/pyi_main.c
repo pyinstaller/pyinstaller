@@ -696,7 +696,6 @@ _pyi_main_onedir_or_onefile_child(struct PYI_CONTEXT *pyi_ctx)
 static int
 _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
 {
-    int cleanup_status;
     int ret;
 
     /* Extract files to temporary directory */
@@ -763,7 +762,12 @@ _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
      * parent process unpacks the application.
      *
      * See: https://github.com/python/cpython/blob/v3.12.2/PC/launcher.c#L765-L779
-     */
+     *
+     * NOTE: this step is now somewhat redundant in onefile builds,
+     * because we use hidden window to capture and process events
+     * related to session shutdown while we wait for child process to
+     * exit. Creation of that hidden window and/or its message processing
+     * would also hide the spinning wheel cursor. */
 #if defined(_WIN32) && defined(WINDOWED)
     if (pyi_ctx->splash == NULL) {
         MSG msg;
@@ -794,6 +798,35 @@ _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
     PYI_DEBUG("LOADER: child process exited (return code: %d)\n", ret);
 
     PYI_DEBUG("LOADER: performing cleanup...\n");
+
+    /* The cleanup code for onefile parent process is organized in a
+     * helper function, so that on Windows, we can also call it from
+     * session shutdown callback.
+     *
+     * If cleanup failed (and this is considered error; see the
+     * implementation), modify the exit code. */
+    if (pyi_main_onefile_parent_cleanup(pyi_ctx) < 0) {
+        ret = -1;
+    }
+
+    /* Re-raise child's signal, if necessary (POSIX only) */
+#ifndef _WIN32
+    if (pyi_ctx->child_signalled) {
+        PYI_DEBUG("LOADER: re-raising child signal %d\n", pyi_ctx->child_signal);
+        raise(pyi_ctx->child_signal);
+    }
+#endif
+
+    PYI_DEBUG("LOADER: end of process reached!\n");
+    return ret;
+}
+
+/* This function must be visible to other compilation units, so that
+ * on Windows, we can also call it from session shutdown callback. */
+int pyi_main_onefile_parent_cleanup(struct PYI_CONTEXT *pyi_ctx)
+{
+    int cleanup_status;
+    int ret = 0;
 
     /* Finalize splash screen before temp directory gets wiped, since the splash
      * screen might hold handles to shared libraries inside the temp dir. Those
@@ -846,15 +879,6 @@ _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
     /* Clean up the archive structure */
     pyi_archive_free(&pyi_ctx->archive);
 
-    /* Re-raise child's signal, if necessary (POSIX only) */
-#ifndef _WIN32
-    if (pyi_ctx->child_signalled) {
-        PYI_DEBUG("LOADER: re-raising child signal %d\n", pyi_ctx->child_signal);
-        raise(pyi_ctx->child_signal);
-    }
-#endif
-
-    PYI_DEBUG("LOADER: end of process reached!\n");
     return ret;
 }
 

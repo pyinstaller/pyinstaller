@@ -1,0 +1,7 @@
+(Windows) The ``onefile`` parent process now sets up invisible window
+to receive and handle ``WM_QUERYENDSESSION`` and ``WM_ENDSESSION``
+event messages, which allows it properly clean up temporary files during
+session shutdown (i.e., user logging off, or initiating system shutdown
+or restart). Cleanup during session shutdown should now work in both
+console-enabled and windowed/noconsole builds, and regardless of whether
+splash screen is used or not.
