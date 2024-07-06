@@ -180,8 +180,26 @@ struct PYI_CONTEXT
     SECURITY_ATTRIBUTES *security_attr;
 #endif
 
-    /* Child process (onefile mode) variables. Used only in POSIX codepath. */
-#if !defined(_WIN32)
+    /* Child process (onefile mode) variables. */
+#if defined(_WIN32)
+    /* Child process information. */
+    PROCESS_INFORMATION child_process;
+
+    /* Hidden window used to receive session shutdown events
+     * (WM_QUERYENDSESSION and WM_ENDSESSION messages). */
+    HWND hidden_window;
+
+    /* Flags used on Windows to signal various circumstances under which
+     * the application should shut itself down (i.e., in onefile mode,
+     * it should terminate the child process and perform the cleanup) */
+
+    /* CTRL_CLOSE_EVENT, CTRL_SHUTDOWN_EVENT, or CTRL_LOGOFF_EVENT
+     * received via installed console handler. */
+    unsigned char console_shutdown;
+
+    /* WM_QUERYENDSESSION received via hidden window. */
+    unsigned char session_shutdown;
+#else
     /* Process ID of the child process (onefile mode). Keeping track of
      * the child PID allows us to forward signals to the child. */
     pid_t child_pid;
@@ -191,15 +209,6 @@ struct PYI_CONTEXT
      * once the temporary directory has been cleaned up. */
     int child_signalled;
     int child_signal;
-#endif
-
-    /* Flags used on Windows to signal various circumstances under which
-     * the application should shut itself down (i.e., in onefile mode,
-     * it should terminate the child process and perform the cleanup) */
-#if defined(_WIN32)
-    /* CTRL_CLOSE_EVENT, CTRL_SHUTDOWN_EVENT, or CTRL_LOGOFF_EVENT
-     * received via installed console handler. */
-    unsigned char console_shutdown;
 #endif
 
     /**
@@ -266,6 +275,9 @@ extern struct PYI_CONTEXT *global_pyi_ctx;
 
 
 int pyi_main(struct PYI_CONTEXT *pyi_ctx);
+
+/* Used in both pyi_main.c and pyi_utils_win32.c */
+int pyi_main_onefile_parent_cleanup(struct PYI_CONTEXT *pyi_ctx);
 
 
 #endif /* PYI_MAIN_H */

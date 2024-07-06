@@ -527,15 +527,106 @@ _pyi_get_stream_handle(FILE *stream)
     return handle;
 }
 
+static
+LRESULT CALLBACK _hidden_window_wndproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    struct PYI_CONTEXT *pyi_ctx;
+    switch (uMsg)
+    {
+        case WM_CREATE: {
+            CREATESTRUCTW *create_struct = (CREATESTRUCTW *)lParam;
+            pyi_ctx = (struct PYI_CONTEXT *)create_struct->lpCreateParams;
+            SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)pyi_ctx);
+            return TRUE;
+        }
+        case WM_QUERYENDSESSION: {
+            /* https://learn.microsoft.com/en-us/windows/win32/shutdown/wm-queryendsession */
+            pyi_ctx = (struct PYI_CONTEXT *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+            PYI_DEBUG_W(L"LOADER: hidden window received WM_QUERYENDSESSION with logoff-option %X\n", lParam);
+            /* As per MSDN:
+             * If your application may need more than 5 seconds to complete
+             * its shutdown processing in response to WM_ENDSESSION, it
+             * should call ShutdownBlockReasonCreate() in its
+             * WM_QUERYENDSESSION handler, and promptly respond TRUE to
+             * WM_QUERYENDSESSION so as not to block shutdown. It should
+             * then perform all shutdown processing in its WM_ENDSESSION handler.
+             *
+             * https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ms700677(v=vs.85)
+             */
+            if (!ShutdownBlockReasonCreate(hwnd, L"Needs to remove its temporary files.")) {
+                PYI_DEBUG_W(L"LOADER: failed to register shutdown block reason (%d)!\n", GetLastError());
+            }
+            /* Set pyi_ctx->session_shutdown to let the rest of the code
+             * know that we received WM_QUERYENDSESSION and that we
+             * expect to receive and handle WM_ENDSESSION. */
+            pyi_ctx->session_shutdown = 1;
+            return TRUE;
+        }
+        case WM_ENDSESSION: {
+            /* https://learn.microsoft.com/en-us/windows/win32/shutdown/wm-endsession */
+            const int grace_period = 1000; /* milliseconds */
+
+            pyi_ctx = (struct PYI_CONTEXT *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+            PYI_DEBUG_W(L"LOADER: hidden window received WM_ENDSESSION with logoff-option %X and end-session option %X\n", lParam, wParam);
+
+            if (!wParam) {
+                PYI_DEBUG_W(L"LOADER: session shutdown has been canceled!\n");
+                pyi_ctx->session_shutdown = 0; /* Clear the session shutdown flag */
+                return 0; /* Message has been processed */
+            }
+
+            /* We need to perform cleanup here, before we exit this message
+             * handler; at that point, Windows is free to terminate the
+             * process (and will do so). */
+            PYI_DEBUG_W(L"LOADER: session shutdown has been confirmed!\n");
+
+            /* If child process is not already dead at this point, give
+             * it a grace period to shut down on its own (or be terminated
+             * by the OS for not processing WM_QUERYENDSESSION that it
+             * also received), before terminating it ourselves. */
+            PYI_DEBUG_W(L"LOADER: handling session shutdown - giving the child %d ms to exit...\n", grace_period);
+            if (WaitForSingleObject(pyi_ctx->child_process.hProcess, grace_period) != WAIT_OBJECT_0) {
+                PYI_DEBUG_W(L"LOADER: terminating the child process...\n");
+                if (!TerminateProcess(pyi_ctx->child_process.hProcess, -1)) {
+                    PYI_DEBUG_W(L"LOADER: TerminateProcess call failed (%d)\n", GetLastError());
+                }
+
+                /* If things don't play out as expected here, there is
+                 * not really much we can do anyway, so do an infinite wait. */
+                if (WaitForSingleObject(pyi_ctx->child_process.hProcess, INFINITE) == WAIT_OBJECT_0) {
+                    PYI_DEBUG_W(L"LOADER: child process terminated!\n");
+                } else {
+                    PYI_DEBUG_W(L"LOADER: child process not terminated!\n");
+                }
+            } else {
+                PYI_DEBUG_W(L"LOADER: child process has finished.\n");
+            }
+            /* The child process is presumed dead at this point. */
+
+            /* Perform cleanup */
+            PYI_DEBUG("LOADER: performing cleanup...\n");
+            pyi_main_onefile_parent_cleanup(pyi_ctx);
+
+            /* We can now die without regrets... */
+            PYI_DEBUG("LOADER: end of WM_ENDSESSION handler reached!\n");
+            return 0; /* Message has been processed */
+        }
+        default: {
+            return DefWindowProc(hwnd, uMsg, wParam, lParam);
+        }
+    }
+}
+
 int
 pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
 {
     SECURITY_ATTRIBUTES security_attributes;
     STARTUPINFOW startup_info;
-    PROCESS_INFORMATION process_info;
     wchar_t executable_filename_w[PYI_PATH_MAX];
     bool succeeded;
     DWORD child_exitcode;
+    WNDCLASSW hidden_window_class;
+    MSG msg;
 
     /* TODO is there a replacement for this conversion or just use wchar_t everywhere? */
     /* Convert file name to wchar_t from utf8. */
@@ -546,7 +637,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
         PYI_DEBUG_W(L"LOADER: failed to install console ctrl handler!\n");
     }
 
-    PYI_DEBUG_W(L"LOADER: setting up to run child\n");
+    PYI_DEBUG_W(L"LOADER: setting up child process...\n");
 
     security_attributes.nLength = sizeof(security_attributes);
     security_attributes.lpSecurityDescriptor = NULL;
@@ -562,8 +653,6 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
     startup_info.hStdOutput = _pyi_get_stream_handle(stdout);
     startup_info.hStdError = _pyi_get_stream_handle(stderr);
 
-    PYI_DEBUG_W(L"LOADER: creating child process\n");
-
     succeeded = CreateProcessW(
         executable_filename_w, /* lpApplicationName */
         GetCommandLineW(), /* lpCommandLine */
@@ -574,21 +663,60 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
         NULL, /* lpEnvironment */
         NULL, /* lpCurrentDirectory */
         &startup_info, /* lpStartupInfo */
-        &process_info /* lpProcessInformation */
+        &pyi_ctx->child_process /* lpProcessInformation */
     );
     if (!succeeded) {
         PYI_WINERROR_W(L"CreateProcessW", L"Failed to create child process!\n");
         return -1;
     }
+    PYI_DEBUG_W(L"LOADER: child process started!\n");
 
-    PYI_DEBUG_W(L"LOADER: waiting for child process to finish...\n");
+    /* Create a hidden window to capture WM_QUERYENDSESSION/WM_ENDSESSION
+     * messages when user tries to end their Windows session (i.e., logs
+     * off or initiates system shutdown or restart). */
+    PYI_DEBUG_W(L"LOADER: creating hidden window to capture system shutdown events...\n");
 
+    ZeroMemory(&hidden_window_class, sizeof(hidden_window_class));
+
+    hidden_window_class.lpszClassName = L"PyInstallerOnefileHiddenWindow";
+    hidden_window_class.lpfnWndProc = _hidden_window_wndproc;
+
+    if (!RegisterClassW(&hidden_window_class)) {
+        PYI_DEBUG_W(L"LOADER: failed to register hidden window class (%d)!\n", GetLastError());
+    }
+
+    pyi_ctx->hidden_window = CreateWindowExW(
+        0, /* dwExStyle */
+        hidden_window_class.lpszClassName, /* lpClassName */
+        TEXT("PyInstaller Onefile Hidden Window"), /* lpWindowName */
+        0, /* dwStyle */
+        CW_USEDEFAULT, /* X */
+        CW_USEDEFAULT, /* Y */
+        CW_USEDEFAULT, /* nWidth */
+        CW_USEDEFAULT, /* nHeight */
+        NULL, /* hWndParent */
+        NULL, /* hMenu */
+        NULL, /* hInstance */
+        pyi_ctx /* lpParam */
+    );
+
+    if (!pyi_ctx->hidden_window) {
+        PYI_DEBUG_W(L"LOADER: failed to create hidden window (%d)!\n", GetLastError());
+    } else {
+        ShowWindow(pyi_ctx->hidden_window, SW_HIDE);
+        PYI_DEBUG_W(L"LOADER: hidden window created!\n");
+    }
+
+    /* Wait for child process to exit, while also processing messages on
+     * the hidden window and checking flags set from console handler. */
+    PYI_DEBUG_W(L"LOADER: entering the waiting loop...\n");
     while (1) {
         DWORD ret;
 
-         /* 10 Hz polling */
-        ret = WaitForSingleObject(process_info.hProcess, 100);
+        /* Poll the process status with 10 Hz frequency */
+        ret = WaitForSingleObject(pyi_ctx->child_process.hProcess, 100);
         if (ret == WAIT_OBJECT_0) {
+            PYI_DEBUG_W(L"LOADER: child process has finished - exiting the wait loop!\n");
             break; /* Child process has finished, for one reason or another. */
         }
 
@@ -596,41 +724,140 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
             PYI_DEBUG_W(L"LOADER: WaitForSingleObject() failed with error code %d!\n", GetLastError());
         }
 
-        /* Check if we received CTRL_CLOSE_EVENT, CTRL_SHUTDOWN_EVENT,
-         * or CTRL_LOGOFF_EVENT from the installed console handler.
-         * If we did, give the child process a short grace period to
-         * exit on its own (or be terminated by the same event), before
-         * terminating it ourselves. This seems to be required with
-         * the new Windows Terminal, where (in contrast to conhost.exe),
-         * the child process does not seem to receive the event until
-         * after the OS terminates the parent. */
+        /* If we received CTRL_CLOSE_EVENT, CTRL_SHUTDOWN_EVENT,
+         * or CTRL_LOGOFF_EVENT from the installed console handler,
+         * exit the loop and enter cleanup code. */
         if (pyi_ctx->console_shutdown) {
-            const int timeout = 500; /* 500 ms grace period */
-            PYI_DEBUG_W(L"LOADER: received console shutdown - waiting %d ms for child to exit...\n", timeout);
-            ret = WaitForSingleObject(process_info.hProcess, timeout);
-            if (ret != WAIT_OBJECT_0) {
-                PYI_DEBUG_W(L"LOADER: terminating the child process...\n");
-                if (!TerminateProcess(process_info.hProcess, -1)) {
-                    PYI_DEBUG_W(L"LOADER: TerminateProcess call failed (%d)\n", GetLastError());
+            PYI_DEBUG_W(L"LOADER: received console shutdown event - exiting the wait loop!\n");
+            break;
+        }
+
+        /* Message pump for the hidden window. Use the non-blocking
+         * PeekMessage, because wait/delay is already performed by the
+         * WaitForSingleObject at the start of the loop. */
+        while (PeekMessageW(&msg, pyi_ctx->hidden_window, 0, 0, PM_REMOVE) > 0) {
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
+    }
+    PYI_DEBUG_W(L"LOADER: made it out of the waiting loop!\n");
+
+    /* If we received CTRL_CLOSE_EVENT, CTRL_SHUTDOWN_EVENT, or
+     * CTRL_LOGOFF_EVENT from the installed console handler, give the
+     * child process a short grace period to exit on its own (or be
+     * terminated by the same event), before terminating it ourselves.
+     * This seems to be required with the new Windows Terminal, where
+     * (in contrast to old conhost.exe), the child process does not seem
+     * to receive the event until after the OS terminates the parent. */
+    if (pyi_ctx->console_shutdown) {
+        const int grace_period = 500; /* milliseconds */
+        PYI_DEBUG_W(L"LOADER: handling console shutdown - giving the child %d ms to exit...\n", grace_period);
+        if (WaitForSingleObject(pyi_ctx->child_process.hProcess, grace_period) != WAIT_OBJECT_0) {
+            PYI_DEBUG_W(L"LOADER: terminating the child process...\n");
+            if (!TerminateProcess(pyi_ctx->child_process.hProcess, -1)) {
+                PYI_DEBUG_W(L"LOADER: TerminateProcess call failed (%d)\n", GetLastError());
+            }
+
+            /* If things don't play out as expected here, there is
+             * not really much we can do anyway, so do an infinite wait. */
+            if (WaitForSingleObject(pyi_ctx->child_process.hProcess, INFINITE) == WAIT_OBJECT_0) {
+                PYI_DEBUG_W(L"LOADER: child process terminated!\n");
+            } else {
+                PYI_DEBUG_W(L"LOADER: child process not terminated!\n");
+            }
+        } else {
+            PYI_DEBUG_W(L"LOADER: child process has finished.\n");
+        }
+        /* The child process is presumed dead at this point */
+    } else {
+        /* The child process might have exited (or was terminated) due
+         * to imminent shutdown event signalled by the WM_QUERYENDSESSION
+         * message. This might happen before we had the chance to receive
+         * and process WM_QUERYENDSESSION message in our main waiting loop.
+         * So wait for a short time, on the off-chance that we receive
+         * WM_QUERYENDSESSION; properly receiving and processing this
+         * message ensures that OS gives us enough time to perform cleanup. */
+        if (!pyi_ctx->session_shutdown) {
+            LARGE_INTEGER start_time;
+            LARGE_INTEGER frequency;
+            LARGE_INTEGER current_time;
+            LARGE_INTEGER elapsed_time;
+
+            const int timeout = 250; /* milliseconds */
+            const int short_timeout = 50; /* milliseconds */
+
+            PYI_DEBUG_W(L"LOADER: waiting %d ms in case we receive WM_QUERYENDSESSION...\n", timeout);
+
+            QueryPerformanceFrequency(&frequency); /* ticks per second */
+            QueryPerformanceCounter(&start_time);
+
+            /* This loop should exit after the hard-coded timeout, or
+             * after we process WM_QUERYENDSESSION. If we also happen
+             * to process WM_ENDSESSION here (with confirmed shutdown),
+             * the WM_ENDSESSION handler will perform cleanup and let
+             * the OS terminate this process, so we might actually not
+             * make it past this loop. */
+            while (1) {
+                /* Perform short wait and check the message queue */
+                MsgWaitForMultipleObjects(0, NULL, FALSE, short_timeout, QS_ALLINPUT);
+                while (PeekMessageW(&msg, pyi_ctx->hidden_window, 0, 0, PM_REMOVE) > 0) {
+                    TranslateMessage(&msg);
+                    DispatchMessageW(&msg);
                 }
 
-                /* If things don't play out as expected here, there is
-                 * not really much we can do anyway */
-                if (WaitForSingleObject(process_info.hProcess, INFINITE) == WAIT_OBJECT_0) {
-                    PYI_DEBUG_W(L"LOADER: child process terminated!\n");
-                } else {
-                    PYI_DEBUG_W(L"LOADER: child process not terminated!\n");
+                if (pyi_ctx->session_shutdown) {
+                    PYI_DEBUG_W(L"LOADER: done waiting for WM_QUERYENDSESSION - message received!\n");
+                    break;
+                }
+
+                QueryPerformanceCounter(&current_time);
+                elapsed_time.QuadPart = current_time.QuadPart - start_time.QuadPart; /* ticks */
+                elapsed_time.QuadPart *= 1000;
+                elapsed_time.QuadPart /= frequency.QuadPart;
+
+                PYI_DEBUG_W(L"LOADER: waited %lld ms / %d ms...\n", elapsed_time.QuadPart, timeout);
+                if (elapsed_time.QuadPart >= timeout) {
+                    PYI_DEBUG_W(L"LOADER: done waiting for WM_QUERYENDSESSION - timed-out!\n");
+                    break;
                 }
             }
-            /* The child process is presumed dead at this point */
-            break;
+        }
+
+        /* If we received WM_QUERYENDSESSION, keep looping until we
+         * also receive WM_ENDSESSION, which will either cancel or confirm
+         * the shutdown. If the former, pyi_ctx->session_shutdow will
+         * be cleared and we will proceed with the regular cleanup
+         * codepath. If shutdown is confirmed, the WM_ENDSESSION handler
+         * will peform cleanup and let the OS terminate this process, so
+         * we might actually not make it past this loop. */
+        if (pyi_ctx->session_shutdown) {
+            PYI_DEBUG_W(L"LOADER: received session shutdown signal via WM_QUERYENDSESSION; waiting for WM_ENDSESSION...\n");
+            while (pyi_ctx->session_shutdown) {
+                /* We can use blocking GetMessageW here, because there
+                 * are no other tasks to perform. */
+                if (GetMessageW(&msg, pyi_ctx->hidden_window, 0, 0) > 0) {
+                    TranslateMessage(&msg);
+                    DispatchMessageW(&msg);
+                }
+            }
+            /* This point should not be reached, unless WM_ENDSESSION
+             * message canceled the shutdown. */
         }
     }
 
-    GetExitCodeProcess(process_info.hProcess, &child_exitcode);
+    PYI_DEBUG_W(L"LOADER: retrieving process exit code and performing cleanup...\n");
 
-    CloseHandle(process_info.hProcess);
-    CloseHandle(process_info.hThread);
+    /* Clean up the hidden window */
+    if (pyi_ctx->hidden_window) {
+        DestroyWindow(pyi_ctx->hidden_window);
+        pyi_ctx->hidden_window = NULL;
+    }
+
+    /* Retrieve the child exit code, and clean up child handles. */
+    GetExitCodeProcess(pyi_ctx->child_process.hProcess, &child_exitcode);
+
+    CloseHandle(pyi_ctx->child_process.hProcess);
+    CloseHandle(pyi_ctx->child_process.hThread);
 
     return child_exitcode;
 }
