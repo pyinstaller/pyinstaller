@@ -30,7 +30,7 @@
  * pyi_config_parse_runtime_options(). No-op if passed a NULL pointer.
  */
 void
-pyi_runtime_options_free(PyiRuntimeOptions *options)
+pyi_runtime_options_free(struct PyiRuntimeOptions *options)
 {
     int i;
 
@@ -137,18 +137,18 @@ _pyi_match_and_parse_xflag(const char *flag, const char *name, int *dest_var)
  * Allocate the PyiRuntimeOptions structure and populate it based on
  * options found in the PKG archive.
  */
-PyiRuntimeOptions *
-pyi_runtime_options_read(const PYI_CONTEXT *pyi_ctx)
+struct PyiRuntimeOptions *
+pyi_runtime_options_read(const struct PYI_CONTEXT *pyi_ctx)
 {
-    PyiRuntimeOptions *options;
-    const ARCHIVE *archive = pyi_ctx->archive;
-    const TOC_ENTRY *toc_entry;
+    struct PyiRuntimeOptions *options;
+    const struct ARCHIVE *archive = pyi_ctx->archive;
+    const struct TOC_ENTRY *toc_entry;
     int num_wflags = 0;
     int num_xflags = 0;
     int failed = 0;
 
     /* Allocate the structure */
-    options = calloc(1, sizeof(PyiRuntimeOptions));
+    options = calloc(1, sizeof(struct PyiRuntimeOptions));
     if (options == NULL) {
         return options;
     }
@@ -333,7 +333,7 @@ pyi_pyconfig_free(PyConfig *config)
  * Set program name. Used to set sys.executable, and in early error messages.
  */
 int
-pyi_pyconfig_set_program_name(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
+pyi_pyconfig_set_program_name(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
@@ -366,7 +366,7 @@ pyi_pyconfig_set_program_name(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
  * Set python home directory. Used to set sys.prefix.
  */
 int
-pyi_pyconfig_set_python_home(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
+pyi_pyconfig_set_python_home(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
@@ -432,7 +432,7 @@ _pyi_pyconfig_set_module_search_paths(PyConfig *config, int python_version, int 
 }
 
 int
-pyi_pyconfig_set_module_search_paths(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
+pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
     /* TODO: instead of stitching together char strings and converting
      * them, we could probably stitch together wide-char strings directly,
@@ -537,7 +537,7 @@ _pyi_pyconfig_set_argv(PyConfig *config, int python_version, int argc, wchar_t *
  * of wide-char strings, we can directly pass it into Python's
  * configuration structure. */
 int
-pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
+pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
     return _pyi_pyconfig_set_argv(
         config,
@@ -555,7 +555,7 @@ pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
  * function, which accounts for the locale/encoding that was set up
  * during pre-initialization of Python interpreter. */
 int
-pyi_pyconfig_set_argv(PyConfig *config, const PYI_CONTEXT *pyi_ctx)
+pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
     char *const *argv;
     wchar_t **argv_w;
@@ -617,7 +617,7 @@ end:
  * Set run-time options.
  */
 int
-pyi_pyconfig_set_runtime_options(PyConfig *config, int python_version, const PyiRuntimeOptions *runtime_options)
+pyi_pyconfig_set_runtime_options(PyConfig *config, int python_version, const struct PyiRuntimeOptions *runtime_options)
 {
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PYCONFIG_IMPL) \
@@ -687,9 +687,10 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, int python_version, const Pyi
  * Pre-initialize python interpreter.
  */
 int
-pyi_pyconfig_preinit_python(const PyiRuntimeOptions *runtime_options)
+pyi_pyconfig_preinit_python(const struct PyiRuntimeOptions *runtime_options)
 {
     PyPreConfig_Common config;
+    PyStatus status;
 
     PI_PyPreConfig_InitIsolatedConfig((PyPreConfig *)&config);
 
@@ -700,6 +701,6 @@ pyi_pyconfig_preinit_python(const PyiRuntimeOptions *runtime_options)
     config.configure_locale = 1;
 
     /* Pre-initialize */
-    PyStatus status = PI_Py_PreInitialize((const PyPreConfig *)&config);
+    status = PI_Py_PreInitialize((const PyPreConfig *)&config);
     return PI_PyStatus_Exception(status) ? -1 : 0;
 }

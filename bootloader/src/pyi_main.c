@@ -64,35 +64,35 @@
  * NOTE: per C standard, static objects are default-initialized, so
  * we do not need explicit zero-initialization.
  */
-static PYI_CONTEXT _pyi_ctx;
+static struct PYI_CONTEXT _pyi_ctx;
 
 
 /* Pointer to global PYI_CONTEXT structure. Intended for use in signal
  * handlers that have no user data / context */
-PYI_CONTEXT *global_pyi_ctx = &_pyi_ctx;
+struct PYI_CONTEXT *global_pyi_ctx = &_pyi_ctx;
 
 
 /* Large parts of `pyi_main` are implemented as helper functions. We
  * keep their definitions below that of `pyi_main`, in an attempt to
  * keep code organized in top-down fashion. Hence, we need forward
  * declarations here */
-static void _pyi_main_read_runtime_options(PYI_CONTEXT *pyi_ctx);
+static void _pyi_main_read_runtime_options(struct PYI_CONTEXT *pyi_ctx);
 
-static void _pyi_main_setup_splash_screen(PYI_CONTEXT *pyi_ctx);
+static void _pyi_main_setup_splash_screen(struct PYI_CONTEXT *pyi_ctx);
 
-static int _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx);
-static int _pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx);
+static int _pyi_main_onedir_or_onefile_child(struct PYI_CONTEXT *pyi_ctx);
+static int _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx);
 
-static int _pyi_main_resolve_executable(PYI_CONTEXT *pyi_context);
-static int _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_context);
+static int _pyi_main_resolve_executable(struct PYI_CONTEXT *pyi_context);
+static int _pyi_main_resolve_pkg_archive(struct PYI_CONTEXT *pyi_context);
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-static int _pyi_main_handle_posix_onedir(PYI_CONTEXT *pyi_ctx);
+static int _pyi_main_handle_posix_onedir(struct PYI_CONTEXT *pyi_ctx);
 #endif
 
 
 int
-pyi_main(PYI_CONTEXT *pyi_ctx)
+pyi_main(struct PYI_CONTEXT *pyi_ctx)
 {
     char *env_var_value;
     bool reset_environment;
@@ -419,10 +419,10 @@ pyi_main(PYI_CONTEXT *pyi_ctx)
 }
 
 static void
-_pyi_main_read_runtime_options(PYI_CONTEXT *pyi_ctx)
+_pyi_main_read_runtime_options(struct PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE *archive = pyi_ctx->archive;
-    const TOC_ENTRY *toc_entry;
+    const struct ARCHIVE *archive = pyi_ctx->archive;
+    const struct TOC_ENTRY *toc_entry;
 
     for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
         if (toc_entry->typecode != ARCHIVE_ITEM_RUNTIME_OPTION) {
@@ -509,7 +509,7 @@ _pyi_main_read_runtime_options(PYI_CONTEXT *pyi_ctx)
  *                        Splash screen setup                         *
 \**********************************************************************/
 static void
-_pyi_main_setup_splash_screen(PYI_CONTEXT *pyi_ctx)
+_pyi_main_setup_splash_screen(struct PYI_CONTEXT *pyi_ctx)
 {
     char *env_suppress_splash;
     bool suppressed = false;
@@ -602,7 +602,7 @@ cleanup:
  *                  Onedir or onefile child codepath                  *
 \**********************************************************************/
 static int
-_pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
+_pyi_main_onedir_or_onefile_child(struct PYI_CONTEXT *pyi_ctx)
 {
     int ret;
 
@@ -694,7 +694,7 @@ _pyi_main_onedir_or_onefile_child(PYI_CONTEXT *pyi_ctx)
  *                      Onefile parent codepath                       *
 \**********************************************************************/
 static int
-_pyi_main_onefile_parent(PYI_CONTEXT *pyi_ctx)
+_pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
 {
     int cleanup_status;
     int ret;
@@ -977,7 +977,7 @@ _pyi_is_ld_linux_so(const char *filename)
 static bool
 _pyi_find_progam_in_search_path(const char *name, char *result_path)
 {
-    char *search_paths = pyi_getenv("PATH"); // returns a copy
+    char *search_paths = pyi_getenv("PATH"); /* returns a copy */
     char *search_path;
 
     if (search_paths == NULL) {
@@ -1074,7 +1074,7 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename)
 
 
 static int
-_pyi_main_resolve_executable(PYI_CONTEXT *pyi_ctx)
+_pyi_main_resolve_executable(struct PYI_CONTEXT *pyi_ctx)
 {
     /* Resolve using OS-specific implementation */
 #ifdef _WIN32
@@ -1121,7 +1121,7 @@ _pyi_allow_pkg_sideload(const char *executable)
 }
 
 static int
-_pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
+_pyi_main_resolve_pkg_archive(struct PYI_CONTEXT *pyi_ctx)
 {
     int status;
 
@@ -1189,7 +1189,7 @@ _pyi_main_resolve_pkg_archive(PYI_CONTEXT *pyi_ctx)
  * environment variable to keep track of whether the process has already
  * been restarted or not. */
 static int
-_pyi_main_handle_posix_onedir(PYI_CONTEXT *pyi_ctx)
+_pyi_main_handle_posix_onedir(struct PYI_CONTEXT *pyi_ctx)
 {
     /* Check if we need to restart */
     if (pyi_ctx->process_level > PYI_PROCESS_LEVEL_PARENT) {

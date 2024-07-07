@@ -49,15 +49,15 @@
  * during the extraction with the name of currently processed TOC entry.
  */
 int
-pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx)
+pyi_launch_extract_files_from_archive(struct PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE *archive = pyi_ctx->archive;
-    const TOC_ENTRY *toc_entry;
+    const struct ARCHIVE *archive = pyi_ctx->archive;
+    const struct TOC_ENTRY *toc_entry;
     ptrdiff_t index;
     int retcode = 0;
     char output_filename[PYI_PATH_MAX];
 
-    ARCHIVE *multipkg_archive_pool[PYI_MULTIPKG_ARCHIVE_POOL_SIZE];
+    struct ARCHIVE *multipkg_archive_pool[PYI_MULTIPKG_ARCHIVE_POOL_SIZE];
     char multipkg_ref[PYI_PATH_MAX];
     char multipkg_name[PYI_PATH_MAX];
 
@@ -275,12 +275,12 @@ _pyi_extract_exception_traceback(
  * Return non zero on failure
  */
 static int
-_pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
+_pyi_launch_run_scripts(const struct PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE *archive = pyi_ctx->archive;
+    const struct ARCHIVE *archive = pyi_ctx->archive;
     unsigned char *data;
     char buf[PYI_PATH_MAX];
-    const TOC_ENTRY *toc_entry;
+    const struct TOC_ENTRY *toc_entry;
     PyObject *__main__;
     PyObject *__file__;
     PyObject *main_dict;
@@ -417,7 +417,7 @@ _pyi_launch_run_scripts(const PYI_CONTEXT *pyi_ctx)
 }
 
 void
-pyi_launch_initialize(PYI_CONTEXT *pyi_ctx)
+pyi_launch_initialize(struct PYI_CONTEXT *pyi_ctx)
 {
     /* Nothing to do here at the moment. */
 }
@@ -430,7 +430,7 @@ pyi_launch_initialize(PYI_CONTEXT *pyi_ctx)
  * to pyi_launch_execute(), which is the important part.
  */
 int
-pyi_launch_execute(PYI_CONTEXT *pyi_ctx)
+pyi_launch_execute(struct PYI_CONTEXT *pyi_ctx)
 {
     int rc = 0;
 
@@ -471,7 +471,7 @@ pyi_launch_execute(PYI_CONTEXT *pyi_ctx)
 }
 
 void
-pyi_launch_finalize(PYI_CONTEXT *pyi_ctx)
+pyi_launch_finalize(struct PYI_CONTEXT *pyi_ctx)
 {
     /* CLean up the python interpreter */
     pyi_pylib_finalize(pyi_ctx);

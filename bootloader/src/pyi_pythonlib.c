@@ -41,9 +41,9 @@
  * Load the Python shared library, and bind all required symbols from it.
  */
 int
-pyi_pylib_load(PYI_CONTEXT *pyi_ctx)
+pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE *archive = pyi_ctx->archive;
+    const struct ARCHIVE *archive = pyi_ctx->archive;
     char dll_name[MAX_DLL_NAME_LEN];
     size_t dll_name_len;
     char dll_fullpath[PYI_PATH_MAX];
@@ -139,9 +139,9 @@ pyi_pylib_load(PYI_CONTEXT *pyi_ctx)
  * Initialize and start python interpreter.
  */
 int
-pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx)
+pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx)
 {
-    PyiRuntimeOptions *runtime_options = NULL;
+    struct PyiRuntimeOptions *runtime_options = NULL;
     PyConfig *config = NULL;
     PyStatus status;
     int ret = -1;
@@ -259,10 +259,10 @@ end:
  * Import (bootstrap) modules embedded in the PKG archive.
  */
 int
-pyi_pylib_import_modules(const PYI_CONTEXT *pyi_ctx)
+pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE *archive = pyi_ctx->archive;
-    const TOC_ENTRY *toc_entry;
+    const struct ARCHIVE *archive = pyi_ctx->archive;
+    const struct TOC_ENTRY *toc_entry;
     unsigned char *data;
     PyObject *co;
     PyObject *mod;
@@ -338,7 +338,7 @@ pyi_pylib_import_modules(const PYI_CONTEXT *pyi_ctx)
  * NB: This entry is removed from sys.path by the Python-side bootstrap scripts.
  */
 int
-_pyi_pylib_install_pyz_entry(const PYI_CONTEXT *pyi_ctx, const TOC_ENTRY *toc_entry)
+_pyi_pylib_install_pyz_entry(const struct PYI_CONTEXT *pyi_ctx, const struct TOC_ENTRY *toc_entry)
 {
     unsigned long long zlib_offset;
     PyObject *sys_path;
@@ -382,10 +382,10 @@ _pyi_pylib_install_pyz_entry(const PYI_CONTEXT *pyi_ctx, const TOC_ENTRY *toc_en
  * Return non zero on failure.
  */
 int
-pyi_pylib_install_pyz(const PYI_CONTEXT *pyi_ctx)
+pyi_pylib_install_pyz(const struct PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE *archive = pyi_ctx->archive;
-    const TOC_ENTRY *toc_entry;
+    const struct ARCHIVE *archive = pyi_ctx->archive;
+    const struct TOC_ENTRY *toc_entry;
 
     PYI_DEBUG("LOADER: installing PYZ archive with Python modules.\n");
 
@@ -405,7 +405,7 @@ pyi_pylib_install_pyz(const PYI_CONTEXT *pyi_ctx)
 }
 
 void
-pyi_pylib_finalize(const PYI_CONTEXT *pyi_ctx)
+pyi_pylib_finalize(const struct PYI_CONTEXT *pyi_ctx)
 {
     /* Ensure python library was loaded; otherwise PI_* function pointers
      * are invalid, and we have nothing to do here. */

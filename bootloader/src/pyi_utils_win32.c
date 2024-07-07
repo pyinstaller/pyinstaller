@@ -16,8 +16,11 @@
  * to Windows.
  */
 
-#ifdef _WIN32
+/* Having a header included outside of the ifdef block prevents the compilation
+ * unit from becoming empty, which is disallowed by pedantic ISO C. */
+#include "pyi_global.h"
 
+#ifdef _WIN32
 
 #include <windows.h>
 #include <io.h> /* _get_osfhandle */
@@ -30,8 +33,6 @@
 
 /* PyInstaller headers. */
 #include "pyi_utils.h"
-
-#include "pyi_global.h"
 #include "pyi_path.h"
 #include "pyi_main.h"
 
@@ -226,7 +227,7 @@ _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
 }
 
 int
-pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
+pyi_create_temporary_application_directory(struct PYI_CONTEXT *pyi_ctx)
 {
     char *original_tmp_value = NULL;
     wchar_t prefix[16];
@@ -455,13 +456,13 @@ _pyi_win32_console_ctrl(DWORD dwCtrlType)
 #if defined(LAUNCH_DEBUG)
     /* https://docs.microsoft.com/en-us/windows/console/handlerroutine */
     static const wchar_t *name_map[] = {
-        L"CTRL_C_EVENT", // 0
-        L"CTRL_BREAK_EVENT", // 1
-        L"CTRL_CLOSE_EVENT", // 2
+        L"CTRL_C_EVENT", /* 0 */
+        L"CTRL_BREAK_EVENT", /* 1 */
+        L"CTRL_CLOSE_EVENT", /* 2 */
         NULL,
         NULL,
-        L"CTRL_LOGOFF_EVENT", // 5
-        L"CTRL_SHUTDOWN_EVENT" // 6
+        L"CTRL_LOGOFF_EVENT", /* 5 */
+        L"CTRL_SHUTDOWN_EVENT" /* 6 */
     };
     const wchar_t *name = (dwCtrlType >= 0 && dwCtrlType <= 6) ? name_map[dwCtrlType] : NULL;
 
@@ -519,7 +520,7 @@ _pyi_get_stream_handle(FILE *stream)
 }
 
 int
-pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
+pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
 {
     SECURITY_ATTRIBUTES security_attributes;
     STARTUPINFOW startup_info;
@@ -647,7 +648,7 @@ _pyi_win32_get_sid(TOKEN_INFORMATION_CLASS token_information_class)
         }
     }
 
-    // Cleanup
+    /* Cleanup */
 cleanup:
     free(token_info);
     if (process_token != INVALID_HANDLE_VALUE) {
@@ -791,7 +792,7 @@ void pyi_win32_minimize_console()
 /* Our last resort in ensuring that onefile application can clean up
  * its temporary directory... */
 void
-pyi_win32_force_unload_bundled_dlls(PYI_CONTEXT *pyi_ctx)
+pyi_win32_force_unload_bundled_dlls(struct PYI_CONTEXT *pyi_ctx)
 {
     HANDLE process_handle;
     HMODULE *loaded_dlls = NULL;

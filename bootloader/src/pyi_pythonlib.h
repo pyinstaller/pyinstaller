@@ -18,14 +18,14 @@
 #ifndef PYI_PYTHONLIB_H
 #define PYI_PYTHONLIB_H
 
-typedef struct _pyi_context PYI_CONTEXT;
+struct PYI_CONTEXT;
 
-int pyi_pylib_load(PYI_CONTEXT *pyi_ctx);
-int pyi_pylib_start_python(const PYI_CONTEXT *pyi_ctx);
-int pyi_pylib_import_modules(const PYI_CONTEXT *pyi_ctx);
-int pyi_pylib_install_pyz(const PYI_CONTEXT *pyi_ctx);
-int pyi_pylib_run_scripts(const PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_install_pyz(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_run_scripts(const struct PYI_CONTEXT *pyi_ctx);
 
-void pyi_pylib_finalize(const PYI_CONTEXT *pyi_ctx);
+void pyi_pylib_finalize(const struct PYI_CONTEXT *pyi_ctx);
 
 #endif /* PYI_PYTHONLIB_H */

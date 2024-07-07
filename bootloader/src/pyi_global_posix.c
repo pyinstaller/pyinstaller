@@ -16,6 +16,10 @@
  * contains implementations that are specific to POSIX platforms.
  */
 
+/* Having a header included outside of the ifdef block prevents the compilation
+ * unit from becoming empty, which is disallowed by pedantic ISO C. */
+#include "pyi_global.h"
+
 #ifndef _WIN32
 
 #include <stdio.h>
@@ -30,7 +34,6 @@
 #endif
 
 /* PyInstaller headers. */
-#include "pyi_global.h"
 #include "pyi_utils.h"
 
 

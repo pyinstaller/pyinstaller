@@ -16,8 +16,11 @@
  * to POSIX platforms.
  */
 
-#ifndef _WIN32
+/* Having a header included outside of the ifdef block prevents the compilation
+ * unit from becoming empty, which is disallowed by pedantic ISO C. */
+#include "pyi_global.h"
 
+#ifndef _WIN32
 
 #include <stdio.h>  /* FILE */
 #include <stdlib.h>
@@ -57,8 +60,6 @@
 
 /* PyInstaller headers. */
 #include "pyi_utils.h"
-
-#include "pyi_global.h"
 #include "pyi_path.h"
 #include "pyi_main.h"
 #include "pyi_apple_events.h"
@@ -213,7 +214,7 @@ _pyi_format_and_create_tmpdir(char *tmpdir_path)
 }
 
 int
-pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx)
+pyi_create_temporary_application_directory(struct PYI_CONTEXT *pyi_ctx)
 {
     static const char *candidate_env_vars[] = {
         "TMPDIR",
@@ -500,7 +501,7 @@ _signal_handler(int signum)
 /* Start frozen application in a subprocess. The frozen application runs
  * in a subprocess. */
 int
-pyi_utils_create_child(PYI_CONTEXT *pyi_ctx)
+pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
 {
     pid_t pid = 0;
     int rc = 0;
@@ -673,7 +674,7 @@ cleanup:
  * passed to executable when .app bundle is launched from Finder:
  * https://stackoverflow.com/questions/10242115/os-x-strange-psn-command-line-parameter-when-launched-from-finder
  */
-int pyi_utils_initialize_args(PYI_CONTEXT *pyi_ctx, const int argc, char *const argv[])
+int pyi_utils_initialize_args(struct PYI_CONTEXT *pyi_ctx, const int argc, char *const argv[])
 {
     int i;
 
@@ -717,7 +718,7 @@ int pyi_utils_initialize_args(PYI_CONTEXT *pyi_ctx, const int argc, char *const 
  * Returns 0 on success, -1 on failure (due to failed array reallocation).
  * On failure, pyi_argv and pyi_argc remain unchanged.
  */
-int pyi_utils_append_to_args(PYI_CONTEXT *pyi_ctx, const char *arg)
+int pyi_utils_append_to_args(struct PYI_CONTEXT *pyi_ctx, const char *arg)
 {
     char **new_pyi_argv;
     char *arg_copy;
@@ -747,7 +748,7 @@ int pyi_utils_append_to_args(PYI_CONTEXT *pyi_ctx, const char *arg)
 /*
  * Free/clean-up the private arguments (pyi_argv).
  */
-void pyi_utils_free_args(PYI_CONTEXT *pyi_ctx)
+void pyi_utils_free_args(struct PYI_CONTEXT *pyi_ctx)
 {
     /* Free each entry */
     int i;

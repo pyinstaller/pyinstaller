@@ -79,10 +79,10 @@ pyi_multipkg_split_dependency_string(char *path, char *filename, const char *dep
  * returned; otherwise, the archive is opened and added to the pool,
  * and then returned. If an error occurs, returns NULL.
  */
-static ARCHIVE *
-_get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *archive_filename)
+static struct ARCHIVE *
+_get_archive(struct PYI_CONTEXT *pyi_ctx, struct ARCHIVE **archive_pool, const char *archive_filename)
 {
-    ARCHIVE *archive = NULL;
+    struct ARCHIVE *archive = NULL;
     int index = 0;
 
     PYI_DEBUG("LOADER: retrieving archive for path %s.\n", archive_filename);
@@ -117,8 +117,8 @@ _get_archive(PYI_CONTEXT *pyi_ctx, ARCHIVE **archive_pool, const char *archive_f
  * and extract it using the appropriate helpers. */
 int
 pyi_multipkg_extract_dependency(
-    PYI_CONTEXT *pyi_ctx,
-    ARCHIVE **archive_pool,
+    struct PYI_CONTEXT *pyi_ctx,
+    struct ARCHIVE **archive_pool,
     const char *other_executable,
     const char *dependency_name,
     const char *output_filename
@@ -189,9 +189,9 @@ pyi_multipkg_extract_dependency(
             return -1;
         }
     } else {
-        ARCHIVE *other_archive = NULL;
+        struct ARCHIVE *other_archive = NULL;
         char other_archive_path[PYI_PATH_MAX];
-        const TOC_ENTRY *toc_entry;
+        const struct TOC_ENTRY *toc_entry;
 
         PYI_DEBUG("LOADER: file %s not found on filesystem, assuming onefile reference.\n", dependency_name);
 

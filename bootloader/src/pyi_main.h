@@ -21,11 +21,11 @@
 #endif
 
 
-typedef struct _archive ARCHIVE;
-typedef struct _splash_context SPLASH_CONTEXT;
+struct ARCHIVE;
+struct SPLASH_CONTEXT;
 
 #if defined(__APPLE__) && defined(WINDOWED)
-typedef struct _apple_event_handler_context APPLE_EVENT_HANDLER_CONTEXT;
+struct APPLE_EVENT_HANDLER_CONTEXT;
 #endif
 
 
@@ -68,11 +68,11 @@ enum PYI_PROCESS_LEVEL
     /* A sub-process spawned from the main application process using the
      * same executable (e.g., spawned using sys.executable; for example,
      * a multiprocessing worker process). */
-    PYI_PROCESS_LEVEL_SUBPROCESS = 2,
+    PYI_PROCESS_LEVEL_SUBPROCESS = 2
 };
 
 
-typedef struct _pyi_context
+struct PYI_CONTEXT
 {
     /* Command line arguments passed to the application.
      *
@@ -125,10 +125,10 @@ typedef struct _pyi_context
     char archive_filename[PYI_PATH_MAX];
 
     /* Main PKG archive */
-    ARCHIVE *archive;
+    struct ARCHIVE *archive;
 
     /* Splash screen context structure */
-    SPLASH_CONTEXT *splash;
+    struct SPLASH_CONTEXT *splash;
 
     /* Flag indicating whether the application's main PKG archive has
      * onefile semantics or not (i.e., needs to extract files to
@@ -249,14 +249,14 @@ typedef struct _pyi_context
      * Apple Events handling in macOS .app bundles
      */
 #if defined(__APPLE__) && defined(WINDOWED)
-    APPLE_EVENT_HANDLER_CONTEXT *ae_ctx;
+    struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx;
 #endif
-} PYI_CONTEXT;
+};
 
-extern PYI_CONTEXT *global_pyi_ctx;
+extern struct PYI_CONTEXT *global_pyi_ctx;
 
 
-int pyi_main(PYI_CONTEXT *pyi_ctx);
+int pyi_main(struct PYI_CONTEXT *pyi_ctx);
 
 
 #endif /* PYI_MAIN_H */
