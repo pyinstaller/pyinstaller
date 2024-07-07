@@ -777,7 +777,7 @@ _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
 #if defined(__APPLE__) && defined(WINDOWED)
     if (1) {
         ProcessSerialNumber psn = { 0, kCurrentProcess };
-        OSStatus returnCode = TransformProcessType(&psn, kProcessTransformToBackgroundApplication);
+        TransformProcessType(&psn, kProcessTransformToBackgroundApplication);
     }
 #endif
 
