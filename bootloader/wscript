@@ -282,6 +282,8 @@ def set_arch_flags(ctx):
 
         # Enable 64-bit porting warnings and other warnings.
         ctx.env.append_value('CFLAGS', '/W3')
+        # Treat compiler warnings as errors.
+        ctx.env.append_value('CFLAGS', '/WX')
         # Disable warnings about unrecognized pragmas.
         ctx.env.append_value('CFLAGS', '/wd4068')
         # Disable warnings about deprecated POSIX function names.
@@ -292,6 +294,8 @@ def set_arch_flags(ctx):
         ctx.env.append_value('CFLAGS', '/EHa')
         # Set the PE checksum on resulting binary.
         ctx.env.append_value('LINKFLAGS', '/RELEASE')
+        # Treat linker warnings as errors
+        ctx.env.append_value('LINKFLAGS', '/WX')
 
     # Ensure proper architecture flags on Mac OS.
     elif ctx.env.DEST_OS == 'darwin':
