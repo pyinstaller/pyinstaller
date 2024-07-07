@@ -17,31 +17,31 @@
 #ifndef PYI_LAUNCH_H
 #define PYI_LAUNCH_H
 
-typedef struct _pyi_context PYI_CONTEXT;
+struct PYI_CONTEXT;
 
 /*
  * Extract files from embedded archive (onefile mode).
  */
-int pyi_launch_extract_files_from_archive(PYI_CONTEXT *pyi_ctx);
+int pyi_launch_extract_files_from_archive(struct PYI_CONTEXT *pyi_ctx);
 
 /*
  * Wrapped platform specific initialization before loading Python and executing
  * all scripts in the archive.
  */
-void pyi_launch_initialize(PYI_CONTEXT *pyi_ctx);
+void pyi_launch_initialize(struct PYI_CONTEXT *pyi_ctx);
 
 /*
  * Wrapped platform specific finalization before loading Python and executing
  * all scripts in the archive.
  */
-void pyi_launch_finalize(PYI_CONTEXT *pyi_ctx);
+void pyi_launch_finalize(struct PYI_CONTEXT *pyi_ctx);
 
 /*
  * Load Python and execute all scripts in the archive
  *
  * @return -1 for internal failures, or the rc of the last script.
  */
-int pyi_launch_execute(PYI_CONTEXT *pyi_ctx);
+int pyi_launch_execute(struct PYI_CONTEXT *pyi_ctx);
 
 
 #endif /* PYI_LAUNCH_H */

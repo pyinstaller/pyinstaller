@@ -46,7 +46,7 @@
  * Returns 0 on success, -1 on failure.
  */
 int
-pyi_create_parent_directory_tree(const PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename)
+pyi_create_parent_directory_tree(const struct PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename)
 {
     char path[PYI_PATH_MAX];
     char *subpath_cursor;

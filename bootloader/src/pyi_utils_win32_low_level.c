@@ -16,11 +16,13 @@
  * to Windows.
  */
 
+/* Having a header included outside of the ifdef block prevents the compilation
+ * unit from becoming empty, which is disallowed by pedantic ISO C. */
+#include "pyi_global.h"
+
 #ifdef _WIN32
 
-
 /* PyInstaller headers. */
-#include "pyi_global.h"  /* PYI_PATH_MAX */
 #include "pyi_utils.h"
 
 #ifndef IO_REPARSE_TAG_SYMLINK

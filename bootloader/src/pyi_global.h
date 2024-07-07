@@ -85,8 +85,10 @@
 #define PYI_DECLPROC(name) \
     __PROC__ ## name PI_ ## name = NULL;
 
+/* GetProcAddress() returns FARPROC, a function pointer, which can be
+ * cast to a different function pointer. */
 #define PYI_GETPROCOPT(dll, name, sym) \
-    PI_ ## name = (__PROC__ ## name)GetProcAddress (dll, #sym)
+    PI_ ## name = (__PROC__ ## name)GetProcAddress(dll, #sym)
 
 /* Note: since function names are always in ASCII, we can safely use %hs
  * to format ANSI string (obtained via stringification) into wide-char
@@ -104,8 +106,24 @@
 #define PYI_DECLPROC(name) \
     __PROC__ ## name PI_ ## name = NULL;
 
+/* dlsym() returns a void * pointer, which is an object pointer.
+ * ISO C explicitly forbids casts from object to function pointers
+ * (in theory, the two could have different storage type, although
+ * in practice, the cast should be safe on contemporary platforms).
+ * To avoid warnings when using gcc with -pedantic option turned on,
+ * we perform type punning through union. */
 #define PYI_GETPROCOPT(dll, name, sym) \
-    PI_ ## name = (__PROC__ ## name)dlsym (dll, #sym)
+    do {\
+        /* This union requires its own scope */ \
+        union { \
+            __PROC__ ## name func_ptr; \
+            void *obj_ptr; \
+        } alias; \
+        /* Store object pointer */ \
+        alias.obj_ptr = dlsym(dll, #sym); \
+        /* Read function pointer */ \
+        PI_ ## name = alias.func_ptr; \
+    } while(0)
 
 #define PYI_GETPROC(dll, name) \
     PYI_GETPROCOPT(dll, name, name); \

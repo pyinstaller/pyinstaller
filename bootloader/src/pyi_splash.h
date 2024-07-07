@@ -21,7 +21,7 @@
 
 /* Archive item header for splash data
  * This struct is a header describing the rest of this archive item */
-typedef struct _splash_data_header
+struct SPLASH_DATA_HEADER
 {
     /* Filename of the Tcl shared library, e.g., tcl86t.dll */
     char tcl_libname[16];
@@ -52,10 +52,10 @@ typedef struct _splash_data_header
      * Followed by a chunk of data, including the splash screen
      * script, the image, and the required files array.
      */
-} SPLASH_DATA_HEADER;
+};
 
 /* Runtime context for the splash screen */
-typedef struct _splash_context
+struct SPLASH_CONTEXT
 {
     /* Mutexes used for thread-safe access to context and its variables. */
     Tcl_Mutex context_mutex;
@@ -124,36 +124,36 @@ typedef struct _splash_context
      * during finalization. */
     pyi_dylib_t dll_tcl;
     pyi_dylib_t dll_tk;
-} SPLASH_CONTEXT;
+};
 
-typedef int (pyi_splash_event_proc)(SPLASH_CONTEXT *, const void *);
+typedef int (pyi_splash_event_proc)(struct SPLASH_CONTEXT *, const void *);
 
-typedef struct _pyi_context PYI_CONTEXT;
+struct PYI_CONTEXT;
 
 
 /**
  * Public API functions for pyi_splash
  */
-int pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx);
+int pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ctx);
 
-int pyi_splash_load_shared_libaries(SPLASH_CONTEXT *splash);
-int pyi_splash_finalize(SPLASH_CONTEXT *splash);
-int pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable);
+int pyi_splash_load_shared_libaries(struct SPLASH_CONTEXT *splash);
+int pyi_splash_finalize(struct SPLASH_CONTEXT *splash);
+int pyi_splash_start(struct SPLASH_CONTEXT *splash, const char *executable);
 
 /* Archive helper functions */
-int pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx);
-int pyi_splash_is_splash_requirement(SPLASH_CONTEXT *splash, const char *name);
+int pyi_splash_extract(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ctx);
+int pyi_splash_is_splash_requirement(struct SPLASH_CONTEXT *splash, const char *name);
 
 int pyi_splash_send(
-    SPLASH_CONTEXT *splash,
+    struct SPLASH_CONTEXT *splash,
     bool async,
     const void *user_data,
     pyi_splash_event_proc proc
 );
-int pyi_splash_update_text(SPLASH_CONTEXT *splash, const char *toc_entry_name);
+int pyi_splash_update_text(struct SPLASH_CONTEXT *splash, const char *toc_entry_name);
 
 /* Memory allocation functions */
-SPLASH_CONTEXT *pyi_splash_context_new();
-void pyi_splash_context_free(SPLASH_CONTEXT **splash_ref);
+struct SPLASH_CONTEXT *pyi_splash_context_new();
+void pyi_splash_context_free(struct SPLASH_CONTEXT **splash_ref);
 
 #endif /*PYI_SPLASH_H */

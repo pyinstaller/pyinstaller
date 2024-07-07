@@ -36,7 +36,7 @@
 #define ARCHIVE_ITEM_SYMLINK          'n'  /* symbolic link */
 
 /* Entry in PKG/CArchive TOC */
-typedef struct _toc_entry
+struct TOC_ENTRY
 {
     uint32_t entry_length; /* length of this TOC entry, including full length of the name field */
     uint32_t offset; /* position of entry's data blob, relative to the start of PKG archive */
@@ -45,10 +45,10 @@ typedef struct _toc_entry
     unsigned char compression_flag; /* compression flag (1 = compressed, 0 = uncompressed) */
     char typecode; /* type code - see ARCHIVE_ITEM_* definitions */
     char name[1];  /* entry name; padded to multiple of 16 */
-} TOC_ENTRY;
+};
 
 /* The PKG/CArchive cookie, from the end of the archive. */
-typedef struct _archive_cookie
+struct ARCHIVE_COOKIE
 {
     char magic[8]; /* 'MEI\014\013\012\013\016' */
     uint32_t pkg_length; /* length of the entire PKG archive */
@@ -56,18 +56,18 @@ typedef struct _archive_cookie
     uint32_t toc_length; /* length of TOC data */
     uint32_t python_version; /* integer representing python version */
     char python_libname[64]; /* Name of the of Python shared library (e.g., "python3.10.dll"). */
-} ARCHIVE_COOKIE;
+};
 
 /* The archive structure */
-typedef struct _archive
+struct ARCHIVE
 {
     /* Full path to archive file. */
     char filename[PYI_PATH_MAX];
 
     uint64_t pkg_offset; /* Offset of the PKG archive in the file */
 
-    TOC_ENTRY *toc; /* Buffer containing all TOC entries */
-    const TOC_ENTRY *toc_end; /* The address at which the TOC buffer ends */
+    struct TOC_ENTRY *toc; /* Buffer containing all TOC entries */
+    const struct TOC_ENTRY *toc_end; /* The address at which the TOC buffer ends */
 
     /* Flag indicating that the archive contains extractable files,
      * and thus has onefile semantics */
@@ -78,18 +78,18 @@ typedef struct _archive
 
     /* The name of python shared library */
     char python_libname[64];
-} ARCHIVE;
+};
 
 
 /* The API */
-ARCHIVE *pyi_archive_open(const char *filename);
-void pyi_archive_free(ARCHIVE **archive_ref);
+struct ARCHIVE *pyi_archive_open(const char *filename);
+void pyi_archive_free(struct ARCHIVE **archive_ref);
 
-const TOC_ENTRY *pyi_archive_next_toc_entry(const ARCHIVE *archive, const TOC_ENTRY *toc_entry);
+const struct TOC_ENTRY *pyi_archive_next_toc_entry(const struct ARCHIVE *archive, const struct TOC_ENTRY *toc_entry);
 
-unsigned char *pyi_archive_extract(const ARCHIVE *archive, const TOC_ENTRY *toc_entry);
-int pyi_archive_extract2fs(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, const char *output_filename);
+unsigned char *pyi_archive_extract(const struct ARCHIVE *archive, const struct TOC_ENTRY *toc_entry);
+int pyi_archive_extract2fs(const struct ARCHIVE *archive, const struct TOC_ENTRY *toc_entry, const char *output_filename);
 
-const TOC_ENTRY *pyi_archive_find_entry_by_name(const ARCHIVE *archive, const char *name);
+const struct TOC_ENTRY *pyi_archive_find_entry_by_name(const struct ARCHIVE *archive, const char *name);
 
 #endif /* PYI_ARCHIVE_H */

@@ -33,10 +33,10 @@
 /*
  * Return pointer to the next TOC entry in the TOC buffer.
  */
-const TOC_ENTRY *
-pyi_archive_next_toc_entry(const ARCHIVE *archive, const TOC_ENTRY *toc_entry)
+const struct TOC_ENTRY *
+pyi_archive_next_toc_entry(const struct ARCHIVE *archive, const struct TOC_ENTRY *toc_entry)
 {
-    return (const TOC_ENTRY *)((const char *)toc_entry + toc_entry->entry_length);
+    return (const struct TOC_ENTRY *)((const char *)toc_entry + toc_entry->entry_length);
 }
 
 
@@ -47,7 +47,7 @@ pyi_archive_next_toc_entry(const ARCHIVE *archive, const TOC_ENTRY *toc_entry)
  * to be valid.
  */
 static int
-_pyi_archive_extract_compressed(FILE *archive_fp, const TOC_ENTRY *toc_entry, FILE *out_fp, unsigned char *out_ptr)
+_pyi_archive_extract_compressed(FILE *archive_fp, const struct TOC_ENTRY *toc_entry, FILE *out_fp, unsigned char *out_ptr)
 {
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer_in = NULL;
@@ -145,7 +145,7 @@ cleanup:
  * from the archive into the provided file handle.
  */
 static int
-_pyi_archive_extract2fs_uncompressed(FILE *archive_fp, const TOC_ENTRY *toc_entry, FILE *out_fp)
+_pyi_archive_extract2fs_uncompressed(FILE *archive_fp, const struct TOC_ENTRY *toc_entry, FILE *out_fp)
 {
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer;
@@ -184,7 +184,7 @@ _pyi_archive_extract2fs_uncompressed(FILE *archive_fp, const TOC_ENTRY *toc_entr
  * the archive into the provided (pre-allocated) buffer.
  */
 static int
-_pyi_archive_extract_uncompressed(FILE *archive_fp, const TOC_ENTRY *toc_entry, unsigned char *out_buf)
+_pyi_archive_extract_uncompressed(FILE *archive_fp, const struct TOC_ENTRY *toc_entry, unsigned char *out_buf)
 {
     const size_t CHUNK_SIZE = 8192;
     unsigned char *buffer;
@@ -210,7 +210,7 @@ _pyi_archive_extract_uncompressed(FILE *archive_fp, const TOC_ENTRY *toc_entry, 
  * Returns pointer to the data (must be freed).
  */
 unsigned char *
-pyi_archive_extract(const ARCHIVE *archive, const TOC_ENTRY *toc_entry)
+pyi_archive_extract(const struct ARCHIVE *archive, const struct TOC_ENTRY *toc_entry)
 {
     FILE *archive_fp = NULL;
     unsigned char *data = NULL;
@@ -256,7 +256,7 @@ cleanup:
  * Create/extract symbolic link from the archive.
  */
 static int
-_pyi_archive_create_symlink(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, const char *output_filename)
+_pyi_archive_create_symlink(const struct ARCHIVE *archive, const struct TOC_ENTRY *toc_entry, const char *output_filename)
 {
     char *link_target = NULL;
     int rc = -1;
@@ -280,7 +280,7 @@ cleanup:
  * Extract an archive entry into specified output file.
  */
 int
-pyi_archive_extract2fs(const ARCHIVE *archive, const TOC_ENTRY *toc_entry, const char *output_filename)
+pyi_archive_extract2fs(const struct ARCHIVE *archive, const struct TOC_ENTRY *toc_entry, const char *output_filename)
 {
     FILE *archive_fp = NULL;
     FILE *out_fp = NULL;
@@ -388,14 +388,14 @@ _pyi_archive_is_extractable(char typecode)
 /*
  * Open the archive.
  */
-ARCHIVE *
+struct ARCHIVE *
 pyi_archive_open(const char *filename)
 {
     FILE *archive_fp = NULL;
     uint64_t cookie_pos = 0;
-    ARCHIVE_COOKIE archive_cookie;
-    ARCHIVE *archive = NULL;
-    TOC_ENTRY *toc_entry;
+    struct ARCHIVE_COOKIE archive_cookie;
+    struct ARCHIVE *archive = NULL;
+    struct TOC_ENTRY *toc_entry;
 
     PYI_DEBUG("LOADER: attempting to open archive %s\n", filename);
 
@@ -419,13 +419,13 @@ pyi_archive_open(const char *filename)
         PYI_PERROR("fseek", "Failed to seek to cookie position!\n");
         goto cleanup;
     }
-    if (fread(&archive_cookie, sizeof(ARCHIVE_COOKIE), 1, archive_fp) < 1) {
+    if (fread(&archive_cookie, sizeof(struct ARCHIVE_COOKIE), 1, archive_fp) < 1) {
         PYI_PERROR("fread", "Failed to read cookie!\n");
         goto cleanup;
     }
 
     /* Allocate the structure */
-    archive = (ARCHIVE *)calloc(1, sizeof(ARCHIVE));
+    archive = (struct ARCHIVE *)calloc(1, sizeof(struct ARCHIVE));
     if (archive == NULL) {
         PYI_PERROR("calloc", "Could not allocate memory for archive structure!\n");
         goto cleanup;
@@ -447,11 +447,11 @@ pyi_archive_open(const char *filename)
 
     /* From the cookie position and declared archive size, calculate
      * the archive start position */
-    archive->pkg_offset = cookie_pos + sizeof(ARCHIVE_COOKIE) - archive_cookie.pkg_length;
+    archive->pkg_offset = cookie_pos + sizeof(struct ARCHIVE_COOKIE) - archive_cookie.pkg_length;
 
     /* Read the table of contents (TOC) */
     pyi_fseek(archive_fp, archive->pkg_offset + archive_cookie.toc_offset, SEEK_SET);
-    archive->toc = (TOC_ENTRY *)malloc(archive_cookie.toc_length);
+    archive->toc = (struct TOC_ENTRY *)malloc(archive_cookie.toc_length);
 
     if (archive->toc == NULL) {
         PYI_PERROR("malloc", "Could not allocate buffer for TOC!\n");
@@ -462,7 +462,7 @@ pyi_archive_open(const char *filename)
         PYI_PERROR("fread", "Could not read full TOC!\n");
         goto cleanup;
     }
-    archive->toc_end = (const TOC_ENTRY *)(((const char *)archive->toc) + archive_cookie.toc_length);
+    archive->toc_end = (const struct TOC_ENTRY *)(((const char *)archive->toc) + archive_cookie.toc_length);
 
     /* Check input file is still ok (should be). */
     if (ferror(archive_fp)) {
@@ -485,7 +485,7 @@ pyi_archive_open(const char *filename)
 
         /* Jump to next entry; with the current entry fixed up, we can
          * use non-const equivalent of pyi_archive_next_toc_entry() */
-        toc_entry = (TOC_ENTRY *)((const char *)toc_entry + toc_entry->entry_length);
+        toc_entry = (struct TOC_ENTRY *)((const char *)toc_entry + toc_entry->entry_length);
     }
 
 cleanup:
@@ -501,9 +501,9 @@ cleanup:
  * location is also cleared to NULL.
  */
 void
-pyi_archive_free(ARCHIVE **archive_ref)
+pyi_archive_free(struct ARCHIVE **archive_ref)
 {
-    ARCHIVE *archive = *archive_ref;
+    struct ARCHIVE *archive = *archive_ref;
 
     *archive_ref = NULL;
 
@@ -522,10 +522,10 @@ pyi_archive_free(ARCHIVE **archive_ref)
 /*
  * Find a TOC entry by its name and return it.
  */
-const TOC_ENTRY *
-pyi_archive_find_entry_by_name(const ARCHIVE *archive, const char *name)
+const struct TOC_ENTRY *
+pyi_archive_find_entry_by_name(const struct ARCHIVE *archive, const char *name)
 {
-    const TOC_ENTRY *toc_entry;
+    const struct TOC_ENTRY *toc_entry;
 
     for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
 #if defined(_WIN32) || defined(__APPLE__)

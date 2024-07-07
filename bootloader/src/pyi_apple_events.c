@@ -17,11 +17,14 @@
  *  - event forwarding to child process
  */
 
+/* Having a header included outside of the ifdef block prevents the compilation
+ * unit from becoming empty, which is disallowed by pedantic ISO C. */
+#include "pyi_global.h"
+
 #if defined(__APPLE__) && defined(WINDOWED)
 
 #include <Carbon/Carbon.h>
 
-#include "pyi_global.h"
 #include "pyi_main.h"
 #include "pyi_utils.h"
 #include "pyi_apple_events.h"
@@ -42,7 +45,7 @@ extern Boolean ConvertEventRefToEventRecord(EventRef inEvent, EventRecord *outEv
 
 
 /* Context structure for keeping track of data. */
-typedef struct _apple_event_handler_context
+struct APPLE_EVENT_HANDLER_CONTEXT
 {
     /* Event handlers for argv-emu / event forwarding */
     EventHandlerUPP upp_handler; /* UPP for event handler callback */
@@ -64,7 +67,7 @@ typedef struct _apple_event_handler_context
      * be initialized to {kEventClassAppleEvent, kEventAppleEvent}
      * when handlers are being set up. */
     EventTypeSpec event_types[1];
-} APPLE_EVENT_HANDLER_CONTEXT;
+};
 
 
 /* Generic event forwarder -- forwards an event destined for this process
@@ -77,7 +80,7 @@ generic_forward_apple_event(
     const AEEventClass eventClass,
     const AEEventID evtID,
     const char *const descStr,
-    PYI_CONTEXT *pyi_ctx
+    struct PYI_CONTEXT *pyi_ctx
 )
 {
     OSErr err;
@@ -208,7 +211,7 @@ generic_forward_apple_event(
      * context structure, so that the caller can re-attempt to send it
      * using the pyi_apple_send_pending_event() function. */
     if (err == procNotFound) {
-        APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = pyi_ctx->ae_ctx;
+        struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = pyi_ctx->ae_ctx;
 
         PYI_DEBUG("LOADER [AppleEvent]: sending failed with procNotFound; storing the pending event...\n");
 
@@ -248,7 +251,7 @@ realloc_checked(void **bufptr, Size size)
 /* Converts 'odoc' or 'GURL' event into command-line arguments, and
  * appends them to argv array. */
 static OSErr
-convert_event_to_argv(const AppleEvent *theAppleEvent, const AEEventID evtID, PYI_CONTEXT *pyi_ctx)
+convert_event_to_argv(const AppleEvent *theAppleEvent, const AEEventID evtID, struct PYI_CONTEXT *pyi_ctx)
 {
     const Boolean is_odoc_event = evtID == kAEOpenDocuments; /* 'odoc' vs 'GURL' */
     AEDescList docList;
@@ -394,7 +397,7 @@ handle_oapp_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon ha
 static OSErr
 handle_odoc_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
 {
-    PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
+    struct PYI_CONTEXT *pyi_ctx = (struct PYI_CONTEXT *)handlerRefCon;
     (void)reply; /* unused */
 
     PYI_DEBUG("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
@@ -418,7 +421,7 @@ handle_odoc_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon ha
 static OSErr
 handle_gurl_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
 {
-    PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
+    struct PYI_CONTEXT *pyi_ctx = (struct PYI_CONTEXT *)handlerRefCon;
     (void)reply; /* unused */
 
     PYI_DEBUG("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
@@ -448,7 +451,7 @@ static OSErr
 handle_rapp_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
 {
     OSErr err;
-    PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
+    struct PYI_CONTEXT *pyi_ctx = (struct PYI_CONTEXT *)handlerRefCon;
     (void)reply; /* unused */
 
     PYI_DEBUG("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
@@ -491,7 +494,7 @@ handle_rapp_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon ha
 static OSErr
 handle_actv_event(const AppleEvent *theAppleEvent, AppleEvent *reply, SRefCon handlerRefCon)
 {
-    PYI_CONTEXT *pyi_ctx = (PYI_CONTEXT *)handlerRefCon;
+    struct PYI_CONTEXT *pyi_ctx = (struct PYI_CONTEXT *)handlerRefCon;
     (void)reply; /* unused */
 
     PYI_DEBUG("LOADER [AppleEvent]: %s called\n", __FUNCTION__);
@@ -562,16 +565,16 @@ evt_handler_proc(EventHandlerCallRef href, EventRef eref, void *data)
  * Install Apple Event handlers. The handlers must be installed prior to
  * calling pyi_apple_process_events().
  */
-APPLE_EVENT_HANDLER_CONTEXT *
-pyi_apple_install_event_handlers(PYI_CONTEXT *pyi_ctx)
+struct APPLE_EVENT_HANDLER_CONTEXT *
+pyi_apple_install_event_handlers(struct PYI_CONTEXT *pyi_ctx)
 {
-    APPLE_EVENT_HANDLER_CONTEXT *ae_ctx;
+    struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx;
     OSStatus err;
 
     PYI_DEBUG("LOADER [AppleEvent]: installing event handlers...\n");
 
     /* Allocate the context structure */
-    ae_ctx = (APPLE_EVENT_HANDLER_CONTEXT *)calloc(1, sizeof(APPLE_EVENT_HANDLER_CONTEXT));
+    ae_ctx = (struct APPLE_EVENT_HANDLER_CONTEXT *)calloc(1, sizeof(struct APPLE_EVENT_HANDLER_CONTEXT));
     if (ae_ctx == NULL) {
         PYI_PERROR("calloc", "Could not allocate memory for APPLE_EVENT_HANDLER_CONTEXT.\n");
         return NULL;
@@ -652,9 +655,9 @@ end:
  * Uninstall Apple Event handlers.
  */
 void
-pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT **ae_ctx_ref)
+pyi_apple_uninstall_event_handlers(struct APPLE_EVENT_HANDLER_CONTEXT **ae_ctx_ref)
 {
-    APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = *ae_ctx_ref;
+    struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx = *ae_ctx_ref;
 
     *ae_ctx_ref = NULL;
 
@@ -695,7 +698,7 @@ pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT **ae_ctx_ref)
  * the specified timeout (in seconds) or an error is reached.
  */
 void
-pyi_apple_process_events(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float timeout)
+pyi_apple_process_events(struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float timeout)
 {
     PYI_DEBUG("LOADER [AppleEvent]: processing Apple Events...\n");
 
@@ -765,9 +768,9 @@ pyi_apple_submit_oapp_event()
 
     PYI_DEBUG("LOADER [AppleEvent]: submitting 'oapp' event...\n");
 
-    // Get PSN via GetCurrentProcess. This function is deprecated, but
-    // we cannot use {0, kCurrentProcess} because we need our event
-    // to be queued.
+    /* Get PSN via GetCurrentProcess. This function is deprecated, but
+     * we cannot use {0, kCurrentProcess} because we need our event
+     * to be queued. */
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -781,21 +784,21 @@ pyi_apple_submit_oapp_event()
         goto cleanup;
     }
 
-    // Create target address using the PSN, ...
+    /* Create target address using the PSN, ... */
     err = AECreateDesc(typeProcessSerialNumber, &psn, sizeof(psn), &target);
     if (err != noErr) {
         PYI_WARNING("LOADER [AppleEvent]: failed to create AEAddressDesc: %d\n", (int)err);
         goto cleanup;
     }
 
-    // ... create OAPP event, ...
+    /* ... create OAPP event, ... */
     err = AECreateAppleEvent(kCoreEventClass, kAEOpenApplication, &target, kAutoGenerateReturnID, kAnyTransactionID, &event);
     if (err != noErr) {
         PYI_WARNING("LOADER [AppleEvent]: failed to create OAPP event: %d\n", (int)err);
         goto cleanup;
     }
 
-    // ... and send it
+    /* ... and send it */
     err = AESendMessage(&event, NULL, kAENoReply, kAEDefaultTimeout);
     if (err != noErr) {
         PYI_WARNING("LOADER [AppleEvent]: failed to send event: %d\n", (int)err);
@@ -804,9 +807,9 @@ pyi_apple_submit_oapp_event()
         PYI_DEBUG("LOADER [AppleEvent]: submitted 'oapp' event.\n");
     }
 
-    // Now wait for the event to show up in event queue (this implicitly
-    // assumes that no other activation event shows up, but those would
-    // also solve the problem we are trying to mitigate).
+    /* Now wait for the event to show up in event queue (this implicitly
+     * assumes that no other activation event shows up, but those would
+     * also solve the problem we are trying to mitigate). */
     PYI_DEBUG("LOADER [AppleEvent]: waiting for 'oapp' event to show up in queue...\n");
     err = ReceiveNextEvent(1, event_types, 10.0, kEventLeaveInQueue, &event_ref);
     if (err != noErr) {
@@ -824,14 +827,14 @@ cleanup:
 
 
 /* Check if we have a pending event that we need to forward. */
-int pyi_apple_has_pending_event(const APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
+int pyi_apple_has_pending_event(const struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
 {
     return ae_ctx->has_pending_event;
 }
 
 /* Clean-up the pending event data and status. */
 void
-pyi_apple_cleanup_pending_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
+pyi_apple_cleanup_pending_event(struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
 {
     /* No-op if have no pending event. */
     if (!ae_ctx->has_pending_event) {
@@ -848,7 +851,7 @@ pyi_apple_cleanup_pending_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx)
 
 /* Attempt to re-send the pending event after the specified delay (in seconds). */
 int
-pyi_apple_send_pending_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float delay)
+pyi_apple_send_pending_event(struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float delay)
 {
     OSErr err;
 
@@ -881,6 +884,5 @@ pyi_apple_send_pending_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float delay)
         return -1;
     }
 }
-
 
 #endif /* if defined(__APPLE__) && defined(WINDOWED) */

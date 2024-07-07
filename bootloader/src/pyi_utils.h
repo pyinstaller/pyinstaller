@@ -23,7 +23,7 @@
 
 #include "pyi_global.h" /* dylib_t */
 
-typedef struct _pyi_context PYI_CONTEXT;
+struct PYI_CONTEXT;
 
 /* Environment variables. */
 char *pyi_getenv(const char *variable);
@@ -31,13 +31,13 @@ int pyi_setenv(const char *variable, const char *value);
 int pyi_unsetenv(const char *variable);
 
 /* Temporary top-level application directory (onefile). */
-int pyi_create_temporary_application_directory(PYI_CONTEXT *pyi_ctx);
+int pyi_create_temporary_application_directory(struct PYI_CONTEXT *pyi_ctx);
 
 /* Recursive directory deletion. */
 int pyi_recursive_rmdir(const char *dir);
 
 /* Misc. file/directory manipulation. */
-int pyi_create_parent_directory_tree(const PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename);
+int pyi_create_parent_directory_tree(const struct PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename);
 int pyi_copy_file(const char *src_filename, const char *dest_filename);
 
 /* Shared library loading. */
@@ -45,7 +45,7 @@ pyi_dylib_t pyi_utils_dlopen(const char *filename);
 int pyi_utils_dlclose(pyi_dylib_t handle);
 
 /* Child process */
-int pyi_utils_create_child(PYI_CONTEXT *pyi_ctx);
+int pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx);
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 int pyi_utils_set_library_search_path(const char *path);
@@ -53,9 +53,9 @@ int pyi_utils_set_library_search_path(const char *path);
 
 /* Argument handling (POSIX only) */
 #if !defined(_WIN32)
-int pyi_utils_initialize_args(PYI_CONTEXT *pyi_ctx, const int argc, char *const argv[]);
-int pyi_utils_append_to_args(PYI_CONTEXT *pyi_ctx, const char *arg);
-void pyi_utils_free_args(PYI_CONTEXT *pyi_ctx);
+int pyi_utils_initialize_args(struct PYI_CONTEXT *pyi_ctx, const int argc, char *const argv[]);
+int pyi_utils_append_to_args(struct PYI_CONTEXT *pyi_ctx, const char *arg);
+void pyi_utils_free_args(struct PYI_CONTEXT *pyi_ctx);
 #endif
 
 /* Magic pattern matching */
@@ -76,7 +76,7 @@ void pyi_win32_minimize_console();
 
 /* Force-unload of bundled DLLs from onefile parent process (Windows only) */
 #if defined(_WIN32)
-void pyi_win32_force_unload_bundled_dlls(PYI_CONTEXT *pyi_ctx);
+void pyi_win32_force_unload_bundled_dlls(struct PYI_CONTEXT *pyi_ctx);
 #endif
 
 /* Windows low-level helpers */

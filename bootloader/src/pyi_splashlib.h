@@ -79,47 +79,47 @@ typedef enum
  * Bound functions from Tcl/Tk
  */
 /* Tcl Initialization/Destruction */
-PYI_EXTDECLPROC(int, Tcl_Init, (Tcl_Interp *));
-PYI_EXTDECLPROC(Tcl_Interp*, Tcl_CreateInterp, (void));
-PYI_EXTDECLPROC(void, Tcl_FindExecutable, (const char *));
-PYI_EXTDECLPROC(int, Tcl_DoOneEvent, (int));
-PYI_EXTDECLPROC(void, Tcl_Finalize, (void));
-PYI_EXTDECLPROC(void, Tcl_FinalizeThread, (void));
-PYI_EXTDECLPROC(void, Tcl_DeleteInterp, (Tcl_Interp *));
+PYI_EXTDECLPROC(int, Tcl_Init, (Tcl_Interp *))
+PYI_EXTDECLPROC(Tcl_Interp*, Tcl_CreateInterp, (void))
+PYI_EXTDECLPROC(void, Tcl_FindExecutable, (const char *))
+PYI_EXTDECLPROC(int, Tcl_DoOneEvent, (int))
+PYI_EXTDECLPROC(void, Tcl_Finalize, (void))
+PYI_EXTDECLPROC(void, Tcl_FinalizeThread, (void))
+PYI_EXTDECLPROC(void, Tcl_DeleteInterp, (Tcl_Interp *))
 
 /* Threading */
-PYI_EXTDECLPROC(int, Tcl_CreateThread, (Tcl_ThreadId *, Tcl_ThreadCreateProc *, ClientData, int, int));
-PYI_EXTDECLPROC(Tcl_ThreadId, Tcl_GetCurrentThread, (void));
-PYI_EXTDECLPROC(int, Tcl_JoinThread, (Tcl_ThreadId, int *));
-PYI_EXTDECLPROC(void, Tcl_MutexLock, (Tcl_Mutex *));
-PYI_EXTDECLPROC(void, Tcl_MutexUnlock, (Tcl_Mutex *));
-PYI_EXTDECLPROC(void, Tcl_MutexFinalize, (Tcl_Mutex *));
-PYI_EXTDECLPROC(void, Tcl_ConditionFinalize, (Tcl_Condition *));
-PYI_EXTDECLPROC(void, Tcl_ConditionNotify, (Tcl_Condition *));
-PYI_EXTDECLPROC(void, Tcl_ConditionWait, (Tcl_Condition *, Tcl_Mutex *, const Tcl_Time *));
-PYI_EXTDECLPROC(void, Tcl_ThreadQueueEvent, (Tcl_ThreadId, Tcl_Event *, Tcl_QueuePosition));
-PYI_EXTDECLPROC(void, Tcl_ThreadAlert, (Tcl_ThreadId threadId));
+PYI_EXTDECLPROC(int, Tcl_CreateThread, (Tcl_ThreadId *, Tcl_ThreadCreateProc *, ClientData, int, int))
+PYI_EXTDECLPROC(Tcl_ThreadId, Tcl_GetCurrentThread, (void))
+PYI_EXTDECLPROC(int, Tcl_JoinThread, (Tcl_ThreadId, int *))
+PYI_EXTDECLPROC(void, Tcl_MutexLock, (Tcl_Mutex *))
+PYI_EXTDECLPROC(void, Tcl_MutexUnlock, (Tcl_Mutex *))
+PYI_EXTDECLPROC(void, Tcl_MutexFinalize, (Tcl_Mutex *))
+PYI_EXTDECLPROC(void, Tcl_ConditionFinalize, (Tcl_Condition *))
+PYI_EXTDECLPROC(void, Tcl_ConditionNotify, (Tcl_Condition *))
+PYI_EXTDECLPROC(void, Tcl_ConditionWait, (Tcl_Condition *, Tcl_Mutex *, const Tcl_Time *))
+PYI_EXTDECLPROC(void, Tcl_ThreadQueueEvent, (Tcl_ThreadId, Tcl_Event *, Tcl_QueuePosition))
+PYI_EXTDECLPROC(void, Tcl_ThreadAlert, (Tcl_ThreadId threadId))
 
 /* Tcl interpreter manipulation */
-PYI_EXTDECLPROC(const char*, Tcl_GetVar2, (Tcl_Interp *, const char *, const char *, int));
-PYI_EXTDECLPROC(const char*, Tcl_SetVar2, (Tcl_Interp *, const char *, const char *, const char *, int));
-PYI_EXTDECLPROC(Tcl_Command, Tcl_CreateObjCommand, (Tcl_Interp *, const char *, Tcl_ObjCmdProc *, ClientData, Tcl_CmdDeleteProc *));
-PYI_EXTDECLPROC(char *, Tcl_GetString, (Tcl_Obj *));
-PYI_EXTDECLPROC(Tcl_Obj *, Tcl_NewStringObj, (const char *, int));
-PYI_EXTDECLPROC(Tcl_Obj *, Tcl_NewByteArrayObj, (const unsigned char *, int));
-PYI_EXTDECLPROC(Tcl_Obj *, Tcl_SetVar2Ex, (Tcl_Interp *, const char *, const char *, Tcl_Obj *, int));
-PYI_EXTDECLPROC(Tcl_Obj *, Tcl_GetObjResult, (Tcl_Interp *));
+PYI_EXTDECLPROC(const char*, Tcl_GetVar2, (Tcl_Interp *, const char *, const char *, int))
+PYI_EXTDECLPROC(const char*, Tcl_SetVar2, (Tcl_Interp *, const char *, const char *, const char *, int))
+PYI_EXTDECLPROC(Tcl_Command, Tcl_CreateObjCommand, (Tcl_Interp *, const char *, Tcl_ObjCmdProc *, ClientData, Tcl_CmdDeleteProc *))
+PYI_EXTDECLPROC(char *, Tcl_GetString, (Tcl_Obj *))
+PYI_EXTDECLPROC(Tcl_Obj *, Tcl_NewStringObj, (const char *, int))
+PYI_EXTDECLPROC(Tcl_Obj *, Tcl_NewByteArrayObj, (const unsigned char *, int))
+PYI_EXTDECLPROC(Tcl_Obj *, Tcl_SetVar2Ex, (Tcl_Interp *, const char *, const char *, Tcl_Obj *, int))
+PYI_EXTDECLPROC(Tcl_Obj *, Tcl_GetObjResult, (Tcl_Interp *))
 
 /* Evaluating scripts and memory functions */
-PYI_EXTDECLPROC(int, Tcl_EvalFile, (Tcl_Interp *, const char *));
-PYI_EXTDECLPROC(int, Tcl_EvalEx, (Tcl_Interp *, const char *, int, int));
-PYI_EXTDECLPROC(int, Tcl_EvalObjv, (Tcl_Interp *, int, Tcl_Obj * const[], int));
-PYI_EXTDECLPROC(char *, Tcl_Alloc, (unsigned int));
-PYI_EXTDECLPROC(void, Tcl_Free, (char *));
+PYI_EXTDECLPROC(int, Tcl_EvalFile, (Tcl_Interp *, const char *))
+PYI_EXTDECLPROC(int, Tcl_EvalEx, (Tcl_Interp *, const char *, int, int))
+PYI_EXTDECLPROC(int, Tcl_EvalObjv, (Tcl_Interp *, int, Tcl_Obj * const[], int))
+PYI_EXTDECLPROC(char *, Tcl_Alloc, (unsigned int))
+PYI_EXTDECLPROC(void, Tcl_Free, (char *))
 
 /* Tk */
-PYI_EXTDECLPROC(int, Tk_Init, (Tcl_Interp *));
-PYI_EXTDECLPROC(int, Tk_GetNumMainWindows, (void));
+PYI_EXTDECLPROC(int, Tk_Init, (Tcl_Interp *))
+PYI_EXTDECLPROC(int, Tk_GetNumMainWindows, (void))
 
 /* Bind all required functions from Tcl and Tk shared libraries */
 int pyi_splashlib_bind_functions(pyi_dylib_t dll_tcl, pyi_dylib_t dll_tk);

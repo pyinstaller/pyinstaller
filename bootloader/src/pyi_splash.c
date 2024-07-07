@@ -63,7 +63,7 @@
 
 /* Forward declarations */
 static Tcl_ThreadCreateProc _splash_init;
-typedef struct Splash_Event Splash_Event;
+struct Splash_Event;
 
 
 /*
@@ -77,15 +77,15 @@ typedef struct Splash_Event Splash_Event;
  * The SPLASH_DATA_HEADER structure is, if loaded from archive,
  * in network/big endian, and must be converted to system endianness.
  */
-static SPLASH_DATA_HEADER *
-_pyi_splash_find_data_header(ARCHIVE *archive)
+static struct SPLASH_DATA_HEADER *
+_pyi_splash_find_data_header(struct ARCHIVE *archive)
 {
-    SPLASH_DATA_HEADER *header = NULL;
-    const TOC_ENTRY *toc_entry;
+    struct SPLASH_DATA_HEADER *header = NULL;
+    const struct TOC_ENTRY *toc_entry;
 
     for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
         if (toc_entry->typecode == ARCHIVE_ITEM_SPLASH) {
-            header = (SPLASH_DATA_HEADER *)pyi_archive_extract(archive, toc_entry);
+            header = (struct SPLASH_DATA_HEADER *)pyi_archive_extract(archive, toc_entry);
             break;
         }
     }
@@ -98,9 +98,9 @@ _pyi_splash_find_data_header(ARCHIVE *archive)
  * the necessary paths and resources.
  */
 int
-pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
+pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ctx)
 {
-    SPLASH_DATA_HEADER *data_header;
+    struct SPLASH_DATA_HEADER *data_header;
 
     /* Read splash resources entry from the archive */
     data_header = _pyi_splash_find_data_header(pyi_ctx->archive);
@@ -203,7 +203,7 @@ pyi_splash_setup(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
  * 0 does not necessarily mean, that Tcl/Tk was successfully initialized.
  */
 int
-pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
+pyi_splash_start(struct SPLASH_CONTEXT *splash, const char *executable)
 {
     PI_Tcl_MutexLock(&splash->context_mutex);
 
@@ -280,10 +280,10 @@ pyi_splash_start(SPLASH_CONTEXT *splash, const char *executable)
  * were already extracted here (and exempts them from warning message).
  */
 int
-pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
+pyi_splash_extract(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ctx)
 {
-    const ARCHIVE *archive = pyi_ctx->archive;
-    const TOC_ENTRY *toc_entry;
+    const struct ARCHIVE *archive = pyi_ctx->archive;
+    const struct TOC_ENTRY *toc_entry;
     const char *requirement_filename = NULL;
     char output_filename[PYI_PATH_MAX];
     size_t pos;
@@ -343,7 +343,7 @@ pyi_splash_extract(SPLASH_CONTEXT *splash, const PYI_CONTEXT *pyi_ctx)
  * by splash screen code).
  */
 int
-pyi_splash_is_splash_requirement(SPLASH_CONTEXT *splash, const char *name)
+pyi_splash_is_splash_requirement(struct SPLASH_CONTEXT *splash, const char *name)
 {
     const char *requirement_filename = NULL;
     size_t pos;
@@ -372,7 +372,7 @@ pyi_splash_is_splash_requirement(SPLASH_CONTEXT *splash, const char *name)
 
 /* Load Tcl/Tk shared libraries and bind required symbols (functions). */
 int
-pyi_splash_load_shared_libaries(SPLASH_CONTEXT *splash)
+pyi_splash_load_shared_libaries(struct SPLASH_CONTEXT *splash)
 {
     splash->dlls_fully_loaded = false;
 
@@ -403,7 +403,7 @@ pyi_splash_load_shared_libaries(SPLASH_CONTEXT *splash)
  * Finalizes the splash screen.
  */
 int
-pyi_splash_finalize(SPLASH_CONTEXT *splash)
+pyi_splash_finalize(struct SPLASH_CONTEXT *splash)
 {
     if (splash == NULL) {
         return 0;
@@ -507,12 +507,12 @@ pyi_splash_finalize(SPLASH_CONTEXT *splash)
 /*
  * Allocate memory for splash status
  */
-SPLASH_CONTEXT *
+struct SPLASH_CONTEXT *
 pyi_splash_context_new()
 {
-    SPLASH_CONTEXT *splash;
+    struct SPLASH_CONTEXT *splash;
 
-    splash = (SPLASH_CONTEXT *)calloc(1, sizeof(SPLASH_CONTEXT));
+    splash = (struct SPLASH_CONTEXT *)calloc(1, sizeof(struct SPLASH_CONTEXT));
 
     if (splash == NULL) {
         PYI_PERROR("calloc", "Could not allocate memory for SPLASH_CONTEXT.\n");
@@ -529,9 +529,9 @@ pyi_splash_context_new()
  * to NULL.
  */
 void
-pyi_splash_context_free(SPLASH_CONTEXT **splash_ref)
+pyi_splash_context_free(struct SPLASH_CONTEXT **splash_ref)
 {
-    SPLASH_CONTEXT *splash = *splash_ref;
+    struct SPLASH_CONTEXT *splash = *splash_ref;
 
     *splash_ref = NULL;
 
@@ -553,7 +553,7 @@ pyi_splash_context_free(SPLASH_CONTEXT **splash_ref)
 struct Splash_Event
 {
     Tcl_Event ev; /* must be first */
-    SPLASH_CONTEXT *splash;
+    struct SPLASH_CONTEXT *splash;
     /* We may wait for the interpreter thread to complete to get
      * a result. For this we use the done condition. The behavior
      * of result and the condition are only defined, if async is false. */
@@ -579,7 +579,7 @@ struct Splash_Event
  */
 static void
 _splash_event_send(
-    SPLASH_CONTEXT *splash,
+    struct SPLASH_CONTEXT *splash,
     Tcl_Event *ev,
     Tcl_Condition *cond,
     Tcl_Mutex *mutex,
@@ -611,9 +611,9 @@ static int
 _splash_event_proc(Tcl_Event *ev, int flags)
 {
     int rc = 0;
-    Splash_Event *splash_event;
+    struct Splash_Event *splash_event;
 
-    splash_event = (Splash_Event *)ev;
+    splash_event = (struct Splash_Event *)ev;
 
     /* Call the custom procedure passed to pyi_splash_send */
     if (splash_event->proc != NULL) {
@@ -647,7 +647,7 @@ _splash_event_proc(Tcl_Event *ev, int flags)
  * Note: this function is executed inside the Tcl interpreter thread.
  */
 static int
-_pyi_splash_text_update(SPLASH_CONTEXT *splash, const void *user_data)
+_pyi_splash_text_update(struct SPLASH_CONTEXT *splash, const void *user_data)
 {
     const char *text = (const char *)user_data;
     PI_Tcl_SetVar2(splash->interp, "status_text", NULL, text, TCL_GLOBAL_ONLY);
@@ -663,7 +663,7 @@ _pyi_splash_text_update(SPLASH_CONTEXT *splash, const void *user_data)
  * from the executable-embedded archive.
  */
 int
-pyi_splash_update_text(SPLASH_CONTEXT *splash, const char *text)
+pyi_splash_update_text(struct SPLASH_CONTEXT *splash, const char *text)
 {
     /* We enqueue the _pyi_splash_text_update function into the Tcl
      * interpreter event queue in async mode, ignoring the return value. */
@@ -689,14 +689,14 @@ pyi_splash_update_text(SPLASH_CONTEXT *splash, const char *text)
  * the status mutex, meaning they can safely modify the SPLASH_CONTEXT.
  */
 int
-pyi_splash_send(SPLASH_CONTEXT *splash, bool async, const void *user_data, pyi_splash_event_proc proc)
+pyi_splash_send(struct SPLASH_CONTEXT *splash, bool async, const void *user_data, pyi_splash_event_proc proc)
 {
     int rc = 0;
-    Splash_Event *ev;
+    struct Splash_Event *ev;
     Tcl_Condition cond = NULL;
 
     /* Tcl will free this event once it was serviced. */
-    ev = (Splash_Event *)PI_Tcl_Alloc(sizeof(Splash_Event));
+    ev = (struct Splash_Event *)PI_Tcl_Alloc(sizeof(struct Splash_Event));
 
     ev->ev.proc = (Tcl_EventProc *)_splash_event_proc;
     ev->splash = splash;
@@ -775,10 +775,10 @@ _tcl_findLibrary_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tc
      * 	    varName		Global variable to set when done (e.g., tk_library)
      */
     int rc;
-    SPLASH_CONTEXT *splash;
+    struct SPLASH_CONTEXT *splash;
     char initScriptPath[PYI_PATH_MAX];
 
-    splash = (SPLASH_CONTEXT *)clientData;
+    splash = (struct SPLASH_CONTEXT *)clientData;
 
     /* In our minimal environment, this function is only called once,
      * from Tk_Init. So we only implement the behavior for Tk. Other
@@ -851,7 +851,7 @@ _tcl_source_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 static int
 _tcl_exit_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    SPLASH_CONTEXT *splash = (SPLASH_CONTEXT *)clientData;
+    struct SPLASH_CONTEXT *splash = (struct SPLASH_CONTEXT *)clientData;
     splash->exit_main_loop = true;
     return TCL_OK;
 }
@@ -878,10 +878,10 @@ static Tcl_ThreadCreateType
 _splash_init(ClientData client_data)
 {
     int err = 0;
-    SPLASH_CONTEXT *splash;
+    struct SPLASH_CONTEXT *splash;
     Tcl_Obj *image_data_obj;
 
-    splash = (SPLASH_CONTEXT *)client_data;
+    splash = (struct SPLASH_CONTEXT *)client_data;
 
     PI_Tcl_MutexLock(&splash->context_mutex);
 

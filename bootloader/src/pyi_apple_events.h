@@ -25,33 +25,33 @@
 
 #if defined(__APPLE__) && defined(WINDOWED)
 
-typedef struct _pyi_context PYI_CONTEXT;
-typedef struct _apple_event_handler_context APPLE_EVENT_HANDLER_CONTEXT;
+struct PYI_CONTEXT;
+struct APPLE_EVENT_HANDLER_CONTEXT;
 
 
 /* Install Apple Event handlers, and return instance of allocated context
  * structure. Requires PYI_CONTEXT as argument, in order to pass the
  * pointer to callbacks. */
-APPLE_EVENT_HANDLER_CONTEXT *pyi_apple_install_event_handlers(PYI_CONTEXT *pyi_ctx);
+struct APPLE_EVENT_HANDLER_CONTEXT *pyi_apple_install_event_handlers(struct PYI_CONTEXT *pyi_ctx);
 
 /* Uninstall Apple Event handlers */
-void pyi_apple_uninstall_event_handlers(APPLE_EVENT_HANDLER_CONTEXT **ae_ctx_ref);
+void pyi_apple_uninstall_event_handlers(struct APPLE_EVENT_HANDLER_CONTEXT **ae_ctx_ref);
 
 /*
  * Process Apple Events, either appending them to sys.argv (if argv-emu
  * is enabled and child process is not (yet) running, or forwarding
  * them to the child process.
  */
-void pyi_apple_process_events(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float timeout);
+void pyi_apple_process_events(struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float timeout);
 
 /* Check if we have a pending event that we need to forward. */
-int pyi_apple_has_pending_event(const APPLE_EVENT_HANDLER_CONTEXT *ae_ctx);
+int pyi_apple_has_pending_event(const struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx);
 
 /* Attempt to re-send the pending event after the specified delay. */
-int pyi_apple_send_pending_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float delay);
+int pyi_apple_send_pending_event(struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx, float delay);
 
 /* Clean-up the pending event data and status. */
-void pyi_apple_cleanup_pending_event(APPLE_EVENT_HANDLER_CONTEXT *ae_ctx);
+void pyi_apple_cleanup_pending_event(struct APPLE_EVENT_HANDLER_CONTEXT *ae_ctx);
 
 /*
  * Attempt to submit oapp event to ourselves in order to mitigate
