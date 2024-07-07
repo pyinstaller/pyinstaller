@@ -23,7 +23,7 @@ ipython==8.26.0; python_version >= '3.10'
 # keyring >= 23.1 requires python >= 3.8.7 on macOS 11 and later (with dyld shared cache support)
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==25.2.1; sys_platform != 'darwin' or python_version >= '3.8.7'
-matplotlib==3.9.0; python_version >= '3.9'
+matplotlib==3.9.1; python_version >= '3.9'
 numpy==2.0.0; python_version >= '3.9'
 pandas==2.2.2; python_version >= '3.9'
 pygments==2.18.0
@@ -75,7 +75,7 @@ sphinx==7.3.7; python_version >= '3.9'
 # Required for test_namespace_package
 sqlalchemy==2.0.31
 zope.interface==6.4.post2
-Pillow==10.3.0
+Pillow==10.4.0
 
 
 # Python versions not supported / supported for older package versions
