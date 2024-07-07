@@ -112,6 +112,13 @@ jobs:
           cd bootloader
           CC="gcc -std=gnu90" python waf --tests all
 
+      - name: Check if bootloader code conforms to c99 ISO C standard (pedantic mode)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          # Compile bootloader
+          cd bootloader
+          CC="gcc -std=c99 -pedantic" python waf --tests all
+
       - name: Check if bootloader is buildable with --static-zlib option
         if: startsWith(matrix.os, 'ubuntu')
         run: cd bootloader && python waf --static-zlib --tests all
