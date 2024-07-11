@@ -371,6 +371,34 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
 
     PYI_DEBUG("LOADER: application's top-level directory: %s\n", pyi_ctx->application_home_dir);
 
+    /* On Windows in onefile parent process with splash screen enabled,
+     * attempt to pre-emptively load system-wide copy of VCRUNTIME140.dll.
+     *
+     * Contemporary Tcl/Tk DLLs are known to depend on VCRUNTIME140.dll,
+     * so when we load them during splash screen initialization, they will
+     * cause VCRUNTIME140.dll to be loaded as well. This happens with
+     * modified search path (see the code block below this one), and thus
+     * the bundled copy will be loaded; this is intended to accommodate
+     * systems that do not have system-wide copy of the DLL available.
+     * However, the OS and/or anti-virus programs might inject additional
+     * DLLs into the process that depend on VCRUNTIME140.dll (see the
+     * follow-up discussion under #7106); such externally loaded DLLs
+     * might prevent us from being able to unload the bundled copy of
+     * VCRUNTIME140.dll, and thus preventing proper temporary file
+     * cleanup. To work around this mess, we prefer to load system-wide
+     * copy of VCRUNTIME140.dll, if available. */
+#if defined(_WIN32)
+    if (pyi_ctx->archive->toc_splash && pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) {
+        const wchar_t *dll_name = L"VCRUNTIME140.dll";
+        PYI_DEBUG_W(L"LOADER: attempting to pre-load system copy of %ls...\n", dll_name);
+        if (LoadLibraryExW(dll_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)) {
+            PYI_DEBUG_W(L"LOADER: successfully loaded system copy of %ls.\n", dll_name);
+        } else {
+            PYI_DEBUG_W(L"LOADER: could not load system copy of %ls.\n", dll_name);
+        }
+    }
+#endif /* defined(_WIN32) */
+
     /* On Windows and under cygwin, add application's top-level directory
      * to DLL search path.  */
 #if defined(_WIN32) || defined(__CYGWIN__)

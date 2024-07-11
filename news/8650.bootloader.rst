@@ -1,0 +1,11 @@
+(Windows) The parent process of a ``onefile`` application with enabled
+splash screen now attempts to pre-load a system-wide copy of
+``VCRUNTIME140.dll``, preferring it over the bundled copy (which would
+be loaded as dependency of Tcl/Tk DLLs during splash screen setup).
+If a system-wide copy is available, the OS and/or anti-virus
+programs might inject other 3rd party DLLs into the process that
+also depend on ``VCRUNTIME140.dll`` (for example, Trend Micro's User Mode
+Hooking component has been observed to do that). Such externally loaded
+DLLs prevent the bootloader from unloading the ``VCRUNTIME140.dll``
+during the clean-up phase, and if the bundled copy was loaded, it would
+also prevent its removal from the application's temporary directory.
