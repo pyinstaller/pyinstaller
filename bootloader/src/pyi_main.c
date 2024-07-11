@@ -515,6 +515,13 @@ _pyi_main_setup_splash_screen(struct PYI_CONTEXT *pyi_ctx)
     bool suppressed = false;
     bool is_eligible = false;
 
+    /* Check if splash screen is available at all, i.e., if PKG/CArchive
+     * contains SPLASH entry. */
+    if (!pyi_ctx->archive->toc_splash) {
+        PYI_DEBUG("LOADER: splash screen is unavailable.\n");
+        return;
+    }
+
     /* Check if user requested splash screen to be suppressed by setting
      * the PYINSTALLER_SUPPRESS_SPLASH_SCREEN environment variable to 1 */
     env_suppress_splash = pyi_getenv("PYINSTALLER_SUPPRESS_SPLASH_SCREEN");
@@ -550,18 +557,15 @@ _pyi_main_setup_splash_screen(struct PYI_CONTEXT *pyi_ctx)
         return;
     }
 
-    /* Check if splash screen resources are available. TODO: it would
-     * be nice if we did this at the start of this function, but without
-     * fully loading the resources... */
-    PYI_DEBUG("LOADER: looking for splash screen resources...\n");
+    /* Load splash screen resources. */
+    PYI_DEBUG("LOADER: loading splash screen resources...\n");
     pyi_ctx->splash = pyi_splash_context_new();
     if (pyi_splash_setup(pyi_ctx->splash, pyi_ctx) != 0) {
-        /* Splash screen resources not found */
-        PYI_DEBUG("LOADER: splash screen resources not found.\n");
+        PYI_WARNING("Failed to load splash screen resources!\n");
         goto cleanup;
     }
 
-    /* Splash screen resources found; setup up splash screen */
+    /* Splash screen resources loaded; setup up splash screen */
     PYI_DEBUG("LOADER: setting up splash screen...\n");
 
     /* In onefile mode, we need to extract dependencies (shared

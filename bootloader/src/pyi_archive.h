@@ -73,6 +73,9 @@ struct ARCHIVE
      * and thus has onefile semantics */
     bool contains_extractable_entries;
 
+    /* Pointer to SPLASH TOC entry, if available */
+    const struct TOC_ENTRY *toc_splash;
+
     /* Python version: major * 100 + minor, e.g., 310 for python 3.10 */
     int python_version;
 
