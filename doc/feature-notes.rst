@@ -1034,6 +1034,15 @@ console control signals <https://docs.microsoft.com/en-us/windows/console/handle
 
 * ``CTRL_SHUTDOWN_EVENT``: system shutting down
 
+.. note::
+   As documented in SetConsoleCtrlHandler_ notes, if the process ends
+   up loading ``gdi32.dll`` or ``user32.dll`` shared library (either
+   directly or indirectly), the installed console handler will not receive
+   ``CTRL_LOGOFF_EVENT`` and ``CTRL_SHUTDOWN_EVENT`` events. The session
+   shutdown can be detected and handled only by means of setting up a
+   hidden window and processing ``WM_QUERYENDSESSION`` and ``WM_ENDSESSION``
+   window messages.
+
 When a console control signal is generated, the handler installed via
 SetConsoleCtrlHandler_ (if any) is executed *in a separate thread*,
 spawned within the program process by the operating system. In other
@@ -1177,6 +1186,34 @@ behind the unpacked temporary directory.
    until after the child process is terminated, and clean up the unpacked
    temporary directory. However, various caveats still apply, as
    discussed in the following sub-sections.
+
+.. versionchanged:: 6.0
+   due to bootloader being linked against ``user32.dll``, the installed
+   console handler cannot receive ``CTRL_LOGOFF_EVENT`` and
+   ``CTRL_SHUTDOWN_EVENT`` events anymore. This applies to the
+   bootloader-installed handler in the parent process of a onefile
+   application, as well as user-installed handler in the main application
+   process in either onefile or onedir application.
+
+.. versionchanged:: 6.10
+   the bootloader's ``CTRL_CLOSE_EVENT`` handler in onefile parent
+   process now explicitly terminates the child process after giving it
+   500 milliseconds grace period. This is necessary for proper clean up
+   of temporary files when application runs under Windows Terminal
+   (instead of ``conhost.exe``), and user closes the terminal window
+   (or tab).
+
+.. versionchanged:: 6.10
+   the bootloader in onefile parent process now sets up a hidden window
+   to receive and process ``WM_QUERYENDSESSION`` and ``WM_ENDSESSION``
+   window messages. Upon receiving the confirmed ``WM_ENDSESSION``
+   message, the parent process terminates the child process after
+   giving it 1-second grace period, before it proceeds with the
+   cleanup. This ensures that temporary files of a background-running
+   onefile application are cleaned up when user logs off or initiates
+   system shutdown or restart. The cleanup should now work regardless
+   of whether application is built in console or noconsole/windowed
+   mode, and regardless of whether splash screen is used or not.
 
 .. [#keyboard_interrupt] The ``KeyboardInterrupt`` exception could have
    been used to terminate the loop as well. However, that would not handle
