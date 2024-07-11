@@ -67,33 +67,6 @@ struct Splash_Event;
 
 
 /*
- * Search the PKG/CArchive for splash screen resources and return a
- * pointer to buffer that contains its data. If no splash screen
- * resources are found, NULL is returned.
- *
- * The splash screen resources entry is identified in the PKG/CArchive
- * by the type code 'ARCHIVE_ITEM_SPLASH'.
- *
- * The SPLASH_DATA_HEADER structure is, if loaded from archive,
- * in network/big endian, and must be converted to system endianness.
- */
-static struct SPLASH_DATA_HEADER *
-_pyi_splash_find_data_header(struct ARCHIVE *archive)
-{
-    struct SPLASH_DATA_HEADER *header = NULL;
-    const struct TOC_ENTRY *toc_entry;
-
-    for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
-        if (toc_entry->typecode == ARCHIVE_ITEM_SPLASH) {
-            header = (struct SPLASH_DATA_HEADER *)pyi_archive_extract(archive, toc_entry);
-            break;
-        }
-    }
-
-    return header;
-}
-
-/*
  * Initialize the splash screen context by reading its data and defining
  * the necessary paths and resources.
  */
@@ -103,19 +76,18 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
     struct SPLASH_DATA_HEADER *data_header;
 
     /* Read splash resources entry from the archive */
-    data_header = _pyi_splash_find_data_header(pyi_ctx->archive);
+    data_header = (struct SPLASH_DATA_HEADER *)pyi_archive_extract(pyi_ctx->archive, pyi_ctx->archive->toc_splash);
     if (data_header == NULL) {
-        return -1; /* No splash resources */
+        return -1; /* Failed to read splash resources */
     }
-    PYI_DEBUG("SPLASH: found splash screen resources.\n");
 
     /* In onedir mode, Tcl/Tk dependencies (shared libraries, .tcl files)
      * are located directly in top-level application directory. In onefile
-     * mode, they are extracted into temporary/ephemeral)top-level
+     * mode, they are extracted into temporary/ephemeral top-level
      * application directory.
      *
      * NOTE: the name fields in SPLASH_DATA_HEADER are 16 characters wide,
-     * and are *implicitly* NULL terminated; the build process uses zero
+     * and are *implicitly* NUL terminated; the build process uses zero
      * padding and is ensuring that strings themselves have no more than
      * 15 characters long. */
 

@@ -483,6 +483,11 @@ pyi_archive_open(const char *filename)
         /* Check if entry is extractable */
         archive->contains_extractable_entries |= _pyi_archive_is_extractable(toc_entry->typecode);
 
+        /* Check if this is SPLASH entry */
+        if (toc_entry->typecode == ARCHIVE_ITEM_SPLASH) {
+            archive->toc_splash = toc_entry;
+        }
+
         /* Jump to next entry; with the current entry fixed up, we can
          * use non-const equivalent of pyi_archive_next_toc_entry() */
         toc_entry = (struct TOC_ENTRY *)((const char *)toc_entry + toc_entry->entry_length);
