@@ -272,6 +272,8 @@ class PyiFrozenImporter:
             modname = fullname.rsplit('.')[-1]
 
             for p in path:
+                if not isinstance(p, str):
+                    continue
                 if not p.startswith(SYS_PREFIX):
                     continue
                 p = p[SYS_PREFIXLEN:]
