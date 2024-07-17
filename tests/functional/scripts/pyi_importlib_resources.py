@@ -347,3 +347,8 @@ with importlib_resources.as_file(data_path) as file_path:
     with open(file_path, 'rb') as fp:
         data = fp.read()
 assert data.splitlines() == expected_data.splitlines()
+
+# Test that for submodules, files() returns the path to their parent package.
+# See https://github.com/pyinstaller/pyinstaller/issues/8659
+assert importlib_resources.files('pyi_pkgres_testpkg.a') == pkg_path
+assert importlib_resources.files('pyi_pkgres_testpkg.subpkg1.c') == subpkg1_path
