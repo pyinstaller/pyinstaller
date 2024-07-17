@@ -350,5 +350,15 @@ assert data.splitlines() == expected_data.splitlines()
 
 # Test that for submodules, files() returns the path to their parent package.
 # See https://github.com/pyinstaller/pyinstaller/issues/8659
-assert importlib_resources.files('pyi_pkgres_testpkg.a') == pkg_path
-assert importlib_resources.files('pyi_pkgres_testpkg.subpkg1.c') == subpkg1_path
+#
+# NOTE: passing a module name to files() seems to be supported only under python >= 3.12 (stdlib) or equivalent
+# importlib_resources >= 5.12. Under earlier versions, it raises `TypeError: '<name>' is not a package`.
+try:
+    assert importlib_resources.files('pyi_pkgres_testpkg.a') == pkg_path
+except TypeError:
+    pass
+
+try:
+    assert importlib_resources.files('pyi_pkgres_testpkg.subpkg1.c') == subpkg1_path
+except TypeError:
+    pass
