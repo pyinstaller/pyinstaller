@@ -460,7 +460,11 @@ class PyiFrozenResourceReader:
         # Local import to avoid including `pathlib` and its dependencies in `base_library.zip`
         from pathlib import Path
         self.importer = importer
-        self.path = Path(sys._MEIPASS).joinpath(*name.split('.'))
+        if self.importer.is_package(name):  # covers both normal packages and PEP-420 namespace packages
+            self.path = Path(sys._MEIPASS).joinpath(*name.split('.'))
+        else:
+            # For modules, we should return the path to their parent (package) directory.
+            self.path = Path(sys._MEIPASS).joinpath(*name.split('.')[:-1])
 
     def open_resource(self, resource):
         return self.files().joinpath(resource).open('rb')
