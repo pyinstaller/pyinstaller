@@ -425,6 +425,11 @@ def _get_imports_macholib(filename, search_paths):
     from macholib.mach_o import LC_RPATH
     from macholib.MachO import MachO
 
+    try:
+        from macholib.dyld import _dyld_shared_cache_contains_path
+    except ImportError:
+        _dyld_shared_cache_contains_path = None
+
     output = set()
     referenced_libs = set()  # Libraries referenced in Mach-O headers.
 
@@ -496,6 +501,18 @@ def _get_imports_macholib(filename, search_paths):
                 return None
 
     def _resolve_using_path(lib):
+        # Absolute paths should not be resolved; we should just check whether the library exists or not. This used to
+        # be done using macholib's dyld_find() as well (as it properly handles system libraries that are hidden on
+        # Big Sur and later), but it turns out that even if given an absolute path, it gives precedence to search paths
+        # from DYLD_LIBRARY_PATH. This leads to confusing errors when directory in DYLD_LIBRARY_PATH contains a file
+        # (shared library or data file) that happens to have the same name as a library from a system framework.
+        if os.path.isabs(lib):
+            if _dyld_shared_cache_contains_path is not None and _dyld_shared_cache_contains_path(lib):
+                return lib
+            if os.path.isfile(lib):
+                return lib
+            return None
+
         try:
             return dyld_find(lib)
         except ValueError:
