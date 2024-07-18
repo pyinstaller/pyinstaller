@@ -133,7 +133,7 @@ jobs:
       - name: Install PyInstaller
         run: |
           # Update pip.
-          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --upgrade pip "setuptools<71.0.0" wheel
 
           # Compile bootloader
           cd bootloader
