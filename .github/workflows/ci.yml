@@ -171,15 +171,60 @@ jobs:
       # Required on macOS >= 11 by tests that register custom URL schema. This could also be achieved by passing
       # --basetemp to pytest, but using environment variable allows us to have a unified "Run test" step for
       # all OSes.
+      #
+      # We now relocate the temporary directory to a fixed location on all OSes, in order to be able to generate
+      # artifacts out of failed tests.
       - name: Relocate temporary dir
-        if: startsWith(matrix.os, 'macos')
+        shell: bash
         run: |
           echo "PYTEST_DEBUG_TEMPROOT=$RUNNER_TEMP" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run-tests
         run: >
             pytest
             -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
+
+      # On all platforms, create a tarball to ensure that symlinks are preserved. Avoid using compression here,
+      # as the tarball will end up collected into artifact zip archive.
+      # To simplify this across platform, run this step in python and use python's tarfile module.
+      - name: Archive failed tests
+        if: ${{ failure() && steps.run-tests.outcome == 'failure' }}
+        shell: python
+        run: |
+          import os
+          import sys
+          import tarfile
+
+          try:
+            import getpass
+            user = getpass.getuser() or "unknown"
+          except Exception:
+            user = "unknown"
+
+          temproot = os.environ['PYTEST_DEBUG_TEMPROOT']
+
+          pytest_name = f'pytest-of-{user}'
+          pytest_fullpath = os.path.join(temproot, pytest_name)
+          print(f"Input directory: {pytest_fullpath}!", file=sys.stderr)
+
+          output_file = os.path.join(temproot, 'archived-failed-tests.tar')
+          print(f"Output file: {output_file}!", file=sys.stderr)
+
+          assert os.path.isdir(pytest_fullpath)
+          assert not os.path.exists(output_file)
+
+          with tarfile.open(output_file, "w") as tf:
+            tf.add(pytest_fullpath, arcname=pytest_name, recursive=True)
+
+          print(f"Created {output_file}!", file=sys.stderr)
+
+      - name: Create artifact out of archived failed tests
+        if: ${{ failure() && steps.run-tests.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-tests-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: '${{ env.PYTEST_DEBUG_TEMPROOT }}/archived-failed-tests.tar'
 
       # Install and test PyInstaller Hook Sample, to ensure that tests declared in
       # entry-points are discovered.
