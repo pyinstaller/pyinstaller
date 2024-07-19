@@ -518,7 +518,12 @@ def pyi_builder_spec(tmpdir, request, monkeypatch, pyi_modgraph):
     # as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    return AppBuilder(tmpdir, request, None)
+    yield AppBuilder(tmpdir, request, None)
+
+    # Clean up the temporary directory of a successful test
+    if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
+        if tmpdir.exists():
+            tmpdir.remove(rec=1, ignore_errors=True)
 
 
 # Define a fixture which compiles the data/load_dll_using_ctypes/ctypes_dylib.c program in the tmpdir, returning the
