@@ -2827,7 +2827,7 @@ class ModuleGraph(ObjectGraph):
         scripts = []
         mods = []
         for mod in self.iter_graph():
-            name = os.path.basename(mod.identifier)
+            name = os.path.basename(mod.graphident)
             if isinstance(mod, Script):
                 scripts.append((name, mod))
             else:
@@ -2842,7 +2842,7 @@ class ModuleGraph(ObjectGraph):
         print(header % {"TITLE": title}, file=out)
 
         def sorted_namelist(mods):
-            lst = [os.path.basename(mod.identifier) for mod in mods if mod]
+            lst = [os.path.basename(mod.graphident) for mod in mods if mod]
             lst.sort()
             return lst
         for name, m in mods:
@@ -2921,9 +2921,9 @@ class ModuleGraph(ObjectGraph):
 
         # find all packages (subgraphs)
         for (node, data, outgoing, incoming) in nodes:
-            nodetoident[node] = getattr(data, 'identifier', None)
+            nodetoident[node] = getattr(data, 'graphident', None)
             if isinstance(data, Package):
-                packageidents[data.identifier] = node
+                packageidents[data.graphident] = node
                 inpackages[node] = set([node])
                 packagenodes.add(node)
 
@@ -3018,8 +3018,11 @@ class ModuleGraph(ObjectGraph):
         print()
         print("%-15s %-25s %s" % ("Class", "Name", "File"))
         print("%-15s %-25s %s" % ("-----", "----", "----"))
-        for m in sorted(self.iter_graph(), key=lambda n: n.identifier):
-            print("%-15s %-25s %s" % (type(m).__name__, m.identifier, m.filename or ""))
+        for m in sorted(self.iter_graph(), key=lambda n: n.graphident):
+            if isinstance(m, AliasNode):
+                print("%-15s %-25s %s" % (type(m).__name__, m.graphident, m.identifier))
+            else:
+                print("%-15s %-25s %s" % (type(m).__name__, m.graphident, m.filename or ""))
 
     def _replace_paths_in_code(self, co):
         new_filename = original_filename = os.path.normpath(co.co_filename)
