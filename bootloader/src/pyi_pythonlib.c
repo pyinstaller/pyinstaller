@@ -326,81 +326,67 @@ pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx)
 }
 
 /*
- * Install a PYZ from a TOC entry, by adding it to sys.path.
- *
- * Must be called after Py_Initialize (i.e. after pyi_pylib_start_python)
- *
- * The installation is done by adding an entry like
- *    absolute_path/dist/hello_world/hello_world?123456
- * to sys.path. The end number is the offset where the
- * Python-side bootstrap code should read the PYZ data.
- * Return non zero on failure.
- * NB: This entry is removed from sys.path by the Python-side bootstrap scripts.
- */
-int
-_pyi_pylib_install_pyz_entry(const struct PYI_CONTEXT *pyi_ctx, const struct TOC_ENTRY *toc_entry)
-{
-    unsigned long long zlib_offset;
-    PyObject *sys_path;
-    PyObject *zlib_entry;
-    PyObject *archivename_obj;
-    int rc = 0;
-
-    /* Retrieve sys.path object; this returns borrowed reference! */
-    sys_path = PI_PySys_GetObject("path");
-    if (sys_path == NULL) {
-        PYI_ERROR("Installing PYZ: could not get sys.path object!\n");
-        return -1;
-    }
-
-#ifdef _WIN32
-    /* Decode UTF-8 to PyUnicode */
-    archivename_obj = PI_PyUnicode_Decode(pyi_ctx->archive_filename, strlen(pyi_ctx->archive_filename), "utf-8", "strict");
-#else
-    /* Decode locale-encoded filename to PyUnicode object using Python's
-     * preferred decoding method for filenames. */
-    archivename_obj = PI_PyUnicode_DecodeFSDefault(pyi_ctx->archive_filename);
-#endif
-
-    zlib_offset = pyi_ctx->archive->pkg_offset + toc_entry->offset;
-    zlib_entry = PI_PyUnicode_FromFormat("%U?%llu", archivename_obj, zlib_offset);
-    PI_Py_DecRef(archivename_obj);
-
-    rc = PI_PyList_Append(sys_path, zlib_entry);
-
-    PI_Py_DecRef(zlib_entry);
-
-    if (rc != 0) {
-        PYI_ERROR("Failed to append PYZ entry to sys.path!\n");
-    }
-
-    return rc;
-}
-
-/*
- * Install PYZ archive(s) to sys.path.
- * Return non zero on failure.
+ * Store path and offset to PYZ archive into sys._pyinstaller_pyz
+ * attribute, so that our bootstrap python script can set up PYZ
+ * archive reader.
  */
 int
 pyi_pylib_install_pyz(const struct PYI_CONTEXT *pyi_ctx)
 {
     const struct ARCHIVE *archive = pyi_ctx->archive;
     const struct TOC_ENTRY *toc_entry;
+    PyObject *archive_filename_obj;
+    PyObject *pyz_path_obj;
+    unsigned long long pyz_offset;
+    int rc;
+    const char *attr_name = "_pyinstaller_pyz";
 
-    PYI_DEBUG("LOADER: installing PYZ archive with Python modules.\n");
+    PYI_DEBUG("LOADER: looking for PYZ archive TOC entry...\n");
 
-    /* Iterate through TOC looking for PYZ (type 'z') */
+    /* Iterate through TOC and look for PYZ entry (type 'z') */
     for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
-        if (toc_entry->typecode != ARCHIVE_ITEM_PYZ) {
-            continue;
-        }
-
-        PYI_DEBUG("LOADER: PYZ archive: %s\n", toc_entry->name);
-        if (_pyi_pylib_install_pyz_entry(pyi_ctx, toc_entry) < 0) {
-            return -1;
+        if (toc_entry->typecode == ARCHIVE_ITEM_PYZ) {
+            break;
         }
     }
+    if (toc_entry >= archive->toc_end) {
+        PYI_ERROR("PYZ archive entry not found in the TOC!\n");
+        return -1;
+    }
 
+    /* Store archive filename as Python string. */
+#ifdef _WIN32
+    /* Decode UTF-8 to PyUnicode */
+    archive_filename_obj = PI_PyUnicode_Decode(pyi_ctx->archive_filename, strlen(pyi_ctx->archive_filename), "utf-8", "strict");
+#else
+    /* Decode locale-encoded filename to PyUnicode object using Python's
+     * preferred decoding method for filenames. */
+    archive_filename_obj = PI_PyUnicode_DecodeFSDefault(pyi_ctx->archive_filename);
+#endif
+
+    /* Format name plus offset; here, we assume that python's %llu format
+     * matches the platform's definition of "unsigned long long". Of
+     * which we actually have no guarantee, but thankfully that does
+     * seem to be the case. */
+    pyz_offset = pyi_ctx->archive->pkg_offset + toc_entry->offset;
+    pyz_path_obj = PI_PyUnicode_FromFormat("%U?%llu", archive_filename_obj, pyz_offset);
+    PI_Py_DecRef(archive_filename_obj);
+
+    if (pyz_path_obj == NULL) {
+        PYI_ERROR("Failed to format PYZ archive path and offset\n");
+        return -1;
+    }
+
+    /* Store into sys._pyinstaller_pyz */
+    rc = PI_PySys_SetObject(attr_name, pyz_path_obj);
+    PI_Py_DecRef(pyz_path_obj);
+
+    if (rc != 0) {
+        PYI_ERROR("Failed to store path to PYZ archive into sys.%s!\n", attr_name);
+        return -1;
+    }
+
+    PYI_DEBUG("LOADER: path to PYZ archive stored into sys.%s...\n", attr_name);
     return 0;
 }
 

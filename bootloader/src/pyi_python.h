@@ -184,9 +184,6 @@ PYI_EXTDECLPROC(PyObject *, PyImport_AddModule, (const char *))
 PYI_EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (const char *, PyObject *))
 PYI_EXTDECLPROC(PyObject *, PyImport_ImportModule, (const char *))
 
-/* PyList_ */
-PYI_EXTDECLPROC(int, PyList_Append, (PyObject *, PyObject *))
-
 /* PyMarshal_ */
 PYI_EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, Py_ssize_t))
 
@@ -214,7 +211,7 @@ PYI_EXTDECLPROC(int, PyStatus_Exception, (PyStatus))
 
 /* PySys_ */
 PYI_EXTDECLPROC(PyObject *, PySys_GetObject, (const char *))
-PYI_EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *))
+PYI_EXTDECLPROC(int, PySys_SetObject, (const char *, PyObject *))
 
 /* PyUnicode_ */
 PYI_EXTDECLPROC(const char *, PyUnicode_AsUTF8, (PyObject *))

@@ -24,7 +24,7 @@ import io
 import _frozen_importlib
 import _thread
 
-from pyimod01_archive import ArchiveReadError, ZlibArchiveReader
+import pyimod01_archive
 
 SYS_PREFIX = sys._MEIPASS + os.sep
 SYS_PREFIXLEN = len(SYS_PREFIX)
@@ -89,32 +89,12 @@ class PyiFrozenImporter:
     method find_spec(), a PEP-451 loader requires methods exec_module(), load_module() and (optionally) create_module().
     All these methods are implemented in this one class.
     """
-    def __init__(self):
+    def __init__(self, pyz_path):
         """
         Load, unzip and initialize the Zip archive bundled with the executable.
         """
-        # Examine all items in sys.path and the one like /path/executable_name?117568 is the correct executable with
-        # the bundled zip archive. Use this value for the ZlibArchiveReader class, and remove this item from sys.path.
-        # It was needed only for PyiFrozenImporter class. Wrong path from sys.path raises an ArchiveReadError exception.
-        for pyz_filepath in sys.path:
-            try:
-                # Unzip zip archive bundled with the executable.
-                self._pyz_archive = ZlibArchiveReader(pyz_filepath, check_pymagic=True)
-
-                # As no exception was raised, we can assume that ZlibArchiveReader was successfully loaded.
-                # Let's remove 'pyz_filepath' from sys.path.
-                trace("# PyInstaller: PyiFrozenImporter(%s)", pyz_filepath)
-                sys.path.remove(pyz_filepath)
-                break
-            except IOError:
-                # Item from sys.path is not ZlibArchiveReader; let's try next one.
-                continue
-            except ArchiveReadError:
-                # Item from sys.path is not ZlibArchiveReader; let's try next one.
-                continue
-        else:
-            # sys.path does not contain the filename of the executable with the bundled zip archive. Raise import error.
-            raise ImportError("Cannot load frozen modules.")
+        # Setup PYZ archive reader
+        self._pyz_archive = pyimod01_archive.ZlibArchiveReader(pyz_path, check_pymagic=True)
 
         # Some runtime hooks might need access to the list of available frozen modules. Make them accessible as a set().
         self.toc = set(self._pyz_archive.toc.keys())
@@ -499,8 +479,20 @@ def install():
     3. C extension modules
     4. Modules from sys.path
     """
-    # Ensure Python looks in the bundled zip archive for modules before any other places.
-    importer = PyiFrozenImporter()
+    # The bootloader should store the path to PYZ archive (the path to the PKG archive and the offset within it; for
+    # executable-embedded archive, this is for example /path/executable_name?117568) into _pyinstaller_pyz
+    # attribute of the sys module.
+    if not hasattr(sys, '_pyinstaller_pyz'):
+        raise RuntimeError("Bootloader did not set sys._pyinstaller_pyz!")
+
+    try:
+        importer = PyiFrozenImporter(sys._pyinstaller_pyz)
+    except Exception as e:
+        raise RuntimeError("Failed to initialize PyInstaller's PyiFrozenImporter!") from e
+
+    delattr(sys, '_pyinstaller_pyz')
+
+    # Register with import machinery.
     sys.meta_path.append(importer)
 
     # On Windows there is importer _frozen_importlib.WindowsRegistryFinder that looks for Python modules in Windows
