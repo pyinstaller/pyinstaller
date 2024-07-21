@@ -46,7 +46,7 @@ PyQtDataVisualization==5.15.6
 PyQtNetworkAuth==5.15.6
 PyQtPurchasing==5.15.6
 QScintilla==2.14.1
-PyQtWebEngine==5.15.6
+PyQtWebEngine==5.15.7
 # PyQt6 and add-on packages
 # The *-Qt6 packages contain Qt shared libraries; their version is therefore the version of Qt release,
 # but in contrast to Qt5 and PyQt5 bindings, the versions here must usually be kept in sync with the
