@@ -39,7 +39,7 @@ PySide6-Essentials==6.7.2; python_version >= '3.9'
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
 # all platforms, while 5.15.11 are available only for macOS (and some of them only for arm64).
-PyQt5==5.15.10
+PyQt5==5.15.11
 PyQt3D==5.15.6
 PyQtChart==5.15.6
 PyQtDataVisualization==5.15.5
