@@ -39,20 +39,20 @@ PySide6-Essentials==6.7.2; python_version >= '3.9'
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
 # all platforms, while 5.15.11 are available only for macOS (and some of them only for arm64).
-PyQt5==5.15.10
-PyQt3D==5.15.6
-PyQtChart==5.15.6
-PyQtDataVisualization==5.15.5
-PyQtNetworkAuth==5.15.5
-PyQtPurchasing==5.15.5
+PyQt5==5.15.11
+PyQt3D==5.15.7
+PyQtChart==5.15.7
+PyQtDataVisualization==5.15.6
+PyQtNetworkAuth==5.15.6
+PyQtPurchasing==5.15.6
 QScintilla==2.14.1
-PyQtWebEngine==5.15.6
+PyQtWebEngine==5.15.7
 # PyQt6 and add-on packages
 # The *-Qt6 packages contain Qt shared libraries; their version is therefore the version of Qt release,
 # but in contrast to Qt5 and PyQt5 bindings, the versions here must usually be kept in sync with the
 # version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
 # thus the ABI is still changing.
-PyQt6==6.7.0
+PyQt6==6.7.1
 PyQt6-Qt6==6.7.2
 PyQt6-3D==6.7.0
 PyQt6-3D-Qt6==6.7.2
@@ -71,7 +71,7 @@ requests==2.32.3
 scipy==1.14.0; python_version >= '3.10'
 # simplejson is used for text_c_extension
 simplejson==3.19.2
-sphinx==7.3.7; python_version >= '3.9'
+sphinx==7.4.7; python_version >= '3.9'
 # Required for test_namespace_package
 sqlalchemy==2.0.31
 zope.interface==6.4.post2
