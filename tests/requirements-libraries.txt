@@ -43,7 +43,7 @@ PyQt5==5.15.11
 PyQt3D==5.15.7
 PyQtChart==5.15.7
 PyQtDataVisualization==5.15.6
-PyQtNetworkAuth==5.15.5
+PyQtNetworkAuth==5.15.6
 PyQtPurchasing==5.15.5
 QScintilla==2.14.1
 PyQtWebEngine==5.15.6
