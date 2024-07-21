@@ -52,8 +52,6 @@ PYI_DECLPROC(PyImport_AddModule)
 PYI_DECLPROC(PyImport_ExecCodeModule)
 PYI_DECLPROC(PyImport_ImportModule)
 
-PYI_DECLPROC(PyList_Append)
-
 PYI_DECLPROC(PyMarshal_ReadObjectFromString)
 
 PYI_DECLPROC(PyMem_RawFree)
@@ -117,8 +115,6 @@ pyi_python_bind_functions(pyi_dylib_t dll, int python_version)
     PYI_GETPROC(dll, PyImport_AddModule)
     PYI_GETPROC(dll, PyImport_ExecCodeModule)
     PYI_GETPROC(dll, PyImport_ImportModule)
-
-    PYI_GETPROC(dll, PyList_Append)
 
     PYI_GETPROC(dll, PyMarshal_ReadObjectFromString)
 
