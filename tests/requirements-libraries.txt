@@ -52,7 +52,7 @@ PyQtWebEngine==5.15.7
 # but in contrast to Qt5 and PyQt5 bindings, the versions here must usually be kept in sync with the
 # version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
 # thus the ABI is still changing.
-PyQt6==6.7.0
+PyQt6==6.7.1
 PyQt6-Qt6==6.7.2
 PyQt6-3D==6.7.0
 PyQt6-3D-Qt6==6.7.2
