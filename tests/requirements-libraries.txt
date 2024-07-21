@@ -42,7 +42,7 @@ PySide6-Essentials==6.7.2; python_version >= '3.9'
 PyQt5==5.15.11
 PyQt3D==5.15.7
 PyQtChart==5.15.7
-PyQtDataVisualization==5.15.5
+PyQtDataVisualization==5.15.6
 PyQtNetworkAuth==5.15.5
 PyQtPurchasing==5.15.5
 QScintilla==2.14.1
