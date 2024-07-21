@@ -40,7 +40,7 @@ PySide6-Essentials==6.7.2; python_version >= '3.9'
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
 # all platforms, while 5.15.11 are available only for macOS (and some of them only for arm64).
 PyQt5==5.15.11
-PyQt3D==5.15.6
+PyQt3D==5.15.7
 PyQtChart==5.15.6
 PyQtDataVisualization==5.15.5
 PyQtNetworkAuth==5.15.5
