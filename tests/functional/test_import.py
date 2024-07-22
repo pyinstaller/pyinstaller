@@ -792,3 +792,143 @@ def test_sys_path_with_vendored_package_append(pyi_builder):
 @xfail(reason="PyInstaller's frozen import does not support sys.path modifications")
 def test_sys_path_with_vendored_package_prepend(pyi_builder):
     _test_sys_path_with_vendored_package(pyi_builder, "prepend", "vendored")
+
+
+# Tests for run-time sys.path modifications that result in a PEP420 namespace package being split across different
+# locations, both within the PYZ archive and in location external to frozen application.
+
+
+# The test supports two import orders: standalone part, vendored part, external part; and reverse. Both orders are
+# tested in case it matters whether the namespace package is first discovered by PyInstaller's frozen importer or by
+# python's `_frozen_importlib_external.PathFinder`.
+# Additionally, two sys.path modification strategies are tested: adding each new entry just before we import the
+# corresponding module, or adding all entries in advance. Adding entries one by one should trigger recomputation
+# of the `_NamespacePath` object on each subsequent import.
+@xfail(reason="PyInstaller's frozen import does not support sys.path modifications nor split namespace packages.")
+@pytest.mark.parametrize('import_order', ['forward', 'reverse'])
+@pytest.mark.parametrize('path_modification', ['one_by_one', 'all_in_advance'])
+def test_split_location_pep420_namespace_package(pyi_builder, import_order, path_modification):
+    modules_root = os.path.join(_MODULES_DIR, 'pyi_split_location_pep420_namespace_package')
+
+
+    pyi_args = [
+        '--paths', os.path.join(modules_root, 'modules'),
+        '--additional-hooks-dir', os.path.join(modules_root, 'hooks'),
+        '--hiddenimport', 'myotherpackage._vendored.mynamespacepackage.vendored_pyz',
+        '--hiddenimport', 'myotherpackage._vendored.mynamespacepackage.vendored_py',
+    ]  # yapf: disable
+
+    # On macOS, also build and test .app bundle executable
+    if is_darwin:
+        pyi_args += ['--windowed']
+
+    # Path to external part needs to be passed to program via command-line arguments
+    app_args = [os.path.join(modules_root, 'external-location')]
+
+    # Test programs for all four combinations
+    _test_programs = {}
+    _test_programs[('forward', 'one_by_one')] = \
+        """
+        import sys
+
+        external_path = sys.argv[1]
+        from myotherpackage import vendored_path
+
+        import mynamespacepackage.standalone_pyz
+        print(mynamespacepackage.standalone_pyz)
+
+        import mynamespacepackage.standalone_py
+        print(mynamespacepackage.standalone_py)
+
+        sys.path.append(vendored_path)
+        import mynamespacepackage.vendored_pyz
+        print(mynamespacepackage.vendored_pyz)
+
+        import mynamespacepackage.vendored_py
+        print(mynamespacepackage.vendored_py)
+
+        sys.path.append(external_path)
+        import mynamespacepackage.external_py
+        print(mynamespacepackage.external_py)
+        """
+    _test_programs[('forward', 'all_in_advance')] = \
+        """
+        import sys
+
+        external_path = sys.argv[1]
+        from myotherpackage import vendored_path
+
+        sys.path.append(vendored_path)
+        sys.path.append(external_path)
+
+        import mynamespacepackage.standalone_pyz
+        print(mynamespacepackage.standalone_pyz)
+
+        import mynamespacepackage.standalone_py
+        print(mynamespacepackage.standalone_py)
+
+        import mynamespacepackage.vendored_pyz
+        print(mynamespacepackage.vendored_pyz)
+
+        import mynamespacepackage.vendored_py
+        print(mynamespacepackage.vendored_py)
+
+        import mynamespacepackage.external_py
+        print(mynamespacepackage.external_py)
+        """
+    _test_programs[('reverse', 'one_by_one')] = \
+        """
+        import sys
+
+        external_path = sys.argv[1]
+        from myotherpackage import vendored_path
+
+        sys.path.insert(0, external_path)
+        import mynamespacepackage.external_py
+        print(mynamespacepackage.external_py)
+
+        sys.path.insert(1, vendored_path)
+        import mynamespacepackage.vendored_py
+        print(mynamespacepackage.vendored_py)
+
+        import mynamespacepackage.vendored_pyz
+        print(mynamespacepackage.vendored_pyz)
+
+        import mynamespacepackage.standalone_py
+        print(mynamespacepackage.standalone_py)
+
+        import mynamespacepackage.standalone_pyz
+        print(mynamespacepackage.standalone_pyz)
+        """
+    _test_programs[('reverse', 'all_in_advance')] = \
+        """
+        import sys
+
+        external_path = sys.argv[1]
+        from myotherpackage import vendored_path
+
+        sys.path.insert(0, external_path)
+        sys.path.insert(1, vendored_path)
+
+        import mynamespacepackage.external_py
+        print(mynamespacepackage.external_py)
+
+        import mynamespacepackage.vendored_py
+        print(mynamespacepackage.vendored_py)
+
+        import mynamespacepackage.vendored_pyz
+        print(mynamespacepackage.vendored_pyz)
+
+        import mynamespacepackage.standalone_py
+        print(mynamespacepackage.standalone_py)
+
+        import mynamespacepackage.standalone_pyz
+        print(mynamespacepackage.standalone_pyz)
+        """
+
+    # Build and run the appropriate test program
+    pyi_builder.test_source(
+        _test_programs[(import_order, path_modification)],
+        pyi_args=pyi_args,
+        app_args=app_args,
+    )
