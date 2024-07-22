@@ -96,7 +96,7 @@ def _initialize():
         _ipc_socket_closed = False
 
         _initialized = True
-        _log(20, "IPC connection to the splash screen was successfully established.")  # log-level: info
+        _log(10, "IPC connection to the splash screen was successfully established.")  # log-level: debug
     except OSError as err:
         raise ConnectionError(f"Could not connect to TCP port {_ipc_port}.") from err
 
@@ -138,7 +138,7 @@ def _check_connection(func):
         """
         if _initialized and _ipc_socket_closed:
             if _ipc_port != 0:
-                _log(20, "Connection to splash screen has already been closed.")  # log-level: info
+                _log(10, "Connection to splash screen has already been closed.")  # log-level: debug
             return
         elif not _initialized:
             raise RuntimeError("This module is not initialized; did it fail to load?")
