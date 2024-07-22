@@ -18,7 +18,7 @@ import ctypes.util
 
 import pytest
 
-from PyInstaller.compat import is_win
+from PyInstaller.compat import is_win, is_darwin
 import PyInstaller.depend.utils
 from PyInstaller.utils.tests import skipif, importorskip, skipif_no_compiler, xfail, has_compiler
 
@@ -738,3 +738,57 @@ def test_package_with_mixed_collection_mode(pyi_builder):
         """,
         pyi_args=['--paths', pathex, '--additional-hooks-dir', hooks_dir],
     )
+
+
+# Tests for run-time sys.path modifications, typically with aim of exposing some part of a package to the outside world
+# as a top-level package; for example, to expose a vendored package to the outside world. These tests aim to verify that
+# we can handle dynamic sys.path modifications within PYZ-collected packages and honor the order of entries in sys.path.
+
+
+# Shared implementation
+def _test_sys_path_with_vendored_package(pyi_builder, modification_type, expected_string, extra_pyi_args=None):
+    pathex = os.path.join(_MODULES_DIR, 'pyi_sys_path_with_vendored_package')
+
+    pyi_args = [
+        '--paths', pathex,
+        '--hiddenimport', 'myotherpackage._vendored.mypackage.mod',
+    ]  # yapf: disable
+
+    if extra_pyi_args:
+        pyi_args += extra_pyi_args
+
+    # On macOS, also build and test .app bundle executable
+    if is_darwin:
+        pyi_args += ['--windowed']
+
+    pyi_builder.test_source(
+        """
+        import myotherpackage
+        myotherpackage.setup_vendored_packages('{0}')
+
+        import mypackage
+        secret = mypackage.get_secret_string()
+        assert secret == '{1}', f"Unexpected secret string: {{secret!r}}"
+        """.format(modification_type, expected_string),
+        pyi_args=pyi_args,
+    )
+
+
+# In this scenario, we have only vendored package available - we intentionally suppress collection of stand-alone
+# package during the build.
+@xfail(reason="PyInstaller's frozen import does not support sys.path modifications")
+def test_sys_path_with_vendored_package_no_standalone(pyi_builder):
+    _test_sys_path_with_vendored_package(pyi_builder, "append", "vendored", ["--exclude", "mypackage"])
+
+
+# In this scenario, we have both stand-alone and vendored package available in sys.path; vendored package directory is
+# appended to sys.path, so we expect to import the stand-alone version.
+def test_sys_path_with_vendored_package_append(pyi_builder):
+    _test_sys_path_with_vendored_package(pyi_builder, "append", "standalone")
+
+
+# In this scenario, we have both stand-alone and vendored package available in sys.path; vendored package directory is
+# prepended to sys.path, so we expect to import the vendored version.
+@xfail(reason="PyInstaller's frozen import does not support sys.path modifications")
+def test_sys_path_with_vendored_package_prepend(pyi_builder):
+    _test_sys_path_with_vendored_package(pyi_builder, "prepend", "vendored")
