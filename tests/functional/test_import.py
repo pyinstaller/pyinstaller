@@ -722,3 +722,19 @@ def test_app_has_moved_error(pyi_builder, tmpdir):
             assert 0, "A system exit should have been raised."
         """
     )
+
+
+def test_package_with_mixed_collection_mode(pyi_builder):
+    # Test that PyInstaller's frozen importer and python's own `_frozen_importlib_external.PathFinder` complement, and
+    # not exclude, each other. This is pre-requisite for having pure-python modules collected in PYZ archive, while
+    # binary extensions (and some pure-python modules as well, if necessary) are collected as separate.
+    pathex = os.path.join(_MODULES_DIR, 'pyi_mixed_collection_mode', 'modules')
+    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_mixed_collection_mode', 'hooks')
+    pyi_builder.test_source(
+        """
+        import mypackage
+        print(mypackage.a)
+        print(mypackage.b)
+        """,
+        pyi_args=['--paths', pathex, '--additional-hooks-dir', hooks_dir],
+    )
