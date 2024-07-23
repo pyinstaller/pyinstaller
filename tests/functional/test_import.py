@@ -776,7 +776,6 @@ def _test_sys_path_with_vendored_package(pyi_builder, modification_type, expecte
 
 # In this scenario, we have only vendored package available - we intentionally suppress collection of stand-alone
 # package during the build.
-@xfail(reason="PyInstaller's frozen import does not support sys.path modifications")
 def test_sys_path_with_vendored_package_no_standalone(pyi_builder):
     _test_sys_path_with_vendored_package(pyi_builder, "append", "vendored", ["--exclude", "mypackage"])
 
@@ -789,7 +788,6 @@ def test_sys_path_with_vendored_package_append(pyi_builder):
 
 # In this scenario, we have both stand-alone and vendored package available in sys.path; vendored package directory is
 # prepended to sys.path, so we expect to import the vendored version.
-@xfail(reason="PyInstaller's frozen import does not support sys.path modifications")
 def test_sys_path_with_vendored_package_prepend(pyi_builder):
     _test_sys_path_with_vendored_package(pyi_builder, "prepend", "vendored")
 
@@ -804,7 +802,6 @@ def test_sys_path_with_vendored_package_prepend(pyi_builder):
 # Additionally, two sys.path modification strategies are tested: adding each new entry just before we import the
 # corresponding module, or adding all entries in advance. Adding entries one by one should trigger recomputation
 # of the `_NamespacePath` object on each subsequent import.
-@xfail(reason="PyInstaller's frozen import does not support sys.path modifications nor split namespace packages.")
 @pytest.mark.parametrize('import_order', ['forward', 'reverse'])
 @pytest.mark.parametrize('path_modification', ['one_by_one', 'all_in_advance'])
 def test_split_location_pep420_namespace_package(pyi_builder, import_order, path_modification):
