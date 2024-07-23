@@ -207,9 +207,9 @@ class ArchiveViewer:
                 for name in archive.toc.keys():
                     print(f" {name}")
             else:
-                print(" is_package, position, length, name")
-                for name, (is_package, position, length) in archive.toc.items():
-                    print(f" {is_package}, {position}, {length}, {name!r}")
+                print(" typecode, position, length, name")
+                for name, (typecode, position, length) in archive.toc.items():
+                    print(f" {typecode}, {position}, {length}, {name!r}")
         else:
             print(f"Contents of {name} (unknown)")
             print(f"FIXME: implement content listing for archive type {type(archive)}!")
