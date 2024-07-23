@@ -336,7 +336,7 @@ _pyi_launch_run_scripts(const struct PYI_CONTEXT *pyi_ctx)
         }
 
         /* Store the code object to __main__ module's _pyi_main_co
-         * attribute, so it can be retrieved by PyiFrozenImporter,
+         * attribute, so it can be retrieved by PyiFrozenEntryPointLoader,
          * if necessary. */
         PI_PyObject_SetAttrString(__main__, "_pyi_main_co", code);
 
