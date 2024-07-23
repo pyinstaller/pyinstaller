@@ -26,13 +26,6 @@ import _thread
 
 import pyimod01_archive
 
-SYS_PREFIX = sys._MEIPASS + os.sep
-SYS_PREFIXLEN = len(SYS_PREFIX)
-
-# In Python 3, it is recommended to use class 'types.ModuleType' to create a new module. However, 'types' module is
-# not a built-in module. The 'types' module uses this trick with using type() function:
-imp_new_module = type(sys)
-
 if sys.flags.verbose and sys.stderr:
 
     def trace(msg, *a):
@@ -58,259 +51,249 @@ def _decode_source(source_bytes):
     return newline_decoder.decode(source_bytes.decode(encoding[0]))
 
 
-class PyiFrozenImporterState:
-    """
-    An object encapsulating extra information for PyiFrozenImporter, to be stored in `ModuleSpec.loader_state`. Having
-    a custom type allows us to verify that module spec indeed contains the original loader state data, as set by
-    `PyiFrozenImporter.find_spec`.
-    """
-    def __init__(self, entry_name):
-        # Module name, as recorded in the PYZ archive.
-        self.pyz_entry_name = entry_name
+# Global instance of PYZ archive reader. Initialized by install().
+pyz_archive = None
+
+# Some runtime hooks might need to traverse available frozen package/module hierarchy to simulate filesystem.
+# Such traversals can be efficiently implemented using a prefix tree (trie), whose computation we defer until first
+# access.
+_pyz_tree_lock = _thread.RLock()
+_pyz_tree = None
+
+
+def get_pyz_toc_tree():
+    global _pyz_tree
+
+    with _pyz_tree_lock:
+        if _pyz_tree is None:
+            _pyz_tree = _build_pyz_prefix_tree(pyz_archive)
+        return _pyz_tree
+
+
+# Fully resolve sys._MEIPASS, so we can compare fully-resolved paths to it.
+_RESOLVED_TOP_LEVEL_DIRECTORY = os.path.realpath(sys._MEIPASS)
+
+# If we are running as macOS .app bundle, compute the alternative top-level directory path as well.
+_is_macos_app_bundle = False
+if sys.platform == 'darwin' and _RESOLVED_TOP_LEVEL_DIRECTORY.endswith("Contents/Frameworks"):
+    _is_macos_app_bundle = True
+    _ALTERNATIVE_TOP_LEVEL_DIRECTORY = os.path.join(
+        os.path.dirname(_RESOLVED_TOP_LEVEL_DIRECTORY),
+        'Resources',
+    )
+
+
+# Helper for computing PYZ prefix tree
+def _build_pyz_prefix_tree(pyz_archive):
+    tree = dict()
+    for entry_name, entry_data in pyz_archive.toc.items():
+        name_components = entry_name.split('.')
+        typecode = entry_data[0]
+        current = tree
+        if typecode in {pyimod01_archive.PYZ_ITEM_PKG, pyimod01_archive.PYZ_ITEM_NSPKG}:
+            # Package; create new dictionary node for its modules
+            for name_component in name_components:
+                current = current.setdefault(name_component, {})
+        else:
+            # Module; create the leaf node (empty string)
+            for name_component in name_components[:-1]:
+                current = current.setdefault(name_component, {})
+            current[name_components[-1]] = ''
+    return tree
 
 
 class PyiFrozenImporter:
     """
-    Load bytecode of Python modules from the executable created by PyInstaller.
+    PyInstaller's frozen module importer (finder + loader) for specific search path.
 
-    Python bytecode is zipped and appended to the executable.
-
-    NOTE: PYZ format cannot be replaced by zipimport module.
-
-    The problem is that we have no control over zipimport; for instance, it does not work if the zip file is embedded
-    into a PKG that is appended to an executable, like we create in one-file mode.
-
-    This used to be PEP-302 finder and loader class for the ``sys.meta_path`` hook. A PEP-302 finder requires method
-    find_module() to return loader class with method load_module(). However, both of these methods were deprecated in
-    python 3.4 by PEP-451 (see below). Therefore, this class now provides only optional extensions to the PEP-302
-    importer protocol.
-
-    This is also a PEP-451 finder and loader class for the ModuleSpec type import system. A PEP-451 finder requires
-    method find_spec(), a PEP-451 loader requires methods exec_module(), load_module() and (optionally) create_module().
-    All these methods are implemented in this one class.
+    Per-path instances allow us to properly translate the given module name ("fullname") into full PYZ entry name.
+    For example, with search path being `sys._MEIPASS`, the module "mypackage.mod" would translate to "mypackage.mod"
+    in the PYZ archive. However, if search path was `sys._MEIPASS/myotherpackage/_vendored` (for example, if
+    `myotherpacakge` added this path to `sys.path`), then "mypackage.mod" would need to translate to
+    "myotherpackage._vendored.mypackage.mod" in the PYZ archive.
     """
-    def __init__(self, pyz_path):
-        """
-        Load, unzip and initialize the Zip archive bundled with the executable.
-        """
-        # Setup PYZ archive reader
-        self._pyz_archive = pyimod01_archive.ZlibArchiveReader(pyz_path, check_pymagic=True)
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self._path})"
 
-        # Some runtime hooks might need access to the list of available frozen modules. Make them accessible as a set().
-        self.toc = set(self._pyz_archive.toc.keys())
+    @classmethod
+    def path_hook(cls, path):
+        trace(f"PyInstaller: running path finder hook for path: {path!r}")
+        try:
+            finder = cls(path)
+            trace("PyInstaller: hook succeeded")
+            return finder
+        except Exception as e:
+            trace(f"PyInstaller: hook failed: {e}")
+            raise
 
-        # Some runtime hooks might need to traverse available frozen package/module hierarchy to simulate filesystem.
-        # Such traversals can be efficiently implemented using a prefix tree (trie), whose computation we defer
-        # until first access.
-        self._lock = _thread.RLock()
-        self._toc_tree = None
+    @staticmethod
+    def _compute_relative_path(path, top_level):
+        try:
+            relative_path = os.path.relpath(path, top_level)
+        except ValueError as e:
+            raise ImportError("Path outside of top-level application directory") from e
+
+        if relative_path.startswith('..'):
+            raise ImportError("Path outside of top-level application directory")
+
+        return relative_path
+
+    def __init__(self, path):
+        self._path = path  # Store original path, as given.
+        self._pyz_archive = pyz_archive
+
+        # Resolve path for comparison
+        resolved_path = os.path.realpath(path)
+
+        # Compare resolved path to resolved top-level application directory.
+        try:
+            relative_path = self._compute_relative_path(resolved_path, _RESOLVED_TOP_LEVEL_DIRECTORY)
+        except Exception:
+            if _is_macos_app_bundle:
+                relative_path = self._compute_relative_path(resolved_path, _ALTERNATIVE_TOP_LEVEL_DIRECTORY)
+            else:
+                raise
+
+        if relative_path == '.':
+            self._pyz_entry_prefix = ''
+        else:
+            self._pyz_entry_prefix = '.'.join(relative_path.split(os.path.sep))
+
+    def _compute_pyz_entry_name(self, fullname):
+        """
+        Convert module fullname into PYZ entry name, subject to the prefix implied by this finder's search path.
+        """
+        tail_module = fullname.rpartition('.')[2]
+
+        if self._pyz_entry_prefix:
+            return self._pyz_entry_prefix + "." + tail_module
+        else:
+            return tail_module
 
     @property
-    def toc_tree(self):
-        with self._lock:
-            if self._toc_tree is None:
-                self._toc_tree = self._build_pyz_prefix_tree()
-            return self._toc_tree
+    def fallback_finder(self):
+        """
+        Opportunistically create a *fallback finder* using `sys.path_hooks` entries that are located *after* our hook.
+        The main goal of this exercise is to obtain an instance of python's FileFinder, but in theory any other hook
+        that comes after ours is eligible to be a fallback.
 
-    # Helper for computing PYZ prefix tree
-    def _build_pyz_prefix_tree(self):
-        tree = dict()
-        for entry_name in self.toc:
-            name_components = entry_name.split('.')
-            current = tree
-            if self._pyz_archive.is_package(entry_name):  # self.is_package() without unnecessary checks
-                # Package; create new dictionary node for its modules
-                for name_component in name_components:
-                    current = current.setdefault(name_component, {})
-            else:
-                # Module; create the leaf node (empty string)
-                for name_component in name_components[:-1]:
-                    current = current.setdefault(name_component, {})
-                current[name_components[-1]] = ''
-        return tree
+        Having this fallback allows our finder to "cooperate" with python's FileFinder, as if the two were a single
+        finder, which allows us to work around the python's PathFinder permitting only one finder instance per path
+        without subclassing FileFinder.
+        """
+        if hasattr(self, '_fallback_finder'):
+            return self._fallback_finder
 
-    # Private helper
-    def _is_pep420_namespace_package(self, fullname):
-        if fullname in self.toc:
+        # Try to instantiate fallback finder
+        our_hook_found = False
+
+        self._fallback_finder = None
+        for idx, hook in enumerate(sys.path_hooks):
+            if hook == self.path_hook:
+                our_hook_found = True
+                continue  # Our hook
+
+            if not our_hook_found:
+                continue  # Skip hooks before our hook
+
             try:
-                return self._pyz_archive.is_pep420_namespace_package(fullname)
-            except Exception as e:
-                raise ImportError(f'PyiFrozenImporter cannot handle module {fullname!r}') from e
-        else:
-            raise ImportError(f'PyiFrozenImporter cannot handle module {fullname!r}')
-
-    #-- Optional Extensions to the PEP-302 Importer Protocol --
-
-    def is_package(self, fullname):
-        if fullname in self.toc:
-            try:
-                return self._pyz_archive.is_package(fullname)
-            except Exception as e:
-                raise ImportError(f'PyiFrozenImporter cannot handle module {fullname!r}') from e
-        else:
-            raise ImportError(f'PyiFrozenImporter cannot handle module {fullname!r}')
-
-    def get_code(self, fullname):
-        """
-        Get the code object associated with the module.
-
-        ImportError should be raised if module not found.
-        """
-        try:
-            if fullname == '__main__':
-                # Special handling for __main__ module; the bootloader should store code object to _pyi_main_co
-                # attribute of the module.
-                return sys.modules['__main__']._pyi_main_co
-
-            # extract() returns None if fullname is not in the archive, and the subsequent subscription attempt raises
-            # exception, which is turned into ImportError.
-            return self._pyz_archive.extract(fullname)
-        except Exception as e:
-            raise ImportError(f'PyiFrozenImporter cannot handle module {fullname!r}') from e
-
-    def get_source(self, fullname):
-        """
-        Method should return the source code for the module as a string.
-        But frozen modules does not contain source code.
-
-        Return None, unless the corresponding source file was explicitly collected to the filesystem.
-        """
-        if fullname in self.toc:
-            # Try loading the .py file from the filesystem (only for collected modules)
-            if self.is_package(fullname):
-                fullname += '.__init__'
-            filename = os.path.join(SYS_PREFIX, fullname.replace('.', os.sep) + '.py')
-            try:
-                # Read in binary mode, then decode
-                with open(filename, 'rb') as fp:
-                    source_bytes = fp.read()
-                return _decode_source(source_bytes)
-            except FileNotFoundError:
+                self._fallback_finder = hook(self._path)
+                break
+            except ImportError:
                 pass
+
+        return self._fallback_finder
+
+    def _find_fallback_spec(self, fullname, target):
+        """
+        Attempt to find the spec using fallback finder, which is opportunistically created here. Typically, this would
+        be python's FileFinder, which can discover specs for on-filesystem modules, such as extension modules and
+        modules that are collected only as source .py files.
+
+        Having this fallback allows our finder to "cooperate" with python's FileFinder, as if the two were a single
+        finder, which allows us to work around the python's PathFinder permitting only one finder instance per path
+        without subclassing FileFinder.
+        """
+        if not hasattr(self, '_fallback_finder'):
+            self._fallback_finder = self._get_fallback_finder()
+
+        if self._fallback_finder is None:
             return None
-        else:
-            # ImportError should be raised if module not found.
-            raise ImportError('No module named ' + fullname)
 
-    def get_data(self, path):
+        return self._fallback_finder.find_spec(fullname, target)
+
+    #-- Core PEP451 finder functionality, modeled after importlib.abc.PathEntryFinder
+    # https://docs.python.org/3/library/importlib.html#importlib.abc.PathEntryFinder
+    def invalidate_caches(self):
         """
-        Returns the data as a string, or raises IOError if the file was not found. The data is always returned as if
-        "binary" mode was used.
+        A method which, when called, should invalidate any internal cache used by the finder. Used by
+        importlib.invalidate_caches() when invalidating the caches of all finders on sys.meta_path.
 
-        The 'path' argument is a path that can be constructed by munging module.__file__ (or pkg.__path__ items).
-
-        This assumes that the file in question was collected into frozen application bundle as a file, and is available
-        on the filesystem. Older versions of PyInstaller also supported data embedded in the PYZ archive, but that has
-        been deprecated in v6.
+        https://docs.python.org/3/library/importlib.html#importlib.abc.MetaPathFinder.invalidate_caches
         """
-        # Try to fetch the data from the filesystem. Since __file__ attribute works properly, just try to open the file
-        # and read it.
-        with open(path, 'rb') as fp:
-            return fp.read()
+        # We do not use any caches, but if we have created a fallback finder, propagate the function call.
+        # NOTE: use getattr() with _fallback_finder attribute, in order to avoid unnecessary creation of the
+        # fallback finder in case when it does not exist yet.
+        fallback_finder = getattr(self, '_fallback_finder', None)
+        if fallback_finder is not None:
+            if hasattr(fallback_finder, 'invalidate_caches'):
+                fallback_finder.invalidate_caches()
 
-    def get_filename(self, fullname):
+    def find_spec(self, fullname, target=None):
         """
-        This method should return the value that __file__ would be set to if the named module was loaded. If the module
-        is not found, an ImportError should be raised.
+        A method for finding a spec for the specified module. The finder will search for the module only within the
+        path entry to which it is assigned. If a spec cannot be found, None is returned. When passed in, target is a
+        module object that the finder may use to make a more educated guess about what spec to return.
+
+        https://docs.python.org/3/library/importlib.html#importlib.abc.PathEntryFinder.find_spec
         """
-        # The absolute absolute path to the executable is taken from sys.prefix. In onefile mode it points to the temp
-        # directory where files are unpacked by PyInstaller. Then, append the appropriate suffix (__init__.pyc for a
-        # package, or just .pyc for a module).
-        # Method is_package() will raise ImportError if module not found.
-        if self.is_package(fullname):
-            filename = os.path.join(SYS_PREFIX, fullname.replace('.', os.path.sep), '__init__.pyc')
-        else:
-            filename = os.path.join(SYS_PREFIX, fullname.replace('.', os.path.sep) + '.pyc')
-        return filename
+        trace(f"{self}: find_spec: called with fullname={fullname!r}, target={fullname!r}")
 
-    def find_spec(self, fullname, path=None, target=None):
-        """
-        PEP-451 finder.find_spec() method for the ``sys.meta_path`` hook.
+        # Convert fullname to PYZ entry name.
+        pyz_entry_name = self._compute_pyz_entry_name(fullname)
 
-        fullname     fully qualified name of the module
-        path         None for a top-level module, or package.__path__ for
-                     submodules or subpackages.
-        target       unused by this Finder
+        # Try looking up the entry in the PYZ archive
+        entry_data = self._pyz_archive.toc.get(pyz_entry_name)
+        if entry_data is None:
+            # Entry not found - try using fallback finder (for example, python's own FileFinder) to resolve on-disk
+            # resources, such as extension modules and modules that are collected only as source .py files.
+            trace(f"{self}: find_spec: {fullname!r} not found in PYZ...")
 
-        Finders are still responsible for identifying, and typically creating, the loader that should be used to load a
-        module. That loader will now be stored in the module spec returned by find_spec() rather than returned directly.
-        As is currently the case without the PEP-452, if a loader would be costly to create, that loader can be designed
-        to defer the cost until later.
-
-        Finders must return ModuleSpec objects when find_spec() is called. This new method replaces find_module() and
-        find_loader() (in the PathEntryFinder case). If a loader does not have find_spec(), find_module() and
-        find_loader() are used instead, for backward-compatibility.
-        """
-        entry_name = None  # None means - no module found in this importer.
-
-        # Try to handle module.__path__ modifications by the modules themselves. This needs to be done first in
-        # order to support module overrides in alternative locations while we also have the original module
-        # available at non-override location.
-        if path is not None:
-            # Reverse the fake __path__ we added to the package module into a dotted module name, and add the tail
-            # module from fullname onto that to synthesize a new fullname.
-            modname = fullname.rsplit('.')[-1]
-
-            for p in path:
-                if not isinstance(p, str):
-                    continue
-                if not p.startswith(SYS_PREFIX):
-                    continue
-                p = p[SYS_PREFIXLEN:]
-                parts = p.split(os.sep)
-                if not parts:
-                    continue
-                if not parts[0]:
-                    parts = parts[1:]
-                parts.append(modname)
-                entry_name = ".".join(parts)
-                if entry_name in self.toc:
-                    trace("import %s as %s # PyInstaller PYZ (__path__ override: %s)", entry_name, fullname, p)
-                    break
+            if self.fallback_finder is not None:
+                trace(f"{self}: find_spec: attempting resolve using fallback finder {self.fallback_finder!r}.")
+                fallback_spec = self.fallback_finder.find_spec(fullname, target)
+                trace(f"{self}: find_spec: fallback finder returned spec: {fallback_spec!r}.")
+                return fallback_spec
             else:
-                entry_name = None
+                trace(f"{self}: find_spec: fallback finder is not available.")
 
-        if entry_name is None:
-            # Either there was no path override, or the module was not available there. Check the fully qualified name
-            # of the module directly.
-            if fullname in self.toc:
-                entry_name = fullname
-                trace("import %s # PyInstaller PYZ", fullname)
-
-        if entry_name is None:
-            trace("# %s not found in PYZ", fullname)
             return None
 
-        if self._is_pep420_namespace_package(entry_name):
-            from importlib._bootstrap_external import _NamespacePath
-            # PEP-420 namespace package; as per PEP 451, we need to return a spec with "loader" set to None
-            # (a.k.a. not set)
-            spec = _frozen_importlib.ModuleSpec(fullname, None, is_package=True)
-            # Set submodule_search_locations, which seems to fill the __path__ attribute.
-            # This needs to be an instance of `importlib._bootstrap_external._NamespacePath` for `importlib.resources`
-            # to work correctly with the namespace package; otherwise `importlib.resources.files()` throws an
-            # `ValueError('Invalid path')` due to this check:
-            # https://github.com/python/cpython/blob/v3.11.5/Lib/importlib/resources/readers.py#L109-L110
-            spec.submodule_search_locations = _NamespacePath(
-                entry_name,
-                [os.path.dirname(self.get_filename(entry_name))],
-                # The `path_finder` argument must be a callable with two arguments (`name` and `path`) that
-                # returns the spec - so we need to bind our `find_spec` via lambda.
-                lambda name, path: self.find_spec(name, path),
-            )
+        # Entry found
+        typecode = entry_data[0]
+        trace(f"{self}: find_spec: found {fullname!r} in PYZ as {pyz_entry_name!r}, typecode={typecode}")
+
+        if typecode == pyimod01_archive.PYZ_ITEM_NSPKG:
+            # PEP420 namespace package
+            # We can use regular list for submodule_search_locations; the caller (i.e., python's PathFinder) takes care
+            # of constructing _NamespacePath from it.
+            spec = _frozen_importlib.ModuleSpec(fullname, None)
+            spec.submodule_search_locations = [
+                # NOTE: since we are using sys._MEIPASS as prefix, we need to construct path from resolved PYZ entry
+                # name (equivalently, we could combine `self._path` and last part of `fullname`).
+                os.path.join(sys._MEIPASS, pyz_entry_name.replace('.', os.path.sep)),
+            ]
             return spec
 
-        # origin has to be the filename
-        origin = self.get_filename(entry_name)
-        is_pkg = self.is_package(entry_name)
+        # Resolve full filename, as if the module/package was located on filesystem.
+        origin = self.get_filename(fullname)
+        is_package = typecode == pyimod01_archive.PYZ_ITEM_PKG
 
         spec = _frozen_importlib.ModuleSpec(
             fullname,
-            self,
-            is_package=is_pkg,
+            self,  # loader
+            is_package=is_package,
             origin=origin,
-            # Provide the entry_name (name of module entry in the PYZ) for the loader to use during loading.
-            loader_state=PyiFrozenImporterState(entry_name)
         )
 
         # Make the import machinery set __file__.
@@ -321,65 +304,32 @@ class PyiFrozenImporter:
 
         # Set submodule_search_locations for packages. Seems to be required for importlib_resources from 3.2.0;
         # see issue #5395.
-        if is_pkg:
-            spec.submodule_search_locations = [os.path.dirname(self.get_filename(entry_name))]
+        if is_package:
+            spec.submodule_search_locations = [os.path.dirname(origin)]
 
         return spec
 
+    #-- Core PEP451 loader functionality as defined by importlib.abc.Loader
+    # https://docs.python.org/3/library/importlib.html#importlib.abc.Loader
     def create_module(self, spec):
         """
-        PEP-451 loader.create_module() method for the ``sys.meta_path`` hook.
+        A method that returns the module object to use when importing a module. This method may return None, indicating
+        that default module creation semantics should take place.
 
-        Loaders may also implement create_module() that will return a new module to exec. It may return None to indicate
-        that the default module creation code should be used. One use case, though atypical, for create_module() is to
-        provide a module that is a subclass of the builtin module type. Most loaders will not need to implement
-        create_module().
-
-        create_module() should properly handle the case where it is called more than once for the same spec/module. This
-        may include returning None or raising ImportError.
+        https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.create_module
         """
-        # Contrary to what is defined in PEP-451, this method is not optional. We want the default results, so we simply
-        # return None (which is handled for su my the import machinery).
-        # See https://bugs.python.org/issue23014 for more information.
         return None
 
     def exec_module(self, module):
         """
-        PEP-451 loader.exec_module() method for the ``sys.meta_path`` hook.
+        A method that executes the module in its own namespace when a module is imported or reloaded. The module
+        should already be initialized when exec_module() is called. When this method exists, create_module()
+        must be defined.
 
-        Loaders will have a new method, exec_module(). Its only job is to "exec" the module and consequently populate
-        the module's namespace. It is not responsible for creating or preparing the module object, nor for any cleanup
-        afterward. It has no return value. exec_module() will be used during both loading and reloading.
-
-        exec_module() should properly handle the case where it is called more than once. For some kinds of modules this
-        may mean raising ImportError every time after the first time the method is called. This is particularly relevant
-        for reloading, where some kinds of modules do not support in-place reloading.
+        https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.exec_module
         """
         spec = module.__spec__
-
-        if isinstance(spec.loader_state, PyiFrozenImporterState):
-            # Use the module name stored in the `loader_state`, which was set by our `find_spec()` implementation.
-            # This is necessary to properly resolve aliased modules; for example, `module.__spec__.name` contains
-            # `pkg_resources.extern.jaraco.text`, but the original name stored in `loader_state`, which we need
-            # to use for code look-up, is `pkg_resources._vendor.jaraco.text`.
-            module_name = spec.loader_state.pyz_entry_name
-        elif isinstance(spec.loader_state, dict):
-            # This seems to happen when `importlib.util.LazyLoader` is used, and our original `loader_state` is lost.
-            # We could use `spec.name` and hope for the best, but that will likely fail with aliased modules (see
-            # the comment in the branch above for an example).
-            #
-            # So try to reconstruct the original module name from the `origin` - which is essentially the reverse of
-            # our `get_filename()` implementation.
-            assert spec.origin.startswith(SYS_PREFIX)
-            module_name = spec.origin[SYS_PREFIXLEN:].replace(os.sep, '.')
-            if module_name.endswith('.pyc'):
-                module_name = module_name[:-4]
-            if module_name.endswith('.__init__'):
-                module_name = module_name[:-9]
-        else:
-            raise RuntimeError(f"Module's spec contains loader_state of incompatible type: {type(spec.loader_state)}")
-
-        bytecode = self.get_code(module_name)
+        bytecode = self.get_code(spec.name)
         if bytecode is None:
             raise RuntimeError(f"Failed to retrieve bytecode for {spec.name!r}!")
 
@@ -388,23 +338,133 @@ class PyiFrozenImporter:
 
         # If `submodule_search_locations` is not None, this is a package; set __path__.
         if spec.submodule_search_locations is not None:
-            # Since PYTHONHOME is set in bootloader, 'sys.prefix' points to the correct path where PyInstaller should
-            # find bundled dynamic libraries. In one-file mode it points to the tmp directory where bundled files are
-            # extracted at execution time.
-            #
-            # __path__ cannot be empty list because 'wx' module prepends something to it. It cannot contain value
-            # 'sys.prefix' because 'xml.etree.cElementTree' fails otherwise.
-            #
-            # Set __path__ to point to 'sys.prefix/package/subpackage'.
-            module.__path__ = [os.path.dirname(module.__file__)]
+            module.__path__ = spec.submodule_search_locations
 
         exec(bytecode, module.__dict__)
 
+    #-- PEP302 protocol extensions as defined by importlib.abc.ExecutionLoader
+    # https://docs.python.org/3/library/importlib.html#importlib.abc.ExecutionLoader
+    def get_filename(self, fullname):
+        """
+        A method that is to return the value of __file__ for the specified module. If no path is available, ImportError
+        is raised.
+
+        If source code is available, then the method should return the path to the source file, regardless of whether a
+        bytecode was used to load the module.
+
+        https://docs.python.org/3/library/importlib.html#importlib.abc.ExecutionLoader.get_filename
+        """
+        # Resolve fullname -> PYZ entry name (in case custom search path is in effect)
+        pyz_entry_name = self._compute_pyz_entry_name(fullname)
+
+        # Look up the PYZ entry
+        entry_data = self._pyz_archive.toc.get(pyz_entry_name)
+        if entry_data is None:
+            raise ImportError(f'Module {fullname!r} not found in PYZ archive (entry {pyz_entry_name!r}).')
+        typecode = entry_data[0]
+
+        # NOTE: since we are using sys._MEIPASS as prefix, we need to construct path from resolved PYZ entry name
+        # (equivalently, we could combine `self._path` and last part of `fullname`).
+        if typecode == pyimod01_archive.PYZ_ITEM_PKG:
+            return os.path.join(sys._MEIPASS, pyz_entry_name.replace('.', os.path.sep), '__init__.pyc')
+        elif typecode == pyimod01_archive.PYZ_ITEM_MODULE:
+            return os.path.join(sys._MEIPASS, pyz_entry_name.replace('.', os.path.sep) + '.pyc')
+
+        # Unsupported entry type
+        return None
+
+    #-- PEP302 protocol extensions as defined by importlib.abc.InspectLoader
+    # https://docs.python.org/3/library/importlib.html#importlib.abc.InspectLoader
+    def get_code(self, fullname):
+        """
+        Return the code object for a module, or None if the module does not have a code object (as would be the case,
+        for example, for a built-in module). Raise an ImportError if loader cannot find the requested module.
+
+        https://docs.python.org/3/library/importlib.html#importlib.abc.InspectLoader.get_code
+        """
+        # Resolve fullname -> PYZ entry name (in case custom search path is in effect)
+        pyz_entry_name = self._compute_pyz_entry_name(fullname)
+
+        # Look up the PYZ entry - so we can raise ImportError for non-existing modules.
+        entry_data = self._pyz_archive.toc.get(pyz_entry_name)
+        if entry_data is None:
+            raise ImportError(f'Module {fullname!r} not found in PYZ archive (entry {pyz_entry_name!r}).')
+
+        return self._pyz_archive.extract(pyz_entry_name)
+
+    def get_source(self, fullname):
+        """
+        A method to return the source of a module. It is returned as a text string using universal newlines, translating
+        all recognized line separators into '\n' characters. Returns None if no source is available (e.g. a built-in
+        module). Raises ImportError if the loader cannot find the module specified.
+
+        https://docs.python.org/3/library/importlib.html#importlib.abc.InspectLoader.get_source
+        """
+        # Use getfilename() to obtain path to file if it were located on filesystem. This implicitly checks that the
+        # fullname is valid.
+        filename = self.get_filename(fullname)
+
+        # FIXME: according to python docs "if source code is available, then the [getfilename()] method should return
+        # the path to the source file, regardless of whether a bytecode was used to load the module.". At the moment,
+        # our implementation always returns pyc suffix.
+        filename = filename[:-1]
+
+        try:
+            # Read in binary mode, then decode
+            with open(filename, 'rb') as fp:
+                source_bytes = fp.read()
+            return _decode_source(source_bytes)
+        except FileNotFoundError:
+            pass
+
+        # Source code is unavailable.
+        return None
+
+    def is_package(self, fullname):
+        """
+        A method to return a true value if the module is a package, a false value otherwise. ImportError is raised if
+        the loader cannot find the module.
+
+        https://docs.python.org/3/library/importlib.html#importlib.abc.InspectLoader.is_package
+        """
+        # Resolve fullname -> PYZ entry name (in case custom search path is in effect)
+        pyz_entry_name = self._compute_pyz_entry_name(fullname)
+
+        # Look up the PYZ entry - so we can raise ImportError for non-existing modules.
+        entry_data = self._pyz_archive.toc.get(pyz_entry_name)
+        if entry_data is None:
+            raise ImportError(f'Module {fullname!r} not found in PYZ archive (entry {pyz_entry_name!r}).')
+        typecode = entry_data[0]
+
+        # We do not need to worry about PEP420 namespace package entries (pyimod01_archive.PYZ_ITEM_NSPKG) here, because
+        # namespace packages do not use the loader part of this importer.
+        return typecode == pyimod01_archive.PYZ_ITEM_PKG
+
+    #-- PEP302 protocol extensions as dfined by importlib.abc.ResourceLoader
+    # https://docs.python.org/3/library/importlib.html#importlib.abc.ResourceLoader
+    def get_data(self, path):
+        """
+        A method to return the bytes for the data located at path. Loaders that have a file-like storage back-end that
+        allows storing arbitrary data can implement this abstract method to give direct access to the data stored.
+        OSError is to be raised if the path cannot be found. The path is expected to be constructed using a module’s
+        __file__ attribute or an item from a package’s __path__.
+
+        https://docs.python.org/3/library/importlib.html#importlib.abc.ResourceLoader.get_data
+        """
+        # Try to fetch the data from the filesystem. Since __file__ attribute works properly, just try to open the file
+        # and read it.
+        with open(path, 'rb') as fp:
+            return fp.read()
+
+    #-- Support for `importlib.resources`.
     def get_resource_reader(self, fullname):
         """
-        Return importlib.resource-compatible resource reader.
+        Return resource reader compatible with `importlib.resources`.
         """
-        return PyiFrozenResourceReader(self, fullname)
+        # Resolve fullname -> PYZ entry name (in case custom search path is in effect)
+        pyz_entry_name = self._compute_pyz_entry_name(fullname)
+
+        return PyiFrozenResourceReader(self, pyz_entry_name)
 
 
 class PyiFrozenResourceReader:
@@ -464,61 +524,70 @@ class PyiFrozenResourceReader:
         return self.path
 
 
+class PyiFrozenEntryPointLoader:
+    """
+    A special loader that enables retrieval of the code-object for the __main__ module.
+    """
+    def __repr__(self):
+        return self.__class__.__name__
+
+    def get_code(self, fullname):
+        if fullname == '__main__':
+            # Special handling for __main__ module; the bootloader should store code object to _pyi_main_co
+            # attribute of the module.
+            return sys.modules['__main__']._pyi_main_co
+
+        raise ImportError(f'{self} cannot handle module {fullname!r}')
+
+
 def install():
     """
-    Install PyiFrozenImporter class into the import machinery.
-
-    This function installs the PyiFrozenImporter class into the import machinery of the running process. The importer
-    is added to sys.meta_path. It could be added to sys.path_hooks, but sys.meta_path is processed by Python before
-    looking at sys.path!
-
-    The order of processing import hooks in sys.meta_path:
-
-    1. built-in modules
-    2. modules from the bundled ZIP archive
-    3. C extension modules
-    4. Modules from sys.path
+    Install PyInstaller's frozen finders/loaders/importers into python's import machinery.
     """
+    # Setup PYZ archive reader.
+    #
     # The bootloader should store the path to PYZ archive (the path to the PKG archive and the offset within it; for
     # executable-embedded archive, this is for example /path/executable_name?117568) into _pyinstaller_pyz
     # attribute of the sys module.
+    global pyz_archive
+
     if not hasattr(sys, '_pyinstaller_pyz'):
         raise RuntimeError("Bootloader did not set sys._pyinstaller_pyz!")
 
     try:
-        importer = PyiFrozenImporter(sys._pyinstaller_pyz)
+        pyz_archive = pyimod01_archive.ZlibArchiveReader(sys._pyinstaller_pyz, check_pymagic=True)
     except Exception as e:
-        raise RuntimeError("Failed to initialize PyInstaller's PyiFrozenImporter!") from e
+        raise RuntimeError("Failed to setup PYZ archive reader!") from e
 
     delattr(sys, '_pyinstaller_pyz')
 
-    # Register with import machinery.
-    sys.meta_path.append(importer)
-
-    # On Windows there is importer _frozen_importlib.WindowsRegistryFinder that looks for Python modules in Windows
-    # registry. The frozen executable should not look for anything in the Windows registry. Remove this importer
-    # from sys.meta_path.
-    for item in sys.meta_path:
-        if hasattr(item, '__name__') and item.__name__ == 'WindowsRegistryFinder':
-            sys.meta_path.remove(item)
+    # On Windows, there is finder called `_frozen_importlib.WindowsRegistryFinder`, which looks for Python module
+    # locations in Windows registry. The frozen application should not look for those, so remove this finder
+    # from `sys.meta_path`.
+    for entry in sys.meta_path:
+        if getattr(entry, '__name__', None) == 'WindowsRegistryFinder':
+            sys.meta_path.remove(entry)
             break
-    # _frozen_importlib.PathFinder is also able to handle Python C extensions. However, PyInstaller needs its own
-    # importer as it uses extension names like 'module.submodle.so' (instead of paths). As of Python 3.7.0b2, there
-    # are several PathFinder instances (and duplicate ones) on sys.meta_path. This propobly is a bug, see
-    # https://bugs.python.org/issue33128. Thus we need to move all of them to the end, and eliminate the duplicates.
-    path_finders = []
-    for item in reversed(sys.meta_path):
-        if getattr(item, '__name__', None) == 'PathFinder':
-            sys.meta_path.remove(item)
-            if item not in path_finders:
-                path_finders.append(item)
-    sys.meta_path.extend(reversed(path_finders))
-    # TODO: do we need _frozen_importlib.FrozenImporter in Python 3? Could it be also removed?
 
-    # Set the FrozenImporter as loader for __main__, in order for python to treat __main__ as a module instead of
-    # a built-in.
+    # Insert our hook for `PyiFrozenImporter` into `sys.path_hooks`. Place it after `zipimporter`, if available.
+    for idx, entry in enumerate(sys.path_hooks):
+        if getattr(entry, '__name__', None) == 'zipimporter':
+            trace(f"PyInstaller: inserting our finder hook at index {idx + 1} in sys.path_hooks.")
+            sys.path_hooks.insert(idx + 1, PyiFrozenImporter.path_hook)
+            break
+    else:
+        trace("PyInstaller: zipimporter hook not found in sys.path_hooks! Prepending our finder hook to the list.")
+        sys.path_hooks.insert(0, PyiFrozenImporter.path_hook)
+
+    # Python might have already created a `FileFinder` for `sys._MEIPASS`. Remove the entry from path importer cache,
+    # so that next loading attempt creates `PyiFrozenImporter` instead. This could probably be avoided altogether if
+    # we refrained from adding `sys._MEIPASS` to `sys.path` until our importer hooks is in place.
+    sys.path_importer_cache.pop(sys._MEIPASS, None)
+
+    # Set the PyiFrozenEntryPointLoader as loader for __main__, in order for python to treat __main__ as a module
+    # instead of a built-in, and to allow its code object to be retrieved.
     try:
-        sys.modules['__main__'].__loader__ = importer
+        sys.modules['__main__'].__loader__ = PyiFrozenEntryPointLoader()
     except Exception:
         pass
 
@@ -557,7 +626,7 @@ def _fixup_frozen_stdlib():
         if is_pkg:
             orig_name += '.__init__'
 
-        # We set suffix to .pyc to be consistent with out PyiFrozenImporter.
+        # We set suffix to .pyc to be consistent with our PyiFrozenImporter.
         filename = os.path.join(sys._MEIPASS, *orig_name.split('.')) + '.pyc'
 
         # Fixup the __file__ attribute

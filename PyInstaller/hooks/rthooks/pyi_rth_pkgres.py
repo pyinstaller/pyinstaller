@@ -9,10 +9,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-# To make pkg_resources work with frozen modules we need to set the 'Provider' class for PyiFrozenImporter. This class
-# decides where to look for resources and other stuff. 'pkg_resources.NullProvider' is dedicated to PEP302 import hooks
-# like PyiFrozenImporter is. It uses method __loader__.get_data() in methods pkg_resources.resource_string() and
-# pkg_resources.resource_stream()
+# To make pkg_resources work with frozen modules we need to set the 'Provider' class for PyiFrozenImporter.
+# This class decides where to look for resources and other stuff.
+#
+# 'pkg_resources.NullProvider' is dedicated to PEP302 import hooks like PyiFileImporter is. It uses method
+# __loader__.get_data() in methods pkg_resources.resource_string() and pkg_resources.resource_stream()
 #
 # We provide PyiFrozenProvider, which subclasses the NullProvider and implements _has(), _isdir(), and _listdir()
 # methods, which are needed for pkg_resources.resource_exists(), resource_isdir(), and resource_listdir() to work. We
@@ -34,7 +35,8 @@ def _pyi_rthook():
     import sys
 
     import pkg_resources
-    from pyimod02_importers import PyiFrozenImporter
+
+    import pyimod02_importers  # PyInstaller's bootstrap module
 
     SYS_PREFIX = pathlib.PurePath(sys._MEIPASS)
 
@@ -94,8 +96,8 @@ def _pyi_rthook():
             # in the `Contents/Resources` directory due to cross-linking.
             self._pkg_path = pathlib.PurePath(module.__file__).parent
 
-            # Construct _TocFilesystem on top of pre-computed prefix tree provided by PyiFrozenImporter.
-            self.embedded_tree = _TocFilesystem(self.loader.toc_tree)
+            # Construct _TocFilesystem on top of pre-computed prefix tree provided by pyimod02_importers.
+            self.embedded_tree = _TocFilesystem(pyimod02_importers.get_pyz_toc_tree())
 
         def _normalize_path(self, path):
             # Avoid using `Path.resolve`, because it resolves symlinks. This is undesirable, because the pure path in
@@ -152,7 +154,17 @@ def _pyi_rthook():
                 content = list(set(content + os.listdir(path)))
             return content
 
-    pkg_resources.register_loader_type(PyiFrozenImporter, PyiFrozenProvider)
+    pkg_resources.register_loader_type(pyimod02_importers.PyiFrozenImporter, PyiFrozenProvider)
+
+    # With our PyiFrozenImporter now being a path entry finder, it effectively replaces python's FileFinder. So we need
+    # to register it with `pkg_resources.find_on_path` to allow metadata to be found on filesystem.
+    pkg_resources.register_finder(pyimod02_importers.PyiFrozenImporter, pkg_resources.find_on_path)
+
+    # For the above change to fully take effect, we need to re-initialize pkg_resources's master working set (since the
+    # original one was built with assumption that sys.path entries are handled by python's FileFinder).
+    # See https://github.com/pypa/setuptools/issues/373
+    if hasattr(pkg_resources, '_initialize_master_working_set'):
+        pkg_resources._initialize_master_working_set()
 
 
 _pyi_rthook()
