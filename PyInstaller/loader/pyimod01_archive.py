@@ -96,26 +96,6 @@ class ZlibArchiveReader:
 
         return filename, offset
 
-    def is_package(self, name):
-        """
-        Check if the given name refers to a package entry. Used by PyiFrozenImporter at runtime.
-        """
-        entry = self.toc.get(name)
-        if entry is None:
-            return False
-        typecode, entry_offset, entry_length = entry
-        return typecode in (PYZ_ITEM_PKG, PYZ_ITEM_NSPKG)
-
-    def is_pep420_namespace_package(self, name):
-        """
-        Check if the given name refers to a namespace package entry. Used by PyiFrozenImporter at runtime.
-        """
-        entry = self.toc.get(name)
-        if entry is None:
-            return False
-        typecode, entry_offset, entry_length = entry
-        return typecode == PYZ_ITEM_NSPKG
-
     def extract(self, name, raw=False):
         """
         Extract data from entry with the given name.
