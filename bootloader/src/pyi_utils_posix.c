@@ -765,4 +765,30 @@ void pyi_utils_free_args(struct PYI_CONTEXT *pyi_ctx)
 }
 
 
+/*
+ * Create a new array of strings with a prepended string.
+ *
+ * Exec is making own copy of the argv array, so we can use original
+ * array strings.
+ */
+char **prepend_string_array(char *argv[], int argc, char *prepend) {
+    // Allocate memory for the new array of strings
+    char **new_argv = (char **)calloc((argc + 1), sizeof(char *));
+    if (new_argv == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return NULL;
+    }
+
+    // Set the first element to the prepend string
+    new_argv[0] = prepend;
+
+    // Copy the rest of the elements from the original array together
+    // with null terminator
+    int i;
+    for (i = 0; i < argc + 1; i++) {
+        new_argv[i + 1] = argv[i];
+    }
+
+    return new_argv;
+}
 #endif /* ifndef _WIN32 */
