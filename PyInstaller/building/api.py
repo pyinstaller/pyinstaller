@@ -1266,25 +1266,29 @@ class MERGE:
                 del key  # Block-local variable
                 continue
 
-            if src_name not in self._dependencies:
-                logger.debug("Adding dependency %s located in %s", src_name, path_to_exe)
-                self._dependencies[src_name] = path_to_exe
+            # In fact, we need to accout for both dest_name and src_name with regular entries as well; previous
+            # approach that considered only src_name ended tripped up when same file was collected in different
+            # locations (i.e., same src_name but different dest_names).
+            key = dest_name, src_name
+            if key not in self._dependencies:
+                logger.debug("Adding dependency %r located in %s", key, path_to_exe)
+                self._dependencies[key] = path_to_exe
                 # Add entry to list of kept TOC entries
                 toc_keep.append(entry)
             else:
                 # Construct relative dependency path; i.e., the relative path from this executable (or rather, its
                 # parent directory) to the executable that contains the dependency.
-                dep_path = os.path.relpath(self._dependencies[src_name], os.path.dirname(path_to_exe))
+                dep_path = os.path.relpath(self._dependencies[key], os.path.dirname(path_to_exe))
                 # Ignore references that point to the origin package. This can happen if the same resource is listed
                 # multiple times in TOCs (e.g., once as binary and once as data).
                 if dep_path.endswith(path_to_exe):
                     logger.debug(
-                        "Ignoring self-reference of %s for %s, located in %s - duplicated TOC entry?", src_name,
-                        path_to_exe, dep_path
+                        "Ignoring self-reference of %r for %s, located in %s - duplicated TOC entry?", key, path_to_exe,
+                        dep_path
                     )
                     # The entry is a duplicate, and should be ignored (i.e., do not add it to either of output TOCs).
                     continue
-                logger.debug("Referencing %s to be a dependency for %s, located in %s", src_name, path_to_exe, dep_path)
+                logger.debug("Referencing %r to be a dependency for %s, located in %s", key, path_to_exe, dep_path)
                 # Create new DEPENDENCY entry; under destination path (first element), we store the original destination
                 # path, while source path contains the relative reference path.
                 toc_refs.append((dest_name, dep_path, "DEPENDENCY"))
