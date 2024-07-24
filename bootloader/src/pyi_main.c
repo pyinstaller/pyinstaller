@@ -1054,7 +1054,7 @@ _pyi_find_progam_in_search_path(const char *name, char *result_path)
 }
 
 static int
-_pyi_resolve_executable_posix(const char *argv0, char *executable_filename)
+_pyi_resolve_executable_posix(const char *argv0, char *executable_filename, char *linker_filename)
 {
     /* On Linux, Cygwin, FreeBSD, and Solaris, we try /proc entry first.
      * The entry points at "true" file location, i.e., fully canonicalized
@@ -1079,7 +1079,8 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename)
      * to ignore it. */
 #if defined(__linux__)
     if (_pyi_is_ld_linux_so(executable_filename) == true) {
-        PYI_DEBUG("LOADER: resolved executable file %s is ld.so dynamic loader - ignoring it!\n", executable_filename);
+        PYI_DEBUG("LOADER: resolved executable file %s is ld.so dynamic loader - ignoring it! (but storing the information)\n", executable_filename);
+        strncpy(linker_filename, executable_filename, PYI_PATH_MAX);
         name_len = -1;
     }
 #endif
@@ -1138,7 +1139,7 @@ _pyi_main_resolve_executable(struct PYI_CONTEXT *pyi_ctx)
 #elif __APPLE__
     return _pyi_resolve_executable_macos(pyi_ctx->executable_filename);
 #else
-    return _pyi_resolve_executable_posix(pyi_ctx->argv[0], pyi_ctx->executable_filename);
+    return _pyi_resolve_executable_posix(pyi_ctx->argv[0], pyi_ctx->executable_filename, pyi_ctx->linker_filename);
 #endif
 }
 
@@ -1266,9 +1267,19 @@ _pyi_main_handle_posix_onedir(struct PYI_CONTEXT *pyi_ctx)
     /* NOTE: the codepath that ended up here does not perform any
      * argument modification, so we always use pyi_ctx->argv (as
      * pyi_ctx->pyi_argv is unavailable). */
-    if (execvp(pyi_ctx->executable_filename, pyi_ctx->argv) < 0) {
-        PYI_ERROR("LOADER: failed to restart process via execvp: %s\n", strerror(errno));
+    if (strncmp(pyi_ctx->linker_filename, "", 1) != 0) {
+        char **new_argv = prepend_string_array(pyi_ctx->argv, pyi_ctx->argc, pyi_ctx->linker_filename);
+        PYI_DEBUG("LOADER: restarting process via execvp by calling dynamic linker: %s\n", pyi_ctx->linker_filename);
+        if (execvp(pyi_ctx->linker_filename, new_argv) < 0) {
+            PYI_ERROR("LOADER: failed to restart process via execvp by calling dynamic linker: %s\n", strerror(errno));
+            return -1;
+        }
+    } else {
+      if (execvp(pyi_ctx->executable_filename, pyi_ctx->argv) < 0) {
+        PYI_ERROR("LOADER: failed to restart process via execvp: %s\n",
+                  strerror(errno));
         return -1;
+      }
     }
 
     /* Unreachable */

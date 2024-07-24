@@ -168,6 +168,13 @@ struct PYI_CONTEXT
      * PyInstaller's CI. */
     unsigned char strict_unpack_mode;
 
+#if !defined(_WIN32) && !defined(__APPLE__)
+    /* Path to the linker executable. If started in onedir mode and
+     * directly via dynamic loader on POSIX platform, store the path
+     * to the linker executable for follow-up execvp() call. */
+    char linker_filename[PYI_PATH_MAX];
+#endif /* !_WIN32 and !__APPLE */
+
 #if defined(_WIN32)
     /* Security attributes structure with security descriptor that limits
      * the access to created directory to the user. Used in onefile mode
