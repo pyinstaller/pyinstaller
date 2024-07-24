@@ -1,0 +1,5 @@
+The ``MERGE`` dependency processing code now uses both source and
+destination path as bookkeeping key (instead of just source path). This
+should fix issues when using ``MERGE`` with application TOCs that contain
+entries for a file that is collected more than once, with different
+destination names.
