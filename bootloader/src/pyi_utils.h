@@ -56,7 +56,7 @@ int pyi_utils_set_library_search_path(const char *path);
 int pyi_utils_initialize_args(struct PYI_CONTEXT *pyi_ctx, const int argc, char *const argv[]);
 int pyi_utils_append_to_args(struct PYI_CONTEXT *pyi_ctx, const char *arg);
 void pyi_utils_free_args(struct PYI_CONTEXT *pyi_ctx);
-char **prepend_string_array(char *argv[], int argc, char *prepend);
+char *const *pyi_prepend_dynamic_loader_to_argv(const int argc, char *const argv[], char *const loader_filename);
 #endif
 
 /* Magic pattern matching */
