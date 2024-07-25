@@ -1,0 +1,7 @@
+(Linux) When frozen executable is launched via dynamic linker/loader
+invocation (e.g., ``/lib64/ld-linux-x86-64.so.2 /path/to/executable``),
+the loader executable's name is now captured and passed on to ``execvp``
+call when restarting the process (``onedir`` mode) or starting the
+child process (``onefile`` mode). This ensures that the restarted/spawned
+process also uses the specified dynamic loader instead of the one
+encoded in executable's ELF headers.

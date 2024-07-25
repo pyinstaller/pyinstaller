@@ -548,14 +548,31 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
         /* If modified arguments (pyi_ctx->pyi_argv) are available, use
          * those. Otherwise, use the original pyi_ctx->argv. */
         char *const *argv = (pyi_ctx->pyi_argv != NULL) ? pyi_ctx->pyi_argv : pyi_ctx->argv;
+        const int argc = (pyi_ctx->pyi_argv != NULL) ? pyi_ctx->pyi_argc : pyi_ctx->argc;
 
         if (_pyi_set_systemd_env() != 0) {
             PYI_WARNING("LOADER: application is started by systemd socket, but we cannot set proper LISTEN_PID on it.\n");
         }
 
-        if (execvp(pyi_ctx->executable_filename, argv) < 0) {
-            PYI_WARNING("LOADER: failed to exec: %s\n", strerror(errno));
-            goto cleanup;
+        if (pyi_ctx->dynamic_loader_filename[0] != 0) {
+            char *const *exec_argv;
+
+            PYI_DEBUG("LOADER: starting child process via execvp and dynamic linker/loader: %s\n", pyi_ctx->dynamic_loader_filename);
+            exec_argv = pyi_prepend_dynamic_loader_to_argv(argc, argv, pyi_ctx->dynamic_loader_filename);
+            if (exec_argv == NULL) {
+                PYI_WARNING("LOADER: failed to allocate argv array for execvp!\n");
+                goto cleanup;
+            }
+            if (execvp(pyi_ctx->dynamic_loader_filename, exec_argv) < 0) {
+                PYI_WARNING("LOADER: failed to start child process: %s\n", strerror(errno));
+                goto cleanup;
+            }
+        } else {
+            PYI_DEBUG("LOADER: starting child process via execvp\n");
+            if (execvp(pyi_ctx->executable_filename, argv) < 0) {
+                PYI_WARNING("LOADER: failed start child process: %s\n", strerror(errno));
+                goto cleanup;
+            }
         }
 
         /* NOTREACHED */
@@ -766,29 +783,30 @@ void pyi_utils_free_args(struct PYI_CONTEXT *pyi_ctx)
 
 
 /*
- * Create a new array of strings with a prepended string.
+ * Allocate new argv array and prepend the given dynamic linker/loader
+ * name to it. Used when restarting or spawning process via execvp().
  *
- * Exec is making own copy of the argv array, so we can use original
- * array strings.
+ * Since execvp() copies the array, we can create a shallow copy of
+ * argv here.
  */
-char **prepend_string_array(char *argv[], int argc, char *prepend) {
-    // Allocate memory for the new array of strings
-    char **new_argv = (char **)calloc((argc + 1), sizeof(char *));
+char *const *pyi_prepend_dynamic_loader_to_argv(const int argc, char *const argv[], char *const loader_filename)
+{
+    char **new_argv;
+    int i;
+
+    /* Allocate the new array; loader name + elements of argv + terminating NULL */
+    new_argv = (char **)calloc(argc + 2, sizeof(char *));
     if (new_argv == NULL) {
-        fprintf(stderr, "Memory allocation failed\n");
         return NULL;
     }
 
-    // Set the first element to the prepend string
-    new_argv[0] = prepend;
-
-    // Copy the rest of the elements from the original array together
-    // with null terminator
-    int i;
-    for (i = 0; i < argc + 1; i++) {
+    /* Shallow copy of the elements. */
+    new_argv[0] = loader_filename;
+    for (i = 0; i < argc; i++) {
         new_argv[i + 1] = argv[i];
     }
 
     return new_argv;
 }
+
 #endif /* ifndef _WIN32 */
