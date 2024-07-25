@@ -173,6 +173,77 @@ def test_pkgutil_iter_modules_macos_app_bundle(script_dir, tmpdir, pyi_builder, 
         assert results_unfrozen == results_frozen
 
 
+# Explicitly test that in macOS .app bundles, modules can be iterated regardless of whether the given search path is
+# anchored in the Contents/Frameworks directory (the "true" sys._MEIPASS) or the Contents/Resources directory.
+# A real-world example would involve a package that is partially collected into PYZ, but its `__init__` module is
+# collected as source .py file only. Thus, the search path derived from fully resolved __file__ attribute would end up
+# pointing to Resources directory instead of Frameworks one. For the purpose of the test, however, we simply modify the
+# search path ourselves.
+#
+# This is more explicit version of test_pkgutil_iter_modules_macos_app_bundle, just in case.
+@pytest.mark.darwin
+def test_pkgutil_iter_modules_macos_app_bundle_alternative_search_path(pyi_builder):
+    if pyi_builder._mode != 'onedir':
+        pytest.skip('The test is applicable only to onedir mode.')
+
+    pyi_builder.test_source(
+        """
+        import os
+        import sys
+        import pkgutil
+        import json  # Our test package
+
+        # Check that we are running in .app bundle mode. If not, exit.
+        print("sys._MEIPASS:", sys._MEIPASS)
+        if not sys._MEIPASS.endswith("Contents/Frameworks"):
+            print("Not running as .app bundle.")
+            sys.exit(0)
+
+        alternative_top_level_dir = os.path.join(os.path.dirname(sys._MEIPASS), 'Resources')
+
+        def _compare_path_contents(true_path, alternative_path, prefix=""):
+            # Iterate over modules using path anchored to "true" top-level directory (sys._MEIPASS).
+            print(f"Iterating over modules in path anchored to true top-level directory - {true_path!r}:")
+            modules1 = list(pkgutil.iter_modules([true_path], prefix))
+            for entry in modules1:
+                print(entry)
+            print("")
+
+            assert len(modules1) > 0, "Modules list is emtpy?!"
+
+            # Iterate over modules using path anchored to "alternative" top-level directory.
+            print(f"Iterating over modules in path anchored to alternative top-level directory {alternative_path!r}:")
+            modules2 = list(pkgutil.iter_modules([alternative_path], prefix))
+            for entry in modules2:
+                print(entry)
+            print("")
+
+            # We can compare only .name and .ispkg, because .module_finder might be per-path instance.
+            def _to_comparable_list(modules):
+                return sorted([(module.name, module.ispkg) for module in modules])
+
+            assert _to_comparable_list(modules1) == _to_comparable_list(modules2), "Lists of modules do not match!"
+            print("OK!")
+
+        # First, run comparison on top-level application directory
+        print("Running test for top-level application directory...")
+        _compare_path_contents(
+            sys._MEIPASS,
+            alternative_top_level_dir,
+        )
+
+        # Repeat for the 'json' package
+        print("Running test for 'json' package...")
+        _compare_path_contents(
+            os.path.join(sys._MEIPASS, 'json'),
+            os.path.join(alternative_top_level_dir, 'json'),
+            prefix='json.',
+        )
+        """,
+        pyi_args=['--collect-submodules', 'json', '--windowed']
+    )
+
+
 # Two tests that reproduce the situation from #8191. In the first test, `pkgutil.iter_modules()` is called on a path
 # that corresponds to a module instead of the package. In the second test, we add a sub-directory component to the path
 # that corresponds to a module. Both cases should be handled gracefully by our `iter_modules` override.
