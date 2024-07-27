@@ -25,7 +25,7 @@ For working around please follow these instructions
      pyinstaller myprog.spec
 
 3. If this fails, you most probably hit an endless recursion in
-   PyInstaller. Please try to track this down has far as possible,
+   PyInstaller. Please try to track this down as far as possible,
    create a minimal example so we can reproduce and open an issue at
    https://github.com/pyinstaller/pyinstaller/issues following the
    instructions in the issue template. Many thanks.
