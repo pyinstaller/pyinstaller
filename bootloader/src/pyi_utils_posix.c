@@ -554,24 +554,31 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
             PYI_WARNING("LOADER: application is started by systemd socket, but we cannot set proper LISTEN_PID on it.\n");
         }
 
+        /* NOTE: if execvp() fails for whatever reason, we must immediately
+         * exit the (forked) child process using exit() call. Otherwise,
+         * the forked child process will continue executing the cleanup
+         * codepath, which is intended for the parent process, and will
+         * end up interfering with the cleanup in the actual parent
+         * process - for example, there will be two attempts at removing
+         * the application's temporary directory. */
         if (pyi_ctx->dynamic_loader_filename[0] != 0) {
             char *const *exec_argv;
 
             PYI_DEBUG("LOADER: starting child process via execvp and dynamic linker/loader: %s\n", pyi_ctx->dynamic_loader_filename);
             exec_argv = pyi_prepend_dynamic_loader_to_argv(argc, argv, pyi_ctx->dynamic_loader_filename);
             if (exec_argv == NULL) {
-                PYI_WARNING("LOADER: failed to allocate argv array for execvp!\n");
-                goto cleanup;
+                PYI_ERROR("LOADER: failed to allocate argv array for execvp!\n");
+                exit(-1);
             }
             if (execvp(pyi_ctx->dynamic_loader_filename, exec_argv) < 0) {
-                PYI_WARNING("LOADER: failed to start child process: %s\n", strerror(errno));
-                goto cleanup;
+                PYI_ERROR("LOADER: failed to start child process: %s\n", strerror(errno));
+                exit(-1);
             }
         } else {
             PYI_DEBUG("LOADER: starting child process via execvp\n");
             if (execvp(pyi_ctx->executable_filename, argv) < 0) {
-                PYI_WARNING("LOADER: failed start child process: %s\n", strerror(errno));
-                goto cleanup;
+                PYI_ERROR("LOADER: failed start child process: %s\n", strerror(errno));
+                exit(-1);
             }
         }
 
