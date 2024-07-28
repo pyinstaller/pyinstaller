@@ -309,6 +309,41 @@ class PyiFrozenImporter:
 
         return spec
 
+    # The following methods are part of legacy PEP302 finder interface. They have been deprecated since python 3.4,
+    # and removed in python 3.12. Provide compatibility shims to accommodate code that might still be using them.
+    if sys.version_info[:2] < (3, 12):
+
+        def find_loader(self, fullname):
+            """
+            A legacy method for finding a loader for the specified module. Returns a 2-tuple of (loader, portion) where
+            portion is a sequence of file system locations contributing to part of a namespace package. The loader may
+            be None while specifying portion to signify the contribution of the file system locations to a namespace
+            package. An empty list can be used for portion to signify the loader is not part of a namespace package. If
+            loader is None and portion is the empty list then no loader or location for a namespace package were found
+            (i.e. failure to find anything for the module).
+
+            Deprecated since python 3.4, removed in 3.12.
+            """
+            # Based on:
+            # https://github.com/python/cpython/blob/v3.11.9/Lib/importlib/_bootstrap_external.py#L1587-L1600
+            spec = self.find_spec(fullname)
+            if spec is None:
+                return None, []
+            return spec.loader, spec.submodule_search_locations or []
+
+        def find_module(self, fullname):
+            """
+            A concrete implementation of Finder.find_module() which is equivalent to self.find_loader(fullname)[0].
+
+            Deprecated since python 3.4, removed in 3.12.
+            """
+            # Based on:
+            # https://github.com/python/cpython/blob/v3.11.9/Lib/importlib/_bootstrap_external.py#L1585
+            # https://github.com/python/cpython/blob/v3.11.9/Lib/importlib/_bootstrap_external.py#L622-L639
+            #
+            loader, portions = self.find_loader(fullname)
+            return loader
+
     #-- Core PEP451 loader functionality as defined by importlib.abc.Loader
     # https://docs.python.org/3/library/importlib.html#importlib.abc.Loader
     def create_module(self, spec):
@@ -341,6 +376,22 @@ class PyiFrozenImporter:
             module.__path__ = spec.submodule_search_locations
 
         exec(bytecode, module.__dict__)
+
+    # The following method is part of legacy PEP302 loader interface. It has been deprecated since python 3.4, and
+    # removed in python 3.12.  Provide compatibility shims to accommodate code that might still be using them.
+    if sys.version_info[:2] < (3, 12):
+
+        def load_module(self, fullname):
+            """
+            A legacy method for loading a module. If the module cannot be loaded, ImportError is raised, otherwise the
+            loaded module is returned.
+
+            Deprecated since python 3.4, removed in 3.12.
+            """
+            # Based on:
+            # https://github.com/python/cpython/blob/v3.11.9/Lib/importlib/_bootstrap_external.py#L942-L945
+            import importlib._bootstrap as _bootstrap
+            return _bootstrap._load_module_shim(self, fullname)
 
     #-- PEP302 protocol extensions as defined by importlib.abc.ExecutionLoader
     # https://docs.python.org/3/library/importlib.html#importlib.abc.ExecutionLoader
