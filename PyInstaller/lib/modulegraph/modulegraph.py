@@ -537,7 +537,7 @@ class AliasNode(Node):
     non-existent target module name (i.e., the desired alias).
     """
 
-    def __init__(self, name, node):
+    def __init__(self, name, node=None):
         """
         Initialize this alias.
 
@@ -547,22 +547,28 @@ class AliasNode(Node):
             Fully-qualified name of the non-existent target module to be
             created (as an alias of the existing source module).
         node : Node
-            Graph node of the existing source module being aliased.
+            Graph node of the existing source module being aliased. Optional;
+            if not provided here, the attributes from referred node should
+            be copied later using `copyAttributesFromReferredNode` method.
         """
         super(AliasNode, self).__init__(name)
 
-        #FIXME: Why only some? Why not *EVERYTHING* except "graphident", which
-        #must remain equal to "name" for lookup purposes? This is, after all,
-        #an alias. The idea is for the two nodes to effectively be the same.
+        # Copy attributes from referred node, if provided
+        self.copyAttributesFromReferredNode(node)
 
-        # Copy some attributes from this source module into this target alias.
+    def copyAttributesFromReferredNode(self, node):
+        """
+        Copy a subset of attributes from referred node (source module) into this target alias.
+        """
+        # FIXME: Why only some? Why not *EVERYTHING* except "graphident", which
+        # must remain equal to "name" for lookup purposes? This is, after all,
+        # an alias. The idea is for the two nodes to effectively be the same.
         for attr_name in (
             'identifier', 'packagepath',
             '_global_attr_names', '_starimported_ignored_module_names',
             '_submodule_basename_to_node'):
             if hasattr(node, attr_name):
                 setattr(self, attr_name, getattr(node, attr_name))
-
 
     def infoTuple(self):
         return (self.graphident, self.identifier)
@@ -1121,8 +1127,23 @@ class ModuleGraph(ObjectGraph):
                 # excluded module
                 m = self.createNode(ExcludedModule, name)
             elif isinstance(deps, Alias):
+                # NOTE: the AliasNode must be created and added to graph
+                # before trying to create the referred node; that might
+                # (due to recursive import analysis) lead to another
+                # attempt to resolve the aliased node (and if there is
+                # a real node that we are trying to shadow with the alias,
+                # that will end up added to the graph and prevent the
+                # alias node from being added).
+                m = self.createNode(AliasNode, name)
+
+                # Create the referred node.
                 other = self._safe_import_hook(deps, None, None).pop()
-                m = self.createNode(AliasNode, name, other)
+
+                # Copy attributes; this used to be done by AliasNode
+                # constructor, back when referred node was created before
+                # the AliasNode (and could thus be passed to its constructor).
+                m.copyAttributesFromReferredNode(other)
+
                 self.implyNodeReference(m, other)
             else:
                 m = self._safe_import_hook(name, None, None).pop()
