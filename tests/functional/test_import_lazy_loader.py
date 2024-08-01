@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.tests import importorskip
-
 
 # A basic lazy loader test with a stdlib module
 def test_importlib_lazy_loader(pyi_builder):
@@ -21,21 +19,35 @@ def test_importlib_lazy_loader(pyi_builder):
     )
 
 
+# NOTE: the tests with aliased module used to be based on `pkg_resources._vendor.jaraco.text` and
+# `pkg_resources.extern.jaraco.text`. However, `pkg_resources` shipped with `setuptools` >= 71  does not vendor its
+# dependencies anymore, so those modules are gone. Therefore, the tests are now using `pyi_testmod_metapath1` from
+# `test_import_metapath1`, which implements a copy of `VendorImporter` used by earlier versions of `setuptools`.
+
+
 # Lazy loader test with aliased module - using original name
-@importorskip('pkg_resources._vendor.jaraco.text')
-def test_importlib_lazy_loader_alias1(pyi_builder):
+def test_importlib_lazy_loader_alias1(pyi_builder, script_dir):
     pyi_builder.test_script(
         'pyi_lazy_import.py',
-        app_args=['pkg_resources._vendor.jaraco.text'],
-        pyi_args=['--hiddenimport', 'pkg_resources'],
+        app_args=['pyi_testmod_metapath1._vendor.ccc.ddd'],
+        pyi_args=[
+            '--hiddenimport',
+            'pyi_testmod_metapath1',
+            '--additional-hooks-dir',
+            script_dir.join('pyi_hooks').strpath,
+        ],
     )
 
 
 # Lazy loader test with aliased module - using alias
-@importorskip('pkg_resources.extern.jaraco.text')
-def test_importlib_lazy_loader_alias2(pyi_builder):
+def test_importlib_lazy_loader_alias2(pyi_builder, script_dir):
     pyi_builder.test_script(
         'pyi_lazy_import.py',
-        app_args=['pkg_resources.extern.jaraco.text'],
-        pyi_args=['--hiddenimport', 'pkg_resources'],
+        app_args=['pyi_testmod_metapath1.extern.ccc.ddd'],
+        pyi_args=[
+            '--hiddenimport',
+            'pyi_testmod_metapath1',
+            '--additional-hooks-dir',
+            script_dir.join('pyi_hooks').strpath,
+        ],
     )
