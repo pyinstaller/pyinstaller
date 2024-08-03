@@ -1,0 +1,1 @@
+The ``-m`` shorthand for :option:`--manifest` will be removed in v7.0.
