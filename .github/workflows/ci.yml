@@ -290,7 +290,6 @@ jobs:
         with:
           update: true
           msystem: ${{matrix.sys}}
-          # mingw-w64-${{matrix.env}}-python-pefile seems unavailable for i686, so omit it here and install it via pip. Same as altgraph, which does not seem to be packaged.
           install: >-
             mingw-w64-${{matrix.env}}-gcc
             mingw-w64-${{matrix.env}}-python
@@ -304,8 +303,11 @@ jobs:
             mingw-w64-${{matrix.env}}-python-pytest-timeout
             mingw-w64-${{matrix.env}}-python-psutil
             mingw-w64-${{matrix.env}}-python-pywin32
-            mingw-w64-${{matrix.env}}-python-numpy
             mingw-w64-${{matrix.env}}-python-pillow
+
+      - if: matrix.env != 'i686'
+        # numpy and pefile are unavailable for i686. Ignore numpy and install pefile via pip
+        run: pacman -S --noconfirm mingw-w64-${{matrix.env}}-python-numpy mingw-w64-${{matrix.env}}-python-pefile
 
       - uses: actions/checkout@v4
 
