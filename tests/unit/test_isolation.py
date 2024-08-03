@@ -310,3 +310,33 @@ def test_subprocess_crash():
         isolated._parent.SubprocessDiedError, match=r"died calling crash\(\) with args=\(12,\) and kwargs=\{\}. .* -?9"
     ):
         isolated.call(crash, 12)
+
+
+# Nested isolated subprocesses are not supported; attempts to use PyInstaller.isolated from within an isolated
+# subprocess should end up reusing the already-existing isolated subprocess. This behavior allows various hook utility
+# functions to be transparently used in the same isolated subprocess instead of having them potentially spawn their
+# own subprocesses (each of those having to import package(s) again).
+def test_nested_isolation():
+    def isolated_function():
+        from PyInstaller import isolated
+        import os
+
+        # Get this process ID of this (isolated process)
+        pid = os.getpid()
+
+        @isolated.decorate
+        def isolated_subfunction():
+            import os
+            return os.getpid()
+
+        other_pid = isolated_subfunction()
+        return pid, other_pid
+
+    # Test the isolated.call invocation
+    pid, other_pid = isolated.call(isolated_function)
+    assert pid == other_pid, f"Did not reuse the same isolated process: {pid} vs. {other_pid}"
+
+    # Test the isolated.call invocation
+    with isolated.Python() as subprocess:
+        pid, other_pid = subprocess.call(isolated_function)
+    assert pid == other_pid, f"Did not reuse the same isolated process: {pid} vs. {other_pid}"

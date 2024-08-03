@@ -86,6 +86,10 @@ def run_next_command(read_fh, write_fh):
 
 
 if __name__ == '__main__':
+    # Mark this process as PyInstaller's isolated subprocess; this makes attempts at spawning further isolated
+    # subprocesses via `PyInstaller.isolated` from this process no-op.
+    sys._pyi_isolated_subprocess = True
+
     read_from_parent, write_to_parent = map(int, sys.argv[1:])
 
     with _open(read_from_parent, "rb") as read_fh:

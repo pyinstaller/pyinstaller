@@ -211,7 +211,14 @@ class Python:
         # default strict-mode setting.
         self._strict_mode = strict_mode if strict_mode is not None else compat.strict_collect_mode
 
+        # Check if we are already running in PyInstaller's isolated  subprocess, to prevent further nesting.
+        self._already_isolated = getattr(sys, '_pyi_isolated_subprocess', False)
+
     def __enter__(self):
+        # No-op if already running in an isolated subprocess.
+        if self._already_isolated:
+            return self
+
         # We need two pipes. One for the child to send data to the parent. The (write) end-point passed to the
         # child needs to be marked as inheritable.
         read_from_child, write_to_parent = create_pipe(False, True)
@@ -246,6 +253,10 @@ class Python:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # No-op if already running in an isolated subprocess.
+        if self._already_isolated:
+            return
+
         if exc_type and issubclass(exc_type, SubprocessDiedError):
             self._write_handle.close()
             self._read_handle.close()
@@ -293,6 +304,10 @@ class Python:
         Call a function in the child Python. Retrieve its return value. Usage of this method is identical to that
         of the :func:`call` function.
         """
+        # If already running in an isolated subprocess, directly execute the function.
+        if self._already_isolated:
+            return function(*args, **kwargs)
+
         if self._child is None:
             raise RuntimeError("An isolated.Python object must be used in a 'with' clause.")
 
