@@ -542,10 +542,15 @@ def __add_options(parser):
         help="Add a version resource from FILE to the exe.",
     )
     g.add_argument(
-        "-m",
         "--manifest",
         metavar="<FILE or XML>",
         help="Add manifest FILE or XML to the exe.",
+    )
+    g.add_argument(
+        "-m",
+        dest="shorthand_manifest",
+        metavar="<FILE or XML>",
+        help="Deprecated shorthand for --manifest.",
     )
     g.add_argument(
         "--no-embed-manifest",
@@ -756,6 +761,12 @@ def main(
         # We need to encapsulate it into apostrofes.
         bundle_identifier = "'%s'" % bundle_identifier
 
+    if _kwargs["shorthand_manifest"]:
+        manifest = _kwargs["shorthand_manifest"]
+        logger.log(
+            logging.DEPRECATION, "PyInstaller v7 will remove the -m shorthand flag. Please use --manifest=%s instead",
+            manifest
+        )
     if manifest:
         if "<" in manifest:
             # Assume XML string
