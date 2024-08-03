@@ -333,7 +333,7 @@ _MODULE_COLLECTION_MODES = {
 
 def _get_module_collection_mode(mode_dict, name, noarchive=False):
     """
-    Determine the module/package collection mode for the given module name, based on the provided collection
+    Determine the module collection mode for the given module name, based on the provided collection
     mode settings dictionary.
     """
     # Default mode: collect into PYZ, unless noarchive is enabled. In that case, collect as pyc.
@@ -848,7 +848,7 @@ class Analysis(Target):
         assert len(self.pure) == 0
         pure_pymodules_toc = self.graph.make_pure_toc()
 
-        # Merge package collection mode settings from .spec file. These are applied last, so they override the
+        # Merge module collection mode settings from .spec file. These are applied last, so they override the
         # settings previously applied by hooks.
         self.graph._module_collection_mode.update(self.module_collection_mode)
         logger.debug("Module collection settings: %r", self.graph._module_collection_mode)

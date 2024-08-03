@@ -93,7 +93,7 @@ class PyiModuleGraph(ModuleGraph):
     _additional_files_cache : AdditionalFilesCache
         Cache of all external dependencies (e.g., binaries, datas) listed in hook scripts for imported modules.
     _module_collection_mode : dict
-        A dictionary of module/package collection mode settings set by hook scripts for their modules.
+        A dictionary of module collection mode settings set by hook scripts for their modules.
     _bindepend_symlink_suppression : set
         A set of paths or path patterns corresponding to shared libraries for which binary dependency analysis should
         not create symbolic links into top-level application directory.
@@ -346,7 +346,7 @@ class PyiModuleGraph(ModuleGraph):
                 # dependencies.
                 self._additional_files_cache.add(module_name, module_hook.binaries, module_hook.datas)
 
-                # Update package collection mode settings.
+                # Update module collection mode settings.
                 self._module_collection_mode.update(module_hook.module_collection_mode)
 
                 # Update symbolic link suppression patterns for binary dependency analysis.
