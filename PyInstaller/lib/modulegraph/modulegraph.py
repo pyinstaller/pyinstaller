@@ -513,10 +513,6 @@ class Node:
         return '%s%r' % (type(self).__name__, self.infoTuple())
 
 
-# TODO: This indirection is, frankly, unnecessary. The
-# ModuleGraph.alias_module() should directly add the desired AliasNode instance
-# to the graph rather than indirectly adding an Alias instance to the
-# "lazynodes" dictionary.
 class Alias(str):
     """
     Placeholder aliasing an existing source module to a non-existent target
