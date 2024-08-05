@@ -10,7 +10,9 @@
 #-----------------------------------------------------------------------------
 
 from PyInstaller.compat import is_darwin, is_unix
-from PyInstaller.utils.hooks import collect_submodules, check_requirement
+from PyInstaller.utils.hooks.setuptools import setuptools_info
+
+datas = []
 
 hiddenimports = [
     # Test case import/test_zipimport2 fails during importing pkg_resources or setuptools when module not present.
@@ -22,20 +24,40 @@ hiddenimports = [
 if is_unix or is_darwin:
     hiddenimports.append('syslog')
 
+# Prevent the following modules from being collected solely due to reference from anywhere within setuptools (or
+# its vendored dependencies).
+excludedimports = [
+    'pytest',
+    'unittest',
+    'numpy',  # originally from hook-setuptools.msvc
+    'docutils',  # originally from hool-setuptools._distutils.command.check
+]
+
 # setuptools >= 39.0.0 is "vendoring" its own direct dependencies from "_vendor" to "extern". This also requires
 # 'pre_safe_import_module/hook-setuptools.extern.six.moves.py' to make the moves defined in 'setuptools._vendor.six'
 # importable under 'setuptools.extern.six'.
-_excluded_submodules = (
-    # Prevent recursing into setuptools._vendor.pyparsing.diagram, which typically fails to be imported due to
-    # missing dependencies (railroad, pyparsing (?), jinja2) and generates a warning... As the module is usually
-    # unimportable, it is likely not to be used by setuptools.
-    'setuptools._vendor.pyparsing.diagram',
-)
-hiddenimports.extend(collect_submodules('setuptools._vendor', filter=lambda name: name not in _excluded_submodules))
+#
+# With setuptools 71.0.0, the vendored packages are exposed to the outside world by `setuptools._vendor` location being
+# appended to `sys.path`, and the `VendorImporter` is gone (i.e., no more mapping to `setuptools.extern`). Since the
+# vendored dependencies are now exposed as top-level modules (provided upstream versions are not available, as they
+# would take precedence due to `sys.path` ordering), we need pre-safe-import-module hooks that detect when only vendored
+# version is available, and add aliases to prevent duplicated collection. For list of vendored packages for which we
+# need such pre-safe-import-module hooks, see the code in `PyInstaller.utils.hooks.setuptools`.
+#
+# The list of submodules from `setuptools._vendor` is now available in `setuptools_info.vendored_modules` (and covers
+# all setuptools versions).
+hiddenimports += setuptools_info.vendored_modules
+
+# With setuptools >= 71.0.0, we also need to ensure that metadata of vendored packages as well as their data files are
+# collected. The list of corresponding data files is kept in `setuptools_info.vendored_data`. On earlier setuptools
+# versions, the list is empty.
+datas += setuptools_info.vendored_data
 
 # As of setuptools >= 60.0, we need to collect the vendored version of distutils via hiddenimports. The corresponding
 # pyi_rth_setuptools runtime hook ensures that the _distutils_hack is installed at the program startup, which allows
 # setuptools to override the stdlib distutils with its vendored version, if necessary.
-if check_requirement("setuptools >= 60.0"):
-    hiddenimports += ["_distutils_hack"]
-    hiddenimports += collect_submodules("setuptools._distutils")
+#
+# The list of submodules from `setuptools._distutils` (plus `_distutils_hack˙) is kept in
+# `setuptools_info.distutils_modules˙.
+if setuptools_info.distutils_vendored:
+    hiddenimports += setuptools_info.distutils_modules
