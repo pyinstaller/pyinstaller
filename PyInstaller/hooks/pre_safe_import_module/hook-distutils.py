@@ -10,26 +10,14 @@
 #-----------------------------------------------------------------------------
 
 from PyInstaller import compat
-from PyInstaller.utils import hooks as hookutils
+from PyInstaller.utils.hooks.setuptools import setuptools_info
 
 
 def pre_safe_import_module(api):
     # `distutils` was removed from from stdlib in python 3.12; if it is available, it is provided by `setuptools`.
-    # Therefore, we need to mark it as a run-time package - this ensures that even though modulegraph cannot find the
-    # module, it will call the standard hook nevertheless, and the standard hook will trigger the collection of
-    # `setuptools`, which in turn will make `distutils` available at the run-time.
-    #
-    # Unfortunately, making the package a run-time package also means that we need to mark all its submodules and
-    # subpackages as run-time ones as well...
-    if compat.is_py312:
-        distutils_submodules = hookutils.collect_submodules('setuptools._distutils')
-
-        # Known package names - so we can avoid calling hooksutils.is_package() for every entry...
-        PACKAGES = {'distutils', 'distutils.command'}
-
-        for module_name in distutils_submodules:
-            mapped_name = module_name.replace('setuptools._distutils', 'distutils')
-            if mapped_name in PACKAGES:
-                api.add_runtime_package(mapped_name)
-            else:
-                api.add_runtime_module(mapped_name)
+    # Therefore, we need to create package/module alias entries, which prevent the setuptools._distutils` and its
+    # submodules from being collected as top-level modules (as `distutils` and its submodules) in addition to being
+    # collected as their "true" names.
+    if compat.is_py312 and setuptools_info.distutils_vendored:
+        for aliased_name, real_vendored_name in setuptools_info.get_distutils_aliases():
+            api.add_alias_module(real_vendored_name, aliased_name)

@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks import check_requirement
+from PyInstaller.utils.hooks.setuptools import setuptools_info
 
 hiddenimports = []
 
@@ -29,5 +29,5 @@ except AttributeError:
 # anyway), so check if we are using that version. While the distutils override behavior can be controleld via the
 # ``SETUPTOOLS_USE_DISTUTILS`` environment variable, the latter may have a different value during the build and at the
 # runtime, and so we need to ensure that both stdlib and setuptools variant of distutils are collected.
-if check_requirement("setuptools >= 60.0"):
+if setuptools_info.available and setuptools_info.version >= (60, 0):
     hiddenimports += ['setuptools._distutils']
