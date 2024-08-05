@@ -468,11 +468,16 @@ def is_package(module_name: str):
         Determines whether the given name represents a package or not. If the name represents a top-level module or
         a package, it is not imported. If the name represents a sub-module or a sub-package, its parent is imported.
         In such cases, this function should be called from an isolated suprocess.
+
+        NOTE: the fallback check for `__init__.py` is there because `_distutils_hack.DistutilsMetaFinder` from
+        `setuptools` does not set spec.submodule_search_locations for `distutils` / `setuptools._distutils` even though
+        it is a package. The alternative would be to always perform full import, and check for the `__path__` attribute,
+        but that would also always require full isolation.
         """
         try:
             import importlib.util
             spec = importlib.util.find_spec(module_name)
-            return bool(spec.submodule_search_locations)
+            return bool(spec.submodule_search_locations) or spec.origin.endswith('__init__.py')
         except Exception:
             return False
 
