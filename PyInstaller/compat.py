@@ -639,7 +639,9 @@ PURE_PYTHON_MODULE_TYPES = {
 # Object types of special Python modules (built-in, run-time, namespace package) in modulegraph dependency graph that do
 # not have code object.
 SPECIAL_MODULE_TYPES = {
-    'AliasNode',
+    # Omit AliasNode from here (and consequently from VALID_MODULE_TYPES), in order to prevent PyiModuleGraph from
+    # running standard hooks for aliased modules.
+    #'AliasNode',
     'BuiltinModule',
     'RuntimeModule',
     'RuntimePackage',
