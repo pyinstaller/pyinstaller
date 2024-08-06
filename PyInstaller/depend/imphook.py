@@ -377,8 +377,8 @@ class ModuleHook:
 
         # Load and execute the hook script. Even if mechanisms from the import machinery are used, this does not import
         # the hook as the module.
-        head, tail = os.path.split(self.hook_filename)
-        logger.info('Loading module hook %r from %r...', tail, head)
+        hook_path, hook_basename = os.path.split(self.hook_filename)
+        logger.info('Processing standard module hook %r from %r', hook_basename, hook_path)
         try:
             self._hook_module = importlib_load_source(self.hook_module_name, self.hook_filename)
         except ImportError:

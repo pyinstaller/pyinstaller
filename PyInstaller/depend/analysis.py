@@ -301,7 +301,7 @@ class PyiModuleGraph(ModuleGraph):
         # 2. All cached hooks whose hook() functions were called are removed from this cache. If this cache is empty, no
         #    hook() functions will be called by the next iteration and this loop will be terminated.
         # 3. If no hook() functions were called, this loop is terminated.
-        logger.info('Processing module hooks...')
+        logger.info('Processing module hooks (post-graph stage)...')
         while True:
             # Set of the names of all imported modules whose post-graph hooks are run by this iteration, preventing the
             # next iteration from re- running these hooks. If still empty at the end of this iteration, no post-graph
@@ -473,7 +473,8 @@ class PyiModuleGraph(ModuleGraph):
             # For the absolute path of each such hook...
             for hook in self._hooks_pre_safe_import_module[module_name]:
                 # Dynamically import this hook as a fabricated module.
-                logger.info('Processing pre-safe import module hook %s from %r.', module_name, hook.hook_filename)
+                hook_path, hook_basename = os.path.split(hook.hook_filename)
+                logger.info('Processing pre-safe-import-module hook %r from %r', hook_basename, hook_path)
                 hook_module_name = 'PyInstaller_hooks_pre_safe_import_module_' + module_name.replace('.', '_')
                 hook_module = importlib_load_source(hook_module_name, hook.hook_filename)
 
@@ -516,7 +517,8 @@ class PyiModuleGraph(ModuleGraph):
             # For the absolute path of each such hook...
             for hook in self._hooks_pre_find_module_path[fullname]:
                 # Dynamically import this hook as a fabricated module.
-                logger.info('Processing pre-find module path hook %s from %r.', fullname, hook.hook_filename)
+                hook_path, hook_basename = os.path.split(hook.hook_filename)
+                logger.info('Processing pre-find-module-path hook %r from %r', hook_basename, hook_path)
                 hook_fullname = 'PyInstaller_hooks_pre_find_module_path_' + fullname.replace('.', '_')
                 hook_module = importlib_load_source(hook_fullname, hook.hook_filename)
 
@@ -721,7 +723,8 @@ class PyiModuleGraph(ModuleGraph):
             if mod_name in self._available_rthooks:
                 # There could be several run-time hooks for a module.
                 for abs_path in self._available_rthooks[mod_name]:
-                    logger.info("Including run-time hook %r", abs_path)
+                    hook_path, hook_basename = os.path.split(abs_path)
+                    logger.info("Including run-time hook %r from %r", hook_basename, hook_path)
                     rthooks_nodes.append(self.add_script(abs_path))
 
         return rthooks_nodes
