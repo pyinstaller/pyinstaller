@@ -378,15 +378,17 @@ class PyiFrozenImporter:
         exec(bytecode, module.__dict__)
 
     # The following method is part of legacy PEP302 loader interface. It has been deprecated since python 3.4, and
-    # removed in python 3.12.  Provide compatibility shims to accommodate code that might still be using them.
-    if sys.version_info[:2] < (3, 12):
+    # slated for removal in python 3.12, although that has not happened yet. Provide compatibility shim to accommodate
+    # code that might still be using it.
+    if True:
 
         def load_module(self, fullname):
             """
             A legacy method for loading a module. If the module cannot be loaded, ImportError is raised, otherwise the
             loaded module is returned.
 
-            Deprecated since python 3.4, removed in 3.12.
+            Deprecated since python 3.4, slated for removal in 3.12 (but still present in python's own FileLoader in
+            both v3.12.4 and v3.13.0rc1).
             """
             # Based on:
             # https://github.com/python/cpython/blob/v3.11.9/Lib/importlib/_bootstrap_external.py#L942-L945
