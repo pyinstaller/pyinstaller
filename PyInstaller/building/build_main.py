@@ -936,10 +936,19 @@ class Analysis(Target):
             for dest_name, src_name, typecode in self.binaries:
                 if typecode not in {'BINARY', 'EXTENSION'}:
                     continue  # Skip symbolic links
+
                 src_lib_path = pathlib.Path(src_name)
+
+                # Check for .name.hmac file next to the shared library.
                 src_hmac_path = src_lib_path.with_name(f".{src_lib_path.name}.hmac")
                 if src_hmac_path.is_file():
                     dest_hmac_path = pathlib.PurePath(dest_name).with_name(src_hmac_path.name)
+                    self.datas.append((str(dest_hmac_path), str(src_hmac_path), 'DATA'))
+
+                # Alternatively, check the fipscheck directory: fipscheck/name.hmac
+                src_hmac_path = src_lib_path.parent / "fipscheck" / f"{src_lib_path.name}.hmac"
+                if src_hmac_path.is_file():
+                    dest_hmac_path = pathlib.PurePath("fipscheck") / src_hmac_path.name
                     self.datas.append((str(dest_hmac_path), str(src_hmac_path), 'DATA'))
 
                 # Similarly, look for .chk files that are used by NSS libraries.
