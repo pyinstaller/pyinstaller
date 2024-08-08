@@ -41,7 +41,7 @@ but is not tested against them as part of the continuous integration tests.
 Main Advantages
 ---------------
 
-- Works out-of-the-box with any Python version 3.8-3.12.
+- Works out-of-the-box with any Python version 3.8-3.13.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
 - Correctly bundles the major Python packages such as numpy, PyQt5,
@@ -66,9 +66,9 @@ Requirements and Tested Platforms
 ---------------------------------
 
 - Python:
-    - 3.8-3.12. Note that Python 3.10.0 contains a bug making it unsupportable by
+    - 3.8-3.13. Note that Python 3.10.0 contains a bug making it unsupportable by
       PyInstaller. PyInstaller will also not work with beta releases of Python
-      3.13.
+      3.14.
 - Windows (32bit/64bit/ARM64):
     - PyInstaller should work on Windows 7 or newer, but we only officially support Windows 8+.
     - Support for Python installed from the Windows store without using virtual
