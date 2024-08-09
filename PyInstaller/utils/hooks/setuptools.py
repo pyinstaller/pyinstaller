@@ -162,11 +162,11 @@ class SetuptoolsInfo:
 
     # Delay initialization of setuptools information until until the corresponding attributes are first requested.
     def __getattr__(self, name):
-        if 'version' in self.__dict__:
+        if 'available' in self.__dict__:
             # Initialization was already done, but requested attribute is not available.
             raise AttributeError(name)
 
-        # Load Qt library info...
+        # Load setuptools info...
         self._load_setuptools_info()
         # ... and return the requested attribute
         return getattr(self, name)
@@ -192,7 +192,7 @@ class SetuptoolsInfo:
 
         # If package could not be imported, `_retrieve_setuptools_info` returns None. In such cases, emit a debug
         # message instead of a warning, because this initialization might be triggered by a helper function that is
-        # trying to determine availability of `setuptools` by inspecting the `version` attribute.
+        # trying to determine availability of `setuptools` by inspecting the `available` attribute.
         if setuptools_info is None:
             logger.debug("%s: failed to obtain setuptools info: setuptools could not be imported.", self)
             return
