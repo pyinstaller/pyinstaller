@@ -63,9 +63,16 @@ def _get_tcl_tk_info():
 
 
 class TclTkInfo:
-    # Root directory names of Tcl and Tk library/data directories in the frozen application
-    TK_ROOTNAME = 'tk'
-    TCL_ROOTNAME = 'tcl'
+    # Root directory names of Tcl and Tk library/data directories in the frozen application. These directories are
+    # originally fully versioned (e.g., tcl8.6 and tk8.6); we want to remap them to unversioned variants, so that our
+    # run-time hook (pyi_rthook__tkinter.py) does not have to determine version numbers when setting `TCL_LIBRARY`
+    # and `TK_LIBRARY` environment variables.
+    #
+    # We also cannot use plain "tk" and "tcl", because on macOS, the Tcl and Tk shared libraries might come from
+    # framework bundles, and would therefore end up being collected as "Tcl" and "Tk" in the top-level application
+    # directory, causing clash due to filesystem being case-insensitive by default.
+    TCL_ROOTNAME = '_tcl_data'
+    TK_ROOTNAME = '_tk_data'
 
     def __init__(self):
         pass
@@ -162,10 +169,8 @@ class TclTkInfo:
         if self.is_macos_system_framework:
             logger.info("%s: using macOS system Tcl/Tk framework - not collecting data files.", self)
         else:
-            # Collect Tcl and Tk scripts from their corresponding library/data directories. In contrast to source
-            # directories, which are typically versioned (tcl8.6, tk8.6), the target directories are unversioned
-            # (tcl, tk); they are added to the Tcl/Tk search path via runtime hook for _tkinter, which sets the
-            # `TCL_LIBRARY` and `TK_LIBRARY` environment # variables.
+            # Collect Tcl and Tk scripts from their corresponding library/data directories. See comment at the
+            # definition of TK_ROOTNAME and TK_ROOTNAME variables.
             if os.path.isdir(self.tcl_data_dir):
                 self.data_files += self._collect_files_from_directory(
                     self.tcl_data_dir,
