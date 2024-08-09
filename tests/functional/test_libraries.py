@@ -47,6 +47,78 @@ def test_tkinter(pyi_builder):
     pyi_builder.test_script('pyi_lib_tkinter.py')
 
 
+# In contrast to test_tkinter, which performs basic import test and verifies that the environment variables are properly
+# set, this is a full functional test; we try to create a Tk window with label and button, and register a timer to shut
+# down the application. Doing so verifies that all Tcl/Tk files (e.g., .tcl scripts from library directories) are
+# properly collected.
+#
+# The prerequisite for this test is that tkinter can be used unfrozen, so try instantiating a window in a subprocess
+# to verify that this is the case. This check should cover the following scenarios:
+#  - tkinter missing
+#  - import of tkinter crashes python interpreter
+#  - tkinter.Tk() fails due to DISPLAY not being set on linux
+#  - tkinter.Tk() fails due to faulty build (e.g., due to Tcl/Tk version mix-up, as seen with python <= 3.10 builds on
+#    macos-12 GHA runners; https://github.com/actions/setup-python/issues/649#issuecomment-1745056485)
+def _tkinter_fully_usable():
+    from PyInstaller import isolated
+
+    @isolated.decorate
+    def _create_tkinter_window():
+        import tkinter
+        tkinter.Tk()
+
+    try:
+        _create_tkinter_window()
+    except Exception:
+        return False
+
+    return True
+
+
+def test_tkinter_functional(pyi_builder):
+    if not _tkinter_fully_usable():
+        pytest.skip("tkinter is not fully usable.")
+
+    pyi_builder.test_source(
+        """
+        import tkinter
+        import tkinter.messagebox
+
+        root = tkinter.Tk()
+
+        # Dump information about library/data directory.
+        tcl_dir = root.tk.exprstring('$tcl_library')
+        print(f"Run-time Tcl library/data directory: {tcl_dir}")
+
+        tk_dir = root.tk.exprstring('$tk_library')
+        print(f"Run-time Tk library/data directory: {tk_dir}")
+
+        # Create test GUI
+        label = tkinter.Label(root, text="Hello World")
+        label.pack()
+
+        def test_button_callback():
+            tkinter.messagebox.showinfo("Test", "Test message")
+
+        button = tkinter.Button(root, text="Test button", command=test_button_callback)
+        button.pack()
+
+        def shutdown_timer_callback():
+            print("Shutting down!")
+            root.destroy()
+
+        shutdown_interval = 1000  # ms
+        print(f"Starting shutdown timer ({shutdown_interval} ms)...")
+        root.after(shutdown_interval, shutdown_timer_callback)
+
+        print("Entering main loop...")
+        root.mainloop()
+
+        print("Done!")
+    """
+    )
+
+
 def test_pkg_resource_res_string(pyi_builder, monkeypatch):
     # Include some data files for testing pkg_resources module.
     datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')), 'pkg3'))
