@@ -14,8 +14,9 @@ def _pyi_rthook():
     import os
     import sys
 
-    tcldir = os.path.join(sys._MEIPASS, 'tcl')
-    tkdir = os.path.join(sys._MEIPASS, 'tk')
+    # The directory names must match TCL_ROOTNAME and TK_ROOTNAME constants defined in `PyInstaller.utils.hooks.tcl_tk`.
+    tcldir = os.path.join(sys._MEIPASS, '_tcl_data')
+    tkdir = os.path.join(sys._MEIPASS, '_tk_data')
 
     # Notify "tkinter" of data directories. On macOS, we do not collect data directories if system Tcl/Tk framework is
     # used. On other OSes, we always collect them, so their absence is considered an error.

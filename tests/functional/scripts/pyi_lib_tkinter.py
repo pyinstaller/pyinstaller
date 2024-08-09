@@ -44,13 +44,13 @@ def compare(test_name, expect, frozen):
 # Tcl scripts directory
 tcl_dir = os.environ.get('TCL_LIBRARY')
 if tcl_dir:
-    compare('Tcl', os.path.join(sys.prefix, 'tcl'), tcl_dir)
+    compare('Tcl', os.path.join(sys.prefix, '_tcl_data'), tcl_dir)
 elif sys.platform != 'darwin':
     raise SystemExit("TCL_LIBRARY environment variable is not set!")
 
 # Tk scripts directory
 tk_dir = os.environ.get('TK_LIBRARY')
 if tk_dir:
-    compare('Tk', os.path.join(sys.prefix, 'tk'), tk_dir)
+    compare('Tk', os.path.join(sys.prefix, '_tk_data'), tk_dir)
 elif sys.platform != 'darwin':
     raise SystemExit("TK_LIBRARY environment variable is not set!")
