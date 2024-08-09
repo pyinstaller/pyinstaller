@@ -220,7 +220,6 @@ def remove_file_extension(filename: str):
     return os.path.splitext(filename)[0]
 
 
-@isolated.decorate
 def can_import_module(module_name: str):
     """
     Check if the specified module can be imported.
@@ -238,10 +237,20 @@ def can_import_module(module_name: str):
     bool
         Boolean indicating whether the module can be imported or not.
     """
+
+    # Run the check in isolated sub-process, so we can gracefully handle cases when importing the module ends up
+    # crashing python interpreter.
+    @isolated.decorate
+    def _can_import_module(module_name):
+        try:
+            __import__(module_name)
+            return True
+        except Exception:
+            return False
+
     try:
-        __import__(module_name)
-        return True
-    except Exception:
+        return _can_import_module(module_name)
+    except isolated.SubprocessDiedError:
         return False
 
 
