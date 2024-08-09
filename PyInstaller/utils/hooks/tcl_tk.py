@@ -10,41 +10,39 @@
 #-----------------------------------------------------------------------------
 
 import os
+import fnmatch
 
 from PyInstaller import compat
 from PyInstaller import isolated
 from PyInstaller import log as logging
-from PyInstaller.building.datastruct import Tree
 from PyInstaller.depend import bindepend
 
 logger = logging.getLogger(__name__)
-
-TK_ROOTNAME = 'tk'
-TCL_ROOTNAME = 'tcl'
 
 
 @isolated.decorate
 def _get_tcl_tk_info():
     """
     Isolated-subprocess helper to retrieve the basic Tcl/Tk information:
-     - tcl_dir = path to the Tcl library/data directory.
+     - tkinter_extension_file = the value of __file__ attribute of the _tkinter binary extension (path to file).
+     - tcl_data_dir = path to the Tcl library/data directory.
      - tcl_version = Tcl version
      - tk_version = Tk version
      - tcl_theaded = boolean indicating whether Tcl/Tk is built with multi-threading support.
     """
     try:
         import tkinter
-        from _tkinter import TCL_VERSION, TK_VERSION
+        import _tkinter
     except ImportError:
         # tkinter unavailable
-        return None, None, None, False
+        return None
     try:
         tcl = tkinter.Tcl()
     except tkinter.TclError:  # e.g. "Can't find a usable init.tcl in the following directories: ..."
-        return None, None, None, False
+        return None
 
     # Query the location of Tcl library/data directory.
-    tcl_dir = tcl.eval("info library")
+    tcl_data_dir = tcl.eval("info library")
 
     # Check if Tcl/Tk is built with multi-threaded support (built with --enable-threads), as indicated by the presence
     # of optional `threaded` member in `tcl_platform` array.
@@ -54,222 +52,256 @@ def _get_tcl_tk_info():
     except tkinter.TclError:
         tcl_threaded = False
 
-    return tcl_dir, TCL_VERSION, TK_VERSION, tcl_threaded
+    return {
+        "available": True,
+        "tkinter_extension_file": _tkinter.__file__,
+        "tcl_version": _tkinter.TCL_VERSION,
+        "tk_version": _tkinter.TK_VERSION,
+        "tcl_threaded": tcl_threaded,
+        "tcl_data_dir": tcl_data_dir,
+    }
 
 
-# Populate the variables. If `tkinter` is unavailable, the values are set to `None` or `False`.
-(
-    tcl_dir,
-    tcl_version,
-    tk_version,
-    tcl_threaded,
-) = _get_tcl_tk_info()
+class TclTkInfo:
+    # Root directory names of Tcl and Tk library/data directories in the frozen application
+    TK_ROOTNAME = 'tk'
+    TCL_ROOTNAME = 'tcl'
 
-
-def _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree):
-    """
-    If the current Tcl installation is a Teapot-distributed version of ActiveTcl *and* the current platform is macOS,
-    log a non-fatal warning that the resulting executable will (probably) fail to run on non-host systems.
-
-    PyInstaller does *not* freeze all ActiveTcl dependencies -- including Teapot, which is typically ignorable. Since
-    Teapot is *not* ignorable in this case, this function warns of impending failure.
-
-    See Also
-    -------
-    https://github.com/pyinstaller/pyinstaller/issues/621
-    """
-    import macholib.util
-
-    # System libraries do not experience this problem.
-    if macholib.util.in_system_path(tcl_root):
-        return
-
-    # Absolute path of the "init.tcl" script.
-    try:
-        init_resource = [r[1] for r in tcltree if r[1].endswith('init.tcl')][0]
-    except IndexError:
-        # If such script could not be found, silently return.
-        return
-
-    mentions_activetcl = False
-    mentions_teapot = False
-    # TCL/TK reads files using the system encoding:
-    # https://www.tcl.tk/doc/howto/i18n.html#system_encoding
-    # On macOS, system encoding is UTF-8
-    with open(init_resource, 'r', encoding='utf8') as init_file:
-        for line in init_file.readlines():
-            line = line.strip().lower()
-            if line.startswith('#'):
-                continue
-            if 'activetcl' in line:
-                mentions_activetcl = True
-            if 'teapot' in line:
-                mentions_teapot = True
-            if mentions_activetcl and mentions_teapot:
-                break
-
-    if mentions_activetcl and mentions_teapot:
-        logger.warning(
-            """
-You appear to be using an ActiveTcl build of Tcl/Tk, which PyInstaller has
-difficulty freezing. To fix this, comment out all references to "teapot" in:
-
-     %s
-
-See https://github.com/pyinstaller/pyinstaller/issues/621 for more information.
-            """ % init_resource
-        )
-
-
-def find_tcl_tk_shared_libs(tkinter_ext_file):
-    """
-    Find Tcl and Tk shared libraries against which the _tkinter module is linked.
-
-    Returns
-    -------
-    list
-        list containing two tuples, one for Tcl and one for Tk library, where each tuple contains the library name and
-        its full path, i.e., [(tcl_lib, tcl_libpath), (tk_lib, tk_libpath)]. If a library is not found, the
-        corresponding tuple elements are set to None.
-    """
-    tcl_lib = None
-    tcl_libpath = None
-    tk_lib = None
-    tk_libpath = None
-
-    for _, lib_path in bindepend.get_imports(tkinter_ext_file):  # (name, fullpath) tuple
-        if lib_path is None:
-            continue  # Skip unresolved entries
-
-        # For comparison, take basename of lib_path. On macOS, lib_name returned by get_imports is in fact referenced
-        # name, which is not necessarily just a basename.
-        lib_name = os.path.basename(lib_path)
-        lib_name_lower = lib_name.lower()  # lower-case for comparisons
-
-        if 'tcl' in lib_name_lower:
-            tcl_lib = lib_name
-            tcl_libpath = lib_path
-        elif 'tk' in lib_name_lower:
-            tk_lib = lib_name
-            tk_libpath = lib_path
-
-    return [(tcl_lib, tcl_libpath), (tk_lib, tk_libpath)]
-
-
-def _find_tcl_tk(tkinter_ext_file):
-    """
-    Get a platform-specific 2-tuple of the absolute paths of the top-level external data directories for both
-    Tcl and Tk, respectively.
-
-    Returns
-    -------
-    list
-        2-tuple that contains the values of `${TCL_LIBRARY}` and `${TK_LIBRARY}`, respectively.
-    """
-    if compat.is_darwin:
-        # On macOS, _tkinter extension is linked either against the system Tcl/Tk framework (older homebrew python,
-        # python3 from XCode tools) or against bundled Tcl/Tk library (recent python.org builds, recent homebrew
-        # python with python-tk). PyInstaller does not bundle data from system frameworks (as it does not not collect
-        # shared libraries from them, either), so we need to determine what kind of Tcl/Tk we are dealing with.
-        libs = find_tcl_tk_shared_libs(tkinter_ext_file)
-
-        # Check the full path to the Tcl library.
-        path_to_tcl = libs[0][1]
-
-        # Starting with macOS 11, system libraries are hidden (unless both Python and PyInstaller's bootloader are built
-        # against MacOS 11.x SDK). Therefore, libs may end up empty; but that implicitly indicates that the system
-        # framework is used, so return (None, None) to inform the caller.
-        if path_to_tcl is None:
-            return None, None
-
-        # Check if the path corresponds to the system framework, i.e., [/System]/Library/Frameworks/Tcl.framework/Tcl
-        if 'Library/Frameworks/Tcl.framework' in path_to_tcl:
-            return None, None  # Do not collect system framework's data.
-
-        # Bundled copy of Tcl/Tk; in this case, the dynamic library is
-        # /Library/Frameworks/Python.framework/Versions/3.x/lib/libtcl8.6.dylib
-        # and the data directories have standard layout that is handled by code below.
-    else:
-        # On Windows and linux, data directories have standard layout that is handled by code below.
+    def __init__(self):
         pass
 
-    # The Tcl library location is already stored in `tcl_dir` global variable. The Tk library is in the same prefix, so
-    # construct the path using `tk_version` global variable.
-    tk_dir = os.path.join(os.path.dirname(tcl_dir), f"tk{tk_version}")
-    return tcl_dir, tk_dir
+    def __repr__(self):
+        return "TclTkInfo"
 
+    # Delay initialization of Tcl/Tk information until until the corresponding attributes are first requested.
+    def __getattr__(self, name):
+        if 'available' in self.__dict__:
+            # Initialization was already done, but requested attribute is not available.
+            raise AttributeError(name)
 
-def _collect_tcl_modules(tcl_root):
-    """
-    Get a list of TOC-style 3-tuples describing Tcl modules. The modules directory is separate from the library/data
-    one, and is located at $tcl_root/../tclX, where X is the major Tcl version.
+        # Load Qt library info...
+        self._load_tcl_tk_info()
+        # ... and return the requested attribute
+        return getattr(self, name)
 
-    Returns
-    -------
-    Tree
-        Such list, if the modules directory exists.
-    """
+    def _load_tcl_tk_info(self):
+        logger.info("%s: initializing cached Tcl/Tk info...", self)
 
-    # Obtain Tcl major version.
-    tcl_major_version = tcl_version.split('.')[0]
+        # Initialize variables so that they might be accessed even if tkinter/Tcl/Tk is unavailable or if initialization
+        # fails for some reason.
+        self.available = False
+        self.tkinter_extension_file = None
+        self.tcl_version = None
+        self.tk_version = None
+        self.tcl_threaded = False
+        self.tcl_data_dir = None
 
-    modules_dirname = f"tcl{tcl_major_version}"
-    modules_path = os.path.join(tcl_root, '..', modules_dirname)
+        self.tk_data_dir = None
+        self.tcl_module_dir = None
 
-    if not os.path.isdir(modules_path):
-        logger.warning('Tcl modules directory %s does not exist.', modules_path)
-        return []
+        self.is_macos_system_framework = False
+        self.tcl_shared_library = (None, None)
+        self.tk_shared_library = (None, None)
 
-    return Tree(modules_path, prefix=modules_dirname)
+        self.data_files = []
 
+        try:
+            tcl_tk_info = _get_tcl_tk_info()
+        except Exception as e:
+            logger.warning("%s: failed to obtain Tcl/Tk info: %s", self, e)
+            return
 
-def collect_tcl_tk_files(tkinter_ext_file):
-    """
-    Get a list of TOC-style 3-tuples describing all external Tcl/Tk data files.
+        # If tkinter could not be imported, `_get_tcl_tk_info` returns None. In such cases, emit a debug message instead
+        # of a warning, because this initialization might be triggered by a helper function that is trying to determine
+        # availability of `tkinter` by inspecting the `available` attribute.
+        if tcl_tk_info is None:
+            logger.debug("%s: failed to obtain Tcl/Tk info: tkinter/_tkinter could not be imported.", self)
+            return
 
-    Returns
-    -------
-    Tree
-        Such list.
-    """
-    # Find Tcl and Tk data directory by analyzing the _tkinter extension.
-    tcl_root, tk_root = _find_tcl_tk(tkinter_ext_file)
+        # Copy properties
+        for key, value in tcl_tk_info.items():
+            setattr(self, key, value)
 
-    # On macOS, we do not collect system libraries. Therefore, if system Tcl/Tk framework is used, it makes no sense to
-    # collect its data, either. In this case, _find_tcl_tk() will return None, None - either deliberately (we found the
-    # data paths, but ignore them) or not (starting with macOS 11, the data path cannot be found until shared library
-    # discovery is fixed).
-    if compat.is_darwin and not tcl_root and not tk_root:
-        logger.info(
-            "Not collecting Tcl/Tk data - either python is using macOS\' system Tcl/Tk framework, or Tcl/Tk data "
-            "directories could not be found."
+        # Parse Tcl/Tk version into (major, minor) tuple.
+        self.tcl_version = tuple((int(x) for x in self.tcl_version.split(".")[:2]))
+        self.tk_version = tuple((int(x) for x in self.tk_version.split(".")[:2]))
+
+        # Infer location of Tk library/data directory: $tcl_root/../tkX.Y, where X and Y are Tk major and minor version.
+        self.tk_data_dir = os.path.join(
+            os.path.dirname(self.tcl_data_dir),
+            f"tk{self.tk_version[0]}.{self.tk_version[1]}",
         )
-        return []
 
-    # TODO Shouldn't these be fatal exceptions?
-    if not tcl_root:
-        logger.error('Tcl/Tk improperly installed on this system.')
-        return []
-    if not os.path.isdir(tcl_root):
-        logger.error('Tcl data directory "%s" not found.', tcl_root)
-        return []
-    if not os.path.isdir(tk_root):
-        logger.error('Tk data directory "%s" not found.', tk_root)
-        return []
+        # Infer location of Tcl module directory. The modules directory is separate from the library/data one, and
+        # is located at $tcl_root/../tclX, where X is the major Tcl version.
+        self.tcl_module_dir = os.path.join(
+            os.path.dirname(self.tcl_data_dir),
+            f"tcl{self.tcl_version[0]}",
+        )
 
-    # Collect Tcl and Tk scripts from their corresponding library/data directories. In contrast to source directories,
-    # which are typically versioned (tcl8.6, tk8.6), the target directories are unversioned (tcl, tk); they are added
-    # to the Tcl/Tk search path via runtime hook for _tkinter, which sets the `TCL_LIBRARY` and `TK_LIBRARY` environment
-    # variables.
-    tcltree = Tree(tcl_root, prefix=TCL_ROOTNAME, excludes=['demos', '*.lib', 'tclConfig.sh'])
-    tktree = Tree(tk_root, prefix=TK_ROOTNAME, excludes=['demos', '*.lib', 'tkConfig.sh'])
+        # Determine full path to Tcl and Tk shared libraries against which the _tkinter extension module is linked.
+        try:
+            (
+                self.tcl_shared_library,
+                self.tk_shared_library,
+            ) = self._find_tcl_tk_shared_libraries(self.tkinter_extension_file)
+        except Exception:
+            logger.warning("%s: failed to determine Tcl and Tk shared library location!", self, exc_info=True)
 
-    # If the current Tcl installation is a Teapot-distributed version of ActiveTcl and the current platform is Mac OS,
-    # warn that this is bad.
-    if compat.is_darwin:
-        _warn_if_activetcl_or_teapot_installed(tcl_root, tcltree)
+        # macOS: check if _tkinter is linked against system-provided Tcl.framework and Tk.framework. This is the case
+        # with python3 from XCode tools (and was the case with very old homebrew python builds). In such cases, we
+        # should not be collecting Tcl/Tk files.
+        if compat.is_darwin:
+            self.is_macos_system_framework = self._check_macos_system_framework(self.tcl_shared_library)
 
-    # Collect Tcl modules.
-    tclmodulestree = _collect_tcl_modules(tcl_root)
+            # Emit a warning in the unlikely event that we are dealing with Teapot-distributed version of ActiveTcl.
+            if not self.is_macos_system_framework:
+                self._warn_if_using_activetcl_or_teapot(self.tcl_data_dir)
 
-    return tcltree + tktree + tclmodulestree
+        # Find all data files
+        if self.is_macos_system_framework:
+            logger.info("%s: using macOS system Tcl/Tk framework - not collecting data files.", self)
+        else:
+            # Collect Tcl and Tk scripts from their corresponding library/data directories. In contrast to source
+            # directories, which are typically versioned (tcl8.6, tk8.6), the target directories are unversioned
+            # (tcl, tk); they are added to the Tcl/Tk search path via runtime hook for _tkinter, which sets the
+            # `TCL_LIBRARY` and `TK_LIBRARY` environment # variables.
+            if os.path.isdir(self.tcl_data_dir):
+                self.data_files += self._collect_files_from_directory(
+                    self.tcl_data_dir,
+                    prefix=self.TCL_ROOTNAME,
+                    excludes=['demos', '*.lib', 'tclConfig.sh'],
+                )
+            else:
+                logger.warning("%s: Tcl library/data directory %r does not exist!", self, self.tcl_data_dir)
+
+            if os.path.isdir(self.tk_data_dir):
+                self.data_files += self._collect_files_from_directory(
+                    self.tk_data_dir,
+                    prefix=self.TK_ROOTNAME,
+                    excludes=['demos', '*.lib', 'tkConfig.sh'],
+                )
+            else:
+                logger.warning("%s: Tk library/data directory %r does not exist!", self, self.tk_data_dir)
+
+            # Collect Tcl modules from modules directory
+            if os.path.isdir(self.tcl_module_dir):
+                self.data_files += self._collect_files_from_directory(
+                    self.tcl_module_dir,
+                    prefix=os.path.basename(self.tcl_module_dir),
+                )
+            else:
+                logger.warning("%s: Tcl module directory %r does not exist!", self, self.tcl_module_dir)
+
+    @staticmethod
+    def _collect_files_from_directory(root, prefix=None, excludes=None):
+        """
+        A minimal port of PyInstaller.building.datastruct.Tree() functionality, which allows us to avoid using Tree
+        here. This way, the TclTkInfo data structure can be used without having PyInstaller's config context set up.
+        """
+        excludes = excludes or []
+
+        todo = [(root, prefix)]
+        output = []
+        while todo:
+            target_dir, prefix = todo.pop()
+
+            for entry in os.listdir(target_dir):
+                # Basic name-based exclusion
+                if any((fnmatch.fnmatch(entry, exclude) for exclude in excludes)):
+                    continue
+
+                src_path = os.path.join(target_dir, entry)
+                dest_path = os.path.join(prefix, entry) if prefix else entry
+
+                if os.path.isdir(src_path):
+                    todo.append((src_path, dest_path))
+                else:
+                    # Return 3-element tuples with fully-resolved dest path, since other parts of code depend on that.
+                    output.append((dest_path, src_path, 'DATA'))
+
+        return output
+
+    @staticmethod
+    def _find_tcl_tk_shared_libraries(tkinter_ext_file):
+        """
+        Find Tcl and Tk shared libraries against which the _tkinter extension module is linked.
+        """
+        tcl_lib = None
+        tk_lib = None
+
+        for _, lib_path in bindepend.get_imports(tkinter_ext_file):  # (name, fullpath) tuple
+            if lib_path is None:
+                continue  # Skip unresolved entries
+
+            # For comparison, take basename of lib_path. On macOS, lib_name returned by get_imports is in fact
+            # referenced name, which is not necessarily just a basename.
+            lib_name = os.path.basename(lib_path)
+            lib_name_lower = lib_name.lower()  # lower-case for comparisons
+
+            if 'tcl' in lib_name_lower:
+                tcl_lib = lib_path
+            elif 'tk' in lib_name_lower:
+                tk_lib = lib_path
+
+        return tcl_lib, tk_lib
+
+    @staticmethod
+    def _check_macos_system_framework(tcl_shared_lib):
+        # Starting with macOS 11, system libraries are hidden (unless both Python and PyInstaller's bootloader are built
+        # against MacOS 11.x SDK). Therefore, Tcl shared library might end up unresolved (None); but that implicitly
+        # indicates that the system framework is used.
+        if tcl_shared_lib is None:
+            return True
+
+        # Check if the path corresponds to the system framework, i.e., [/System]/Library/Frameworks/Tcl.framework/Tcl
+        return 'Library/Frameworks/Tcl.framework' in tcl_shared_lib
+
+    @staticmethod
+    def _warn_if_using_activetcl_or_teapot(tcl_root):
+        """
+        Check if Tcl installation is a Teapot-distributed version of ActiveTcl, and log a non-fatal warning that the
+        resulting frozen application will (likely) fail to run on other systems.
+
+        PyInstaller does *not* freeze all ActiveTcl dependencies -- including Teapot, which is typically ignorable.
+        Since Teapot is *not* ignorable in this case, this function warns of impending failure.
+
+        See Also
+        -------
+        https://github.com/pyinstaller/pyinstaller/issues/621
+        """
+        if tcl_root is None:
+            return
+
+        # Read the "init.tcl" script and look for mentions of "activetcl" and "teapot"
+        init_tcl = os.path.join(tcl_root, 'init.tcl')
+        if not os.path.isfile(init_tcl):
+            return
+
+        mentions_activetcl = False
+        mentions_teapot = False
+
+        # Tcl/Tk reads files using the system encoding (https://www.tcl.tk/doc/howto/i18n.html#system_encoding);
+        # on macOS, this is UTF-8.
+        with open(init_tcl, 'r', encoding='utf8') as fp:
+            for line in fp.readlines():
+                line = line.strip().lower()
+                if line.startswith('#'):
+                    continue
+                if 'activetcl' in line:
+                    mentions_activetcl = True
+                if 'teapot' in line:
+                    mentions_teapot = True
+                if mentions_activetcl and mentions_teapot:
+                    break
+
+        if mentions_activetcl and mentions_teapot:
+            logger.warning(
+                "You appear to be using an ActiveTcl build of Tcl/Tk, which PyInstaller has\n"
+                "difficulty freezing. To fix this, comment out all references to 'teapot' in\n"
+                f"{init_tcl!r}\n"
+                "See https://github.com/pyinstaller/pyinstaller/issues/621 for more information."
+            )
+
+
+tcltk_info = TclTkInfo()

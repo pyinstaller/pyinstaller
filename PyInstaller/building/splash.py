@@ -21,7 +21,7 @@ from PyInstaller.building.datastruct import Target
 from PyInstaller.building.utils import _check_guts_eq, _check_guts_toc, misc
 from PyInstaller.compat import is_darwin
 from PyInstaller.depend import bindepend
-from PyInstaller.utils.hooks import tcl_tk as tcltk_utils
+from PyInstaller.utils.hooks.tcl_tk import tcltk_info
 
 try:
     from PIL import Image as PILImage
@@ -37,14 +37,14 @@ logger = logging.getLogger(__name__)
 # (see `PyInstaller.utils.hooks.tcl_tk.collect_tcl_tk_files`).
 splash_requirements = [
     # prepended tcl/tk binaries
-    os.path.join(tcltk_utils.TK_ROOTNAME, "license.terms"),
-    os.path.join(tcltk_utils.TK_ROOTNAME, "text.tcl"),
-    os.path.join(tcltk_utils.TK_ROOTNAME, "tk.tcl"),
+    os.path.join(tcltk_info.TK_ROOTNAME, "license.terms"),
+    os.path.join(tcltk_info.TK_ROOTNAME, "text.tcl"),
+    os.path.join(tcltk_info.TK_ROOTNAME, "tk.tcl"),
     # Used for customizable font
-    os.path.join(tcltk_utils.TK_ROOTNAME, "ttk", "ttk.tcl"),
-    os.path.join(tcltk_utils.TK_ROOTNAME, "ttk", "fonts.tcl"),
-    os.path.join(tcltk_utils.TK_ROOTNAME, "ttk", "cursors.tcl"),
-    os.path.join(tcltk_utils.TK_ROOTNAME, "ttk", "utils.tcl"),
+    os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "ttk.tcl"),
+    os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "fonts.tcl"),
+    os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "cursors.tcl"),
+    os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "utils.tcl"),
 ]
 
 
@@ -132,6 +132,16 @@ class Splash(Target):
         if is_darwin:
             raise SystemExit("Splash screen is not supported on macOS.")
 
+        # Ensure tkinter (and thus Tcl/Tk) is available.
+        if not tcltk_info.available:
+            raise SystemExit(
+                "Your platform does not support the splash screen feature, since tkinter is not installed. Please "
+                "install tkinter and try again."
+            )
+
+        # Check if the Tcl/Tk version is supported.
+        self._check_tcl_tk_compatibility()
+
         # Make image path relative to .spec file
         if not os.path.isabs(image_file):
             image_file = os.path.join(CONF['specpath'], image_file)
@@ -165,41 +175,34 @@ class Splash(Target):
             self.script_name = root + '_script.tcl'
 
         # Internal variables
-        try:
-            # Do not import _tkinter at the toplevel, because on some systems _tkinter will fail to load, since it is
-            # not installed. This would cause a runtime error in PyInstaller, since this module is imported from
-            # build_main.py, instead we just want to inform the user that the splash screen feature is not supported on
-            # his platform
-            import _tkinter
-            self._tkinter_module = _tkinter
-            self._tkinter_file = self._tkinter_module.__file__
-        except ModuleNotFoundError:
-            raise SystemExit(
-                "Your platform does not support the splash screen feature, since tkinter is not installed. Please "
-                "install tkinter and try again."
-            )
+        # Store path to _tkinter extension module, so that guts check can detect if the path changed for some reason.
+        self._tkinter_file = tcltk_info.tkinter_extension_file
 
         # Calculated / analysed values
         self.uses_tkinter = self._uses_tkinter(self._tkinter_file, binaries)
         logger.debug("Program uses tkinter: %r", self.uses_tkinter)
         self.script = self.generate_script()
-        self.tcl_lib, self.tk_lib = tcltk_utils.find_tcl_tk_shared_libs(self._tkinter_file)
-        if is_darwin:
-            # Outdated Tcl/Tk 8.5 system framework is not supported. Depending on macOS version, the library path will
-            # come up empty (hidden system libraries on Big Sur), or will be
-            # [/System]/Library/Frameworks/Tcl.framework/Tcl
-            if self.tcl_lib[1] is None or 'Library/Frameworks/Tcl.framework' in self.tcl_lib[1]:
-                raise SystemExit("The splash screen feature does not support macOS system framework version of Tcl/Tk.")
-        # Check if tcl/tk was found
-        assert all(self.tcl_lib)
-        assert all(self.tk_lib)
-        logger.debug("Use Tcl Library from %s and Tk From %s", self.tcl_lib, self.tk_lib)
-        self.splash_requirements = set([self.tcl_lib[0], self.tk_lib[0]] + splash_requirements)
+        self.tcl_lib = tcltk_info.tcl_shared_library  # full path to shared library
+        self.tk_lib = tcltk_info.tk_shared_library
 
-        logger.info("Collect tcl/tk binaries for the splash screen")
-        tcltk_tree = tcltk_utils.collect_tcl_tk_files(self._tkinter_file)
+        assert self.tcl_lib is not None
+        assert self.tk_lib is not None
+
+        logger.debug("Using Tcl shared library: %r", self.tcl_lib)
+        logger.debug("Using Tk shared library: %r", self.tk_lib)
+
+        self.splash_requirements = set([
+            # NOTE: the implicit assumption here is that Tcl and Tk shared library are collected into top-level
+            # application directory, which, at tme moment, is true in practically all cases.
+            os.path.basename(self.tcl_lib),
+            os.path.basename(self.tk_lib),
+            *splash_requirements,
+        ])
+
+        logger.info("Collect Tcl/Tk data files for the splash screen")
+        tcltk_tree = tcltk_info.data_files  # 3-element tuple TOC
         if self.full_tk:
-            # The user wants a full copy of tk, so make all tk files a requirement.
+            # The user wants a full copy of Tk, so make all Tk files a requirement.
             self.splash_requirements.update(entry[0] for entry in tcltk_tree)
 
         # Scan for binary dependencies of the Tcl/Tk shared libraries, and add them to `binaries` TOC list (which
@@ -207,7 +210,7 @@ class Splash(Target):
         # existing spec files depend on this naming). We specify these binary dependencies (which include the
         # Tcl and Tk shared libaries themselves) even if the user's program uses tkinter and they would be collected
         # anyway; let the collection mechanism deal with potential duplicates.
-        tcltk_libs = [(dest_name, src_name, 'BINARY') for dest_name, src_name in (self.tcl_lib, self.tk_lib)]
+        tcltk_libs = [(os.path.basename(src_name), src_name, 'BINARY') for src_name in (self.tcl_lib, self.tk_lib)]
         self.binaries = bindepend.binary_dependency_analysis(tcltk_libs)
 
         # Put all shared library dependencies in `splash_requirements`, so they are made available in onefile mode.
@@ -234,9 +237,6 @@ class Splash(Target):
 
         # Remove all files which were not found.
         self.splash_requirements = set(filter(_filter_requirement, self.splash_requirements))
-
-        # Test if the tcl/tk version is supported by the bootloader.
-        self.test_tk_version()
 
         logger.debug("Splash Requirements: %s", self.splash_requirements)
 
@@ -312,14 +312,14 @@ class Splash(Target):
                 _img.close()
                 _img_resized.close()
                 _image_data = _image_stream.getvalue()
-                logger.info("Resized image %s from dimensions %s to (%d, %d)", self.image_file, str(_orig_size), _w, _h)
+                logger.info("Resized image %s from dimensions %r to (%d, %d)", self.image_file, _orig_size, _w, _h)
                 return _image_data
             else:
                 raise ValueError(
                     "The splash image dimensions (w: %d, h: %d) exceed max_img_size (w: %d, h:%d), but the image "
                     "cannot be resized due to missing PIL.Image! Either install the Pillow package, adjust the "
-                    "max_img_size, or use an image of compatible dimensions.", _orig_size[0], _orig_size[1],
-                    self.max_img_size[0], self.max_img_size[1]
+                    "max_img_size, or use an image of compatible dimensions." %
+                    (_orig_size[0], _orig_size[1], self.max_img_size[0], self.max_img_size[1])
                 )
 
         # Open image file
@@ -351,7 +351,7 @@ class Splash(Target):
         else:
             raise ValueError(
                 "The image %s needs to be converted to a PNG file, but PIL.Image is not available! Either install the "
-                "Pillow package, or use a PNG image for you splash screen.", self.image_file
+                "Pillow package, or use a PNG image for you splash screen." % (self.image_file,)
             )
 
         image_file.close()
@@ -359,38 +359,42 @@ class Splash(Target):
         SplashWriter(
             self.name,
             self.splash_requirements,
-            self.tcl_lib[0],  # tcl86t.dll
-            self.tk_lib[0],  # tk86t.dll
-            tcltk_utils.TK_ROOTNAME,
+            os.path.basename(self.tcl_lib),  # tcl86t.dll
+            os.path.basename(self.tk_lib),  # tk86t.dll
+            tcltk_info.TK_ROOTNAME,
             image,
             self.script
         )
 
-    def test_tk_version(self):
-        tcl_version = float(self._tkinter_module.TCL_VERSION)
-        tk_version = float(self._tkinter_module.TK_VERSION)
+    @staticmethod
+    def _check_tcl_tk_compatibility():
+        tcl_version = tcltk_info.tcl_version  # (major, minor) tuple
+        tk_version = tcltk_info.tk_version
+
+        if is_darwin and tcltk_info.is_macos_system_framework:
+            # Outdated Tcl/Tk 8.5 system framework is not supported.
+            raise SystemExit("The splash screen feature does not support macOS system framework version of Tcl/Tk.")
 
         # Test if tcl/tk version is supported
-        if tcl_version < 8.6 or tk_version < 8.6:
+        if tcl_version < (8, 6) or tk_version < (8, 6):
             logger.warning(
-                "The installed Tcl/Tk (%s/%s) version might not work with the splash screen feature of the bootloader. "
-                "The bootloader is tested against Tcl/Tk 8.6", self._tkinter_module.TCL_VERSION,
-                self._tkinter_module.TK_VERSION
+                "The installed Tcl/Tk (%d.%d / %d.%d) version might not work with the splash screen feature of the "
+                "bootloader, which was tested against Tcl/Tk 8.6", *tcl_version, *tk_version
             )
 
         # This should be impossible, since tcl/tk is released together with the same version number, but just in case
         if tcl_version != tk_version:
             logger.warning(
-                "The installed version of Tcl (%s) and Tk (%s) do not match. PyInstaller is tested against matching "
-                "versions", self._tkinter_module.TCL_VERSION, self._tkinter_module.TK_VERSION
+                "The installed version of Tcl (%d.%d) and Tk (%d.%d) do not match. PyInstaller is tested against "
+                "matching versions", *tcl_version, *tk_version
             )
 
         # Ensure that Tcl is built with multi-threading support.
-        if not tcltk_utils.tcl_threaded:
+        if not tcltk_info.tcl_threaded:
             # This is a feature breaking problem, so exit.
             raise SystemExit(
-                "The installed tcl version is not threaded. PyInstaller only supports the splash screen "
-                "using threaded tcl."
+                "The installed Tcl version is not threaded. PyInstaller only supports the splash screen "
+                "using threaded Tcl."
             )
 
     def generate_script(self):
