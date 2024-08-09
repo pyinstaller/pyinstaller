@@ -17,6 +17,9 @@ from PyInstaller import isolated
 from PyInstaller import log as logging
 from PyInstaller.depend import bindepend
 
+if compat.is_darwin:
+    from PyInstaller.utils import osx as osxutils
+
 logger = logging.getLogger(__name__)
 
 
@@ -133,19 +136,6 @@ class TclTkInfo:
         self.tcl_version = tuple((int(x) for x in self.tcl_version.split(".")[:2]))
         self.tk_version = tuple((int(x) for x in self.tk_version.split(".")[:2]))
 
-        # Infer location of Tk library/data directory: $tcl_root/../tkX.Y, where X and Y are Tk major and minor version.
-        self.tk_data_dir = os.path.join(
-            os.path.dirname(self.tcl_data_dir),
-            f"tk{self.tk_version[0]}.{self.tk_version[1]}",
-        )
-
-        # Infer location of Tcl module directory. The modules directory is separate from the library/data one, and
-        # is located at $tcl_root/../tclX, where X is the major Tcl version.
-        self.tcl_module_dir = os.path.join(
-            os.path.dirname(self.tcl_data_dir),
-            f"tcl{self.tcl_version[0]}",
-        )
-
         # Determine full path to Tcl and Tk shared libraries against which the _tkinter extension module is linked.
         try:
             (
@@ -164,6 +154,44 @@ class TclTkInfo:
             # Emit a warning in the unlikely event that we are dealing with Teapot-distributed version of ActiveTcl.
             if not self.is_macos_system_framework:
                 self._warn_if_using_activetcl_or_teapot(self.tcl_data_dir)
+
+        # Infer location of Tk library/data directory. Ideally, we could infer this by running
+        #
+        # import tkinter
+        # root = tkinter.Tk()
+        # tk_data_dir = root.tk.exprstring('$tk_library')
+        #
+        # in the isolated subprocess as part of `_get_tcl_tk_info`. However, that is impractical, as it shows the empty
+        # window, and on some platforms (e.g., linux) requires display server. Therefore, try to guess the location,
+        # based on the following heuristic:
+        #  - if Tk is built as macOS framework bundle, look for Scripts sub-directory in Resources directory next to
+        #    the shared library.
+        #  - otherwise, look for: $tcl_root/../tkX.Y, where X and Y are Tk major and minor version.
+        if compat.is_darwin and self.tk_shared_library and (
+            # is_framework_bundle_lib handles only fully-versioned framework library paths...
+            (osxutils.is_framework_bundle_lib(self.tk_shared_library)) or
+            # ... so manually handle top-level-symlinked variant for now.
+            (self.tk_shared_library).endswith("Tk.framework/Tk")
+        ):
+            # Fully resolve the library path, in case it is a top-level symlink; for example, resolve
+            # /Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Tk
+            # into
+            # /Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Versions/8.6/Tk
+            tk_lib_realpath = os.path.realpath(self.tk_shared_library)
+            # Resources/Scripts directory next to the shared library
+            self.tk_data_dir = os.path.join(os.path.dirname(tk_lib_realpath), "Resources", "Scripts")
+        else:
+            self.tk_data_dir = os.path.join(
+                os.path.dirname(self.tcl_data_dir),
+                f"tk{self.tk_version[0]}.{self.tk_version[1]}",
+            )
+
+        # Infer location of Tcl module directory. The modules directory is separate from the library/data one, and
+        # is located at $tcl_root/../tclX, where X is the major Tcl version.
+        self.tcl_module_dir = os.path.join(
+            os.path.dirname(self.tcl_data_dir),
+            f"tcl{self.tcl_version[0]}",
+        )
 
         # Find all data files
         if self.is_macos_system_framework:
