@@ -100,7 +100,9 @@ def discover_hook_directories():
     entry_points = importlib_metadata.entry_points(group='pyinstaller40', name='hook-dirs')
 
     # Ensure that pyinstaller_hooks_contrib comes last so that hooks from packages providing their own take priority.
-    entry_points = sorted(entry_points, key=lambda x: x.module == "_pyinstaller_hooks_contrib.hooks")
+    # In pyinstaller-hooks-contrib >= 2024.8, the entry-point module is `_pyinstaller_hooks_contrib`; in earlier
+    # versions, it was `_pyinstaller_hooks_contrib.hooks`.
+    entry_points = sorted(entry_points, key=lambda x: x.module.startswith("_pyinstaller_hooks_contrib"))
 
     hook_directories = []
     for entry_point in entry_points:

@@ -46,7 +46,7 @@ Additional hooks are provided by the ``pyinstaller-hooks-contrib``
 package, which is typically installed as part of PyInstaller dependencies.
 See `here <https://github.com/pyinstaller/pyinstaller/tree/develop/PyInstaller/hooks>`__
 to browse PyInstaller-provided hooks in the online repository,
-and `here <https://github.com/pyinstaller/pyinstaller-hooks-contrib/tree/master/src/_pyinstaller_hooks_contrib/hooks/stdhooks>`__
+and `here <https://github.com/pyinstaller/pyinstaller-hooks-contrib/tree/master/_pyinstaller_hooks_contrib/stdhooks>`__
 for hooks provided by the ``pyinstaller-hooks-contrib``.
 
 Many hooks consist of only one statement, an assignment to ``hiddenimports``.
