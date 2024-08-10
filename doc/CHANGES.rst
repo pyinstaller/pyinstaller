@@ -15,6 +15,222 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.10.0 (2024-08-10)
+-------------------
+
+Features
+~~~~~~~~
+
+* (Linux) Extend the mechanism for collection of ``.hmac`` files from
+  :issue:`8288` to also include ``.hmac`` files in the ``fipscheck`` directory.
+  (:issue:`8719`)
+* Add support for Python 3.13. (:issue:`8198`)
+
+* Introduce new :envvar:`PYINSTALLER_RESET_ENVIRONMENT` environment variable, to
+  be used by application developers when trying to launch
+  :data:`sys.executable`-based process that is supposed to outlive the current
+  application process (which includes the :ref:`application restart scenario
+  <independent subprocess>`). This is considered the official and preferred
+  approach at spawning new independent instances of the same application (as
+  opposed to modifying the private :envvar:`_PYI_ARCHIVE_FILE` environment
+  variable). (:issue:`8634`)
+* The splash screen in splash-screen enabled frozen application can now
+  be disabled by the user at run-time, using the new
+  :envvar:`PYINSTALLER_SUPPRESS_SPLASH_SCREEN` environment variable. If the
+  environment variable is set to ``1``, the splash screen is not shown,
+  and functions from :mod:`pyi_splash` become no-op without raising errors
+  or displaying warning messages. (:issue:`8634`)
+
+
+Bugfix
+~~~~~~
+
+* (Windows) Attempt to work around the leak of ``VCRUNTIME140.dll`` in
+  ``onefile`` applications with splash screen enabled in scenarios where
+  the OS and/or anti-virus program injects additional DLLs into the process
+  that also depend on ``VCRUNTIME140.dll``. (:issue:`7106`)
+* (Windows) Fix regression in PyInstaller 6.x that caused console-enabled
+  onefile to applications fail to clean up their temporary directory during
+  system session shutdown (i.e., when user logs off or initiates system shutdown
+  or restart). For console-enabled onefile applications, this used to work up
+  until PyInstaller 6.0 by means of installed console handler; however, due to
+  contemporary bootloader executables being linked against ``user32.dll``, the
+  console handler does not receive ``CTRL_LOGOFF_EVENT`` and
+  ``CTRL_SHUTDOWN_EVENT`` console events anymore (for the same reason, this did
+  not work for builds with splash screen, even between v5.3 and 6.0). Instead,
+  session shutdown is now handled by means of hidden window and handling of
+  ``WM_QUERYENDSESSION`` and ``WM_ENDSESSION`` event messages. (:issue:`8648`)
+* (Windows) Improve handling of ``CTRL_CLOSE_EVENT`` console event in
+  ``onefile`` builds for compatibility with Windows Terminal in order to
+  avoid leaking temporary files when user closes the terminal window
+  (or tab). Upon receiving the event, the parent process now gives the child
+  process a 500-millisecond grace period to exit, after which it terminates
+  the child process and proceeds with the cleanup (previously, the parent
+  process indefinitely waited for the child to exit, under assumption that
+  the ``CTRL_CLOSE_EVENT`` will also cause the child to exit at the same
+  time – which was the case with ``conhost.exe``, but is not the case with
+  Windows Terminal, where the child appears to receive event only after
+  OS already terminated the parent process). (:issue:`8640`)
+* (Windows) The windowed/noconsole ``onefile`` builds should now clean up
+  their temporary directories during session shutdown (i.e., when user logs
+  off or initiates system shutdown or restart). (:issue:`8648`)
+* Fix the implementation of ``PyiFrozenResourceReader.files()`` when called
+  with (sub)module name, it should return the path to the module's parent
+  (package) directory, instead of a sub-directory with module's name.
+  (:issue:`8659`)
+* The ``MERGE`` dependency processing code now uses both source and destination
+  path as a bookkeeping key (instead of just source path). This fixes issues
+  when using ``MERGE`` with application TOCs that contain entries for a file
+  that is collected more than once, with different destination names.
+  (:issue:`8687`)
+* The splash screen is now automatically suppressed in worker sub-processes
+  spawned via :data:`sys.executable`. The splash screen is not shown, and
+  functions from :mod:`pyi_splash` become no-op without raising errors or
+  displaying warning messages. (:issue:`8634`)
+
+
+Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~
+
+* Attempting to restart the application by spawning new process via
+  :data:`sys.executable` and exiting the current process now requires the
+  :envvar:`PYINSTALLER_RESET_ENVIRONMENT` environment variable to be set prior
+  to spawning the process. See :ref:`independent subprocess`. (:issue:`8634`)
+
+
+Deprecations
+~~~~~~~~~~~~
+
+* The ``-m`` shorthand for :option:`--manifest` will be removed in v7.0.
+  (:issue:`2560`)
+
+
+Hooks
+~~~~~
+
+* Clean up the ``multiprocessing`` run-time hook. Due to changes in detection
+  of inherited PyInstaller environments, we do not need to restore (the now
+  renamed) ``_MEIPASS2``  environment variable anymore, and we can remove
+  all our custom ``Popen`` overrides. (:issue:`8634`)
+* Implement support for ``setuptools`` >= 71.0.0 and its new approach to
+  vendoring its dependencies. (:issue:`8720`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Linux) When frozen executable is launched via dynamic linker/loader
+  invocation (e.g., ``/lib64/ld-linux-x86-64.so.2 /path/to/executable``),
+  the loader executable's name is now captured and passed on to ``execvp``
+  call when restarting the process (``onedir`` mode) or starting the
+  child process (``onefile`` mode). This ensures that the restarted/spawned
+  process also uses the specified dynamic loader instead of the one
+  encoded in executable's ELF headers. (:issue:`8662`)
+* (Windows) In debug-enabled bootloader variants, copies of debug/warning/error
+  messages are now submitted to ``OutputDebugString`` win32 API in addition
+  to their primary output mechanism (i.e., ``stderr`` or message dialog).
+  This applies to both console and noconsole/windowed bootloader variants.
+  (Previously, ``OutputDebugString`` was used only for debug messages in
+  debug-enabled noconsole/windowed bootloader variant, where it serves as
+  the primary output mechanism.) (:issue:`8642`)
+* (Windows) The ``onefile`` parent process now sets up invisible window
+  to receive and handle ``WM_QUERYENDSESSION`` and ``WM_ENDSESSION``
+  event messages, which allows it properly clean up temporary files during
+  session shutdown (i.e., user logging off, or initiating system shutdown
+  or restart). Cleanup during session shutdown should now work in both
+  console-enabled and windowed/noconsole builds, and regardless of whether
+  splash screen is used or not. (:issue:`8648`)
+* (Windows) The parent process of a ``onefile`` application with enabled
+  splash screen now attempts to pre-load a system-wide copy of
+  ``VCRUNTIME140.dll``, preferring it over the bundled copy (which would
+  be loaded as dependency of Tcl/Tk DLLs during splash screen setup).
+  If a system-wide copy is available, the OS and/or anti-virus
+  programs might inject other 3rd party DLLs into the process that
+  also depend on ``VCRUNTIME140.dll`` (for example, Trend Micro's User Mode
+  Hooking component has been observed to do that). Such externally loaded
+  DLLs prevent the bootloader from unloading the ``VCRUNTIME140.dll``
+  during the clean-up phase, and if the bundled copy was loaded, it would
+  also prevent its removal from the application's temporary directory.
+  (:issue:`8650`)
+* Bootloader's debug/error/warning messages are now always formatted in
+  the temporary buffer (even when they are written to ``stderr``), in
+  order to ensure their atomicity and avoid interleaving of message parts
+  in multi-process scenarios. (:issue:`8642`)
+* Change the prefix of debug/warning/error messages from `[{PID}]` to
+  `[PYI-{PID}:{SEVERITY}]`, and apply it consistently across all
+  bootloader-generated messages. (:issue:`8642`)
+* Implemented explicit tracking of (sub)process level via newly-introduced
+  :envvar:`_PYI_PARENT_PROCESS_LEVEL` environment variable. This allows us to
+  reliably distinguish between different process types: in ``onedir``
+  applications, between the main application process and worker sub-process(es)
+  spawned via :data:`sys.executable`; in ``onefile`` applications, between the
+  parent process, the main application process, and worker sub-process(es)
+  spawned via :data:`sys.executable`. (:issue:`8634`)
+* Reworked the detection of inherited PyInstaller environments, which now has
+  reversed logic compared to original implementation. Up until now, a process
+  running the bootloader was considered a (new) top-level process of a frozen
+  application unless the ``_MEIPASS2`` environment was set. Because bootloader
+  was clearing the ``_MEIPASS2`` environment variable prior to running the
+  python code in the main application process, this meant that application's
+  responsibility to restore the ``_MEIPASS2`` environment variable before
+  spawning worker sub-process via :data:`sys.executable` to, for example,
+  prevent a onefile application from unpacking itself again. In the new
+  implementation, the default assumption is that the process is a worker
+  sub-process of the same (instance of) application, unless the path to
+  PKG/CArchive has changed (which implies that a different executable is used),
+  as tracked by newly-introduced :envvar:`_PYI_ARCHIVE_FILE` environment variable.
+  This means that no additional action is needed to spawn worker sub-processes
+  via :data:`sys.executable` in multiprocessing scenarios, but on the other hand,
+  :ref:`attempting to restart the application <independent subprocess>` now
+  requires :envvar:`PYINSTALLER_RESET_ENVIRONMENT` environment variable to be
+  set before spawning the new application process. To prevent issues when
+  launching applications built with older version of PyInstaller as
+  subprocesses, the ``_MEIPASS2`` environment variable was renamed to
+  :envvar:`_PYI_APPLICATION_HOME_DIR`; note that this refers to the internally-used
+  environment variable, and does **not** affect the PyInstaller-specific
+  ``sys._MEIPASS`` attribute. (:issue:`8634`)
+
+
+Module Loader
+~~~~~~~~~~~~~
+
+* The ``PyiFrozenImporter`` has been reworked from being a monolithic
+  `meta path finder
+  <https://docs.python.org/3/glossary.html#term-meta-path-finder>`_
+  (with fused `loader <https://docs.python.org/3/glossary.html#term-loader>`_
+  part)
+  into path-instanced `path entry finder
+  <https://docs.python.org/3/glossary.html#term-path-entry-finder>`_
+  (with fused loader part), registered with python's default
+  `path based finder
+  <https://docs.python.org/3/glossary.html#term-path-based-finder>`_.
+  The new path-instanced design enables proper handling of run-time
+  :data:`sys.path`
+  modifications; i.e., modules within the PYZ archive can now be resolved
+  based on entries in :data:`sys.path` that are anchored to the top-level
+  application directory (``sys._MEIPASS``). This in turn also facilitates
+  full support for PEP420 namespace packages that are split across
+  different :data:`sys.path` locations; both within the PYZ archive, on
+  filesystem within top-level application directory tree, and/or in
+  fully-external locations. (:issue:`8695`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Add a note about splash screen suppression to the splash screen
+  documentation. (:issue:`8634`)
+* Extend the Advanced Topics section with new subsection,
+  :ref:`bootloader environment variables`, which documents all public and
+  private environment variables used by PyInstaller's bootloader.
+  (:issue:`8634`)
+* Extend the Common Issues and Pitfalls section with :ref:`new subsection
+  <independent subprocess>` that describes the new requirements for launching a
+  :data:`sys.executable`-based process that is supposed to outlive the current
+  application process, which includes the application restart scenario.
+  (:issue:`8634`)
+
+
 6.9.0 (2024-07-06)
 ------------------
 

@@ -1,4 +1,0 @@
-Extend the Common Issues and Pitfalls section with :ref:`new subsection <independent subprocess>` that
-describes the new requirements for launching a ``sys.executable``-based
-process that is supposed to outlive the current application process,
-which includes the application restart scenario.

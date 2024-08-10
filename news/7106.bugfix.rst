@@ -1,4 +1,0 @@
-(Windows) Attempt to work around the leak of ``VCRUNTIME140.dll`` in
-``onefile`` applications with splash screen enabled in scenarios where
-the OS and/or anti-virus program injects additional DLLs into the process
-that also depend on ``VCRUNTIME140.dll``.

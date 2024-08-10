@@ -1,3 +1,0 @@
-Extend the Advanced Topics section with new subsection,
-:ref:`bootloader environment variables`, which documents all public and
-private environment variables used by PyInstaller's bootloader.

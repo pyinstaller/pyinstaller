@@ -1,3 +1,0 @@
-(Windows) The windowed/noconsole ``onefile`` builds should now clean up
-their temporary directories during session shutdown (i.e., when user logs
-off or initiates system shutdown or restart).

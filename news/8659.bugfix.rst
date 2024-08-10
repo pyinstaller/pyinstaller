@@ -1,3 +1,0 @@
-Fix the implementation of ``PyiFrozenResourceReader.files()``; when called
-with (sub)module name, it should return the path to the module's parent
-(package) directory, instead of a sub-directory with module's name.

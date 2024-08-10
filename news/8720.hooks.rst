@@ -1,2 +1,0 @@
-Implement support for ``setuptools`` >= 71.0.0 and its new approach to
-vendoring its dependencies.

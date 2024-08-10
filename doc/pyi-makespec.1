@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYI-MAKESPEC" "1" "2024-07-06" "6.9.0" "PyInstaller"
-.SH NAME
-pyi-makespec \- Create a spec file for your PyInstaller project
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "PYI-MAKESPEC" "1" "2024-08-10" "6.10.0" "PyInstaller"
+.SH NAME
+pyi-makespec \- Create a spec file for your PyInstaller project
 .\" disable justification (adjust text to left margin only)
 .ad l
 \.SH SYNOPSIS
@@ -53,7 +53,7 @@ pyi\-makespec [\-\-onefile] yourprogram.py
 .sp
 By default, \fBpyi\-makespec\fP generates a spec file that tells
 PyInstaller to create a distribution directory contains the main
-executable and the dynamic libraries. The option \fB\-\-onefile\fP
+executable and the dynamic libraries. The option \X'tty: link #cmdoption-F'\fI\%\-\-onefile\fP\X'tty: link'
 specifies that you want PyInstaller to build a single file with
 everything inside.
 .sp
@@ -67,7 +67,7 @@ scriptname
 .SS Options
 .INDENT 0.0
 .TP
-.B \-h\fP,\fB  \-\-help
+.B  \-h\fP,\fB  \-\-help
 show this help message and exit
 .TP
 .BI \-\-log\-level \ LEVEL
@@ -78,10 +78,10 @@ via and overrides the PYI_LOG_LEVEL environment variable.
 .SS What To Generate
 .INDENT 0.0
 .TP
-.B \-D\fP,\fB  \-\-onedir
+.B  \-D\fP,\fB  \-\-onedir
 Create a one\-folder bundle containing an executable (default)
 .TP
-.B \-F\fP,\fB  \-\-onefile
+.B  \-F\fP,\fB  \-\-onefile
 Create a one\-file bundled executable.
 .TP
 .BI \-\-specpath \ DIR
@@ -94,7 +94,7 @@ basename)
 .BI \-\-contents\-directory \ CONTENTS_DIRECTORY
 For onedir builds only, specify the name of the directory in which all
 supporting files (i.e. everything except the executable itself) will be
-placed in. Use "." to re\-enable old onedir layout without contents
+placed in. Use \(dq.\(dq to re\-enable old onedir layout without contents
 directory.
 .UNINDENT
 .SS What To Bundle, Where To Search
@@ -103,7 +103,7 @@ directory.
 .INDENT 0.0
 .INDENT 3.5
 Additional data files or directories containing data files to be added to
-the application. The argument value should be in form of "source:dest_dir",
+the application. The argument value should be in form of \(dqsource:dest_dir\(dq,
 where source is the path to file (or directory) to be collected, dest_dir
 is the destination directory relative to the top\-level application
 directory, and both paths are separated by a colon (:). To put a file in
@@ -186,7 +186,7 @@ all: All three of the following options. \- imports: specify the \-v option
 to the underlying Python interpreter, causing it to print a message each
 time a module is initialized, showing the place (filename or built\-in
 module) from which it is loaded. See
-\fI\%https://docs.python.org/3/using/cmdline.html#id4\fP\&. \- bootloader: tell the
+\X'tty: link https://docs.python.org/3/using/cmdline.html#id4'\fI\%https://docs.python.org/3/using/cmdline.html#id4\fP\X'tty: link'\&. \- bootloader: tell the
 bootloader to issue progress messages while initializing and starting the
 bundled app. Used to diagnose problems with missing imports. \- noarchive:
 instead of storing all frozen Python source files as an archive inside the
@@ -203,15 +203,15 @@ manual.
 .TP
 .BI \-\-python\-option \ PYTHON_OPTION
 Specify a command\-line option to pass to the Python interpreter at runtime.
-Currently supports "v" (equivalent to "\-\-debug imports"), "u", "W <warning
-control>", "X <xoption>", and "hash_seed=<value>". For details, see the
-section "Specifying Python Interpreter Options" in PyInstaller manual.
+Currently supports \(dqv\(dq (equivalent to \(dq\-\-debug imports\(dq), \(dqu\(dq, \(dqW <warning
+control>\(dq, \(dqX <xoption>\(dq, and \(dqhash_seed=<value>\(dq. For details, see the
+section \(dqSpecifying Python Interpreter Options\(dq in PyInstaller manual.
 .TP
-.B \-s\fP,\fB  \-\-strip
+.B  \-s\fP,\fB  \-\-strip
 Apply a symbol\-table strip to the executable and shared libs (not
 recommended for Windows)
 .TP
-.B \-\-noupx
+.B  \-\-noupx
 Do not use UPX even if it is available (works differently between Windows
 and *nix)
 .TP
@@ -224,18 +224,18 @@ times.
 .SS Windows And Mac Os X Specific Options
 .INDENT 0.0
 .TP
-.B \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
+.B  \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
 Open a console window for standard i/o (default). On Windows this option
 has no effect if the first script is a \(aq.pyw\(aq file.
 .TP
-.B \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
+.B  \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
 Windows and Mac OS X: do not provide a console window for standard i/o. On
 Mac OS this also triggers building a Mac OS .app bundle. On Windows this
 option is automatically set if the first script is a \(aq.pyw\(aq file. This
 option is ignored on *NIX systems.
 .UNINDENT
 .sp
-\-\-hide\-console {hide\-late,minimize\-late,minimize\-early,hide\-early}
+\-\-hide\-console {hide\-late,minimize\-early,minimize\-late,hide\-early}
 .INDENT 0.0
 .INDENT 3.5
 Windows only: in console\-enabled executable, have bootloader automatically
@@ -245,16 +245,16 @@ hide or minimize the console window if the program owns the console window
 .UNINDENT
 .INDENT 0.0
 .TP
-.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or "NONE">\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or "NONE">
+.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or \(dqNONE\(dq>\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or \(dqNONE\(dq>
 FILE.ico: apply the icon to a Windows executable. FILE.exe,ID: extract the
 icon with ID from an exe. FILE.icns: apply the icon to the .app bundle on
 Mac OS. If an image file is entered that isn\(aqt in the platform format (ico
 on Windows, icns on Mac), PyInstaller tries to use Pillow to translate the
-icon into the correct format (if Pillow is installed). Use "NONE" to not
+icon into the correct format (if Pillow is installed). Use \(dqNONE\(dq to not
 apply any icon, thereby making the OS show some default (default: apply
 PyInstaller\(aqs icon). This option can be used multiple times.
 .TP
-.B \-\-disable\-windowed\-traceback
+.B  \-\-disable\-windowed\-traceback
 Disable traceback dump of unhandled exception in windowed (noconsole) mode
 (Windows and macOS only), and instead display a message that this feature
 is disabled.
@@ -265,8 +265,11 @@ is disabled.
 .BI \-\-version\-file \ FILE
 Add a version resource from FILE to the exe.
 .TP
-.BI \-m \ <FILE or XML>\fR,\fB \ \-\-manifest \ <FILE or XML>
+.BI \-\-manifest \ <FILE or XML>
 Add manifest FILE or XML to the exe.
+.TP
+.BI \-m \ <FILE or XML>
+Deprecated shorthand for \-\-manifest.
 .TP
 .BI \-r \ RESOURCE\fR,\fB \ \-\-resource \ RESOURCE
 Add or update a resource to a Windows executable. The RESOURCE is one to
@@ -278,18 +281,18 @@ added/updated to the final executable if TYPE, NAME and LANGUAGE are
 omitted or specified as wildcard *. This option can be used multiple
 times.
 .TP
-.B \-\-uac\-admin
+.B  \-\-uac\-admin
 Using this option creates a Manifest that will request elevation upon
 application start.
 .TP
-.B \-\-uac\-uiaccess
+.B  \-\-uac\-uiaccess
 Using this option allows an elevated application to work with Remote
 Desktop.
 .UNINDENT
 .SS Mac Os Specific Options
 .INDENT 0.0
 .TP
-.B \-\-argv\-emulation
+.B  \-\-argv\-emulation
 Enable argv emulation for macOS app bundles. If enabled, the initial open
 document/URL event is processed by the bootloader and the passed file paths
 or URLs are appended to sys.argv.
@@ -328,7 +331,7 @@ POSIX systems, PyInstaller\(aqs bootloader does NOT perform shell\-style
 environment variable expansion on the given path string. Therefore, using
 environment variables (e.g., \fB~\fP or \fB$HOME\fP) in path will NOT work.
 .TP
-.B \-\-bootloader\-ignore\-signals
+.B  \-\-bootloader\-ignore\-signals
 Tell the bootloader to ignore signals rather than forwarding them to the
 child process. Useful in situations where for example a supervisor process
 signals both the bootloader and the child (e.g., via a process group) to
@@ -345,8 +348,8 @@ but is typically a subdirectory of the home directory.
 .SH SEE ALSO
 .sp
 \fBpyinstaller\fP(1),
-The PyInstaller Manual \fI\%https://pyinstaller.readthedocs.io/\fP,
-Project Homepage \fI\%http://www.pyinstaller.org\fP
+The PyInstaller Manual \X'tty: link https://pyinstaller.readthedocs.io/'\fI\%https://pyinstaller.readthedocs.io/\fP\X'tty: link',
+Project Homepage \X'tty: link http://www.pyinstaller.org'\fI\%http://www.pyinstaller.org\fP\X'tty: link'
 .SH AUTHOR
 Hartmut Goebel
 .SH COPYRIGHT
