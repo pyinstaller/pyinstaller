@@ -234,7 +234,7 @@ jobs:
       - name: Inject bogus hook
         shell: python
         run: |
-          from _pyinstaller_hooks_contrib.hooks.stdhooks import __path__ as path
+          from _pyinstaller_hooks_contrib.stdhooks import __path__ as path
           with open(path[0] + "/hook-pyi_hooksample.py", "w") as f:
               f.write('assert 0, "Wrong hook! Use the pyi_hooksample copy instead!"\n')
 
