@@ -41,6 +41,10 @@
     #include <Carbon/Carbon.h>  /* TransformProcessType */
 #endif
 
+#if defined(__APPLE__)
+    #include <mach-o/dyld.h>  /* _NSGetExecutablePath() */
+#endif
+
 /* PyInstaller headers. */
 #include "pyi_main.h"
 #include "pyi_global.h"  /* PYI_PATH_MAX */
