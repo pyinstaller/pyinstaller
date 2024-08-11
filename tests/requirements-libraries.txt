@@ -16,7 +16,7 @@ importlib_resources==6.4.0; python_version < '3.9'
 # -------
 # These packages work with no (known) issues.
 babel==2.16.0
-Django==5.0.7; python_version >= '3.10'
+Django==5.1; python_version >= '3.10'
 future==1.0.0
 gevent==24.2.1
 ipython==8.26.0; python_version >= '3.10'
