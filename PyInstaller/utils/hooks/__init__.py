@@ -1031,6 +1031,11 @@ def copy_metadata(package_name: str, recursive: bool = False):
                 f"Distribution metadata path {src_path!r} for {package_name} is neither file nor directory!"
             )
 
+        # Hack for metadata from packages vendored by setuptools >= 71. If source path is rooted in setuptools/_vendor,
+        # prepend the same to the destination path and avoid collecting into top-level directory.
+        if src_path.parent.name == '_vendor' and src_path.parent.parent.name == 'setuptools':
+            dest_path = os.path.join('setuptools', '_vendor', dest_path)
+
         out.append((str(src_path), str(dest_path)))
 
         if not recursive:
