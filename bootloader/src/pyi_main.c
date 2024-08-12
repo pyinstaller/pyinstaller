@@ -394,6 +394,14 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
 #if defined(_WIN32)
     if (pyi_ctx->archive->toc_splash && pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) {
         const wchar_t *dll_name = L"VCRUNTIME140.dll";
+
+        /* Avoid accidentally picking up VCRUNTIME140.dll from another
+         * (instance of) frozen application that might have launched
+         * this instance. I.e., call SetDllDirectoryW(NULL) to reset
+         * the search path modification that happens in the code block
+         * that follows this one (and is inherited by child processes). */
+        SetDllDirectoryW(NULL);
+
         PYI_DEBUG_W(L"LOADER: attempting to pre-load system copy of %ls...\n", dll_name);
         if (LoadLibraryExW(dll_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)) {
             PYI_DEBUG_W(L"LOADER: successfully loaded system copy of %ls.\n", dll_name);
