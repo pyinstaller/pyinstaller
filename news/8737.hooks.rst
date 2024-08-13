@@ -1,0 +1,4 @@
+Tweak the ``setuptools`` hook to minimize collection of vendored
+packages/modules and their (meta)data when using ``setuptools`` >= 71.0;
+the aim is to have the run-time behavior of collected vendored package
+closely match the behavior of its non-vendored counterpart.
