@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.compat import is_darwin, is_unix
+from PyInstaller import compat
 from PyInstaller.utils.hooks.setuptools import setuptools_info
 
 datas = []
@@ -21,7 +21,7 @@ hiddenimports = [
 ]
 
 # Necessary for setuptools on Mac/Unix
-if is_unix or is_darwin:
+if compat.is_unix or compat.is_darwin:
     hiddenimports.append('syslog')
 
 # Prevent the following modules from being collected solely due to reference from anywhere within setuptools (or
@@ -46,18 +46,31 @@ excludedimports = [
 #
 # The list of submodules from `setuptools._vendor` is now available in `setuptools_info.vendored_modules` (and covers
 # all setuptools versions).
-hiddenimports += setuptools_info.vendored_modules
-
-# With setuptools >= 71.0.0, we also need to ensure that metadata of vendored packages as well as their data files are
-# collected. The list of corresponding data files is kept in `setuptools_info.vendored_data`. On earlier setuptools
-# versions, the list is empty.
-datas += setuptools_info.vendored_data
-
-# As of setuptools >= 60.0, we need to collect the vendored version of distutils via hiddenimports. The corresponding
-# pyi_rth_setuptools runtime hook ensures that the _distutils_hack is installed at the program startup, which allows
-# setuptools to override the stdlib distutils with its vendored version, if necessary.
 #
-# The list of submodules from `setuptools._distutils` (plus `_distutils_hack˙) is kept in
-# `setuptools_info.distutils_modules˙.
-if setuptools_info.distutils_vendored:
+# NOTE: with setuptools >= 71.0, we do not need to add modules from `setuptools._vendored` to hidden imports anymore,
+# because the aliases we set up should ensure that the necessary parts get collected. We still need them for earlier
+# versions of setuptools, though.
+if setuptools_info.version < (71, 0):
+    hiddenimports += setuptools_info.vendored_modules
+
+# The situation with vendored distutils (from `setuptools._distutils`) is a bit more complicated; python >= 3.12 does
+# not provide stdlib version of `distutils` anymore, so our corresponding pre-safe-import-module hook sets up aliases.
+# In earlier python versions, stdlib version is available as well, and at run-time, we might need both versions present,
+# so that whichever is applicable can be used. Therefore, for python < 3.12, we need to add the vendored distuils
+# modules to hidden imports.
+if setuptools_info.distutils_vendored and not compat.is_py312:
     hiddenimports += setuptools_info.distutils_modules
+
+# With setuptools >= 71.0.0, the vendored packages also have metadata, and might also contain data files that need to
+# be collected. The list of corresponding data files is kept cached in `setuptools_info.vendored_data` (to minimize the
+# number of times we need to call collect_data_files()).
+#
+# While it might be tempting to simply collect all data files and be done with it, we actually need to match the
+# collection behavior for the stand-alone versions of these packages; i.e., we should collect metadata (and/or data
+# files) for the vendored package only if the same data is also collected for stand-alone version. Otherwise, we risk
+# inconsistent behavior and potential mismatches; for example, if we collected metadata for vendored package A here,
+# but end up collecting stand-alone A, for which we normally do not collect the metadata, then at run-time, we will end
+# up with stand-alone copy of A and vendored copy of its metadata being discoverable.
+#
+# Therefore, if metadata and/or metadata needs to be collected, do it in corresponding sub-package hook (for an example,
+# see `hook-setuptools._vendor.jaraco.text.py`).
