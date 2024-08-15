@@ -28,7 +28,6 @@ if compat.is_unix or compat.is_darwin:
 # its vendored dependencies).
 excludedimports = [
     'pytest',
-    'unittest',
     'numpy',  # originally from hook-setuptools.msvc
     'docutils',  # originally from hool-setuptools._distutils.command.check
 ]
