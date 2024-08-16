@@ -1,0 +1,19 @@
+#OI AMOR
+print("Oi amor tudo bem?Coloca seu belo nome aqui amor;)")
+usuario=input()
+if (usuario == "Anabel"):
+    print("Bem vinda Amor é vc mesmo amor")
+else:
+    print("Nao é meu amor sai daqui!!")
+    
+print("Quer ler um segredo meu?")
+print("digita que sim ou não ent:)")
+resp=input()
+if (resp == "sim"):
+    print("EU TE AMOOO")
+
+else:
+    print("fodase que não,EU TE AMOOOO")
+ 
+print("Gostou amor??Escreve que me ama pra sair hihihi")
+dig=input()
