@@ -175,7 +175,12 @@ def _gen_pseudo_rthooks(name, rthook_dat, tmpdir, gen_files=True):
 def test_collect_rthooks_1(tmpdir, monkeypatch):
     rh1 = {"test_pyimodulegraph_mymod1": ["m1.py"]}
     hd1 = _gen_pseudo_rthooks("h1", rh1, tmpdir)
-    mg = FakePyiModuleGraph(HOMEPATH, user_hook_dirs=[str(hd1)])
+    mg = FakePyiModuleGraph(
+        HOMEPATH,
+        user_hook_dirs=[
+            (str(hd1), analysis.HookPriority.BUILTIN_HOOKS),
+        ],
+    )
     assert len(mg._available_rthooks["test_pyimodulegraph_mymod1"]) == 1
 
 
@@ -184,7 +189,13 @@ def test_collect_rthooks_2(tmpdir, monkeypatch):
     rh2 = {"test_pyimodulegraph_mymod2": ["rth1.py", "rth1.py"]}
     hd1 = _gen_pseudo_rthooks("h1", rh1, tmpdir)
     hd2 = _gen_pseudo_rthooks("h2", rh2, tmpdir)
-    mg = FakePyiModuleGraph(HOMEPATH, user_hook_dirs=[str(hd1), str(hd2)])
+    mg = FakePyiModuleGraph(
+        HOMEPATH,
+        user_hook_dirs=[
+            (str(hd1), analysis.HookPriority.BUILTIN_HOOKS),
+            (str(hd2), analysis.HookPriority.BUILTIN_HOOKS),
+        ],
+    )
     assert len(mg._available_rthooks["test_pyimodulegraph_mymod1"]) == 1
     assert len(mg._available_rthooks["test_pyimodulegraph_mymod2"]) == 2
 
@@ -194,7 +205,13 @@ def test_collect_rthooks_3(tmpdir, monkeypatch):
     rh2 = {"test_pyimodulegraph_mymod1": ["rth1.py", "rth1.py"]}
     hd1 = _gen_pseudo_rthooks("h1", rh1, tmpdir)
     hd2 = _gen_pseudo_rthooks("h2", rh2, tmpdir)
-    mg = FakePyiModuleGraph(HOMEPATH, user_hook_dirs=[str(hd1), str(hd2)])
+    mg = FakePyiModuleGraph(
+        HOMEPATH,
+        user_hook_dirs=[
+            (str(hd1), analysis.HookPriority.BUILTIN_HOOKS),
+            (str(hd2), analysis.HookPriority.BUILTIN_HOOKS),
+        ],
+    )
     assert len(mg._available_rthooks["test_pyimodulegraph_mymod1"]) == 1
 
 
@@ -202,7 +219,12 @@ def test_collect_rthooks_fail_1(tmpdir, monkeypatch):
     rh1 = {"test_pyimodulegraph_mymod1": ["m1.py"]}
     hd1 = _gen_pseudo_rthooks("h1", rh1, tmpdir, False)
     with pytest.raises(AssertionError):
-        FakePyiModuleGraph(HOMEPATH, user_hook_dirs=[str(hd1)])
+        FakePyiModuleGraph(
+            HOMEPATH,
+            user_hook_dirs=[
+                (str(hd1), analysis.HookPriority.BUILTIN_HOOKS),
+            ],
+        )
 
 
 class FakeGraph(analysis.PyiModuleGraph):
