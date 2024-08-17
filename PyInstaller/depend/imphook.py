@@ -98,7 +98,7 @@ class ModuleHookCache(dict):
             List of the absolute or relative paths of all directories containing hook scripts to be cached.
         """
 
-        for hook_dir in hook_dirs:
+        for hook_dir, default_priority in hook_dirs:
             # Canonicalize this directory's path and validate its existence.
             hook_dir = os.path.abspath(hook_dir)
             if not os.path.isdir(hook_dir):
@@ -117,6 +117,7 @@ class ModuleHookCache(dict):
                     module_name=module_name,
                     hook_filename=hook_filename,
                     hook_module_name_prefix=self._hook_module_name_prefix,
+                    default_priority=default_priority,
                 )
 
                 # Add this hook to this module's list of hooks.
@@ -126,7 +127,13 @@ class ModuleHookCache(dict):
         # Post-processing: we allow only one instance of hook per module. Currently, the priority order is defined
         # implicitly, via order of hook directories, so the first hook in the list has the highest priority.
         for module_name in self.keys():
-            self[module_name] = self[module_name][0]
+            hooks = self[module_name]
+            if len(hooks) == 1:
+                self[module_name] = hooks[0]
+            else:
+                # Order by priority value, in descending order.
+                sorted_hooks = sorted(hooks, key=lambda hook: hook.priority, reverse=True)
+                self[module_name] = sorted_hooks[0]
 
     def remove_modules(self, *module_names):
         """
@@ -241,11 +248,16 @@ class ModuleHook:
     _hook_module : module
         In-memory module of this hook script's interpreted contents, lazily loaded on the first call to the
         `_load_hook_module()` method _or_ `None` if this method has yet to be accessed.
+    _default_priority : int
+        Default (location-based) priority for this hook.
+    priority : int
+        Actual priority for this hook. Might be different from `_default_priority` if hook file specifies the hook
+        priority override.
     """
 
     #-- Magic --
 
-    def __init__(self, module_graph, module_name, hook_filename, hook_module_name_prefix):
+    def __init__(self, module_graph, module_name, hook_filename, hook_module_name_prefix, default_priority):
         """
         Initialize this metadata.
 
@@ -264,7 +276,9 @@ class ModuleHook:
             is non-unique, an existing in-memory module will be erroneously reused when lazily loading this hook
             script, thus erroneously resanitizing previously sanitized hook script attributes (e.g., `datas`) with
             the `format_binaries_and_datas()` helper.
-
+        default_priority : int
+            Default, location-based priority for this hook. Used to select active hook when multiple hooks are defined
+            for the same module.
         """
         # Note that the passed module graph is already a weak reference, avoiding circular reference issues. See
         # ModuleHookCache.__init__(). TODO: Add a failure message
@@ -273,6 +287,8 @@ class ModuleHook:
         self.module_name = module_name
         self.hook_filename = hook_filename
 
+        self._default_priority = default_priority
+
         # Name of the in-memory module fabricated to refer to this hook script.
         self.hook_module_name = hook_module_name_prefix + self.module_name.replace('.', '_')
 
@@ -280,6 +296,10 @@ class ModuleHook:
         self._loaded = False
         self._has_hook_function = False
         self._hook_module = None
+
+    @property
+    def priority(self):
+        return self._default_priority
 
     def __getattr__(self, attr_name):
         """
