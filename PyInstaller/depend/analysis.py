@@ -40,6 +40,7 @@ import sys
 import traceback
 from collections import defaultdict
 from copy import deepcopy
+import enum
 
 from PyInstaller import HOMEPATH, PACKAGEPATH
 from PyInstaller import log as logging
@@ -57,6 +58,13 @@ from PyInstaller.log import DEBUG, INFO, TRACE
 from PyInstaller.utils.hooks import collect_submodules, is_package
 
 logger = logging.getLogger(__name__)
+
+
+class HookPriority(enum.IntEnum):
+    BUILTIN_HOOKS = 0  # Built-in hooks. Lowest priority.
+    CONTRIBUTED_HOOKS = 1000  # Hooks from pyinstaller-hooks-contrib package.
+    UPSTREAM_HOOKS = 2000  # Hooks provided by packages themselves, via entry-points.
+    USER_HOOKS = 3000  # User-supplied hooks (command-line / spec file). Highest priority.
 
 
 class PyiModuleGraph(ModuleGraph):
@@ -114,8 +122,13 @@ class PyiModuleGraph(ModuleGraph):
         self._top_script_node = None
         self._additional_files_cache = AdditionalFilesCache()
         self._module_collection_mode = dict()
-        # Command line, Entry Point, and then builtin hook dirs.
-        self._user_hook_dirs = [*user_hook_dirs, os.path.join(PACKAGEPATH, 'hooks')]
+        # Hook sources: user-supplied (command-line / spec file), entry-point (upstream hooks, contributed hooks), and
+        # built-in hooks. The order does not really matter anymore, because each entry is now a (location, priority)
+        # tuple, and order is determined from assigned priority (which may also be overridden by hooks themselves).
+        self._user_hook_dirs = [
+            *user_hook_dirs,
+            (os.path.join(PACKAGEPATH, 'hooks'), HookPriority.BUILTIN_HOOKS),
+        ]
         # Hook-specific lookup tables. These need to reset when reusing cached PyiModuleGraph to avoid hooks to refer to
         # files or data from another test-case.
         logger.info('Initializing module graph hook caches...')
@@ -125,7 +138,7 @@ class PyiModuleGraph(ModuleGraph):
 
         # Search for run-time hooks in all hook directories.
         self._available_rthooks = defaultdict(list)
-        for uhd in self._user_hook_dirs:
+        for uhd, _ in self._user_hook_dirs:
             uhd_path = os.path.abspath(os.path.join(uhd, 'rthooks.dat'))
             try:
                 with open(uhd_path, 'r', encoding='utf-8') as f:
@@ -219,7 +232,7 @@ class PyiModuleGraph(ModuleGraph):
 
     def _cache_hooks(self, hook_type):
         """
-        Get a cache of all hooks of the passed type.
+        Create a cache of all hooks of the specified type.
 
         The cache will include all official hooks defined by the PyInstaller codebase _and_ all unofficial hooks
         defined for the current application.
@@ -228,16 +241,17 @@ class PyiModuleGraph(ModuleGraph):
         ----------
         hook_type : str
             Type of hooks to be cached, equivalent to the basename of the subpackage of the `PyInstaller.hooks`
-            package containing such hooks (e.g., `post_create_package` for post-create package hooks).
+            package containing such hooks (e.g., empty string for standard hooks, `pre_safe_import_module` for
+            pre-safe-import-module hooks, `pre_find_module_path` for pre-find-module-path hooks).
         """
         # Cache of this type of hooks.
         hook_dirs = []
-        for user_hook_dir in self._user_hook_dirs:
+        for user_hook_dir, priority in self._user_hook_dirs:
             # Absolute path of the user-defined subdirectory of this hook type. If this directory exists, add it to the
             # list to be cached.
             user_hook_type_dir = os.path.join(user_hook_dir, hook_type)
             if os.path.isdir(user_hook_type_dir):
-                hook_dirs.append(user_hook_type_dir)
+                hook_dirs.append((user_hook_type_dir, priority))
 
         return ModuleHookCache(self, hook_dirs)
 
