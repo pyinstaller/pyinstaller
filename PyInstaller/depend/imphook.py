@@ -16,6 +16,7 @@ import glob
 import os.path
 import sys
 import weakref
+import re
 
 from PyInstaller import log as logging
 from PyInstaller.building.utils import format_binaries_and_datas
@@ -287,6 +288,7 @@ class ModuleHook:
         self.module_name = module_name
         self.hook_filename = hook_filename
 
+        # Default priority; used as fall-back for dynamic `hook_priority` attribute.
         self._default_priority = default_priority
 
         # Name of the in-memory module fabricated to refer to this hook script.
@@ -296,10 +298,6 @@ class ModuleHook:
         self._loaded = False
         self._has_hook_function = False
         self._hook_module = None
-
-    @property
-    def priority(self):
-        return self._default_priority
 
     def __getattr__(self, attr_name):
         """
@@ -319,13 +317,16 @@ class ModuleHook:
         Class docstring for supported magic attributes.
         """
 
-        # If this is a magic attribute, initialize this attribute by lazy loading this hook script and then return
-        # this attribute.
+        if attr_name == 'priority':
+            # If attribute is part of hook metadata, read metadata from hook script and return the attribute value.
+            self._load_hook_metadata()
+            return getattr(self, attr_name)
         if attr_name in _MAGIC_MODULE_HOOK_ATTRS and not self._loaded:
+            # If attribute is hook's magic attribute, load and run the hook script, and return the attribute value.
             self._load_hook_module()
             return getattr(self, attr_name)
-        # Else, this is an undefined attribute. Raise an exception.
         else:
+            # This is an undefined attribute. Raise an exception.
             raise AttributeError(attr_name)
 
     def __setattr__(self, attr_name, attr_value):
@@ -351,6 +352,29 @@ class ModuleHook:
         return super().__setattr__(attr_name, attr_value)
 
     #-- Loading --
+
+    def _load_hook_metadata(self):
+        """
+        Load hook metadata from its source file.
+        """
+        self.priority = self._default_priority
+
+        # Priority override pattern: `# $PyInstaller-Hook-Priority: <value>`
+        priority_pattern = re.compile(r"^\s*#\s*\$PyInstaller-Hook-Priority:\s*(?P<value>[\S]+)")
+
+        with open(self.hook_filename, "r") as f:
+            for line in f:
+                # Attempt to match and parse hook priority directive
+                m = priority_pattern.match(line)
+                if m is not None:
+                    try:
+                        self.priority = int(m.group('value'))
+                    except Exception:
+                        logger.warning(
+                            "Failed to parse hook priority value string: %r!", m.group('value'), exc_info=True
+                        )
+                    # Currently, this is our only line of interest, so we can stop the search here.
+                    return
 
     def _load_hook_module(self, keep_module_ref=False):
         """
