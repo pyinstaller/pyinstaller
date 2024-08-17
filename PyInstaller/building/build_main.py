@@ -37,7 +37,7 @@ from PyInstaller.building.utils import (
 )
 from PyInstaller.compat import is_win, is_conda, is_darwin, is_linux
 from PyInstaller.depend import bindepend
-from PyInstaller.depend.analysis import initialize_modgraph, HookPriority
+from PyInstaller.depend.analysis import initialize_modgraph, HOOK_PRIORITY_USER_HOOKS
 from PyInstaller.depend.utils import create_py3_base_library, scan_code_for_ctypes
 from PyInstaller import isolated
 from PyInstaller.utils.misc import absnormpath, get_path_to_toplevel_modules, mtime
@@ -94,7 +94,7 @@ def discover_hook_directories():
     from traceback import format_exception_only
     from PyInstaller.log import logger
     from PyInstaller.compat import importlib_metadata
-    from PyInstaller.depend.analysis import HookPriority
+    from PyInstaller.depend.analysis import HOOK_PRIORITY_CONTRIBUTED_HOOKS, HOOK_PRIORITY_UPSTREAM_HOOKS
 
     # The “selectable” entry points (via group and name keyword args) were introduced in importlib_metadata 4.6 and
     # Python 3.10. The compat module ensures we are using a compatible version.
@@ -117,8 +117,8 @@ def discover_hook_directories():
 
         # Determine location-based priority: upstream hooks vs. hooks from contributed hooks package.
         location_priority = (
-            HookPriority.CONTRIBUTED_HOOKS
-            if entry_point.module.startswith("_pyinstaller_hooks_contrib") else HookPriority.UPSTREAM_HOOKS
+            HOOK_PRIORITY_CONTRIBUTED_HOOKS
+            if entry_point.module.startswith("_pyinstaller_hooks_contrib") else HOOK_PRIORITY_UPSTREAM_HOOKS
         )
 
         # Append entries
@@ -127,9 +127,7 @@ def discover_hook_directories():
 
     logger.debug("discover_hook_directories: Hook directories: %s", hook_directories)
 
-    # Unfortunately, HookEntry enum values cannot be marshalled, so we need to convert them to integer values. Do so
-    # after dumping them in the above debug message, so that their symbolic names are displayed.
-    return [(path, int(priority)) for path, priority in hook_directories]
+    return hook_directories
 
 
 def find_binary_dependencies(binaries, import_packages):
@@ -518,11 +516,10 @@ class Analysis(Target):
         # shell when using ˙--additional-hooks-dir=~/path/abc` instead of ˙--additional-hooks-dir ~/path/abc` (or when
         # the path argument is quoted).
         if hookspath:
-            self.hookspath.extend([(os.path.expanduser(path), HookPriority.USER_HOOKS) for path in hookspath])
+            self.hookspath.extend([(os.path.expanduser(path), HOOK_PRIORITY_USER_HOOKS) for path in hookspath])
 
-        # Add hook directories from PyInstaller entry points. Convert integer priority values back into their enum
-        # counterpaths
-        self.hookspath += [(path, HookPriority(priority)) for path, priority in discover_hook_directories()]
+        # Add hook directories from PyInstaller entry points.
+        self.hookspath += discover_hook_directories()
 
         self.hooksconfig = {}
         if hooksconfig:
