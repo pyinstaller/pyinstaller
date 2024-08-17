@@ -231,12 +231,25 @@ jobs:
       - name: Install hooksample
         run: pip install "https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip"
 
-      - name: Inject bogus hook
+      # Augment _pyinstaller_hooks_contrib with bogus hooks that conflict with the hooks provided by hooksample.
+      # Due to (implicit) hook priority, the 3rd-party hooks should be chosen over _pyinstaller_hooks_contrib
+      # ones, and so the bogus hooks should never be ran. This applies to standard module hooks, as well as
+      # the pre-find-module-path and pre-safe-import-module hooks.
+      - name: Inject bogus hooks
         shell: python
         run: |
-          from _pyinstaller_hooks_contrib.stdhooks import __path__ as path
-          with open(path[0] + "/hook-pyi_hooksample.py", "w") as f:
-              f.write('assert 0, "Wrong hook! Use the pyi_hooksample copy instead!"\n')
+          import os
+          from _pyinstaller_hooks_contrib import (
+              stdhooks,
+              pre_safe_import_module,
+              pre_find_module_path,
+          )
+          with open(os.path.join(stdhooks.__path__[0], "hook-pyi_hooksample.py"), "w") as f:
+              f.write('raise Exception("Wrong hook! Use the pyi_hooksample copy instead!")\n')
+          with open(os.path.join(pre_safe_import_module.__path__[0], "hook-pyi_hooksample.py"), "w") as f:
+              f.write('raise Exception("Wrong hook! Use the pyi_hooksample copy instead!")\n')
+          with open(os.path.join(pre_find_module_path.__path__[0], "hook-pyi_hooksample.py"), "w") as f:
+              f.write('raise Exception("Wrong hook! Use the pyi_hooksample copy instead!")\n')
 
       - name: Run hooksample tests
         run: |
