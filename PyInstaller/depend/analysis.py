@@ -118,7 +118,7 @@ class PyiModuleGraph(ModuleGraph):
         self._user_hook_dirs = [*user_hook_dirs, os.path.join(PACKAGEPATH, 'hooks')]
         # Hook-specific lookup tables. These need to reset when reusing cached PyiModuleGraph to avoid hooks to refer to
         # files or data from another test-case.
-        logger.info('Caching module graph hooks...')
+        logger.info('Initializing module graph hook caches...')
         self._hooks = self._cache_hooks("")
         self._hooks_pre_safe_import_module = self._cache_hooks('pre_safe_import_module')
         self._hooks_pre_find_module_path = self._cache_hooks('pre_find_module_path')
@@ -309,7 +309,7 @@ class PyiModuleGraph(ModuleGraph):
             hooked_module_names = set()
 
             # For each remaining hookable module and corresponding hooks...
-            for module_name, module_hooks in self._hooks.items():
+            for module_name, module_hook in self._hooks.items():
                 # Graph node for this module if imported or "None" otherwise.
                 module_node = self.find_node(module_name, create_nspkg=False)
 
@@ -323,17 +323,15 @@ class PyiModuleGraph(ModuleGraph):
                     hooked_module_names.add(module_name)
                     continue
 
-                # For each hook script for this module...
-                for module_hook in module_hooks:
-                    # Run this script's post-graph hook.
-                    module_hook.post_graph(analysis)
+                # Run this script's post-graph hook.
+                module_hook.post_graph(analysis)
 
-                    # Cache all external dependencies listed by this script after running this hook, which could add
-                    # dependencies.
-                    self._additional_files_cache.add(module_name, module_hook.binaries, module_hook.datas)
+                # Cache all external dependencies listed by this script after running this hook, which could add
+                # dependencies.
+                self._additional_files_cache.add(module_name, module_hook.binaries, module_hook.datas)
 
-                    # Update package collection mode settings.
-                    self._module_collection_mode.update(module_hook.module_collection_mode)
+                # Update package collection mode settings.
+                self._module_collection_mode.update(module_hook.module_collection_mode)
 
                 # Prevent this module's hooks from being run again.
                 hooked_module_names.add(module_name)
@@ -351,8 +349,9 @@ class PyiModuleGraph(ModuleGraph):
         """
         excluded_imports = set()
         while module_name:
-            # Gather excluded imports from hook(s) belonging to the module
-            for module_hook in self._hooks.get(module_name, []):
+            # Gather excluded imports from hook belonging to the module.
+            module_hook = self._hooks.get(module_name, None)
+            if module_hook:
                 excluded_imports.update(module_hook.excludedimports)
             # Change module name to the module's parent name
             module_name = module_name.rpartition('.')[0]
@@ -468,35 +467,32 @@ class PyiModuleGraph(ModuleGraph):
 
         See the superclass method for description of parameters and return value.
         """
-        # If this module has pre-safe import module hooks, run these first.
-        if module_name in self._hooks_pre_safe_import_module:
-            # For the absolute path of each such hook...
-            for hook in self._hooks_pre_safe_import_module[module_name]:
-                # Dynamically import this hook as a fabricated module.
-                hook_path, hook_basename = os.path.split(hook.hook_filename)
-                logger.info('Processing pre-safe-import-module hook %r from %r', hook_basename, hook_path)
-                hook_module_name = 'PyInstaller_hooks_pre_safe_import_module_' + module_name.replace('.', '_')
-                hook_module = importlib_load_source(hook_module_name, hook.hook_filename)
+        # If this module has a pre-safe import module hook, run it. Make sure to remove it first, to prevent subsequent
+        # calls from running it again.
+        hook = self._hooks_pre_safe_import_module.pop(module_name, None)
+        if hook is not None:
+            # Dynamically import this hook as a fabricated module.
+            hook_path, hook_basename = os.path.split(hook.hook_filename)
+            logger.info('Processing pre-safe-import-module hook %r from %r', hook_basename, hook_path)
+            hook_module_name = 'PyInstaller_hooks_pre_safe_import_module_' + module_name.replace('.', '_')
+            hook_module = importlib_load_source(hook_module_name, hook.hook_filename)
 
-                # Object communicating changes made by this hook back to us.
-                hook_api = PreSafeImportModuleAPI(
-                    module_graph=self,
-                    module_basename=module_basename,
-                    module_name=module_name,
-                    parent_package=parent_package,
-                )
+            # Object communicating changes made by this hook back to us.
+            hook_api = PreSafeImportModuleAPI(
+                module_graph=self,
+                module_basename=module_basename,
+                module_name=module_name,
+                parent_package=parent_package,
+            )
 
-                # Run this hook, passed this object.
-                if not hasattr(hook_module, 'pre_safe_import_module'):
-                    raise NameError('pre_safe_import_module() function not defined by hook %r.' % hook_module)
-                hook_module.pre_safe_import_module(hook_api)
+            # Run this hook, passed this object.
+            if not hasattr(hook_module, 'pre_safe_import_module'):
+                raise NameError('pre_safe_import_module() function not defined by hook %r.' % hook_module)
+            hook_module.pre_safe_import_module(hook_api)
 
-                # Respect method call changes requested by this hook.
-                module_basename = hook_api.module_basename
-                module_name = hook_api.module_name
-
-            # Prevent subsequent calls from rerunning these hooks.
-            del self._hooks_pre_safe_import_module[module_name]
+            # Respect method call changes requested by this hook.
+            module_basename = hook_api.module_basename
+            module_name = hook_api.module_name
 
         # Call the superclass method.
         return super()._safe_import_module(module_basename, module_name, parent_package)
@@ -512,33 +508,30 @@ class PyiModuleGraph(ModuleGraph):
 
         See superclass method for parameter and return value descriptions.
         """
-        # If this module has pre-find module path hooks, run these first.
-        if fullname in self._hooks_pre_find_module_path:
-            # For the absolute path of each such hook...
-            for hook in self._hooks_pre_find_module_path[fullname]:
-                # Dynamically import this hook as a fabricated module.
-                hook_path, hook_basename = os.path.split(hook.hook_filename)
-                logger.info('Processing pre-find-module-path hook %r from %r', hook_basename, hook_path)
-                hook_fullname = 'PyInstaller_hooks_pre_find_module_path_' + fullname.replace('.', '_')
-                hook_module = importlib_load_source(hook_fullname, hook.hook_filename)
+        # If this module has a pre-find module path hook, run it. Make sure to remove it first, to prevent subsequent
+        # calls from running it again.
+        hook = self._hooks_pre_find_module_path.pop(fullname, None)
+        if hook is not None:
+            # Dynamically import this hook as a fabricated module.
+            hook_path, hook_basename = os.path.split(hook.hook_filename)
+            logger.info('Processing pre-find-module-path hook %r from %r', hook_basename, hook_path)
+            hook_fullname = 'PyInstaller_hooks_pre_find_module_path_' + fullname.replace('.', '_')
+            hook_module = importlib_load_source(hook_fullname, hook.hook_filename)
 
-                # Object communicating changes made by this hook back to us.
-                hook_api = PreFindModulePathAPI(
-                    module_graph=self,
-                    module_name=fullname,
-                    search_dirs=search_dirs,
-                )
+            # Object communicating changes made by this hook back to us.
+            hook_api = PreFindModulePathAPI(
+                module_graph=self,
+                module_name=fullname,
+                search_dirs=search_dirs,
+            )
 
-                # Run this hook, passed this object.
-                if not hasattr(hook_module, 'pre_find_module_path'):
-                    raise NameError('pre_find_module_path() function not defined by hook %r.' % hook_module)
-                hook_module.pre_find_module_path(hook_api)
+            # Run this hook, passed this object.
+            if not hasattr(hook_module, 'pre_find_module_path'):
+                raise NameError('pre_find_module_path() function not defined by hook %r.' % hook_module)
+            hook_module.pre_find_module_path(hook_api)
 
-                # Respect method call changes requested by this hook.
-                search_dirs = hook_api.search_dirs
-
-            # Prevent subsequent calls from rerunning these hooks.
-            del self._hooks_pre_find_module_path[fullname]
+            # Respect search-directory changes requested by this hook.
+            search_dirs = hook_api.search_dirs
 
         # Call the superclass method.
         return super()._find_module_path(fullname, module_name, search_dirs)

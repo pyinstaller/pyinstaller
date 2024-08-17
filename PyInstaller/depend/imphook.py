@@ -25,10 +25,6 @@ from PyInstaller.exceptions import ImportErrorWhenRunningHook
 
 logger = logging.getLogger(__name__)
 
-# Safety check: Hook module names need to be unique. Duplicate names might occur if the cached PyuModuleGraph has an
-# issue.
-HOOKS_MODULE_NAMES = set()
-
 
 class ModuleHookCache(dict):
     """
@@ -127,6 +123,11 @@ class ModuleHookCache(dict):
                 module_hooks = self.setdefault(module_name, [])
                 module_hooks.append(module_hook)
 
+        # Post-processing: we allow only one instance of hook per module. Currently, the priority order is defined
+        # implicitly, via order of hook directories, so the first hook in the list has the highest priority.
+        for module_name in self.keys():
+            self[module_name] = self[module_name][0]
+
     def remove_modules(self, *module_names):
         """
         Remove the passed modules and all hook scripts cached for these modules from this cache.
@@ -140,13 +141,10 @@ class ModuleHookCache(dict):
         for module_name in module_names:
             # Unload this module's hook script modules from memory. Since these are top-level pure-Python modules cached
             # only in the "sys.modules" dictionary, popping these modules from this dictionary suffices to garbage
-            # collect these modules.
-            module_hooks = self.get(module_name, [])
-            for module_hook in module_hooks:
+            # collect them.
+            module_hook = self.pop(module_name, None)  # Remove our reference, if available.
+            if module_hook is not None:
                 sys.modules.pop(module_hook.hook_module_name, None)
-
-            # Remove this module and its hook script objects from this cache.
-            self.pop(module_name, None)
 
 
 def _module_collection_mode_sanitizer(value):
@@ -278,15 +276,6 @@ class ModuleHook:
         # Name of the in-memory module fabricated to refer to this hook script.
         self.hook_module_name = hook_module_name_prefix + self.module_name.replace('.', '_')
 
-        # Safety check, see above
-        global HOOKS_MODULE_NAMES
-        if self.hook_module_name in HOOKS_MODULE_NAMES:
-            # When self._shallow is true, this class never loads the hook and sets the attributes to empty values
-            self._shallow = True
-        else:
-            self._shallow = False
-            HOOKS_MODULE_NAMES.add(self.hook_module_name)
-
         # Attributes subsequently defined by the _load_hook_module() method.
         self._loaded = False
         self._has_hook_function = False
@@ -360,19 +349,8 @@ class ModuleHook:
         Class docstring for supported attributes.
         """
 
-        # If this hook script module has already been loaded, or we are _shallow, noop.
-        if (self._loaded and (self._hook_module is not None or not keep_module_ref)) or self._shallow:
-            if self._shallow:
-                self._loaded = True
-                self._hook_module = True  # Not None
-                # Inform the user
-                logger.debug(
-                    'Skipping module hook %r from %r because a hook for %s has already been loaded.',
-                    *os.path.split(self.hook_filename)[::-1], self.module_name
-                )
-                # Set the default attributes to empty instances of the type.
-                for attr_name, (attr_type, _) in _MAGIC_MODULE_HOOK_ATTRS.items():
-                    super().__setattr__(attr_name, attr_type())
+        # If this hook script module has already been loaded, noop.
+        if self._loaded and (self._hook_module is not None or not keep_module_ref):
             return
 
         # Load and execute the hook script. Even if mechanisms from the import machinery are used, this does not import
