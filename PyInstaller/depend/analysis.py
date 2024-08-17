@@ -40,7 +40,6 @@ import sys
 import traceback
 from collections import defaultdict
 from copy import deepcopy
-import enum
 
 from PyInstaller import HOMEPATH, PACKAGEPATH
 from PyInstaller import log as logging
@@ -59,12 +58,11 @@ from PyInstaller.utils.hooks import collect_submodules, is_package
 
 logger = logging.getLogger(__name__)
 
-
-class HookPriority(enum.IntEnum):
-    BUILTIN_HOOKS = 0  # Built-in hooks. Lowest priority.
-    CONTRIBUTED_HOOKS = 1000  # Hooks from pyinstaller-hooks-contrib package.
-    UPSTREAM_HOOKS = 2000  # Hooks provided by packages themselves, via entry-points.
-    USER_HOOKS = 3000  # User-supplied hooks (command-line / spec file). Highest priority.
+# Location-based hook priority constants
+HOOK_PRIORITY_BUILTIN_HOOKS = 0  # Built-in hooks. Lowest priority.
+HOOK_PRIORITY_CONTRIBUTED_HOOKS = 1000  # Hooks from pyinstaller-hooks-contrib package.
+HOOK_PRIORITY_UPSTREAM_HOOKS = 2000  # Hooks provided by packages themselves, via entry-points.
+HOOK_PRIORITY_USER_HOOKS = 3000  # User-supplied hooks (command-line / spec file). Highest priority.
 
 
 class PyiModuleGraph(ModuleGraph):
@@ -127,7 +125,7 @@ class PyiModuleGraph(ModuleGraph):
         # tuple, and order is determined from assigned priority (which may also be overridden by hooks themselves).
         self._user_hook_dirs = [
             *user_hook_dirs,
-            (os.path.join(PACKAGEPATH, 'hooks'), HookPriority.BUILTIN_HOOKS),
+            (os.path.join(PACKAGEPATH, 'hooks'), HOOK_PRIORITY_BUILTIN_HOOKS),
         ]
         # Hook-specific lookup tables. These need to reset when reusing cached PyiModuleGraph to avoid hooks to refer to
         # files or data from another test-case.

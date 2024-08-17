@@ -178,7 +178,7 @@ def test_collect_rthooks_1(tmpdir, monkeypatch):
     mg = FakePyiModuleGraph(
         HOMEPATH,
         user_hook_dirs=[
-            (str(hd1), analysis.HookPriority.BUILTIN_HOOKS),
+            (str(hd1), analysis.HOOK_PRIORITY_BUILTIN_HOOKS),
         ],
     )
     assert len(mg._available_rthooks["test_pyimodulegraph_mymod1"]) == 1
@@ -192,8 +192,8 @@ def test_collect_rthooks_2(tmpdir, monkeypatch):
     mg = FakePyiModuleGraph(
         HOMEPATH,
         user_hook_dirs=[
-            (str(hd1), analysis.HookPriority.BUILTIN_HOOKS),
-            (str(hd2), analysis.HookPriority.BUILTIN_HOOKS),
+            (str(hd1), analysis.HOOK_PRIORITY_BUILTIN_HOOKS),
+            (str(hd2), analysis.HOOK_PRIORITY_BUILTIN_HOOKS),
         ],
     )
     assert len(mg._available_rthooks["test_pyimodulegraph_mymod1"]) == 1
@@ -208,8 +208,8 @@ def test_collect_rthooks_3(tmpdir, monkeypatch):
     mg = FakePyiModuleGraph(
         HOMEPATH,
         user_hook_dirs=[
-            (str(hd1), analysis.HookPriority.BUILTIN_HOOKS),
-            (str(hd2), analysis.HookPriority.BUILTIN_HOOKS),
+            (str(hd1), analysis.HOOK_PRIORITY_BUILTIN_HOOKS),
+            (str(hd2), analysis.HOOK_PRIORITY_BUILTIN_HOOKS),
         ],
     )
     assert len(mg._available_rthooks["test_pyimodulegraph_mymod1"]) == 1
@@ -222,7 +222,7 @@ def test_collect_rthooks_fail_1(tmpdir, monkeypatch):
         FakePyiModuleGraph(
             HOMEPATH,
             user_hook_dirs=[
-                (str(hd1), analysis.HookPriority.BUILTIN_HOOKS),
+                (str(hd1), analysis.HOOK_PRIORITY_BUILTIN_HOOKS),
             ],
         )
 
