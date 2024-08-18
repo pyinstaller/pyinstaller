@@ -25,7 +25,6 @@ import packaging.requirements
 from PyInstaller import HOMEPATH, compat
 from PyInstaller import log as logging
 from PyInstaller.depend.imphookapi import PostGraphAPI
-from PyInstaller.exceptions import ExecCommandFailed
 from PyInstaller import isolated
 from PyInstaller.compat import importlib_metadata
 
@@ -1089,7 +1088,7 @@ def get_installer(module: str):
                                     encoding='utf-8').stdout
             if 'is provided by' in output:
                 return 'macports'
-        except ExecCommandFailed:
+        except Exception:
             pass
 
         # Check if the file is located in homebrew's Cellar directory
