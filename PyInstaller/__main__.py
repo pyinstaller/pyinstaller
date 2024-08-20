@@ -235,7 +235,7 @@ def check_unsafe_privileges():
     """
     Forbid dangerous usage of PyInstaller with escalated privileges
     """
-    if compat.is_win:
+    if compat.is_win and not compat.is_win_wine:
         # Discourage (with the intention to eventually block) people using *run as admin* with PyInstaller.
         # There are 4 cases, block case 3 but be careful not to also block case 2.
         #   1. User has no admin access: TokenElevationTypeDefault
