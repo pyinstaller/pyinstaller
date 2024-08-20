@@ -11,6 +11,14 @@
 
 from PyInstaller.utils.hooks import collect_data_files
 
-hiddenimports = ["babel.dates"]
-
+# Ensure that .dat files from locale-data sub-directory are collected.
 datas = collect_data_files('babel')
+
+# Unpickling of locale-data/root.dat currently (babel v2.16.0) requires classes from following modules, so ensure that
+# they are always collected:
+hiddenimports = [
+    "babel.dates",
+    "babel.localedata",
+    "babel.plural",
+    "babel.numbers",
+]
