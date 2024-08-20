@@ -492,3 +492,18 @@ def test_setuptools(pyi_builder):
     pyi_builder.test_source("""
         import setuptools
         """)
+
+
+@importorskip('babel')
+def test_babel(pyi_builder):
+    # Try to format a date/time in order to ensure that data files from babel's locale-data directory (especially
+    # root.dat) can be unpickled.
+    pyi_builder.test_source(
+        """
+        import datetime
+        from babel.dates import format_datetime
+
+        datetime_obj = datetime.datetime(2007, 4, 1, 15, 30)
+        print(format_datetime(datetime_obj, 'full', locale='fr_FR'))
+        """
+    )
