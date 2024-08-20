@@ -59,10 +59,10 @@ from PyInstaller.utils.hooks import collect_submodules, is_package
 logger = logging.getLogger(__name__)
 
 # Location-based hook priority constants
-HOOK_PRIORITY_BUILTIN_HOOKS = 0  # Built-in hooks. Lowest priority.
-HOOK_PRIORITY_CONTRIBUTED_HOOKS = 1000  # Hooks from pyinstaller-hooks-contrib package.
-HOOK_PRIORITY_UPSTREAM_HOOKS = 2000  # Hooks provided by packages themselves, via entry-points.
-HOOK_PRIORITY_USER_HOOKS = 3000  # User-supplied hooks (command-line / spec file). Highest priority.
+HOOK_PRIORITY_BUILTIN_HOOKS = -2000  # Built-in hooks. Lowest priority.
+HOOK_PRIORITY_CONTRIBUTED_HOOKS = -1000  # Hooks from pyinstaller-hooks-contrib package.
+HOOK_PRIORITY_UPSTREAM_HOOKS = 0  # Hooks provided by packages themselves, via entry-points.
+HOOK_PRIORITY_USER_HOOKS = 1000  # User-supplied hooks (command-line / spec file). Highest priority.
 
 
 class PyiModuleGraph(ModuleGraph):
