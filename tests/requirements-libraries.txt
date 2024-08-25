@@ -24,7 +24,7 @@ ipython==8.26.0; python_version >= '3.10'
 keyring==23.0.1; sys_platform == 'darwin' and python_version < '3.8.7'  # pyup: ignore
 keyring==25.3.0; sys_platform != 'darwin' or python_version >= '3.8.7'
 matplotlib==3.9.2; python_version >= '3.9'
-numpy==2.1.0; python_version >= '3.9'
+numpy==2.1.0; python_version >= '3.10'
 pandas==2.2.2; python_version >= '3.9'
 pygments==2.18.0
 PyGObject==3.48.2; sys_platform == 'linux'
@@ -82,6 +82,7 @@ Pillow==10.4.0
 # -------------------------------------------------------
 
 numpy==1.24.3; python_version == '3.8'  # pyup: ignore
+numpy==2.0.1; python_version == '3.9'  # pyup: ignore
 pandas==2.0.3; python_version == '3.8'  # pyup: ignore
 scipy==1.10.1; python_version == '3.8'  # pyup: ignore
 scipy==1.13.1; python_version == '3.9'  # pyup: ignore
