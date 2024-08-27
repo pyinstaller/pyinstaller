@@ -886,17 +886,29 @@ if compat.is_linux:
 elif compat.is_win:
 
     def _classify_binary_vs_data(filename):
-        # See if the file can be opened using `pefile`.
         import pefile
 
+        # First check for MZ signature, which should allow us to quickly classify the majority of data files.
         try:
-            pe = pefile.PE(filename, fast_load=True)  # noqa: F841
-            return 'BINARY'
+            with open(filename, 'rb') as fp:
+                sig = fp.read(2)
         except Exception:
-            # TODO: catch only `pefile.PEFormatError`?
+            return None
+
+        if sig != b"MZ":
+            return "DATA"
+
+        # Check if the file can be opened using `pefile`.
+        try:
+            with pefile.PE(filename, fast_load=True) as pe:  # noqa: F841
+                pass
+            return 'BINARY'
+        except pefile.PEFormatError:
+            return 'DATA'
+        except Exception:
             pass
 
-        return 'DATA'
+        return None
 
 elif compat.is_darwin:
 
