@@ -166,6 +166,17 @@ def _module_collection_mode_sanitizer(value):
     raise ValueError(f"Invalid module collection mode setting value: {value!r}")
 
 
+def _bindepend_symlink_suppression_sanitizer(value):
+    if isinstance(value, (list, set)):
+        # Hook set a list or a set; use it as-is
+        return set(value)
+    elif isinstance(value, str):
+        # Hook set a string; create a set with single element.
+        return set([value])
+
+    raise ValueError(f"Invalid value for bindepend_symlink_suppression: {value!r}")
+
+
 # Dictionary mapping the names of magic attributes required by the "ModuleHook" class to 2-tuples "(default_type,
 # sanitizer_func)", where:
 #
@@ -198,6 +209,9 @@ _MAGIC_MODULE_HOOK_ATTRS = {
 
     # Package/module collection mode dictionary.
     'module_collection_mode': (dict, _module_collection_mode_sanitizer),
+
+    # Path patterns for suppression of symbolic links created by binary dependency analysis.
+    'bindepend_symlink_suppression': (set, _bindepend_symlink_suppression_sanitizer),
 }
 
 
@@ -235,6 +249,9 @@ class ModuleHook:
     module_collection_mode : dict
         A dictionary of package/module names and their corresponding collection mode strings ('pyz', 'pyc', 'py',
         'pyz+py', 'py+pyz').
+    bindepend_symlink_suppression : set
+        A set of paths or path patterns corresponding to shared libraries for which binary dependency analysis should
+        not create symbolic links into top-level application directory.
 
     Attributes (Non-magic)
     ----------
@@ -498,6 +515,7 @@ class ModuleHook:
         self.binaries.update(set(hook_api._added_binaries))
         self.hiddenimports.extend(hook_api._added_imports)
         self.module_collection_mode.update(hook_api._module_collection_mode)
+        self.bindepend_symlink_suppression.update(hook_api._bindepend_symlink_suppression)
 
         # FIXME: `hook_api._deleted_imports` should be appended to `self.excludedimports` and used to suppress module
         # import during the modulegraph construction rather than handled here. However, for that to work, the `hook()`

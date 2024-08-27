@@ -306,6 +306,9 @@ class PostGraphAPI:
     _module_collection_mode : dict
         Dictionary of package/module names and their corresponding collection mode strings. This is equivalent to the
         global `module_collection_mode` hook attribute.
+    _bindepend_symlink_suppression : set
+        A set of paths or path patterns corresponding to shared libraries for which binary dependency analysis should
+        not generate symbolic links into top-level application directory.
     """
     def __init__(self, module_name, module_graph, analysis):
         # Mutable attributes.
@@ -332,6 +335,7 @@ class PostGraphAPI:
         self._added_imports = []
         self._deleted_imports = []
         self._module_collection_mode = {}
+        self._bindepend_symlink_suppression = set()
 
     # Immutable properties. No corresponding setters are defined.
     @property
@@ -473,3 +477,10 @@ class PostGraphAPI:
             self._module_collection_mode.pop(name)
         else:
             self._module_collection_mode[name] = mode
+
+    def add_bindepend_symlink_suppression_pattern(self, pattern):
+        """
+        Add the given path or path pattern to the set of patterns that prevent binary dependency analysis from creating
+        a symbolic link to the top-level application directory.
+        """
+        self._bindepend_symlink_suppression.add(pattern)
