@@ -106,7 +106,7 @@ def _select_destination_directory(src_filename, parent_dir_preservation_paths):
     return src_filename.name
 
 
-def binary_dependency_analysis(binaries, search_paths=None):
+def binary_dependency_analysis(binaries, search_paths=None, symlink_suppression_patterns=None):
     """
     Perform binary dependency analysis on the given TOC list of collected binaries, by recursively scanning each binary
     for linked dependencies (shared library imports). Returns new TOC list that contains both original entries and their
@@ -191,7 +191,19 @@ def binary_dependency_analysis(binaries, search_paths=None):
             # LD_LIBRARY_PATH being set to the top-level application directory on linux (although library search
             # should be mostly done via rpaths, so this might be redundant) and to accommodate library path
             # rewriting on macOS, which assumes that the library was collected into top-level directory.
-            if not compat.is_win and dep_dest_path.parent != pathlib.PurePath('.'):
+            if compat.is_win:
+                # We do not use symlinks on Windows.
+                pass
+            elif dep_dest_path.parent == pathlib.PurePath('.'):
+                # The shared library itself is being collected into top-level application directory.
+                pass
+            elif any(dep_src_path.match(pattern) for pattern in symlink_suppression_patterns):
+                # Honor symlink suppression patterns specified by hooks.
+                logger.warning(
+                    "Skipping symbolic link from %r to top-level application directory due to source path matching one "
+                    "of symlink suppression path patterns.", str(dep_dest_path)
+                )
+            else:
                 logger.debug("Adding symbolic link from %r to top-level application directory.", str(dep_dest_path))
                 output_toc.append((str(dep_dest_path.name), str(dep_dest_path), 'SYMLINK'))
 

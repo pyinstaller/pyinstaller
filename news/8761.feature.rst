@@ -1,0 +1,7 @@
+Implement a mechanism that allows hooks to inform PyInstaller's binary
+dependency analysis that it should not create symbolic links to top-level
+application directory for certain shared libraries (applicable to platforms
+where such symbolic links are created in the first place). This mechanism
+is intended as a work around for corner cases when such symbolic links
+disrupt run-time discovery of other shared libraries that are stored in
+the linked library's true location.

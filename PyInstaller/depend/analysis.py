@@ -94,6 +94,9 @@ class PyiModuleGraph(ModuleGraph):
         Cache of all external dependencies (e.g., binaries, datas) listed in hook scripts for imported modules.
     _module_collection_mode : dict
         A dictionary of module/package collection mode settings set by hook scripts for their modules.
+    _bindepend_symlink_suppression : set
+        A set of paths or path patterns corresponding to shared libraries for which binary dependency analysis should
+        not create symbolic links into top-level application directory.
     _base_modules: list
         Dependencies for `base_library.zip` (which remain the same for every executable).
     """
@@ -120,6 +123,7 @@ class PyiModuleGraph(ModuleGraph):
         self._top_script_node = None
         self._additional_files_cache = AdditionalFilesCache()
         self._module_collection_mode = dict()
+        self._bindepend_symlink_suppression = set()
         # Hook sources: user-supplied (command-line / spec file), entry-point (upstream hooks, contributed hooks), and
         # built-in hooks. The order does not really matter anymore, because each entry is now a (location, priority)
         # tuple, and order is determined from assigned priority (which may also be overridden by hooks themselves).
@@ -344,6 +348,9 @@ class PyiModuleGraph(ModuleGraph):
 
                 # Update package collection mode settings.
                 self._module_collection_mode.update(module_hook.module_collection_mode)
+
+                # Update symbolic link suppression patterns for binary dependency analysis.
+                self._bindepend_symlink_suppression.update(module_hook.bindepend_symlink_suppression)
 
                 # Prevent this module's hooks from being run again.
                 hooked_module_names.add(module_name)

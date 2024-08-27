@@ -130,7 +130,7 @@ def discover_hook_directories():
     return hook_directories
 
 
-def find_binary_dependencies(binaries, import_packages):
+def find_binary_dependencies(binaries, import_packages, symlink_suppression_patterns):
     """
     Find dynamic dependencies (linked shared libraries) for the provided list of binaries.
 
@@ -144,6 +144,12 @@ def find_binary_dependencies(binaries, import_packages):
             List of binaries to scan for dynamic dependencies.
     import_packages
             List of packages to import prior to scanning binaries.
+    symlink_suppression_patterns
+            Set of paths and/or path patterns for which binary dependency analysis should not create symbolic links
+            to the top-level application directory (when the discovered shared library's parent directory structure
+            is preserved). When binary dependency analysis discovers a shared library, it matches its *source path*
+            against all symlink suppression patterns (using `pathlib.PurePath.match`) to determine whether to create
+            a symbolic link to top-level application directory or not.
 
     :return: expanded list of binaries and then dependencies.
     """
@@ -300,7 +306,11 @@ def find_binary_dependencies(binaries, import_packages):
     extra_libdirs = list(dict.fromkeys(extra_libdirs).keys())
 
     # Search for dependencies of the given binaries
-    return bindepend.binary_dependency_analysis(binaries, search_paths=extra_libdirs)
+    return bindepend.binary_dependency_analysis(
+        binaries,
+        search_paths=extra_libdirs,
+        symlink_suppression_patterns=symlink_suppression_patterns,
+    )
 
 
 class _ModuleCollectionMode(enum.IntFlag):
@@ -935,7 +945,9 @@ class Analysis(Target):
         logger.info('Looking for dynamic libraries')
 
         collected_packages = self.graph.get_collected_packages()
-        self.binaries.extend(find_binary_dependencies(self.binaries, collected_packages))
+        self.binaries.extend(
+            find_binary_dependencies(self.binaries, collected_packages, self.graph._bindepend_symlink_suppression)
+        )
 
         # Apply work-around for (potential) binaries collected from `pywin32` package...
         if is_win:

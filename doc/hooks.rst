@@ -351,6 +351,54 @@ applies them to the bundle being created.
    can be modified using the `set_module_collection_mode method`_ from
    the ``hook_api`` object instead of setting the global hook variable.
 
+.. _bindepend symlink suppression:
+
+``bindepend_symlink_suppression``
+   An option for hooks to prevent the PyInstaller's binary dependency
+   analysis process from creating a symbolic link to top-level application
+   directory for specific shared library. Has effect only on platforms
+   where such symbolic links are created.
+
+   The value can be either a string (single path or pattern), a list of
+   strings, or a set of strings. During binary dependency analysis,
+   the discovered shared library's source path is matched against all
+   patterns that have been set by hooks to determine whether the symbolic
+   link should be created or not.
+
+   This mechanism is intended to be used in specific cases to work around
+   issues caused by symbolic links created by binary dependency analysis;
+   for example, when such a library tries to look up its location, but
+   does not fully resolve the obtained path.
+
+   Example::
+
+      # hook-mypackage.py
+
+      import os
+      from PyInstaller import compat
+      from PyInstaller.utils.hooks import get_module_file_attribute
+
+      # On linux, suppress creation of symbolic links to top-level application
+      # directory for all shared libraries collected from the package's directory.
+      if compat.is_linux:
+         package_dir = os.path.dirname(get_module_file_attribute('mypackage'))
+         bindepend_symlink_suppression = os.path.join(package_dir, "*.so*")
+
+   Example::
+
+      # hook-mypackage.py
+
+      from PyInstaller import compat
+
+      # On linux, suppress creation of symbolic links to top-level application
+      # directory for shared libraries bundled with this package in its two
+      # library subdirectories.
+      if compat.is_linux:
+         bindepend_symlink_suppression = [
+            "**/mypackage/lib_dir1/*.so*",
+            "**/mypackage/lib_dir2/*.so*",
+         ]
+
 
 Useful Items in ``PyInstaller.compat``
 ----------------------------------------
@@ -553,6 +601,12 @@ The ``hook_api`` object also offers the following methods:
    current hook's context! The collection mode may be set for the hooked
    package, its sub-module or sub-package, or for other packages. If ``name``
    is ``None``, it is substituted with the hooked package/module name.
+
+``add_bindepend_symlink_suppression_pattern( pattern )``:
+   Add the given path or path pattern to the set of patterns that prevent
+   binary dependency analysis from creating a symbolic link to the top-level
+   application directory. The same can be achieved by setting the
+   :ref:`bindepend_symlink_suppression hook global variable <bindepend symlink suppression>`.
 
 The ``hook()`` function can add, remove or change included files using the
 above methods of ``hook_api``.
