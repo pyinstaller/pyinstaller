@@ -1,0 +1,3 @@
+(Windows) Pin ``pefile != 2024.8.26`` due to performance regression in
+``pefile`` 2024.8.26 that heavily impacts PyInstaller's binary dependency
+analysis and binary-vs-data classification.
