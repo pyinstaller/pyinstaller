@@ -469,3 +469,22 @@ def test_optimization_via_python_option(pyi_builder, level, tmpdir):
 def test_optimization_via_optimize_option(pyi_builder, level, tmpdir):
     pyi_args = ["--optimize", str(level)]
     _test_optimization(pyi_builder, level, tmpdir, pyi_args)
+
+
+# Test that runpy.run_path() in frozen application can run a bundled python script file. See #8767.
+def test_runpy_run_from_location(tmpdir, pyi_builder):
+    script_file = tmpdir / "script.py"
+    with open(script_file, "w", encoding="utf8") as fp:
+        fp.write("""print("Hello world!")\n""")
+
+    pyi_builder.test_source(
+        """
+        import os
+        import sys
+        import runpy
+
+        script_file = os.path.join(sys._MEIPASS, 'script.py')
+        runpy.run_path(script_file, run_name="__main__")
+        """,
+        pyi_args=['--add-data', f"{script_file}:."],
+    )

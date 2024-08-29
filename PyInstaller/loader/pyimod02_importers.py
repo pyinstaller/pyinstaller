@@ -154,6 +154,12 @@ class PyiFrozenImporter:
             else:
                 raise
 
+        # Ensure that path does not point to a file on filesystem. Strictly speaking, we should be checking that the
+        # given path is a valid directory, but that would need to check both PYZ and filesystem. So for now, limit the
+        # check to catch paths pointing to file, because that breaks `runpy.run_path()`, as per #8767.
+        if os.path.isfile(path):
+            raise ImportError("only directories are supported")
+
         if relative_path == '.':
             self._pyz_entry_prefix = ''
         else:
