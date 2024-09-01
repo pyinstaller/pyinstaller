@@ -17,6 +17,7 @@ import ctypes.util
 import io
 import os
 import re
+import shutil
 import struct
 import zipfile
 from types import CodeType
@@ -323,12 +324,11 @@ def load_ldconfig_cache():
         LDCONFIG_CACHE = {}
         return
 
-    from distutils.spawn import find_executable
-    ldconfig = find_executable('ldconfig')
+    ldconfig = shutil.which('ldconfig')
     if ldconfig is None:
         # If `ldconfig` is not found in $PATH, search for it in some fixed directories. Simply use a second call instead
         # of fiddling around with checks for empty env-vars and string-concat.
-        ldconfig = find_executable('ldconfig', '/usr/sbin:/sbin:/usr/bin:/usr/sbin')
+        ldconfig = shutil.which('ldconfig', path='/usr/sbin:/sbin:/usr/bin:/bin')
 
         # If we still could not find the 'ldconfig' command...
         if ldconfig is None:
