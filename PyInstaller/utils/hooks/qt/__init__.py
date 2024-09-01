@@ -985,7 +985,7 @@ class QtLibraryInfo:
         plugin_binaries = set()
 
         # Read the `qmldir` file to determine the names of plugin binaries, if any.
-        contents = qmldir_file.read_text()
+        contents = qmldir_file.read_text(encoding="utf-8")
         for line in contents.splitlines():
             m = self._qml_plugin_def.match(line)
             if m is None:

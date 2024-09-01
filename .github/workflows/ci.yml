@@ -244,11 +244,11 @@ jobs:
               pre_safe_import_module,
               pre_find_module_path,
           )
-          with open(os.path.join(stdhooks.__path__[0], "hook-pyi_hooksample.py"), "w") as f:
+          with open(os.path.join(stdhooks.__path__[0], "hook-pyi_hooksample.py"), "w", encoding="utf-8") as f:
               f.write('raise Exception("Wrong hook! Use the pyi_hooksample copy instead!")\n')
-          with open(os.path.join(pre_safe_import_module.__path__[0], "hook-pyi_hooksample.py"), "w") as f:
+          with open(os.path.join(pre_safe_import_module.__path__[0], "hook-pyi_hooksample.py"), "w", encoding="utf-8") as f:
               f.write('raise Exception("Wrong hook! Use the pyi_hooksample copy instead!")\n')
-          with open(os.path.join(pre_find_module_path.__path__[0], "hook-pyi_hooksample.py"), "w") as f:
+          with open(os.path.join(pre_find_module_path.__path__[0], "hook-pyi_hooksample.py"), "w", encoding="utf-8") as f:
               f.write('raise Exception("Wrong hook! Use the pyi_hooksample copy instead!")\n')
 
       - name: Run hooksample tests
