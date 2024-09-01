@@ -429,7 +429,7 @@ def _test_optimization(pyi_builder, level, tmpdir, pyi_args):
 
     pyi_builder.test_script("pyi_optimization.py", pyi_args=pyi_args, app_args=[results_filename])
 
-    with open(results_filename, "r") as fp:
+    with open(results_filename, "r", encoding="utf-8") as fp:
         results = json.load(fp)
 
     # Check that sys.flags.optimize matches the specified level

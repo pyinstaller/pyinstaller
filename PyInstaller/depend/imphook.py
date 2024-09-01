@@ -379,7 +379,7 @@ class ModuleHook:
         # Priority override pattern: `# $PyInstaller-Hook-Priority: <value>`
         priority_pattern = re.compile(r"^\s*#\s*\$PyInstaller-Hook-Priority:\s*(?P<value>[\S]+)")
 
-        with open(self.hook_filename, "r") as f:
+        with open(self.hook_filename, "r", encoding="utf-8") as f:
             for line in f:
                 # Attempt to match and parse hook priority directive
                 m = priority_pattern.match(line)
