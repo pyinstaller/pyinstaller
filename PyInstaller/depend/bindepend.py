@@ -199,7 +199,7 @@ def binary_dependency_analysis(binaries, search_paths=None, symlink_suppression_
                 pass
             elif any(dep_src_path.match(pattern) for pattern in symlink_suppression_patterns):
                 # Honor symlink suppression patterns specified by hooks.
-                logger.warning(
+                logger.debug(
                     "Skipping symbolic link from %r to top-level application directory due to source path matching one "
                     "of symlink suppression path patterns.", str(dep_dest_path)
                 )
