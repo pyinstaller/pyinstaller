@@ -31,6 +31,8 @@ following locations:
 The program has access to several variables for these uses.
 
 
+.. _`using-file`:
+
 Using ``__file__``
 ~~~~~~~~~~~~~~~~~~
 

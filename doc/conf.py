@@ -67,9 +67,10 @@ for (contents, path) in [
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.intersphinx', 
+extensions = ['sphinx.ext.intersphinx',
               'sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
+              'sphinx_toolbox.collapse',
               'sphinx_autodoc_typehints',
               'sphinxcontrib.towncrier',
               'sphinx_issues']
@@ -79,6 +80,7 @@ issues_github_path = "pyinstaller/pyinstaller"
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'matplotlib': ('https://matplotlib.org/stable/', None),
+    'platformdirs': ('https://platformdirs.readthedocs.io/en/latest/', None),
 }
 
 # Autodoc cross references which don't exist and should not be warned about.

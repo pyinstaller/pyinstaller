@@ -19,3 +19,7 @@ them more readable. */
 .rst-content .section[id="changelog-for-pyinstaller"] ul li { margin-bottom: 14px; }
 /* But don't space out lists within lists because they look stupid. */
 .rst-content .section[id="changelog-for-pyinstaller"] ul li ul li { margin-bottom: unset; }
+
+summary {
+  padding-bottom: 1.5em;
+}

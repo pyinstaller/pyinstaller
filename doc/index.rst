@@ -68,6 +68,7 @@ _________
    advanced-topics
    hooks
    hooks-config
+   building-for-other-platforms
    bootloader-building
    CHANGES
    CREDITS
