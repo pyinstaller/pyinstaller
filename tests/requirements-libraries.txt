@@ -27,7 +27,7 @@ matplotlib==3.9.2; python_version >= '3.9'
 numpy==2.1.1; python_version >= '3.10'
 pandas==2.2.2; python_version >= '3.9'
 pygments==2.18.0
-PyGObject==3.48.2; sys_platform == 'linux'
+PyGObject==3.50.0; sys_platform == 'linux'
 # Official PySide2 wheels do not support python 3.11 or newer
 PySide2==5.15.2.1; python_version < '3.11'
 # PySide6 is a metapackage that depends on PySide6-Essentials and PySide6-Addons. Their versions are
