@@ -12,10 +12,8 @@
 __all__ = ('HOMEPATH', 'PLATFORM', '__version__', 'DEFAULT_DISTPATH', 'DEFAULT_SPECPATH', 'DEFAULT_WORKPATH')
 
 import os
-import sys
 
 from PyInstaller import compat
-from PyInstaller.utils.git import get_repo_revision
 
 # Note: Keep this variable as plain string so it could be updated automatically when doing a release.
 __version__ = '6.10.0'
@@ -26,24 +24,6 @@ PACKAGEPATH = os.path.abspath(os.path.dirname(__file__))
 
 HOMEPATH = os.path.dirname(PACKAGEPATH)
 
-# Update __version__ as necessary.
-if os.path.exists(os.path.join(HOMEPATH, 'setup.py')):
-    # PyInstaller is run directly from source without installation, or __version__ is called from 'setup.py'...
-    if compat.getenv('PYINSTALLER_DO_RELEASE') == '1':
-        # Suppress the git revision when doing a release.
-        pass
-    elif 'sdist' not in sys.argv:
-        # and 'setup.py' was not called with 'sdist' argument. For creating source tarball we do not want git revision
-        # in the filename.
-        try:
-            __version__ += get_repo_revision()
-        except Exception:
-            # Write to stderr because stdout is used for eval() statement in some subprocesses.
-            sys.stderr.write('WARN: failed to parse git revision')
-else:
-    # PyInstaller was installed by `python setup.py install'.
-    from importlib.metadata import version
-    __version__ = version('PyInstaller')
 # Default values of paths where to put files created by PyInstaller. If changing these, do not forget to update the
 # help text for corresponding command-line options, defined in build_main.
 

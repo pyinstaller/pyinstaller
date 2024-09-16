@@ -16,7 +16,6 @@ if not test (read -n1 -P 'Are the most recent "version latest" readthedocs build
     exit 1;
 end
 
-set -x PYINSTALLER_DO_RELEASE 1
 pip install -q -r doc/requirements.txt
 pip install -Uq twine
 
