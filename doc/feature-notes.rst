@@ -1796,6 +1796,43 @@ option takes place before starting the embedded python interpreter.
    implement its own programmatic hiding/minimization of the console
    window, and have it performed only after the UI becomes visible.
 
+.. note::
+   This feature has several known caveats when ``Windows Terminal`` is
+   used as the default terminal app to host command-line applications, as
+   opposed to the old ``Windows Console Host`` (``conhost.exe``). This
+   is the default setting on contemporary Windows 11 systems [*]_.
+
+   The issues are as follows:
+
+   * terminal window can be only minimized; attempting to hide it will
+     result in minimization instead.
+
+   * if the user has configured Windows Terminal to open new tabs instead
+     of new windows, the application's console will end up attached as
+     new tab in existing window, if available. Therefore, if application
+     tries to hide/minimize its console, it will end up minimizing that
+     window (along with other tabs that it might contain).
+
+   * the Windows terminal window will likely be fully shown before it
+     ends up being minimized.
+
+   * due to timing issues, the Windows terminal might fail to be minimized
+     (although the bootloader is trying to mitigate this particular issue).
+
+   As an application developer, it is unlikely that you will have control
+   over users' default terminal app and its settings. Therefore, if you
+   are using this feature to create an illusion of a hybrid-console
+   application (that has no console when launched by double-clicking on
+   the executable, but shows console output when launched from existing
+   console window), the only reliable approach at the moment is to
+   explicitly force the application to be launched via ``conhost.exe``.
+
+   One way to achieve that (regardless of default terminal app setting)
+   is to have your application's installer (assuming you have one) create
+   a desktop (or Start Menu) shortcut that has the ``Target`` set to
+   ``conhost.exe c:\path\to\installed\application.exe``.
+
+.. [*] The setting can be found under ``System Settings → For Developers → Terminal``.
 
 .. include:: _common_definitions.txt
 
