@@ -1045,14 +1045,42 @@ static void pyi_win32_adjust_console(int show_cmd)
     if (hConsole != NULL) {
         DWORD dwProcessId = GetCurrentProcessId();
         DWORD dwConsoleProcessId;
+        int i;
 
         if (GetWindowThreadProcessId(hConsole, &dwConsoleProcessId) == 0) {
             return; /* Window handle is invalid */
         }
 
-        if (dwProcessId == dwConsoleProcessId) {
-            ShowWindow(hConsole, show_cmd);
+        if (dwProcessId != dwConsoleProcessId) {
+            /* We do not own console window (i.e., were launched from existing console) */
+            PYI_DEBUG_W(L"LOADER: console window not owned by application - skipping adjustment.\n");
+            return;
         }
+
+        PYI_DEBUG_W(L"LOADER: console window is owned by application - calling ShowWindow() with nCmdShow=%d...\n", show_cmd);
+
+        /* If Windows Terminal is used as the default terminal app (which
+         * is the case on contemporary Windows 11 systems), we need to
+         * ensure that its window was shown before we submit request
+         * to hide/minimize it (sidenote: both translate into minimization).
+         * Otherwise, the request ends up being ignored. ShowWindow()
+         * returns the previous status of the window; non-zero if it
+         * was visible, zero if it was not visible - use that to catch
+         * transition from visible state. As a safety mechanism, perform
+         * up to five attempts with 100 ms delay, so that in the worst
+         * case, we end up delaying the program by half a second. */
+        for (i = 0; i < 5; i++) {
+            BOOL status;
+
+            status = ShowWindow(hConsole, show_cmd);
+            if (status != 0) {
+                PYI_DEBUG_W(L"LOADER: console window transitioned from non-hidden to hidden on attempt #%i.\n", i + 1);
+                return;
+            }
+            Sleep(100);
+        }
+
+        PYI_DEBUG_W(L"LOADER: console window failed to transition from non-hidden to hidden in %i attempts!\n", i);
     }
 }
 
