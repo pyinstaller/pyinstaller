@@ -34,8 +34,3 @@ jobs:
 
     - name: Run Lint
       run: ruff check --output-format=github .
-
-    - name: Test Packaging
-      run: |
-        python setup.py sdist bdist_wheel
-        pip install -v .

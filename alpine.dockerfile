@@ -35,14 +35,14 @@ RUN pip wheel -r tests/requirements-tools.txt -w wheels
 
 # Recent versions of python docker image do not provide setuptools and wheel with python (>= 3.12) by default.
 # See: https://github.com/docker-library/python/issues/952
-RUN pip install --upgrade setuptools wheel
+RUN pip install --upgrade setuptools wheel build
 
 # Build a wheel for PyInstaller. Do this last and use as few files as possible to maximize cache-ability.
 COPY COPYING.txt .
 COPY setup.* ./
 COPY bootloader bootloader
 COPY PyInstaller PyInstaller
-RUN python setup.py -qqq bdist_wheel -d wheels
+RUN pip wheel --no-build-isolation --no-dependencies --wheel-dir=wheels .
 
 
 FROM python:alpine

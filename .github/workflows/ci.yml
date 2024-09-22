@@ -275,7 +275,8 @@ jobs:
       # all the extras needed to compile the bootloader.
       - run: |
           git clean -xfdq .
-          python setup.py -qqq sdist
+          pip install build
+          python -m build --sdist --no-isolation --outdir dist
           docker build --target=wheel-factory -t bar -f alpine.dockerfile .
       - run: |
           sdist="$(ls dist)"

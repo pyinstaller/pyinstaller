@@ -21,6 +21,7 @@ pip install -Uq twine
 
 read -n1 -P 'nano is about to be opened so that you can edit PyInstaller\'s version. When it does, write the new version then save and quit. Press any key to proceed: '
 nano +21 PyInstaller/__init__.py
+set new_version (cat PyInstaller/__init__.py | string match -rg "__version__ = '(.+)'")
 towncrier --yes
 sh -c 'cd doc && make man'
 
@@ -28,7 +29,7 @@ sh -c 'cd doc && make man'
 set header (head -n7 doc/CREDITS.rst)
 set footer (tail -n +7 doc/CREDITS.rst)
 printf '%s\n' $header > doc/CREDITS.rst
-set title 'Contributions to PyInstaller '(python setup.py --version)
+set title 'Contributions to PyInstaller '$new_version
 echo $title >> doc/CREDITS.rst
 echo $title | perl -pe 's/./-/g' >> doc/CREDITS.rst
 echo '' >> doc/CREDITS.rst
@@ -37,7 +38,7 @@ printf '%s\n' $footer >> doc/CREDITS.rst
 
 # Update docs versions in the README.
 perl -pe 's&https?://pyinstaller.readthedocs.io&https://pyinstaller.org&g' -i README.rst
-perl -pe 's&(https://pyinstaller.org/en/)[^/]+/&$1'v(python setup.py --version)'/&g' -i README.rst
+perl -pe 's&(https://pyinstaller.org/en/)[^/]+/&$1'$new_version'/&g' -i README.rst
 
 sh -c 'cd doc; make clean html'
 open doc/_build/html/CHANGES.html
@@ -57,9 +58,7 @@ echo 'Building bootloaders for Linux. If this is the first time you\'ve done so 
 ./release/build-manylinux || exit 1
 
 function pyi_build_wheels
-    rm -rf build dist pyinstaller.egg-info
-    python setup.py bdist_wheels
-    python setup.py -qqq sdist
+    ./release/build-wheels
     twine check dist/* || return 1
 end
 
@@ -70,15 +69,15 @@ end
 
 function pyi_commit
     git add -u
-    git commit -m 'Release v'(python setup.py --version)'. [skip ci]'
-    git tag v(python setup.py --version)
+    git commit -m 'Release v'$new_version'. [skip ci]'
+    git tag v$new_version
     echo 'A commit and tag for this release has been made. When you\'re ready run:'
     echo -s '    ' (set_color $fish_color_command) 'git push; sleep 60; git push --tags' (set_color normal)
     echo 'Note that the dumb delay is required to avoid hitting readthedocs\'s concurrent build limit.'
 end
 
 function pyi_github_release
-    gh release create v(python setup.py --version) --notes 'Please see the [v'(python setup.py --version)' section of the changelog](https://pyinstaller.org/en/v'(python setup.py --version)'/CHANGES.html#id1) for a list of the changes since '(git tag -l --sort=version:refname)[-2]'.'
+    gh release create v$new_version --notes 'Please see the [v'$new_version' section of the changelog](https://pyinstaller.org/en/v'$new_version'/CHANGES.html#id1) for a list of the changes since '(git tag -l --sort=version:refname)[-2]'.'
 end
 
 printf 'Commands '
