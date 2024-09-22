@@ -93,9 +93,13 @@ excludedimports = [
     "setuptools",
 ]
 
-# As of v1.22, numpy.testing (imported for example by some scipy modules) requires numpy.distutils and distutils.
-# So exclude them only for earlier versions.
-if numpy_version < (1, 22):
+# As of v1.22.0, numpy.testing (imported for example by some scipy modules) requires numpy.distutils and distutils.
+# This was due to numpy.testing adding import of numpy.testing._private.extbuild, which in turn imported numpy.distutils
+# and distutils. These imports were moved into functions that require them in v1.22.2 and v.1.23.0.
+# See: https://github.com/numpy/numpy/pull/20831 and https://github.com/numpy/numpy/pull/20906
+# So we can exclude them for all numpy versions except for v1.22.0 and v1.22.1 - the main motivation is to avoid pulling
+# in `setuptools` (which nowadays provides its vendored version of `distutils`).
+if numpy_version < (1, 22, 0) or numpy_version > (1, 22, 1):
     excludedimports += [
         "distutils",
         "numpy.distutils",
