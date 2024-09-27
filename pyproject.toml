@@ -1,27 +1,3 @@
-[tool.ruff]
-exclude = [
-   ".git",
-   "bootloader",
-   "build",
-   "dist",
-   "doc/_build",
-   "doc/conf.py",
-   "PyInstaller/lib",
-   "tests/functional/data/name_clash_with_entry_point",
-   "tests/functional/data/sphinx/conf.py",
-   "tests/unit/test_modulegraph",
-   # These two files intentionally contains invalid UTF-8 character
-   "tests/functional/modules/pyi_module_with_invalid_encoding/mymodule1.py",
-   "tests/functional/modules/pyi_module_with_invalid_encoding/mymodule2.py",
-]
-line-length=120
-lint.select = [
-  "E",       # pycodestyle errors
-  "F",       # pyflakes
-  "W",       # pycodestyle warnings
-]
-output-format = "full"
-
 [tool.towncrier]
 	filename = "doc/CHANGES.rst"
 	directory = "news"

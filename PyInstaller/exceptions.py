@@ -61,7 +61,7 @@ _MISSING_PYTHON_LIB_MSG = \
       * apt-get install python3-dev
       * apt-get install python-dev
     * If you are building Python by yourself, rebuild with `--enable-shared` (or, `--enable-framework` on macOS).
-"""
+"""  # noqa: E122
 
 
 class PythonLibraryNotFoundError(IOError):

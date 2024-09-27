@@ -54,7 +54,7 @@ b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     </dependentAssembly>
   </dependency>
 </assembly>
-"""  # noqa: E501
+"""  # noqa: E122,E501
 
 #- DOM navigation helpers
 

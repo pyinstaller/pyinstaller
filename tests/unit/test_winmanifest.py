@@ -225,7 +225,7 @@ b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     </dependentAssembly>
   </dependency>
 </assembly>
-"""  # noqa: E501
+"""  # noqa: E128,E501
 
     app_manifest = winmanifest.create_application_manifest(_MANIFEST_XML)
 
@@ -302,7 +302,7 @@ b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     </windowsSettings>
   </application>
 </assembly>
-"""  # noqa: E501
+"""  # noqa: E128,E501
 
     app_manifest = winmanifest.create_application_manifest(_MANIFEST_XML)
 
@@ -377,7 +377,7 @@ b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     </dependentAssembly>
   </dependency>
 </assembly>
-"""  # noqa: E501
+"""  # noqa: E128,E501
 
     app_manifest = winmanifest.create_application_manifest(_MANIFEST_XML)
 
@@ -452,7 +452,7 @@ b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     </dependentAssembly>
   </dependency>
 </assembly>
-"""  # noqa: E501
+"""  # noqa: E128,E501
 
     app_manifest = winmanifest.create_application_manifest(_MANIFEST_XML)
 
@@ -548,7 +548,7 @@ def test_manifest_write_to_exe_non_ascii_characters(tmp_path):
     </security>
   </trustInfo>
 </assembly>
-""".encode("utf-8") # noqa: E501
+""".encode("utf-8")  # noqa: E128,E501
 
     # Locate bootloader executable
     bootloader_file = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, 'run.exe')

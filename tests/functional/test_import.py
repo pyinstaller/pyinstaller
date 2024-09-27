@@ -712,7 +712,7 @@ def test_app_has_moved_error(pyi_builder, tmpdir):
         f"""
         import os
         import sys
-        os.rename(sys.executable, {repr(str(tmpdir/ "something-else"))})
+        os.rename(sys.executable, {repr(str(tmpdir / "something-else"))})
         try:
             # Import some non-builtin module which hasn't already been loaded.
             import csv
@@ -806,7 +806,6 @@ def test_sys_path_with_vendored_package_prepend(pyi_builder):
 @pytest.mark.parametrize('path_modification', ['one_by_one', 'all_in_advance'])
 def test_split_location_pep420_namespace_package(pyi_builder, import_order, path_modification):
     modules_root = os.path.join(_MODULES_DIR, 'pyi_split_location_pep420_namespace_package')
-
 
     pyi_args = [
         '--paths', os.path.join(modules_root, 'modules'),
