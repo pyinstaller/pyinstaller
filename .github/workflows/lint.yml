@@ -26,11 +26,11 @@ jobs:
         python-version: 3.8
 
     - name: Install dependencies
-      run: pip install --upgrade ruff setuptools toml wheel yapf==0.32.0
+      run: pip install --upgrade flake8 wheel setuptools yapf==0.32.0 toml
 
     - name: Test that yapf has been applied
       # If this check fails for your PR, run `yapf -rip .`
       run: yapf --recursive --parallel --diff .
 
     - name: Run Lint
-      run: ruff check --output-format=github .
+      run: flake8 .

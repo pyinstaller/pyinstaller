@@ -242,7 +242,7 @@ def check_unsafe_privileges():
         #   2. User is an admin/UAC disabled (common on CI/VMs): TokenElevationTypeDefault
         #   3. User has used *run as administrator* to elevate: TokenElevationTypeFull
         #   4. User can escalate but hasn't: TokenElevationTypeLimited
-        # See https://techcommunity.microsoft.com/t5/windows-blog-archive/how-to-determine-if-a-user-is-a-member-of-the-administrators/ba-p/228476
+        # https://techcommunity.microsoft.com/t5/windows-blog-archive/how-to-determine-if-a-user-is-a-member-of-the-administrators/ba-p/228476
         import ctypes
 
         advapi32 = ctypes.CDLL("Advapi32.dll")

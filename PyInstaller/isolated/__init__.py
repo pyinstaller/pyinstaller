@@ -27,5 +27,5 @@ This submodule provides:
 
 """
 
-# ruff: noqa
+# flake8: noqa
 from ._parent import Python, call, decorate, SubprocessDiedError
