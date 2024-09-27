@@ -12,9 +12,6 @@
 # Base test requirements
 -r requirements-base.txt
 
-# Check new flake8 violations on pull requests
-flake8
-
 # The following libraries are required by some basic tests, but their
 # binary PyPI wheels may be available only for released python versions
 # (i.e., they might be unavailable for pre-release versions).
