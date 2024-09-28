@@ -1,0 +1,3 @@
+(Windows) Fix regression with PyInstaller 6.x and ``numpy`` < 1.26
+that resulted in duplicated shared libraries bundled with ``numpy``
+PyPI wheels.
