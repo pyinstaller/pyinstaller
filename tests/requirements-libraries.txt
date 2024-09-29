@@ -33,7 +33,7 @@ PySide2==5.15.2.1; python_version < '3.11'
 # PySide6 is a metapackage that depends on PySide6-Essentials and PySide6-Addons. Their versions are
 # usually kept in sync.
 PySide6==6.7.3; python_version >= '3.9'
-PySide6-Addons==6.7.2; python_version >= '3.9'
+PySide6-Addons==6.7.3; python_version >= '3.9'
 PySide6-Essentials==6.7.2; python_version >= '3.9'
 # PyQt5 and add-on packages
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
