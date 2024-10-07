@@ -296,6 +296,11 @@ def _resolveCtypesImports(cbinaries):
             # 'W: library kernel32.dll required via ctypes not found'
             if not include_library(cbin):
                 continue
+            # On non-Windows, automatically ignore all ctypes-based referenes to DLL files. This complements the above
+            # check, which might not match potential case variations (e.g., `KERNEL32.dll`, instead of `kernel32.dll`)
+            # due to case-sensitivity of the matching that is in effect on non-Windows platforms.
+            if not compat.is_win and cbin.lower().endswith('.dll'):
+                continue
             logger.warning("Library %s required via ctypes not found", cbin)
         else:
             if not include_library(cpath):
