@@ -18,7 +18,6 @@ import re
 
 from PyInstaller import compat
 import PyInstaller.log as logging
-from PyInstaller.utils.win32 import winutils
 
 logger = logging.getLogger(__name__)
 
@@ -246,79 +245,68 @@ elif compat.is_unix:
     _excludes |= _unix_excludes
 
 
-class ExcludeList:
-    def __init__(self):
-        self.regex = re.compile('|'.join(_excludes), re.I)
+class MatchList:
+    def __init__(self, entries):
+        self._regex = re.compile('|'.join(entries), re.I) if entries else None
 
-    def search(self, libname):
-        # Running re.search() on '' regex never returns None.
-        if _excludes:
-            return self.regex.match(os.path.basename(libname))
-        else:
-            return False
+    def check_library(self, libname):
+        if self._regex:
+            return self._regex.match(os.path.basename(libname))
+        return False
 
-
-class IncludeList:
-    def __init__(self):
-        self.regex = re.compile('|'.join(_includes), re.I)
-
-    def search(self, libname):
-        # Running re.search() on '' regex never returns None.
-        if _includes:
-            return self.regex.match(os.path.basename(libname))
-        else:
-            return False
-
-
-exclude_list = ExcludeList()
-include_list = IncludeList()
 
 if compat.is_darwin:
-    # On Mac use macholib to decide if a binary is a system one.
-    from macholib import util
+    import macholib.util
 
-    class MacExcludeList:
-        def __init__(self, global_exclude_list):
-            self._exclude_list = global_exclude_list
+    class MacExcludeList(MatchList):
+        def __init__(self, entries):
+            super().__init__(entries)
 
-        def search(self, libname):
+        def check_library(self, libname):
             # Try the global exclude list.
-            result = self._exclude_list.search(libname)
+            result = super().check_library(libname)
             if result:
                 return result
 
             # Exclude libraries in standard system locations.
-            return util.in_system_path(libname)
+            return macholib.util.in_system_path(libname)
 
-    exclude_list = MacExcludeList(exclude_list)
+    exclude_list = MacExcludeList(_excludes)
+    include_list = MatchList(_includes)
 
 elif compat.is_win:
+    from PyInstaller.utils.win32 import winutils
 
-    class WinExcludeList:
-        def __init__(self, global_exclude_list):
-            self._exclude_list = global_exclude_list
+    class WinExcludeList(MatchList):
+        def __init__(self, entries):
+            super().__init__(entries)
 
             self._windows_dir = pathlib.Path(winutils.get_windows_dir()).resolve()
+
+            # When running as SYSTEM user, the home directory is `%WINDIR%\system32\config\systemprofile`.
             self._home_dir = pathlib.Path.home().resolve()
-            # When running as SYSTEM user, the home directory is %WINDIR%\system32\config\systemprofile
             self._system_home = self._windows_dir in self._home_dir.parents
 
-        def search(self, libname):
+        def check_library(self, libname):
             # Try the global exclude list. The global exclude list contains lower-cased names, so lower-case the input
             # for case-normalized comparison.
-            result = self._exclude_list.search(libname.lower())
+            result = super().check_library(libname.lower())
             if result:
                 return result
 
             # Exclude everything from the Windows directory by default; but allow contents of user's gome directory if
             # that happens to be rooted under Windows directory (e.g., when running PyInstaller as SYSTEM user).
-            lib_path = pathlib.Path(libname).resolve()
-            exclude = self._windows_dir in lib_path.parents
-            if exclude and self._system_home and self._home_dir in lib_path.parents:
+            lib_fullpath = pathlib.Path(libname).resolve()
+            exclude = self._windows_dir in lib_fullpath.parents
+            if exclude and self._system_home and self._home_dir in lib_fullpath.parents:
                 exclude = False
             return exclude
 
-    exclude_list = WinExcludeList(exclude_list)
+    exclude_list = WinExcludeList(_excludes)
+    include_list = MatchList(_includes)
+else:
+    exclude_list = MatchList(_excludes)
+    include_list = MatchList(_includes)
 
 _seen_wine_dlls = set()  # Used for warning tracking in include_library()
 
@@ -327,10 +315,9 @@ def include_library(libname):
     """
     Check if the dynamic library should be included with application or not.
     """
-    if exclude_list:
-        if exclude_list.search(libname) and not include_list.search(libname):
-            # Library is excluded and is not overridden by include list. It should be excluded.
-            return False
+    if exclude_list.check_library(libname) and not include_list.check_library(libname):
+        # Library is excluded and is not overridden by include list. It should be excluded.
+        return False
 
     # If we are running under Wine and the library is a Wine built-in DLL, ensure that it is always excluded. Typically,
     # excluding a DLL leads to an incomplete bundle and run-time errors when the said DLL is not installed on the target
@@ -343,9 +330,11 @@ def include_library(libname):
     # turning it into the "standard" missing DLL problem. Exclusion should not affect the bundle's ability to run under
     #  Wine itself, as the excluded DLLs are available there.
     if compat.is_win_wine and compat.is_wine_dll(libname):
+        # Display warning message only once per DLL. Note that it is also displayed only if the DLL were to be included
+        # in the first place.
         if libname not in _seen_wine_dlls:
-            logger.warning("Excluding Wine built-in DLL: %s", libname)  # displayed only if DLL would have been included
-            _seen_wine_dlls.add(libname)  # display only once for each DLL
+            logger.warning("Excluding Wine built-in DLL: %s", libname)
+            _seen_wine_dlls.add(libname)
         return False
 
     return True
@@ -362,24 +351,11 @@ if compat.is_linux:
 if compat.is_win_10 or compat.is_win_11:
     _warning_suppressions.append(r'api-ms-win-.*\.dll')
 
-
-class MissingLibWarningSuppressionList:
-    def __init__(self):
-        self.regex = re.compile('|'.join(_warning_suppressions), re.I)
-
-    def search(self, libname):
-        # Running re.search() on '' regex never returns None.
-        if _warning_suppressions:
-            return self.regex.match(os.path.basename(libname))
-        else:
-            return False
-
-
-missing_lib_warning_suppression_list = MissingLibWarningSuppressionList()
+missing_lib_warning_suppression_list = MatchList(_warning_suppressions)
 
 
 def warn_missing_lib(libname):
     """
     Check if a missing-library warning should be displayed for the given library name (or full path).
     """
-    return not missing_lib_warning_suppression_list.search(libname)
+    return not missing_lib_warning_suppression_list.check_library(libname)
