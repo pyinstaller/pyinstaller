@@ -292,15 +292,28 @@ def check_unsafe_privileges():
 
     if compat.is_win:
         # Do not let people run PyInstaller from admin cmd's default working directory (C:\Windows\system32)
+        cwd = pathlib.Path.cwd()
+
         try:
-            pathlib.Path().resolve().relative_to(r"C:\Windows")
-        except ValueError:
-            pass
-        else:
+            win_dir = compat.win32api.GetWindowsDirectory()
+        except Exception:
+            win_dir = None
+        win_dir = None if win_dir is None else pathlib.Path(win_dir).resolve()
+
+        inside_win_dir = cwd == win_dir or win_dir in cwd.parents
+
+        # The only exception to the above is if user's home directory is also located under %WINDIR%, which happens
+        # when PyInstaller is ran under SYSTEM user.
+        if inside_win_dir:
+            home_dir = pathlib.Path.home().resolve()
+            if cwd == home_dir or home_dir in cwd.parents:
+                inside_win_dir = False
+
+        if inside_win_dir:
             raise SystemExit(
-                f"Error: Do not run pyinstaller from {pathlib.Path().resolve()}. cd to where your code is and run "
-                "pyinstaller from there. Hint: You can open a terminal where your code is by going to the parent "
-                "folder in Windows file explorer then typing cmd into the address bar."
+                f"Error: Do not run pyinstaller from {cwd}. cd to where your code is and run pyinstaller from there. "
+                "Hint: You can open a terminal where your code is by going to the parent folder in Windows file "
+                "explorer and typing cmd into the address bar."
             )
 
 
