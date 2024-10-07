@@ -419,8 +419,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
 
 #if defined(__CYGWIN__)
         /* Cygwin */
-        ret = cygwin_conv_path(CCP_POSIX_TO_WIN_W | CCP_RELATIVE, pyi_ctx->application_home_dir, dllpath_w, PYI_PATH_MAX);
-        if (ret != 0) {
+        if (cygwin_conv_path(CCP_POSIX_TO_WIN_W | CCP_RELATIVE, pyi_ctx->application_home_dir, dllpath_w, PYI_PATH_MAX) != 0) {
             PYI_PERROR("cygwin_conv_path", "Failed to convert DLL search path!\n");
             return -1;
         }
