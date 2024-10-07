@@ -12,17 +12,13 @@
 Manipulating with dynamic libraries.
 """
 
-import os.path
-
-from PyInstaller.utils.win32 import winutils
-
-__all__ = ['exclude_list', 'include_list', 'include_library']
-
 import os
+import pathlib
 import re
 
-import PyInstaller.log as logging
 from PyInstaller import compat
+import PyInstaller.log as logging
+from PyInstaller.utils.win32 import winutils
 
 logger = logging.getLogger(__name__)
 
@@ -283,16 +279,16 @@ if compat.is_darwin:
 
     class MacExcludeList:
         def __init__(self, global_exclude_list):
-            # Wraps the global 'exclude_list' before it is overridden by this class.
             self._exclude_list = global_exclude_list
 
         def search(self, libname):
-            # First try global exclude list. If it matches, return its result; otherwise continue with other check.
+            # Try the global exclude list.
             result = self._exclude_list.search(libname)
             if result:
                 return result
-            else:
-                return util.in_system_path(libname)
+
+            # Exclude libraries in standard system locations.
+            return util.in_system_path(libname)
 
     exclude_list = MacExcludeList(exclude_list)
 
@@ -301,20 +297,26 @@ elif compat.is_win:
     class WinExcludeList:
         def __init__(self, global_exclude_list):
             self._exclude_list = global_exclude_list
-            # use normpath because msys2 uses / instead of \
-            self._windows_dir = os.path.normpath(winutils.get_windows_dir().lower())
+
+            self._windows_dir = pathlib.Path(winutils.get_windows_dir()).resolve()
+            self._home_dir = pathlib.Path.home().resolve()
+            # When running as SYSTEM user, the home directory is %WINDIR%\system32\config\systemprofile
+            self._system_home = self._windows_dir in self._home_dir.parents
 
         def search(self, libname):
-            libname = libname.lower()
-            result = self._exclude_list.search(libname)
+            # Try the global exclude list. The global exclude list contains lower-cased names, so lower-case the input
+            # for case-normalized comparison.
+            result = self._exclude_list.search(libname.lower())
             if result:
                 return result
-            else:
-                # Exclude everything from the Windows directory by default.
-                # .. sometimes realpath changes the case of libname, lower it
-                # .. use normpath because msys2 uses / instead of \
-                fn = os.path.normpath(os.path.realpath(libname).lower())
-                return fn.startswith(self._windows_dir)
+
+            # Exclude everything from the Windows directory by default; but allow contents of user's gome directory if
+            # that happens to be rooted under Windows directory (e.g., when running PyInstaller as SYSTEM user).
+            lib_path = pathlib.Path(libname).resolve()
+            exclude = self._windows_dir in lib_path.parents
+            if exclude and self._system_home and self._home_dir in lib_path.parents:
+                exclude = False
+            return exclude
 
     exclude_list = WinExcludeList(exclude_list)
 
