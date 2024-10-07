@@ -1,0 +1,5 @@
+(Windows) Allow PyInstaller to be launched from SYSTEM user's home
+directory (``%WINDIR%\system32\config\systemprofile``) and its
+sub-directories, as an exception to general prohibition of running
+from Windows directory and its sub-directories (which was introduced
+in :issue:`8570`).
