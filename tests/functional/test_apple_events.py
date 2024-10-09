@@ -75,9 +75,9 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
             time.sleep(polltime)
 
     # Generate unique URL scheme & file ext to avoid collisions.
-    unique_key = int(time.time())
-    custom_url_scheme = "pyi-test-%i" % unique_key
-    custom_file_ext = 'pyi_test_%i' % unique_key
+    unique_key = uuid.uuid4()
+    custom_url_scheme = f"pyi-test-{unique_key}"
+    custom_file_ext = f"pyi_test_{unique_key}"
     monkeypatch.setenv("PYI_CUSTOM_URL_SCHEME", custom_url_scheme)
     monkeypatch.setenv("PYI_CUSTOM_FILE_EXT", custom_file_ext)
     monkeypatch.setenv("PYI_BUILD_MODE", build_mode)
@@ -105,7 +105,7 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     # re-using the same path (even though the preceding test's contents were removed) may cause issues with app bundle
     # registration...
     old_dist = os.path.join(tmpdir, 'dist')
-    new_dist = os.path.join(tmpdir, f'dist-{uuid.uuid4()}')
+    new_dist = os.path.join(tmpdir, f'dist-{unique_key}')
 
     os.rename(old_dist, new_dist)
 
