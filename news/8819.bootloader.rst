@@ -1,0 +1,2 @@
+(AIX) Fix errors when compiling bootloader under AIX (regression
+introduced in PyInstaller v6.8).

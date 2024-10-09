@@ -68,8 +68,8 @@ pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx)
         pyver_minor = archive->python_version % 100;
 
         dll_name_len = snprintf(
-            dllname,
-            DLLNAME_LEN,
+            dll_name,
+            MAX_DLL_NAME_LEN,
             "libpython%d.%d.a(libpython%d.%d.so)",
             pyver_major,
             pyver_minor,
