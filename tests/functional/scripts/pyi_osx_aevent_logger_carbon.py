@@ -36,7 +36,7 @@ class EventTypeSpec(ctypes.Structure):
 
 
 def _ctypes_setup():
-    carbon = ctypes.CDLL("/System/Library/Carbon.framework/Carbon")
+    carbon = ctypes.CDLL("/System/Library/Frameworks/Carbon.framework/Carbon")
 
     ae_callback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
     carbon.AEInstallEventHandler.argtypes = [
