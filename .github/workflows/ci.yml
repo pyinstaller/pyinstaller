@@ -264,6 +264,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
       - run: docker build -f alpine.dockerfile -t foo .
       - run: >
           docker run
@@ -276,7 +279,7 @@ jobs:
       - run: |
           git clean -xfdq .
           pip install build
-          python -m build --sdist --no-isolation --outdir dist
+          python -m build --sdist --outdir dist
           docker build --target=wheel-factory -t bar -f alpine.dockerfile .
       - run: |
           sdist="$(ls dist)"
