@@ -66,9 +66,9 @@ Requirements and Tested Platforms
 ---------------------------------
 
 - Python:
-    - 3.8-3.13. Note that Python 3.10.0 contains a bug making it unsupportable by
+    - 3.8-3.14. Note that Python 3.10.0 contains a bug making it unsupportable by
       PyInstaller. PyInstaller will also not work with beta releases of Python
-      3.14.
+      3.15.
 - Windows (32bit/64bit/ARM64):
     - PyInstaller should work on Windows 7 or newer, but we only officially support Windows 8+.
     - Support for Python installed from the Windows store without using virtual
