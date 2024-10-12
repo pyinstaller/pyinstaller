@@ -11,7 +11,6 @@
 
 import sys
 import os
-import glob
 
 from setuptools import setup
 
@@ -47,11 +46,11 @@ class build_bootloader(Command):
     def bootloader_exists(self):
         # Checks if the console, non-debug bootloader exists
         from PyInstaller import HOMEPATH, PLATFORM
-        from PyInstaller.compat import is_win, is_cygwin
         exe = 'run'
-        if is_win or is_cygwin:
+        pyi_platform = os.environ.get("PYI_PLATFORM", PLATFORM)
+        if "Windows" in pyi_platform:
             exe = 'run.exe'
-        exe = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, exe)
+        exe = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', pyi_platform, exe)
         return os.path.isfile(exe)
 
     def compile_bootloader(self):
@@ -76,6 +75,8 @@ class build_bootloader(Command):
             file=sys.stderr
         )
         self.compile_bootloader()
+        if not self.bootloader_exists():
+            raise SystemExit("ERROR: Bootloaders have been compiled for the wrong platform")
 
 
 class MyBuild(build):
@@ -100,7 +101,6 @@ class Wheel(bdist_wheel):
         self.pyi_platform = os.environ.get("PYI_PLATFORM")
 
         if self.pyi_platform:
-            pattern = f"PyInstaller/bootloader/{self.pyi_platform}/run*"
             if "Darwin" in self.pyi_platform:
                 icons = ["incs"]
             elif "Windows" in self.pyi_platform:
@@ -108,14 +108,7 @@ class Wheel(bdist_wheel):
             else:
                 icons = []
         else:
-            pattern = "PyInstaller/bootloader/*/run*"
             icons = ["ico", "icns"]
-
-        if not glob.glob(pattern):
-            raise SystemExit(
-                f"Error: No bootloaders found matching pattern {repr(pattern)}. See "
-                f"https://pyinstaller.readthedocs.io/en/stable/bootloader-building.html for how to compile them."
-            )
 
         self.distribution.package_data = {
             "PyInstaller": [
