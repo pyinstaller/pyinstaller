@@ -14,86 +14,66 @@ import signal
 
 import pytest
 
-signals = sorted([key for key in dir(signal) if key.startswith('SIG') and not key.startswith('SIG_')])
-
 
 @pytest.mark.darwin
 @pytest.mark.linux
-@pytest.mark.parametrize('signame', signals)
-@pytest.mark.parametrize('ignore', [True, False])
-def test_signal_handled(pyi_builder, signame, ignore):
-    # xfail tests for signals that the bootloader does NOT forward
-    if signame in ['SIGKILL', 'SIGSTOP']:
-        pytest.skip('{} cannot be caught'.format(signame))
-    elif signame in ['SIGCHLD', 'SIGCLD']:
-        pytest.skip('Messing with {} interferes with bootloader'.format(signame))
-    elif signame == 'SIGTSTP':
-        pytest.xfail('{} is not caught to allow Ctrl-Z'.format(signame))
+@pytest.mark.parametrize(
+    'signal_name',
+    [sig.name for sig in signal.Signals],
+)
+@pytest.mark.parametrize('forward_signals', [True, False], ids=['forward', 'ignore'])
+@pytest.mark.parametrize('pyi_builder', ['onefile'], indirect=True)  # Run only in onefile mode.
+def test_onefile_signal_handling(pyi_builder, signal_name, forward_signals):
+    if signal_name in {'SIGKILL', 'SIGSTOP'}:
+        pytest.skip(f"{signal_name} cannot be caught.")
+    elif signal_name in {'SIGCHLD', 'SIGCLD'}:
+        pytest.skip(f"{signal_name} is not handled by bootloader: required for wait() on child process.")
+    elif signal_name == 'SIGTSTP':
+        pytest.skip(f"{signal_name} is not handled by bootloader: required for Ctrl-Z.")
 
-    verb = 'ignored' if ignore else 'handled'
-    app_name = 'test_signal_{}_{}'.format(verb, signame)
-    pyi_args = ['--bootloader-ignore-signals'] if ignore else []
+    signal_number = signal.Signals[signal_name].value  # Convert signal name to signal number for easier handling.
 
     pyi_builder.test_source(
         """
-        import psutil
-        import signal
+        import os
         import sys
+        import signal
         import time
-        from signal import {signame}
 
-        def eprint(*args): print(*args, file=sys.stderr)
+        signal_number = int(sys.argv[1])
+        signal_name = signal.Signals(signal_number).name  # This implicitly validates signal number
 
-        p = psutil.Process()
-        eprint('[test_signal_handled_{signame}] process tree:')
-        while p:
-            eprint('-', p.name(), '(%s)' % p.pid)
-            if p == p.parent():
+        # Return code: received signal number, or zero if signal was not received.
+        return_code = 0
+
+        # Install signal handler
+        def signal_handler(signum, *args):
+            global return_code
+            return_code = signum  # Set program's return code to signal number
+
+        print(f"Installing signal handler for signal={signal_number} ({signal_name})", file=sys.stderr)
+        signal.signal(signal_number, signal_handler)
+
+        # Send signal to parent process of the onefile frozen application.
+        parent_pid = os.getppid()
+        print(
+            f"Sending signal={signal_number} ({signal_name}) to parent process with PID={parent_pid}",
+            file=sys.stderr,
+        )
+        os.kill(parent_pid, signal_number)
+
+        # Wait up to a second for signal to be delivered.
+        for i in range(10):
+            if return_code != 0:
+                print("Signal received!", file=sys.stderr)
                 break
-            p = p.parent()
-
-        signalled = False
-
-        def handle(signum, *args):
-            eprint('handled signal', signum)
-            global signalled
-            signalled = True
-
-        signal.signal({signame}, handle)
-
-        ignore = {ignore}
-
-        child = psutil.Process()
-        parent = child.parent()
-
-        if parent.name() == '{app_name}':
-            # We are the forked child of the bootloader process. Signal our parent process to mimic the behavior
-            # of an external program signalling the process running the executable that pyinstaller produced.
-            target = parent
-        elif ignore:
-            # Cannot use pytest.skip() from inside this process.
-            print('Bootloader did not fork; test is invalid')
-            sys.exit(0)
+            time.sleep(0.1)
         else:
-            target = child
+            print("Signal not received!", file=sys.stderr)
 
-        eprint('signalling', target.name(), '(%s)' % target.pid)
-        target.send_signal({signame})
-
-        # sleep a bit to avoid exiting before the signal is delivered
-        time.sleep(1)
-
-        eprint('ignore:', ignore)
-        eprint('signalled:', signalled)
-        if ignore and signalled:
-            raise Exception('signal {signame} not ignored')
-        elif not ignore and not signalled:
-            raise Exception('signal handler not called for {signame}')
-
-        msg = 'ignored' if ignore else 'handled'
-        eprint('bootloader', msg, 'signal successfully.')
-        """.format(signame=signame, app_name=app_name, ignore=ignore),
-        app_name=app_name,
-        runtime=5,
-        pyi_args=pyi_args
+        sys.exit(return_code)
+        """,
+        pyi_args=[] if forward_signals else ['--bootloader-ignore-signals'],
+        app_args=[str(signal_number)],
+        retcode=signal_number if forward_signals else 0,
     )
