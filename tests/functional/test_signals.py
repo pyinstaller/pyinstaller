@@ -10,29 +10,20 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+import sys
 import signal
+import subprocess
 
 import pytest
 
 
 @pytest.mark.darwin
 @pytest.mark.linux
-@pytest.mark.parametrize(
-    'signal_name',
-    [sig.name for sig in signal.Signals],
-)
 @pytest.mark.parametrize('forward_signals', [True, False], ids=['forward', 'ignore'])
 @pytest.mark.parametrize('pyi_builder', ['onefile'], indirect=True)  # Run only in onefile mode.
-def test_onefile_signal_handling(pyi_builder, signal_name, forward_signals):
-    if signal_name in {'SIGKILL', 'SIGSTOP'}:
-        pytest.skip(f"{signal_name} cannot be caught.")
-    elif signal_name in {'SIGCHLD', 'SIGCLD'}:
-        pytest.skip(f"{signal_name} is not handled by bootloader: required for wait() on child process.")
-    elif signal_name == 'SIGTSTP':
-        pytest.skip(f"{signal_name} is not handled by bootloader: required for Ctrl-Z.")
-
-    signal_number = signal.Signals[signal_name].value  # Convert signal name to signal number for easier handling.
-
+def test_onefile_signal_handling(pyi_builder, forward_signals):
+    # Build the test program. The `pyi_builder.test_soruce` also runs the built program, but since no arguments are
+    # passed via command-line, this program run is a no-op.
     pyi_builder.test_source(
         """
         import os
@@ -40,6 +31,13 @@ def test_onefile_signal_handling(pyi_builder, signal_name, forward_signals):
         import signal
         import time
 
+        # Quietly exit if no signal number is given on command-line. This accommodates the fact that
+        # `pyi_builder.test_source()` always runs the program after building it.
+        if len(sys.argv) < 2:
+            print(f"Usage: {sys.argv[0]} <signal-number>", file=sys.stderr)
+            sys.exit(0)
+
+        # Signal number is passed as first command-line argument
         signal_number = int(sys.argv[1])
         signal_name = signal.Signals(signal_number).name  # This implicitly validates signal number
 
@@ -74,6 +72,41 @@ def test_onefile_signal_handling(pyi_builder, signal_name, forward_signals):
         sys.exit(return_code)
         """,
         pyi_args=[] if forward_signals else ['--bootloader-ignore-signals'],
-        app_args=[str(signal_number)],
-        retcode=signal_number if forward_signals else 0,
     )
+
+    exes = pyi_builder._find_executables('test_source')
+    assert len(exes) == 1
+    program_exe = exes[0]
+
+    # Use the built executable with all applicable signals.
+    failures = []
+    for signal_entry in signal.Signals:
+        signal_name = signal_entry.name
+        signal_number = signal_entry.value
+
+        # Exemptions
+        reason = None
+        if signal_name in {'SIGKILL', 'SIGSTOP'}:
+            reason = f"{signal_name} cannot be caught."
+        elif signal_name in {'SIGCHLD', 'SIGCLD'}:
+            reason = f"{signal_name} is not handled by bootloader: required for wait() on child process."
+        elif signal_name == 'SIGTSTP':
+            reason = f"{signal_name} is not handled by bootloader: required for Ctrl-Z."
+
+        if reason is not None:
+            print(f"=== skipping test with {signal_name}: {reason} ===", file=sys.stderr)
+            continue
+
+        # Expected return code: signal number in signal-forwarding mode, zero otherwise.
+        expected_code = signal_number if forward_signals else 0
+
+        # Run
+        print(f"=== running test with {signal_name} ===", file=sys.stderr)
+        status = subprocess.run([program_exe, str(signal_number)])
+        ret_code = status.returncode
+
+        print(f"=== program returned code {ret_code} (expected {expected_code}) ===", file=sys.stderr)
+        if ret_code != expected_code:
+            failures.append((signal_name, f"Unexpected exit code: {ret_code} (expected={expected_code})!"))
+
+    assert not failures, "Not all signals were handled as expected!"
