@@ -11,6 +11,8 @@ that might not be obvious when developing and running unfrozen python
 programs.
 
 
+.. _distributing_symlinks:
+
 Requirements Imposed by Symbolic Links in Frozen Application
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -441,6 +443,8 @@ when spawning the process, for example::
     accommodate across various multiprocessing frameworks and other code
     that spawns worker processes via ``sys.executable``.
 
+
+.. _no_console_stdout_stderr:
 
 ``sys.stdin``, ``sys.stdout``, and ``sys.stderr`` in ``noconsole``/``windowed`` Applications (Windows only)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

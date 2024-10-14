@@ -47,7 +47,7 @@ def test_macos_bundle_signing_py_files(pyi_builder, monkeypatch):
     monkeypatch.setenv("PYINSTALLER_STRICT_BUNDLE_CODESIGN_ERROR", "1")
     monkeypatch.setenv("PYINSTALLER_VERIFY_BUNDLE_SIGNATURE", "1")
 
-    # Override Analysis so that we can set package collection mode without having to use .spec file.
+    # Override Analysis so that we can set module collection mode without having to use .spec file.
     def AnalysisOverride(*args, **kwargs):
         kwargs['module_collection_mode'] = {'psutil': 'py'}
         return Analysis(*args, **kwargs)
@@ -69,7 +69,7 @@ def test_macos_bundle_signing_pyc_files(pyi_builder, monkeypatch):
     monkeypatch.setenv("PYINSTALLER_STRICT_BUNDLE_CODESIGN_ERROR", "1")
     monkeypatch.setenv("PYINSTALLER_VERIFY_BUNDLE_SIGNATURE", "1")
 
-    # Override Analysis so that we can set package collection mode without having to use .spec file.
+    # Override Analysis so that we can set module collection mode without having to use .spec file.
     def AnalysisOverride(*args, **kwargs):
         kwargs['module_collection_mode'] = {'psutil': 'pyc'}
         return Analysis(*args, **kwargs)

@@ -262,7 +262,7 @@ applies them to the bundle being created.
 
       warn_on_missing_hiddenimports = False
 
-.. _package collection mode:
+.. _module collection mode:
 
 ``module_collection_mode``
    A setting controlling the collection mode for module(s). The value
@@ -594,7 +594,7 @@ The ``hook_api`` object also offers the following methods:
 .. _set_module_collection_mode method:
 
 ``set_module_collection_mode ( name, mode )``:
-   Set the `package collection mode`_ for the specified package/module name.
+   Set the `module collection mode`_ for the specified package/module name.
    Valid values for ``mode`` are: ``'pyz'``, ``'pyc'``, ``'py'``,
    ``'pyz+py'``, ``'py+pyz'`` and ``None``. ``None`` clears/resets the
    setting for the given package/module name - but only within the
