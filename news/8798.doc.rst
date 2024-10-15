@@ -1,3 +1,0 @@
-Document the caveats of enabling the hiding/minimization mechanism in
-the frozen application when Windows Terminal is configured as the default
-terminal app on the run-time system.

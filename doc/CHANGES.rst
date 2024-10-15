@@ -15,6 +15,113 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.11.0 (2024-10-15)
+-------------------
+
+Features
+~~~~~~~~
+
+* Implement a mechanism that allows hooks to inform PyInstaller's binary
+  dependency analysis that it should not create symbolic links to top-level
+  application directory for certain shared libraries (applicable to platforms
+  where such symbolic links are created in the first place). This mechanism
+  is intended as a work around for corner cases when such symbolic links
+  disrupt run-time discovery of other shared libraries that are stored in
+  the linked library's true location. (:issue:`8761`)
+
+
+Bugfix
+~~~~~~
+
+* (Windows) Allow PyInstaller to be launched from SYSTEM user's home
+  directory (``%WINDIR%\system32\config\systemprofile``) and its
+  sub-directories, as an exception to general prohibition of running
+  from Windows directory and its sub-directories (which was introduced
+  in :issue:`8570`). (:issue:`8816`)
+* (Windows) Attempt to mitigate timing issues that prevented console
+  hiding/minimization mechanism (:issue:`7735`) from taking effect when
+  Windows Terminal is used as the default terminal app. (:issue:`8798`)
+* (Windows) Fix binary dependency analysis for files found under
+  SYSTEM user's home directory (``%WINDIR%\system32\config\systemprofile``)
+  when running PyInstaller as SYSTEM user. (:issue:`8810`)
+* (Windows) Fix regression with PyInstaller 6.x and ``numpy`` < 1.26
+  that resulted in duplicated shared libraries bundled with ``numpy``
+  PyPI wheels. (:issue:`8736`)
+* (Windows) Fix the leak of ``VCRUNTIME140.dll`` in ``onefile`` applications
+  with splash screen enabled, this time in scenarios with full application
+  restart (regression introduced by :issue:`8650`). (:issue:`8701`)
+* Fix a regression when trying to use ``runpy.run_path`` to run a python
+  script bundled with the frozen application. (:issue:`8767`)
+
+
+Hooks
+~~~~~
+
+* Add hook for ``PySide6.QtGraphsWidgets``, which was introduced with
+  ``PySide6`` v6.8.0. (:issue:`8828`)
+* Tweak the ``setuptools`` hook to minimize collection of vendored
+  packages/modules and their (meta)data when using ``setuptools`` >= 71.0;
+  the aim is to have the run-time behavior of collected vendored package
+  closely match the behavior of its non-vendored counterpart. (:issue:`8737`)
+* Update ``babel`` hook to collect all submodules that are needed to
+  unpickle the bundled locale data files. (:issue:`8750`)
+* Update and modernize PyInstaller's copy of ``numpy`` hook for compatibility
+  with ``numpy`` 1.24.x, 1.25.x, 1.26x, and 2.x. Set the priority of
+  PyInstaller's copy of ``numpy`` hook to 1 (using the new hook priority
+  mechanism from :issue:`8740`), so that it overrides the upstream hook, in
+  attempt to address the following issues:
+
+  - fix duplication of shared libraries bundled with ``numpy`` < 1.26
+    PyPI wheels on Windows, which is caused by changed behavior of
+    PyInstaller's binary dependency analysis in PyInstaller 6.x (both the
+    old version of PyInstaller's numpy hook and its upstream counterpart
+    were written for behavior of v5 and earlier).
+
+  - avoid triggering a warning about ``numpy`` base dist not being
+    found when using ``pip``-installed ``numpy`` with Anaconda python.
+
+  - with ``numpy`` >= 1.26 on Windows, collect the load-order file from
+    ``numpy.libs`` directory (if available) along with the shared libraries.
+    This should minimize potential issues when using ``pip``-installed
+    ``numpy`` >= 1.26 with Anaconda python 3.8 and 3.9. (:issue:`8799`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (AIX) Fix errors when compiling bootloader under AIX (regression
+  introduced in PyInstaller v6.8). (:issue:`8819`)
+* (Cygwin) Fix missing-variable-error when compiling bootloader under
+  Cygwin (regression introduced in PyInstaller v6.8). (:issue:`8814`)
+
+
+Documentation
+~~~~~~~~~~~~~
+
+* Document the caveats of enabling the hiding/minimization mechanism in
+  the frozen application when Windows Terminal is configured as the default
+  terminal app on the run-time system. (:issue:`8798`)
+
+
+PyInstaller Core
+~~~~~~~~~~~~~~~~
+
+* (Windows) Pin ``pefile != 2024.8.26`` due to performance regression in
+  ``pefile`` 2024.8.26 that heavily impacts PyInstaller's binary dependency
+  analysis and binary-vs-data classification. (:issue:`8762`)
+
+
+Bootloader build
+~~~~~~~~~~~~~~~~
+
+* Relax the check for ``libdl`` to accommodate platforms which put the
+  ``libdl``
+  symbols in ``libc`` but don't provide the placeholders needed to adhere to
+  the
+  POSIX requirement that ``-ldl`` should always be available, most notably
+  OpenWRT. (:issue:`7552`)
+
+
 6.10.0 (2024-08-10)
 -------------------
 
@@ -1287,7 +1394,7 @@ Hooks
 Bootloader
 ~~~~~~~~~~
 
-* Have bootloader call :c:func:`Py_GetPath` before :c:func:`Py_SetPath` on all
+* Have bootloader call ``Py_GetPath()`` before ``Py_SetPath()`` on all
   platforms (instead of just on Windows) to work around memory-initialization
   issues in python 3.8 and 3.9, which come to light with
   :envvar:`PYTHONMALLOC=debug <PYTHONMALLOC>` or :envvar:`PYTHONDEVMODE=1

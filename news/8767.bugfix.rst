@@ -1,2 +1,0 @@
-Fix a regression when trying to use ``runpy.run_path`` to run a python
-script bundled with the frozen application.

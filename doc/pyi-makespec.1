@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "PYI-MAKESPEC" "1" "2024-08-10" "6.10.0" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2024-10-15" "6.11.0" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .\" disable justification (adjust text to left margin only)
@@ -43,11 +43,9 @@ files that cover basic usages:
 .INDENT 0.0
 .INDENT 3.5
 .sp
-.nf
-.ft C
+.EX
 pyi\-makespec [\-\-onefile] yourprogram.py
-.ft P
-.fi
+.EE
 .UNINDENT
 .UNINDENT
 .sp
@@ -235,7 +233,7 @@ option is automatically set if the first script is a \(aq.pyw\(aq file. This
 option is ignored on *NIX systems.
 .UNINDENT
 .sp
-\-\-hide\-console {hide\-late,minimize\-early,minimize\-late,hide\-early}
+\-\-hide\-console {hide\-early,minimize\-early,hide\-late,minimize\-late}
 .INDENT 0.0
 .INDENT 3.5
 Windows only: in console\-enabled executable, have bootloader automatically

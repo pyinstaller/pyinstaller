@@ -1,3 +1,0 @@
-(Windows) Fix the leak of ``VCRUNTIME140.dll`` in ``onefile`` applications
-with splash screen enabled, this time in scenarios with full application
-restart (regression introduced by :issue:`8650`).

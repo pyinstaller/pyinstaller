@@ -1,2 +1,0 @@
-Update ``babel`` hook to collect all submodules that are needed to
-unpickle the bundled locale data files.

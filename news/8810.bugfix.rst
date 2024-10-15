@@ -1,3 +1,0 @@
-(Windows) Fix binary dependency analysis for files found under
-SYSTEM user's home directory (``%WINDIR%\system32\config\systemprofile``)
-when running PyInstaller as SYSTEM user.

@@ -1,2 +1,0 @@
-(Cygwin) Fix missing-variable-error when compiling bootloader under
-Cygwin (regression introduced in PyInstaller v6.8).

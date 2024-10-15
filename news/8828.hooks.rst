@@ -1,2 +1,0 @@
-Add hook for ``PySide6.QtGraphsWidgets``, which was introduced with
-``PySide6`` v6.8.0.

@@ -564,7 +564,7 @@ which has the following immutable properties:
       * A non-package module or C extension, this is the absolute path of the
         corresponding file.
 
-:attr:`__path__`:
+``__path__``:
    A list of the absolute paths of all directories comprising the module
    if it is a package, or ``None``. Typically the list contains only the
    absolute path of the package's directory.
@@ -729,7 +729,7 @@ The ``psim_api`` object also offers the following methods:
    path that the imported module would add dynamically to
    the path if the module was executed normally.
    ``directory`` is a string, a pathname to add to the
-   :attr:`__path__` attribute.
+   ``__path__`` attribute.
 
 
 .. include:: _common_definitions.txt

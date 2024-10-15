@@ -1,3 +1,0 @@
-(Windows) Attempt to mitigate timing issues that prevented console
-hiding/minimization mechanism (:issue:`7735`) from taking effect when
-Windows Terminal is used as the default terminal app.

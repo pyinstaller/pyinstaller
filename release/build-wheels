@@ -4,6 +4,7 @@ wheel() {
   platform="$1"
   wheel_tag="$2"
   rm -rf build/
+  echo "--- $platform ---"
   PYI_WHEEL_TAG="$wheel_tag" PYI_PLATFORM="$platform" python -m build --no-isolation --wheel --outdir=dist . > /dev/null
 }
 

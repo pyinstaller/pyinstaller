@@ -1,4 +1,0 @@
-Relax the check for ``libdl`` to accommodate platforms which put the ``libdl``
-symbols in ``libc`` but don't provide the placeholders needed to adhere to the
-POSIX requirement that ``-ldl`` should always be available, most notably
-OpenWRT.
