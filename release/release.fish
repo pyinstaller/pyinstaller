@@ -54,8 +54,10 @@ perl -i -pe 's|pyinstaller-hooks-contrib >= .*|pyinstaller-hooks-contrib >= '$ne
 
 read -P 'If the bootloaders need to be rebuilt, now is the time to do it. Hit return if they don\'t need rebuilding or once you have rebuilt and copied the '(set_color --bold)'Windows and macOS bootloaders only'(set_color normal)' into PyInstaller/bootloaders: '
 
-echo 'Building bootloaders for Linux. If this is the first time you\'ve done so on this machine then this will take a while.'
-./release/build-manylinux || exit 1
+function pyi_build_linux_bootloaders
+    echo 'Building bootloaders for Linux. If this is the first time you\'ve done so on this machine then this will take a while.'
+    ./release/build-manylinux || return 1
+end
 
 function pyi_build_wheels
     ./release/build-wheels
@@ -81,5 +83,5 @@ function pyi_github_release
 end
 
 printf 'Commands '
-printf (set_color $fish_color_command)'%s'(set_color normal)', ' pyi_build_wheels pyi_upload_to_pypi pyi_commit pyi_github_release
+printf (set_color $fish_color_command)'%s'(set_color normal)', ' pyi_build_linux_bootloaders pyi_build_wheels pyi_upload_to_pypi pyi_commit pyi_github_release
 echo 'have been defined. When you\'re ready, run each of those (in that order).'
