@@ -12,6 +12,13 @@
 import sys
 import pprint
 import _imp  # A built-in
+import importlib
+
+# NOTE: having `importlib` imported seems to ensure that `__file__` attribute is set on the `_frozen_importlib` module.
+# Under python < 3.14, importing `pprint` seemed to have also imported `importlib`; but in 3.14.0a1, this is not the
+# case. Therefore, we import `importlib` explicitly and use `importlib.import_module()` to load frozen modules (in
+# earlier version of the test, `__import__()` was used). In contrast to `_frozen_importlib`, other frozen stdlib modules
+# seem to have `__file__` set regardless of whether `importlib` is imported or not.
 
 if sys.version_info < (3, 11):
     raise RuntimeError("Requires python >= 3.11!")
@@ -27,7 +34,7 @@ frozen_stdlib_modules = sorted([name for name in _imp._frozen_module_names() if 
 output_data = [sys._stdlib_dir]  # First entry is sys._stdlib_dir
 for module_name in frozen_stdlib_modules:
     print(f"Checking {module_name}...", file=sys.stderr)
-    module = __import__(module_name)
+    module = importlib.import_module(module_name)
 
     if not hasattr(module, '__file__'):
         raise RuntimeError(f"No __file__ attribute on {module_name}!")
