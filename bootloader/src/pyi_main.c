@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2023, PyInstaller Development Team.
+ * Copyright (c) 2013-2024, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -1283,7 +1283,7 @@ _pyi_main_handle_posix_onedir(struct PYI_CONTEXT *pyi_ctx)
         return 0;
     }
 
-    PYI_DEBUG("LOADER: POSIX onedir process needs to set library seach path and restart itself.\n");
+    PYI_DEBUG("LOADER: POSIX onedir process needs to set library search path and restart itself.\n");
 
     /* Set up the library search path (by modifying LD_LIBRARY_PATH or
      * equivalent), so that the restarted process will be able to find
