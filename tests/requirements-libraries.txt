@@ -77,27 +77,43 @@ Pillow==11.0.0; python_version >= '3.9'
 
 
 # Python versions not supported / supported for older package versions
-# -------------------------------------------------------
+# --------------------------------------------------------------------
 
-numpy==1.24.3; python_version == '3.8'  # pyup: ignore
+# For every package in the above list that has a "python_version >="
+# condition, add entries with "python_version ==" for supported/tested
+# version(s) of python and pin the package to the last version that
+# supports the given python version. Make sure entries end with
+# `# pyup: ignore` to prevent them from being updated.
+
+
+# Python 3.9
+# ----------
+Django==4.2.8; python_version == '3.9'  # pyup: ignore
+
 numpy==2.0.1; python_version == '3.9'  # pyup: ignore
-pandas==2.0.3; python_version == '3.8'  # pyup: ignore
-scipy==1.10.1; python_version == '3.8'  # pyup: ignore
 scipy==1.13.1; python_version == '3.9'  # pyup: ignore
-matplotlib==3.7.3; python_version == '3.8'  # pyup: ignore
 
-ipython==8.12.1; python_version == '3.8'  # pyup: ignore
-ipython==8.18.1; python_version == '3.9'  # pyup: ignore
-
-sphinx==7.1.2; python_version == '3.8'  # pyup: ignore
 sphinx==7.4.7; python_version == '3.9'  # pyup: ignore
 
-Pillow==10.4.0; python_version == '3.8'  # pyup: ignore
+ipython==8.18.1; python_version == '3.9'  # pyup: ignore
 
-# Django dropped support for python < 3.10 in v5.0
-Django==4.2.8; python_version < '3.10'  # pyup: ignore
+# Python 3.8
+# ----------
+Django==4.2.8; python_version == '3.8'  # pyup: ignore
 
-# PySide6 dropped support for python < 3.9 in v6.7.0
+numpy==1.24.3; python_version == '3.8'  # pyup: ignore
+scipy==1.10.1; python_version == '3.8'  # pyup: ignore
+pandas==2.0.3; python_version == '3.8'  # pyup: ignore
+matplotlib==3.7.3; python_version == '3.8'  # pyup: ignore
+
+PyGObject==3.48.2; sys_platform == 'linux' and python_version == '3.8'  # pyup: ignore
+
 PySide6==6.6.3.1; python_version == '3.8'  # pyup: ignore
 PySide6-Addons==6.6.3.1; python_version == '3.8'  # pyup: ignore
 PySide6-Essentials==6.6.3.1; python_version == '3.8'  # pyup: ignore
+
+sphinx==7.1.2; python_version == '3.8'  # pyup: ignore
+
+ipython==8.12.1; python_version == '3.8'  # pyup: ignore
+
+Pillow==10.4.0; python_version == '3.8'  # pyup: ignore
