@@ -297,15 +297,27 @@ Architecture validation during binary collection
 
 To prevent run-time issues caused by missing or mismatched architecture slices
 in binaries, the binary collection process performs strict architecture validation.
-It checks whether collected binary files contain required arch slice(s), and if
-not, the build process is aborted with an error message about the problematic
-binary.
+It checks whether collected binary files contain required arch slice(s) -- if
+not, the build process is aborted with exception of type
+``PyInstaller.utils.osx.IncompatibleBinaryArchError`` that contains a
+detailed error message about the problematic binary.
+
+The error message will typically be either ``"{name} does not contain
+slice for {target_arch}!"`` (when trying to build a ``universal2`` program
+and the collected binary is a thin single-arch file) or ``"{name} is
+incompatible with target arch {target_arch} (has arch: ...)!"`` (when
+trying to build program for foreign architecture in a partial ``universal2``
+environment and the collected binary is a thin single-arch file for the
+non-target architecture).
 
 In such cases, creating frozen application for the selected target
 architecture will not be possible unless the problem of missing arch slices
-is manually addressed (for example, by downloading the wheel corresponding to
+is manually addressed; for example, by downloading the wheel corresponding to
 the missing architecture, and stiching the offending binary files together
-using the ``lipo`` utility).
+using the ``lipo`` utility. You can also use 3rd party utilities, such as
+``delocate-merge`` from the `delocate <https://pypi.org/project/delocate>`_
+project, to merge two single-arch wheels for a package into a ``universal2``
+wheel, and then install the merged wheel into your build environment.
 
 .. versionchanged:: 4.10
    In earlier PyInstaller versions, the architecture validation was performed
