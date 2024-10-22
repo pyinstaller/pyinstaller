@@ -290,7 +290,9 @@ class IncompatibleBinaryArchError(Exception):
     """
     Exception raised by `binary_to_target_arch` when the passed binary fails the strict architecture check.
     """
-    pass
+    def __init__(self, message):
+        url = "https://pyinstaller.org/en/stable/feature-notes.html#macos-multi-arch-support"
+        super().__init__(f"{message} For details about this error message, see: {url}")
 
 
 def get_binary_architectures(filename):
