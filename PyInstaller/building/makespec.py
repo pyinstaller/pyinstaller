@@ -468,10 +468,19 @@ def __add_options(parser):
         help="Apply a symbol-table strip to the executable and shared libs (not recommended for Windows)",
     )
     g.add_argument(
-        "--noupx",
+        "--upx",
         action="store_true",
+        dest="upx",
         default=False,
-        help="Do not use UPX even if it is available (works differently between Windows and *nix)",
+        help="Use UPX (if available) to compress collected binaries.",
+    )
+    g.add_argument(
+        "--noupx",
+        action="store_false",
+        dest="upx",
+        default=False,
+        help="Do not use UPX even if it is available. This option is kept for backward compatibility; UPX is now "
+        "disabled by default, and must be enabled using --upx option.",
     )
     g.add_argument(
         "--upx-exclude",
@@ -669,7 +678,7 @@ def main(
     debug=[],
     python_options=[],
     strip=False,
-    noupx=False,
+    upx=False,
     upx_exclude=None,
     runtime_tmpdir=None,
     contents_directory=None,
@@ -857,7 +866,7 @@ def main(
         'debug_bootloader': 'bootloader' in debug,
         'bootloader_ignore_signals': bootloader_ignore_signals,
         'strip': strip,
-        'upx': not noupx,
+        'upx': upx,
         'upx_exclude': upx_exclude,
         'runtime_tmpdir': runtime_tmpdir,
         'exe_options': exe_options,
