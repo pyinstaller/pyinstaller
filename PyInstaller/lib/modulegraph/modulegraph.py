@@ -2549,10 +2549,18 @@ class ModuleGraph(ObjectGraph):
                 if not is_scanning_imports:
                     continue
 
-                assert prev_insts[-2].opname == 'LOAD_CONST'
-                assert prev_insts[-1].opname == 'LOAD_CONST'
-
                 # Python >=2.5: LOAD_CONST flags, LOAD_CONST names, IMPORT_NAME name
+                #
+                # Python 3.14 split LOAD_CONST into LOAD_CONST, LOAD_CONST_IMMORTAL,
+                # and LOAD_SMALL_INT. The former two can be used to load the names,
+                # while LOAD_SMALL_INT can be also used to load the flags.
+                if sys.version_info >= (3, 14):
+                    assert prev_insts[-2].opname in {'LOAD_CONST', 'LOAD_CONST_IMMORTAL', 'LOAD_SMALL_INT'}
+                    assert prev_insts[-1].opname in {'LOAD_CONST', 'LOAD_CONST_IMMORTAL'}
+                else:
+                    assert prev_insts[-2].opname == 'LOAD_CONST'
+                    assert prev_insts[-1].opname == 'LOAD_CONST'
+
                 level = prev_insts[-2].argval
                 fromlist = prev_insts[-1].argval
 
