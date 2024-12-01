@@ -17,6 +17,7 @@ from types import CodeType
 from textwrap import dedent, indent
 import operator
 
+from PyInstaller import compat
 from PyInstaller.depend.bytecode import (
     function_calls,
     recursive_function_calls,
@@ -33,7 +34,9 @@ def many_constants():
     """
     Generate Python code that includes >256 constants.
     """
-    return "".join(f'a = {i}\n' for i in range(300))
+    # NOTE: in python >= 3.14.0a2, integer arguments smaller than 256 are pushed directly to stack, without using a
+    # co_consts. Therefore, to effectively use >256 constants, we need to generate >512 integer arguments.
+    return "".join(f'a = {i}\n' for i in range(600))
 
 
 def many_globals():
@@ -66,8 +69,15 @@ def test_many_constants():
     # Only the variable name 'a'.
     assert code.co_names == ('a',)
 
-    # 1000 integers plus a 'None' return.
-    assert len(code.co_consts) == 301
+    # In python >= 3.14.0a2, LOAD_SMALL_INT instruction is used to push integers smaller than 256 on the stack, and
+    # co_consts is used for larger values (in combination with LOAD_CONST / LOAD_CONST_IMMORTAL).
+    # In earlier python versions, co_consts is used for all constants.
+    if compat.is_py314:
+        # (600 - 256) integers plus a `None` return.
+        assert len(code.co_consts) == 601 - 256
+    else:
+        # 600 integers plus a 'None' return.
+        assert len(code.co_consts) == 601
 
 
 def test_many_globals():
