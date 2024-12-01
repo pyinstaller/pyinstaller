@@ -30,13 +30,20 @@ def compile_(x):
     return compile(dedent(x), "<no file>", "exec")
 
 
-def many_constants():
+def many_int_constants():
     """
-    Generate Python code that includes >256 constants.
+    Generate Python code that includes >256 integer constants.
     """
     # NOTE: in python >= 3.14.0a2, integer arguments smaller than 256 are pushed directly to stack, without using a
     # co_consts. Therefore, to effectively use >256 constants, we need to generate >512 integer arguments.
     return "".join(f'a = {i}\n' for i in range(600))
+
+
+def many_str_constants():
+    """
+    Generate Python code that includes >256 string constants.
+    """
+    return "".join(f'a = "val_{i}"\n' for i in range(300))
 
 
 def many_globals():
@@ -64,8 +71,8 @@ def in_a_function(body):
 # removed as redundant by the compiler.
 
 
-def test_many_constants():
-    code: CodeType = compile_(many_constants())
+def test_many_int_constants():
+    code: CodeType = compile_(many_int_constants())
     # Only the variable name 'a'.
     assert code.co_names == ('a',)
 
@@ -78,6 +85,15 @@ def test_many_constants():
     else:
         # 600 integers plus a 'None' return.
         assert len(code.co_consts) == 601
+
+
+def test_many_str_constants():
+    code: CodeType = compile_(many_str_constants())
+    # Only the variable name 'a'.
+    assert code.co_names == ('a',)
+
+    # 300 string constants plus a 'None' return.
+    assert len(code.co_consts) == 301
 
 
 def test_many_globals():
@@ -101,8 +117,11 @@ def test_global_functions():
 
     # Having >256 constants will take us into extended arg territory where multiple byte-pair instructions are needed
     # to reference the constant. If everything works, we should not notice the difference.
-    code = compile_(many_constants() + "foo(.123)")
+    code = compile_(many_int_constants() + "foo(.123)")
     assert function_calls(code) == [('foo', [.123])]
+
+    code = compile_(many_str_constants() + "foo(.321)")
+    assert function_calls(code) == [('foo', [.321])]
 
     # Similarly, >256 global names also requires special handling.
     code = compile_(many_globals() + "foo(.456)")

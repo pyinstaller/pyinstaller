@@ -32,8 +32,8 @@ def __scan_code_for_ctypes(code, monkeypatch, extended_args):
     if extended_args:
         # Chuck in a load of preceding rubbish to test if the bytecode scanner can correctly
         # handle the EXTENDED_ARGS opcode.
-        from test_bytecode import many_constants, many_globals
-        code = many_constants() + many_globals() + code
+        from test_bytecode import many_str_constants, many_globals
+        code = many_str_constants() + many_globals() + code
 
     co = compile(code, 'dummy', 'exec')
     #import pdb ; pdb.set_trace()
