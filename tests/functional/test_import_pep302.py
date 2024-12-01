@@ -23,6 +23,13 @@
 # Note: The modules need to be imported at the end of the resp. code. Otherwise the pkgutil-functions take a very
 #       different branch (since the module is already in sys.modules) and what we want to test will not be tested.
 
+import pytest
+
+from PyInstaller import compat
+
+# All tests here require `pkgutil.get_loader()`, which was deprecated in python 3.12 and removed in 3.14.
+pytestmark = pytest.mark.skipif(compat.is_py314, reason="pkgutil.get_loader() was removed in python >= 3.14.")
+
 
 def test_pep302_loader_builtin(pyi_builder):
     pyi_builder.test_source(
