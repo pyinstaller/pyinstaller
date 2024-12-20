@@ -14,16 +14,13 @@ Otherwise it is marked as fail.
 
 Note: All tests in this file should use the argument 'runtime'.
 """
-import pytest
 
 from PyInstaller.utils.tests import importorskip
-from PyInstaller.compat import is_win
 
 _RUNTIME = 10  # In seconds.
 
 
 @importorskip('IPython')
-@pytest.mark.skipif(is_win, reason='See issue #3535.')
 def test_ipython(pyi_builder):
     pyi_builder.test_source("""
         from IPython import embed
