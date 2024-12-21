@@ -58,36 +58,34 @@ def test_multiple_calls():
         assert child.call(add_1, 3) == 4
 
 
-def use_builtins():
-    """
-    Test builtin functions, classes and constants are available.
-    """
-    assert sum([1, 2, 3]) == 6
-    list(range(10))
-    print("hello")
-    Ellipsis
-    ...
-    NotImplemented
-
-
-def use_imports():
-    """
-    Test that import-ing is possible.
-    """
-    import string
-    string.digits
-
-    import psutil
-    return psutil.boot_time()
-
-
 def test_builtins_access():
     """
     Ensure that generic builtins are accessible and that imports work.
     """
+    def _use_builtins():
+        """
+        Test builtin functions, classes and constants are available.
+        """
+        assert sum([1, 2, 3]) == 6
+        list(range(10))
+        print("hello")
+        Ellipsis
+        ...
+        NotImplemented
+
+    def _use_imports():
+        """
+        Test that import-ing is possible.
+        """
+        import string
+        string.digits
+
+        import json
+        return json.dumps({'a': 1, 'b': 2})
+
     with isolated.Python() as child:
-        child.call(use_builtins)
-        child.call(use_imports)
+        child.call(_use_builtins)
+        child.call(_use_imports)
 
 
 def test_context_wrapping():
