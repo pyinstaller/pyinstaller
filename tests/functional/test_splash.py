@@ -19,8 +19,10 @@ import os
 import pytest
 
 from PyInstaller.compat import is_darwin, is_musl
+from PyInstaller.utils.tests import importorskip
 
 pytestmark = [
+    importorskip('tkinter'),
     pytest.mark.skipif(is_darwin, reason="Splash screen is not supported on macOS."),
     pytest.mark.xfail(is_musl, reason="musl + tkinter is known to cause mysterious segfaults."),
 ]
