@@ -82,7 +82,7 @@ def pytest_runtest_setup(item):
     supported_platforms = SUPPORTED_OSES.intersection(mark.name for mark in item.iter_markers())
     plat = sys.platform
     if supported_platforms and plat not in supported_platforms:
-        pytest.skip("does not run on %s" % plat)
+        pytest.skip(f"does not run on {plat}")
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -92,7 +92,7 @@ def pytest_runtest_makereport(item, call):
     rep = outcome.get_result()
 
     # Set a report attribute for each phase of a call, which can be "setup", "call", "teardown".
-    setattr(item, "rep_" + rep.when, rep)
+    setattr(item, f"rep_{rep.when}", rep)
 
 
 # Return the base directory which contains the current test module.
@@ -213,6 +213,12 @@ class AppBuilder:
         del kwargs['test_id']
         return self.test_script(str(scriptfile), *args, **kwargs)
 
+    def _display_message(self, step_name, message):
+        # Print the given message to both stderr and stdout, and it with APP-BUILDER to make it clear where it
+        # originates from.
+        print(f'[APP-BUILDER:{step_name}] {message}', file=sys.stdout)
+        print(f'[APP-BUILDER:{step_name}] {message}', file=sys.stderr)
+
     def test_script(
         self, script, pyi_args=None, app_name=None, app_args=None, runtime=None, run_from_path=False, **kwargs
     ):
@@ -227,11 +233,6 @@ class AppBuilder:
         :param toc_log: List of modules that are expected to be bundled with the executable.
         """
         __tracebackhide__ = True
-
-        def marker(line):
-            # Print some marker to stdout and stderr to make it easier to distinguish the phases in the CI test output.
-            print('-------', line, '-------')
-            print('-------', line, '-------', file=sys.stderr)
 
         if pyi_args is None:
             pyi_args = []
@@ -249,15 +250,15 @@ class AppBuilder:
         if not os.path.isabs(script):
             script = os.path.join(_get_script_dir(self._request), script)
         self.script = script
-        assert os.path.exists(self.script), 'Script %s not found.' % script
+        assert os.path.exists(self.script), f'Script {script} not found.'
 
-        marker('Starting build.')
+        self._display_message('TEST-SCRIPT', 'Starting build...')
         if not self._test_building(args=pyi_args):
-            pytest.fail('Building of %s failed.' % script)
+            pytest.fail(f'Building of {script} failed.')
 
-        marker('Build finished, now running executable.')
+        self._display_message('TEST-SCRIPT', 'Build finished, now running executable...')
         self._test_executables(app_name, args=app_args, runtime=runtime, run_from_path=run_from_path, **kwargs)
-        marker('Running executable finished.')
+        self._display_message('TEST-SCRIPT', 'Running executable finished.')
 
     def _test_executables(self, name, args, runtime, run_from_path, **kwargs):
         """
@@ -279,10 +280,10 @@ class AppBuilder:
             toc_log = os.path.join(_get_logs_dir(self._request), os.path.splitext(os.path.basename(exe))[0] + '.toc')
             if os.path.exists(toc_log):
                 if not self._examine_executable(exe, toc_log):
-                    pytest.fail('Matching .toc of %s failed.' % exe)
+                    pytest.fail(f'Matching .toc of {exe} failed.')
             retcode = self._run_executable(exe, args, run_from_path, runtime)
             if retcode != kwargs.get('retcode', 0):
-                pytest.fail('Running exe %s failed with return-code %s.' % (exe, retcode))
+                pytest.fail(f'Running exe {exe} failed with return-code {retcode}.')
 
     def _find_executables(self, name):
         """
@@ -362,15 +363,13 @@ class AppBuilder:
         return self._run_executable_(args, exe_path, prog_env, prog_cwd, runtime)
 
     def _run_executable_(self, args, exe_path, prog_env, prog_cwd, runtime):
+        # Run the executable
+        self._display_message('RUN-EXE', f'Running {exe_path!r}, args: {args!r}')
         process = psutil.Popen(
             args, executable=exe_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=prog_env, cwd=prog_cwd
         )
+        self._display_message('RUN-EXE', f'Process ID: {process.pid}')
 
-        def _msg(*text):
-            print('[' + str(process.pid) + '] ', *text)
-
-        # Run executable. stderr is redirected to stdout.
-        _msg('RUNNING: ', repr(exe_path), ', args: ', repr(args))
         # 'psutil' allows to use timeout in waiting for a subprocess. If not timeout was specified then it is 'None' -
         # no timeout, just waiting. Runtime is useful mostly for interactive tests.
         try:
@@ -386,13 +385,14 @@ class AppBuilder:
             else:
                 # Exe is running and it is not interactive. Fail the test.
                 retcode = 1
-                _msg(f'TIMED OUT while running executable (timeout: {timeout} sec)!')
+                self._display_message('RUN-EXE', f'Timeout while running executable (timeout: {timeout} sec)!')
             # Kill the subprocess and its child processes.
             for p in list(process.children(recursive=True)) + [process]:
                 with suppress(psutil.NoSuchProcess):
                     p.kill()
             stdout, stderr = process.communicate()
 
+        self._display_message('RUN-EXE', 'Captured output:')
         sys.stdout.buffer.write(stdout)
         sys.stderr.buffer.write(stderr)
 
@@ -410,7 +410,7 @@ class AppBuilder:
             default_args = [
                 '--distpath', self._distdir,
                 '--workpath', self._builddir,
-                '--log-level=INFO',
+                '--log-level', 'INFO',
             ]  # yapf: disable
         else:
             default_args = [
@@ -420,7 +420,7 @@ class AppBuilder:
                 '--distpath', self._distdir,
                 '--workpath', self._builddir,
                 '--path', _get_modules_dir(self._request),
-                '--log-level=INFO',
+                '--log-level', 'INFO',
             ]  # yapf: disable
 
             # Choose bundle mode.
@@ -430,7 +430,7 @@ class AppBuilder:
                 default_args.append('--onefile')
             # if self._mode is None then just the spec file was supplied.
 
-        pyi_args = [self.script] + default_args + args
+        pyi_args = [self.script, *default_args, *args]
         # TODO: fix return code in running PyInstaller programmatically.
         PYI_CONFIG = configure.get_config()
         # Override CACHEDIR for PyInstaller and put it into self.tmpdir
@@ -447,7 +447,7 @@ class AppBuilder:
 
         :return: True if .toc files match
         """
-        print('EXECUTING MATCHING:', toc_log)
+        self._display_message('EXAMINE-EXE', f'Matching against TOC log: {toc_log!r}')
         fname_list = pkg_archive_contents(exe)
         with open(toc_log, 'r', encoding='utf-8') as f:
             pattern_list = eval(f.read())
@@ -457,20 +457,15 @@ class AppBuilder:
         for pattern in pattern_list:
             for fname in fname_list:
                 if re.match(pattern, fname):
-                    print('MATCH:', pattern, '-->', fname)
+                    self._display_message('EXAMINE-EXE', f'Entry found: {pattern!r} --> {fname!r}')
                     break
             else:
                 # No matching entry found
                 missing.append(pattern)
-                print('MISSING:', pattern)
+                self._display_message('EXAMINE-EXE', f'Entry MISSING: {pattern!r}')
 
-        # Not all modules matched. Stop comparing other .toc files and fail the test.
-        if missing:
-            for m in missing:
-                print('Missing', m, 'in', exe)
-            return False
-        # All patterns matched.
-        return True
+        # We expect the missing list to be empty
+        return not missing
 
 
 # Scope 'session' should keep the object unchanged for whole tests. This fixture caches basic module graph dependencies
