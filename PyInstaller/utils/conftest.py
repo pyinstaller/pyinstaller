@@ -35,7 +35,7 @@ import pytest  # noqa: E402
 
 from PyInstaller import __main__ as pyi_main  # noqa: E402
 from PyInstaller import configure  # noqa: E402
-from PyInstaller.compat import is_darwin, is_win  # noqa: E402
+from PyInstaller.compat import is_cygwin, is_darwin, is_win  # noqa: E402
 from PyInstaller.depend.analysis import initialize_modgraph  # noqa: E402
 from PyInstaller.archive.readers import pkg_archive_contents  # noqa: E402
 from PyInstaller.utils.tests import gen_sourcefile  # noqa: E402
@@ -320,6 +320,9 @@ class AppBuilder:
         if is_win:
             # Minimum Windows PATH is in most cases:   C:\Windows\system32;C:\Windows
             prog_env['PATH'] = os.pathsep.join(winutils.get_system_path())
+        # Same for Cygwin - if /usr/bin is not in PATH, cygwin1.dll cannot be discovered.
+        if is_cygwin:
+            prog_env['PATH'] = os.pathsep.join(['/usr/local/bin', '/usr/bin'])
         # On macOS, we similarly set up minimal PATH with system directories, in case utilities from there are used by
         # tested python code (for example, matplotlib >= 3.9.0 uses `system_profiler` that is found in /usr/sbin).
         if is_darwin:
