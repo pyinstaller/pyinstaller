@@ -15,9 +15,17 @@ import subprocess
 
 import pytest
 
-from PyInstaller.compat import is_win
+from PyInstaller.compat import is_win, is_cygwin
 
-START_METHODS = ['spawn'] if is_win else ['spawn', 'fork', 'forkserver']
+if is_win:
+    # On Windows, only spawn method is supported.
+    START_METHODS = ['spawn']
+elif is_cygwin:
+    # Under Cygwin, forkserver does not seem to work even in unfrozen python.
+    START_METHODS = ['spawn', 'fork']
+else:
+    # On POSIX systems (including macOS), all methods are supported.
+    START_METHODS = ['spawn', 'fork', 'forkserver']
 
 
 @pytest.mark.timeout(timeout=60)
