@@ -411,3 +411,60 @@ jobs:
         run: >
             pytest
             -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+
+  test-cygwin:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash -o igncr -eo pipefail '{0}'
+    steps:
+      - name: Setup Cygwin
+        uses: cygwin/cygwin-install-action@master
+        with:
+          platform: x86_64
+          # NOTE: some of the provided packages (python39-wheel,
+          # python39-setuptools, python39-packaging, python39-pytest) are
+          # out-of-date, and we instead install PyPI wheels.
+          #
+          # NOTE: tkinter could be installed via python39-tkinter, but
+          # is unusable ("no display name and no $DISPLAY environment
+          # variable" error).
+          packages: >-
+            gcc-core
+            zlib
+            zlib-devel
+            python39
+            python39-devel
+            python39-pip
+
+      - name: Disable CRLF line endings in git checkout
+        run: git config --global core.autocrlf input
+
+      - name: Checkout PyInstaller code
+        uses: actions/checkout@v4
+
+      - name: Show system and python information
+        run: |
+          uname -a
+          python --version
+
+      - name: Update pip and base test tools
+        run: python -m pip install --progress-bar=off --upgrade pip setuptools wheel build --requirement tests/requirements-base.txt
+
+      - name: Install PyInstaller
+        run: |
+          # Compile bootloader
+          cd bootloader
+          python waf --gcc --tests all
+          cd ..
+
+          # Install PyInstaller.
+          python -m pip install --progress-bar=off .[completion]
+
+          # Make sure the help options print.
+          python -m PyInstaller -h
+
+      - name: Run tests
+        run: >
+            python -m pytest
+            -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
