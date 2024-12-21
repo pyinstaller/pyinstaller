@@ -19,7 +19,7 @@ import re
 
 import pytest
 
-from PyInstaller.compat import is_darwin, is_win
+from PyInstaller.compat import is_cygwin, is_darwin, is_win
 from PyInstaller.utils.tests import importorskip, skipif, xfail, onedir_only, onefile_only
 
 
@@ -709,7 +709,7 @@ def test_sys_executable(pyi_builder, append_pkg, monkeypatch):
 
     # Expected executable basename
     exe_basename = 'test_source'
-    if is_win:
+    if is_win or is_cygwin:
         exe_basename += '.exe'
 
     pyi_builder.test_source(
