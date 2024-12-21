@@ -23,5 +23,6 @@ pytest-drop-dup-tests
 # Rerun flaky (apple event related) tests
 pytest-rerunfailures
 
-# Better subprocess alternative with implemented timeout.
-psutil
+# Better subprocess alternative with process tree support.
+# Not available on cygwin.
+psutil; sys_platform != 'cygwin'
