@@ -237,9 +237,15 @@ _aix_excludes = {
     r'libz\.a',
 }
 
+_cygwin_excludes = {
+    r'cygwin1\.dll',
+}
+
 if compat.is_win:
     _includes |= _win_includes
     _excludes |= _win_excludes
+elif compat.is_cygwin:
+    _excludes |= _cygwin_excludes
 elif compat.is_aix:
     # The exclude list for AIX differs from other *nix platforms.
     _excludes |= _aix_excludes
