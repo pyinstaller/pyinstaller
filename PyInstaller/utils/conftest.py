@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+import contextlib
 import copy
 import glob
 import logging
@@ -17,18 +18,22 @@ import platform
 import re
 import shutil
 import subprocess
-from contextlib import suppress
+import sys
 
 # Set a handler for the root-logger to inhibit 'basicConfig()' (called in PyInstaller.log) is setting up a stream
 # handler writing to stderr. This avoids log messages to be written (and captured) twice: once on stderr and
 # once by pytests's caplog.
 logging.getLogger().addHandler(logging.NullHandler())
 
-# Manages subprocess timeout.
-import psutil  # noqa: E402
+# psutil is used for process tree clean-up on time-out when running the test frozen application. If unavailable
+# (for example, on cygwin), we fall back to trying to terminate only the main application process.
+try:
+    import psutil  # noqa: E402
+except ModuleNotFoundError:
+    psutil = None
+
 import py  # noqa: E402
 import pytest  # noqa: E402
-import sys  # noqa: E402
 
 # Expand sys.path with PyInstaller source.
 _ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
@@ -363,38 +368,97 @@ class AppBuilder:
         return self._run_executable_(args, exe_path, prog_env, prog_cwd, runtime)
 
     def _run_executable_(self, args, exe_path, prog_env, prog_cwd, runtime):
+        # Use psutil.Popen, if available; otherwise, fall back to subprocess.Popen
+        popen_implementation = subprocess.Popen if psutil is None else psutil.Popen
+
         # Run the executable
         self._display_message('RUN-EXE', f'Running {exe_path!r}, args: {args!r}')
-        process = psutil.Popen(
+        process = popen_implementation(
             args, executable=exe_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=prog_env, cwd=prog_cwd
         )
         self._display_message('RUN-EXE', f'Process ID: {process.pid}')
 
-        # 'psutil' allows to use timeout in waiting for a subprocess. If not timeout was specified then it is 'None' -
-        # no timeout, just waiting. Runtime is useful mostly for interactive tests.
+        # Wait for the process to finish. If no run-time (= timeout) is specified, we expect the process to exit on
+        # its own, and use global _EXE_TIMEOUT. If run-time is specified, we expect the application to be running
+        # for at least the specified amount of time, which is useful in "interactive" test applications that are not
+        # expected exit on their own.
+        stdout = stderr = None
         try:
             timeout = runtime if runtime else _EXE_TIMEOUT
             stdout, stderr = process.communicate(timeout=timeout)
             retcode = process.returncode
-        except (psutil.TimeoutExpired, subprocess.TimeoutExpired):
+            self._display_message('RUN-EXE', f'Process exited on its own with return code {retcode}.')
+        except (subprocess.TimeoutExpired) if psutil is None else (psutil.TimeoutExpired, subprocess.TimeoutExpired):
             if runtime:
                 # When 'runtime' is set, the expired timeout is a good sign that the executable was running successfully
-                # for a specified time.
-                # TODO: is there a better way return success than 'retcode = 0'?
+                # for the specified time.
+                self._display_message('RUN-EXE', f'Process reached expected run-time of {runtime} seconds.')
                 retcode = 0
             else:
-                # Exe is running and it is not interactive. Fail the test.
+                # Executable is still running and it is not interactive. Clean up the process tree, and fail the test.
+                self._display_message('RUN-EXE', f'Timeout while running executable (timeout: {timeout} seconds)!')
                 retcode = 1
-                self._display_message('RUN-EXE', f'Timeout while running executable (timeout: {timeout} sec)!')
-            # Kill the subprocess and its child processes.
-            for p in list(process.children(recursive=True)) + [process]:
-                with suppress(psutil.NoSuchProcess):
-                    p.kill()
-            stdout, stderr = process.communicate()
 
+            if psutil is None:
+                # We are using subprocess.Popen(). Without psutil, we have no access to process tree; this poses a
+                # problem for onefile builds, where we would need to first kill the child (main application) process,
+                # and let the onefile parent perform its cleanup. As a best-effort approach, we can first call
+                # process.terminate(); on POSIX systems, this sends SIGTERM to the parent process, and in most
+                # situations, the bootloader will forward it to the child process. Then wait 5 seconds, and call
+                # process.kill() if necessary. On Windows, however, both process.terminate() and process.kill() do
+                # the same. Therefore, we should avoid running "interactive" tests with expected run-time if we do
+                # not have psutil available.
+                try:
+                    self._display_message('RUN-EXE', 'Stopping the process using Popen.terminate()...')
+                    process.terminate()
+                    stdout, stderr = process.communicate(timeout=5)
+                    self._display_message('RUN-EXE', 'Process stopped.')
+                except subprocess.TimeoutExpired:
+                    # Kill the process.
+                    try:
+                        self._display_message('RUN-EXE', 'Stopping the process using Popen.kill()...')
+                        process.kill()
+                        # process.communicate() waits for end-of-file, which may never arrive if there is a child
+                        # process still alive. Nothing we can really do about it here, so add a short timeout and
+                        # display a warning.
+                        stdout, stderr = process.communicate(timeout=1)
+                        self._display_message('RUN-EXE', 'Process stopped.')
+                    except subprocess.TimeoutExpired:
+                        self._display_message('RUN-EXE', 'Failed to stop the process (or its child process(es))!')
+            else:
+                # We are using psutil.Popen(). First, force-kill all child processes; in onefile mode, this includes
+                # the application process, whose termination should trigger cleanup and exit of the parent onefile
+                # process.
+                self._display_message('RUN-EXE', 'Stopping child processes...')
+                for child_process in list(process.children(recursive=True)):
+                    with contextlib.suppress(psutil.NoSuchProcess):
+                        self._display_message('RUN-EXE', f'Stopping child process {child_process.pid}...')
+                        child_process.kill()
+
+                # Give the main process 5 seconds to exit on its own (to accommodate cleanup in onefile mode).
+                try:
+                    self._display_message('RUN-EXE', f'Waiting for main process ({process.pid}) to stop...')
+                    stdout, stderr = process.communicate(timeout=5)
+                    self._display_message('RUN-EXE', 'Process stopped on its own.')
+                except (psutil.TimeoutExpired, subprocess.TimeoutExpired):
+                    # End of the line - kill the main process.
+                    self._display_message('RUN-EXE', 'Stopping the process using Popen.kill()...')
+                    with contextlib.suppress(psutil.NoSuchProcess):
+                        process.kill()
+                    # Try to retrieve stdout/stderr - but keep a short timeout, just in case...
+                    try:
+                        stdout, stderr = process.communicate(timeout=1)
+                        self._display_message('RUN-EXE', 'Process stopped.')
+                    except (psutil.TimeoutExpired, subprocess.TimeoutExpire):
+                        self._display_message('RUN-EXE', 'Failed to stop the process (or its child process(es))!')
+
+        # Display captured stdout/stderr.
         self._display_message('RUN-EXE', 'Captured output:')
-        sys.stdout.buffer.write(stdout)
-        sys.stderr.buffer.write(stderr)
+        sys.stdout.buffer.write(b"N/A\n" if stdout is None else stdout)
+        sys.stderr.buffer.write(b"N/A\n" if stderr is None else stderr)
+        self._display_message('RUN-EXE', 'End of captured output.')
+
+        self._display_message('RUN-EXE', f'Done! Return code: {retcode}')
 
         return retcode
 
