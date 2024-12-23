@@ -256,13 +256,12 @@ def test_import_pyi_splash(pyi_builder):
 #--- ctypes ----
 
 
-@skipif_no_compiler
-@skipif(is_win, reason="CDLL(None) seams to be not valid on Windows")
+@skipif(is_win, reason="ctypes.CDLL(None) is not valid on Windows")
 def test_ctypes_CDLL_None(pyi_builder):
     # Make sure we are able to load CDLL(None) -> pip does this for some reason
     pyi_builder.test_source(
         """
-        import ctypes, ctypes.util
+        import ctypes
         lib = ctypes.CDLL(None)
         assert lib is not None
         """
