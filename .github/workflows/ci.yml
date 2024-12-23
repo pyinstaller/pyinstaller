@@ -425,17 +425,15 @@ jobs:
           # NOTE: some of the provided packages (python39-wheel,
           # python39-setuptools, python39-packaging, python39-pytest) are
           # out-of-date, and we instead install PyPI wheels.
-          #
-          # NOTE: tkinter could be installed via python39-tkinter, but
-          # is unusable ("no display name and no $DISPLAY environment
-          # variable" error).
           packages: >-
             gcc-core
             zlib
             zlib-devel
+            xorg-server-extra
             python39
             python39-devel
             python39-pip
+            python39-tkinter
 
       - name: Disable CRLF line endings in git checkout
         run: git config --global core.autocrlf input
@@ -463,6 +461,11 @@ jobs:
 
           # Make sure the help options print.
           python -m PyInstaller -h
+
+      - name: Start display server
+        run: |
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
 
       - name: Run tests
         run: >
