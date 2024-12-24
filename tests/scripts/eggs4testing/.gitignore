@@ -1,9 +1,0 @@
-/venv/
-/*.egg-info
-/dist/
-/build/
-/nspkg[123]-a/
-/nspkg[123]-aaa/
-/nspkg[123]-bbb/
-/nspkg[123]-ccc/
-/nspkg[123]-empty/
