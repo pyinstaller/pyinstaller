@@ -10,10 +10,9 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
 import subprocess
-from os.path import join
 
 
-def test_collect_entry_point(pyi_builder_spec, script_dir, tmpdir):
+def test_collect_entry_point(pyi_builder_spec, script_dir, tmp_path):
     """
     Test PyInstaller.utils.hooks.collect_entry_point().
 
@@ -26,9 +25,9 @@ def test_collect_entry_point(pyi_builder_spec, script_dir, tmpdir):
     assert len(plugins), "The pytest11 entry point appears to have moved."
 
     pyi_builder_spec.test_spec('list_pytest11_entry_point.spec')
-    exe = join(tmpdir, "dist", "list_pytest11_entry_point", "list_pytest11_entry_point")
+    exe = tmp_path / "dist" / "list_pytest11_entry_point" / "list_pytest11_entry_point"
 
-    p = subprocess.run([exe], stdout=subprocess.PIPE, check=True, encoding="utf-8")
+    p = subprocess.run([str(exe)], stdout=subprocess.PIPE, check=True, encoding="utf-8")
     collected_plugins = p.stdout.strip("\n").split("\n")
 
     assert collected_plugins == plugins

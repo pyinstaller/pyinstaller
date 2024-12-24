@@ -27,11 +27,11 @@ from PyInstaller.compat import is_macos_11
 # On macOS 11, the custom URL schema registration does not work properly if the .app bundle is located in the default
 # temporary path (/var or /private/var prefix). Therefore, for the tests below to work, the pytest's base temporary
 # path needs to be moved (for example, via the --basetemp argument).
-def macos11_check_tmpdir(test):
+def macos11_check_tmp_path(test):
     @functools.wraps(test)
     def wrapped(**kwargs):
-        tmpdir = kwargs['tmpdir']
-        if is_macos_11 and str(tmpdir).startswith(('/var', '/private/var')):
+        tmp_path = kwargs['tmp_path']
+        if is_macos_11 and str(tmp_path).startswith(('/var', '/private/var')):
             pytest.skip(
                 "The custom URL schema registration does not work on macOS 11 when .app bundles are placed in "
                 "the default temporary path."
@@ -48,7 +48,7 @@ def macos11_check_tmpdir(test):
 # However, in practice, in turns out that each high-level toolkit handles events a bit differently, and offers different
 # level of support (in tkinter/Tk case even depending on the Tk version). Therefore, this test function is currently
 # used only with Carbon-based logger and does not (yet) implement toolkit-specific quirks.
-def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, build_mode, argv_emu):
+def _test_apple_events_handling(appname, tmp_path, pyi_builder_spec, monkeypatch, build_mode, argv_emu):
     # Helper for determining application start/finish via logged events.
     def wait_for_event(logfile, event, timeout=60, polltime=0.25):
         """
@@ -83,14 +83,13 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     monkeypatch.setenv("PYI_BUILD_MODE", build_mode)
     monkeypatch.setenv("PYI_ARGV_EMU", str(int(argv_emu)))
 
-    app_path = os.path.join(tmpdir, 'dist', appname + '.app')
-    logfile_path = os.path.join(tmpdir, 'dist', 'events.log')
+    logfile_path = tmp_path / 'dist' / 'events.log'
 
     # test_spec() builds the app and automatically runs it. As we want to test custom protocol handler registration, we
     # want this run to exit as soon as possible. Passing arg "0" would have it exit immediately, but with some logger
     # applications (e.g., pure Carbon based), that prevents bundle's executable to be found on subsequent open attempts;
     # presumably because event loop does not process any events. So use 5-seconds timeout instead.
-    pyi_builder_spec.test_spec(appname + '.spec', app_args=["5"])
+    pyi_builder_spec.test_spec(f'{appname}.spec', app_args=["5"])
 
     # Wait for the app started by test_spec() to exit
     assert wait_for_event(logfile_path, 'started'), 'Timeout while waiting for app to start (test_spec run)!'
@@ -100,29 +99,29 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     # Clean up the log file created by test_spec() running the app
     os.remove(logfile_path)
 
-    # Rename the dist directory into dist-{uuid}, to ensure path uniqueness for each test run. The name of the tmpdir
-    # may be the same across different test runs (with different parametrizations) due to the length of the test name;
-    # re-using the same path (even though the preceding test's contents were removed) may cause issues with app bundle
-    # registration...
-    old_dist = os.path.join(tmpdir, 'dist')
-    new_dist = os.path.join(tmpdir, f'dist-{unique_key}')
+    # Rename the dist directory into dist-{uuid}, to ensure path uniqueness for each test run. The name of the temporary
+    # directory may be the same across different test runs (with different parametrizations) due to the length of the
+    # test name; re-using the same path (even though the preceding test's contents were removed) may cause issues with
+    # app bundle registration...
+    old_dist = tmp_path / 'dist'
+    new_dist = tmp_path / f'dist-{unique_key}'
 
-    os.rename(old_dist, new_dist)
+    old_dist.rename(new_dist)
 
-    app_path = os.path.join(new_dist, appname + '.app')
-    logfile_path = os.path.join(new_dist, 'events.log')
+    app_path = new_dist / f'{appname}.app'
+    logfile_path = new_dist / 'events.log'
 
     # Run using 'open', passing a 5-second timeout as an arg to exit as soon as possible (do not pass 0 to prevent
     # skipping the event loop in the application). This will cause macOS to register the custom protocol handler and
     # file extension association.
-    subprocess.check_call(['open', app_path, '--args', "5"])
+    subprocess.check_call(['open', str(app_path), '--args', "5"])
 
     assert wait_for_event(logfile_path, 'started'), 'Timeout while waiting for app to start (registration run)!'
     assert wait_for_event(logfile_path, 'finished'), 'Timeout while waiting for app to finish (registration run)!'
     time.sleep(5)  # wait for app to fully exit
 
     # App exited immediately, clean-up
-    os.remove(logfile_path)
+    logfile_path.unlink()
 
     # At this point both the protocol handler and the file ext are registered
     # 1. Try the file extension -- this tests the AppleEvent rewrite of a "file://" event to a regular filesystem path.
@@ -131,11 +130,10 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     # lots of args and seeing what happens.
     n_files = 32
     assoc_files = []
-    for ii in range(n_files):
-        assoc_path = os.path.join(tmpdir, 'AFile{}.{}'.format(ii, custom_file_ext))
-        with open(assoc_path, 'wt', encoding='utf8') as fh:
-            fh.write("File contents #{}\n".format(ii))
-        assoc_files.append(assoc_path)
+    for idx in range(n_files):
+        assoc_path = tmp_path / f'AFile{idx}.{custom_file_ext}'
+        assoc_path.write_text(f"File contents #{idx}\n", encoding='utf-8')
+        assoc_files.append(str(assoc_path))
 
     # Open app again by "open"ing the associated files.
     #
@@ -145,7 +143,7 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     #
     # The generator below produces odd numbered files as "file://" URLs, and even numbered are just file paths. Under
     # argv emulation, they should all end up appended to sys.argv in the app as simple file paths.
-    files_list = [('file://' if ii % 2 else '') + ff for ii, ff in enumerate(assoc_files)]
+    files_list = [('file://' if idx % 2 else '') + file_path for idx, file_path in enumerate(assoc_files)]
     subprocess.check_call(['open', *files_list])
 
     assert wait_for_event(logfile_path, 'started'), 'Timeout while waiting for app to start (test run)!'
@@ -153,7 +151,7 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
     # At this point the app is running.
 
     # 2. Call open using the url associated with the app. This should forward the Apple URL event to the running app.
-    url_hello = custom_url_scheme + "://lowecase_required/hello_world/"
+    url_hello = f"{custom_url_scheme}://lowecase_required/hello_world/"
     subprocess.check_call(['open', url_hello])
     time.sleep(1.0)
 
@@ -177,25 +175,25 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
         time.sleep(1.0)  # the activate event gets sent with a delay
 
     # 5. Call open with first four associated files.
-    files_list = [('file://' if ii % 2 else '') + ff for ii, ff in enumerate(assoc_files[:4])]
+    files_list = [('file://' if idx % 2 else '') + file_path for idx, file_path in enumerate(assoc_files[:4])]
     subprocess.check_call(['open', *files_list])
     time.sleep(1.0)
 
     # 6. Call open again using the url associated with the app. This should forward the Apple URL event to the
     # already-running app.
-    url_goodbye = custom_url_scheme + "://lowecase_required/goodybe_galaxy/"
+    url_goodbye = f"{custom_url_scheme}://lowecase_required/goodybe_galaxy/"
     subprocess.check_call(['open', url_goodbye])
     time.sleep(1.0)
 
     # 7. Call open again using the url associated with the app, this time testing support for large URL data (~64kB).
-    url_large = custom_url_scheme + "://lowecase_required/large_data/"
+    url_large = f"{custom_url_scheme}://lowecase_required/large_data/"
     # Note: We would have gone larger but 'open' itself seems to not consistently like data over a certain size.
     url_large += 'x' * 64000  # Append 64 kB of data to URL to stress-test.
     subprocess.check_call(['open', url_large])
     time.sleep(1.0)
 
     # 8. Call open with last four associated files again.
-    files_list = [('file://' if ii % 2 else '') + ff for ii, ff in enumerate(assoc_files[-4:])]
+    files_list = [('file://' if idx % 2 else '') + file_path for idx, file_path in enumerate(assoc_files[-4:])]
     subprocess.check_call(['open', *files_list])
     time.sleep(1.0)
 
@@ -328,15 +326,15 @@ def _test_apple_events_handling(appname, tmpdir, pyi_builder_spec, monkeypatch, 
 
 
 @pytest.mark.darwin
-@macos11_check_tmpdir
+@macos11_check_tmp_path
 @pytest.mark.flaky(reruns=3)
 @pytest.mark.parametrize("build_mode", ['onefile', 'onedir'])
 @pytest.mark.parametrize("argv_emu", [True, False], ids=["emu", "noemu"])
-def test_apple_event_handling_carbon(tmpdir, pyi_builder_spec, monkeypatch, build_mode, argv_emu):
+def test_apple_event_handling_carbon(tmp_path, pyi_builder_spec, monkeypatch, build_mode, argv_emu):
     # Carbon-based event logger.
     return _test_apple_events_handling(
         'pyi_osx_aevent_handling_carbon',
-        tmpdir,
+        tmp_path,
         pyi_builder_spec,
         monkeypatch,
         build_mode,

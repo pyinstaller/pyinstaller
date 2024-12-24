@@ -19,20 +19,20 @@ gSrcDir = os.path.join(gRootDir, 'testpkg-setuptools-namespace')
 
 
 @pytest.fixture
-def install_testpkg(tmpdir):
+def install_testpkg(tmp_path):
     # Copy the package to ``dest_dir``, so that the build won't modify anything in ``gSrcDir``.
-    dest_dir = str(tmpdir / 'data')
+    dest_dir = tmp_path / 'data'
     shutil.copytree(gSrcDir, dest_dir)
 
     # A directory to place the resulting built library in.
-    libdir = str(tmpdir / 'test')
+    libdir = tmp_path / 'test'
 
     # Perform the build.
     subprocess.check_call([
         sys.executable, 'setup.py', 'install',
-            '--install-lib', libdir,
+            '--install-lib', str(libdir),
             '--single-version-externally-managed',
-            '--record', os.path.join(libdir, 'record.lst'),
+            '--record', str(libdir  / 'record.lst'),
         ], cwd=dest_dir)
 
     return libdir

@@ -21,6 +21,7 @@
 # itself.
 
 import os
+import pathlib
 
 import pytest
 
@@ -36,7 +37,7 @@ pytestmark = [
 ]
 
 # Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+_MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
 
 def __exec_python_script(script_filename, pathex):
@@ -50,21 +51,25 @@ def __exec_python_script(script_filename, pathex):
     return exec_python_rc(script_filename, env=env)
 
 
-def test_importlib_resources_source(tmpdir, script_dir):
+def test_importlib_resources_source(script_dir):
     # Run the test script unfrozen - to validate it is working and to verify the behavior of importlib.resources
     # (or importlib_resources back-port).
-    pathex = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'package')
-    test_script = os.path.join(script_dir, 'pyi_importlib_resources.py')
-    ret = __exec_python_script(test_script, pathex=pathex)
+    pathex = _MODULES_DIR / 'pyi_pkg_resources_provider' / 'package'
+    test_script = script_dir / 'pyi_importlib_resources.py'
+    ret = __exec_python_script(str(test_script), pathex=str(pathex))
     assert ret == 0, "Test script failed!"
 
 
-def test_importlib_resources_frozen(pyi_builder, tmpdir, script_dir):
+def test_importlib_resources_frozen(pyi_builder, script_dir):
     # Run the test script as a frozen program
-    pathex = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'package')
+    pathex = _MODULES_DIR / 'pyi_pkg_resources_provider' / 'package'
     test_script = 'pyi_importlib_resources.py'
-    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'hooks')
-    pyi_args = ['--paths', pathex, '--hidden-import', 'pyi_pkgres_testpkg', '--additional-hooks-dir', hooks_dir]
+    hooks_dir = _MODULES_DIR / 'pyi_pkg_resources_provider' / 'hooks'
+    pyi_args = [
+        '--paths', str(pathex),
+        '--hidden-import', 'pyi_pkgres_testpkg',
+        '--additional-hooks-dir', str(hooks_dir),
+    ]  # yapf: disable
     if is_darwin:
         pyi_args += ['--windowed']  # Also build and test .app bundle executable
     pyi_builder.test_script(
@@ -85,13 +90,17 @@ def test_importlib_resources_frozen(pyi_builder, tmpdir, script_dir):
 # The test covers both scenarios via `as_package` parameter.
 @pytest.mark.parametrize('as_package', [True, False])
 def test_importlib_resources_namespace_package_data_files(pyi_builder, as_package):
-    pathex = os.path.join(_MODULES_DIR, 'pyi_namespace_package_with_data', 'package')
-    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_namespace_package_with_data', 'hooks')
+    pathex = _MODULES_DIR / 'pyi_namespace_package_with_data' / 'package'
+    hooks_dir = _MODULES_DIR / 'pyi_namespace_package_with_data' / 'hooks'
     if as_package:
         hidden_imports = ['--hidden-import', 'pyi_test_nspkg', '--hidden-import', 'pyi_test_nspkg.data']
     else:
         hidden_imports = ['--hidden-import', 'pyi_test_nspkg']
-    pyi_args = ['--paths', pathex, *hidden_imports, '--additional-hooks-dir', hooks_dir]
+    pyi_args = [
+        '--paths', str(pathex),
+        *hidden_imports,
+        '--additional-hooks-dir', str(hooks_dir),
+    ]  # yapf: disable
     if is_darwin:
         pyi_args += ['--windowed']  # Also build and test .app bundle executable
     pyi_builder.test_source(

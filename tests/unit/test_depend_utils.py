@@ -43,7 +43,7 @@ def __scan_code_for_ctypes(code, monkeypatch, extended_args):
 @pytest.mark.parametrize('classname', CTYPES_CLASSNAMES)
 @pytest.mark.parametrize('extended_args', [False, True])
 def test_ctypes_CDLL_call(monkeypatch, classname, extended_args):
-    code = "%s('somelib.xxx')" % classname
+    code = f"{classname}('somelib.xxx')"
     res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res == set(['somelib.xxx'])
 
@@ -52,7 +52,7 @@ def test_ctypes_CDLL_call(monkeypatch, classname, extended_args):
 @pytest.mark.parametrize('extended_args', [False, True])
 def test_ctypes_LibraryLoader(monkeypatch, classname, extended_args):
     # This type of usage is only valid on Windows and the lib-name will always get `.dll` appended.
-    code = "%s.somelib" % classname.lower()
+    code = f"{classname.lower()}.somelib"
     res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res == set(['somelib.dll'])
 
@@ -60,7 +60,7 @@ def test_ctypes_LibraryLoader(monkeypatch, classname, extended_args):
 @pytest.mark.parametrize('classname', CTYPES_CLASSNAMES)
 @pytest.mark.parametrize('extended_args', [False, True])
 def test_ctypes_LibraryLoader_LoadLibrary(monkeypatch, classname, extended_args):
-    code = "%s.LoadLibrary('somelib.xxx')" % classname.lower()
+    code = f"{classname.lower()}.LoadLibrary('somelib.xxx')"
     res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res == set(['somelib.xxx'])
 
@@ -77,7 +77,7 @@ def test_ctypes_util_find_library(monkeypatch, extended_args):
         libname = "KERNEL32"
     else:
         libname = "c"
-    code = "ctypes.util.find_library('%s')" % libname
+    code = f"ctypes.util.find_library('{libname}')"
     res = __scan_code_for_ctypes(code, monkeypatch, extended_args)
     assert res
 

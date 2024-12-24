@@ -34,7 +34,7 @@ def test_importlib_lazy_loader_alias1(pyi_builder, script_dir):
             '--hiddenimport',
             'pyi_testmod_metapath1',
             '--additional-hooks-dir',
-            script_dir.join('pyi_hooks').strpath,
+            str(script_dir / 'pyi_hooks'),
         ],
     )
 
@@ -48,6 +48,6 @@ def test_importlib_lazy_loader_alias2(pyi_builder, script_dir):
             '--hiddenimport',
             'pyi_testmod_metapath1',
             '--additional-hooks-dir',
-            script_dir.join('pyi_hooks').strpath,
+            str(script_dir / 'pyi_hooks'),
         ],
     )

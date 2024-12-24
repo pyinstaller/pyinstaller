@@ -14,8 +14,6 @@ Tests for splash screen.
 NOTE: splash screen is not supported on macOS due to incompatible design.
 """
 
-import os
-
 import pytest
 
 from PyInstaller.compat import is_darwin, is_musl
@@ -56,17 +54,17 @@ def test_splash_screen_running(pyi_builder_spec, capfd, monkeypatch, build_mode,
 # - user imports pyi_splash, which calls pyi_splash.close() via atexit()
 # - user imports pyi_splash and calls pyi_splash.close()
 def test_splash_screen_shutdown_auto(pyi_builder, script_dir):
-    splash_image = os.path.join(script_dir, '..', 'data', 'splash', 'image.png')
+    splash_image = script_dir.parent / 'data' / 'splash' / 'image.png'
     pyi_builder.test_source(
         """
         print("Done!")
         """,
-        pyi_args=["--splash", splash_image],
+        pyi_args=["--splash", str(splash_image)],
     )
 
 
 def test_splash_screen_shutdown_atexit(pyi_builder, script_dir):
-    splash_image = os.path.join(script_dir, '..', 'data', 'splash', 'image.png')
+    splash_image = script_dir.parent / 'data' / 'splash' / 'image.png'
     pyi_builder.test_source(
         """
         # Importing pyi_splash registers pyi_splash.close() call via atexit().
@@ -75,12 +73,12 @@ def test_splash_screen_shutdown_atexit(pyi_builder, script_dir):
 
         print("Done!")
         """,
-        pyi_args=["--splash", splash_image],
+        pyi_args=["--splash", str(splash_image)],
     )
 
 
 def test_splash_screen_shutdown_manual(pyi_builder, script_dir):
-    splash_image = os.path.join(script_dir, '..', 'data', 'splash', 'image.png')
+    splash_image = script_dir.parent / 'data' / 'splash' / 'image.png'
     pyi_builder.test_source(
         """
         print("Importing pyi_splash...")
@@ -91,16 +89,16 @@ def test_splash_screen_shutdown_manual(pyi_builder, script_dir):
 
         print("Done!")
         """,
-        pyi_args=["--splash", splash_image],
+        pyi_args=["--splash", str(splash_image)],
     )
 
 
 # Check that splash screen is gracefully disabled in subprocesses spawned via sys.executable
 def test_pyi_splash_in_subprocess(pyi_builder, script_dir):
-    splash_image = os.path.join(script_dir, '..', 'data', 'splash', 'image.png')
+    splash_image = script_dir.parent / 'data' / 'splash' / 'image.png'
     pyi_builder.test_script(
         "pyi_splash_in_subprocess.py",
-        pyi_args=["--splash", splash_image],
+        pyi_args=["--splash", str(splash_image)],
     )
 
 
@@ -108,7 +106,7 @@ def test_pyi_splash_in_subprocess(pyi_builder, script_dir):
 # The test procedure is adapted from pyi_splash_in_subprocess.py script of `test_pyi_splash_in_subprocess`.
 def test_pyi_splash_suppress(pyi_builder, script_dir, monkeypatch):
     monkeypatch.setenv("PYINSTALLER_SUPPRESS_SPLASH_SCREEN", "1")
-    splash_image = os.path.join(script_dir, '..', 'data', 'splash', 'image.png')
+    splash_image = script_dir.parent / 'data' / 'splash' / 'image.png'
     pyi_builder.test_source(
         """
         import time
@@ -144,5 +142,5 @@ def test_pyi_splash_suppress(pyi_builder, script_dir, monkeypatch):
         # After close, splash screen should be (still) inactive
         assert not pyi_splash.is_alive(), "Splash screen is not inactive!"
         """,
-        pyi_args=["--splash", splash_image],
+        pyi_args=["--splash", str(splash_image)],
     )

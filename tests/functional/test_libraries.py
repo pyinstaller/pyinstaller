@@ -10,18 +10,17 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import os
+import pathlib
 
 import pytest
-import py
 
 from PyInstaller.compat import is_win, is_linux
 from PyInstaller.utils.tests import importorskip, xfail, skipif, requires
 from PyInstaller.utils.hooks import can_import_module
 
 # :todo: find a way to get this from `conftest` or such directory with testing modules used in some tests.
-_MODULES_DIR = py.path.local(os.path.abspath(__file__)).dirpath('modules')
-_DATA_DIR = py.path.local(os.path.abspath(__file__)).dirpath('data')
+_MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
+_DATA_DIR = pathlib.Path(__file__).parent / 'data'
 
 
 @importorskip('gevent')
@@ -121,26 +120,29 @@ def test_tkinter_functional(pyi_builder):
 
 def test_pkg_resource_res_string(pyi_builder, monkeypatch):
     # Include some data files for testing pkg_resources module.
-    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')), 'pkg3'))
-    pyi_builder.test_script('pkg_resource_res_string.py', pyi_args=['--add-data', datas])
+    add_data_arg = f"{_MODULES_DIR / 'pkg3' / 'sample-data.txt'}:pkg3"
+    pyi_builder.test_script('pkg_resource_res_string.py', pyi_args=['--add-data', add_data_arg])
 
 
 def test_pkgutil_get_data(pyi_builder, monkeypatch):
     # Include some data files for testing pkg_resources module.
-    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')), 'pkg3'))
-    pyi_builder.test_script('pkgutil_get_data.py', pyi_args=['--add-data', datas])
+    add_data_arg = f"{_MODULES_DIR / 'pkg3' / 'sample-data.txt'}:pkg3"
+    pyi_builder.test_script('pkgutil_get_data.py', pyi_args=['--add-data', add_data_arg])
 
 
 @xfail(reason='Our import mechanism returns the wrong loader-class for __main__.')
 def test_pkgutil_get_data__main__(pyi_builder, monkeypatch):
     # Include some data files for testing pkg_resources module.
-    datas = os.pathsep.join((str(_MODULES_DIR.join('pkg3', 'sample-data.txt')), 'pkg3'))
-    pyi_builder.test_script('pkgutil_get_data__main__.py', pyi_args=['--add-data', datas])
+    add_data_arg = f"{_MODULES_DIR / 'pkg3' / 'sample-data.txt'}:pkg3"
+    pyi_builder.test_script('pkgutil_get_data__main__.py', pyi_args=['--add-data', add_data_arg])
 
 
 @importorskip('sphinx')
-def test_sphinx(tmpdir, pyi_builder, data_dir):
-    # Note that including the data_dir fixture copies files needed by this test
+def test_sphinx(pyi_builder, data_dir):
+    # NOTE: including the `data_dir` fixture copies files needed by this test!
+    # These data files are not collected into frozen application; instead, the test script uses `pyi_get_datadir` module
+    # that in turn uses `pyi_testmod_gettemp` module (both found in tests/functional/modules) to resolve the copied data
+    # directory based on the location of the test executable.
     pyi_builder.test_script('pyi_lib_sphinx.py')
 
 
@@ -219,11 +221,11 @@ def test_pytz(pyi_builder):
 
 
 @importorskip('requests')
-def test_requests(tmpdir, pyi_builder, data_dir, monkeypatch):
-    # Note that including the data_dir fixture copies files needed by this test.
-    # Include the data files.
-    datas = os.pathsep.join((str(data_dir.join('*')), os.curdir))
-    pyi_builder.test_script('pyi_lib_requests.py', pyi_args=['--add-data', datas])
+def test_requests(pyi_builder, data_dir):
+    # NOTE: including the `data_dir` fixture copies files needed by this test!
+    # We collect the data into frozen application.
+    add_data_arg = f"{data_dir / '*'}:."
+    pyi_builder.test_script('pyi_lib_requests.py', pyi_args=['--add-data', add_data_arg])
 
 
 @importorskip('urllib3.packages.six')
@@ -393,14 +395,14 @@ def test_zeep(pyi_builder):
 @importorskip('PIL')
 #@pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
 def test_pil_img_conversion(pyi_builder):
-    datas = os.pathsep.join((str(_DATA_DIR.join('PIL_images')), '.'))
+    add_data_arg = f"{_DATA_DIR / 'PIL_images'}:."
     pyi_builder.test_script(
         'pyi_lib_PIL_img_conversion.py',
         pyi_args=[
-            '--add-data', datas,
+            '--add-data', add_data_arg,
             # Use console mode or else on Windows the VS() messageboxes will stall pytest.
             '--console'
-        ]
+        ],
     )  # yapf: disable
 
 
@@ -482,9 +484,9 @@ def test_pandas_plotting_matplotlib(pyi_builder):
 @pytest.mark.skipif(not is_win, reason='pywin32-ctypes is supported only on Windows')
 @pytest.mark.parametrize('submodule', ['win32api', 'win32cred', 'pywintypes'])
 def test_pywin32ctypes(pyi_builder, submodule):
-    pyi_builder.test_source("""
-        from win32ctypes.pywin32 import {0}
-        """.format(submodule))
+    pyi_builder.test_source(f"""
+        from win32ctypes.pywin32 import {submodule}
+        """)
 
 
 @importorskip('setuptools')

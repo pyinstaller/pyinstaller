@@ -19,12 +19,13 @@
 # itself.
 
 import os
+import pathlib
 
 from PyInstaller.utils.tests import importorskip
 from PyInstaller.compat import is_darwin, exec_python_rc
 
 # Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+_MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
 
 def __exec_python_script(script_filename, pathex):
@@ -32,29 +33,33 @@ def __exec_python_script(script_filename, pathex):
     env = os.environ.copy()
     # ... and prepend PYTHONPATH with pathex
     if 'PYTHONPATH' in env:
-        pathex = os.pathsep.join([pathex, env['PYTHONPATH']])
-    env['PYTHONPATH'] = pathex
+        pathex = os.pathsep.join([str(pathex), env['PYTHONPATH']])
+    env['PYTHONPATH'] = str(pathex)
     # Run the test script
-    return exec_python_rc(script_filename, env=env)
+    return exec_python_rc(str(script_filename), env=env)
 
 
 @importorskip('pkg_resources')
-def test_pkg_resources_provider_source(tmpdir, script_dir, monkeypatch):
+def test_pkg_resources_provider_source(tmp_path, script_dir, monkeypatch):
     # Run the test script unfrozen - to validate it is working and to verify the behavior of
     # pkg_resources.DefaultProvider.
-    pathex = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'package')
-    test_script = os.path.join(script_dir, 'pyi_pkg_resources_provider.py')
+    pathex = _MODULES_DIR / 'pyi_pkg_resources_provider' / 'package'
+    test_script = script_dir / 'pyi_pkg_resources_provider.py'
     ret = __exec_python_script(test_script, pathex=pathex)
     assert ret == 0, "Test script failed!"
 
 
 @importorskip('pkg_resources')
-def test_pkg_resources_provider_frozen(pyi_builder, tmpdir, script_dir, monkeypatch):
+def test_pkg_resources_provider_frozen(pyi_builder, tmp_path, script_dir, monkeypatch):
     # Run the test script as a frozen program
-    pathex = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'package')
+    pathex = _MODULES_DIR / 'pyi_pkg_resources_provider' / 'package'
     test_script = 'pyi_pkg_resources_provider.py'
-    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_pkg_resources_provider', 'hooks')
-    pyi_args = ['--paths', pathex, '--hidden-import', 'pyi_pkgres_testpkg', '--additional-hooks-dir', hooks_dir]
+    hooks_dir = _MODULES_DIR / 'pyi_pkg_resources_provider' / 'hooks'
+    pyi_args = [
+        '--paths', str(pathex),
+        '--hidden-import', 'pyi_pkgres_testpkg',
+        '--additional-hooks-dir', str(hooks_dir),
+    ]  # yapf: disable
     if is_darwin:
         pyi_args += ['--windowed']  # Also build and test .app bundle executable
     pyi_builder.test_script(

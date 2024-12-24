@@ -33,8 +33,8 @@ def qt_param(qt_flavor, *args, **kwargs):
 _QT_PY_PACKAGES = ['PyQt5', 'PyQt6', 'PySide2', 'PySide6']
 QtPyLibs = pytest.mark.parametrize('QtPyLib', [qt_param(i) for i in _QT_PY_PACKAGES])
 
-# OS X bundles, produced by the ``--windowed`` flag, invoke a unique code path that sometimes causes failures in Qt
-# applications.
+# macOS .app bundles, produced by the ``--windowed`` flag, invoke a unique code path that sometimes causes failures in
+# Qt applications. So build with ``--windowed`` option, which will build and run both POSIX build and .app bundle.
 USE_WINDOWED_KWARG = dict(pyi_args=['--windowed']) if is_darwin else {}
 
 
@@ -63,13 +63,13 @@ _ensure_qt_library_info_is_initialized()
 @QtPyLibs
 def test_Qt_QtWidgets(pyi_builder, QtPyLib):
     pyi_builder.test_source(
-        """
+        f"""
         import sys
 
-        from {0}.QtWidgets import QApplication, QWidget
-        from {0}.QtCore import QTimer
+        from {QtPyLib}.QtWidgets import QApplication, QWidget
+        from {QtPyLib}.QtCore import QTimer
 
-        is_qt6 = '{0}' in {{'PySide6', 'PyQt6'}}
+        is_qt6 = '{QtPyLib}' in {{'PySide6', 'PyQt6'}}
 
         app = QApplication(sys.argv)
         window = QWidget()
@@ -85,7 +85,7 @@ def test_Qt_QtWidgets(pyi_builder, QtPyLib):
         else:
             res = app.exec_()
         sys.exit(res)
-        """.format(QtPyLib), **USE_WINDOWED_KWARG
+        """, **USE_WINDOWED_KWARG
     )
 
 
@@ -103,14 +103,14 @@ def test_Qt_QtQml(pyi_builder, QtPyLib):
             pytest.skip('PySide6-Essentials 6.6.3 is missing shared libraries required by Qt Quick Controls 2.')
 
     pyi_builder.test_source(
-        """
+        f"""
         import sys
 
-        from {0}.QtGui import QGuiApplication
-        from {0}.QtQml import QQmlApplicationEngine
-        from {0}.QtCore import QTimer, QUrl
+        from {QtPyLib}.QtGui import QGuiApplication
+        from {QtPyLib}.QtQml import QQmlApplicationEngine
+        from {QtPyLib}.QtCore import QTimer, QUrl
 
-        is_qt6 = '{0}' in {{'PyQt6', 'PySide6'}}
+        is_qt6 = '{QtPyLib}' in {{'PyQt6', 'PySide6'}}
 
         # Select a style via the `command line
         # <https://doc.qt.io/qt-5/qtquickcontrols2-styles.html#command-line-argument>`_,
@@ -144,7 +144,7 @@ def test_Qt_QtQml(pyi_builder, QtPyLib):
             res = app.exec_()
         del engine
         sys.exit(res)
-        """.format(QtPyLib), **USE_WINDOWED_KWARG
+        """, **USE_WINDOWED_KWARG
     )
 
 
@@ -182,10 +182,10 @@ def test_Qt_QtNetwork_SSL_support(pyi_builder, QtPyLib):
         pytest.skip('QtNetwork does not use OpenSSL.')
 
     pyi_builder.test_source(
-        """
+        f"""
         import sys
-        from {0}.QtCore import QCoreApplication, QLibraryInfo
-        from {0}.QtNetwork import QSslSocket
+        from {QtPyLib}.QtCore import QCoreApplication, QLibraryInfo
+        from {QtPyLib}.QtNetwork import QSslSocket
 
         app = QCoreApplication(sys.argv)
 
@@ -213,17 +213,17 @@ def test_Qt_QtNetwork_SSL_support(pyi_builder, QtPyLib):
             print(f"Active TLS backend: {{QSslSocket.activeBackend()}}")
             print(f"Available TLS backends: {{QSslSocket.availableBackends()}}")
             assert 'openssl' in QSslSocket.availableBackends(), "OpenSSL TLS backend not available!"
-        """.format(QtPyLib), **USE_WINDOWED_KWARG
+        """, **USE_WINDOWED_KWARG
     )
 
 
 @QtPyLibs
 def test_Qt_QTranslate(pyi_builder, QtPyLib):
     pyi_builder.test_source(
-        """
+        f"""
         import sys
-        from {0}.QtWidgets import QApplication
-        from {0}.QtCore import QTranslator, QLocale, QLibraryInfo
+        from {QtPyLib}.QtWidgets import QApplication
+        from {QtPyLib}.QtCore import QTranslator, QLocale, QLibraryInfo
 
         # Initialize Qt default translations
         app = QApplication(sys.argv)
@@ -243,27 +243,30 @@ def test_Qt_QTranslate(pyi_builder, QtPyLib):
         else:
             print('Qt locale %s not found!' % locale.name())
             assert False
-        """.format(QtPyLib)
+        """
     )
 
 
 @QtPyLibs
-def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, QtPyLib):
-    # Note that including the data_dir fixture copies files needed by this test.
+def test_Qt_Ui_file(pyi_builder, data_dir, QtPyLib):
+    # NOTE: including the `data_dir` fixture copies files needed by this test!
+    # These data files are not collected into frozen application; instead, the test script uses `pyi_get_datadir` module
+    # that in turn uses `pyi_testmod_gettemp` module (both found in tests/functional/modules) to resolve the copied data
+    # directory based on the location of the test executable.
     pyi_builder.test_source(
-        """
+        f"""
         import os
         import sys
 
-        import {0}.QtQuickWidgets  # Used instead of hiddenimports
+        import {QtPyLib}.QtQuickWidgets  # Used instead of hiddenimports
 
-        from {0}.QtWidgets import QApplication, QWidget
-        from {0}.QtCore import QTimer
+        from {QtPyLib}.QtWidgets import QApplication, QWidget
+        from {QtPyLib}.QtCore import QTimer
 
         from pyi_get_datadir import get_data_dir
 
-        is_qt6 = '{0}' in {{'PyQt6', 'PySide6'}}
-        is_pyqt = '{0}' in {{'PyQt5', 'PyQt6'}}
+        is_qt6 = '{QtPyLib}' in {{'PyQt6', 'PySide6'}}
+        is_pyqt = '{QtPyLib}' in {{'PyQt5', 'PyQt6'}}
 
         app = QApplication(sys.argv)
 
@@ -273,7 +276,7 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, QtPyLib):
         if is_qt6:
             try:
                 # This seems to be unsupported on macOS version of PySide6 at the time of writing (6.1.0)
-                from {0}.QtQuick import QQuickWindow, QSGRendererInterface
+                from {QtPyLib}.QtQuick import QQuickWindow, QSGRendererInterface
                 QQuickWindow.setGraphicsApi(QSGRendererInterface.GraphicsApi.OpenGL)
             except Exception:
                 pass
@@ -282,12 +285,12 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, QtPyLib):
         ui_file = os.path.join(get_data_dir(), 'Qt_Ui_file', 'gui.ui')
         if is_pyqt:
             # Use PyQt.uic
-            from {0} import uic
+            from {QtPyLib} import uic
             window = QWidget()
             uic.loadUi(ui_file, window)
         else:
             # Use PySide.QtUiTools.QUiLoader
-            from {0}.QtUiTools import QUiLoader
+            from {QtPyLib}.QtUiTools import QUiLoader
             loader = QUiLoader()
             window = loader.load(ui_file)
         window.show()
@@ -302,7 +305,7 @@ def test_Qt_Ui_file(tmpdir, pyi_builder, data_dir, QtPyLib):
         else:
             res = app.exec_()
         sys.exit(res)
-        """.format(QtPyLib)
+        """
     )
 
 
@@ -364,19 +367,21 @@ def _disable_qtwebengine_sandbox(qt_flavor):
 
 # Run the the QtWebEngineWidgets test for chosen Qt-based package flavor.
 def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
-    source = """
+    disable_sandbox = _disable_qtwebengine_sandbox(qt_flavor)
+    pyi_builder.test_source(
+        f"""
         import sys
 
         # Disable QtWebEngine/chromium sanbox, if necessary
-        if {1}:
+        if {disable_sandbox}:
             import os
             os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
 
-        from {0}.QtWidgets import QApplication
-        from {0}.QtWebEngineWidgets import QWebEngineView
-        from {0}.QtCore import QTimer
+        from {qt_flavor}.QtWidgets import QApplication
+        from {qt_flavor}.QtWebEngineWidgets import QWebEngineView
+        from {qt_flavor}.QtCore import QTimer
 
-        is_qt6 = '{0}' in {{'PyQt6', 'PySide6'}}
+        is_qt6 = '{qt_flavor}' in {{'PyQt6', 'PySide6'}}
 
         # Web page to display
         WEB_PAGE_HTML = '''
@@ -436,30 +441,31 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
         else:
             res = app.exec_()
         sys.exit(res)
-        """.format(qt_flavor, _disable_qtwebengine_sandbox(qt_flavor))
-
-    pyi_builder.test_source(source, **USE_WINDOWED_KWARG)
+        """, **USE_WINDOWED_KWARG
+    )
 
 
 # Run the the QtWebEngineQuick test for chosen Qt-based package flavor.
 def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
-    source = """
+    disable_sandbox = _disable_qtwebengine_sandbox(qt_flavor)
+    pyi_builder.test_source(
+        f"""
         import sys
 
         # Disable QtWebEngine/chromium sanbox, if necessary
-        if {1}:
+        if {disable_sandbox}:
             import os
             os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
 
-        from {0}.QtGui import QGuiApplication
-        from {0}.QtQml import QQmlApplicationEngine
+        from {qt_flavor}.QtGui import QGuiApplication
+        from {qt_flavor}.QtQml import QQmlApplicationEngine
 
-        is_qt6 = '{0}' in {{'PyQt6', 'PySide6'}}
+        is_qt6 = '{qt_flavor}' in {{'PyQt6', 'PySide6'}}
 
         if is_qt6:
-            from {0}.QtWebEngineQuick import QtWebEngineQuick
+            from {qt_flavor}.QtWebEngineQuick import QtWebEngineQuick
         else:
-            from {0}.QtWebEngine import QtWebEngine as QtWebEngineQuick
+            from {qt_flavor}.QtWebEngine import QtWebEngine as QtWebEngineQuick
         QtWebEngineQuick.initialize()
 
         app = QGuiApplication(sys.argv)
@@ -508,9 +514,8 @@ def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
             res = app.exec_()
         del engine
         sys.exit(res)
-        """.format(qt_flavor, _disable_qtwebengine_sandbox(qt_flavor))
-
-    pyi_builder.test_source(source, **USE_WINDOWED_KWARG)
+        """, **USE_WINDOWED_KWARG
+    )
 
 
 @requires('PyQt5')
@@ -583,14 +588,14 @@ def test_Qt_QtMultimedia_player_init(pyi_builder, QtPyLib):
             pytest.skip('QtMultimedia is broken under PyQt6 6.7.0 and PyQt6-Qt6 6.7.1.')
 
     pyi_builder.test_source(
-        """
+        f"""
         import sys
 
-        from {0} import QtCore, QtMultimedia
+        from {QtPyLib} import QtCore, QtMultimedia
 
         app = QtCore.QCoreApplication(sys.argv)
         player = QtMultimedia.QMediaPlayer(app)
-        """.format(QtPyLib), **USE_WINDOWED_KWARG
+        """, **USE_WINDOWED_KWARG
     )
 
 
@@ -606,13 +611,13 @@ def test_Qt_QtMultimedia_player_init(pyi_builder, QtPyLib):
 ])
 def test_Qt_QtMultimedia_with_true_property(pyi_builder, QtPyLib):
     pyi_builder.test_source(
-        """
+        f"""
         import sys
-        from {0} import QtCore, QtMultimedia
+        from {QtPyLib} import QtCore, QtMultimedia
         from __feature__ import true_property
 
         app = QtCore.QCoreApplication(sys.argv)
-        """.format(QtPyLib), **USE_WINDOWED_KWARG
+        """, **USE_WINDOWED_KWARG
     )
 
 

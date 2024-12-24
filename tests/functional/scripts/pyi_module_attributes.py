@@ -25,7 +25,7 @@ _pyexe_file = gettemp("python_exe.build")
 with open(_pyexe_file) as fp:
     _lines = fp.readlines()
     _pyexe = _lines[0].strip()
-    _env_path = _lines[2].strip()
+    _env_path = _lines[1].strip()
 
 
 def exec_python(pycode):

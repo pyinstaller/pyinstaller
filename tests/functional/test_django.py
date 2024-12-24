@@ -32,8 +32,8 @@ from PyInstaller.utils.tests import importorskip, xfail
 @pytest.mark.timeout(timeout=7 * 60)
 def test_django(pyi_builder, monkeypatch, data_dir):
     # Extend sys.path so PyInstaller could find modules from 'tmpdir/django/'.
-    monkeypatch.syspath_prepend(data_dir.strpath)
+    monkeypatch.syspath_prepend(str(data_dir))
     # Django uses manage.py as the main script.
-    script = str(data_dir / 'manage.py')
+    script = data_dir / 'manage.py'
     # Create the exe, run django command 'check' to do basic sanity checking of the executable.
     pyi_builder.test_script(script, app_name='django_site', app_args=['check'])

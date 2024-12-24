@@ -22,6 +22,7 @@
 # noarchive mode, to cover both cases.
 
 import os
+import pathlib
 
 import pytest
 
@@ -29,7 +30,7 @@ from PyInstaller.compat import exec_python_rc
 from PyInstaller.utils.tests import importable
 
 # Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+_MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
 
 # Read the output file produced by test script. Each line consists of two elements separated by semi-colon:
@@ -54,24 +55,23 @@ def _read_results_file(filename):
     ]
 )
 @pytest.mark.parametrize('archive', ['archive', 'noarchive'])
-def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder, archive, resolve_pkg_path=False):
+def test_pkgutil_iter_modules(package, script_dir, tmp_path, pyi_builder, archive, resolve_pkg_path=False):
     # Ensure package is available
     if not importable(package.split(".")[0]):
-        pytest.skip("Needs " + package)
+        pytest.skip(f"Needs {package}")
 
     # Full path to test script
-    test_script = 'pyi_pkgutil_iter_modules.py'
-    test_script = os.path.join(script_dir, test_script)
+    test_script = script_dir / 'pyi_pkgutil_iter_modules.py'
 
     # Run unfrozen test script
-    out_unfrozen = os.path.join(tmpdir, 'output-unfrozen.txt')
-    rc = exec_python_rc(test_script, package, '--output-file', out_unfrozen)
+    out_unfrozen = tmp_path / 'output-unfrozen.txt'
+    rc = exec_python_rc(str(test_script), package, '--output-file', str(out_unfrozen))
     assert rc == 0
     # Read results
     results_unfrozen = _read_results_file(out_unfrozen)
 
     # Run frozen script
-    out_frozen = os.path.join(tmpdir, 'output-frozen.txt')
+    out_frozen = tmp_path / 'output-frozen.txt'
     debug_args = ['--debug', 'noarchive'] if archive == 'noarchive' else []
     pyi_builder.test_script(
         test_script,
@@ -81,7 +81,7 @@ def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder, archive,
             # enable/disable noarchive
             *debug_args,
         ],
-        app_args=[package, '--output-file', out_frozen] + (['--resolve-pkg-path'] if resolve_pkg_path else [])
+        app_args=[package, '--output-file', str(out_frozen)] + (['--resolve-pkg-path'] if resolve_pkg_path else [])
     )  # yapf: disable
     # Read results
     results_frozen = _read_results_file(out_frozen)
@@ -98,11 +98,11 @@ def test_pkgutil_iter_modules(package, script_dir, tmpdir, pyi_builder, archive,
 # ensure proper matching.
 # The test is applicable only to macOS in onefile mode.
 @pytest.mark.darwin
-def test_pkgutil_iter_modules_resolve_pkg_path(script_dir, tmpdir, pyi_builder):
+def test_pkgutil_iter_modules_resolve_pkg_path(script_dir, tmp_path, pyi_builder):
     if pyi_builder._mode != 'onefile':
         pytest.skip('The test is applicable only to onefile mode.')
     # A single combination (altgraph package, archive mode) is enough to check for proper symlink handling.
-    test_pkgutil_iter_modules('json', script_dir, tmpdir, pyi_builder, archive=True, resolve_pkg_path=True)
+    test_pkgutil_iter_modules('json', script_dir, tmp_path, pyi_builder, archive=True, resolve_pkg_path=True)
 
 
 # Additional test for macOS .app bundles and packages that contain data files. See #7884. In generated .app bundles,
@@ -118,25 +118,24 @@ def test_pkgutil_iter_modules_resolve_pkg_path(script_dir, tmpdir, pyi_builder):
 # data and binary files, the directory is created in both Contents/Frameworks and Contents/Resources, and the contents
 # are cross-linked between them on file level.
 @pytest.mark.darwin
-def test_pkgutil_iter_modules_macos_app_bundle(script_dir, tmpdir, pyi_builder, monkeypatch):
+def test_pkgutil_iter_modules_macos_app_bundle(script_dir, tmp_path, pyi_builder, monkeypatch):
     if pyi_builder._mode != 'onedir':
         pytest.skip('The test is applicable only to onedir mode.')
 
-    pathex = os.path.join(_MODULES_DIR, 'pyi_pkgutil_itermodules', 'package')
-    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_pkgutil_itermodules', 'hooks')
+    pathex = _MODULES_DIR / 'pyi_pkgutil_itermodules' / 'package'
+    hooks_dir = _MODULES_DIR / 'pyi_pkgutil_itermodules' / 'hooks'
     package = 'mypackage'
 
     # Full path to test script
-    test_script = 'pyi_pkgutil_iter_modules.py'
-    test_script = os.path.join(script_dir, test_script)
+    test_script = script_dir / 'pyi_pkgutil_iter_modules.py'
 
     # Run unfrozen test script
     env = os.environ.copy()
     if 'PYTHONPATH' in env:
-        pathex = os.pathsep.join([pathex, env['PYTHONPATH']])
-    env['PYTHONPATH'] = pathex
-    out_unfrozen = os.path.join(tmpdir, 'output-unfrozen.txt')
-    rc = exec_python_rc(test_script, package, '--output-file', out_unfrozen, env=env)
+        pathex = os.pathsep.join([str(pathex), env['PYTHONPATH']])
+    env['PYTHONPATH'] = str(pathex)
+    out_unfrozen = tmp_path / 'output-unfrozen.txt'
+    rc = exec_python_rc(str(test_script), package, '--output-file', str(out_unfrozen), env=env)
     assert rc == 0
     # Read results
     results_unfrozen = _read_results_file(out_unfrozen)
@@ -147,9 +146,9 @@ def test_pkgutil_iter_modules_macos_app_bundle(script_dir, tmpdir, pyi_builder, 
     pyi_builder.test_script(
         test_script,
         pyi_args=[
-            '--paths', pathex,
+            '--paths', str(pathex),
             '--hiddenimport', package,
-            '--additional-hooks-dir', hooks_dir,
+            '--additional-hooks-dir', str(hooks_dir),
             '--windowed',  # enable .app bundle
         ],
         app_args=[package],
@@ -159,10 +158,10 @@ def test_pkgutil_iter_modules_macos_app_bundle(script_dir, tmpdir, pyi_builder, 
     executables = pyi_builder._find_executables('pyi_pkgutil_iter_modules')
     assert executables
     for idx, exe in enumerate(executables):
-        out_frozen = os.path.join(tmpdir, f"output-frozen-{idx}.txt")
+        out_frozen = tmp_path / f"output-frozen-{idx}.txt"
         rc = pyi_builder._run_executable(
             exe,
-            args=[package, '--output-file', out_frozen],
+            args=[package, '--output-file', str(out_frozen)],
             run_from_path=False,
             runtime=None,
         )

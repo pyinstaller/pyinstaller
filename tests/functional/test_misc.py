@@ -10,6 +10,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import pathlib
 import sys
 import json
 
@@ -18,27 +19,27 @@ import pytest
 from PyInstaller import compat
 
 # Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+_MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
 
 # Test that in python 3.11 and later, sys._stdlib_dir is set and that python-frozen modules have __file__ attribute.
 @pytest.mark.skipif(not compat.is_py311, reason="applicable only to python >= 3.11")
-def test_frozen_stdlib_modules(pyi_builder, script_dir, tmpdir):
+def test_frozen_stdlib_modules(pyi_builder, script_dir, tmp_path):
     test_script = 'pyi_frozen_stdlib_modules.py'
-    ref_result_file = os.path.join(tmpdir, 'ref_results.txt')
-    result_file = os.path.join(tmpdir, 'results.txt')
+    ref_result_file = tmp_path / 'ref_results.txt'
+    result_file = tmp_path / 'results.txt'
 
     # Run the test script unfrozen, to obtain reference results
     ret = compat.exec_python_rc(
-        os.path.join(script_dir, test_script),
-        ref_result_file,
+        str(script_dir / test_script),
+        str(ref_result_file),
     )
     assert ret == 0, "Unfrozen test script failed!"
 
     # Freeze and run the test script
     pyi_builder.test_script(
         test_script,
-        app_args=[result_file],
+        app_args=[str(result_file)],
     )
 
     # Process the results
@@ -80,7 +81,7 @@ def test_frozen_stdlib_modules(pyi_builder, script_dir, tmpdir):
 # Test inspect.getmodule() on stack-frames obtained by inspect.stack(). Reproduces the issue reported by #5963 while
 # expanding the test to cover a package and its submodule in addition to the __main__ module.
 def test_inspect_getmodule_from_stackframes(pyi_builder):
-    pathex = os.path.join(_MODULES_DIR, 'pyi_inspect_getmodule_from_stackframes')
+    pathex = _MODULES_DIR / 'pyi_inspect_getmodule_from_stackframes'
     # NOTE: run_from_path MUST be True, otherwise cwd + rel_path coincides with sys._MEIPASS + rel_path and masks the
     #       path resolving issue in onedir builds.
     pyi_builder.test_source(
@@ -105,7 +106,7 @@ def test_inspect_getmodule_from_stackframes(pyi_builder):
         module_names = [module.__name__ for module in modules]
         assert module_names == expected_module_names
         """,
-        pyi_args=['--paths', pathex],
+        pyi_args=['--paths', str(pathex)],
         run_from_path=True
     )
 
@@ -126,11 +127,11 @@ def test_dis_main(pyi_builder):
 @pytest.mark.parametrize('xflag,enabled', [("X utf8", True), ("X utf8=1", True), ("X utf8=0", False)])
 def test_utf8_mode_xflag(xflag, enabled, pyi_builder):
     pyi_builder.test_source(
-        """
+        f"""
         import sys
         print("sys.flags:", sys.flags)
-        assert sys.flags.utf8_mode == {}
-        """.format(enabled),
+        assert sys.flags.utf8_mode == {enabled}
+        """,
         pyi_args=["--python-option", xflag]
     )
 
@@ -155,11 +156,11 @@ def test_utf8_mode_locale(locale, pyi_builder, monkeypatch):
 @pytest.mark.parametrize('xflag,enabled', [("X dev", True), ("X dev=1", True), ("X dev=0", False)])
 def test_dev_mode_xflag(xflag, enabled, pyi_builder):
     pyi_builder.test_source(
-        """
+        f"""
         import sys
         print("sys.flags:", sys.flags)
-        assert sys.flags.dev_mode == {}
-        """.format(enabled),
+        assert sys.flags.dev_mode == {enabled}
+        """,
         pyi_args=["--python-option", xflag]
     )
 
@@ -177,21 +178,20 @@ def test_disable_hash_randomization(pyi_builder):
 
 
 # Test that onefile cleanup does not remove contents of a directory that user symlinks into sys._MEIPASS (see #6074).
-def test_onefile_cleanup_symlinked_dir(pyi_builder, tmpdir):
+def test_onefile_cleanup_symlinked_dir(pyi_builder, tmp_path):
     if pyi_builder._mode != 'onefile':
         pytest.skip('The test is relevant only to onefile builds.')
 
     # Create output directory with five pre-existing files
-    output_dir = str(tmpdir / 'output_dir')
-    os.mkdir(output_dir)
+    output_dir = tmp_path / 'output_dir'
+    output_dir.mkdir()
     for idx in range(5):
-        output_file = os.path.join(output_dir, f'preexisting-{idx}.txt')
-        with open(output_file, 'w', encoding='utf-8') as fp:
-            fp.write(f'Pre-existing file #{idx}')
+        output_file = output_dir / f'preexisting-{idx}.txt'
+        output_file.write_text(f"Pre-existing file #{idx}", encoding='utf-8')
 
     # Check if OS supports creation of symbolic links
     try:
-        os.symlink(output_dir, str(tmpdir / 'testdir'))
+        (tmp_path / 'testdir').symlink_to(output_dir)
     except OSError:
         pytest.skip("OS does not support (unprivileged) creation of symbolic links.")
 
@@ -216,17 +216,17 @@ def test_onefile_cleanup_symlinked_dir(pyi_builder, tmpdir):
 
     # Output directory should contain all five pre-existing and five new files.
     for idx in range(5):
-        output_file = os.path.join(output_dir, f'preexisting-{idx}.txt')
-        assert os.path.isfile(output_file)
+        output_file = output_dir / f'preexisting-{idx}.txt'
+        assert output_file.is_file()
     for idx in range(5):
-        output_file = os.path.join(output_dir, f'output-{idx}.txt')
-        assert os.path.isfile(output_file)
+        output_file = output_dir / f'output-{idx}.txt'
+        assert output_file.is_file()
 
 
 # Test that single-file metadata (as commonly found in Debian/Ubuntu packages) is properly collected by copy_metadata().
 def test_single_file_metadata(pyi_builder):
     # Add directory containing the my-test-package metadata to search path
-    extra_path = os.path.join(_MODULES_DIR, "pyi_single_file_metadata")
+    extra_path = _MODULES_DIR / "pyi_single_file_metadata"
 
     pyi_builder.test_source(
         """
@@ -241,7 +241,7 @@ def test_single_file_metadata(pyi_builder):
         assert dist.version == '1.0'
         assert dist.egg_name() == f'my_test_package-{dist.version}-py{sys.version_info[0]}.{sys.version_info[1]}'
         """,
-        pyi_args=['--paths', extra_path]
+        pyi_args=['--paths', str(extra_path)]
     )
 
 
@@ -249,27 +249,27 @@ def test_single_file_metadata(pyi_builder):
 # (non-UTF8) encoding and fails to declare such encoding using PEP361 encoding header.
 def test_program_importing_module_with_invalid_encoding1(pyi_builder):
     # Add directory containing the my-test-package metadata to search path
-    extra_path = os.path.join(_MODULES_DIR, "pyi_module_with_invalid_encoding")
+    extra_path = _MODULES_DIR / "pyi_module_with_invalid_encoding"
 
     pyi_builder.test_source(
         """
         import mymodule1
         assert mymodule1.hello() == "hello"
         """,
-        pyi_args=['--paths', extra_path]
+        pyi_args=['--paths', str(extra_path)]
     )
 
 
 def test_program_importing_module_with_invalid_encoding2(pyi_builder):
     # Add directory containing the my-test-package metadata to search path
-    extra_path = os.path.join(_MODULES_DIR, "pyi_module_with_invalid_encoding")
+    extra_path = _MODULES_DIR / "pyi_module_with_invalid_encoding"
 
     pyi_builder.test_source(
         """
         import mymodule2
         assert mymodule2.hello() == "hello"
         """,
-        pyi_args=['--paths', extra_path]
+        pyi_args=['--paths', str(extra_path)]
     )
 
 
@@ -317,12 +317,12 @@ def test_inspect_rthook_robustness(pyi_builder):
 # executable bit.
 @pytest.mark.linux
 @pytest.mark.darwin
-def test_bundled_shell_script(pyi_builder, tmpdir):
-    script_file = tmpdir / "test_script.sh"
+def test_bundled_shell_script(pyi_builder, tmp_path):
+    script_file = tmp_path / "test_script.sh"
     with open(script_file, "w", encoding="utf-8") as fp:
         print('#!/bin/sh', file=fp)
         print('echo "Hello world!"', file=fp)
-    os.chmod(script_file, 0o755)
+    script_file.chmod(0o755)
 
     pyi_builder.test_source(
         """
@@ -335,7 +335,7 @@ def test_bundled_shell_script(pyi_builder, tmpdir):
         print(output)
         assert output.strip() == "Hello world!"
         """,
-        pyi_args=['--add-data', str(script_file) + os.pathsep + '.']
+        pyi_args=['--add-data', f"{script_file}:."]
     )
 
 
@@ -346,19 +346,19 @@ def test_bundled_shell_script(pyi_builder, tmpdir):
 # to resolve `__main__` into `.../PyInstaller.exe/__main__.py` (or `.../pytest.exe/__main__.py`). On Linux and macOS,
 # modulegraph does not seem to be able to resolve `__main__`.
 def test_import_main_should_not_collect_pyinstaller1(pyi_builder):
-    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_import_main', 'hooks')
+    hooks_dir = _MODULES_DIR / 'pyi_import_main' / 'hooks'
     pyi_builder.test_source(
         """
         # Plain import.
         import __main__
         print(__main__)
         """,
-        pyi_args=['--additional-hooks-dir', hooks_dir]
+        pyi_args=['--additional-hooks-dir', str(hooks_dir)]
     )
 
 
 def test_import_main_should_not_collect_pyinstaller2(pyi_builder):
-    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_import_main', 'hooks')
+    hooks_dir = _MODULES_DIR / 'pyi_import_main' / 'hooks'
     pyi_builder.test_source(
         """
         # Import __main__ in the same way as `pkg_resources` and its vendored variants
@@ -368,7 +368,7 @@ def test_import_main_should_not_collect_pyinstaller2(pyi_builder):
         except ImportError:
             pass
         """,
-        pyi_args=['--additional-hooks-dir', hooks_dir]
+        pyi_args=['--additional-hooks-dir', str(hooks_dir)]
     )
 
 
@@ -388,46 +388,47 @@ def test_import_main_should_not_collect_pyinstaller2(pyi_builder):
 # triggers collection of top-level `tests` package that is provided by the `LaoNLP` distribution. And importing
 # the said `tests` package during analysis triggers LaoNLP's unit tests...
 def test_missing_relative_import_collects_unrelated_top_level_module(pyi_builder):
-    extra_path = os.path.join(_MODULES_DIR, "pyi_missing_relative_import")
-    hooks_dir = os.path.join(extra_path, 'hooks')
+    extra_path = _MODULES_DIR / "pyi_missing_relative_import"
+    hooks_dir = extra_path / 'hooks'
 
     pyi_builder.test_source(
         """
         import mypackage
-        """, pyi_args=['--additional-hooks-dir', hooks_dir, '--paths', extra_path]
-    )
+        """,
+        pyi_args=['--additional-hooks-dir', str(hooks_dir), '--paths', str(extra_path)]
+    )  # yapf: disable
 
 
 # Test that various forms of relative imports are properly caught by the module exclusion.
 @pytest.mark.parametrize('exclude', [False, True], ids=["baseline", "exclude"])
 def test_excluded_relative_imports(pyi_builder, exclude):
-    extra_path = os.path.join(_MODULES_DIR, "pyi_excluded_relative_imports")
-    hooks_dir = os.path.join(extra_path, 'hooks')
+    extra_path = _MODULES_DIR / "pyi_excluded_relative_imports"
+    hooks_dir = extra_path / 'hooks'
 
-    pyi_args = ['--paths', extra_path]
+    pyi_args = ['--paths', str(extra_path)]
     if exclude:
-        pyi_args += ['--additional-hooks-dir', hooks_dir]
+        pyi_args += ['--additional-hooks-dir', str(hooks_dir)]
 
     pyi_builder.test_source(
-        """
+        f"""
         import os
-        os.environ['_FORBIDDEN_MODULES_ENABLED'] = '{0}'  # '0' or '1'
+        os.environ['_FORBIDDEN_MODULES_ENABLED'] = '{str(int(not exclude))}'  # '0' or '1'
 
         import mypackage
-        """.format(str(int(not exclude))),
+        """,
         pyi_args=pyi_args,
     )
 
 
 # Test the bytecode optimization settings (either implicit via python interpreter options or explicit via the new
 # optimize option).
-def _test_optimization(pyi_builder, level, tmpdir, pyi_args):
-    extra_path = os.path.join(_MODULES_DIR, "pyi_optimization")
-    results_filename = tmpdir / "results.json"
+def _test_optimization(pyi_builder, level, tmp_path, pyi_args):
+    extra_path = _MODULES_DIR / "pyi_optimization"
+    results_filename = tmp_path / "results.json"
 
-    pyi_args = ["--path", extra_path] + pyi_args
+    pyi_args = ["--path", str(extra_path), *pyi_args]
 
-    pyi_builder.test_script("pyi_optimization.py", pyi_args=pyi_args, app_args=[results_filename])
+    pyi_builder.test_script("pyi_optimization.py", pyi_args=pyi_args, app_args=[str(results_filename)])
 
     with open(results_filename, "r", encoding="utf-8") as fp:
         results = json.load(fp)
@@ -455,27 +456,26 @@ def _test_optimization(pyi_builder, level, tmpdir, pyi_args):
 
 
 @pytest.mark.parametrize('level', [0, 1, 2], ids=["unspecified", "O", "OO"])
-def test_optimization_via_python_option(pyi_builder, level, tmpdir):
+def test_optimization_via_python_option(pyi_builder, level, tmp_path):
     pyi_args = level * ["--python", "O"]
 
     # If no "--python O" flags are supplied, the optimization level is set to `sys.flags.optimize`.
     if not pyi_args:
         level = sys.flags.optimize
 
-    _test_optimization(pyi_builder, level, tmpdir, pyi_args)
+    _test_optimization(pyi_builder, level, tmp_path, pyi_args)
 
 
 @pytest.mark.parametrize('level', [0, 1, 2])
-def test_optimization_via_optimize_option(pyi_builder, level, tmpdir):
+def test_optimization_via_optimize_option(pyi_builder, level, tmp_path):
     pyi_args = ["--optimize", str(level)]
-    _test_optimization(pyi_builder, level, tmpdir, pyi_args)
+    _test_optimization(pyi_builder, level, tmp_path, pyi_args)
 
 
 # Test that runpy.run_path() in frozen application can run a bundled python script file. See #8767.
-def test_runpy_run_from_location(tmpdir, pyi_builder):
-    script_file = tmpdir / "script.py"
-    with open(script_file, "w", encoding="utf8") as fp:
-        fp.write("""print("Hello world!")\n""")
+def test_runpy_run_from_location(tmp_path, pyi_builder):
+    script_file = tmp_path / "script.py"
+    script_file.write_text("""print("Hello world!")\n""", encoding='utf-8')
 
     pyi_builder.test_source(
         """

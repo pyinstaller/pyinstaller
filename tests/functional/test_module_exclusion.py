@@ -9,12 +9,12 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import os
+import pathlib
 
 import pytest
 
 # Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+_MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
 
 # Test module exclusion; ensure that excluded modules are not collected. When exclusion is performed via hooks, also
@@ -27,11 +27,11 @@ _MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules
     )
 )
 def test_module_exclusion(exclude_args, exclude_hooks, pyi_builder):
-    pyi_args = ['--paths', os.path.join(_MODULES_DIR, 'pyi_module_exclusion', 'modules')]
+    pyi_args = ['--paths', str(_MODULES_DIR / 'pyi_module_exclusion' / 'modules')]
     if exclude_args:
         pyi_args += ['--exclude', 'mymodule_feature2', '--exclude', 'mymodule_feature3']
     if exclude_hooks:
-        pyi_args += ['--additional-hooks-dir', os.path.join(_MODULES_DIR, 'pyi_module_exclusion', 'hooks')]
+        pyi_args += ['--additional-hooks-dir', str(_MODULES_DIR / 'pyi_module_exclusion' / 'hooks')]
 
     pyi_builder.test_source(
         """

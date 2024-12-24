@@ -10,7 +10,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import os
 import subprocess
 
 import pytest
@@ -19,9 +18,10 @@ from PyInstaller.utils.tests import importorskip
 
 
 def test_ascii_path(pyi_builder):
-    distdir = pyi_builder._distdir
-    dd_ascii = distdir.encode('ascii', 'replace').decode('ascii')
-    if distdir != dd_ascii:
+    dist_dir = str(pyi_builder._dist_dir)
+
+    dist_dir_ascii = dist_dir.encode('ascii', 'replace').decode('ascii')
+    if dist_dir != dist_dir_ascii:
         pytest.skip(reason="Default build path not ASCII, skipping...")
 
     pyi_builder.test_script('pyi_path_encoding.py')
@@ -31,15 +31,14 @@ def test_ascii_path(pyi_builder):
 def test_linux_non_unicode_path(pyi_builder, monkeypatch):
     # If we set the locale to 'C', mbstowcs should be completely useless. This test verifies that _Py_char2wchar will
     # decode the "undecodable" bytes and will decode even filenames that weren't encoded with the locale encoding.
-    distdir = pyi_builder._distdir
     unicode_filename = 'ěščřžýáíé日本語'
-    pyi_builder._distdir = os.path.join(distdir, unicode_filename)
-    os.makedirs(pyi_builder._distdir)
 
-    tmpdir = os.path.join(str(pyi_builder._tmpdir), unicode_filename + "_TMP")
+    pyi_builder._dist_dir = pyi_builder._dist_dir / unicode_filename
+
+    tmp = pyi_builder._tmp_path / f"{unicode_filename}_TMP"
     monkeypatch.setenv('LC_ALL', 'C')
-    monkeypatch.setenv('TMPDIR', tmpdir)
-    monkeypatch.setenv('TMP', tmpdir)
+    monkeypatch.setenv('TMPDIR', str(tmp))
+    monkeypatch.setenv('TMP', str(tmp))
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
@@ -48,76 +47,65 @@ def test_linux_non_unicode_path(pyi_builder, monkeypatch):
 @pytest.mark.linux
 def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
     # Mac and Linux should handle 'unicode' type filenames without problem.
-    distdir = pyi_builder._distdir
     unicode_filename = 'ěščřžýáíé日本語'
-    pyi_builder._distdir = os.path.join(distdir, unicode_filename)
-    os.makedirs(pyi_builder._distdir)
 
-    tmpdir = os.path.join(str(pyi_builder._tmpdir), unicode_filename + "_TMP")
-    monkeypatch.setenv('TMPDIR', tmpdir)
-    monkeypatch.setenv('TMP', tmpdir)
+    pyi_builder._dist_dir = pyi_builder._dist_dir / unicode_filename
+
+    tmp = pyi_builder._tmp_path / f"{unicode_filename}_TMP"
+    monkeypatch.setenv('TMPDIR', str(tmp))
+    monkeypatch.setenv('TMP', str(tmp))
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
 @pytest.mark.win32
 def test_win_codepage_path(pyi_builder, monkeypatch):
-    distdir = pyi_builder._distdir
     # Create some bytes and decode with the current codepage to get a filename that is guaranteed to encode with the
     # current codepage. Assumes a one-byte codepage, i.e., not cp937 (shift-JIS) which is multibyte.
     cp_filename = bytes(bytearray(range(0x80, 0x86))).decode('mbcs')
 
-    pyi_builder._distdir = os.path.join(distdir, cp_filename)
-    os.makedirs(pyi_builder._distdir)
+    pyi_builder._dist_dir = pyi_builder._dist_dir / cp_filename
 
-    tmpdir = os.path.join(str(pyi_builder._tmpdir), cp_filename + "_TMP")
-    monkeypatch.setenv('TMPDIR', tmpdir)
-    monkeypatch.setenv('TMP', tmpdir)
+    tmp = pyi_builder._tmp_path / f"{cp_filename}_TMP"
+    monkeypatch.setenv('TMPDIR', str(tmp))
+    monkeypatch.setenv('TMP', str(tmp))
 
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
 @pytest.mark.win32
 def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
-    distdir = pyi_builder._distdir
     # Create some bytes and decode with the current codepage to get a filename that is guaranteed to encode with the
     # current codepage. Assumes a one-byte codepage, i.e., not cp937 (shift-JIS) which is multibyte.
     cp_filename = bytes(bytearray(range(0x80, 0x86))).decode('mbcs')
 
-    distdir = os.path.join(distdir, cp_filename)
-    os.makedirs(distdir)
+    pyi_builder._dist_dir = pyi_builder._dist_dir / cp_filename
 
     # Try to remove ShortFileName from this folder using `fsutil`. Requires admin privileges, so `xfail` if we do not
     # have them. `8dot3name strip` only affects subfolders, so pass the folder containing our codepage filename.
-    fsutil_distdir = pyi_builder._distdir
-
-    if subprocess.call(['fsutil', '8dot3name', 'strip', fsutil_distdir]):
+    pyi_builder._dist_dir.mkdir(parents=True)  # Ensure directory exists so we can modify it with `fsutil`.
+    if subprocess.call(['fsutil', '8dot3name', 'strip', str(pyi_builder._dist_dir)]):
         pytest.xfail("Administrator privileges required to strip ShortFileName.")
 
-    tmpdir = os.path.join(str(pyi_builder._tmpdir), cp_filename + "_TMP")
-    monkeypatch.setenv('TMPDIR', tmpdir)
-    monkeypatch.setenv('TMP', tmpdir)
+    tmp = pyi_builder._tmp_path / f"{cp_filename}_TMP"
+    monkeypatch.setenv('TMPDIR', str(tmp))
+    monkeypatch.setenv('TMP', str(tmp))
 
-    pyi_builder._distdir = distdir
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
 @pytest.mark.win32
 def test_win_non_codepage_path(pyi_builder, monkeypatch):
-    distdir = pyi_builder._distdir
     # Both eastern European and Japanese characters - no codepage should encode this.
     non_cp_filename = 'ěščřžýáíé日本語'
 
     # Codepage encoding would replace some of these chars with "???".
-
-    pyi_builder._distdir = os.path.join(distdir, non_cp_filename)
-    os.makedirs(pyi_builder._distdir)
-
-    tmpdir = os.path.join(str(pyi_builder._tmpdir), non_cp_filename + "_TMP")
+    pyi_builder._dist_dir = pyi_builder._dist_dir / non_cp_filename
 
     # To test what happens with a non-ANSI tempdir, we will also need to pass the TMP environ as wide chars.
-    monkeypatch.setenv('TMPDIR', tmpdir)
-    monkeypatch.setenv('TMP', tmpdir)
+    tmp = pyi_builder._tmp_path / f"{non_cp_filename}_TMP"
+    monkeypatch.setenv('TMPDIR', str(tmp))
+    monkeypatch.setenv('TMP', str(tmp))
 
     pyi_builder.test_script('pyi_path_encoding.py')
 

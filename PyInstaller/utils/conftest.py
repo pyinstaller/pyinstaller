@@ -32,7 +32,6 @@ try:
 except ModuleNotFoundError:
     psutil = None
 
-import py  # noqa: E402
 import pytest  # noqa: E402
 
 # Expand sys.path with PyInstaller source.
@@ -63,7 +62,7 @@ def SPEC_DIR(request):
     """
     Return the directory where the test spec-files reside.
     """
-    return py.path.local(_get_spec_dir(request))
+    return _get_spec_dir(request)
 
 
 @pytest.fixture
@@ -71,7 +70,7 @@ def SCRIPT_DIR(request):
     """
     Return the directory where the test scripts reside.
     """
-    return py.path.local(_get_script_dir(request))
+    return _get_script_dir(request)
 
 
 def pytest_runtest_setup(item):
@@ -102,54 +101,54 @@ def pytest_runtest_makereport(item, call):
 
 # Return the base directory which contains the current test module.
 def _get_base_dir(request):
-    return os.path.dirname(os.path.abspath(request.fspath.strpath))
+    return request.path.resolve().parent  # pathlib.Path instance
 
 
 # Directory with Python scripts for functional tests.
 def _get_script_dir(request):
-    return os.path.join(_get_base_dir(request), 'scripts')
+    return _get_base_dir(request) / 'scripts'
 
 
 # Directory with testing modules used in some tests.
 def _get_modules_dir(request):
-    return os.path.join(_get_base_dir(request), 'modules')
+    return _get_base_dir(request) / 'modules'
 
 
 # Directory with .toc log files.
 def _get_logs_dir(request):
-    return os.path.join(_get_base_dir(request), 'logs')
+    return _get_base_dir(request) / 'logs'
 
 
 # Return the directory where data for tests is located.
 def _get_data_dir(request):
-    return os.path.join(_get_base_dir(request), 'data')
+    return _get_base_dir(request) / 'data'
 
 
 # Directory with .spec files used in some tests.
 def _get_spec_dir(request):
-    return os.path.join(_get_base_dir(request), 'specs')
+    return _get_base_dir(request) / 'specs'
 
 
 @pytest.fixture
 def script_dir(request):
-    return py.path.local(_get_script_dir(request))
+    return _get_script_dir(request)
 
 
-# A helper function to copy from data/dir to tmpdir/data.
+# A helper function to copy from data/dir to tmp_path/data.
 def _data_dir_copy(
     # The pytest request object.
     request,
     # The name of the subdirectory located in data/name to copy.
     subdir_name,
-    # The tmpdir object for this test. See: https://pytest.org/latest/tmpdir.html.
-    tmpdir
+    # The tmp_path object for this test. See: https://pytest.org/latest/tmp_path.html.
+    tmp_path
 ):
 
     # Form the source and tmp paths.
-    source_data_dir = py.path.local(_get_data_dir(request)).join(subdir_name)
-    tmp_data_dir = tmpdir.join('data', subdir_name)
+    source_data_dir = _get_data_dir(request) / subdir_name
+    tmp_data_dir = tmp_path / 'data' / subdir_name
     # Copy the data.
-    shutil.copytree(source_data_dir.strpath, tmp_data_dir.strpath)
+    shutil.copytree(source_data_dir, tmp_data_dir)
     # Return the temporary data directory, so that the copied data can now be used.
     return tmp_data_dir
 
@@ -162,24 +161,24 @@ def data_dir(
     # and
     # https://pytest.org/latest/fixture.html#fixtures-can-introspect-the-requesting-test-context.
     request,
-    # The tmpdir object for this test. See https://pytest.org/latest/tmpdir.html.
-    tmpdir
+    # The tmp_path object for this test. See: https://pytest.org/latest/tmp_path.html.
+    tmp_path
 ):
 
     # Strip the leading 'test_' from the test's name.
     name = request.function.__name__[5:]
-    # Copy to tmpdir and return the path.
-    return _data_dir_copy(request, name, tmpdir)
+    # Copy to data dir and return the path.
+    return _data_dir_copy(request, name, tmp_path)
 
 
 class AppBuilder:
-    def __init__(self, tmpdir, request, bundle_mode):
-        self._tmpdir = tmpdir
+    def __init__(self, tmp_path, request, bundle_mode):
+        self._tmp_path = tmp_path
         self._request = request
         self._mode = bundle_mode
-        self._specdir = str(tmpdir)
-        self._distdir = str(tmpdir / 'dist')
-        self._builddir = str(tmpdir / 'build')
+        self._spec_dir = tmp_path
+        self._dist_dir = tmp_path / 'dist'
+        self._build_dir = tmp_path / 'build'
         self._is_spec = False
 
     def test_spec(self, specfile, *args, **kwargs):
@@ -187,7 +186,7 @@ class AppBuilder:
         Test a Python script that is referenced in the supplied .spec file.
         """
         __tracebackhide__ = True
-        specfile = os.path.join(_get_spec_dir(self._request), specfile)
+        specfile = _get_spec_dir(self._request) / specfile
         # 'test_script' should handle .spec properly as script.
         self._is_spec = True
         return self.test_script(specfile, *args, **kwargs)
@@ -214,9 +213,9 @@ class AppBuilder:
         """
         __tracebackhide__ = True
         # For parametrized test append the test-id.
-        scriptfile = gen_sourcefile(self._tmpdir, source, kwargs.setdefault('test_id'))
+        scriptfile = gen_sourcefile(self._tmp_path, source, kwargs.setdefault('test_id'))
         del kwargs['test_id']
-        return self.test_script(str(scriptfile), *args, **kwargs)
+        return self.test_script(scriptfile, *args, **kwargs)
 
     def _display_message(self, step_name, message):
         # Print the given message to both stderr and stdout, and it with APP-BUILDER to make it clear where it
@@ -258,9 +257,9 @@ class AppBuilder:
 
         # Relative path means that a script from _script_dir is referenced.
         if not os.path.isabs(script):
-            script = os.path.join(_get_script_dir(self._request), script)
-        self.script = script
-        assert os.path.exists(self.script), f'Script {script} not found.'
+            script = _get_script_dir(self._request) / script
+        self.script = str(script)  # might be a pathlib.Path at this point!
+        assert os.path.exists(self.script), f'Script {self.script!r} not found.'
 
         self._display_message('TEST-SCRIPT', 'Starting build...')
         if not self._test_building(args=pyi_args):
@@ -287,8 +286,9 @@ class AppBuilder:
         assert exes != [], 'No executable file was found.'
         for exe in exes:
             # Try to find .toc log file. .toc log file has the same basename as exe file.
-            toc_log = os.path.join(_get_logs_dir(self._request), os.path.splitext(os.path.basename(exe))[0] + '.toc')
-            if os.path.exists(toc_log):
+            toc_log = os.path.splitext(os.path.basename(exe))[0] + '.toc'
+            toc_log = _get_logs_dir(self._request) / toc_log
+            if toc_log.exists():
                 if not self._examine_executable(exe, toc_log):
                     pytest.fail(f'Matching .toc of {exe} failed.')
             retcode = self._run_executable(exe, args, run_from_path, runtime)
@@ -307,8 +307,8 @@ class AppBuilder:
         :return: List of executables
         """
         exes = []
-        onedir_pt = os.path.join(self._distdir, name, name)
-        onefile_pt = os.path.join(self._distdir, name)
+        onedir_pt = str(self._dist_dir / name / name)
+        onefile_pt = str(self._dist_dir / name)
         patterns = [
             onedir_pt,
             onefile_pt,
@@ -323,8 +323,8 @@ class AppBuilder:
         # For Mac OS append pattern for .app bundles.
         if is_darwin:
             # e.g:  ./dist/name.app/Contents/MacOS/name
-            pt = os.path.join(self._distdir, name + '.app', 'Contents', 'MacOS', name)
-            patterns.append(pt)
+            app_bundle_pt = str(self._dist_dir / f'{name}.app' / 'Contents' / 'MacOS' / name)
+            patterns.append(app_bundle_pt)
         # Apply file patterns.
         for pattern in patterns:
             for prog in glob.glob(pattern):
@@ -357,7 +357,7 @@ class AppBuilder:
         if run_from_path:
             # Run executable in the temp directory. Add the directory containing the executable to $PATH. Basically,
             # pretend we are a shell executing the program from $PATH.
-            prog_cwd = str(self._tmpdir)
+            prog_cwd = str(self._tmp_path)
             prog_name = os.path.basename(prog)
             prog_env['PATH'] = os.pathsep.join([prog_env.get('PATH', ''), os.path.dirname(prog)])
 
@@ -477,18 +477,18 @@ class AppBuilder:
         """
         if self._is_spec:
             default_args = [
-                '--distpath', self._distdir,
-                '--workpath', self._builddir,
+                '--distpath', str(self._dist_dir),
+                '--workpath', str(self._build_dir),
                 '--log-level', 'INFO',
             ]  # yapf: disable
         else:
             default_args = [
                 '--debug=bootloader',
                 '--noupx',
-                '--specpath', self._specdir,
-                '--distpath', self._distdir,
-                '--workpath', self._builddir,
-                '--path', _get_modules_dir(self._request),
+                '--specpath', str(self._spec_dir),
+                '--distpath', str(self._dist_dir),
+                '--workpath', str(self._build_dir),
+                '--path', str(_get_modules_dir(self._request)),
                 '--log-level', 'INFO',
             ]  # yapf: disable
 
@@ -502,8 +502,8 @@ class AppBuilder:
         pyi_args = [self.script, *default_args, *args]
         # TODO: fix return code in running PyInstaller programmatically.
         PYI_CONFIG = configure.get_config()
-        # Override CACHEDIR for PyInstaller and put it into self.tmpdir
-        PYI_CONFIG['cachedir'] = str(self._tmpdir)
+        # Override CACHEDIR for PyInstaller; relocate cache into `self._tmp_path`.
+        PYI_CONFIG['cachedir'] = str(self._tmp_path)
 
         pyi_main.run(pyi_args, PYI_CONFIG)
         retcode = 0
@@ -516,7 +516,7 @@ class AppBuilder:
 
         :return: True if .toc files match
         """
-        self._display_message('EXAMINE-EXE', f'Matching against TOC log: {toc_log!r}')
+        self._display_message('EXAMINE-EXE', f'Matching against TOC log: {str(toc_log)!r}')
         fname_list = pkg_archive_contents(exe)
         with open(toc_log, 'r', encoding='utf-8') as f:
             pattern_list = eval(f.read())
@@ -550,59 +550,61 @@ def pyi_modgraph():
 
 # Run by default test as onedir and onefile.
 @pytest.fixture(params=['onedir', 'onefile'])
-def pyi_builder(tmpdir, monkeypatch, request, pyi_modgraph):
+def pyi_builder(tmp_path, monkeypatch, request, pyi_modgraph):
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'])
     # PyInstaller or a test case might manipulate 'sys.path'. Reset it for every test.
     monkeypatch.syspath_prepend(None)
     # Set current working directory to
-    monkeypatch.chdir(tmpdir)
+    monkeypatch.chdir(tmp_path)
     # Clean up configuration and force PyInstaller to do a clean configuration for another app/test. The value is same
     # as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    yield AppBuilder(tmpdir, request, request.param)
+    yield AppBuilder(tmp_path, request, request.param)
 
     # Clean up the temporary directory of a successful test
     if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
-        if tmpdir.exists():
-            tmpdir.remove(rec=1, ignore_errors=True)
+        if tmp_path.exists():
+            shutil.rmtree(tmp_path, ignore_errors=True)
 
 
 # Fixture for .spec based tests. With .spec it does not make sense to differentiate onefile/onedir mode.
 @pytest.fixture
-def pyi_builder_spec(tmpdir, request, monkeypatch, pyi_modgraph):
+def pyi_builder_spec(tmp_path, request, monkeypatch, pyi_modgraph):
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'])
     # Set current working directory to
-    monkeypatch.chdir(tmpdir)
+    monkeypatch.chdir(tmp_path)
     # PyInstaller or a test case might manipulate 'sys.path'. Reset it for every test.
     monkeypatch.syspath_prepend(None)
     # Clean up configuration and force PyInstaller to do a clean configuration for another app/test. The value is same
     # as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    yield AppBuilder(tmpdir, request, None)
+    yield AppBuilder(tmp_path, request, None)
 
     # Clean up the temporary directory of a successful test
     if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
-        if tmpdir.exists():
-            tmpdir.remove(rec=1, ignore_errors=True)
+        if tmp_path.exists():
+            shutil.rmtree(tmp_path, ignore_errors=True)
 
 
-# Define a fixture which compiles the data/load_dll_using_ctypes/ctypes_dylib.c program in the tmpdir, returning the
-# tmpdir object.
+# A fixture that compiles a test shared library from `data/load_dll_using_ctypes/ctypes_dylib.c` in a sub-directory
+# of the tmp_dir, and returns path to the compiled shared library.
 @pytest.fixture()
-def compiled_dylib(tmpdir, request):
-    tmp_data_dir = _data_dir_copy(request, 'ctypes_dylib', tmpdir)
+def compiled_dylib(tmp_path, request):
+    # Copy the source to temporary directory.
+    tmp_data_dir = _data_dir_copy(request, 'ctypes_dylib', tmp_path)
 
     # Compile the ctypes_dylib in the tmpdir: Make tmpdir/data the CWD. Do NOT use monkeypatch.chdir() to change and
     # monkeypatch.undo() to restore the CWD, since this will undo ALL monkeypatches (such as the pyi_builder's additions
     # to sys.path), breaking the test.
-    old_wd = tmp_data_dir.chdir()
+    old_cwd = os.getcwd()
+    os.chdir(tmp_data_dir)
     try:
         if is_win:
-            tmp_data_dir = tmp_data_dir.join('ctypes_dylib.dll')
+            output_path = tmp_data_dir / 'ctypes_dylib.dll'
             # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
             march = '-m32' if architecture == '32bit' else '-m64'
             ret = subprocess.call('gcc -shared ' + march + ' ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
@@ -615,7 +617,7 @@ def compiled_dylib(tmpdir, request):
                 # Fallback to msvc.
                 ret = subprocess.call([cl_path, '/LD', 'ctypes_dylib.c'], shell=False)
         elif is_darwin:
-            tmp_data_dir = tmp_data_dir.join('ctypes_dylib.dylib')
+            output_path = tmp_data_dir / 'ctypes_dylib.dylib'
             # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
             arch = 'arm64' if platform.machine() == 'arm64' else 'i386' if architecture == '32bit' else 'x86_64'
             cmd = (
@@ -626,14 +628,14 @@ def compiled_dylib(tmpdir, request):
             id_dylib = os.path.abspath('ctypes_dylib.dylib')
             ret = subprocess.call('install_name_tool -id %s ctypes_dylib.dylib' % (id_dylib,), shell=True)
         else:
-            tmp_data_dir = tmp_data_dir.join('ctypes_dylib.so')
+            output_path = tmp_data_dir / 'ctypes_dylib.so'
             ret = subprocess.call('gcc -fPIC -shared ctypes_dylib.c -o ctypes_dylib.so', shell=True)
         assert ret == 0, 'Compile ctypes_dylib failed.'
     finally:
         # Reset the CWD directory.
-        old_wd.chdir()
+        os.chdir(old_cwd)
 
-    return tmp_data_dir
+    return output_path
 
 
 @pytest.fixture

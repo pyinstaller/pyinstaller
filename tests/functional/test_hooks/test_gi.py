@@ -34,7 +34,7 @@ gi_repository_names = [x[0] for x in gi_repositories]
 
 # Names of the same packages, decorated to be skipped if unimportable.
 gi_repositories_skipped_if_unimportable = [
-    pytest.param(gi_repository_name, gi_repository_version, marks=importorskip('gi.repository.' + gi_repository_name))
+    pytest.param(gi_repository_name, gi_repository_version, marks=importorskip(f'gi.repository.{gi_repository_name}'))
     for gi_repository_name, gi_repository_version in gi_repositories
 ]
 
@@ -56,10 +56,10 @@ def test_gi_repository(pyi_builder, repository_name, version):
 
     # Test the importability of this subpackage.
     pyi_builder.test_source(
-        """
+        f"""
         import gi
         gi.require_version('{repository_name}', '{version}')
         from gi.repository import {repository_name}
         print({repository_name})
-        """.format(repository_name=repository_name, version=version)
+        """
     )

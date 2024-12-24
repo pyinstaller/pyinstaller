@@ -13,6 +13,7 @@ Functional tests for Matplotlib.
 """
 
 import pytest
+
 from PyInstaller.utils.tests import importorskip
 from PyInstaller.utils.hooks import check_requirement
 

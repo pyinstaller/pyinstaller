@@ -13,7 +13,7 @@
 import locale
 import os
 import sys
-from pathlib import Path
+import pathlib
 import subprocess
 import re
 
@@ -39,17 +39,17 @@ def test_absolute_python_path(pyi_builder):
 @pytest.mark.linux
 @skipif(not os.path.exists('/proc/self/status'), reason='/proc/self/status does not exist')
 @pytest.mark.parametrize("symlink_name", ["symlink", "very_long_name_in_symlink", "sub/dir/program"])
-def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name, tmpdir, SPEC_DIR, SCRIPT_DIR):
-    def patch(spec_name, symlink_name):
-        content = SPEC_DIR.join(spec_name).read_text(encoding="utf-8")
-        content = content.replace("@SYMLINKNAME@", symlink_name)
-        content = content.replace("@SCRIPTDIR@", str(SCRIPT_DIR))
-        outspec = tmpdir.join(spec_name)
-        outspec.write_text(content, encoding="utf-8", ensure=True)
-        return outspec
+def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name, tmp_path, SPEC_DIR, SCRIPT_DIR):
+    def _patch_spec(spec_name, symlink_name):
+        spec_content = (SPEC_DIR / spec_name).read_text(encoding="utf-8")
+        spec_content = spec_content.replace("@SYMLINKNAME@", symlink_name)
+        spec_content = spec_content.replace("@SCRIPTDIR@", str(SCRIPT_DIR))
+        spec_file = tmp_path / spec_name
+        spec_file.write_text(spec_content, encoding="utf-8")
+        return spec_file
 
-    specfile = patch("symlink_basename_is_kept.spec", symlink_name)
-    pyi_builder_spec.test_spec(str(specfile), app_name=symlink_name)
+    spec_file = _patch_spec("symlink_basename_is_kept.spec", symlink_name)
+    pyi_builder_spec.test_spec(str(spec_file), app_name=symlink_name)
 
 
 def test_pyz_as_external_file(pyi_builder, monkeypatch):
@@ -173,13 +173,13 @@ def test_module__file__attribute(pyi_builder):
     pyi_builder.test_script('pyi_module__file__attribute.py')
 
 
-def test_module_attributes(tmpdir, pyi_builder):
-    # Create file in tmpdir with path to python executable and if it is running in debug mode.
-    # Test script uses python interpreter to compare module attributes.
-    with open(os.path.join(tmpdir.strpath, 'python_exe.build'), 'w', encoding='utf8') as f:
+def test_module_attributes(tmp_path, pyi_builder):
+    # Create a text file in tmp_path with path to the python executable and contents of PATH.
+    # The frozen test program uses this information to spawn python interpreter to obtain attributes of the test modules
+    # when running unfrozen, which it then compares to the attributes of the test modules within the frozen test
+    # application itself.
+    with open(tmp_path / 'python_exe.build', 'w', encoding='utf8') as f:
         f.write(sys.executable + "\n")
-        f.write('debug=%s' % __debug__ + '\n')
-        # On Windows we need to preserve system PATH for subprocesses in tests.
         f.write(os.environ.get('PATH') + '\n')
     pyi_builder.test_script('pyi_module_attributes.py')
 
@@ -308,7 +308,7 @@ def test_option_w_ignore(pyi_builder, monkeypatch, capsys):
     assert "'import warnings' failed" not in err
 
 
-@pytest.mark.parametrize("distutils", ["", "from distutils "])
+@pytest.mark.parametrize("distutils", [False, True], ids=["sysconfig", "distutils.sysconfig"])
 def test_python_makefile(pyi_builder, distutils):
     """
     Tests hooks for ``sysconfig`` and its near-duplicate ``distutils.sysconfig``. Raises an import error if we fail
@@ -323,34 +323,36 @@ def test_python_makefile(pyi_builder, distutils):
     # the information it needs.
     if distutils:
         from distutils import sysconfig
+        import_preamble = 'from distutils '
     else:
         import sysconfig
+        import_preamble = ''
     unfrozen_keys = sorted(sysconfig.get_config_vars().keys())
 
     pyi_builder.test_source(
-        """
+        f"""
         # The error is raised immediately on import.
-        {}import sysconfig
+        {import_preamble}import sysconfig
 
         # But just in case, Python later opt for some lazy loading, force
         # configuration retrieval:
         from pprint import pprint
         pprint(sysconfig.get_config_vars())
 
-        unfrozen_keys = {}
+        unfrozen_keys = {unfrozen_keys}
         assert sorted(sysconfig.get_config_vars()) == unfrozen_keys
-        """.format(distutils, unfrozen_keys)
+        """
     )
 
 
 def test_set_icon(pyi_builder, data_dir):
     if is_win:
-        args = ['--icon', os.path.join(data_dir.strpath, 'pyi_icon.ico')]
+        args = ['--icon', str(data_dir / 'pyi_icon.ico')]
     elif is_darwin:
         # On OS X icon is applied only for windowed mode.
-        args = ['--windowed', '--icon', os.path.join(data_dir.strpath, 'pyi_icon.icns')]
+        args = ['--windowed', '--icon', str(data_dir / 'pyi_icon.icns')]
     else:
-        pytest.skip('option --icon works only on Windows and Mac OS X')
+        pytest.skip('option --icon works only on Windows and macOS')
     os.chdir(os.path.expanduser("~"))
     pyi_builder.test_source("print('Hello Python!')", pyi_args=args)
 
@@ -359,32 +361,26 @@ def test_python_home(pyi_builder):
     pyi_builder.test_script('pyi_python_home.py')
 
 
-def test_stderr_encoding(tmpdir, pyi_builder):
+def test_stderr_encoding(tmp_path, pyi_builder):
     # NOTE: '-s' option to pytest disables output capturing, changing this test's result:
-    # without -s: py.test process changes its own stdout encoding to 'UTF-8' to capture output. subprocess spawned by
-    #             py.test has stdout encoding 'cp1252', which is an ANSI codepage. test fails as they do not match.
-    # with -s:    py.test process has stdout encoding from windows terminal, which is an OEM codepage. spawned
+    # without -s: pytest process changes its own stdout encoding to 'UTF-8' to capture output. subprocess spawned by
+    #             pytest has stdout encoding 'cp1252', which is an ANSI codepage. test fails as they do not match.
+    # with -s:    pytest process has stdout encoding from windows terminal, which is an OEM codepage. spawned
     #             subprocess has the same encoding. test passes.
-    with open(os.path.join(tmpdir.strpath, 'stderr_encoding.build'), 'w', encoding='utf-8') as f:
-        if sys.stderr.isatty():
-            enc = str(sys.stderr.encoding)
-        else:
-            # For non-interactive stderr use locale encoding - ANSI codepage.
-            # This fixes the test when running with py.test and capturing output.
-            enc = locale.getpreferredencoding(False)
-        f.write(enc)
+
+    # Get the current encoding, and save it into file for test frozen application to use.
+    # For non-interactive stderr use locale encoding - ANSI codepage. This fixes the test when running with pytest and
+    # capturing output.
+    encoding = str(sys.stderr.encoding) if sys.stderr.isatty() else locale.getpreferredencoding(False)
+    (tmp_path / 'stderr_encoding.build').write_text(encoding, encoding="utf-8")
+
     pyi_builder.test_script('pyi_stderr_encoding.py')
 
 
-def test_stdout_encoding(tmpdir, pyi_builder):
-    with open(os.path.join(tmpdir.strpath, 'stdout_encoding.build'), 'w', encoding='utf-8') as f:
-        if sys.stdout.isatty():
-            enc = str(sys.stdout.encoding)
-        else:
-            # For non-interactive stderr use locale encoding - ANSI codepage.
-            # This fixes the test when running with py.test and capturing output.
-            enc = locale.getpreferredencoding(False)
-        f.write(enc)
+def test_stdout_encoding(tmp_path, pyi_builder):
+    encoding = str(sys.stdout.encoding) if sys.stdout.isatty() else locale.getpreferredencoding(False)
+    (tmp_path / 'stdout_encoding.build').write_text(encoding, encoding="utf-8")
+
     pyi_builder.test_script('pyi_stdout_encoding.py')
 
 
@@ -566,14 +562,15 @@ def test_renamed_exe(pyi_builder):
     _old_find_executables = pyi_builder._find_executables
 
     def _find_executables(name):
-        oldexes = _old_find_executables(name)
-        newexes = []
-        for old in oldexes:
+        old_executables = _old_find_executables(name)
+        new_executables = []
+        for old_exe in old_executables:
+            old_exe_path = pathlib.Path(old_exe)
+            new_exe_path = old_exe_path.with_name(f"renamed_{old_exe_path.name}")
+            old_exe_path.rename(new_exe_path)
 
-            new = os.path.join(os.path.dirname(old), "renamed_" + os.path.basename(old))
-            os.rename(old, new)
-            newexes.append(new)
-        return newexes
+            new_executables.append(str(new_exe_path))
+        return new_executables
 
     pyi_builder._find_executables = _find_executables
     pyi_builder.test_source("print('Hello Python!')")
@@ -599,7 +596,8 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
         """
         import pyi_collect_submodules_mod
         __import__('pyi_testmod_relimp.B.C')
-        """, ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')]
+        """,
+        pyi_args=['--additional-hooks-dir', str(script_dir / 'pyi_hooks')]
     )
 
 
@@ -627,8 +625,10 @@ def test_option_runtime_tmpdir(pyi_builder):
             raise SystemExit('Expected sys._MEIPASS to be under current working dir.'
                              ' sys._MEIPASS = ' + runtime_tmpdir + ', cwd = ' + cwd)
         print('test - done')
-        """, ['--runtime-tmpdir=.']
-    )  # set runtime-tmpdir to current working dir
+        """,
+        # Set runtime-tmpdir to current working dir
+        pyi_args=['--runtime-tmpdir', '.']
+    )
 
 
 @xfail(reason='Issue #3037 - all scripts share the same global vars')
@@ -679,7 +679,7 @@ def test_pe_checksum(pyi_builder):
         assert header_sum.value == checksum.value
 
 
-def test_onefile_longpath(pyi_builder, tmpdir):
+def test_onefile_longpath(pyi_builder, tmp_path):
     """
     Verify that files with paths longer than 260 characters are correctly extracted from the onefile build.
     See issue #5615."
@@ -689,26 +689,26 @@ def test_onefile_longpath(pyi_builder, tmpdir):
         pytest.skip('The test is relevant only to onefile builds.')
     # Create data file with secret
     _SECRET = 'LongDataPath'
-    src_filename = tmpdir / 'data.txt'
-    with open(src_filename, 'w', encoding='utf-8') as fp:
-        fp.write(_SECRET)
+    src_path = tmp_path / 'data.txt'
+    src_path.write_text(_SECRET, encoding='utf-8')
     # Generate long target filename/path; eight equivalents of SHA256 strings plus data.txt should push just the
     # _MEIPASS-relative path beyond 260 characters...
     dst_filename = os.path.join(*[32 * chr(c) for c in range(ord('A'), ord('A') + 8)], 'data.txt')
     assert len(dst_filename) >= 260
     # Name for --add-data
-    add_data_name = src_filename + ':' + os.path.dirname(dst_filename)
+    add_data_arg = f"{src_path}:{os.path.dirname(dst_filename)}"
     pyi_builder.test_source(
-        """
+        f"""
         import sys
         import os
 
-        data_file = os.path.join(sys._MEIPASS, r'{data_file}')
+        data_file = os.path.join(sys._MEIPASS, {str(dst_filename)!r})
         print("Reading secret from %r" % (data_file))
         with open(data_file, 'r') as fp:
             secret = fp.read()
-        assert secret == r'{secret}'
-        """.format(data_file=dst_filename, secret=_SECRET), ['--add-data', str(add_data_name)]
+        assert secret == {_SECRET!r}
+        """,
+        pyi_args=['--add-data', add_data_arg]
     )
 
 
@@ -736,7 +736,7 @@ def test_application_executable_has_manifest(pyi_builder, icon):
         icon_path = os.path.join(PACKAGEPATH, 'bootloader', 'images', 'icon-console.ico')
         extra_args = ['--icon', icon_path]
     # Build the executable...
-    pyi_builder.test_source("""print('Hello world!')""", extra_args)
+    pyi_builder.test_source("""print('Hello world!')""", pyi_args=extra_args)
     # ... and ensure that it contains manifest
     exes = pyi_builder._find_executables('test_source')
     assert exes
@@ -767,12 +767,12 @@ def test_sys_executable(pyi_builder, append_pkg, monkeypatch):
         exe_basename += '.exe'
 
     pyi_builder.test_source(
-        """
+        f"""
         import sys
         import os
         exe_basename = os.path.basename(sys.executable)
-        assert exe_basename == '{}', "Unexpected basename(sys.executable): " + exe_basename
-        """.format(exe_basename)
+        assert exe_basename == {exe_basename!r}, "Unexpected basename(sys.executable): " + exe_basename
+        """
     )
 
 
@@ -781,25 +781,29 @@ def test_subprocess_in_windowed_mode(pyi_windowed_builder):
     """Test invoking subprocesses from a PyInstaller app built in windowed mode."""
 
     pyi_windowed_builder.test_source(
-        r"""
+        fr"""
         from subprocess import PIPE, run
         from unittest import TestCase
 
         # Lazily use unittest's rich assertEqual() for assertions with builtin diagnostics.
         assert_equal = TestCase().assertEqual
 
-        run([{0}, "-c", ""], check=True)
+        # Path to python interpreter
+        python = {sys.executable!r}
+
+        # Run with empty command to ensure interpreter works.
+        run([python, "-c", ""], check=True)
 
         # Verify that stdin, stdout and stderr still work and haven't been muddled.
-        p = run([{0}, "-c", "print('foo')"], stdout=PIPE, universal_newlines=True)
+        p = run([python, "-c", "print('foo')"], stdout=PIPE, universal_newlines=True)
         assert_equal(p.stdout, "foo\n", p.stdout)
 
-        p = run([{0}, "-c", r"import sys; sys.stderr.write('bar\n')"], stderr=PIPE, universal_newlines=True)
+        p = run([python, "-c", r"import sys; sys.stderr.write('bar\n')"], stderr=PIPE, universal_newlines=True)
         assert_equal(p.stderr, "bar\n", p.stderr)
 
-        p = run([{0}], input="print('foo')\nprint('bar')\n", stdout=PIPE, universal_newlines=True)
+        p = run([python], input="print('foo')\nprint('bar')\n", stdout=PIPE, universal_newlines=True)
         assert_equal(p.stdout, "foo\nbar\n", p.stdout)
-        """.format(repr(sys.executable)),
+        """,
         pyi_args=["--windowed"]
     )
 
@@ -809,7 +813,7 @@ def test_package_entry_point_name_collision(pyi_builder):
     Check when an imported package has the same name as the entry point script. Despite the obvious ambiguity, Python
     still handles this case fine and PyInstaller should too.
     """
-    script = Path(__file__, "../data/name_clash_with_entry_point/matching_name.py").resolve()
+    script = pathlib.Path(__file__).parent / 'data' / 'name_clash_with_entry_point' / 'matching_name.py'
 
     # Each file prints its filename and the value of __name__.
     expected = [
@@ -835,17 +839,17 @@ def test_contents_directory(pyi_builder):
     if pyi_builder._mode != 'onedir':
         pytest.skip('--contents-directory does not affect onefile builds.')
 
-    pyi_builder.test_source("", pyi_args=["--contents-directory=foo"])
+    pyi_builder.test_source("", pyi_args=["--contents-directory", "foo"])
     exe, = pyi_builder._find_executables("test_source")
-    bundle = Path(exe).parent
+    bundle = pathlib.Path(exe).parent
     assert (bundle / "foo").is_dir()
 
-    pyi_builder.test_source("", pyi_args=["--contents-directory=é³þ³źć🚀", "--noconfirm"])
+    pyi_builder.test_source("", pyi_args=["--contents-directory", "é³þ³źć🚀", "--noconfirm"])
     assert not (bundle / "foo").exists()
     assert (bundle / "é³þ³źć🚀").is_dir()
 
     with pytest.raises(SystemExit, match='Invalid value "\\.\\." passed'):
-        pyi_builder.test_source("", pyi_args=["--contents-directory=..", "--noconfirm"])
+        pyi_builder.test_source("", pyi_args=["--contents-directory", "..", "--noconfirm"])
 
 
 def test_legacy_onedir_layout(pyi_builder):

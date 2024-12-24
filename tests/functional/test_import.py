@@ -12,9 +12,9 @@
 
 import os
 import sys
-import glob
 import ctypes
 import ctypes.util
+import pathlib
 
 import pytest
 
@@ -24,7 +24,7 @@ from PyInstaller.utils.tests import skipif, importorskip, skipif_no_compiler, xf
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
-_MODULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'modules')
+_MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
 
 def test_nameclash(pyi_builder):
@@ -147,7 +147,7 @@ def test_import_submodule_from_aliased_pkg(pyi_builder, script_dir):
         sys.modules['alias_name'] = pyi_testmod_submodule_from_aliased_pkg
 
         from alias_name import submodule
-        """, ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')]
+        """, ['--additional-hooks-dir', f"{script_dir / 'pyi_hooks'}"]
     )
 
 
@@ -160,7 +160,7 @@ def test_module_with_coding_utf8(pyi_builder):
 # See issue #6143.
 def test_source_utf8_emoji(pyi_builder):
     # Collect the module's source as data file
-    datas = os.pathsep.join((os.path.join(_MODULES_DIR, 'module_with_utf8_emoji.py'), os.curdir))
+    add_data_arg = f"{_MODULES_DIR / 'module_with_utf8_emoji.py'}:."
     pyi_builder.test_source(
         """
         import inspect
@@ -169,7 +169,7 @@ def test_source_utf8_emoji(pyi_builder):
 
         # Retrieve source code
         source = inspect.getsource(module_with_utf8_emoji)
-        """, ['--add-data', datas]
+        """, ['--add-data', add_data_arg]
     )
 
 
@@ -218,7 +218,8 @@ def test_import_non_existing_raises_import_error(pyi_builder):
 @xfail(reason='__path__ not respected for filesystem modules.')
 def test_import_respects_path(pyi_builder, script_dir):
     pyi_builder.test_source(
-        'import pyi_testmod_path', ['--additional-hooks-dir=' + script_dir.join('pyi_hooks').strpath]
+        'import pyi_testmod_path',
+        pyi_args=['--additional-hooks-dir', str(script_dir / 'pyi_hooks')],
     )
 
 
@@ -227,17 +228,18 @@ def test_import_respects_path(pyi_builder, script_dir):
 # imported directly and won't be found by modulegraph.
 def test_import_metapath1(pyi_builder, script_dir):
     pyi_builder.test_source(
-        'import pyi_testmod_metapath1', ['--additional-hooks-dir=' + script_dir.join('pyi_hooks').strpath]
+        'import pyi_testmod_metapath1',
+        pyi_args=['--additional-hooks-dir', str(script_dir / 'pyi_hooks')],
     )
 
 
 @importorskip('PyQt5')
 def test_import_pyqt5_uic_port(script_dir, pyi_builder):
-    extra_path = os.path.join(_MODULES_DIR, 'pyi_import_pyqt_uic_port')
+    extra_path = _MODULES_DIR / 'pyi_import_pyqt_uic_port'
     pyi_builder.test_script(
         'pyi_import_pyqt5_uic_port.py',
         # Add the path to a fake PyQt5 package, used for this test.
-        pyi_args=['--path', extra_path]
+        pyi_args=['--path', str(extra_path)]
     )
 
 
@@ -296,9 +298,9 @@ def skip_if_lib_missing(libname, text=None):
     """
     soname = ctypes.util.find_library(libname)
     if not text:
-        text = "lib%s.so" % libname
+        text = f"lib{libname}.so"
     # Return pytest decorator.
-    return skipif(not (soname and ctypes.CDLL(soname)), reason="required %s missing" % text)
+    return skipif(not (soname and ctypes.CDLL(soname)), reason=f"required {text} missing")
 
 
 _template_ctypes_CDLL_find_library = """
@@ -358,14 +360,14 @@ for prefix in ('', 'ctypes.'):
 def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id):
     # Evaluate the soname here, so the test-code contains a constant. We want the name of the dynamically-loaded library
     # only, not its path. See discussion in https://github.com/pyinstaller/pyinstaller/pull/1478#issuecomment-139622994.
-    soname = compiled_dylib.basename
+    soname = compiled_dylib.name
 
     source = """
         import ctypes ; from ctypes import *
         lib = %s(%%(soname)r)
     """ % funcname + _template_ctypes_test
 
-    __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.dirname)
+    __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.parent)
     pyi_builder.test_source(source % locals(), test_id=test_id)
 
 
@@ -374,7 +376,7 @@ def test_ctypes_in_func_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, 
     """
     This is much like test_ctypes_gen except that the ctypes calls are in a function. See issue #1620.
     """
-    soname = compiled_dylib.basename
+    soname = compiled_dylib.name
 
     source = (
         """
@@ -387,7 +389,7 @@ def test_ctypes_in_func_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, 
     f()
     """
     )
-    __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.dirname)
+    __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.parent)
     pyi_builder.test_source(source % locals(), test_id=test_id)
 
 
@@ -425,8 +427,8 @@ def test_ctypes_cdll_builtin_extension(pyi_builder):
 
 
 def test_egg_unzipped(pyi_builder):
-    pathex = os.path.join(_MODULES_DIR, 'pyi_test_egg', 'pyi_egg_unzipped.egg')
-    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_test_egg', 'hooks')
+    pathex = _MODULES_DIR / 'pyi_test_egg' / 'pyi_egg_unzipped.egg'
+    hooks_dir = _MODULES_DIR / 'pyi_test_egg' / 'hooks'
     pyi_builder.test_source(
         """
         # This code is part of the package for testing eggs in `PyInstaller`.
@@ -447,13 +449,13 @@ def test_egg_unzipped(pyi_builder):
 
         print('Okay.')
         """,
-        pyi_args=['--paths', pathex, '--additional-hooks-dir', hooks_dir],
-    )
+        pyi_args=['--paths', str(pathex), '--additional-hooks-dir', str(hooks_dir)],
+    )  # yapf: disable
 
 
 def test_egg_unzipped_metadata_pkg_resources(pyi_builder):
-    pathex = os.path.join(_MODULES_DIR, 'pyi_test_egg', 'pyi_egg_unzipped.egg')
-    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_test_egg', 'hooks')
+    pathex = _MODULES_DIR / 'pyi_test_egg' / 'pyi_egg_unzipped.egg'
+    hooks_dir = _MODULES_DIR / 'pyi_test_egg' / 'hooks'
     pyi_builder.test_source(
         """
         import pkg_resources
@@ -468,13 +470,13 @@ def test_egg_unzipped_metadata_pkg_resources(pyi_builder):
         # Project name is taken from egg name
         assert dist.project_name == 'pyi-egg-unzipped', f"Unexpected project name {dist.project_name!r}"
         """,
-        pyi_args=['--paths', pathex, '--additional-hooks-dir', hooks_dir],
-    )
+        pyi_args=['--paths', str(pathex), '--additional-hooks-dir', str(hooks_dir)],
+    )  # yapf: disable
 
 
 def test_egg_unzipped_metadata_importlib_metadata(pyi_builder):
-    pathex = os.path.join(_MODULES_DIR, 'pyi_test_egg', 'pyi_egg_unzipped.egg')
-    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_test_egg', 'hooks')
+    pathex = _MODULES_DIR / 'pyi_test_egg' / 'pyi_egg_unzipped.egg'
+    hooks_dir = _MODULES_DIR / 'pyi_test_egg' / 'hooks'
     pyi_builder.test_source(
         """
         try:
@@ -500,8 +502,8 @@ def test_egg_unzipped_metadata_importlib_metadata(pyi_builder):
         assert dist.name == 'unzipped-egg', f"Unexpected name {dist.name!r}"
         assert dist.version == '0.1', f"Unexpected version {dist.version!r}"
         """,
-        pyi_args=['--paths', pathex, '--additional-hooks-dir', hooks_dir],
-    )
+        pyi_args=['--paths', str(pathex), '--additional-hooks-dir', str(hooks_dir)],
+    )  # yapf: disable
 
 
 #--- namespaces ---
@@ -509,57 +511,62 @@ def test_egg_unzipped_metadata_importlib_metadata(pyi_builder):
 
 def test_nspkg1(pyi_builder):
     # Test inclusion of namespace packages implemented using pkg_resources.declare_namespace
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    extra_paths = (_MODULES_DIR / 'nspkg1-pkg').glob('*.egg')
+    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg1.aaa
         import nspkg1.bbb.zzz
         import nspkg1.ccc
         """,
-        pyi_args=['--paths', os.pathsep.join(pathex)],
+        pyi_args=['--paths', paths_arg],
     )
 
 
 def test_nspkg1_empty(pyi_builder):
     # Test inclusion of a namespace-only packages in an zipped egg. This package only defines the namespace, nothing is
     # contained there.
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    extra_paths = (_MODULES_DIR / 'nspkg1-pkg').glob('*.egg')
+    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg1
         print (nspkg1)
         """,
-        pyi_args=['--paths', os.pathsep.join(pathex)],
+        pyi_args=['--paths', paths_arg],
     )
 
 
 def test_nspkg1_bbb_zzz(pyi_builder):
     # Test inclusion of a namespace packages in an zipped egg
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    extra_paths = (_MODULES_DIR / 'nspkg1-pkg').glob('*.egg')
+    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg1.bbb.zzz
         """,
-        pyi_args=['--paths', os.pathsep.join(pathex)],
+        pyi_args=['--paths', paths_arg],
     )
 
 
 def test_nspkg2(pyi_builder):
     # Test inclusion of namespace packages implemented as nspkg.pth-files
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg2-pkg'))
+    extra_paths = [_MODULES_DIR / 'nspkg2-pkg']
+    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg2.aaa
         import nspkg2.bbb.zzz
         import nspkg2.ccc
         """,
-        pyi_args=['--paths', os.pathsep.join(pathex)],
+        pyi_args=['--paths', paths_arg],
     )
 
 
 @xfail(reason="modulegraph implements `pkgutil.extend_path` wrong")
 def test_nspkg3(pyi_builder):
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*.egg'))
+    extra_paths = (_MODULES_DIR / 'nspkg3-pkg').glob('*.egg')
+    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg3.aaa
@@ -579,48 +586,52 @@ def test_nspkg3(pyi_builder):
             raise SystemExit('nspkg3.a found but should not')
         import nspkg3.ccc
         """,
-        pyi_args=['--paths', os.pathsep.join(pathex)],
+        pyi_args=['--paths', paths_arg],
     )
 
 
 def test_nspkg3_empty(pyi_builder):
     # Test inclusion of a namespace-only package in a zipped egg using pkgutil.extend_path. This package only defines
     # namespace, nothing is contained there.
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*_empty.egg'))
+    extra_paths = (_MODULES_DIR / 'nspkg3-pkg').glob('*_empty.egg')
+    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg3
         print (nspkg3)
         """,
-        pyi_args=['--paths', os.pathsep.join(pathex)],
+        pyi_args=['--paths', paths_arg],
     )
 
 
 def test_nspkg3_aaa(pyi_builder):
     # Test inclusion of a namespace package in an directory using pkgutil.extend_path
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*.egg'))
+    extra_paths = (_MODULES_DIR / 'nspkg3-pkg').glob('*.egg')
+    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg3.aaa
         """,
-        pyi_args=['--paths', os.pathsep.join(pathex)],
+        pyi_args=['--paths', paths_arg],
     )
 
 
 def test_nspkg3_bbb_zzz(pyi_builder):
     # Test inclusion of a namespace package in an zipped egg using pkgutil.extend_path
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg3-pkg', '*.egg'))
+    extra_paths = (_MODULES_DIR / 'nspkg3-pkg').glob('*.egg')
+    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg3.bbb.zzz
         """,
-        pyi_args=['--paths', os.pathsep.join(pathex)],
+        pyi_args=['--paths', paths_arg],
     )
 
 
 def test_nspkg_pep420(pyi_builder):
     # Test inclusion of PEP 420 namespace packages.
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
+    extra_paths = (_MODULES_DIR / 'nspkg-pep420').glob('path*')
+    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import package.sub1
@@ -628,7 +639,7 @@ def test_nspkg_pep420(pyi_builder):
         import package.subpackage.sub
         import package.nspkg.mod
         """,
-        pyi_args=['--paths', os.pathsep.join(pathex)],
+        pyi_args=['--paths', paths_arg],
     )
 
 
@@ -637,7 +648,8 @@ def test_nspkg_attributes(pyi_builder):
     # pkg_resources.declare_namespace) have proper attributes:
     #  * __path__ attribute should contain at least one path
     #  * __file__ attribute should point to an __init__ file within __path__
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg1-pkg', '*.egg'))
+    extra_paths = (_MODULES_DIR / 'nspkg1-pkg').glob('*.egg')
+    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import os
@@ -657,7 +669,7 @@ def test_nspkg_attributes(pyi_builder):
 
         validate_nspkg(nspkg1)
         """,
-        pyi_args=['--paths', os.pathsep.join(pathex)],
+        pyi_args=['--paths', paths_arg],
     )
 
 
@@ -665,7 +677,8 @@ def test_nspkg_attributes_pep420(pyi_builder):
     # Test that PEP-420 namespace packages have proper attributes:
     #  * __path__ should contain at least one path
     #  * __file__ should be None
-    pathex = glob.glob(os.path.join(_MODULES_DIR, 'nspkg-pep420', 'path*'))
+    extra_paths = (_MODULES_DIR / 'nspkg-pep420').glob('path*')
+    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import package
@@ -682,7 +695,7 @@ def test_nspkg_attributes_pep420(pyi_builder):
         validate_nspkg_pep420(package)
         validate_nspkg_pep420(package.nspkg)
         """,
-        pyi_args=['--paths', os.pathsep.join(pathex)],
+        pyi_args=['--paths', paths_arg],
     )
 
 
@@ -695,16 +708,20 @@ def test_pkg_without_hook_for_pkg(pyi_builder, script_dir):
     # The package `pkg_without_hook_for_pkg` does not have a hook, but `pkg_without_hook_for_pkg.sub1` has one. And this
     # hook includes the "hidden" import `pkg_without_hook_for_pkg.sub1.sub11`
     pyi_builder.test_source(
-        'import pkg_without_hook_for_pkg.sub1', ['--additional-hooks-dir=%s' % script_dir.join('pyi_hooks')]
+        'import pkg_without_hook_for_pkg.sub1',
+        pyi_args=['--additional-hooks-dir', str(script_dir / 'pyi_hooks')],
     )
 
 
-def test_app_with_plugin(pyi_builder, data_dir, monkeypatch):
-    datas = os.pathsep.join(('data/*/static_plugin.py', os.curdir))
-    pyi_builder.test_script('pyi_app_with_plugin.py', pyi_args=['--add-data', datas])
+def test_app_with_plugin(pyi_builder, data_dir):
+    add_data_arg = f"{data_dir / 'static_plugin.py'}:."
+    pyi_builder.test_script(
+        'pyi_app_with_plugin.py',
+        pyi_args=['--add-data', add_data_arg],
+    )
 
 
-def test_app_has_moved_error(pyi_builder, tmpdir):
+def test_app_has_moved_error(pyi_builder, tmp_path):
     """
     Test graceful exit from the user moving/deleting the application whilst it's still running.
     """
@@ -712,7 +729,7 @@ def test_app_has_moved_error(pyi_builder, tmpdir):
         f"""
         import os
         import sys
-        os.rename(sys.executable, {repr(str(tmpdir / "something-else"))})
+        os.rename(sys.executable, {repr(str(tmp_path / "something-else"))})
         try:
             # Import some non-builtin module which hasn't already been loaded.
             import csv
@@ -728,16 +745,16 @@ def test_package_with_mixed_collection_mode(pyi_builder):
     # Test that PyInstaller's frozen importer and python's own `_frozen_importlib_external.PathFinder` complement, and
     # not exclude, each other. This is pre-requisite for having pure-python modules collected in PYZ archive, while
     # binary extensions (and some pure-python modules as well, if necessary) are collected as separate.
-    pathex = os.path.join(_MODULES_DIR, 'pyi_mixed_collection_mode', 'modules')
-    hooks_dir = os.path.join(_MODULES_DIR, 'pyi_mixed_collection_mode', 'hooks')
+    pathex = _MODULES_DIR / 'pyi_mixed_collection_mode' / 'modules'
+    hooks_dir = _MODULES_DIR / 'pyi_mixed_collection_mode' / 'hooks'
     pyi_builder.test_source(
         """
         import mypackage
         print(mypackage.a)
         print(mypackage.b)
         """,
-        pyi_args=['--paths', pathex, '--additional-hooks-dir', hooks_dir],
-    )
+        pyi_args=['--paths', str(pathex), '--additional-hooks-dir', str(hooks_dir)],
+    )  # yapf: disable
 
 
 # Tests for run-time sys.path modifications, typically with aim of exposing some part of a package to the outside world
@@ -747,10 +764,10 @@ def test_package_with_mixed_collection_mode(pyi_builder):
 
 # Shared implementation
 def _test_sys_path_with_vendored_package(pyi_builder, modification_type, expected_string, extra_pyi_args=None):
-    pathex = os.path.join(_MODULES_DIR, 'pyi_sys_path_with_vendored_package')
+    pathex = _MODULES_DIR / 'pyi_sys_path_with_vendored_package'
 
     pyi_args = [
-        '--paths', pathex,
+        '--paths', str(pathex),
         '--hiddenimport', 'myotherpackage._vendored.mypackage.mod',
     ]  # yapf: disable
 
@@ -762,14 +779,14 @@ def _test_sys_path_with_vendored_package(pyi_builder, modification_type, expecte
         pyi_args += ['--windowed']
 
     pyi_builder.test_source(
-        """
+        f"""
         import myotherpackage
-        myotherpackage.setup_vendored_packages('{0}')
+        myotherpackage.setup_vendored_packages('{modification_type}')
 
         import mypackage
         secret = mypackage.get_secret_string()
-        assert secret == '{1}', f"Unexpected secret string: {{secret!r}}"
-        """.format(modification_type, expected_string),
+        assert secret == '{expected_string}', f"Unexpected secret string: {{secret!r}}"
+        """,
         pyi_args=pyi_args,
     )
 
@@ -805,11 +822,11 @@ def test_sys_path_with_vendored_package_prepend(pyi_builder):
 @pytest.mark.parametrize('import_order', ['forward', 'reverse'])
 @pytest.mark.parametrize('path_modification', ['one_by_one', 'all_in_advance'])
 def test_split_location_pep420_namespace_package(pyi_builder, import_order, path_modification):
-    modules_root = os.path.join(_MODULES_DIR, 'pyi_split_location_pep420_namespace_package')
+    modules_root = _MODULES_DIR / 'pyi_split_location_pep420_namespace_package'
 
     pyi_args = [
-        '--paths', os.path.join(modules_root, 'modules'),
-        '--additional-hooks-dir', os.path.join(modules_root, 'hooks'),
+        '--paths', str(modules_root / 'modules'),
+        '--additional-hooks-dir', str(modules_root / 'hooks'),
         '--hiddenimport', 'myotherpackage._vendored.mynamespacepackage.vendored_pyz',
         '--hiddenimport', 'myotherpackage._vendored.mynamespacepackage.vendored_py',
     ]  # yapf: disable

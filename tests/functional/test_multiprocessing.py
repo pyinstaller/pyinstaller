@@ -121,7 +121,7 @@ def test_multiprocessing_subprocess_environment(pyi_builder, start_method):
 # using `subprocess` module. If using the same executable (`sys.executable`), sys._MEIPASS should be inherited by the
 # child process (in onefile mode, this means no unpacking). If it is a different executable, sys._MEIPASS should not be
 # inherited (and a onefile child process should unpack itself).
-def test_subprocess_environment_inheritance(pyi_builder_spec, tmpdir):
+def test_subprocess_environment_inheritance(pyi_builder_spec, tmp_path):
     # Build the spec. This will build a pair of identical onedir programs and a pair of identical onefile programs,
     # which we can then use to test all pertinent combinations. The `pyi_builder_spec` fixture attempts to run the built
     # executable, and for that part, we need to supply the executable name. Since no parameters are passed to the
@@ -132,18 +132,18 @@ def test_subprocess_environment_inheritance(pyi_builder_spec, tmpdir):
 
     # "Manually" detertmine the executable paths, as `pyi_builder_spec._find_executables` cannot cope with custom names
     # that are used in the .spec file.
-    dist_dir = os.path.join(tmpdir, 'dist')
+    dist_dir = tmp_path / 'dist'
     exe_suffix = ".exe" if is_win else ""
 
-    onedir_program_1 = os.path.join(dist_dir, "onedir_program_1", f"onedir_program_1{exe_suffix}")
-    onedir_program_2 = os.path.join(dist_dir, "onedir_program_2", f"onedir_program_2{exe_suffix}")
-    onefile_program_1 = os.path.join(dist_dir, f"onefile_program_1{exe_suffix}")
-    onefile_program_2 = os.path.join(dist_dir, f"onefile_program_2{exe_suffix}")
+    onedir_program_1 = dist_dir / "onedir_program_1" / f"onedir_program_1{exe_suffix}"
+    onedir_program_2 = dist_dir / "onedir_program_2" / f"onedir_program_2{exe_suffix}"
+    onefile_program_1 = dist_dir / f"onefile_program_1{exe_suffix}"
+    onefile_program_2 = dist_dir / f"onefile_program_2{exe_suffix}"
 
-    assert os.path.isfile(onedir_program_1)
-    assert os.path.isfile(onedir_program_2)
-    assert os.path.isfile(onefile_program_1)
-    assert os.path.isfile(onefile_program_1)
+    assert onedir_program_1.is_file()
+    assert onedir_program_2.is_file()
+    assert onefile_program_1.is_file()
+    assert onefile_program_1.is_file()
 
     # Test all relevant combinations; the programs in pairs are functionally identical, so we need to test only one
     # combination (for example, onedir_program_2 exists only so that onedir_program_1 can use it as a child, but the

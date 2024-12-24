@@ -9,10 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import types
-import pytest
 import itertools
-from textwrap import dedent
+import textwrap
+import types
+
+import pytest
 
 from PyInstaller import HOMEPATH
 from PyInstaller.depend import analysis
@@ -21,11 +22,11 @@ import PyInstaller.log as logging
 from PyInstaller.utils.tests import gen_sourcefile
 
 
-def test_get_co_using_ctypes(tmpdir):
+def test_get_co_using_ctypes(tmp_path):
     logging.logger.setLevel(logging.DEBUG)
     mg = analysis.PyiModuleGraph(HOMEPATH, excludes=["xencodings"])
-    script = tmpdir.join('script.py')
-    script.write('import ctypes')
+    script = tmp_path / 'script.py'
+    script.write_text("import ctypes", encoding='utf-8')
     script_filename = str(script)
     mg.add_script(script_filename)
     res = mg.get_code_using("ctypes")
@@ -47,23 +48,22 @@ def test_get_co_using_ctypes_from_extension():
     assert '_struct' not in res
 
 
-def test_metadata_collection(tmpdir):
+def test_metadata_collection(tmp_path):
     from PyInstaller.utils.hooks import copy_metadata
 
     mg = analysis.PyiModuleGraph(HOMEPATH, excludes=["xencodings"])
-    script = tmpdir.join('script.py')
 
-    script.write(
-        dedent(
-            '''
-            from importlib.metadata import distribution, version
-            import importlib.metadata
+    source = textwrap.dedent(
+        '''
+        from importlib.metadata import distribution, version
+        import importlib.metadata
 
-            distribution("setuptools")
-            importlib.metadata.version("altgraph")
-            '''
-        )
+        distribution("setuptools")
+        importlib.metadata.version("altgraph")
+        '''
     )
+    script = tmp_path / 'script.py'
+    script.write_text(source, encoding='utf-8')
 
     mg.add_script(str(script))
     metadata = mg.metadata_required()
@@ -95,32 +95,32 @@ def fresh_pyi_modgraph(monkeypatch):
     return analysis.initialize_modgraph()
 
 
-def test_cached_graph_is_not_leaking(fresh_pyi_modgraph, monkeypatch, tmpdir):
+def test_cached_graph_is_not_leaking(fresh_pyi_modgraph, monkeypatch, tmp_path):
     """
     Ensure cached PyiModulegraph can separate imports between scripts.
     """
     mg = fresh_pyi_modgraph
     # self-test 1: uuid is not included in the graph by default
-    src = gen_sourcefile(tmpdir, """print""", test_id="1")
+    src = gen_sourcefile(tmp_path, """print""", test_id="1")
     mg.add_script(str(src))
     assert not mg.find_node("uuid")  # self-test
 
     # self-test 2: uuid is available and included when imported
-    src = gen_sourcefile(tmpdir, """import uuid""", test_id="2")
+    src = gen_sourcefile(tmp_path, """import uuid""", test_id="2")
     node = mg.add_script(str(src))
     assert node is not None
     names = [n.identifier for n in mg.iter_graph(start=node)]
     assert "uuid" in names
 
     # the actual test: uuid is not leaking to the other script
-    src = gen_sourcefile(tmpdir, """print""", test_id="3")
+    src = gen_sourcefile(tmp_path, """print""", test_id="3")
     node = mg.add_script(str(src))
     assert node is not None
     names = [n.identifier for n in mg.iter_graph(start=node)]
     assert "uuid" not in names
 
 
-def test_cached_graph_is_not_leaking_hidden_imports(fresh_pyi_modgraph, tmpdir):
+def test_cached_graph_is_not_leaking_hidden_imports(fresh_pyi_modgraph, tmp_path):
     """
     Ensure cached PyiModulegraph can separate hidden imports between scripts.
     """
@@ -128,7 +128,7 @@ def test_cached_graph_is_not_leaking_hidden_imports(fresh_pyi_modgraph, tmpdir):
     # self-test 1: skipped here, see test_cached_graph_is_not_leaking
 
     # self-test 2: uuid is included when hidden imported
-    src = gen_sourcefile(tmpdir, """print""", test_id="2")
+    src = gen_sourcefile(tmp_path, """print""", test_id="2")
     node = mg.add_script(str(src))
     assert node is not None
     mg.add_hiddenimports(["uuid"])
@@ -136,23 +136,23 @@ def test_cached_graph_is_not_leaking_hidden_imports(fresh_pyi_modgraph, tmpdir):
     assert "uuid" in names
 
     # the actual test: uuid is not leaking to the other script
-    src = gen_sourcefile(tmpdir, """print""", test_id="3")
+    src = gen_sourcefile(tmp_path, """print""", test_id="3")
     node = mg.add_script(str(src))
     assert node is not None
     names = [n.identifier for n in mg.iter_graph(start=node)]
     assert "uuid" not in names
 
 
-def test_graph_collects_script_dependencies(fresh_pyi_modgraph, tmpdir):
+def test_graph_collects_script_dependencies(fresh_pyi_modgraph, tmp_path):
     mg = fresh_pyi_modgraph
     # self-test 1: uuid is not included in the graph by default
-    src1 = gen_sourcefile(tmpdir, """print""", test_id="1")
+    src1 = gen_sourcefile(tmp_path, """print""", test_id="1")
     node = mg.add_script(str(src1))
     assert node is not None
     assert not mg.find_node("uuid")  # self-test
 
     # Add script importing uuid
-    src2 = gen_sourcefile(tmpdir, """import uuid""", test_id="2")
+    src2 = gen_sourcefile(tmp_path, """import uuid""", test_id="2")
     mg.add_script(str(src2))
     assert mg.find_node("uuid")  # self-test
 
@@ -162,19 +162,25 @@ def test_graph_collects_script_dependencies(fresh_pyi_modgraph, tmpdir):
     assert "uuid" in names
 
 
-def _gen_pseudo_rthooks(name, rthook_dat, tmpdir, gen_files=True):
-    hd = tmpdir.ensure(name, dir=True)
+def _gen_pseudo_rthooks(name, rthook_dat, tmp_path, gen_files=True):
+    # Create hooks directory
+    hooks_dir = tmp_path / name
+    rthooks_dir = hooks_dir / 'rthooks'
+    rthooks_dir.mkdir(parents=True)
+
+    # Create hook files
     if gen_files:
-        for fn in itertools.chain(*rthook_dat.values()):
-            hd.ensure("rthooks", fn)
-    rhd = hd.ensure("rthooks.dat")
-    rhd.write(repr(rthook_dat))
-    return hd
+        for hook_file in itertools.chain(*rthook_dat.values()):
+            (rthooks_dir / hook_file).touch()  # Create empty hook file
+
+    # Create rthooks.dat file
+    (hooks_dir / 'rthooks.dat').write_text(repr(rthook_dat), encoding='utf-8')
+    return hooks_dir
 
 
-def test_collect_rthooks_1(tmpdir, monkeypatch):
+def test_collect_rthooks_1(tmp_path, monkeypatch):
     rh1 = {"test_pyimodulegraph_mymod1": ["m1.py"]}
-    hd1 = _gen_pseudo_rthooks("h1", rh1, tmpdir)
+    hd1 = _gen_pseudo_rthooks("h1", rh1, tmp_path)
     mg = FakePyiModuleGraph(
         HOMEPATH,
         user_hook_dirs=[
@@ -184,11 +190,11 @@ def test_collect_rthooks_1(tmpdir, monkeypatch):
     assert len(mg._available_rthooks["test_pyimodulegraph_mymod1"]) == 1
 
 
-def test_collect_rthooks_2(tmpdir, monkeypatch):
+def test_collect_rthooks_2(tmp_path, monkeypatch):
     rh1 = {"test_pyimodulegraph_mymod1": ["m1.py"]}
     rh2 = {"test_pyimodulegraph_mymod2": ["rth1.py", "rth1.py"]}
-    hd1 = _gen_pseudo_rthooks("h1", rh1, tmpdir)
-    hd2 = _gen_pseudo_rthooks("h2", rh2, tmpdir)
+    hd1 = _gen_pseudo_rthooks("h1", rh1, tmp_path)
+    hd2 = _gen_pseudo_rthooks("h2", rh2, tmp_path)
     mg = FakePyiModuleGraph(
         HOMEPATH,
         user_hook_dirs=[
@@ -200,11 +206,11 @@ def test_collect_rthooks_2(tmpdir, monkeypatch):
     assert len(mg._available_rthooks["test_pyimodulegraph_mymod2"]) == 2
 
 
-def test_collect_rthooks_3(tmpdir, monkeypatch):
+def test_collect_rthooks_3(tmp_path, monkeypatch):
     rh1 = {"test_pyimodulegraph_mymod1": ["m1.py"]}
     rh2 = {"test_pyimodulegraph_mymod1": ["rth1.py", "rth1.py"]}
-    hd1 = _gen_pseudo_rthooks("h1", rh1, tmpdir)
-    hd2 = _gen_pseudo_rthooks("h2", rh2, tmpdir)
+    hd1 = _gen_pseudo_rthooks("h1", rh1, tmp_path)
+    hd2 = _gen_pseudo_rthooks("h2", rh2, tmp_path)
     mg = FakePyiModuleGraph(
         HOMEPATH,
         user_hook_dirs=[
@@ -215,9 +221,9 @@ def test_collect_rthooks_3(tmpdir, monkeypatch):
     assert len(mg._available_rthooks["test_pyimodulegraph_mymod1"]) == 1
 
 
-def test_collect_rthooks_fail_1(tmpdir, monkeypatch):
+def test_collect_rthooks_fail_1(tmp_path, monkeypatch):
     rh1 = {"test_pyimodulegraph_mymod1": ["m1.py"]}
-    hd1 = _gen_pseudo_rthooks("h1", rh1, tmpdir, False)
+    hd1 = _gen_pseudo_rthooks("h1", rh1, tmp_path, False)
     with pytest.raises(AssertionError):
         FakePyiModuleGraph(
             HOMEPATH,

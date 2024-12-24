@@ -9,89 +9,113 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import pytest
+import importlib.machinery
 import os
 import pathlib
-from importlib.machinery import EXTENSION_SUFFIXES
+
+import pytest
 
 from PyInstaller.building import utils
 
 
-def test_format_binaries_and_datas_not_found_raises_error(tmpdir):
+def test_format_binaries_and_datas_not_found_raises_error(tmp_path):
     datas = [('non-existing.txt', '.')]
-    tmpdir.join('existing.txt').ensure()
+    (tmp_path / 'existing.txt').touch()  # Create a file with different name, for sanity check.
     # TODO Tighten test when introducing PyInstaller.exceptions
     with pytest.raises(SystemExit):
-        utils.format_binaries_and_datas(datas, str(tmpdir))
+        utils.format_binaries_and_datas(datas, str(tmp_path))
 
 
-def test_format_binaries_and_datas_empty_src(tmpdir):
+def test_format_binaries_and_datas_empty_src(tmp_path):
     # `format_binaries_and_datas()` must disallow empty src in `binaries`/`datas` tuples, as those result in implicit
     # collection of the whole current working directory .
     datas = [('', '.')]
     with pytest.raises(SystemExit, match="Empty SRC is not allowed"):
-        utils.format_binaries_and_datas(datas, str(tmpdir))
+        utils.format_binaries_and_datas(datas, str(tmp_path))
 
 
-def test_format_binaries_and_datas_1(tmpdir):
-    def _(path):
-        return os.path.join(*path.split('/'))
+def test_format_binaries_and_datas_basic(tmp_path):
+    # (src, dest) tuples to be passed to format_binaries_and_datas()
+    DATAS = (
+        ('existing.txt', '.'),
+        ('other.txt', 'foo'),
+        ('*.log', 'logs'),
+        ('a/*.log', 'lll'),
+        ('a/here.tex', '.'),
+        ('b/[abc].tex', 'tex'),
+    )
 
-    datas = [
-        (_('existing.txt'), '.'),
-        (_('other.txt'), 'foo'),
-        (_('*.log'), 'logs'),
-        (_('a/*.log'), 'lll'),
-        (_('a/here.tex'), '.'),
-        (_('b/[abc].tex'), 'tex'),
-    ]
-
-    expected = set()
-    for dest, src in (
+    # Expected entries; they are listed as (src, dest) tuples for readability; the subsequent code transforms them into
+    # (dest, src) tuples format used by format_binaries_and_datas().
+    EXPECTED = (
         ('existing.txt', 'existing.txt'),
-        ('foo/other.txt', 'other.txt'),
-        ('logs/aaa.log', 'aaa.log'),
-        ('logs/bbb.log', 'bbb.log'),
-        ('lll/xxx.log', 'a/xxx.log'),
-        ('lll/yyy.log', 'a/yyy.log'),
-        ('here.tex', 'a/here.tex'),
-        ('tex/a.tex', 'b/a.tex'),
-        ('tex/b.tex', 'b/b.tex'),
-    ):
-        src = tmpdir.join(_(src)).ensure()
-        expected.add((_(dest), str(src)))
+        ('other.txt', 'foo/other.txt'),
+        ('aaa.log', 'logs/aaa.log'),
+        ('bbb.log', 'logs/bbb.log'),
+        ('a/xxx.log', 'lll/xxx.log'),
+        ('a/yyy.log', 'lll/yyy.log'),
+        ('a/here.tex', 'here.tex'),
+        ('b/a.tex', 'tex/a.tex'),
+        ('b/b.tex', 'tex/b.tex'),
+    )
 
-    # add some files which are not included
-    tmpdir.join(_('not.txt')).ensure()
-    tmpdir.join(_('a/not.txt')).ensure()
-    tmpdir.join(_('b/not.txt')).ensure()
+    # Normalize separator in source paths
+    datas = [(os.path.normpath(src), dest) for src, dest in DATAS]
 
-    res = utils.format_binaries_and_datas(datas, str(tmpdir))
+    # Convert the (src, dest) entries from EXPECTED into (dest, src) format, and turn `src` into full path.
+    expected = set()
+    for src, dest in EXPECTED:
+        src_path = tmp_path / src
+        dest_path = pathlib.PurePath(dest)  # Normalize separators.
+        # Create the file
+        src_path.parent.mkdir(parents=True, exist_ok=True)
+        src_path.touch()
+        # Expected entry
+        expected.add((str(dest_path), str(src_path)))
+
+    # Create some additional files that should not be included.
+    (tmp_path / 'not.txt').touch()
+    (tmp_path / 'a' / 'not.txt').touch()
+    (tmp_path / 'b' / 'not.txt').touch()
+
+    res = utils.format_binaries_and_datas(datas, str(tmp_path))
     assert res == expected
 
 
-def test_format_binaries_and_datas_with_bracket(tmpdir):
+def test_format_binaries_and_datas_with_bracket(tmp_path):
     # See issue #2314: the filename contains brackets which are interpreted by glob().
+    DATAS = (
+        (('b/[abc].tex'), 'tex'),
+    )  # yapf: disable
 
-    def _(path):
-        return os.path.join(*path.split('/'))
+    EXPECTED = (
+        ('b/[abc].tex', 'tex/[abc].tex'),
+    )  # yapf: disable
 
-    datas = [(_('b/[abc].tex'), 'tex')]
+    # Normalize separator in source paths
+    datas = [(os.path.normpath(src), dest) for src, dest in DATAS]
 
+    # Convert the (src, dest) entries from EXPECTED into (dest, src) format, and turn `src` into full path.
     expected = set()
-    for dest, src in (('tex/[abc].tex', 'b/[abc].tex'),):
-        src = tmpdir.join(_(src)).ensure()
-        expected.add((_(dest), str(src)))
+    for src, dest in EXPECTED:
+        src_path = tmp_path / src
+        dest_path = pathlib.PurePath(dest)  # Normalize separators.
+        # Create the file
+        src_path.parent.mkdir(parents=True, exist_ok=True)
+        src_path.touch()
+        # Expected entry
+        expected.add((str(dest_path), str(src_path)))
 
-    # add some files which are not included
-    tmpdir.join(_('tex/not.txt')).ensure()
+    # Create some additional files that should not be included.
+    (tmp_path / 'tex').mkdir(parents=True, exist_ok=True)
+    (tmp_path / 'tex' / 'not.txt').touch()
 
-    res = utils.format_binaries_and_datas(datas, str(tmpdir))
+    res = utils.format_binaries_and_datas(datas, str(tmp_path))
     assert res == expected
 
 
 def test_add_suffix_to_extension():
-    SUFFIX = EXTENSION_SUFFIXES[0]
+    SUFFIX = importlib.machinery.EXTENSION_SUFFIXES[0]
     # Each test case is a tuple of four values:
     #  * input dest_name
     #  * output (expected) dest_name

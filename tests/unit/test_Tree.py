@@ -15,7 +15,6 @@
 import os
 import pytest
 
-from os.path import join
 import PyInstaller.building.datastruct
 
 
@@ -27,19 +26,19 @@ class Tree(PyInstaller.building.datastruct.Tree):
 
 
 TEST_MOD = 'Tree_files'
-_DATA_BASEPATH = join(os.path.dirname(os.path.abspath(__file__)), TEST_MOD)
+_DATA_BASEPATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), TEST_MOD)
 
 _TEST_FILES = sorted([
-    join('subpkg', 'twelve.py'),
-    join('subpkg', 'thirteen.txt'),
-    join('subpkg', 'init__.py'),
+    os.path.join('subpkg', 'twelve.py'),
+    os.path.join('subpkg', 'thirteen.txt'),
+    os.path.join('subpkg', 'init__.py'),
     'two.py',
     'dynamiclib.dylib',
-    join('py_files_not_in_package', 'sub_pkg', 'three.py'),
-    join('py_files_not_in_package', 'sub_pkg', 'init__.py'),
-    join('py_files_not_in_package', 'one.py'),
-    join('py_files_not_in_package', 'data', 'eleven.dat'),
-    join('py_files_not_in_package', 'ten.dat'),
+    os.path.join('py_files_not_in_package', 'sub_pkg', 'three.py'),
+    os.path.join('py_files_not_in_package', 'sub_pkg', 'init__.py'),
+    os.path.join('py_files_not_in_package', 'one.py'),
+    os.path.join('py_files_not_in_package', 'data', 'eleven.dat'),
+    os.path.join('py_files_not_in_package', 'ten.dat'),
     'dynamiclib.dll',
     'pyextension.pyd',
     'nine.dat',
@@ -49,14 +48,14 @@ _TEST_FILES = sorted([
 
 _PARAMETERS = (
     (None, None, _TEST_FILES),
-    ('abc', None, [join('abc', f) for f in _TEST_FILES]),
+    ('abc', None, [os.path.join('abc', f) for f in _TEST_FILES]),
     (None, ['*.py'], [f for f in _TEST_FILES if not f.endswith('.py')]),
     (None, ['*.py', '*.pyd'], [f for f in _TEST_FILES if not f.endswith(('.py', '.pyd'))]),
     (None, ['subpkg'], [f for f in _TEST_FILES if not f.startswith('subpkg')]),
     (None, ['subpkg', 'sub_pkg'],
      [f for f in _TEST_FILES if not (f.startswith('subpkg') or os.sep + 'sub_pkg' + os.sep in f)]),
     ('klm', ['subpkg', 'sub_pkg', '*.py', '*.pyd'], [
-        join('klm', f) for f in _TEST_FILES
+        os.path.join('klm', f) for f in _TEST_FILES
         if not (f.startswith('subpkg') or os.sep + 'sub_pkg' + os.sep in f or f.endswith(('.py', '.pyd')))
     ]),
 )  # yapf: disable
