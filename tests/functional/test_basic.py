@@ -197,23 +197,23 @@ def test_ctypes_hooks_are_in_place(pyi_builder):
     )
 
 
-# TODO test it on OS X.
-def test_load_dll_using_ctypes(monkeypatch, pyi_builder, compiled_dylib):
-    # Note that including the data_dir fixture copies files needed by this test.
-    #
-    # TODO: make sure PyInstaller is able to find the library and bundle it with the app.
-    # # If the required dylib does not reside in the current directory, the Analysis class machinery,
-    # # based on ctypes.util.find_library, will not find it. This was done on purpose for this test,
-    # # to show how to give Analysis class a clue.
-    # if is_win:
-    #     os.environ['PATH'] = os.path.abspath(CTYPES_DIR) + ';' + os.environ['PATH']
-    # else:
-    #     os.environ['LD_LIBRARY_PATH'] = CTYPES_DIR
-    #     os.environ['DYLD_LIBRARY_PATH'] = CTYPES_DIR
-    #     os.environ['LIBPATH'] = CTYPES_DIR
+def test_load_dll_using_ctypes(pyi_builder, compiled_dylib):
+    # Collect the compiled shared library into top-level application directory
+    pyi_builder.test_source(
+        f"""
+        import os
+        import sys
+        import ctypes
 
-    # Build and run the app.
-    pyi_builder.test_script('pyi_load_dll_using_ctypes.py')
+        libname = {str(compiled_dylib.name)!r}
+        libpath = os.path.join(os.path.dirname(__file__), libname)
+
+        lib = ctypes.CDLL(libpath)
+
+        assert lib.add_twelve(42) == 42 + 12
+        """,
+        pyi_args=['--add-binary', f"{compiled_dylib}:."],
+    )
 
 
 def test_chdir_meipass(pyi_builder):

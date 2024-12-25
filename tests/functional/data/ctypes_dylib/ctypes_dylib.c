@@ -14,7 +14,7 @@
 #ifdef _WIN32
 
 // Windows code
-int __declspec(dllexport) dummy(int arg)
+int __declspec(dllexport) add_twelve(int arg)
 {
     return arg + 12;
 }
@@ -22,7 +22,7 @@ int __declspec(dllexport) dummy(int arg)
 #else
 
 // Unix code
-int dummy(int arg)
+int add_twelve(int arg)
 {
     return arg + 12;
 }

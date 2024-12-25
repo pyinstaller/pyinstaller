@@ -641,7 +641,7 @@ def compiled_dylib(tmp_path, request):
                 objects,
                 output_filename,
                 target_lang='c',
-                export_symbols=['dummy'],
+                export_symbols=['add_twelve'],
             )
         finally:
             os.chdir(old_cwd)  # Restore old working directory.
