@@ -35,8 +35,8 @@ except ModuleNotFoundError:
 import pytest  # noqa: E402
 
 # Expand sys.path with PyInstaller source.
-_ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
-sys.path.append(_ROOT_DIR)
+_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
+sys.path.append(str(_ROOT_DIR))
 
 from PyInstaller import __main__ as pyi_main  # noqa: E402
 from PyInstaller import configure  # noqa: E402
@@ -583,76 +583,6 @@ def pyi_builder_spec(tmp_path, request, monkeypatch, pyi_modgraph):
     if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
         if tmp_path.exists():
             shutil.rmtree(tmp_path, ignore_errors=True)
-
-
-# A fixture that compiles a test shared library from `data/load_dll_using_ctypes/ctypes_dylib.c` in a sub-directory
-# of the tmp_dir, and returns path to the compiled shared library.
-@pytest.fixture()
-def compiled_dylib(tmp_path, request):
-    # Copy the source to temporary directory.
-    tmp_source_dir = _data_dir_copy(request, 'ctypes_dylib', tmp_path)
-
-    # Compile shared library using `distuils.ccompiler` module. The code is loosely based on implementation of the
-    # `distutils.command.build_ext` command module.
-    def _compile_dylib(source_dir):
-        # Until python 3.12, `distutils` was part of standard library. For newer python versions, `setuptools` provides
-        # its vendored copy. If neither are available, skip the test.
-        try:
-            import distutils.ccompiler
-            import distutils.sysconfig
-        except ImportError:
-            pytest.skip('distutils.ccompiler is not available')
-
-        # Set up compiler
-        compiler = distutils.ccompiler.new_compiler()
-        distutils.sysconfig.customize_compiler(compiler)
-        if hasattr(compiler, 'initialize'):  # Applicable to MSVCCompiler on Windows.
-            compiler.initialize()
-
-        if is_win:
-            # With MinGW compiler, the `customize_compiler()` call ends up changing `compiler.shared_lib_extension` into
-            # ".pyd". Use ".dll" instead.
-            suffix = '.dll'
-        elif is_darwin:
-            # On macOS, `compiler.shared_lib_extension` is ".so", but ".dylib" is more appropriate.
-            suffix = '.dylib'
-        else:
-            suffix = compiler.shared_lib_extension
-
-        # Change the current working directory to the directory that contains source files. Ideally, we could pass the
-        # absolute path to sources to `compiler.compile()` and set its `output_dir` argument to the directory where
-        # object files should be generated. However, in this case, the object files are put under output directory
-        # *while retaining their original path component*. If `output_dir` is not specified, then the original absolute
-        # source file paths seem to be turned into relative ones (e.g, on Linux, the leading / is stripped away).
-        #
-        # NOTE: with python >= 3.11 we could use contextlib.chdir().
-        old_cwd = pathlib.Path.cwd()
-        os.chdir(source_dir)
-        try:
-            # Compile source .c file into object
-            sources = [
-                'ctypes_dylib.c',
-            ]
-            objects = compiler.compile(sources)
-
-            # Link into shared library
-            output_filename = f'ctypes_dylib{suffix}'
-            compiler.link_shared_object(
-                objects,
-                output_filename,
-                target_lang='c',
-                export_symbols=['add_twelve'],
-            )
-        finally:
-            os.chdir(old_cwd)  # Restore old working directory.
-
-        # Return path to compiled shared library
-        return source_dir / output_filename
-
-    try:
-        return _compile_dylib(tmp_source_dir)
-    except Exception as e:
-        pytest.skip(f"Could not compile test shared library: {e}")
 
 
 @pytest.fixture
