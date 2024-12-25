@@ -12,57 +12,18 @@
 Decorators for skipping PyInstaller tests when specific requirements are not met.
 """
 
-import distutils.ccompiler
 import inspect
-import os
-import shutil
+import sys
 import textwrap
 
 import pytest
-import sys
 
-from PyInstaller.compat import is_win
 from PyInstaller.utils.hooks import check_requirement
 
 # Wrap some pytest decorators to be consistent in tests.
 parametrize = pytest.mark.parametrize
 skipif = pytest.mark.skipif
 xfail = pytest.mark.xfail
-
-
-def _check_for_compiler():
-    import tempfile
-
-    # Change to some tempdir since cc.has_function() would compile into the current directory, leaving garbage.
-    old_wd = os.getcwd()
-    tmp = tempfile.mkdtemp()
-    os.chdir(tmp)
-    cc = distutils.ccompiler.new_compiler()  # NOTE: Mingw32CCompiler on Windows does not have `initialize` method.
-    if is_win and hasattr(cc, 'initialize'):
-        try:
-            cc.initialize()
-            has_compiler = True
-        # This error is raised on Windows if a compiler can't be found.
-        except distutils.errors.DistutilsPlatformError:
-            has_compiler = False
-    else:
-        # The C standard library contains the ``clock`` function. Use that to determine if a compiler is installed. This
-        # does not work on Windows::
-        #
-        #   Users\bjones\AppData\Local\Temp\a.out.exe.manifest : general error
-        #   c1010070: Failed to load and parse the manifest. The system cannot
-        #   find the file specified.
-        has_compiler = cc.has_function('clock', includes=['time.h'])
-    os.chdir(old_wd)
-    # TODO: Find a way to remove the generated clockXXXX.c file, too
-    shutil.rmtree(tmp)
-    return has_compiler
-
-
-# A decorator to skip tests if a C compiler is not detected.
-has_compiler = _check_for_compiler()
-skipif_no_compiler = skipif(not has_compiler, reason="Requires a C compiler")
-
 skip = pytest.mark.skip
 
 

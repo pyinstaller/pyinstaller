@@ -14,7 +14,7 @@ import copy
 import glob
 import logging
 import os
-import platform
+import pathlib
 import re
 import shutil
 import subprocess
@@ -40,7 +40,7 @@ sys.path.append(_ROOT_DIR)
 
 from PyInstaller import __main__ as pyi_main  # noqa: E402
 from PyInstaller import configure  # noqa: E402
-from PyInstaller.compat import architecture, is_darwin, is_win  # noqa: E402
+from PyInstaller.compat import is_darwin, is_win  # noqa: E402
 from PyInstaller.depend.analysis import initialize_modgraph  # noqa: E402
 from PyInstaller.archive.readers import pkg_archive_contents  # noqa: E402
 from PyInstaller.utils.tests import gen_sourcefile  # noqa: E402
@@ -590,47 +590,69 @@ def pyi_builder_spec(tmp_path, request, monkeypatch, pyi_modgraph):
 @pytest.fixture()
 def compiled_dylib(tmp_path, request):
     # Copy the source to temporary directory.
-    tmp_data_dir = _data_dir_copy(request, 'ctypes_dylib', tmp_path)
+    tmp_source_dir = _data_dir_copy(request, 'ctypes_dylib', tmp_path)
 
-    # Compile the ctypes_dylib in the tmpdir: Make tmpdir/data the CWD. Do NOT use monkeypatch.chdir() to change and
-    # monkeypatch.undo() to restore the CWD, since this will undo ALL monkeypatches (such as the pyi_builder's additions
-    # to sys.path), breaking the test.
-    old_cwd = os.getcwd()
-    os.chdir(tmp_data_dir)
-    try:
+    # Compile shared library using `distuils.ccompiler` module. The code is loosely based on implementation of the
+    # `distutils.command.build_ext` command module.
+    def _compile_dylib(source_dir):
+        # Until python 3.12, `distutils` was part of standard library. For newer python versions, `setuptools` provides
+        # its vendored copy. If neither are available, skip the test.
+        try:
+            import distutils.ccompiler
+            import distutils.sysconfig
+        except ImportError:
+            pytest.skip('distutils.ccompiler is not available')
+
+        # Set up compiler
+        compiler = distutils.ccompiler.new_compiler()
+        distutils.sysconfig.customize_compiler(compiler)
+        if hasattr(compiler, 'initialize'):  # Applicable to MSVCCompiler on Windows.
+            compiler.initialize()
+
         if is_win:
-            output_path = tmp_data_dir / 'ctypes_dylib.dll'
-            # For Mingw-x64 we must pass '-m32' to build 32-bit binaries
-            march = '-m32' if architecture == '32bit' else '-m64'
-            ret = subprocess.call('gcc -shared ' + march + ' ctypes_dylib.c -o ctypes_dylib.dll', shell=True)
-            if ret != 0:
-                # Find path to cl.exe file.
-                from distutils.msvccompiler import MSVCCompiler
-                comp = MSVCCompiler()
-                comp.initialize()
-                cl_path = comp.cc
-                # Fallback to msvc.
-                ret = subprocess.call([cl_path, '/LD', 'ctypes_dylib.c'], shell=False)
+            # With MinGW compiler, the `customize_compiler()` call ends up changing `compiler.shared_lib_extension` into
+            # ".pyd". Use ".dll" instead.
+            suffix = '.dll'
         elif is_darwin:
-            output_path = tmp_data_dir / 'ctypes_dylib.dylib'
-            # On Mac OS X we need to detect architecture - 32 bit or 64 bit.
-            arch = 'arm64' if platform.machine() == 'arm64' else 'i386' if architecture == '32bit' else 'x86_64'
-            cmd = (
-                'gcc -arch ' + arch + ' -Wall -dynamiclib '
-                'ctypes_dylib.c -o ctypes_dylib.dylib -headerpad_max_install_names'
-            )
-            ret = subprocess.call(cmd, shell=True)
-            id_dylib = os.path.abspath('ctypes_dylib.dylib')
-            ret = subprocess.call('install_name_tool -id %s ctypes_dylib.dylib' % (id_dylib,), shell=True)
+            # On macOS, `compiler.shared_lib_extension` is ".so", but ".dylib" is more appropriate.
+            suffix = '.dylib'
         else:
-            output_path = tmp_data_dir / 'ctypes_dylib.so'
-            ret = subprocess.call('gcc -fPIC -shared ctypes_dylib.c -o ctypes_dylib.so', shell=True)
-        assert ret == 0, 'Compile ctypes_dylib failed.'
-    finally:
-        # Reset the CWD directory.
-        os.chdir(old_cwd)
+            suffix = compiler.shared_lib_extension
 
-    return output_path
+        # Change the current working directory to the directory that contains source files. Ideally, we could pass the
+        # absolute path to sources to `compiler.compile()` and set its `output_dir` argument to the directory where
+        # object files should be generated. However, in this case, the object files are put under output directory
+        # *while retaining their original path component*. If `output_dir` is not specified, then the original absolute
+        # source file paths seem to be turned into relative ones (e.g, on Linux, the leading / is stripped away).
+        #
+        # NOTE: with python >= 3.11 we could use contextlib.chdir().
+        old_cwd = pathlib.Path.cwd()
+        os.chdir(source_dir)
+        try:
+            # Compile source .c file into object
+            sources = [
+                'ctypes_dylib.c',
+            ]
+            objects = compiler.compile(sources)
+
+            # Link into shared library
+            output_filename = f'ctypes_dylib{suffix}'
+            compiler.link_shared_object(
+                objects,
+                output_filename,
+                target_lang='c',
+                export_symbols=['dummy'],
+            )
+        finally:
+            os.chdir(old_cwd)  # Restore old working directory.
+
+        # Return path to compiled shared library
+        return source_dir / output_filename
+
+    try:
+        return _compile_dylib(tmp_source_dir)
+    except Exception as e:
+        pytest.skip(f"Could not compile test shared library: {e}")
 
 
 @pytest.fixture

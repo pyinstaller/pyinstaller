@@ -20,7 +20,7 @@ import re
 import pytest
 
 from PyInstaller.compat import is_darwin, is_win
-from PyInstaller.utils.tests import importorskip, skipif, skipif_no_compiler, xfail
+from PyInstaller.utils.tests import importorskip, skipif, xfail
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -198,7 +198,6 @@ def test_ctypes_hooks_are_in_place(pyi_builder):
 
 
 # TODO test it on OS X.
-@skipif_no_compiler
 def test_load_dll_using_ctypes(monkeypatch, pyi_builder, compiled_dylib):
     # Note that including the data_dir fixture copies files needed by this test.
     #

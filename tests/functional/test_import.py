@@ -20,7 +20,7 @@ import pytest
 
 from PyInstaller.compat import is_win, is_darwin
 import PyInstaller.depend.utils
-from PyInstaller.utils.tests import skipif, importorskip, skipif_no_compiler, xfail, has_compiler
+from PyInstaller.utils.tests import skipif, importorskip, xfail
 
 # :todo: find a way to get this from `conftest` or such
 # Directory with testing modules used in some tests.
@@ -346,11 +346,8 @@ for prefix in ('', 'ctypes.'):
     for funcname in ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary'):
         ids.append(prefix + funcname)
         params = (prefix + funcname, ids[-1])
-        # Marking doesn't seem to chain here, so select just one skipping mark instead of both.
-        if not has_compiler:
-            params = pytest.param(*params, marks=skipif_no_compiler(params))
-        elif funcname in ("WinDLL", "OleDLL"):
-            # WinDLL, OleDLL only work on windows.
+        if funcname in ("WinDLL", "OleDLL"):
+            # WinDLL, OleDLL only work on Windows.
             params = pytest.param(*params, marks=pytest.mark.win32)
         parameters.append(params)
 
