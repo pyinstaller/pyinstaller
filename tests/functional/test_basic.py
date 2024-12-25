@@ -39,11 +39,11 @@ def test_absolute_python_path(pyi_builder):
 @pytest.mark.linux
 @skipif(not os.path.exists('/proc/self/status'), reason='/proc/self/status does not exist')
 @pytest.mark.parametrize("symlink_name", ["symlink", "very_long_name_in_symlink", "sub/dir/program"])
-def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name, tmp_path, SPEC_DIR, SCRIPT_DIR):
+def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name, tmp_path, spec_dir, script_dir):
     def _patch_spec(spec_name, symlink_name):
-        spec_content = (SPEC_DIR / spec_name).read_text(encoding="utf-8")
+        spec_content = (spec_dir / spec_name).read_text(encoding="utf-8")
         spec_content = spec_content.replace("@SYMLINKNAME@", symlink_name)
-        spec_content = spec_content.replace("@SCRIPTDIR@", str(SCRIPT_DIR))
+        spec_content = spec_content.replace("@SCRIPTDIR@", str(script_dir))
         spec_file = tmp_path / spec_name
         spec_file.write_text(spec_content, encoding="utf-8")
         return spec_file
@@ -874,12 +874,12 @@ def test_legacy_onedir_layout(pyi_builder):
     )
 
 
-def test_spec_options(pyi_builder, SPEC_DIR, capsys):
+def test_spec_options(pyi_builder, spec_dir, capsys):
     if pyi_builder._mode != 'onedir':
         pytest.skip('spec file is onedir mode only')
 
     pyi_builder.test_spec(
-        SPEC_DIR / "pyi_spec_options.spec",
+        spec_dir / "pyi_spec_options.spec",
         pyi_args=["--", "--optional-dependency", "email", "--optional-dependency", "gzip"]
     )
     exe, = pyi_builder._find_executables("pyi_spec_options")
@@ -888,10 +888,10 @@ def test_spec_options(pyi_builder, SPEC_DIR, capsys):
 
     capsys.readouterr()
     with pytest.raises(SystemExit) as ex:
-        pyi_builder.test_spec(SPEC_DIR / "pyi_spec_options.spec", pyi_args=["--", "--help"])
+        pyi_builder.test_spec(spec_dir / "pyi_spec_options.spec", pyi_args=["--", "--help"])
     assert ex.value.code == 0
     assert "help blah blah blah" in capsys.readouterr().out
 
     with pytest.raises(SystemExit) as ex:
-        pyi_builder.test_spec(SPEC_DIR / "pyi_spec_options.spec", pyi_args=["--", "--onefile"])
+        pyi_builder.test_spec(spec_dir / "pyi_spec_options.spec", pyi_args=["--", "--onefile"])
     assert "pyi_spec_options.spec: error: unrecognized arguments: --onefile" in capsys.readouterr().err

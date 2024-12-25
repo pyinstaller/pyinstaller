@@ -57,22 +57,6 @@ _PYI_BUILDER_CLEANUP = os.environ.get("PYI_BUILDER_CLEANUP", "1") == "1"
 # --------
 
 
-@pytest.fixture
-def SPEC_DIR(request):
-    """
-    Return the directory where the test spec-files reside.
-    """
-    return _get_spec_dir(request)
-
-
-@pytest.fixture
-def SCRIPT_DIR(request):
-    """
-    Return the directory where the test scripts reside.
-    """
-    return _get_script_dir(request)
-
-
 def pytest_runtest_setup(item):
     """
     Markers to skip tests based on the current platform.
@@ -130,7 +114,18 @@ def _get_spec_dir(request):
 
 
 @pytest.fixture
+def spec_dir(request):
+    """
+    Return the directory where the test spec-files reside.
+    """
+    return _get_spec_dir(request)
+
+
+@pytest.fixture
 def script_dir(request):
+    """
+    Return the directory where the test scripts reside.
+    """
     return _get_script_dir(request)
 
 
