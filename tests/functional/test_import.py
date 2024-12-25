@@ -343,65 +343,84 @@ def test_ctypes_find_library_and_CDLL_on_linux(pyi_builder, libname):
 
 
 #-- Generate test-cases for the different types of ctypes objects.
-
-_template_ctypes_test = """
-        print(lib)
-        assert lib is not None and lib._name is not None
-        import sys, os
-        if getattr(sys, 'frozen', False):
-            libfile = os.path.join(sys._MEIPASS, %(soname)r)
-            print(libfile)
-            assert os.path.isfile(libfile), '%(soname)s is missing'
-            print('>>> file found')
-    """
-
-parameters = []
-ids = []
+_ctypes_parameters = []
+_ctypes_ids = []
 for prefix in ('', 'ctypes.'):
     for funcname in ('CDLL', 'PyDLL', 'WinDLL', 'OleDLL', 'cdll.LoadLibrary'):
-        ids.append(prefix + funcname)
-        params = (prefix + funcname, ids[-1])
+        _ctypes_ids.append(prefix + funcname)
+        params = (prefix + funcname, _ctypes_ids[-1])
         if funcname in ("WinDLL", "OleDLL"):
             # WinDLL, OleDLL only work on Windows.
             params = pytest.param(*params, marks=pytest.mark.win32)
-        parameters.append(params)
+        _ctypes_parameters.append(params)
 
 
-@pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
-def test_ctypes_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id):
+@pytest.mark.parametrize("funcname,test_id", _ctypes_parameters, ids=_ctypes_ids)
+def test_ctypes_bindings(pyi_builder, monkeypatch, compiled_dylib, funcname, test_id):
     # Evaluate the soname here, so the test-code contains a constant. We want the name of the dynamically-loaded library
     # only, not its path. See discussion in https://github.com/pyinstaller/pyinstaller/pull/1478#issuecomment-139622994.
     soname = compiled_dylib.name
 
-    source = """
-        import ctypes ; from ctypes import *
-        lib = %s(%%(soname)r)
-    """ % funcname + _template_ctypes_test
-
+    # Patch _resolveCtypesImports tp extend search path with the parent directory of the compiled shared library.
     __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.parent)
-    pyi_builder.test_source(source % locals(), test_id=test_id)
+
+    pyi_builder.test_source(
+        f"""
+        import os
+        import sys
+
+        # Both imports allow us to prefixed and non-prefixed funcname.
+        import ctypes
+        from ctypes import *
+
+        # Load the library.
+        lib = {funcname}({soname!r})
+        print(f"Loaded library handle: {{lib}}")
+
+        libfile = os.path.join(sys._MEIPASS, {soname!r})
+        assert os.path.isfile(libfile), f'Shared library {{soname}} not found in top-level application directory!'
+
+        # NOTE: since we are using our own compiled test library, we do not need to explicitly check that the bundled
+        # copy is loaded.
+        """,
+        test_id=test_id,
+    )
 
 
-@pytest.mark.parametrize("funcname,test_id", parameters, ids=ids)
-def test_ctypes_in_func_gen(pyi_builder, monkeypatch, funcname, compiled_dylib, test_id):
-    """
-    This is much like test_ctypes_gen except that the ctypes calls are in a function. See issue #1620.
-    """
+@pytest.mark.parametrize("funcname,test_id", _ctypes_parameters, ids=_ctypes_ids)
+def test_ctypes_bindings_in_function(pyi_builder, monkeypatch, compiled_dylib, funcname, test_id):
+    # This is much like test_ctypes_bindings except that the ctypes calls are in a function. See issue #1620.
     soname = compiled_dylib.name
 
-    source = (
-        """
-    import ctypes ; from ctypes import *
-    def f():
-      def g():
-        lib = %s(%%(soname)r)
-    """ % funcname + _template_ctypes_test + """
-      g()
-    f()
-    """
-    )
     __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib.parent)
-    pyi_builder.test_source(source % locals(), test_id=test_id)
+
+    pyi_builder.test_source(
+        f"""
+        import os
+        import sys
+
+        # Both imports allow us to prefixed and non-prefixed funcname.
+        import ctypes
+        from ctypes import *
+
+        # Load the library.
+        def f():
+            def g():
+                lib = {funcname}({soname!r})
+                return lib
+            return g()
+
+        lib = f()
+        print(f"Loaded library handle: {{lib}}")
+
+        libfile = os.path.join(sys._MEIPASS, {soname!r})
+        assert os.path.isfile(libfile), f'Shared library {{soname}} not found in top-level application directory!'
+
+        # NOTE: since we are using our own compiled test library, we do not need to explicitly check that the bundled
+        # copy is loaded.
+        """,
+        test_id=test_id,
+    )
 
 
 def test_ctypes_cdll_builtin_extension(pyi_builder):
@@ -412,20 +431,20 @@ def test_ctypes_cdll_builtin_extension(pyi_builder):
         pytest.skip(f"{builtin_ext} is a built-in module without extension.")
 
     pyi_builder.test_source(
-        """
+        f"""
         import ctypes
         import importlib.machinery
 
         # Try to load CDLL with all possible extension suffices; this should fail in all cases, as built-in extensions
         # should not be in the ctypes' search path.
-        builtin_ext = '{0}'
+        builtin_ext = {builtin_ext!r}
         for suffix in importlib.machinery.EXTENSION_SUFFIXES:
             try:
                 lib = ctypes.CDLL(builtin_ext + suffix)
             except OSError:
                 lib = None
             assert lib is None, "Built-in extension picked up by ctypes.CDLL!"
-        """.format(builtin_ext)
+        """
     )
 
 
