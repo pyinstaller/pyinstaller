@@ -285,46 +285,61 @@ def __monkeypatch_resolveCtypesImports(monkeypatch, compiled_dylib):
     monkeypatch.setattr(PyInstaller.depend.utils, "_resolveCtypesImports", mocked_resolveCtypesImports)
 
 
-#FIXME: For reusability, move this to "PyInstaller.utils.tests".
-def skip_if_lib_missing(libname, text=None):
-    """
-    pytest decorator to evaluate the required shared lib.
-
-    :param libname: Name of the required library.
-    :param text: Text to put into the reason message (defaults to 'lib%s.so' % libname)
-
-    :return: pytest decorator with a reason.
-    """
+# Check that using `ctypes.CDLL(ctypes.util.find_library(name_literal))` ends up collecting the shared library  and
+# loads the bundled copy at the run-time. This test is Linux-specific and uses system-installed shared libraries. This
+# is because `ctypes.util.find_library` works with linker-like names (without "lib" prefix and ".so*" suffix and
+# requires the shared library to have a valid SONAME.
+@pytest.mark.linux
+@pytest.mark.parametrize('libname', ['png', 'gs'])
+def test_ctypes_find_library_and_CDLL_on_linux(pyi_builder, libname):
+    # Check that the library can be resolved via ctypes.util.find_library(), which implies its availability.
     soname = ctypes.util.find_library(libname)
-    if not text:
-        text = f"lib{libname}.so"
-    # Return pytest decorator.
-    return skipif(not (soname and ctypes.CDLL(soname)), reason=f"required {text} missing")
+    if not soname:
+        pytest.skip(f"could not resolve {libname} into .so library name (library is likely not installed)")
 
+    pyi_builder.test_source(
+        f"""
+        import sys
+        import os
+        import ctypes
+        import ctypes.util
 
-_template_ctypes_CDLL_find_library = """
-    import ctypes, ctypes.util, sys, os
-    lib = ctypes.CDLL(ctypes.util.find_library(%(libname)r))
-    print(lib)
-    assert lib is not None and lib._name is not None
-    if getattr(sys, 'frozen', False):
-        soname = ctypes.util.find_library(%(libname)r)
-        print(soname)
+        # Try to resolve the library into soname.
+        # PyInstaller's ctypes analysis can pick up only literal arguments to ctypes.util.find_library()!
+        soname = ctypes.util.find_library({libname!r})
+        print("Resolved soname:", soname)
+        assert soname is not None, 'Could not resolve linker-like library name into .so name'
+
+        # Load the library
+        lib = ctypes.CDLL(soname)
+        assert lib is not None and lib._name is not None, f'Could not load shared library {{soname}}'
+
+        # Ensure that library with the resolved soname was in fact collected into top-level application directory.
         libfile = os.path.join(sys._MEIPASS, soname)
-        print(libfile)
-        assert os.path.isfile(libfile), '%%s is missing' %% soname
-        print('>>> file found')
-    """
+        assert os.path.isfile(libfile), f'Shared library {{soname}} not found in top-level application directory!'
 
+        # Check that the library we loaded is in fact the copy from the top-level application directory. For that,
+        # we need psutil.
+        try:
+            import psutil
+        except ModuleNotFoundError:
+            print("psutil not available, ending test.")
 
-# At least on Linux, we can not use our own `ctypes_dylib` because `find_library` does not consult LD_LIBRARY_PATH and
-# hence does not find our lib. This tests verifies the path of the loaded library and thus checks if the library is
-# collected into the frozen application.
-# TODO: Check how this behaves on other platforms.
-@skip_if_lib_missing('png', 'libpng.so (Ghostscript)')
-def test_ctypes_CDLL_find_library__png(pyi_builder):
-    libname = 'png'
-    pyi_builder.test_source(_template_ctypes_CDLL_find_library % locals())
+        process = psutil.Process(os.getpid())
+        print("Loaded libraries:")
+        for loaded_lib in process.memory_maps():
+            print(f"  {{loaded_lib.path}}")
+
+        # Find the library that matches our soname
+        matching_libs = [
+            loaded_lib.path for loaded_lib in process.memory_maps()
+            if os.path.basename(loaded_lib.path) == soname
+        ]
+
+        print(f"Matching libraries: {{matching_libs!r}}")
+        assert any(loaded_lib == libfile for loaded_lib in matching_libs), f'Bundled copy of {{soname}} not loaded!'
+        """
+    )
 
 
 #-- Generate test-cases for the different types of ctypes objects.
