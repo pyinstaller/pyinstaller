@@ -239,6 +239,11 @@ class AppBuilder:
         """
         __tracebackhide__ = True
 
+        # Skip interactive tests (the ones with `runtime` set) if `psutil` is unavailable, as we need it to properly
+        # clean up the process tree.
+        if runtime and psutil is None:
+            pytest.skip('Interactive tests require psutil for proper cleanup.')
+
         if pyi_args is None:
             pyi_args = []
         if app_args is None:
