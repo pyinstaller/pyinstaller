@@ -8,7 +8,61 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-#
+
+import os
+import pathlib
+
+import pytest
+
+from PyInstaller.compat import exec_python_rc
+from PyInstaller.utils.tests import importable, xfail, onedir_only, onefile_only
+
+# Directory with testing modules used in some tests.
+_MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
+
+
+# Tests for pkgutil.get_data().
+def test_pkgutil_get_data(pyi_builder):
+    add_data_arg = f"{_MODULES_DIR / 'pkg3' / 'sample-data.txt'}:pkg3"
+    pyi_builder.test_source(
+        """
+            import pkgutil
+            import pkg3  # Serves as a hiddenimport
+
+            expected_data = b'This is data text for testing the packaging module data.'
+
+            data = pkgutil.get_data('pkg3', 'sample-data.txt')
+            print("Read data: {data!r}")
+            if not data:
+                raise SystemExit('Error: Could not read data with pkgutil.get_data().')
+
+            if data.strip() != expected_data:
+                raise SystemExit('Error: Read data does not match expected data!')
+        """,
+        pyi_args=['--add-data', add_data_arg],
+    )
+
+
+@xfail(reason='Our import mechanism returns the wrong loader-class for __main__.')
+def test_pkgutil_get_data__main__(pyi_builder):
+    add_data_arg = f"{_MODULES_DIR / 'pkg3' / 'sample-data.txt'}:pkg3"
+    pyi_builder.test_source(
+        """
+        import pkgutil
+
+        expected_data = b'This is data text for testing the packaging module data.'
+
+        data = pkgutil.get_data('__main__', 'pkg3/sample-data.txt')
+        if not data:
+            raise SystemExit('Error: Could not read data with pkgutil.get_data().')
+
+        if data.strip() != expected_data:
+            raise SystemExit('Error: Read data does not match expected data!')
+        """,
+        pyi_args=['--add-data', add_data_arg],
+    )
+
+
 # Tests for pkgutil.iter_modules(). The test attempts to list contents of a package in both unfrozen and frozen version,
 # and compares the obtained lists.
 #
@@ -20,17 +74,6 @@
 # to that is noarchive mode, where .pyc modules are not collected into archive; as they are present on filesystem as-is,
 # they are again handled directly by python's FileFinder. Therefore, each test is performed both in archive and in
 # noarchive mode, to cover both cases.
-
-import os
-import pathlib
-
-import pytest
-
-from PyInstaller.compat import exec_python_rc
-from PyInstaller.utils.tests import importable, onedir_only, onefile_only
-
-# Directory with testing modules used in some tests.
-_MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
 
 # Read the output file produced by test script. Each line consists of two elements separated by semi-colon:

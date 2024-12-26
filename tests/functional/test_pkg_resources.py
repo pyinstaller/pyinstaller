@@ -32,6 +32,27 @@ def test_pkg_resources_importable(pyi_builder):
         """)
 
 
+def test_pkg_resources_resource_string(pyi_builder):
+    add_data_arg = f"{_MODULES_DIR / 'pkg3' / 'sample-data.txt'}:pkg3"
+    pyi_builder.test_source(
+        """
+        import pkg_resources
+        import pkg3
+
+        expected_data = b'This is data text for testing the packaging module data.'
+
+        # In a frozen app, the resources is available at: os.path.join(sys._MEIPASS, 'pkg3/sample-data.txt')
+        data = pkg_resources.resource_string(pkg3.__name__, 'sample-data.txt')
+        if not data:
+            raise SystemExit('Error: Could not read data with pkg_resources.resource_string().')
+
+        if data.strip() != expected_data:
+            raise SystemExit('Error: Read data does not match expected data!')
+        """,
+        pyi_args=['--add-data', add_data_arg],
+    )
+
+
 # Tests for pkg_resources provider.
 #
 # These tests run a test script (scripts/pyi_pkg_resources_provider.py) in unfrozen and frozen form, in combination with

@@ -9,17 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import pathlib
-
 import pytest
 
 from PyInstaller.compat import is_win, is_linux
-from PyInstaller.utils.tests import importorskip, xfail, skipif, requires
+from PyInstaller.utils.tests import importorskip, skipif, requires
 from PyInstaller.utils.hooks import can_import_module
-
-# :todo: find a way to get this from `conftest` or such directory with testing modules used in some tests.
-_MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
-_DATA_DIR = pathlib.Path(__file__).parent / 'data'
 
 
 @importorskip('gevent')
@@ -115,25 +109,6 @@ def test_tkinter_functional(pyi_builder):
         print("Done!")
     """
     )
-
-
-def test_pkg_resource_res_string(pyi_builder, monkeypatch):
-    # Include some data files for testing pkg_resources module.
-    add_data_arg = f"{_MODULES_DIR / 'pkg3' / 'sample-data.txt'}:pkg3"
-    pyi_builder.test_script('pkg_resource_res_string.py', pyi_args=['--add-data', add_data_arg])
-
-
-def test_pkgutil_get_data(pyi_builder, monkeypatch):
-    # Include some data files for testing pkg_resources module.
-    add_data_arg = f"{_MODULES_DIR / 'pkg3' / 'sample-data.txt'}:pkg3"
-    pyi_builder.test_script('pkgutil_get_data.py', pyi_args=['--add-data', add_data_arg])
-
-
-@xfail(reason='Our import mechanism returns the wrong loader-class for __main__.')
-def test_pkgutil_get_data__main__(pyi_builder, monkeypatch):
-    # Include some data files for testing pkg_resources module.
-    add_data_arg = f"{_MODULES_DIR / 'pkg3' / 'sample-data.txt'}:pkg3"
-    pyi_builder.test_script('pkgutil_get_data__main__.py', pyi_args=['--add-data', add_data_arg])
 
 
 @importorskip('sphinx')
@@ -387,54 +362,6 @@ def test_zeep(pyi_builder):
         # Test the hook to zeep
         from zeep import utils
         utils.get_version()
-        """
-    )
-
-
-@importorskip('PIL')
-#@pytest.mark.xfail(reason="Fails with Pillow 3.0.0")
-def test_pil_img_conversion(pyi_builder):
-    add_data_arg = f"{_DATA_DIR / 'PIL_images'}:."
-    pyi_builder.test_script(
-        'pyi_lib_PIL_img_conversion.py',
-        pyi_args=[
-            '--add-data', add_data_arg,
-            # Use console mode or else on Windows the VS() messageboxes will stall pytest.
-            '--console'
-        ],
-    )  # yapf: disable
-
-
-@requires("pillow >= 1.1.6")
-@importorskip('PyQt5')
-def test_pil_PyQt5(pyi_builder):
-    # hook-PIL is excluding PyQt5, but is must still be included since it is imported elsewhere.
-    # Also see issue #1584.
-    pyi_builder.test_source("""
-        import PyQt5
-        import PIL
-        import PIL.ImageQt
-        """)
-
-
-@importorskip('PIL')
-def test_pil_plugins(pyi_builder):
-    pyi_builder.test_source(
-        """
-        # Verify packaging of PIL.Image.
-        from PIL.Image import frombytes
-        print(frombytes)
-
-        # PIL import hook should bundle all available PIL plugins. Verify that plugins are collected.
-        from PIL import Image
-        Image.init()
-        MIN_PLUG_COUNT = 7  # Without all plugins the count is usually 6.
-        plugins = list(Image.SAVE.keys())
-        plugins.sort()
-        if len(plugins) < MIN_PLUG_COUNT:
-            raise SystemExit('No PIL image plugins were collected!')
-        else:
-            print('PIL supported image formats: %s' % plugins)
         """
     )
 

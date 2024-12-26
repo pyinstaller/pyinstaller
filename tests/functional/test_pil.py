@@ -15,15 +15,77 @@ Note that the original unmaintained PIL has been obsoleted by the PIL-compatible
 which retains the same Python package `PIL`.
 """
 
+import pathlib
+
 import pytest
 
 from PyInstaller.utils.tests import importorskip
 from PyInstaller.utils.hooks import can_import_module
 
+# All tests in this file require PIL
+pytestmark = importorskip('PIL')
+
+
+# Functional test that tries to convert a .tiff image to a .png
+def test_pil_image_conversion(pyi_builder, tmp_path):
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        import PIL.Image
+
+        if len(sys.argv) != 3:
+            print(f"use: {sys.argv[0]} <input-filename> <output-filename>")
+            raise SystemExit(1)
+
+        input_file = sys.argv[1]
+        output_file = sys.argv[2]
+
+        image = PIL.Image.open(input_file)
+        image.save(output_file)
+        """,
+        app_args=[
+            str(pathlib.Path(__file__).parent / 'data' / 'PIL_images' / 'tinysample.tiff'),
+            str(tmp_path / 'converted_tinysample.png'),
+        ],
+    )
+
+
+@importorskip('PyQt5')
+def test_pil_pyqt5(pyi_builder):
+    # hook-PIL is excluding PyQt5, but is must still be included since it is imported elsewhere.
+    # Also see issue #1584.
+    pyi_builder.test_source("""
+        import PyQt5
+        import PIL
+        import PIL.ImageQt
+        """)
+
+
+def test_pil_plugins(pyi_builder):
+    pyi_builder.test_source(
+        """
+        # Verify packaging of PIL.Image.
+        from PIL.Image import frombytes
+        print(frombytes)
+
+        # PIL import hook should bundle all available PIL plugins. Verify that plugins are collected.
+        from PIL import Image
+        Image.init()
+        MIN_PLUG_COUNT = 7  # Without all plugins the count is usually 6.
+        plugins = list(Image.SAVE.keys())
+        plugins.sort()
+        if len(plugins) < MIN_PLUG_COUNT:
+            raise SystemExit('No PIL image plugins were collected!')
+        else:
+            print('PIL supported image formats: %s' % plugins)
+        """
+    )
+
 
 # The tkinter module may be available for import, but not actually importable due to missing shared libraries.
 # Therefore, we need to use `can_import_module`-based skip decorator instead of `@importorskip`.
-@importorskip('PIL')
 @pytest.mark.skipif(not can_import_module("tkinter"), reason="tkinter cannot be imported.")
 def test_pil_no_tkinter(pyi_builder):
     """
@@ -56,7 +118,6 @@ def test_pil_no_tkinter(pyi_builder):
 
 # The tkinter module may be available for import, but not actually importable due to missing shared libraries.
 # Therefore, we need to use `can_import_module`-based skip decorator instead of `@importorskip`.
-@importorskip('PIL')
 @pytest.mark.skipif(not can_import_module("tkinter"), reason="tkinter cannot be imported.")
 def test_pil_tkinter(pyi_builder):
     """
@@ -83,7 +144,6 @@ def test_pil_tkinter(pyi_builder):
     )
 
 
-@importorskip('PIL')
 @importorskip('matplotlib')
 def test_pil_no_matplotlib(pyi_builder):
     """
