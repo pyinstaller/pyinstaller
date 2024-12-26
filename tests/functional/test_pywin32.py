@@ -11,7 +11,7 @@
 
 import pytest
 
-from PyInstaller.utils.tests import importorskip
+from PyInstaller.utils.tests import importorskip, onedir_only
 from PyInstaller.utils.hooks import can_import_module
 
 
@@ -106,7 +106,7 @@ from PyInstaller.utils.hooks import can_import_module
         'pythoncom',
     )
 )
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_pywin32_imports(pyi_builder, module):
     if not can_import_module(module):
         pytest.skip(f"Module '{module}' cannot be imported.")

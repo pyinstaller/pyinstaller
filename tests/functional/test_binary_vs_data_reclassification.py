@@ -14,6 +14,7 @@
 import pytest
 
 import PyInstaller.utils.misc as miscutils
+from PyInstaller.utils.tests import onedir_only
 
 
 # Helpers
@@ -60,7 +61,7 @@ def _create_test_build(pyi_builder, tmp_path, datas=None, binaries=None):
 @pytest.mark.linux
 @pytest.mark.win32
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_automatic_reclassification_data_file(pyi_builder, tmp_path):
     binaries = []
 
@@ -86,7 +87,7 @@ def test_automatic_reclassification_data_file(pyi_builder, tmp_path):
 @pytest.mark.linux
 @pytest.mark.win32
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_automatic_reclassification_binary(pyi_builder, tmp_path):
     datas = []
 

@@ -27,7 +27,7 @@ import pathlib
 import pytest
 
 from PyInstaller.compat import exec_python_rc
-from PyInstaller.utils.tests import importable
+from PyInstaller.utils.tests import importable, onedir_only, onefile_only
 
 # Directory with testing modules used in some tests.
 _MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
@@ -98,9 +98,8 @@ def test_pkgutil_iter_modules(package, script_dir, tmp_path, pyi_builder, archiv
 # ensure proper matching.
 # The test is applicable only to macOS in onefile mode.
 @pytest.mark.darwin
+@onefile_only
 def test_pkgutil_iter_modules_resolve_pkg_path(script_dir, tmp_path, pyi_builder):
-    if pyi_builder._mode != 'onefile':
-        pytest.skip('The test is applicable only to onefile mode.')
     # A single combination (altgraph package, archive mode) is enough to check for proper symlink handling.
     test_pkgutil_iter_modules('json', script_dir, tmp_path, pyi_builder, archive=True, resolve_pkg_path=True)
 
@@ -118,10 +117,8 @@ def test_pkgutil_iter_modules_resolve_pkg_path(script_dir, tmp_path, pyi_builder
 # data and binary files, the directory is created in both Contents/Frameworks and Contents/Resources, and the contents
 # are cross-linked between them on file level.
 @pytest.mark.darwin
+@onedir_only
 def test_pkgutil_iter_modules_macos_app_bundle(script_dir, tmp_path, pyi_builder, monkeypatch):
-    if pyi_builder._mode != 'onedir':
-        pytest.skip('The test is applicable only to onedir mode.')
-
     pathex = _MODULES_DIR / 'pyi_pkgutil_itermodules' / 'package'
     hooks_dir = _MODULES_DIR / 'pyi_pkgutil_itermodules' / 'hooks'
     package = 'mypackage'
@@ -181,10 +178,8 @@ def test_pkgutil_iter_modules_macos_app_bundle(script_dir, tmp_path, pyi_builder
 #
 # This is more explicit version of test_pkgutil_iter_modules_macos_app_bundle, just in case.
 @pytest.mark.darwin
+@onedir_only
 def test_pkgutil_iter_modules_macos_app_bundle_alternative_search_path(pyi_builder):
-    if pyi_builder._mode != 'onedir':
-        pytest.skip('The test is applicable only to onedir mode.')
-
     pyi_builder.test_source(
         """
         import os

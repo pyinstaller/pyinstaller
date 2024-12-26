@@ -20,7 +20,7 @@ import re
 import pytest
 
 from PyInstaller.compat import is_darwin, is_win
-from PyInstaller.utils.tests import importorskip, skipif, xfail
+from PyInstaller.utils.tests import importorskip, skipif, xfail, onedir_only, onefile_only
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -52,16 +52,13 @@ def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name, tmp_path, spec
     pyi_builder_spec.test_spec(str(spec_file), app_name=symlink_name)
 
 
+@onedir_only
 def test_pyz_as_external_file(pyi_builder, monkeypatch):
     # This tests the not well documented and seldom used feature of having the PYZ-archive in a separate file (.pkg).
 
     def MyEXE(*args, **kwargs):
         kwargs['append_pkg'] = False
         return EXE(*args, **kwargs)
-
-    # :todo: find a better way to not even run this test in onefile-mode
-    if pyi_builder._mode == 'onefile':
-        pytest.skip('only --onedir')
 
     import PyInstaller.building.build_main
     EXE = PyInstaller.building.build_main.EXE
@@ -628,25 +625,25 @@ def test_arbitrary_ext(pyi_builder):
     pyi_builder.test_script('pyi_arbitrary_ext.foo')
 
 
+@onefile_only
 def test_option_runtime_tmpdir(pyi_builder):
     """
-    Test to ensure that option `runtime_tmpdir` can be set and has effect.
+    Test to ensure that option `runtime_tmpdir` can be set and has effect. Applicable to onefile builds only.
     """
 
     pyi_builder.test_source(
         """
-        print('test - runtime_tmpdir - custom runtime temporary directory')
         import os
         import sys
 
         cwd = os.path.abspath(os.getcwd())
         runtime_tmpdir = os.path.abspath(sys._MEIPASS)
-        # for onedir mode, runtime_tmpdir == cwd
-        # for onefile mode, os.path.dirname(runtime_tmpdir) == cwd
-        if not runtime_tmpdir == cwd and not os.path.dirname(runtime_tmpdir) == cwd:
-            raise SystemExit('Expected sys._MEIPASS to be under current working dir.'
-                             ' sys._MEIPASS = ' + runtime_tmpdir + ', cwd = ' + cwd)
-        print('test - done')
+
+        # With --runtime-tmpdir=., we expect the application to unpack itself into cwd/_MEIXXXX directory.
+        if os.path.dirname(runtime_tmpdir) != cwd:
+            raise SystemExit(
+                f'Expected sys._MEIPASS ({sys._MEIPASS}) to be under current working dir ({cwd}).'
+            )
         """,
         # Set runtime-tmpdir to current working dir
         pyi_args=['--runtime-tmpdir', '.']
@@ -701,14 +698,12 @@ def test_pe_checksum(pyi_builder):
         assert header_sum.value == checksum.value
 
 
+@onefile_only
 def test_onefile_longpath(pyi_builder, tmp_path):
     """
     Verify that files with paths longer than 260 characters are correctly extracted from the onefile build.
     See issue #5615."
     """
-    # The test is relevant only for onefile builds
-    if pyi_builder._mode != 'onefile':
-        pytest.skip('The test is relevant only to onefile builds.')
     # Create data file with secret
     _SECRET = 'LongDataPath'
     src_path = tmp_path / 'data.txt'
@@ -854,13 +849,11 @@ def test_package_entry_point_name_collision(pyi_builder):
     assert re.findall("Running (.*) as (.*)", p.stdout) == expected
 
 
+@onedir_only
 def test_contents_directory(pyi_builder):
     """
     Test the --contents-directory option, including changing it without --clean.
     """
-    if pyi_builder._mode != 'onedir':
-        pytest.skip('--contents-directory does not affect onefile builds.')
-
     pyi_builder.test_source("", pyi_args=["--contents-directory", "foo"])
     exe, = pyi_builder._find_executables("test_source")
     bundle = pathlib.Path(exe).parent
@@ -874,13 +867,11 @@ def test_contents_directory(pyi_builder):
         pyi_builder.test_source("", pyi_args=["--contents-directory", "..", "--noconfirm"])
 
 
+@onedir_only
 def test_legacy_onedir_layout(pyi_builder):
     """
     Test the --contents-directory=., which re-enables the legacy onedir layout.
     """
-    if pyi_builder._mode != 'onedir':
-        pytest.skip('--contents-directory does not affect onefile builds.')
-
     pyi_builder.test_source(
         """
         import sys
@@ -896,24 +887,21 @@ def test_legacy_onedir_layout(pyi_builder):
     )
 
 
-def test_spec_options(pyi_builder, spec_dir, capsys):
-    if pyi_builder._mode != 'onedir':
-        pytest.skip('spec file is onedir mode only')
-
-    pyi_builder.test_spec(
+def test_spec_options(pyi_builder_spec, spec_dir, capsys):
+    pyi_builder_spec.test_spec(
         spec_dir / "pyi_spec_options.spec",
         pyi_args=["--", "--optional-dependency", "email", "--optional-dependency", "gzip"]
     )
-    exe, = pyi_builder._find_executables("pyi_spec_options")
+    exe, = pyi_builder_spec._find_executables("pyi_spec_options")
     p = subprocess.run([exe], stdout=subprocess.PIPE, encoding="utf-8")
     assert p.stdout == "Available dependencies: email gzip\n"
 
     capsys.readouterr()
     with pytest.raises(SystemExit) as ex:
-        pyi_builder.test_spec(spec_dir / "pyi_spec_options.spec", pyi_args=["--", "--help"])
+        pyi_builder_spec.test_spec(spec_dir / "pyi_spec_options.spec", pyi_args=["--", "--help"])
     assert ex.value.code == 0
     assert "help blah blah blah" in capsys.readouterr().out
 
     with pytest.raises(SystemExit) as ex:
-        pyi_builder.test_spec(spec_dir / "pyi_spec_options.spec", pyi_args=["--", "--onefile"])
+        pyi_builder_spec.test_spec(spec_dir / "pyi_spec_options.spec", pyi_args=["--", "--onefile"])
     assert "pyi_spec_options.spec: error: unrecognized arguments: --onefile" in capsys.readouterr().err

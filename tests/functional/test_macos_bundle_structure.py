@@ -16,7 +16,7 @@ import plistlib
 
 import pytest
 
-from PyInstaller.utils.tests import importorskip
+from PyInstaller.utils.tests import importorskip, onedir_only
 from PyInstaller.building.osx import DOT_REPLACEMENT
 
 # NOTE: the tests below explicitly enable the following environment variables:
@@ -29,7 +29,7 @@ from PyInstaller.building.osx import DOT_REPLACEMENT
 # Test that collected metadata is properly relocated to avoid codesign errors due to directory containing dots in name.
 @pytest.mark.darwin
 @importorskip('psutil')
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_signing_metadata(pyi_builder, monkeypatch):
     monkeypatch.setenv("PYINSTALLER_STRICT_BUNDLE_CODESIGN_ERROR", "1")
     monkeypatch.setenv("PYINSTALLER_VERIFY_BUNDLE_SIGNATURE", "1")
@@ -42,7 +42,7 @@ def test_macos_bundle_signing_metadata(pyi_builder, monkeypatch):
 # Test that the bundle signing works even if we collect a package as source .py files, which we do not relocate.
 @pytest.mark.darwin
 @importorskip('psutil')
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_signing_py_files(pyi_builder, monkeypatch):
     monkeypatch.setenv("PYINSTALLER_STRICT_BUNDLE_CODESIGN_ERROR", "1")
     monkeypatch.setenv("PYINSTALLER_VERIFY_BUNDLE_SIGNATURE", "1")
@@ -64,7 +64,7 @@ def test_macos_bundle_signing_py_files(pyi_builder, monkeypatch):
 # Test that the codesigning works even if we collect a package as .pyc files, which we do not relocate.
 @pytest.mark.darwin
 @importorskip('psutil')
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_signing_pyc_files(pyi_builder, monkeypatch):
     monkeypatch.setenv("PYINSTALLER_STRICT_BUNDLE_CODESIGN_ERROR", "1")
     monkeypatch.setenv("PYINSTALLER_VERIFY_BUNDLE_SIGNATURE", "1")
@@ -148,7 +148,7 @@ def _create_test_framework(bundle_path):
 
 # Test that top-level data file is relocated into `Contents/Resources` and symlinked back into `Contents/Frameworks`.
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_data_file(pyi_builder, monkeypatch, tmp_path):
     datas = []
 
@@ -172,7 +172,7 @@ def test_macos_bundle_layout_data_file(pyi_builder, monkeypatch, tmp_path):
 
 # Test that top-level binary is kept in `Contents/Frameworks` and symlinked into `Contents/Resources`.
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_binary(pyi_builder, monkeypatch, tmp_path):
     binaries = []
 
@@ -196,7 +196,7 @@ def test_macos_bundle_layout_binary(pyi_builder, monkeypatch, tmp_path):
 
 # Test that data-only directory is relocated into `Contents/Resources` and symlinked back into `Contents/Frameworks`.
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_data_only_dir(pyi_builder, monkeypatch, tmp_path):
     datas = []
 
@@ -247,7 +247,7 @@ def test_macos_bundle_layout_data_only_dir(pyi_builder, monkeypatch, tmp_path):
 
 # Test that binary-only directory is kept in `Contents/Frameworks` and symlinked into `Contents/Resources`.
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_binary_only_dir(pyi_builder, monkeypatch, tmp_path):
     binaries = []
 
@@ -299,7 +299,7 @@ def test_macos_bundle_layout_binary_only_dir(pyi_builder, monkeypatch, tmp_path)
 # Test that mxied-content directory is created in both `Contents/Frameworks` and `Contents/Resources`, and that files
 # are put into the proper directory and cross-linked into the other directory.
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_mixed_dir(pyi_builder, monkeypatch, tmp_path):
     datas = []
     binaries = []
@@ -353,7 +353,7 @@ def test_macos_bundle_layout_mixed_dir(pyi_builder, monkeypatch, tmp_path):
 # Repeat the test with mixed-content directory, except that it now contains three sub-directories: a data-only one,
 # a binary-only one, and mixed-content one.
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_mixed_dir_with_subdirs(pyi_builder, monkeypatch, tmp_path):
     datas = []
     binaries = []
@@ -474,7 +474,7 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs(pyi_builder, monkeypatch, tm
 # Repeat the test with mixed-content directory and sub-directories, except that all directories now contain a dot in
 # their names.
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_mixed_dir_with_subdirs_and_dots(pyi_builder, monkeypatch, tmp_path):
     datas = []
     binaries = []
@@ -632,7 +632,7 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs_and_dots(pyi_builder, monkey
 
 # Test with symlink in top-level directory pointing to a data file in data-only directory.
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_symlink_into_data_dir(pyi_builder, monkeypatch, tmp_path):
     datas = []
 
@@ -686,7 +686,7 @@ def test_macos_bundle_layout_symlink_into_data_dir(pyi_builder, monkeypatch, tmp
 
 # Test with symlink in top-level directory pointing to a binary in binary-only directory.
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_symlink_into_binary_dir(pyi_builder, monkeypatch, tmp_path):
     binaries = []
 
@@ -740,7 +740,7 @@ def test_macos_bundle_layout_symlink_into_binary_dir(pyi_builder, monkeypatch, t
 
 # Test with symlinks in top-level directory pointing to files in mixed-content directory.
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_symlink_into_mixed_dir(pyi_builder, monkeypatch, tmp_path):
     datas = []
     binaries = []
@@ -829,7 +829,7 @@ def test_macos_bundle_layout_symlink_into_mixed_dir(pyi_builder, monkeypatch, tm
 # This implicitly also tests that we do not replace the dot in the .framework bundle's directory name (the .framework
 # bundle directories are the only directories in `Contents/Frameworks` that are allowed to have a dot in name).
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_framework_in_top_level(pyi_builder, monkeypatch, tmp_path):
     datas = []
     binaries = []
@@ -940,7 +940,7 @@ def test_macos_bundle_layout_framework_in_top_level(pyi_builder, monkeypatch, tm
 
 # Test with .framework bundle in binary-only directory and framework's binary symlinked to top-level directory.
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, tmp_path):
     datas = []
     binaries = []
@@ -1079,7 +1079,7 @@ def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, t
 # This also tests that a directory is recognized as a mixed-content one if it contains a data file and a .framework
 # bundle (i.e., no other binary files).
 @pytest.mark.darwin
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)  # Run only in onedir mode.
+@onedir_only
 def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tmp_path):
     datas = []
     binaries = []

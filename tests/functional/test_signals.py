@@ -15,11 +15,13 @@ import subprocess
 
 import pytest
 
+from PyInstaller.utils.tests import onefile_only
+
 
 @pytest.mark.darwin
 @pytest.mark.linux
 @pytest.mark.parametrize('forward_signals', [True, False], ids=['forward', 'ignore'])
-@pytest.mark.parametrize('pyi_builder', ['onefile'], indirect=True)  # Run only in onefile mode.
+@onefile_only
 def test_onefile_signal_handling(pyi_builder, forward_signals):
     # Build the test program. The `pyi_builder.test_soruce` also runs the built program, but since no arguments are
     # passed via command-line, this program run is a no-op.

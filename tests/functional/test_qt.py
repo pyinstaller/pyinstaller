@@ -17,7 +17,7 @@ from PyInstaller import isolated
 from PyInstaller.compat import is_win, is_darwin, is_linux
 from PyInstaller.utils.hooks import check_requirement, can_import_module
 from PyInstaller.utils.hooks.qt import get_qt_library_info
-from PyInstaller.utils.tests import importorskip, requires, skipif
+from PyInstaller.utils.tests import importorskip, requires, skipif, onedir_only
 
 
 def qt_param(qt_flavor, *args, **kwargs):
@@ -671,27 +671,27 @@ def _test_qt_bindings_import(bindings, module, pyi_builder_onedir):
 
 @importorskip('PySide2')
 @pytest.mark.parametrize('module', _list_all_qt_submodules('PySide2'))
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+@onedir_only
 def test_qt_module_import_PySide2(module, pyi_builder):
     _test_qt_bindings_import("PySide2", module, pyi_builder)
 
 
 @importorskip('PySide6')
 @pytest.mark.parametrize('module', _list_all_qt_submodules('PySide6'))
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+@onedir_only
 def test_qt_module_import_PySide6(module, pyi_builder):
     _test_qt_bindings_import("PySide6", module, pyi_builder)
 
 
 @importorskip('PyQt5')
 @pytest.mark.parametrize('module', _list_all_qt_submodules('PyQt5'))
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+@onedir_only
 def test_qt_module_import_PyQt5(module, pyi_builder):
     _test_qt_bindings_import("PyQt5", module, pyi_builder)
 
 
 @importorskip('PyQt6')
 @pytest.mark.parametrize('module', _list_all_qt_submodules('PyQt6'))
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+@onedir_only
 def test_qt_module_import_PyQt6(module, pyi_builder):
     _test_qt_bindings_import("PyQt6", module, pyi_builder)

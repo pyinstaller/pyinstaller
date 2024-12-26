@@ -26,6 +26,10 @@ skipif = pytest.mark.skipif
 xfail = pytest.mark.xfail
 skip = pytest.mark.skip
 
+# Use these decorators to use the `pyi_builder` fixture only in onedir or only in onefile mode instead of both.
+onedir_only = pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+onefile_only = pytest.mark.parametrize('pyi_builder', ['onefile'], indirect=True)
+
 
 def importorskip(package: str):
     """

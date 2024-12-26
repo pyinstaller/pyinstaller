@@ -17,6 +17,7 @@ import json
 import pytest
 
 from PyInstaller import compat
+from PyInstaller.utils.tests import onefile_only
 
 # Directory with testing modules used in some tests.
 _MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
@@ -178,10 +179,8 @@ def test_disable_hash_randomization(pyi_builder):
 
 
 # Test that onefile cleanup does not remove contents of a directory that user symlinks into sys._MEIPASS (see #6074).
+@onefile_only
 def test_onefile_cleanup_symlinked_dir(pyi_builder, tmp_path):
-    if pyi_builder._mode != 'onefile':
-        pytest.skip('The test is relevant only to onefile builds.')
-
     # Create output directory with five pre-existing files
     output_dir = tmp_path / 'output_dir'
     output_dir.mkdir()

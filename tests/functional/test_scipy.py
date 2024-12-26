@@ -16,7 +16,7 @@ import sys
 
 import pytest
 
-from PyInstaller.utils.tests import importorskip, xfail
+from PyInstaller.utils.tests import importorskip, xfail, onedir_only
 
 pytestmark = [
     importorskip('scipy'),
@@ -52,7 +52,7 @@ pytestmark = [
         'scipy.stats',
     ]
 )
-@pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+@onedir_only
 def test_scipy(pyi_builder, module):
     pyi_builder.test_source(f"""
         import {module}
