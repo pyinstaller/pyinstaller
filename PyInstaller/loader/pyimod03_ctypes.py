@@ -118,7 +118,7 @@ def install():
         ctypes.util.find_library = pyinstaller_find_library
 
 
-# On Mac OS insert sys._MEIPASS in the first position of the list of paths that ctypes uses to search for libraries.
+# On macOS insert sys._MEIPASS in the first position of the list of paths that ctypes uses to search for libraries.
 #
 # Note: 'ctypes' module will NOT be bundled with every app because code in this module is not scanned for module
 #       dependencies. It is safe to wrap 'ctypes' module into 'try/except ImportError' block.

@@ -135,7 +135,7 @@ class TestCollectSubmodules(object):
         mod_list.sort()
         assert mod_list == [
             TEST_MOD,
-            # Python extensions end with '.pyd' on Windows and with  '.so' on Linux, Mac OS, and other OSes.
+            # Python extensions end with '.pyd' on Windows and with  '.so' on Linux, macOS, and other OSes.
             TEST_MOD + '.pyextension',
             #TEST_MOD + '.raises_error_on_import_1',
             #TEST_MOD + '.raises_error_on_import_2',

@@ -177,7 +177,7 @@ def get_homebrew_path(formula: str = ''):
     except subprocess.CalledProcessError:
         logger.debug('homebrew formula "%s" not installed' % formula)
     if path:
-        return path.decode('utf8')  # Mac OS filenames are UTF-8
+        return path.decode('utf8')  # macOS filenames are UTF-8
     else:
         return None
 

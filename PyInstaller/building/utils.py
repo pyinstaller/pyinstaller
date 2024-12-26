@@ -302,7 +302,7 @@ def process_collected_binary(
     # the binary's location (i.e., @loader_path).
     #
     # While modifying the headers invalidates existing signatures, we avoid removing them in order to speed things up
-    # (and to avoid potential bugs in the codesign utility, like the one reported on Mac OS 10.13 in #6167).
+    # (and to avoid potential bugs in the codesign utility, like the one reported on macOS 10.13 in #6167).
     # The forced re-signing at the end should take care of the invalidated signatures.
     if is_darwin:
         try:

@@ -297,9 +297,9 @@ def set_arch_flags(ctx):
         # Treat linker warnings as errors
         ctx.env.append_value('LINKFLAGS', '/WX')
 
-    # Ensure proper architecture flags on Mac OS.
+    # Ensure proper architecture flags on macOS.
     elif ctx.env.DEST_OS == 'darwin':
-        # Default compiler on Mac OS X is Clang, which does not have '-m32' and '-m64' flags.
+        # Default compiler on macOS is Clang, which does not have '-m32' and '-m64' flags.
         if ctx.env.PYI_ARCH == '32bit':
             mac_arch = ['-arch', 'i386']
         else:
@@ -450,7 +450,7 @@ def configure(ctx):
             )
 
     if ctx.env.DEST_OS == 'darwin':
-        # macOS 10.13 is the oldest version supported by Apple. According to OS X docs, setting the
+        # macOS 10.13 is the oldest version supported by Apple. According to macOS docs, setting the
         # MACOSX_DEPLOYMENT_TARGET environment variable is equivalent to the following gcc option:
         # -mmacosx-version-min=10.13
         #
@@ -539,8 +539,8 @@ def configure(ctx):
             #     _BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE
             ctx.env.append_value('DEFINES', '_DEFAULT_SOURCE')
 
-            # TODO: What other platforms support _FORTIFY_SOURCE macro? OS X?
-            # TODO: OS X's CLang appears to support this macro as well. See:
+            # TODO: What other platforms support _FORTIFY_SOURCE macro? macOS?
+            # TODO: macOS's CLang appears to support this macro as well. See:
             # https://marc.info/?l=cfe-dev&m=122032133830183
 
             # For security, enable the _FORTIFY_SOURCE macro detecting buffer overflows in various string and memory
@@ -553,7 +553,7 @@ def configure(ctx):
 
                 # Define this macro.
                 ctx.env.append_value('DEFINES', '_FORTIFY_SOURCE=2')
-        # On Mac OS X, mkdtemp() is available only with _DARWIN_C_SOURCE.
+        # On macOS, mkdtemp() is available only with _DARWIN_C_SOURCE.
         elif ctx.env.DEST_OS == 'darwin':
             ctx.env.append_value('DEFINES', '_DARWIN_C_SOURCE')
 
@@ -727,7 +727,7 @@ def configure(ctx):
                 ctx.env.append_value('LINKFLAGS', '-Wl,--stack,2000000')
 
     # On linux link only with needed libraries.
-    # On some platforms (Mac OS, Solaris, AIX), -Wl,--as-needed is detected as supported during configuration,
+    # On some platforms (macOS, Solaris, AIX), -Wl,--as-needed is detected as supported during configuration,
     # but fails during build. So use it only with linux.
     if ctx.env.DEST_OS == 'linux' and ctx.check_cc(linkflags='-Wl,--as-needed', mandatory=False):
         ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
@@ -772,7 +772,7 @@ def configure(ctx):
                 # default 6.00 (x86, x64) and 6.02 (ARM) should be fine for our purposes.
                 ctx.env.append_value('LINKFLAGS', '/SUBSYSTEM:WINDOWS')
         elif ctx.env.DEST_OS == 'darwin':
-            # To support catching AppleEvents and running as ordinary Mac OS GUI app, we have to link against the
+            # To support catching AppleEvents and running as ordinary macOS GUI app, we have to link against the
             # Carbon framework. This linkage only needs to be there for the windowed bootloaders.
             ctx.env.append_value('LINKFLAGS', '-framework')
             ctx.env.append_value('LINKFLAGS', 'Carbon')
@@ -844,7 +844,7 @@ def build(ctx):
             features=features
         )
     else:
-        # Linux, Darwin (MacOSX), ...
+        # Linux, Darwin (macOS), ...
         # Only the libs found will actually be used, so it's safe to list all here. The decision if a lib is required
         # for a specific platform is made in the configure phase.
         libs = [
@@ -895,7 +895,7 @@ class make_all(BuildContext):
 
     def execute_build(ctx):
         Options.commands = ['build_debug', 'build_release']
-        # On Windows and Mac OS we also need console/windowed bootloaders. On other platforms they make no sense.
+        # On Windows and macOS we also need console/windowed bootloaders. On other platforms they make no sense.
         if ctx.env.DEST_OS in ('win32', 'darwin'):
             Options.commands += ['build_debugw', 'build_releasew']
         # Install bootloaders.

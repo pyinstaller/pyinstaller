@@ -274,7 +274,7 @@ def _resolveCtypesImports(cbinaries):
         if compat.is_unix:
             # CAVEAT: find_library() is not the correct function. ctype's documentation says that it is meant to resolve
             # only the filename (as a *compiler* does) not the full path. Anyway, it works well enough on Windows and
-            # Mac OS. On Linux, we need to implement more code to find out the full path.
+            # macOS. On Linux, we need to implement more code to find out the full path.
             if cpath is None:
                 cpath = cbin
             # "man ld.so" says that we should first search LD_LIBRARY_PATH and then the ldcache.

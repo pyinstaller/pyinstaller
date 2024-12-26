@@ -282,7 +282,7 @@ class TclTkInfo:
     @staticmethod
     def _check_macos_system_framework(tcl_shared_lib):
         # Starting with macOS 11, system libraries are hidden (unless both Python and PyInstaller's bootloader are built
-        # against MacOS 11.x SDK). Therefore, Tcl shared library might end up unresolved (None); but that implicitly
+        # against macOS 11.x SDK). Therefore, Tcl shared library might end up unresolved (None); but that implicitly
         # indicates that the system framework is used.
         if tcl_shared_lib is None:
             return True

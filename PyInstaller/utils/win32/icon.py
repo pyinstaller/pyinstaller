@@ -10,7 +10,7 @@
 #-----------------------------------------------------------------------------
 """
 The code in this module supports the --icon parameter on Windows.
-(For --icon support under Mac OS, see building/osx.py.)
+(For --icon support under macOS, see building/osx.py.)
 
 The only entry point, called from api.py, is CopyIcons(), below. All the elaborate structure of classes that follows
 is used to support the operation of CopyIcons_FromIco(). None of these classes and globals are referenced outside

@@ -18,7 +18,7 @@ def _pyi_rthook():
 
     pixbuf_file = os.path.join(sys._MEIPASS, 'lib', 'gdk-pixbuf', 'loaders.cache')
 
-    # If we are not on Windows, we need to rewrite the cache -> we rewrite on Mac OS to support --onefile mode
+    # If we are not on Windows, we need to rewrite the cache -> we rewrite on macOS to support --onefile mode
     if os.path.exists(pixbuf_file) and sys.platform != 'win32':
         with open(pixbuf_file, 'rb') as fp:
             contents = fp.read()

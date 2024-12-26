@@ -167,7 +167,7 @@ def gir_library_path_fix(path):
 
     path = os.path.abspath(path)
 
-    # On Mac OS we need to recompile the GIR files to reference the loader path,
+    # On macOS we need to recompile the GIR files to reference the loader path,
     # but this is not necessary on other platforms.
     if compat.is_darwin:
 

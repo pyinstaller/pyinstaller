@@ -49,7 +49,7 @@ def packages_clang11_debianoid
 end
 
 def packages_debianoid
-  # This always also installs the software for cross-building for OS X and
+  # This always also installs the software for cross-building for macOS and
   # Windows. Differentiating here is most probably not worth the effort.
   return <<-EOF
     dpkg --add-architecture i386
@@ -323,7 +323,7 @@ Vagrant.configure(2) do |config|
       # We need clang-11 to build universal2 bootloader.
       b.vm.provision "packages clang11 debianoid", :type => :shell, :inline => packages_clang11_debianoid, :keep_color => true
       if (not File.exist?("_sdks/osx/osxcross.tar.xz"))
-        abort("\nERROR: OS X cross SDK is missing. Please run once the "\
+        abort("\nERROR: macOS cross SDK is missing. Please run once the "\
               "`build-osxcross` machine.\n\n")
       end
       b.vm.provision "build bootloader for osx",

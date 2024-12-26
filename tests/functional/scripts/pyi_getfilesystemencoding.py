@@ -17,7 +17,7 @@ frozen_encoding = str(sys.getfilesystemencoding())
 if sys.platform.startswith('win'):
     # See PEP 529 for more information.
     encoding = 'utf-8'
-# On Mac OS X the value should be still the same.
+# On macOS the value should be still the same.
 elif sys.platform.startswith('darwin'):
     encoding = 'utf-8'
 # On Linux and other unixes it should be usually 'utf-8'

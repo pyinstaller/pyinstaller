@@ -353,7 +353,7 @@ def test_set_icon(pyi_builder, data_dir):
     if is_win:
         args = ['--icon', str(data_dir / 'pyi_icon.ico')]
     elif is_darwin:
-        # On OS X icon is applied only for windowed mode.
+        # On macOS icon is applied only for windowed mode.
         args = ['--windowed', '--icon', str(data_dir / 'pyi_icon.icns')]
     else:
         pytest.skip('option --icon works only on Windows and macOS')

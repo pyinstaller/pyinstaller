@@ -96,7 +96,7 @@ PyInstaller/bootloader/*
 !PyInstaller/bootloader/Windows-64bit-intel/
 !PyInstaller/bootloader/images/
 
-# Mac OS X
+# macOS
 .DS_store
 
 # Windows debug symbols

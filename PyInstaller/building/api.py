@@ -373,7 +373,7 @@ class EXE(Target):
                 process signals both the bootloader and the child (e.g., via a process group) to avoid signalling the
                 child twice.
             console
-                On Windows or Mac OS governs whether to use the console executable or the windowed executable. Always
+                On Windows or macOS governs whether to use the console executable or the windowed executable. Always
                 True on Linux/Unix (always console executable - it does not matter there).
             hide_console
                 Windows only. In console-enabled executable, hide or minimize the console window if the program owns the
@@ -394,7 +394,7 @@ class EXE(Target):
             exclude_binaries
                 Forwarded to the PKG the EXE builds.
             icon
-                Windows and Mac OS only. icon='myicon.ico' to use an icon file or icon='notepad.exe,0' to grab an icon
+                Windows and macOS only. icon='myicon.ico' to use an icon file or icon='notepad.exe,0' to grab an icon
                 resource. Defaults to use PyInstaller's console or windowed icon. Use icon=`NONE` to not add any icon.
             version
                 Windows only. version='myversion.txt'. Use grab_version.py to get a version resource from an executable
@@ -721,7 +721,7 @@ class EXE(Target):
         """
         Pick up the right bootloader file - debug, console, windowed.
         """
-        # Having console/windowed bootloader makes sense only on Windows and Mac OS.
+        # Having console/windowed bootloader makes sense only on Windows and macOS.
         if is_win or is_darwin:
             if not self.console:
                 exe = exe + 'w'

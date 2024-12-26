@@ -78,7 +78,7 @@ is_win_10 = is_win and (platform.win32_ver()[0] == '10')
 is_win_11 = is_win and (platform.win32_ver()[0] == '11')
 is_win_wine = False  # Running under Wine; determined later on.
 is_cygwin = sys.platform == 'cygwin'
-is_darwin = sys.platform == 'darwin'  # Mac OS X
+is_darwin = sys.platform == 'darwin'  # macOS
 
 # Unix platforms
 is_linux = sys.platform.startswith('linux')
@@ -89,7 +89,7 @@ is_openbsd = sys.platform.startswith('openbsd')
 is_hpux = sys.platform.startswith('hp-ux')
 
 # Some code parts are similar to several unix platforms (e.g. Linux, Solaris, AIX).
-# Mac OS is not considered as unix since there are many platform-specific details for Mac in PyInstaller.
+# macOS is not considered as unix since there are many platform-specific details for Mac in PyInstaller.
 is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
 
 # Linux distributions such as Alpine or OpenWRT use musl as their libc implementation and resultantly need specially
@@ -509,7 +509,7 @@ def exec_command_all(*cmdargs: str, encoding: str | None = None, **kwargs: int |
 def __wrap_python(args, kwargs):
     cmdargs = [sys.executable]
 
-    # Mac OS X supports universal binaries (binary for multiple architectures. We need to ensure that subprocess
+    # macOS supports universal binaries (binary for multiple architectures. We need to ensure that subprocess
     # binaries are running for the same architecture as python executable. It is necessary to run binaries with 'arch'
     # command.
     if is_darwin:
@@ -522,7 +522,7 @@ def __wrap_python(args, kwargs):
             py_prefix = ['arch', '-i386']
         else:
             py_prefix = []
-        # Since Mac OS 10.11, the environment variable DYLD_LIBRARY_PATH is no more inherited by child processes, so we
+        # Since macOS 10.11, the environment variable DYLD_LIBRARY_PATH is no more inherited by child processes, so we
         # proactively propagate the current value using the `-e` option of the `arch` command.
         if 'DYLD_LIBRARY_PATH' in os.environ:
             path = os.environ['DYLD_LIBRARY_PATH']

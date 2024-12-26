@@ -18,7 +18,7 @@ Directory Structure
   for Windows. On other platforms the bootloader uses zlib library from the
   system.
 * images
-  PyInstaller icons for Windows bootloaders and the .app bundle on Mac OS X.
+  PyInstaller icons for Windows bootloaders and the .app bundle on macOS.
 
 Build instructions
 ===============================

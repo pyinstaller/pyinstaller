@@ -138,7 +138,7 @@ Cross-Building for macOS
 -----------------------------------
 
 For cross-compiling for macOS you need the Clang/LLVM compiler, the
-`cctools` (ld, lipo, …), and the OSX SDK. Clang/LLVM is a cross compiler by
+`cctools` (ld, lipo, …), and the macOS SDK. Clang/LLVM is a cross compiler by
 default and is available on nearly every GNU/Linux distribution, so you just
 need a proper port of the cctools and the macOS SDK.
 
@@ -460,7 +460,7 @@ All guests [#]_ will automatically build the bootloader when running
 `vagrant up GUEST` or
 `vagrant provision GUEST`. They will build both 32- and 64-bit bootloaders.
 
-.. [#] Except of guest `osxcross`, which will build the OS X SDK and cctools
+.. [#] Except of guest `osxcross`, which will build the macOS SDK and cctools
        as described in section :ref:`cross-building for macos`.
 
 When building the bootloaders, the guests are sharing
@@ -517,7 +517,7 @@ We currently provide this guests:
                       some cases you need to enter the password (which is
                       `Passw0rd!`).
 
-:build-osxcross: GNU/Linux guest used to build the OS X SDK and `cctools` as
+:build-osxcross: GNU/Linux guest used to build the macOS SDK and `cctools` as
                  described in section :ref:`cross-building for macos`.
 
 

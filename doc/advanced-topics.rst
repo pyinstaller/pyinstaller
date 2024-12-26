@@ -47,7 +47,7 @@ A. First process: bootloader starts.
 
        - AIX: same thing, but using LIBPATH and LIBPATH_ORIG.
 
-       - OSX: unset DYLD_LIBRARY_PATH.
+       - macOS: unset DYLD_LIBRARY_PATH.
 
     3. Set up to handle signals for both processes.
 

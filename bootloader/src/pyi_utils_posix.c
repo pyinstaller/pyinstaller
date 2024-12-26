@@ -52,7 +52,7 @@
 #endif
 
 #ifndef SIGCLD
-    #define SIGCLD SIGCHLD /* not defined on OS X */
+    #define SIGCLD SIGCHLD /* not defined on macOS */
 #endif
 
 #ifndef sighandler_t

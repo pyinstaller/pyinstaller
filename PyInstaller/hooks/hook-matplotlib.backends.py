@@ -169,7 +169,7 @@ def _collect_all_importable_backends(hook_api):
     # List of backends to exclude; Qt4 is not supported by PyInstaller anymore.
     exclude_backends = {'Qt4Agg', 'Qt4Cairo'}
 
-    # Ignore "CocoaAgg" on OSes other than Mac OS; attempting to import it on other OSes halts the current
+    # Ignore "CocoaAgg" on OSes other than macOS; attempting to import it on other OSes halts the current
     # (sub)process without printing output or raising exceptions, preventing reliable detection. Apply the
     # same logic for the (newer) "MacOSX" backend.
     if not is_darwin:

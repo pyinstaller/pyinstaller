@@ -994,7 +994,7 @@ _pyi_resolve_executable_macos(char *executable_filename)
     char program_path[PYI_PATH_MAX];
     uint32_t name_length = sizeof(program_path);
 
-    /* Mac OS X has special function to obtain path to executable.
+    /* macOS has special function to obtain path to executable.
      * This may return a symbolic link. */
     if (_NSGetExecutablePath(program_path, &name_length) != 0) {
         PYI_ERROR("Failed to obtain executable path via _NSGetExecutablePath!\n");

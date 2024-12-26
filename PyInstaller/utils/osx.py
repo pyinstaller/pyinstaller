@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 """
-Utils for Mac OS platform.
+Utils for macOS platform.
 """
 
 import math
@@ -167,10 +167,10 @@ def fix_exe_for_code_signing(filename):
     """
     Fixes the Mach-O headers to make code signing possible.
 
-    Code signing on Mac OS does not work out of the box with embedding .pkg archive into the executable.
+    Code signing on macOS does not work out of the box with embedding .pkg archive into the executable.
 
     The fix is done this way:
-    - Make the embedded .pkg archive part of the Mach-O 'String Table'. 'String Table' is at end of the Mac OS exe file,
+    - Make the embedded .pkg archive part of the Mach-O 'String Table'. 'String Table' is at end of the macOS exe file,
       so just change the size of the table to cover the end of the file.
     - Fix the size of the __LINKEDIT segment.
 
@@ -209,7 +209,7 @@ def fix_exe_for_code_signing(filename):
     # segment. Therefore, the end of SYMTAB section should be aligned with the end of __LINKEDIT segment, and in turn
     # both should be aligned with the end of the file (as we are in the last or the only arch slice).
     #
-    # However, when removing the signature from the executable using codesign under Mac OS 10.13, the codesign utility
+    # However, when removing the signature from the executable using codesign under macOS 10.13, the codesign utility
     # may produce an invalid file, with the declared length of the __LINKEDIT segment (linkedit_seg.filesize) pointing
     # beyond the end of file, as reported in issue #6167.
     #

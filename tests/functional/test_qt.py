@@ -319,7 +319,7 @@ def test_Qt_Ui_file(pyi_builder, data_dir, QtPyLib):
 @requires('PyQt5')
 @pytest.mark.skipif(
     check_requirement('PyQt5 == 5.11.3') and is_darwin,
-    reason='This version of the OS X wheel does not include QWebEngine.'
+    reason='This version of the macOS wheel does not include QWebEngine.'
 )
 def test_PyQt5_Qt(pyi_builder):
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo', **USE_WINDOWED_KWARG)

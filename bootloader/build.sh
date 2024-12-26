@@ -13,7 +13,7 @@
 cd $(dirname "$0")
 
 if [ ! -r "_sdks/osx/osxcross.tar.xz" ] ; then
-	echo "Building the OS X SDK and cctools"
+	echo "Building the macOS SDK and cctools"
 	vagrant up --no-provision build-osxcross
 	vagrant provision build-osxcross
 	vagrant destroy builx-osxcross
@@ -25,7 +25,7 @@ vagrant up --no-provision linux64 windows10
 
 # build the bootloaders
 vagrant provision linux64            # GNU/Linux bootloaders
-TARGET=OSX vagrant provision linux64 # OS X bootloaders
+TARGET=OSX vagrant provision linux64 # macOS bootloaders
 vagrant provision windows10          # Windows bootloaders (using msvc)
 
 # verify the bootloaders have been built

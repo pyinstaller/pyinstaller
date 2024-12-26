@@ -34,7 +34,7 @@ class BUNDLE(Target):
     def __init__(self, *args, **kwargs):
         from PyInstaller.config import CONF
 
-        # BUNDLE only has a sense under Mac OS, it's a noop on other platforms
+        # BUNDLE only has a sense under macOS, it is a noop on other platforms.
         if not is_darwin:
             return
 
@@ -569,7 +569,7 @@ class BUNDLE(Target):
 
             # Required by 'codesign' utility.
             # The value for CFBundleIdentifier is used as the default unique name of your program for Code Signing
-            # purposes. It even identifies the APP for access to restricted OS X areas like Keychain.
+            # purposes. It even identifies the APP for access to restricted macOS areas like Keychain.
             #
             # The identifier used for signing must be globally unique. The usual form for this identifier is a
             # hierarchical name in reverse DNS notation, starting with the toplevel domain, followed by the company

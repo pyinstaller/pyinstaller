@@ -483,7 +483,7 @@ def __add_options(parser):
         "multiple times.",
     )
 
-    g = parser.add_argument_group('Windows and Mac OS X specific options')
+    g = parser.add_argument_group('Windows and macOS specific options')
     g.add_argument(
         "-c",
         "--console",
@@ -501,8 +501,8 @@ def __add_options(parser):
         dest="console",
         action="store_false",
         default=None,
-        help="Windows and Mac OS X: do not provide a console window for standard i/o. On Mac OS this also triggers "
-        "building a Mac OS .app bundle. On Windows this option is automatically set if the first script is a '.pyw' "
+        help="Windows and macOS: do not provide a console window for standard i/o. On macOS this also triggers "
+        "building a macOS .app bundle. On Windows this option is automatically set if the first script is a '.pyw' "
         "file. This option is ignored on *NIX systems.",
     )
     g.add_argument(
@@ -520,7 +520,7 @@ def __add_options(parser):
         dest="icon_file",
         metavar='<FILE.ico or FILE.exe,ID or FILE.icns or Image or "NONE">',
         help="FILE.ico: apply the icon to a Windows executable. FILE.exe,ID: extract the icon with ID from an exe. "
-        "FILE.icns: apply the icon to the .app bundle on Mac OS. If an image file is entered that isn't in the "
+        "FILE.icns: apply the icon to the .app bundle on macOS. If an image file is entered that isn't in the "
         "platform format (ico on Windows, icns on Mac), PyInstaller tries to use Pillow to translate the icon into "
         "the correct format (if Pillow is installed). Use \"NONE\" to not apply any icon, thereby making the OS show "
         "some default (default: apply PyInstaller's icon). This option can be used multiple times.",
@@ -594,7 +594,7 @@ def __add_options(parser):
         action=_RemovedWinNoPreferRedirectsAction,
     )
 
-    g = parser.add_argument_group('Mac OS specific options')
+    g = parser.add_argument_group('macOS specific options')
     g.add_argument(
         "--argv-emulation",
         dest="argv_emulation",
@@ -607,7 +607,7 @@ def __add_options(parser):
     g.add_argument(
         '--osx-bundle-identifier',
         dest='bundle_identifier',
-        help="Mac OS .app bundle identifier is used as the default unique program name for code signing purposes. "
+        help="macOS .app bundle identifier is used as the default unique program name for code signing purposes. "
         "The usual form is a hierarchical name in reverse DNS notation. For example: com.mycompany.department.appname "
         "(default: first script's basename)",
     )
@@ -745,11 +745,11 @@ def main(
             exe_options += "\n    icon='NONE',"
         else:
             exe_options += "\n    icon=[%s]," % ','.join("'%s'" % escape_win_filepath(ic) for ic in icon_file)
-        # Icon file for Mac OS.
+        # Icon file for macOS.
         # We need to encapsulate it into apostrofes.
         icon_file = "'%s'" % icon_file[0]
     else:
-        # On Mac OS, the default icon has to be copied into the .app bundle.
+        # On macOS, the default icon has to be copied into the .app bundle.
         # The the text value 'None' means - use default icon.
         icon_file = 'None'
     if contents_directory:
@@ -867,12 +867,12 @@ def main(
         'runtime_hooks': runtime_hooks or [],
         # List of modules/packages to ignore.
         'excludes': excludes or [],
-        # only Windows and Mac OS distinguish windowed and console apps
+        # only Windows and macOS distinguish windowed and console apps
         'console': console,
         'disable_windowed_traceback': disable_windowed_traceback,
-        # Icon filename. Only Mac OS uses this item.
+        # Icon filename. Only macOS uses this item.
         'icon': icon_file,
-        # .app bundle identifier. Only OSX uses this item.
+        # .app bundle identifier. Only macOS uses this item.
         'bundle_identifier': bundle_identifier,
         # argv emulation (macOS only)
         'argv_emulation': argv_emulation,
@@ -893,12 +893,12 @@ def main(
     with open(specfnm, 'w', encoding='utf-8') as specfile:
         if onefile:
             specfile.write(onefiletmplt % d)
-            # For Mac OS create .app bundle.
+            # For macOS create .app bundle.
             if is_darwin and not console:
                 specfile.write(bundleexetmplt % d)
         else:
             specfile.write(onedirtmplt % d)
-            # For Mac OS create .app bundle.
+            # For macOS create .app bundle.
             if is_darwin and not console:
                 specfile.write(bundletmplt % d)
 

@@ -299,7 +299,7 @@ class AppBuilder:
         # For Windows append .exe extension to patterns.
         if is_win:
             patterns = [pt + '.exe' for pt in patterns]
-        # For Mac OS append pattern for .app bundles.
+        # For macOS append pattern for .app bundles.
         if is_darwin:
             # e.g:  ./dist/name.app/Contents/MacOS/name
             app_bundle_pt = str(self._dist_dir / f'{name}.app' / 'Contents' / 'MacOS' / name)

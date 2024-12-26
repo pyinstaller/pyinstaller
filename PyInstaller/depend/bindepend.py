@@ -460,7 +460,7 @@ def _get_imports_macholib(filename, search_paths):
     referenced_libs = set()  # Libraries referenced in Mach-O headers.
 
     # Parent directory of the input binary and parent directory of python executable, used to substitute @loader_path
-    # and @executable_path. The MacOS dylib loader (dyld) fully resolves the symbolic links when using @loader_path
+    # and @executable_path. The macOS dylib loader (dyld) fully resolves the symbolic links when using @loader_path
     # and @executable_path references, so we need to do the same using `os.path.realpath`.
     bin_path = os.path.dirname(os.path.realpath(filename))
     python_bin_path = os.path.dirname(os.path.realpath(sys.executable))

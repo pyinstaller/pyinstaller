@@ -55,7 +55,7 @@
  * initializes a minimal Tcl/Tk environment, and runs the splash screen in it.
  *
  * Only threaded Tcl is supported; i..e, Tcl had to be compiled with the --enable-threads
- * flag, which is it by default on Windows and MacOS. Many Linux distributions also come
+ * flag, which is it by default on Windows and macOS. Many Linux distributions also come
  * with threaded Tcl installation, although it is not guaranteed. PyInstaller checks at
  * build time if Tcl is threaded and raises an error if it is not.
  */
