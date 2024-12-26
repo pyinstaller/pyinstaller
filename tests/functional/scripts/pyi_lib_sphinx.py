@@ -13,12 +13,15 @@
 # module directories, which their respective hook scripts must find and copy.
 
 import os
+import sys
 
 import sphinx.cmd.build
 
-from pyi_get_datadir import get_data_dir
-
-sphinx_path = os.path.join(get_data_dir(), 'sphinx')
+# The path to source data directory is passed via first command-line argument.
+if len(sys.argv) != 2:
+    print(f"Use: {sys.argv[0]} <data-dir>")
+    raise SystemExit(1)
+sphinx_path = sys.argv[1]
 
 # Invoke Sphinx. See http://sphinx-doc.org/invocation.html#invocation-of-sphinx-build for more details
 # on the used options.

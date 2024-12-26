@@ -139,11 +139,11 @@ def test_pkgutil_get_data__main__(pyi_builder, monkeypatch):
 
 @importorskip('sphinx')
 def test_sphinx(pyi_builder, data_dir):
-    # NOTE: including the `data_dir` fixture copies files needed by this test!
-    # These data files are not collected into frozen application; instead, the test script uses `pyi_get_datadir` module
-    # that in turn uses `pyi_testmod_gettemp` module (both found in tests/functional/modules) to resolve the copied data
-    # directory based on the location of the test executable.
-    pyi_builder.test_script('pyi_lib_sphinx.py')
+    pyi_builder.test_script(
+        'pyi_lib_sphinx.py',
+        # Pass the path to temporary copy of data directory via command-line arguments.
+        app_args=[str(data_dir)],
+    )
 
 
 @importorskip('pygments')
