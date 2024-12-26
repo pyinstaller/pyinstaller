@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
 # PyInstaller documentation build configuration file, created by
 # sphinx-quickstart on Sun Mar 27 16:53:34 2016.
 #
@@ -67,7 +64,7 @@ for (contents, path) in [
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.intersphinx', 
+extensions = ['sphinx.ext.intersphinx',
               'sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
               'sphinx_autodoc_typehints',
