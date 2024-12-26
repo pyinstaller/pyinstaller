@@ -249,10 +249,6 @@ def test_Qt_QTranslate(pyi_builder, QtPyLib):
 
 @QtPyLibs
 def test_Qt_Ui_file(pyi_builder, data_dir, QtPyLib):
-    # NOTE: including the `data_dir` fixture copies files needed by this test!
-    # These data files are not collected into frozen application; instead, the test script uses `pyi_get_datadir` module
-    # that in turn uses `pyi_testmod_gettemp` module (both found in tests/functional/modules) to resolve the copied data
-    # directory based on the location of the test executable.
     pyi_builder.test_source(
         f"""
         import os
@@ -262,8 +258,6 @@ def test_Qt_Ui_file(pyi_builder, data_dir, QtPyLib):
 
         from {QtPyLib}.QtWidgets import QApplication, QWidget
         from {QtPyLib}.QtCore import QTimer
-
-        from pyi_get_datadir import get_data_dir
 
         is_qt6 = '{QtPyLib}' in {{'PyQt6', 'PySide6'}}
         is_pyqt = '{QtPyLib}' in {{'PyQt5', 'PyQt6'}}
@@ -282,7 +276,7 @@ def test_Qt_Ui_file(pyi_builder, data_dir, QtPyLib):
                 pass
 
         # Load the UI
-        ui_file = os.path.join(get_data_dir(), 'Qt_Ui_file', 'gui.ui')
+        ui_file = os.path.join(os.path.dirname(__file__), 'gui.ui')
         if is_pyqt:
             # Use PyQt.uic
             from {QtPyLib} import uic
@@ -305,7 +299,9 @@ def test_Qt_Ui_file(pyi_builder, data_dir, QtPyLib):
         else:
             res = app.exec_()
         sys.exit(res)
-        """
+        """,
+        # Collect the .ui file into top-level application directory.
+        pyi_args=['--add-data', f"{data_dir / 'gui.ui'}:."],
     )
 
 
