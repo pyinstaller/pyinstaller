@@ -18,7 +18,7 @@ from PyInstaller.utils.tests import importorskip, parametrize
 
 # Names of all "gi.repository" packages provided by PyGObject  to be tested below, typically corresponding to
 # those packages hooked by PyInstaller.
-gi_repositories = [
+_gi_repositories = [
     ('Gst', '1.0'),
     ('GLib', '2.0'),
     ('GModule', '2.0'),
@@ -28,14 +28,7 @@ gi_repositories = [
     ('Clutter', '1.0'),
     ('GtkClutter', '1.0'),
     ('Champlain', '0.12'),
-    ('GtkChamplain', '0.12')
-]  # yapf: disable
-gi_repository_names = [x[0] for x in gi_repositories]
-
-# Names of the same packages, decorated to be skipped if unimportable.
-gi_repositories_skipped_if_unimportable = [
-    pytest.param(gi_repository_name, gi_repository_version, marks=importorskip(f'gi.repository.{gi_repository_name}'))
-    for gi_repository_name, gi_repository_version in gi_repositories
+    ('GtkChamplain', '0.12'),
 ]
 
 
@@ -43,9 +36,8 @@ gi_repositories_skipped_if_unimportable = [
 @importorskip('gi.repository')
 @parametrize(
     ('repository_name', 'version'),
-    gi_repositories_skipped_if_unimportable,
-    # Ensure human-readable test parameter names.
-    ids=gi_repository_names
+    [pytest.param(name, version, marks=importorskip(f'gi.repository.{name}')) for name, version in _gi_repositories],
+    ids=[name for name, version in _gi_repositories],  # Ensure human-readable test parameter names.
 )
 def test_gi_repository(pyi_builder, repository_name, version):
     """
