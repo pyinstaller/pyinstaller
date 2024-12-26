@@ -81,7 +81,7 @@ def requires(requirement: str):
         return pytest.mark.skip(f"Requires {requirement}.")
 
 
-def gen_sourcefile(tmpdir, source, test_id=None):
+def gen_sourcefile(tmp_path, source, test_id=None):
     """
     Generate a source file for testing.
 
@@ -94,9 +94,6 @@ def gen_sourcefile(tmpdir, source, test_id=None):
 
     :param test_id: Test-id for parametrized tests. If given, it will be appended to the script filename,
                     separated by two underscores.
-
-    Ensure that the caller of `test_source` is in a UTF-8 encoded file with the correct '# -*- coding: utf-8 -*-'
-    marker.
     """
     testname = inspect.stack()[1][3]
     if test_id:
@@ -105,9 +102,7 @@ def gen_sourcefile(tmpdir, source, test_id=None):
 
     # Periods are not allowed in Python module names.
     testname = testname.replace('.', '_')
-    scriptfile = tmpdir / (testname + '.py')
+    scriptfile = tmp_path / (testname + '.py')
     source = textwrap.dedent(source)
-    with scriptfile.open('w', encoding='utf-8') as ofh:
-        print('# -*- coding: utf-8 -*-', file=ofh)
-        print(source, file=ofh)
+    scriptfile.write_text(source, encoding='utf-8')
     return scriptfile

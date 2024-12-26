@@ -189,10 +189,6 @@ class AppBuilder:
                         by two underscores.
 
         All other arguments are passed straight on to `test_script`.
-
-        Ensure that the caller of `test_source` is in a UTF-8 encoded file with the correct '# -*- coding: utf-8 -*-'
-        marker.
-
         """
         __tracebackhide__ = True
         # For parametrized test append the test-id.
