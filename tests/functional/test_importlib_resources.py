@@ -26,7 +26,7 @@ import pathlib
 import pytest
 
 from PyInstaller.utils.tests import skipif
-from PyInstaller.compat import is_darwin, is_py39, exec_python_rc
+from PyInstaller.compat import is_darwin, is_py39, is_py310, exec_python_rc
 from PyInstaller.utils.hooks import check_requirement
 
 pytestmark = [
@@ -88,7 +88,14 @@ def test_importlib_resources_frozen(pyi_builder, script_dir):
 #    namespace package ends up being handled by PyInstaller's `PyiFrozenFinder`, which requires extra care to ensure
 #    compatibility with `importlib` resource reader.
 # The test covers both scenarios via `as_package` parameter.
+#
+# NOTE: the handling of resources in PEP-420 namespace packages as expected by this test was introduced in stdlib
+# version of `importlib.resources` in python 3.10 (equivalent of importlib-resources >= 5.0).
 @pytest.mark.parametrize('as_package', [True, False])
+@skipif(
+    not is_py310 and not check_requirement('importlib_resources >= 5.0'),
+    reason="Requires python <= 3.10 or importlib_resources >= 5.0."
+)
 def test_importlib_resources_namespace_package_data_files(pyi_builder, as_package):
     pathex = _MODULES_DIR / 'pyi_namespace_package_with_data' / 'package'
     hooks_dir = _MODULES_DIR / 'pyi_namespace_package_with_data' / 'hooks'
