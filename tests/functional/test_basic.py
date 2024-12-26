@@ -10,6 +10,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+import codecs
 import locale
 import os
 import sys
@@ -360,27 +361,45 @@ def test_python_home(pyi_builder):
     pyi_builder.test_script('pyi_python_home.py')
 
 
-def test_stderr_encoding(tmp_path, pyi_builder):
+@pytest.mark.parametrize('stream', ['stdout', 'stderr'])
+def test_standard_stream_encoding(stream, tmp_path, pyi_builder):
     # NOTE: '-s' option to pytest disables output capturing, changing this test's result:
     # without -s: pytest process changes its own stdout encoding to 'UTF-8' to capture output. subprocess spawned by
     #             pytest has stdout encoding 'cp1252', which is an ANSI codepage. test fails as they do not match.
     # with -s:    pytest process has stdout encoding from windows terminal, which is an OEM codepage. spawned
     #             subprocess has the same encoding. test passes.
 
-    # Get the current encoding, and save it into file for test frozen application to use.
-    # For non-interactive stderr use locale encoding - ANSI codepage. This fixes the test when running with pytest and
-    # capturing output.
-    encoding = str(sys.stderr.encoding) if sys.stderr.isatty() else locale.getpreferredencoding(False)
-    (tmp_path / 'stderr_encoding.build').write_text(encoding, encoding="utf-8")
+    # A test program that dumps encoding of the stream into specified file.
+    frozen_encoding_file = tmp_path / 'frozen_encoding.txt'
+    pyi_builder.test_source(
+        f"""
+        import sys
 
-    pyi_builder.test_script('pyi_stderr_encoding.py')
+        encoding = str(sys.{stream}.encoding)
+        if len(sys.argv) >= 2:
+            with open(sys.argv[1], 'w', encoding='utf-8') as fp:
+                fp.write(encoding)
+        else:
+            print(encoding)
+        """,
+        app_args=[str(frozen_encoding_file)]
+    )
+    frozen_encoding = frozen_encoding_file.read_text(encoding='utf-8')
+    print(f"Frozen encoding: {frozen_encoding}")
 
+    # For non-interactive stdout/stderr, assume locale encoding (on Windows, this will be ANSI codepage). This fixes the
+    # test when running with pytest and capturing output.
+    unfrozen_stream = getattr(sys, stream)
+    unfrozen_encoding = (
+        str(unfrozen_stream.encoding) if unfrozen_stream.isatty() else locale.getpreferredencoding(False)
+    )
+    print(f"Unfrozen encoding: {frozen_encoding}")
 
-def test_stdout_encoding(tmp_path, pyi_builder):
-    encoding = str(sys.stdout.encoding) if sys.stdout.isatty() else locale.getpreferredencoding(False)
-    (tmp_path / 'stdout_encoding.build').write_text(encoding, encoding="utf-8")
+    # Normalize encoding names - "UTF-8" should be the same as "utf8".
+    unfrozen_encoding = codecs.lookup(unfrozen_encoding).name
+    frozen_encoding = codecs.lookup(frozen_encoding).name
 
-    pyi_builder.test_script('pyi_stdout_encoding.py')
+    assert frozen_encoding == unfrozen_encoding
 
 
 def test_site_module_disabled(pyi_builder):
