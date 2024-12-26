@@ -54,6 +54,6 @@ pytestmark = [
 )
 @pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
 def test_scipy(pyi_builder, module):
-    pyi_builder.test_source("""
-        import {0}
-        """.format(module))
+    pyi_builder.test_source(f"""
+        import {module}
+        """)
