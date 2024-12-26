@@ -129,29 +129,12 @@ def script_dir(request):
     return _get_script_dir(request)
 
 
-# A helper function to copy from data/dir to tmp_path/data.
-def _data_dir_copy(
-    # The pytest request object.
-    request,
-    # The name of the subdirectory located in data/name to copy.
-    subdir_name,
-    # The tmp_path object for this test. See: https://pytest.org/latest/tmp_path.html.
-    tmp_path
-):
-
-    # Form the source and tmp paths.
-    source_data_dir = _get_data_dir(request) / subdir_name
-    tmp_data_dir = tmp_path / 'data' / subdir_name
-    # Copy the data.
-    shutil.copytree(source_data_dir, tmp_data_dir)
-    # Return the temporary data directory, so that the copied data can now be used.
-    return tmp_data_dir
-
-
-# Define a fixure for the DataDir object.
+# A fixture that copies test's data directory into test's temporary directory. The data directory is assumed to be
+# `data/{test-name}` found next to the .py file that contains test.
 @pytest.fixture
 def data_dir(
-    # The request object for this test. See
+    # The request object for this test. Used to infer name of the test and location of the source .py file.
+    # See
     # https://pytest.org/latest/builtin.html#_pytest.python.FixtureRequest
     # and
     # https://pytest.org/latest/fixture.html#fixtures-can-introspect-the-requesting-test-context.
@@ -159,11 +142,16 @@ def data_dir(
     # The tmp_path object for this test. See: https://pytest.org/latest/tmp_path.html.
     tmp_path
 ):
-
     # Strip the leading 'test_' from the test's name.
-    name = request.function.__name__[5:]
+    test_name = request.function.__name__[5:]
+
     # Copy to data dir and return the path.
-    return _data_dir_copy(request, name, tmp_path)
+    source_data_dir = _get_data_dir(request) / test_name
+    tmp_data_dir = tmp_path / 'data'
+    # Copy the data.
+    shutil.copytree(source_data_dir, tmp_data_dir)
+    # Return the temporary data directory, so that the copied data can now be used.
+    return tmp_data_dir
 
 
 class AppBuilder:

@@ -1,8 +1,23 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2005-2023, PyInstaller Development Team.
+#
+# Distributed under the terms of the GNU General Public License (version 2
+# or later) with exception for distributing the bootloader.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#
+# SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
+#-----------------------------------------------------------------------------
+
+import os
 import pathlib
+import shutil
 
 import pytest
 
-# Bring all fixtures into this file.
+from PyInstaller.compat import is_win, is_darwin
+
+# Bring all common fixtures into this file.
 from PyInstaller.utils.conftest import *  # noqa: F401, F403
 
 
@@ -16,7 +31,7 @@ from PyInstaller.utils.conftest import *  # noqa: F401, F403
 @pytest.fixture(scope="session")
 def compiled_dylib(tmp_path_factory):
     # Copy the source to temporary directory.
-    orig_source_dir = pathlib.Path(__file__).parent  / 'data' / 'ctypes_dylib'
+    orig_source_dir = pathlib.Path(__file__).parent / 'data' / 'ctypes_dylib'
     tmp_source_dir = tmp_path_factory.mktemp('compiled_ctypes_dylib')
     shutil.copy2(orig_source_dir / 'ctypes_dylib.c', tmp_source_dir)
 
