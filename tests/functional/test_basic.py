@@ -175,14 +175,19 @@ def test_module__file__attribute(pyi_builder):
 
 
 def test_module_attributes(tmp_path, pyi_builder):
-    # Create a text file in tmp_path with path to the python executable and contents of PATH.
+    # Create a text file with path to the python executable and contents of PATH.
     # The frozen test program uses this information to spawn python interpreter to obtain attributes of the test modules
     # when running unfrozen, which it then compares to the attributes of the test modules within the frozen test
     # application itself.
-    with open(tmp_path / 'python_exe.build', 'w', encoding='utf8') as f:
+    parameters_file = tmp_path / 'python_exe.txt'
+    with open(parameters_file, 'w', encoding='utf8') as f:
         f.write(sys.executable + "\n")
         f.write(os.environ.get('PATH') + '\n')
-    pyi_builder.test_script('pyi_module_attributes.py')
+
+    pyi_builder.test_script(
+        'pyi_module_attributes.py',
+        app_args=[str(parameters_file)],
+    )
 
 
 def test_module_reload(pyi_builder):

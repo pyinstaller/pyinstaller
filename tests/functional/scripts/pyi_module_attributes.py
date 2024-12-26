@@ -15,17 +15,19 @@
 import copy
 import os
 import subprocess
+import sys
 import xml.etree.ElementTree as ET
 import xml.etree.cElementTree as cET
 
-from pyi_testmod_gettemp import gettemp
+# We expect to receive text file with python interpreter parameters as the first command-line argument.
+if len(sys.argv) != 2:
+    print(f"use: {sys.argv[0]} <parameters-file>")
+    raise SystemExit(1)
 
-_pyexe_file = gettemp("python_exe.build")
-
-with open(_pyexe_file) as fp:
+with open(sys.argv[1], 'r', encoding='utf-8') as fp:
     _lines = fp.readlines()
-    _pyexe = _lines[0].strip()
-    _env_path = _lines[1].strip()
+_pyexe = _lines[0].strip()
+_env_path = _lines[1].strip()
 
 
 def exec_python(pycode):
