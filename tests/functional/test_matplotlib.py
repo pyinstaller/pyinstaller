@@ -17,74 +17,67 @@ import pytest
 from PyInstaller.utils.tests import importorskip
 from PyInstaller.utils.hooks import check_requirement
 
-# List of 3-tuples "(backend_name, package_name, binding)", where:
+# List of tuples "(backend_name, qt_bindings)", where:
 #
 # * "backend_name" is the name of a Matplotlib backend to be tested below.
-# * "package_name" is the name of the external package required by this backend.
-# * "binding" is the binding to use (and to set environment-variable QT_API to).
+# * "qt_bindings" is the name of the external Qt bindings package required by this backend.
 #
 if check_requirement("matplotlib >= 3.5.0"):
     # Matplotlib 3.5.0 introduced a unified Qt backend that supports PySide2, PyQt5, PySide6, and PyQt6.
-    backend_rcParams_key_values = [
-        ('QtAgg', 'PyQt5', 'pyqt5'),
-        ('QtAgg', 'PySide2', 'pyside2'),
-        ('QtAgg', 'PyQt6', 'pyqt6'),
-        ('QtAgg', 'PySide6', 'pyside6'),
+    _backends = [
+        ('QtAgg', 'PyQt5'),
+        ('QtAgg', 'PySide2'),
+        ('QtAgg', 'PyQt6'),
+        ('QtAgg', 'PySide6'),
     ]
 else:
-    backend_rcParams_key_values = [
-        ('Qt5Agg', 'PyQt5', 'pyqt5'),
-        ('Qt5Agg', 'PySide2', 'pyside2'),
+    _backends = [
+        ('Qt5Agg', 'PyQt5'),
+        ('Qt5Agg', 'PySide2'),
     ]
-
-# Same list, decorated to skip all backends whose packages are unimportable#.
-backend_rcParams_key_values_skipped_if_unimportable = [
-    pytest.param(*backend_rcParams_key_value, marks=importorskip(backend_rcParams_key_value[1]))
-    for backend_rcParams_key_value in backend_rcParams_key_values
-]
-
-print(backend_rcParams_key_values_skipped_if_unimportable)
-
-# Names of all packages required by backends listed above.
-package_names = [backend_rcParams_key_value[1] for backend_rcParams_key_value in backend_rcParams_key_values]
 
 
 # Test Matplotlib with access to only one backend at a time.
 @importorskip('matplotlib')
 @pytest.mark.parametrize(
-    'backend_name, package_name, binding', backend_rcParams_key_values_skipped_if_unimportable, ids=package_names
+    'backend_name, qt_bindings',
+    [
+        pytest.param(backend_name, qt_bindings, marks=importorskip(qt_bindings))
+        for backend_name, qt_bindings in _backends
+    ],
+    ids=[qt_bindings for backend_name, qt_bindings in _backends],
 )
-def test_matplotlib(pyi_builder, monkeypatch, backend_name, package_name, binding):
+def test_matplotlib(pyi_builder, monkeypatch, backend_name, qt_bindings):
     '''
     Test Matplotlib with the passed backend enabled, the passed backend package included with this frozen application,
     all other backend packages explicitly excluded from this frozen application, and the passed rcParam key set to the
     corresponding passed value if that key is _not_ `None` or ignore that value otherwise.
     '''
 
-    # PyInstaller options excluding all backend packages except the passed backend package. This is especially critical
-    # for Qt backend packages (e.g., "PyQt5", "PySide2"). On first importation, Matplotlib attempts to import all
-    # available Qt packages. However, runtime PyInstaller hooks fail when multiple Qt packages are frozen into the same
-    # application. For each such package, all other Qt packages must be excluded.
+    # Exclude all Qt bindings except the ones we are using in this test.
     pyi_args = [
-        '--exclude-module=' + package_name_excludable for package_name_excludable in package_names
-        if package_name_excludable != package_name
+        f'--exclude-module={bindings_name}' for backend_name, bindings_name in _backends if bindings_name != qt_bindings
     ]
 
-    # Script to be tested, enabling this Qt backend.
-    test_script = (
-        """
+    # Test program
+    pyi_builder.test_source(
+        f"""
         import os
         import sys
         import tempfile
 
         import matplotlib
 
+        # Matplotlib >= v3.4.0 allows Qt bindings name in QT_API environment variable to be capitalized. Lower-case it
+        # here just in case we ever happen to run the test with older version.
+        qt_bindings_lower = {qt_bindings!r}.lower()
+
         # Report these parameters.
-        print('Testing Matplotlib with backend=%r and QT_API=%r' % ({backend_name!r}, {binding!r}))
+        print(f'Testing Matplotlib with backend={backend_name} and QT_API={{qt_bindings_lower}}')
 
         # Configure Matplotlib *BEFORE* calling any Matplotlib functions.
         matplotlib.rcParams['backend'] = {backend_name!r}
-        os.environ['QT_API'] = {binding!r}
+        os.environ['QT_API'] = qt_bindings_lower
 
         # Enable the desired backend *BEFORE* plotting with this backend.
         matplotlib.use({backend_name!r})
@@ -92,7 +85,7 @@ def test_matplotlib(pyi_builder, monkeypatch, backend_name, package_name, bindin
         # A runtime hook should force Matplotlib to create its configuration directory in a temporary directory
         # rather than in $HOME/.matplotlib.
         configdir = os.environ['MPLCONFIGDIR']
-        print('MPLCONFIGDIR:', repr(configdir))
+        print(f'MPLCONFIGDIR: {{configdir}}')
         if not configdir.startswith(tempfile.gettempdir()):
             raise SystemExit('MPLCONFIGDIR not pointing to temp directory.')
 
@@ -102,8 +95,6 @@ def test_matplotlib(pyi_builder, monkeypatch, backend_name, package_name, bindin
 
         # Try importing pyplot. This will attempt to activate the selected backend.
         from matplotlib import pyplot as plt
-        """.format(backend_name=backend_name, binding=binding)
+        """,
+        pyi_args=pyi_args,
     )
-
-    # Test this script.
-    pyi_builder.test_source(test_script, pyi_args=pyi_args)
