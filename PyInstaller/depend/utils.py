@@ -271,7 +271,7 @@ def _resolveCtypesImports(cbinaries):
         except FileNotFoundError:
             # In these cases, find_library() should return None.
             cpath = None
-        if compat.is_unix:
+        if compat.is_unix or compat.is_cygwin:
             # CAVEAT: find_library() is not the correct function. ctype's documentation says that it is meant to resolve
             # only the filename (as a *compiler* does) not the full path. Anyway, it works well enough on Windows and
             # macOS. On Linux, we need to implement more code to find out the full path.
@@ -298,7 +298,7 @@ def _resolveCtypesImports(cbinaries):
             # On non-Windows, automatically ignore all ctypes-based referenes to DLL files. This complements the above
             # check, which might not match potential case variations (e.g., `KERNEL32.dll`, instead of `kernel32.dll`)
             # due to case-sensitivity of the matching that is in effect on non-Windows platforms.
-            if not compat.is_win and cbin.lower().endswith('.dll'):
+            if (not compat.is_win and not compat.is_cygwin) and cbin.lower().endswith('.dll'):
                 continue
             logger.warning("Library %s required via ctypes not found", cbin)
         else:
@@ -320,6 +320,11 @@ def load_ldconfig_cache():
     global LDCONFIG_CACHE
 
     if LDCONFIG_CACHE is not None:
+        return
+
+    if compat.is_cygwin:
+        # Not available under Cygwin; but we might be re-using general POSIX codepaths, and end up here. So exit early.
+        LDCONFIG_CACHE = {}
         return
 
     if compat.is_musl:

@@ -1,0 +1,2 @@
+(Cygwin) Improve Cygwin support to the extent that we can run a
+Cygwin-based CI pipeline with basic part of PyInstaller's test suite.
