@@ -14,7 +14,6 @@ import copy
 import glob
 import logging
 import os
-import pathlib
 import re
 import shutil
 import subprocess
@@ -33,10 +32,6 @@ except ModuleNotFoundError:
     psutil = None
 
 import pytest  # noqa: E402
-
-# Expand sys.path with PyInstaller source.
-_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
-sys.path.append(str(_ROOT_DIR))
 
 from PyInstaller import __main__ as pyi_main  # noqa: E402
 from PyInstaller import configure  # noqa: E402
