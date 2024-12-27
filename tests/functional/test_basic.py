@@ -190,34 +190,6 @@ def test_module_reload(pyi_builder):
     pyi_builder.test_script('pyi_module_reload.py')
 
 
-def test_ctypes_hooks_are_in_place(pyi_builder):
-    pyi_builder.test_source(
-        """
-        import ctypes
-        assert ctypes.CDLL.__name__ == 'PyInstallerCDLL', ctypes.CDLL
-        """
-    )
-
-
-def test_load_dll_using_ctypes(pyi_builder, compiled_dylib):
-    # Collect the compiled shared library into top-level application directory
-    pyi_builder.test_source(
-        f"""
-        import os
-        import sys
-        import ctypes
-
-        libname = {str(compiled_dylib.name)!r}
-        libpath = os.path.join(os.path.dirname(__file__), libname)
-
-        lib = ctypes.CDLL(libpath)
-
-        assert lib.add_twelve(42) == 42 + 12
-        """,
-        pyi_args=['--add-binary', f"{compiled_dylib}:."],
-    )
-
-
 def test_chdir_meipass(pyi_builder):
     # Ensure meipass dir exists.
     pyi_builder.test_source(
