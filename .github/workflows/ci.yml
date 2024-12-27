@@ -426,9 +426,12 @@ jobs:
           # python39-setuptools, python39-packaging, python39-pytest) are
           # out-of-date, and we instead install PyPI wheels.
           #
-          # Installing python39 seems to install python39-sphinx, but
-          # without sphinxcontrib packages that we need in our test.
-          # So make sure they are all installed.
+          # NOTE: for some reason, python39-pip depends on python39-sphinx,
+          # which is an old sphinx v4.4.0 package. This version contains
+          # an issue caused by open() without specified encoding, which
+          # was fixed in sphinx >= v5.0. Therefore, we install an up-to-date
+          # version of sphinx from PyPI in the "Update pip and base test tools"
+          # step.
           packages: >-
             gcc-core
             zlib
@@ -438,12 +441,7 @@ jobs:
             python39-devel
             python39-pip
             python39-tkinter
-            python39-sphinx
-            python39-alabaster
-            python39-sphinxcontrib-applehelp
-            python39-sphinxcontrib-devhelp
-            python39-sphinxcontrib-htmlhelp
-            python39-sphinxcontrib-qthelp
+
 
       - name: Disable CRLF line endings in git checkout
         run: git config --global core.autocrlf input
@@ -457,7 +455,7 @@ jobs:
           python --version
 
       - name: Update pip and base test tools
-        run: python -m pip install --progress-bar=off --upgrade pip setuptools wheel build --requirement tests/requirements-base.txt
+        run: python -m pip install --progress-bar=off --upgrade pip setuptools wheel build --requirement tests/requirements-base.txt sphinx
 
       - name: Install PyInstaller
         run: |
