@@ -476,6 +476,10 @@ jobs:
           echo "DISPLAY=:99" >> $GITHUB_ENV
 
       - name: Run tests
+        # Keep the number of pytest workers below the number of available
+        # CPU cores to avoid CPU contention scenarios, which seem to trigger
+        # a race condition in Cygwin `tkinter` (seemingly in both unfrozen
+        # and frozen programs).
         run: >
             python -m pytest
-            -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+            -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
