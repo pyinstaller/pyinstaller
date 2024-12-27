@@ -5,8 +5,8 @@ import sys
 import shutil
 import warnings
 from altgraph import Graph
-from PyInstaller.compat import is_win
-from PyInstaller.utils.tests import importorskip
+from PyInstaller.compat import is_win, is_cygwin
+from PyInstaller.utils.tests import importorskip, skipif
 import textwrap
 import pickle
 from io import StringIO
@@ -72,6 +72,12 @@ class TestFunctions (unittest.TestCase):
         def assertIsInstance(self, obj, types):
             self.assertTrue(isinstance(obj, types), '%r is not instance of %r'%(obj, types))
 
+    # The test package (and its .zip and .egg variants) do not contain dummy extension file with .dll suffix, which
+    # would be required for the test under Cygwin.
+    @skipif(
+        is_cygwin,
+        reason="Does not account for the .dll suffix used for extension modules under Cygwin.",
+    )
     def test_find_module(self):
         for path in ('syspath', 'syspath.zip', 'syspath.egg'):
             path = os.path.join(os.path.dirname(TESTDATA), path)
@@ -163,8 +169,10 @@ class TestFunctions (unittest.TestCase):
 
                 if sys.platform == 'win32':
                     ext = '.pyd'
+                elif sys.platform == 'cygwin':
+                    ext = '.dll'
                 else:
-                    # This is a ly, but is good enough for now
+                    # This is a lie, but is good enough for now
                     ext = '.so'
 
                 self.assertEqual(filename, os.path.join(path, 'myext' + ext))
