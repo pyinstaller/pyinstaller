@@ -15,8 +15,15 @@ import shutil
 import re
 
 from PyInstaller.utils import hooks as hookutils
-from PyInstaller.compat import exec_python, is_win
+from PyInstaller.compat import exec_python, is_win, is_cygwin
+from PyInstaller.utils.tests import skipif
 from PyInstaller import log as logging
+
+# Cygwin uses .dll suffix for extension modules, which several tests fail to properly account for.
+incompatible_with_cygwin = skipif(
+    is_cygwin,
+    reason="Does not account for the .dll suffix used for extension modules under Cygwin.",
+)
 
 
 class TestRemovePrefix(object):
@@ -126,16 +133,20 @@ class TestCollectSubmodules(object):
         assert TEST_MOD in mod_list
 
     # Python extension is included in the list.
+    @incompatible_with_cygwin
     def test_collect_submod_pyextension(self, mod_list):
         assert TEST_MOD + '.pyextension' in mod_list
 
     # Check that all packages get included
     # NOTE: the new behavior (see #6846 and #6850) is that un-importable subpackages are not included.
+    @incompatible_with_cygwin
     def test_collect_submod_all_included(self, mod_list):
         mod_list.sort()
         assert mod_list == [
             TEST_MOD,
             # Python extensions end with '.pyd' on Windows and with  '.so' on Linux, macOS, and other OSes.
+            # Under Cygwin, '.dll' suffix is used for extensions; therefore, the premise and the test data used by
+            # this test is inherently incompatible with Cygwin.
             TEST_MOD + '.pyextension',
             #TEST_MOD + '.raises_error_on_import_1',
             #TEST_MOD + '.raises_error_on_import_2',
@@ -145,6 +156,7 @@ class TestCollectSubmodules(object):
         ]
 
     # Dynamic libraries (.dll, .dylib) are not included in the list.
+    @incompatible_with_cygwin
     def test_collect_submod_no_dynamiclib(self, mod_list):
         assert TEST_MOD + '.dynamiclib' not in mod_list
 
@@ -161,6 +173,7 @@ class TestCollectSubmodules(object):
         assert mod_list == [TEST_MOD + '.subpkg', TEST_MOD + '.subpkg.twelve']
 
     # Test in an ``.egg`` file.
+    @incompatible_with_cygwin  # calls `test_collect_submod_all_included`
     def test_collect_submod_egg(self, tmp_path, monkeypatch):
         # Copy files to a tmpdir for egg building.
         dest_path = tmp_path / 'hookutils_package'
@@ -362,6 +375,7 @@ def data_lists(monkeypatch, request):
 
 
 # Make sure the correct files are found.
+@incompatible_with_cygwin
 def test_collect_data_all_included(data_lists):
     subfiles, src, dst = data_lists
     # Check the source and dest lists against the correct values in subfiles.
