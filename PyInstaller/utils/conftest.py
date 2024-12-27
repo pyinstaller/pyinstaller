@@ -352,9 +352,7 @@ class AppBuilder:
 
         # Run the executable
         self._display_message('RUN-EXE', f'Running {exe_path!r}, args: {args!r}')
-        process = popen_implementation(
-            args, executable=exe_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=prog_env, cwd=prog_cwd
-        )
+        process = popen_implementation(args, executable=exe_path, env=prog_env, cwd=prog_cwd)
         self._display_message('RUN-EXE', f'Process ID: {process.pid}')
 
         # Wait for the process to finish. If no run-time (= timeout) is specified, we expect the process to exit on
@@ -430,12 +428,6 @@ class AppBuilder:
                         self._display_message('RUN-EXE', 'Process stopped.')
                     except (psutil.TimeoutExpired, subprocess.TimeoutExpire):
                         self._display_message('RUN-EXE', 'Failed to stop the process (or its child process(es))!')
-
-        # Display captured stdout/stderr.
-        self._display_message('RUN-EXE', 'Captured output:')
-        sys.stdout.buffer.write(b"N/A\n" if stdout is None else stdout)
-        sys.stderr.buffer.write(b"N/A\n" if stderr is None else stderr)
-        self._display_message('RUN-EXE', 'End of captured output.')
 
         self._display_message('RUN-EXE', f'Done! Return code: {retcode}')
 
