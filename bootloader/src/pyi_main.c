@@ -94,7 +94,7 @@ static int _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx);
 static int _pyi_main_resolve_executable(struct PYI_CONTEXT *pyi_context);
 static int _pyi_main_resolve_pkg_archive(struct PYI_CONTEXT *pyi_context);
 
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__CYGWIN__)
 static int _pyi_main_handle_posix_onedir(struct PYI_CONTEXT *pyi_ctx);
 #endif
 
@@ -224,10 +224,18 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
         if (pyi_ctx->is_onefile) {
             pyi_ctx->process_level = PYI_PROCESS_LEVEL_PARENT;
         } else {
-#if !defined(_WIN32) && !defined(__APPLE__)
-            pyi_ctx->process_level = PYI_PROCESS_LEVEL_PARENT; /* POSIX */
+#if defined(_WIN32) || defined(__APPLE__)
+            /* Windows, macOS - mark as main process. */
+            pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN;
+#elif defined(__CYGWIN__)
+            /* Cygwin - mark as main process, as we do not need to restart.
+             * For explanation, see comments in Cygwin-specific part where
+             * library search path is set (further down this function). */
+            pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN;
 #else
-            pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN; /* Windows, macOS */
+            /* Other POSIX systems - mark as parent/launcher due to having
+             * to restart the process, as per comment block above. */
+            pyi_ctx->process_level = PYI_PROCESS_LEVEL_PARENT;
 #endif
         }
     } else if (strcmp(env_var_value, "0") == 0) {
@@ -374,8 +382,11 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
         /* Special handling for onedir mode on POSIX systems other than
          * macOS. To achieve single-process onedir mode, we need to set
          * library search path and restart the current process. This is
-         * handled by the following helper function. */
-#if !defined(_WIN32) && !defined(__APPLE__)
+         * handled by the following helper function.
+         * NOTE: under Cygwin, we do not have to restart the process to
+         * set the search path, so skip this call.
+         */
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__CYGWIN__)
         if (_pyi_main_handle_posix_onedir(pyi_ctx) < 0) {
             return -1;
         }
@@ -420,35 +431,69 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
     }
 #endif /* defined(_WIN32) */
 
-    /* On Windows and under cygwin, add application's top-level directory
-     * to DLL search path.  */
-#if defined(_WIN32) || defined(__CYGWIN__)
+    /* On Windows and under Cygwin, add application's top-level directory
+     * to DLL search path. Do so before we start loading bundled DLLs
+     * (i.e., trying to start the splash screen). */
+#if defined(_WIN32)
     if (1) {
+        /* Windows - call SetDllDirectoryW() */
         wchar_t dllpath_w[PYI_PATH_MAX];
+        if (pyi_win32_utf8_to_wcs(pyi_ctx->application_home_dir, dllpath_w, PYI_PATH_MAX) == NULL) {
+            PYI_ERROR("Failed to convert DLL search path!\n");
+            return -1;
+        }
+        PYI_DEBUG_W(L"LOADER: calling SetDllDirectoryW: %ls\n", dllpath_w);
+        SetDllDirectoryW(dllpath_w);
+    }
+#elif defined(__CYGWIN__)
+    if (1) {
+        /* Under Cygwin, `dlopen()` uses `LD_LIBRARY_PATH` environment
+         * variable for library names that do not include path to the
+         * library file. However, linked libraries are resolved using
+         * Windows' loader, which is controlled by `SetDllDirectoryW()`.
+         * Therefore, we need to modify the search path of both mechanisms.
+         *
+         * Failing to call `SetDllDirectoryW` results in dependencies
+         * of python shared library not being resolved when running the
+         * frozen application outside of the Cygwin environment.
+         *
+         * Failing to set `LD_LIBRARY_PATH` seems to cause segmentation
+         * faults in worker processes when `multiprocessing` is used
+         * (both inside and outside of the Cygwin environment). */
+        wchar_t dllpath_w[PYI_PATH_MAX];
+        bool modify_ld_library_path;
 
-#if defined(__CYGWIN__)
-        /* Cygwin */
+        /* Convert POSIX path (whose root is determined by location of
+         * the cygwin1.dll) into (wide-char) Windows path that can be
+         * passed to `SetDllDirectoryW`. */
         if (cygwin_conv_path(CCP_POSIX_TO_WIN_W | CCP_RELATIVE, pyi_ctx->application_home_dir, dllpath_w, PYI_PATH_MAX) != 0) {
             PYI_PERROR("cygwin_conv_path", "Failed to convert DLL search path!\n");
             return -1;
         }
+
         /* On Cygwin, we do not have PYI_DEBUG_W macro available; so
          * use %S format to try printing the wide-char string. We can
          * be fairly certain that compiler is not MSVC, so %S does mean
          * wide-char in this context; there might still be garbled text
          * if string contains Unicode characters, but we will take the
          * risk... */
-        PYI_DEBUG("LOADER: calling SetDllDirectory: %S\n", dllpath_w);
-#else
-        /* Windows */
-        if (pyi_win32_utf8_to_wcs(pyi_ctx->application_home_dir, dllpath_w, PYI_PATH_MAX) == NULL) {
-            PYI_ERROR("Failed to convert DLL search path!\n");
-            return -1;
-        }
-        PYI_DEBUG_W(L"LOADER: calling SetDllDirectory: %ls\n", dllpath_w);
-#endif  /* defined(__CYGWIN__) */
-
+        PYI_DEBUG("LOADER: calling SetDllDirectoryW: %S\n", dllpath_w);
         SetDllDirectoryW(dllpath_w);
+
+        /* Modify `LD_LIBRARY_PATH`, but only if we are the parent process
+         * of onefile application, or main process of onedir application.
+         * Their child processes will inherit the environment variable,
+         * and the attempt to modify it again would result in duplicated
+         * entries (and clobbered `LD_LIBRARY_PATH_ORIG`). */
+        modify_ld_library_path = (
+            (pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) ||
+            (!pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_MAIN)
+        );
+        if (modify_ld_library_path) {
+            if (pyi_utils_set_library_search_path(pyi_ctx->application_home_dir) < 0) {
+                return -1;
+            }
+        }
     }
 #endif  /* defined(_WIN32) || defined(__CYGWIN__) */
 
@@ -826,8 +871,9 @@ _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
      * search path (via LD_LIBRARY_PATH or equivalent). Since the
      * search path cannot be modified for the running process, we
      * need to set it in the parent process, before launching the
-     * child process. */
-#if !defined(_WIN32) && !defined(__APPLE__)
+     * child process. Skip this call under Cygwin, because it was
+     * already made in the common codepath. */
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__CYGWIN__)
     if (pyi_utils_set_library_search_path(pyi_ctx->application_home_dir) == -1) {
         return -1;
     }
@@ -1280,7 +1326,7 @@ _pyi_main_resolve_pkg_archive(struct PYI_CONTEXT *pyi_ctx)
 /**********************************************************************\
  *                 POSIX single-process onedir helper                 *
 \**********************************************************************/
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__CYGWIN__)
 
 /* On POSIX systems, we cannot dynamically set library search path for
  * the running process. On OSes other than macOS (where we solve this
@@ -1290,7 +1336,14 @@ _pyi_main_resolve_pkg_archive(struct PYI_CONTEXT *pyi_ctx)
  * the current process via `exec()` without `fork()` for the environment
  * changes (library search path) to take effect. We use a special
  * environment variable to keep track of whether the process has already
- * been restarted or not. */
+ * been restarted or not.
+ *
+ * NOTE: this function is not used on Cygwin, where `LD_LIBRARY_PATH`
+ * is used only to resolve shared libraries opened by `dlopen()` (without
+ * full path), while linked libraries are resolved by the DLL search
+ * path set by `SetDllDirectoryW()`. Therefore, we can just set the
+ * environment variable without restarting the process, which we handle
+ * directly in the main program codepath. */
 static int
 _pyi_main_handle_posix_onedir(struct PYI_CONTEXT *pyi_ctx)
 {
