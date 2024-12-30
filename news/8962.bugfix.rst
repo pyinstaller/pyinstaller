@@ -1,0 +1,7 @@
+(macOS) Prevent binary dependency analysis from spuriously resolving
+shared library instance in a standard library path (for example,
+Homebrew-installed library in ``/usr/local/lib``) when trying to
+resolve ``@rpath``-based reference with multiple candidate run paths
+that are anchored to ``@loader_path`` or ``@executable_path`` prefix
+that resolves to a completely different path prefix (for example, an
+Anaconda python environment).

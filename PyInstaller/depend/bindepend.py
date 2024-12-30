@@ -505,27 +505,6 @@ def _get_imports_macholib(filename, search_paths):
     # registering the following fall-back run-path.
     run_paths.add(os.path.join(compat.base_prefix, 'lib'))
 
-    def _resolve_using_loader_path(lib, bin_path, python_bin_path):
-        # macholib does not support @loader_path, so replace it with @executable_path. Strictly speaking, @loader_path
-        # should be anchored to parent directory of analyzed binary (`bin_path`), while @executable_path should be
-        # anchored to the parent directory of the process' executable. Typically, this would be python executable
-        # (`python_bin_path`), unless we are analyzing a collected 3rd party executable. In that case, `bin_path`
-        # is correct option. So we first try resolving using `bin_path`, and then fall back to `python_bin_path`.
-        # This does not account for transitive run paths of higher-order dependencies, but there is only so much we
-        # can do here...
-        if lib.startswith('@loader_path'):
-            lib = lib.replace('@loader_path', '@executable_path')
-
-        try:
-            # Try resolving with binary's path first...
-            return dyld_find(lib, executable_path=bin_path)
-        except ValueError:
-            # ... and fall-back to resolving with python executable's path
-            try:
-                return dyld_find(lib, executable_path=python_bin_path)
-            except ValueError:
-                return None
-
     def _resolve_using_path(lib):
         # Absolute paths should not be resolved; we should just check whether the library exists or not. This used to
         # be done using macholib's dyld_find() as well (as it properly handles system libraries that are hidden on
@@ -543,6 +522,32 @@ def _get_imports_macholib(filename, search_paths):
             return dyld_find(lib)
         except ValueError:
             return None
+
+    def _resolve_using_loader_path(lib, bin_path, python_bin_path):
+        # Strictly speaking, @loader_path should be anchored to parent directory of analyzed binary (`bin_path`), while
+        # @executable_path should be anchored to the parent directory of the process' executable. Typically, this would
+        # be python executable (`python_bin_path`). Unless we are analyzing a collected 3rd party executable; in that
+        # case, `bin_path` is correct option. So we first try resolving using `bin_path`, and then fall back to
+        # `python_bin_path`. This does not account for transitive run paths of higher-order dependencies, but there is
+        # only so much we can do here...
+        #
+        # NOTE: do not use macholib's `dyld_find`, because its fallback search locations might end up resolving wrong
+        # instance of the library! For example, if our `bin_path` and `python_bin_path` are anchored in an Anaconda
+        # python environment and the candidate library path does not exit (because we are calling this function when
+        # trying to resolve @rpath with multiple candidate run paths), we do not want to fall back to eponymous library
+        # that happens to be present in the Homebrew python environment...
+        if lib.startswith('@loader_path/'):
+            lib = lib[len('@loader_path/'):]
+        elif lib.startswith('@executable_path/'):
+            lib = lib[len('@executable_path/'):]
+
+        # Try resolving with binary's path first...
+        resolved_lib = _resolve_using_path(os.path.join(bin_path, lib))
+        if resolved_lib is not None:
+            return resolved_lib
+
+        # ... and fall-back to resolving with python executable's path
+        return _resolve_using_path(os.path.join(python_bin_path, lib))
 
     # Try to resolve full path of the referenced libraries.
     for referenced_lib in referenced_libs:
