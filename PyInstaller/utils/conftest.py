@@ -353,7 +353,6 @@ class AppBuilder:
         # Run the executable
         self._display_message('RUN-EXE', f'Running {exe_path!r}, args: {args!r}')
         process = popen_implementation(args, executable=exe_path, env=prog_env, cwd=prog_cwd)
-        self._display_message('RUN-EXE', f'Process ID: {process.pid}')
 
         # Wait for the process to finish. If no run-time (= timeout) is specified, we expect the process to exit on
         # its own, and use global _EXE_TIMEOUT. If run-time is specified, we expect the application to be running
