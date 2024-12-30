@@ -80,6 +80,10 @@ struct PYI_CONTEXT *const global_pyi_ctx = &_pyi_ctx;
  * keep their definitions below that of `pyi_main`, in an attempt to
  * keep code organized in top-down fashion. Hence, we need forward
  * declarations here */
+#if defined(LAUNCH_DEBUG)
+static void _pyi_main_dump_command_line_arguments(const struct PYI_CONTEXT *pyi_ctx);
+#endif
+
 static void _pyi_main_read_runtime_options(struct PYI_CONTEXT *pyi_ctx);
 
 static void _pyi_main_setup_splash_screen(struct PYI_CONTEXT *pyi_ctx);
@@ -110,6 +114,11 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
 #endif  /* _WIN32 */
 
     PYI_DEBUG("PyInstaller Bootloader 6.x\n");
+
+    /* In debug builds, dump the command-line arguments. */
+#if defined(LAUNCH_DEBUG)
+    _pyi_main_dump_command_line_arguments(pyi_ctx);
+#endif
 
     /* Fully resolve the executable name. */
     if (_pyi_main_resolve_executable(pyi_ctx) < 0) {
@@ -456,6 +465,23 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
         return _pyi_main_onedir_or_onefile_child(pyi_ctx);
     }
 }
+
+#if defined(LAUNCH_DEBUG)
+
+static void
+_pyi_main_dump_command_line_arguments(const struct PYI_CONTEXT *pyi_ctx)
+{
+    int i;
+    for (i = 0; i < pyi_ctx->argc; i++) {
+#if defined(_WIN32)
+        PYI_DEBUG_W(L"LOADER: argv[%d]: %ls\n", i, pyi_ctx->argv_w[i]);
+#else
+        PYI_DEBUG("LOADER: argv[%d]: %s\n", i, pyi_ctx->argv[i]);
+#endif
+    }
+}
+
+#endif /* defined(LAUNCH_DEBUG) */
 
 static void
 _pyi_main_read_runtime_options(struct PYI_CONTEXT *pyi_ctx)
