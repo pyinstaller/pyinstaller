@@ -1,30 +1,64 @@
 name: CI
 
 # Controls when the action will run. Triggers the workflow on push or pull request
-## events but only for the master branch
+# events for develop and v4 branche.
 on:
   push:
     branches:
       - 'develop'
+      - 'v4'
   pull_request:
     branches:
       - '**'
       - '!master'
       - '!pyup/**'
 
+env:
+  # Colored pytest output on CI despite not having a tty
+  FORCE_COLOR: 1
+  # Enable strict unpack mode to catch file duplication problems in onefile builds (at executable run-time).
+  PYINSTALLER_STRICT_UNPACK_MODE: 1
+  # Enable strict collect mode to catch file duplication problems in PKG/Carchive (onefile builds) or COLLECT
+  # (onedir builds) at build time.
+  PYINSTALLER_STRICT_COLLECT_MODE: 1
+  # Enable strict handling of codesign errors for macOS bundles.
+  PYINSTALLER_STRICT_BUNDLE_CODESIGN_ERROR: 1
+  # Enable strict verification of macOS bundles w.r.t. the code-signing requirements.
+  PYINSTALLER_VERIFY_BUNDLE_SIGNATURE: 1
+  # Enable PEP 597 EncodingWarnings
+  PYTHONWARNDEFAULTENCODING: true
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
 jobs:
   tests:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
-        os: ['windows-latest', 'ubuntu-latest', 'macos-latest']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        os: ['windows-latest', 'ubuntu-22.04', 'macos-13', 'macos-14']
+        # Split macOS workflows between macos-13 (x86_64) and macos-14 (arm64)
+        # runners to cover both architectures without running all combinations.
+        exclude:
+          - python-version: '3.8'
+            os: 'macos-14'
+          - python-version: '3.10'
+            os: 'macos-14'
+          - python-version: '3.12'
+            os: 'macos-14'
+          - python-version: '3.9'
+            os: 'macos-13'
+          - python-version: '3.11'
+            os: 'macos-13'
+          - python-version: '3.13'
+            os: 'macos-13'
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -32,13 +66,40 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -qq \
+          sudo apt-get upgrade -qq
+          sudo apt-get install -qq --no-install-recommends \
+            libcmocka-dev \
             libxml2-dev libxslt1-dev gfortran libatlas-base-dev \
             libespeak1 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
             libxkbcommon-x11-0 libxcb-icccm4 libxcb1 openssl \
             libxcb-randr0-dev libxcb-xtest0-dev libxcb-xinerama0-dev \
             libxcb-shape0-dev libxcb-xkb-dev xvfb \
-            libopengl0 libegl1
+            libopengl0 libegl1 \
+            libpulse0 libpulse-mainloop-glib0 \
+            gstreamer1.0-plugins-base libgstreamer-gl1.0-0 \
+            gir1.2-gtk-3.0 libgirepository1.0-dev \
+            libfuse2
+
+      # The following locales are required by test_basic::test_user_preferred_locale
+      #  - en_US.UTF-8
+      #  - en_US.ISO8859-1
+      #  - sl_SI.UTF-8
+      #  - sl_SI.ISO8859-2
+      #
+      # The following locale is used by test_basic::test_time_module_localized
+      #  - cs_CZ.UTF-8
+      - name: Install and enable additional locales
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq --no-install-recommends locales
+          sudo locale-gen \
+            en_US.UTF-8 \
+            en_US \
+            sl_SI.UTF-8 \
+            sl_SI \
+            cs_CZ.UTF-8
+          locale -a
 
       - name: Download AppImage tool
         if: startsWith(matrix.os, 'ubuntu')
@@ -54,42 +115,203 @@ jobs:
 
       - name: Fetch cache
         id: cache-target
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ${{ env.pip_cache_dir }}
           key: ${{ runner.os }}-${{ matrix.python-version }}
 
-      - name: Set up environment
+      - name: Check if bootloader code conforms to gnu90 C standard
+        if: startsWith(matrix.os, 'ubuntu')
         run: |
-          # Update pip.
-          python -m pip install -U pip setuptools wheel
-
-          # Install dependencies for tests.
-          pip install --progress-bar=off -U -r tests/requirements-tools.txt -r tests/requirements-libraries.txt
           # Compile bootloader
           cd bootloader
-          python waf all
-          cd ..
+          CC="gcc -std=gnu90" python waf --tests all
 
-          # Install PyInstaller.
-          pip install --progress-bar=off .
+      - name: Check if bootloader code conforms to c99 ISO C standard (pedantic mode)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          # Compile bootloader
+          cd bootloader
+          CC="gcc -std=c99 -pedantic" python waf --tests all
 
-          # Make sure the help options print.
-          python -m pyinstaller -h
+      - name: Check if bootloader is buildable with --static-zlib option
+        if: startsWith(matrix.os, 'ubuntu')
+        run: cd bootloader && python waf --static-zlib --tests all
+
+      - name: Check if bootloader is buildable for Windows ARM
+        if: startsWith(matrix.os, 'windows')
+        run: |
+            cd bootloader
+            python waf --tests --target-arch=64bit-arm all
+            ls ../PyInstaller/bootloader/Windows-64bit-arm
+
+      - name: Update pip
+        run: python -m pip install --upgrade pip setuptools wheel build
+
+      # On (macos-14, python 3.10), (macos-13, python 3.11) and (macos-14, python 3.11)
+      # combinations the initial `setuptools` installation seems to contain `.opt-1.pyc`
+      # files in `__pycache__` directories. During the upgrade, `pip` fails to remove
+      # those directories (https://github.com/pypa/pip/issues/11835).
+      #
+      # `setuptools` 75.4 removed its vendored copy of `importlib_resources`, but due to
+      # the above issue, the effectively empty directory remains, turning `importlib_resources`
+      # into defunct namespace package, which causes some of our tests to fail.
+      - name: Work around potentially broken setuptools upgrade
+        shell: python
+        run: |
+          import sys
+          import pathlib
+          import shutil
+          import importlib.util
+
+          spec = importlib.util.find_spec('setuptools._vendor.importlib_resources')
+          if spec is None:
+            print("Did not find setuptools-vendored copy of importlib_resources.")
+            sys.exit(0)
+          elif spec.loader is not None:
+            print("Found a valid setuptools-vendored copy of importlib_resources.")
+            sys.exit(0)
+
+          print("Found a defunct setuptools-vendored copy of importlib_resources!")
+
+          # List the contents of importlib_resources package directory for debug purposes
+          def list_directory(path, pad=""):
+            for child in path.iterdir():
+              if child.is_dir():
+                print(f"{pad} + {child.name}")
+                list_directory(child, pad + " ")
+              else:
+                print(f"{pad} - {child.name} ({child.stat().st_size} bytes)")
+
+          for path in spec.submodule_search_locations:
+            print(f"Listing contents of {path}")
+            list_directory(pathlib.Path(path))
+
+          # Remove
+          for path in spec.submodule_search_locations:
+            print(f"Removing {path}...")
+            shutil.rmtree(path)
+
+      - name: Compile bootloader
+        run: cd bootloader && python waf --tests all
+
+      - name: Download dependencies
+        run: pip download --dest=dist .[completion] && rm -f dist/pyinstaller-*.whl
+        shell: bash
+
+      - name: Build wheels
+        run: sh release/build-wheels
+
+      - name: Install PyInstaller
+        run: pip install --no-index --find-links=dist pyinstaller[completion]
+
+      - name: Check pyinstaller --help
+        run: python -m PyInstaller -h
+
+      - name: Install test dependencies (base tools)
+        run: |
+          pip install --progress-bar=off --upgrade --requirement tests/requirements-base.txt
+
+      - name: Install test dependencies (tools and libraries)
+        if: ${{ !endsWith(matrix.python-version, '-dev') }}
+        run: |
+          pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
+
+      - name: Set up extra environment variables (non-Windows)
+        if: ${{ !startsWith(matrix.os, 'windows') }}
+        run: |
+          # Run Qt-based tests with offscreen backend. This seems to break QtWebEngine tests on Windows, so
+          # apply it only here, in non-Windows path.
+          echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
 
       - name: Start display server
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           Xvfb :99 &
           echo "DISPLAY=:99" >> $GITHUB_ENV
-          echo "QT_DEBUG_PLUGINS=1" >> $GITHUB_ENV
+
+      # Required on macOS >= 11 by tests that register custom URL schema. This could also be achieved by passing
+      # --basetemp to pytest, but using environment variable allows us to have a unified "Run test" step for
+      # all OSes.
+      #
+      # We now relocate the temporary directory to a fixed location on all OSes, in order to be able to generate
+      # artifacts out of failed tests.
+      - name: Relocate temporary dir
+        shell: bash
+        run: |
+          echo "PYTEST_DEBUG_TEMPROOT=$RUNNER_TEMP" >> $GITHUB_ENV
 
       - name: Run tests
-        uses: xoviat/actions-pytest@0.1-alpha2
+        id: run-tests
+        run: >
+            pytest
+            -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+
+      # On all platforms, create a tarball to ensure that symlinks are preserved. Avoid using compression here,
+      # as the tarball will end up collected into artifact zip archive.
+      # To simplify this across platform, run this step in python and use python's tarfile module.
+      - name: Archive failed tests
+        if: ${{ failure() && steps.run-tests.outcome == 'failure' }}
+        shell: python
+        run: |
+          import os
+          import sys
+          import tarfile
+
+          try:
+            import getpass
+            user = getpass.getuser() or "unknown"
+          except Exception:
+            user = "unknown"
+
+          temproot = os.environ['PYTEST_DEBUG_TEMPROOT']
+
+          pytest_name = f'pytest-of-{user}'
+          pytest_fullpath = os.path.join(temproot, pytest_name)
+          print(f"Input directory: {pytest_fullpath}!", file=sys.stderr)
+
+          output_file = os.path.join(temproot, 'archived-failed-tests.tar')
+          print(f"Output file: {output_file}!", file=sys.stderr)
+
+          assert os.path.isdir(pytest_fullpath)
+          assert not os.path.exists(output_file)
+
+          with tarfile.open(output_file, "w") as tf:
+            tf.add(pytest_fullpath, arcname=pytest_name, recursive=True)
+
+          print(f"Created {output_file}!", file=sys.stderr)
+
+      - name: Create artifact out of archived failed tests
+        if: ${{ failure() && steps.run-tests.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
         with:
-          args: >
-            -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
-            --force-flaky --no-flaky-report --reruns 3 --reruns-delay 10
+          name: failed-tests-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: '${{ env.PYTEST_DEBUG_TEMPROOT }}/archived-failed-tests.tar'
+
+      # Install and test PyInstaller Hook Sample, to ensure that tests declared in
+      # entry-points are discovered.
+      - name: Install hooksample
+        run: pip install "https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip"
+
+      # Augment _pyinstaller_hooks_contrib with bogus hooks that conflict with the hooks provided by hooksample.
+      # Due to (implicit) hook priority, the 3rd-party hooks should be chosen over _pyinstaller_hooks_contrib
+      # ones, and so the bogus hooks should never be ran. This applies to standard module hooks, as well as
+      # the pre-find-module-path and pre-safe-import-module hooks.
+      - name: Inject bogus hooks
+        shell: python
+        run: |
+          import os
+          from _pyinstaller_hooks_contrib import (
+              stdhooks,
+              pre_safe_import_module,
+              pre_find_module_path,
+          )
+          with open(os.path.join(stdhooks.__path__[0], "hook-pyi_hooksample.py"), "w", encoding="utf-8") as f:
+              f.write('raise Exception("Wrong hook! Use the pyi_hooksample copy instead!")\n')
+          with open(os.path.join(pre_safe_import_module.__path__[0], "hook-pyi_hooksample.py"), "w", encoding="utf-8") as f:
+              f.write('raise Exception("Wrong hook! Use the pyi_hooksample copy instead!")\n')
+          with open(os.path.join(pre_find_module_path.__path__[0], "hook-pyi_hooksample.py"), "w", encoding="utf-8") as f:
+              f.write('raise Exception("Wrong hook! Use the pyi_hooksample copy instead!")\n')
 
       - name: Run hooksample tests
         run: |
@@ -99,3 +321,93 @@ jobs:
           # dir all the way to the top of the filesystem per
           # https://docs.pytest.org/en/latest/customize.html).
           python -m PyInstaller.utils.run_tests -c PyInstaller/utils/pytest.ini --include_only=pyi_hooksample.
+
+  test-alpine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: docker build -f alpine.dockerfile -t foo .
+      - run: >
+          docker run
+          foo
+          pytest
+          -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+
+      # Verify that installing from sdist works. This is mostly just a verification that the MANIFEST.in contains
+      # all the extras needed to compile the bootloader.
+      - run: |
+          git clean -xfdq .
+          pip install build
+          python -m build --sdist --outdir dist
+          docker build --target=wheel-factory -t bar -f alpine.dockerfile .
+      - run: |
+          sdist="$(ls dist)"
+          docker run -v "$PWD/dist:/io" bar ash -c "
+            pip install /io/$sdist
+            echo 'print(1 + 1)' > test.py
+            pyinstaller test.py
+            ./dist/test/test
+          "
+
+  test-msys2:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - { sys: mingw64, env: x86_64 }
+          - { sys: mingw32, env: i686 }
+          - { sys: ucrt64,  env: ucrt-x86_64 }
+      fail-fast: false
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: ${{matrix.sys}}
+          install: >-
+            mingw-w64-${{matrix.env}}-gcc
+            mingw-w64-${{matrix.env}}-python
+            mingw-w64-${{matrix.env}}-python-pip
+            mingw-w64-${{matrix.env}}-python-wheel
+            mingw-w64-${{matrix.env}}-python-setuptools
+            mingw-w64-${{matrix.env}}-python-pywin32-ctypes
+            mingw-w64-${{matrix.env}}-python-packaging
+            mingw-w64-${{matrix.env}}-python-pytest
+            mingw-w64-${{matrix.env}}-python-pytest-xdist
+            mingw-w64-${{matrix.env}}-python-pytest-timeout
+            mingw-w64-${{matrix.env}}-python-psutil
+            mingw-w64-${{matrix.env}}-python-pywin32
+            mingw-w64-${{matrix.env}}-python-pillow
+
+      - if: matrix.env != 'i686'
+        # numpy and pefile are unavailable for i686. Ignore numpy and install pefile via pip
+        run: pacman -S --noconfirm mingw-w64-${{matrix.env}}-python-numpy mingw-w64-${{matrix.env}}-python-pefile
+
+      - uses: actions/checkout@v4
+
+      - run: |
+          uname -a
+          python --version
+
+      - name: Install PyInstaller
+        run: |
+          # Compile bootloader
+          cd bootloader
+          python waf --gcc --tests all
+          cd ..
+
+          # Install PyInstaller.
+          pip install --progress-bar=off .[completion]
+
+          # Make sure the help options print.
+          python -m PyInstaller -h
+
+      - name: Run tests
+        run: >
+            pytest
+            -n 5 --maxfail 3 --durations 10 tests/unit tests/functional

@@ -15,7 +15,7 @@ and execute::
 
     pyinstaller myscript.py
 
-|PyInstaller| analyzes :file:`myscript.py` and:
+PyInstaller analyzes :file:`myscript.py` and:
 
 * Writes :file:`myscript.spec` in the same folder as the script.
 * Creates a folder :file:`build` in the same folder as the script if it does not exist.
@@ -33,7 +33,7 @@ Its code is the first to execute at run-time.
 
 For certain uses you may edit the contents of ``myscript.spec``
 (described under :ref:`Using Spec Files`).
-After you do this, you name the spec file to |PyInstaller| instead of the script:
+After you do this, you name the spec file to PyInstaller instead of the script:
 
     ``pyinstaller myscript.spec``
 
@@ -88,19 +88,19 @@ Or in Windows, use the little-known BAT file line continuation::
 
     pyinstaller --noconfirm --log-level=WARN ^
         --onefile --nowindow ^
-        --add-data="README;." ^
-        --add-data="image1.png;img" ^
-        --add-binary="libfoo.so;lib" ^
+        --add-data="README:." ^
+        --add-data="image1.png:img" ^
+        --add-binary="libfoo.so:lib" ^
         --hidden-import=secret1 ^
         --hidden-import=secret2 ^
         --icon=..\MLNMFLCN.ICO ^
         myscript.spec
 
 
-Running |PyInstaller| from Python code
+Running PyInstaller from Python code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you want to run |PyInstaller| from Python code, you can use the ``run`` function
+If you want to run PyInstaller from Python code, you can use the ``run`` function
 defined in ``PyInstaller.__main__``. For instance, the following code:
 
 .. code-block:: python
@@ -120,97 +120,80 @@ Is equivalent to:
     pyinstaller my_script.py --onefile --windowed
 
 
-Running |PyInstaller| with Python optimizations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. Note::
-
-    When using this feature, you should be aware of how the Python bytecode
-    optimization mechanism works. When using ``-O``, ``__debug__`` is set
-    to ``False`` and ``assert`` statements are removed from the bytecode.
-    The ``-OO`` flag additionally removes docstrings.
-
-    Using this feature affects not only your main script, but *all* modules
-    included by |PyInstaller|. If your code (or any module imported by your
-    script) relies on these features, your program may break or have
-    unexpected behavior.
-
-|PyInstaller| can be run with Python optimization flags (``-O`` or ``-OO``)
-by executing it as a Python module, rather than using the ``pyinstaller``
-command::
-
-    # run with basic optimizations
-    python -O -m PyInstaller myscript.py
-
-    # also discard docstrings
-    python -OO -m PyInstaller myscript.py
-
-Or, by explicitly setting the ``PYTHONOPTIMIZE`` environment variable
-to a non-zero value::
-
-    # Unix
-    PYTHONOPTIMIZE=1 pyinstaller myscript.py
-
-    # Windows
-    set PYTHONOPTIMIZE=1 && pyinstaller myscript.py
-
-You can use any |PyInstaller| options that are otherwise available with
-the ``pyinstaller`` command. For example::
-
-    python -O -m PyInstaller --onefile myscript.py
-
-Alternatively, you can also use the path to pyinstaller::
-
-    python -O /path/to/pyinstaller myscript.py
-
 Using UPX
 ~~~~~~~~~~~~~~~~~~~
 
-UPX_ is a free utility available for most operating systems.
-UPX compresses executable files and libraries, making them smaller,
-sometimes much smaller.
-UPX is available for most operating systems and can compress
-a large number of executable file formats.
-See the UPX_ home page for downloads, and for the list of
-supported executable formats.
+UPX_ is a free utility for compressing executable files and libraries.
+It is available for most operating systems and can compress a large number
+of executable file formats. See the UPX_ home page for downloads, and for
+the list of supported file formats.
 
-A compressed executable program is wrapped in UPX
-startup code that dynamically decompresses the program
-when the program is launched.
-After it has been decompressed, the program runs normally.
-In the case of a |PyInstaller| one-file executable that has
-been UPX-compressed, the full execution sequence is:
+When UPX is available, PyInstaller uses it to individually compress
+each collected binary file (executable, shared library, or python
+extension) in order to reduce the overall size of the frozen application
+(the one-dir bundle directory, or the one-file executable). The frozen
+application's executable itself is not UPX-compressed (regardless of one-dir
+or one-file mode), as most of its size comprises the embedded archive that
+already contains individually compressed files.
 
-* The compressed program start up in the UPX decompressor code.
-* After decompression, the program executes the |PyInstaller| |bootloader|,
-  which creates a temporary environment for Python.
-* The Python interpreter executes your script.
+PyInstaller looks for the UPX in the standard executable path(s) (defined
+by ``PATH`` environment variable), or in the path specified via the
+:option:`--upx-dir` command-line option. If found, it is used automatically.
+The use of UPX can be completely disabled using the :option:`--noupx`
+command-line option.
 
-|PyInstaller| looks for UPX on the execution path
-or the path specified with the :option:`--upx-dir` option.
-If UPX exists, |PyInstaller| applies it to the final executable,
-unless the :option:`--noupx` option was given.
-UPX has been used with |PyInstaller| output often, usually with no problems.
+.. note::
+    UPX is currently used only on Windows. On other operating systems,
+    the collected binaries are not processed even if UPX is found. The
+    shared libraries (e.g., the Python shared library) built on modern
+    linux distributions seem to break when processed with UPX, resulting
+    in defunct application bundles. On macOS, UPX currently fails to
+    process .dylib shared libraries; furthermore the UPX-compressed files
+    fail the validation check of the ``codesign`` utility, and therefore
+    cannot be code-signed (which is a requirement on the Apple M1 platform).
 
 
-.. _encrypting python bytecode:
+Excluding problematic files from UPX processing
+-----------------------------------------------
 
-Encrypting Python Bytecode
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using UPX may end up corrupting a collected shared library. Known examples
+of such corruption are Windows DLLs with `Control Flow Guard (CFG) enabled
+<https://github.com/upx/upx/issues/398>`_, as well as `Qt5 and Qt6
+plugins <https://github.com/upx/upx/issues/107>`_. In such cases,
+individual files may be need to be excluded from UPX processing, using
+the :option:`--upx-exclude` option (or using the ``upx_exclude`` argument
+in the :ref:`.spec file <using spec files>`).
 
-To encrypt the Python bytecode modules stored in the bundle,
-pass the :option:`--key`\ =\ *key-string*  argument on
-the command line.
+.. versionchanged:: 4.2
+    PyInstaller detects CFG-enabled DLLs and automatically excludes
+    them from UPX processing.
 
-For this to work, you need to run::
+.. versionchanged:: 4.3
+    PyInstaller automatically excludes Qt5 and Qt6 plugins from
+    UPX processing.
 
-    pip install pyinstaller[encryption]
+Although PyInstaller attempts to automatically detect and exclude some of
+the problematic files from UPX processing, there are cases where the
+UPX excludes need to be specified manually. For example, 32-bit Windows
+binaries from the ``PySide2`` package (Qt5 DLLs and python extension modules)
+have been `reported <https://github.com/pyinstaller/pyinstaller/issues/4178#issuecomment-868985789>`_
+to be corrupted by UPX.
 
-The *key-string* is a string of 16 characters which is used to
-encrypt each file of Python byte-code before it is stored in
-the archive inside the executable file.
+.. versionchanged:: 5.0
+    Unlike earlier releases that compared the provided UPX-exclude names
+    against basenames of the collect binary files (and, due to incomplete
+    case normalization, required provided exclude names to be lowercase
+    on Windows), the UPX-exclude pattern matching now uses OS-default
+    case sensitivity and supports the wildcard (``*``) operator. It also
+    supports specifying (full or partial) parent path of the file.
 
-This feature uses the tinyaes_ module internally for the encryption.
+The provided UPX exclude patterns are matched against *source* (origin)
+paths of the collected binary files, and the matching is performed from
+right to left.
+
+For example, to exclude Qt5 DLLs from the PySide2 package, use
+``--upx-exclude "Qt*.dll"``, and to exclude the python extensions
+from the PySide2 package, use ``--upx-exclude "PySide2\*.pyd"``.
 
 
 .. _splash screen:
@@ -233,6 +216,11 @@ The bootloader is able to display a one-image (i.e. only an image) splash
 screen, which is displayed before the actual main extraction process starts.
 The splash screen supports non-transparent and hard-cut-transparent images as background
 image, so non-rectangular splash screens can also be displayed.
+
+.. Note::
+    Splash images with transparent regions are not supported on Linux due to
+    Tcl/Tk platform limitations. The ``-transparentcolor`` and ``-transparent`` wm attributes
+    used by PyInstaller are not available to Linux.
 
 This splash screen is based on `Tcl/Tk`_, which is the same library used by the Python
 module `tkinter`_. PyInstaller bundles the dynamic libraries of tcl and tk into the
@@ -284,12 +272,66 @@ For a detailed description see :ref:`pyi_splash Module`.
 Defining the Extraction Location
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In rare cases, when you bundle to a single executable
-(see :ref:`Bundling to One File` and :ref:`how the one-file program works`),
-you may want to control the location of the temporary directory at compile
-time. This can be done using the :option:`--runtime-tmpdir` option. If this option is
-given, the bootloader will ignore any temp-folder location defined by the
-run-time OS. Please use this option only if you know what you are doing.
+When building your application in ``onefile`` mode (see :ref:`Bundling to
+One File` and :ref:`how the one-file program works`), you might encounter
+situations where you want to control the location of the temporary directory
+where the application unpacks itself. For example:
+
+- your application is supposed to be running for long periods of time,
+  and you need to prevent its files from being deleted by the OS that
+  performs periodic clean-up in standard temporary directories.
+
+- your target POSIX system does not use standard temporary directory
+  location (i.e., ``/tmp``) and the standard environment variables for
+  temporary directory are not set in the environment.
+
+- the default temporary directory on the target POSIX system is mounted
+  with ``noexec`` option, which prevents the frozen application from
+  loading the unpacked shared libraries.
+
+The location of the temporary directory can be overridden dynamically,
+by setting corresponding environment variable(s) before launching the
+application, or set statically, using the :option:`--runtime-tmpdir` option
+during the build process.
+
+Using environment variables
+---------------------------
+
+The extraction location can be controlled dynamically, by setting the
+environment variable(s) that PyInstaller uses to determine the temporary
+directory. This can, for example, be done in a wrapper shell script that
+sets the environment variable(s) before running the frozen application's
+executable.
+
+On POSIX systems, the environment variables used for temporary
+directory location are ``TMPDIR``, ``TEMP``, and ``TMP``, in that
+order; if none are defined (or the corresponding directories do not
+exist or cannot be used), ``/tmp``, ``/var/tmp``, and ``/usr/tmp`` are
+used as hard-coded fall-backs, in the specified order. The directory
+specified via the environment variable must exist (i.e., the application
+attempts to create only its own directory under the base temporary directory).
+
+On Windows, the default temporary directory location is determined via
+`GetTempPathW <https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-gettemppathw>`_
+function (which looks at ``TMP`` and ``TEMP`` environment variables for
+initial temporary directory candidates).
+
+Using the :option:`--runtime-tmpdir` option
+-------------------------------------------
+
+The location of the temporary directory can be set statically, at compile
+time, using the :option:`--runtime-tmpdir` option. If this option is used,
+the bootloader will ignore temporary directory locations defined by
+the OS, and use the specified path. The path can be either absolute
+or relative (which makes it relative to the current working directory).
+
+Please use this option only if you know what you are doing.
+
+.. note::
+    On POSIX systems, PyInstaller's bootloader does **not** perform shell-style
+    environment variable expansion on the path string given via
+    :option:`--runtime-tmpdir` option. Therefore, using environment
+    variables (e.g., ``~`` or ``$HOME``) in the path will **not** work.
 
 
 .. _supporting multiple platforms:
@@ -298,7 +340,7 @@ Supporting Multiple Platforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you distribute your application for only one combination of OS and Python,
-just install |PyInstaller| like any other package and use it in your
+just install PyInstaller like any other package and use it in your
 normal development setup.
 
 
@@ -316,17 +358,17 @@ These are called `virtual environments` or `venvs` in short.
 
 * Use `venv` to create as many different development environments as you need,
   each with its unique combination of Python and installed packages.
-* Install |PyInstaller| in each virtual environment.
-* Use |PyInstaller| to build your application in each virtual environment.
+* Install PyInstaller in each virtual environment.
+* Use PyInstaller to build your application in each virtual environment.
 
-Note that when using `venv`, the path to the |PyInstaller| commands is:
+Note that when using `venv`, the path to the PyInstaller commands is:
 
 * Windows: ENV_ROOT\\Scripts
 * Others:  ENV_ROOT/bin
 
 Under Windows, the pip-Win_ package makes it
 especially easy to set up different environments and switch between them.
-Under GNU/Linux and Mac OS, you switch environments at the command line.
+Under GNU/Linux and macOS, you switch environments at the command line.
 
 See :pep:`405`
 and the official `Python Tutorial on Virtual Environments and Packages
@@ -338,7 +380,7 @@ Supporting Multiple Operating Systems
 ---------------------------------------
 
 If you need to distribute your application for more than one OS,
-for example both Windows and Mac OS X, you must install |PyInstaller|
+for example both Windows and macOS, you must install PyInstaller
 on each platform and bundle your app separately on each.
 
 You can do this from a single machine using virtualization.
@@ -352,7 +394,7 @@ A `File Sync & Share`__ system like NextCloud_ is useful with virtual machines.
 Install the synchronization client in each virtual machine,
 all linked to your synchronization account.
 Keep a single copy of your script(s) in a synchronized folder.
-Then on any virtual machine you can run |PyInstaller| thus::
+Then on any virtual machine you can run PyInstaller thus::
 
     cd ~/NextCloud/project_folder/src # GNU/Linux, Mac -- Windows similar
     rm *.pyc # get rid of modules compiled by another Python
@@ -363,12 +405,12 @@ Then on any virtual machine you can run |PyInstaller| thus::
 
 __ https://en.wikipedia.org/wiki/Enterprise_file_synchronization_and_sharing
 
-|PyInstaller| reads scripts from the common synchronized folder,
+PyInstaller reads scripts from the common synchronized folder,
 but writes its work files and the bundled app in folders that
 are local to the virtual machine.
 
 If you share the same home directory on multiple platforms, for
-example GNU/Linux and OS X, you will need to set the PYINSTALLER_CONFIG_DIR
+example GNU/Linux and macOS, you will need to set the PYINSTALLER_CONFIG_DIR
 environment variable to different values on each platform otherwise
 PyInstaller may cache files for one platform and use them on the other
 platform, as by default it uses a subdirectory of your home directory
@@ -395,7 +437,7 @@ some elements are optional, others required.
 When you view the version tab of a Properties dialog,
 there's no simple relationship between
 the data displayed and the structure of the resource.
-For this reason |PyInstaller| includes the ``pyi-grab_version`` command.
+For this reason PyInstaller includes the ``pyi-grab_version`` command.
 It is invoked with the full path name of any Windows executable
 that has a Version resource:
 
@@ -443,7 +485,7 @@ and installs that resource in the *executable_file* specified.
 For advanced uses, examine a version text file as written by  ``pyi-grab_version``.
 You find it is Python code that creates a ``VSVersionInfo`` object.
 The class definition for ``VSVersionInfo`` is found in
-``utils/win32/versioninfo.py`` in the |PyInstaller| distribution folder.
+``utils/win32/versioninfo.py`` in the PyInstaller distribution folder.
 You can write a program that imports ``versioninfo``.
 In that program you can ``eval``
 the contents of a version info text file to produce a
@@ -454,10 +496,12 @@ Or you can apply the ``unicode()`` function to the object
 to reproduce the version text file.
 
 
-Building Mac OS X App Bundles
+.. _macOS app bundles:
+
+Building macOS App Bundles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Under Mac OS X, |PyInstaller| always builds a UNIX executable in
+Under macOS, PyInstaller always builds a UNIX executable in
 :file:`dist`.
 If you specify :option:`--onedir`, the output is a folder named :file:`myscript`
 containing supporting files and an executable named :file:`myscript`.
@@ -467,22 +511,42 @@ Either executable can be started from a Terminal command line.
 Standard input and output work as normal through that Terminal window.
 
 If you specify :option:`--windowed` with either option, the ``dist`` folder
-also contains an OS X application named :file:`myscript.app`.
+also contains a macOS app bundle named :file:`myscript.app`.
 
-As you probably know, an application is a special type of folder.
-The one built by |PyInstaller| contains a folder always named
-:file:`Contents` which contains:
+.. note::
+    Generating app bundles with onefile executables (i.e., using the
+    combination of :option:`--onefile` and :option:`--windowed` options),
+    while possible, is not recommended. Such app bundles are inefficient,
+    because they require unpacking on each run (and the unpacked content
+    might be scanned by the OS each time). Furthermore, onefile executables
+    will not work when signed/notarized with sandbox enabled (which
+    is a requirement for distribution of apps through Mac App Store).
 
-  + A folder :file:`Frameworks` which is empty.
-  + A folder :file:`Resources` that contains an icon file.
-  + A file :file:`Info.plist` that describes the app.
-  + A folder :file:`MacOS` that contains the the executable and
-    supporting files, just as in the :option:`--onedir` folder.
+As you are likely aware, an app bundle is a special type of folder.
+The one built by PyInstaller always contains a folder named
+:file:`Contents`, which contains:
+
+  + A file named :file:`Info.plist` that describes the app.
+  + A folder named :file:`MacOS` that contains the program executable.
+  + A folder named :file:`Frameworks` that contains the collected binaries
+    (shared libraries, python extensions) and nested .framework bundles.
+    It also contains symbolic links to data files and directories from
+    the :file:`Resources` directory.
+  + A folder named :file:`Resources` that contains the icon file and all
+    collected data files. It also contains symbolic links to binaries
+    and directories from the :file:`Resources` directory.
+
+.. note::
+    The contents of the :file:`Frameworks` and :file:`Resources` directories
+    are cross-linked between the two directories in an effort to
+    maintain an illusion of a single content directory (which is required
+    by some packages), while also trying to satisfy the Apple's file
+    placement requirements for codesigning.
 
 Use the :option:`--icon` argument to specify a custom icon for the application.
 It will be copied into the :file:`Resources` folder.
-(If you do not specify an icon file, |PyInstaller| supplies a
-file :file:`icon-windowed.icns` with the |PyInstaller| logo.)
+(If you do not specify an icon file, PyInstaller supplies a
+file :file:`icon-windowed.icns` with the PyInstaller logo.)
 
 Use the :option:`--osx-bundle-identifier` argument to add a bundle identifier.
 This becomes the ``CFBundleIdentifier`` used in code-signing
@@ -490,7 +554,7 @@ This becomes the ``CFBundleIdentifier`` used in code-signing
 and for more detail, the `Apple code signing overview`_ technical note).
 
 You can add other items to the :file:`Info.plist` by editing the spec file;
-see :ref:`Spec File Options for a Mac OS X Bundle` below.
+see :ref:`Spec File Options for a macOS Bundle` below.
 
 
 Platform-specific Notes
@@ -502,7 +566,7 @@ GNU/Linux
 Making GNU/Linux Apps Forward-Compatible
 ==========================================
 
-Under GNU/Linux, |PyInstaller| does not bundle ``libc``
+Under GNU/Linux, PyInstaller does not bundle ``libc``
 (the C standard library, usually ``glibc``, the Gnu version) with the app.
 Instead, the app expects to link dynamically to the ``libc`` from the
 local OS where it runs.
@@ -522,6 +586,25 @@ and 32-bit versions, and these are not compatible.
 As a result you cannot bundle your app on a 32-bit system and run it
 on a 64-bit installation, nor vice-versa.
 You must make a unique version of the app for each word-length supported.
+
+Note that PyInstaller does bundle other shared libraries that are discovered
+via dependency analysis, such as libstdc++.so.6, libfontconfig.so.1,
+libfreetype.so.6. These libraries may be required on systems where older
+(and thus incompatible) versions of these libraries are available. On the
+other hand, the bundled libraries may cause issues when trying to load a
+system-provided shared library that is linked against a newer version of the
+system-provided library.
+
+For example, system-installed mesa DRI drivers (e.g., radeonsi_dri.so)
+depend on the system-provided version of libstdc++.so.6. If the frozen
+application bundles an older version of libstdc++.so.6 (as collected from
+the build system), this will likely cause missing symbol errors and prevent
+the DRI drivers from loading. In this case, the bundled libstdc++.so.6
+should be removed. However, this may not work on a different distribution
+that provides libstdc++.so.6 older than the one from the build system; in
+that case, the bundled version should be kept, because the system-provided
+version may lack the symbols required by other collected binaries that depend
+on libstdc++.so.6.
 
 .. _Platform-specific Notes - Windows:
 
@@ -550,50 +633,57 @@ So you have the following options:
    `.spec`-file to include the required DLLs, see “Distributing Software that
    uses the Universal CRT“ in the above-mentioned link, number 6.
 
-   If you think, |PyInstaller| should do this by itself, please :ref:`help
-   improving <how-to-contribute>` |PyInstaller|.
+   If you think, PyInstaller should do this by itself, please :ref:`help
+   improving <how-to-contribute>` PyInstaller.
 
 
 
-Mac OS X
+macOS
 -------------------
 
-Making Mac OS X apps Forward-Compatible
-========================================
+Making macOS apps Forward-Compatible
+=====================================
 
-In Mac OS X, components from one version of the OS are usually compatible
-with later versions, but they may not work with earlier versions.
+On macOS, system components from one version of the OS are usually compatible
+with later versions, but they may not work with earlier versions. While
+PyInstaller does not collect system components of the OS, the collected
+3rd party binaries (e.g., python extension modules) are built against
+specific version of the OS libraries, and may or may not support older
+OS versions.
 
-The only way to be certain your app supports an older version of Mac OS X
-is to run PyInstaller in the oldest version of the OS you need to support.
+As such, the only way to ensure that your frozen application supports
+an older version of the OS is to freeze it on the oldest version of the
+OS that you wish to support. This applies especially when building with
+`Homebrew`_ python, as its binaries usually explicitly target the
+running OS.
 
-For example, to be sure of compatibility with "Snow Leopard" (10.6)
-and later versions, you should execute PyInstaller in that environment.
-You would create a copy of Mac OS X 10.6, typically in a virtual machine.
-In it, install the desired level of Python
-(the default Python in Snow Leopard was 2.6, which PyInstaller no longer supports),
-and install |PyInstaller|, your source, and all its dependencies.
-Then build your app in that environment.
-It should be compatible with later versions of Mac OS X.
+For example, to ensure compatibility with "Mojave" (10.14) and later versions,
+you should set up a full environment (i.e., install python, PyInstaller,
+your application's code, and all its dependencies) in a copy of macOS 10.14,
+using a virtual machine if necessary. Then use PyInstaller to freeze
+your application in that environment; the generated frozen application
+should be compatible with that and later versions of macOS.
 
 
-Building 32-bit Apps in Mac OS X
-====================================
+Building 32-bit Apps in macOS
+================================
 
-.. note:: This section still refers to Python 2.7 provided by Apple.
-          It might not be valid for Python 3 installed
-          from `MacPorts`_ or `Homebrew`_.
+.. note:: This section is largely obsolete, as support for 32-bit application
+          was removed in macOS 10.15 Catalina (for 64-bit multi-arch support
+          on modern versions of macOS, see :ref:`here <macos multi-arch support>`).
+          However, PyInstaller still supports building 32-bit bootloader,
+          and 32-bit/64-bit Python installers are still available from
+          python.org for (some) versions of Python 3.7 which PyInstaller dropped
+          support for in v6.0.
 
-          Please contribute to keep this section up-to-date.
-
-Older versions of Mac OS X supported both 32-bit and 64-bit executables.
+Older versions of macOS supported both 32-bit and 64-bit executables.
 PyInstaller builds an app using the the word-length of the Python used to execute it.
 That will typically be a 64-bit version of Python,
 resulting in a 64-bit executable.
 To create a 32-bit executable, run PyInstaller under a 32-bit Python.
 
-Python as installed in OS X will usually be executable in either 64- or 32-bit mode.
-To verify this, apply the ``file`` command to the Python executable::
+To verify that the installed python version supports execution in either
+64- or 32-bit mode, use the ``file`` command on the Python executable::
 
     $ file /usr/local/bin/python3
     /usr/local/bin/python3: Mach-O universal binary with 2 architectures
@@ -604,59 +694,49 @@ The OS chooses which architecture to run, and typically defaults to 64-bit.
 You can force the use of either architecture by name using the ``arch`` command::
 
     $ /usr/local/bin/python3
-    Python 3.4.2 (v3.4.2:ab2c023a9432, Oct  5 2014, 20:42:22)
+    Python 3.7.6 (v3.7.6:43364a7ae0, Dec 18 2019, 14:12:53)
     [GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
     Type "help", "copyright", "credits" or "license" for more information.
     >>> import sys; sys.maxsize
     9223372036854775807
 
     $ arch -i386 /usr/local/bin/python3
-    Python 3.4.2 (v3.4.2:ab2c023a9432, Oct  5 2014, 20:42:22)
+    Python 3.7.6 (v3.7.6:43364a7ae0, Dec 18 2019, 14:12:53)
     [GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
     Type "help", "copyright", "credits" or "license" for more information.
     >>> import sys; sys.maxsize
     2147483647
 
-Apple's default ``/usr/bin/python`` may circumvent the ``arch``
-specification and run 64-bit regardless.
-(That is not the case if you apply ``arch`` to a specific version
-such as ``/usr/bin/python2.7``.)
-To make sure of running 32-bit in all cases, set the following environment variable::
-
-    VERSIONER_PYTHON_PREFER_32_BIT=yes
-    arch -i386 /usr/bin/python pyinstaller --clean -F -w myscript.py
+.. note:: PyInstaller does not provide pre-built 32-bit bootloaders for
+          macOS anymore. In order to use PyInstaller with 32-bit python,
+          you need to :ref:`build the bootloader <building the bootloader>`
+          yourself, using an XCode
+          version that still supports compiling 32-bit. Depending on the
+          compiler/toolchain, you may also need to explicitly pass
+          ``--target-arch=32bit`` to the ``waf`` command.
 
 
 Getting the Opened Document Names
-====================================
+=================================
 
-.. Note::
-
-	Support for OpenDocument events is broken in |PyInstaller| 3.0
-	owing to code changes needed in the bootloader to support current
-	versions of Mac OS X.
-	Do not attempt to use this feature until it has been fixed.
-	If this feature is important to you, follow and comment on
-	the status of `PyInstaller Issue #1309`_.
-
-When a user double-clicks a document of a type your application
-supports, or when a user drags a document icon and drops it
-on your application's icon, Mac OS X launches your application
+When user double-clicks a document of a type that is registered with
+your application, or when a user drags a document and drops it
+on your application's icon, macOS launches your application
 and provides the name(s) of the opened document(s) in the
 form of an OpenDocument AppleEvent.
-This AppleEvent is received by the |bootloader|
-before your code has started executing.
 
-The |bootloader| gets the names of opened documents from
-the OpenDocument event and encodes them into the ``argv``
-string before starting your code.
-Thus your code can query :data:`sys.argv` to get the names
-of documents that should be opened at startup.
+These events are typically handled via installed event handlers in your
+application (e.g., using ``Carbon`` API via ``ctypes``, or using
+facilities provided by UI toolkits, such as ``tkinter`` or ``PyQt5``).
 
-OpenDocument is the only AppleEvent the |bootloader| handles.
-If you want to handle other events, or events that
-are delivered after the program has launched, you must
-set up the appropriate handlers.
+Alternatively, PyInstaller also supports conversion of open
+document/URL events into arguments that are appended to :data:`sys.argv`.
+This applies only to events received during application launch, i.e.,
+before your frozen code is started. To handle events that are dispatched
+while your application is already running, you need to set up corresponding
+event handlers.
+
+For details, see :ref:`this section <macos event forwarding and argv emulation>`.
 
 
 AIX

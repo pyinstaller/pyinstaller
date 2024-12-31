@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2020, PyInstaller Development Team.
+# Copyright (c) 2020-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -11,4 +11,4 @@
 
 from PyInstaller.utils.hooks import collect_data_files
 
-datas = collect_data_files('pyi_pkgres_testpkg', excludes=['**/__pycache__', ])
+datas = collect_data_files('pyi_pkgres_testpkg', excludes=['**/__pycache__'])

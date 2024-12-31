@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2014-2021, PyInstaller Development Team.
+# Copyright (c) 2014-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -9,16 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller.utils.hooks.qt import pyside2_library_info, \
-    add_qt5_dependencies, get_qt_webengine_binaries_and_data_files
+from PyInstaller.utils.hooks.qt import add_qt5_dependencies
 
-
-# Ensure PySide2 is importable before adding info depending on it.
-if pyside2_library_info.version is not None:
-    hiddenimports, binaries, datas = add_qt5_dependencies(__file__)
-
-    # Include helper process executable, translations, and resources.
-    webengine_binaries, webengine_datas = \
-        get_qt_webengine_binaries_and_data_files(pyside2_library_info)
-    binaries += webengine_binaries
-    datas += webengine_datas
+hiddenimports, binaries, datas = add_qt5_dependencies(__file__)

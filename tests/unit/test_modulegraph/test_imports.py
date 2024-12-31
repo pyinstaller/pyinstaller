@@ -27,16 +27,16 @@ class TestNativeImport (unittest.TestCase):
                 print (%s.__name__)
             """) %(name, name)
 
-        p = subprocess.Popen([sys.executable, '-c', script],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    'testpkg-relimport'),
+        p = subprocess.Popen(
+            [sys.executable, '-c', script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'testpkg-relimport'),
+            encoding='utf8',
         )
         data = p.communicate()[0]
-        if sys.version_info[0] != 2:
-            data = data.decode('UTF-8')
         data = data.strip()
 
         if data.endswith(' refs]'):
@@ -63,15 +63,10 @@ class TestNativeImport (unittest.TestCase):
         m = self.importModule('pkg.mod')
         self.assertEqual(m, 'pkg.mod')
 
-    if sys.version_info[0] == 2:
-        def testOldStyle(self):
-            m = self.importModule('pkg.oldstyle.mod')
-            self.assertEqual(m, 'pkg.mod')
-    else:
-        # python3 always has __future__.absolute_import
-        def testOldStyle(self):
-            m = self.importModule('pkg.oldstyle.mod')
-            self.assertEqual(m, 'mod')
+    # python3 always has __future__.absolute_import
+    def testOldStyle(self):
+        m = self.importModule('pkg.oldstyle.mod')
+        self.assertEqual(m, 'mod')
 
     def testNewStyle(self):
         m = self.importModule('pkg.toplevel.mod')
@@ -166,10 +161,7 @@ class TestModuleGraphImport (unittest.TestCase):
         n = self.mf.find_node('pkg.oldstyle')
         self.assertIsInstance(n, modulegraph.SourceModule)
         refs = set(self.mf.outgoing(n))
-        if sys.version_info[0] == 2:
-            n2 = self.mf.find_node('pkg.mod')
-        else:
-            n2 = self.mf.find_node('mod')
+        n2 = self.mf.find_node('mod')
         self.assertEqual(refs, set([self.mf.find_node('pkg'), n2]))
         ed = self.mf.edgeData(n, n2)
         self.assertIsInstance(ed, modulegraph.DependencyInfo)
@@ -279,21 +271,12 @@ class TestModuleGraphImport (unittest.TestCase):
         self.assertIsInstance(node, modulegraph.SourceModule)
         self.assertEqual(node.identifier, 'pkg.mod')
 
-    if sys.version_info[0] == 2:
-        def testOldStyle(self):
-            node = self.mf.find_node('pkg.oldstyle')
-            self.assertIsInstance(node, modulegraph.SourceModule)
-            self.assertEqual(node.identifier, 'pkg.oldstyle')
-            sub = [ n for n in self.mf.get_edges(node)[0] if n.identifier != '__future__' ][0]
-            self.assertEqual(sub.identifier, 'pkg.mod')
-    else:
-        # python3 always has __future__.absolute_import
-        def testOldStyle(self):
-            node = self.mf.find_node('pkg.oldstyle')
-            self.assertIsInstance(node, modulegraph.SourceModule)
-            self.assertEqual(node.identifier, 'pkg.oldstyle')
-            sub = [ n for n in self.mf.get_edges(node)[0] if n.identifier != '__future__' ][0]
-            self.assertEqual(sub.identifier, 'mod')
+    def testOldStyle(self):
+        node = self.mf.find_node('pkg.oldstyle')
+        self.assertIsInstance(node, modulegraph.SourceModule)
+        self.assertEqual(node.identifier, 'pkg.oldstyle')
+        sub = [ n for n in self.mf.get_edges(node)[0] if n.identifier != '__future__' ][0]
+        self.assertEqual(sub.identifier, 'mod')
 
     def testNewStyle(self):
         node = self.mf.find_node('pkg.toplevel')
@@ -380,6 +363,15 @@ class TestRegressions2 (unittest.TestCase):
         self.assertIsInstance(node, modulegraph.SourceModule)
 
 class TestRegressions3 (unittest.TestCase):
+    # NOTE: in its original variant, this test was using the `distutils`
+    # package as the test package; this has now been replaced with `json`.
+    #
+    # The reason is that with `setuptools`-provided distutils, modulegraph
+    # fails to account for the meta-path loader used by setuptools to
+    # override the distutils, and instead finds the stdlib `distutils`.
+    # This failure is independent of the scenario of this test, which
+    # involves `mypkg` creating a subpackage that essentially forwards
+    # to a stdlib package.
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
         def assertIsInstance(self, value, types):
             if not isinstance(value, types):
@@ -396,24 +388,23 @@ class TestRegressions3 (unittest.TestCase):
         self.mf = modulegraph.ModuleGraph(path=[ root ] + sys.path)
         self.mf.add_script(os.path.join(root, 'script.py'))
 
-    @unittest.skipUnless(not hasattr(sys, 'real_prefix'), "Test doesn't work in virtualenv")
     def testRegr1(self):
-        node = self.mf.find_node('mypkg.distutils')
+        node = self.mf.find_node('mypkg.json')
         self.assertIsInstance(node, modulegraph.Package)
-        node = self.mf.find_node('mypkg.distutils.ccompiler')
+        node = self.mf.find_node('mypkg.json.encoder')
         self.assertIsInstance(node, modulegraph.SourceModule)
         self.assertStartswith(node.filename, os.path.dirname(__file__))
 
-        import distutils.sysconfig, distutils.ccompiler
-        node = self.mf.find_node('distutils.ccompiler')
+        import json.encoder, json.decoder
+        node = self.mf.find_node('json.encoder')
         self.assertIsInstance(node, modulegraph.SourceModule)
         self.assertEqual(os.path.dirname(node.filename),
-                os.path.dirname(distutils.ccompiler.__file__))
+                os.path.dirname(json.encoder.__file__))
 
-        node = self.mf.find_node('distutils.sysconfig')
+        node = self.mf.find_node('json.decoder')
         self.assertIsInstance(node, modulegraph.SourceModule)
         self.assertEqual(os.path.dirname(node.filename),
-                os.path.dirname(distutils.sysconfig.__file__))
+                os.path.dirname(json.decoder.__file__))
 
 class TestRegression4 (unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
@@ -440,24 +431,6 @@ class TestRegression4 (unittest.TestCase):
 
         node = self.mf.find_node('pkg.core.listenerimpl')
         self.assertIsInstance(node, modulegraph.SourceModule)
-
-class TestRegression5 (unittest.TestCase):
-    if not hasattr(unittest.TestCase, 'assertIsInstance'):
-        def assertIsInstance(self, value, types):
-            if not isinstance(value, types):
-                self.fail("%r is not an instance of %r"%(value, types))
-
-    def setUp(self):
-        root = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                'testpkg-regr5')
-        self.mf = modulegraph.ModuleGraph(path=[ root ] + sys.path)
-        self.mf.add_script(os.path.join(root, 'script.py'))
-
-    def testRegr1(self):
-        node = self.mf.find_node('distutils')
-        self.assertIsInstance(node, modulegraph.Package)
-        self.assertIn(os.path.join('distutils', '__init__'), node.filename)
 
 
 class TestRelativeReferenceToToplevel (unittest.TestCase):
@@ -522,26 +495,17 @@ class TestInvalidAsyncFunction (unittest.TestCase):
             if not isinstance(value, types):
                 self.fail("%r is not an instance of %r"%(value, types))
 
-    @unittest.skipUnless(sys.version_info[:2] == (3,5), "Requires python 3.5")
-    def test_invalid_async_function(self):
-        # In python 3.5 the following function is invalid:
-        #
-        #    async def foo():
-        #       yield 1
-        #
-        # This is a syntax error that's reported when compiling the AST
-        # to bytecode, which caused an error in modulegraph.
-        #
-        # In python 3.6 this is valid code (and in earlier versions async
-        # versions didn't exist)
-        root = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                'testpkg-regr8')
-        mf = modulegraph.ModuleGraph(path=[ root ] + sys.path)
-        mf.add_script(os.path.join(root, 'script.py'))
 
-        n = mf.find_node('mod')
-        self.assertIsInstance(n, modulegraph.InvalidSourceModule)
+def test_extended_args_import():
+    source = "".join(f"dummy_var{i} = {i}\n" for i in range(300)) + "import os\n"
+    code = compile(source, "", "exec")
+    node = modulegraph.Node("dummy_module")
+    node._deferred_imports = []
+    node.code = code
+    graph = modulegraph.ModuleGraph()
+    graph._scan_bytecode(node, code, True)
+    assert node._deferred_imports[0][1][0] == "os"
+
 
 if __name__ == "__main__":
     unittest.main()

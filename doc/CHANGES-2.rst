@@ -18,7 +18,7 @@ Changelog for PyInstaller 2.x
 - All temporary work files are now put to --workpath.
 - Add option --clean to remove PyInstaller cache and temporary files.
 - Add experimental support for Linux arm.
-- Minimum suported Python version is 2.4.
+- Minimum supported Python version is 2.4.
 - Add import hooks for docutils, jinja2, sphinx, pytz, idlelib, sqlite3.
 - Add import hooks for IPython, Scipy, pygst, Python for .NET.
 - Add import hooks for PyQt5, Bacon, raven.
@@ -28,7 +28,7 @@ Changelog for PyInstaller 2.x
   pkg_resources.resource_stream(), pkg_resources.resource_string().
 - Better support for pkg_resources (.egg manipulation) in frozen executables.
 - Add option --runtime-hook to allow running custom code from frozen app
-  before loading other Python from the frozen app. This is usefull for some
+  before loading other Python from the frozen app. This is useful for some
   specialized preprocessing just for the frozen executable. E.g. this
   option can be used to set SIP api v2 for PyQt4.
 
@@ -56,7 +56,7 @@ Changelog for PyInstaller 2.x
 - (Windows) Recompile bootloaders with VS2008 to ensure win2k compatibility.
 - (Windows) Use 8.3 filenames for homepath/temppath.
 - Add prefix LOADER to the debug text from bootloader.
-- Allow running PyInstaller programatically.
+- Allow running PyInstaller programmatically.
 - Move/Rename some files, code refactoring.
 - Add more tests.
 - Tilde is in PyInstaller recognized as $HOME variable.
@@ -65,7 +65,7 @@ Changelog for PyInstaller 2.x
 2.0 (2012-08-08)
 ----------------
 
-- Minimum suported Python version is 2.3.
+- Minimum supported Python version is 2.3.
 - (OSX) Add support for Mac OS X 64-bit
 - (OSX) Add support Mac OS X 10.7 (Lion) and 10.8 (Mountain Lion).
 - (OSX) With argument --windowed PyInstaller creates application bundle (.app)

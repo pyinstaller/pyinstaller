@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2021, PyInstaller Development Team.
+# Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,11 +8,9 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""
-Import hook for Gst(GStreamer) http://gstreamer.freedesktop.org/ introspected through
-PyGobject https://wiki.gnome.org/PyGObject via the GObject Introspection middleware
-layer https://wiki.gnome.org/Projects/GObjectIntrospection
-"""
-from PyInstaller.utils.hooks.gi import get_gi_typelibs
 
-binaries, datas, hiddenimports = get_gi_typelibs('GstBase', '1.0')
+from PyInstaller.utils.hooks.gi import GiModuleInfo
+
+module_info = GiModuleInfo('GstBase', '1.0')
+if module_info.available:
+    binaries, datas, hiddenimports = module_info.collect_typelib_data()

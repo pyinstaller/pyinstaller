@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2021, PyInstaller Development Team.
+# Copyright (c) 2013-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -10,11 +10,6 @@
 #-----------------------------------------------------------------------------
 
 
-import sys
-
 def pre_find_module_path(hook_api):
-    # Forbid imports in the port_v2 directory under Python 3
-    # The code wouldn't import and would crash the build process.
+    # Forbid imports in the port_v2 directory under Python 3 The code wouldn't import and would crash the build process.
     hook_api.search_dirs = []
-
-

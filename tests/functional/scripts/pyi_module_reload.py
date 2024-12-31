@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2021, PyInstaller Development Team.
+# Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -9,26 +9,14 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-# PyInstaller always loads modules from the embedded archive before
-# looking at sys.path.
+# PyInstaller always loads modules from the embedded archive before looking at sys.path.
 #
-# This tests creates module with the same name as the one in the
-# embbedded archive. Python should always load module from the
-# embedded archive.
+# This tests creates a module with the same name as the one in the embedded archive. The frozen application
+# should always load the module from the embedded archive.
 
-
-# imp module is deprecated since Python 3.4.
-try:
-    import importlib as imp
-    # Python 3.3 does not have function importlib.reload().
-    if not hasattr(imp, 'reload'):
-        raise ImportError
-except ImportError:
-    import imp
 import os
 import sys
-
+import importlib
 
 # Create module.
 txt = """
@@ -38,19 +26,18 @@ mod_filename = os.path.join(sys._MEIPASS, 'data_reload.py')
 with open(mod_filename, 'w') as f:
     f.write(txt % 2)
 
-
 # Import created module.
-import data_reload
+import data_reload  # noqa: E402
+
 orig_x = data_reload.x
 print(('data_reload.x is %s' % data_reload.x))
-
 
 # Modify code of module - increment x.
 with open(mod_filename, 'w') as f:
     f.write(txt % (data_reload.x + 1))
 
 # Reload module.
-imp.reload(data_reload)
+importlib.reload(data_reload)
 print(('data_reload.x is now %s' % data_reload.x))
 # The value of 'x' should be the orig_x + 1.
 assert data_reload.x == orig_x + 1

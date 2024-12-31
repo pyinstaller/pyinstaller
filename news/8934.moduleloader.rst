@@ -1,0 +1,7 @@
+Split the ``PyiFrozenImporter`` (fused `path based finder
+<https://docs.python.org/3/glossary.html#term-path-based-finder>`_
+and `loader <https://docs.python.org/3/glossary.html#term-loader>`_)
+into separate finder (``PyiFrozenFinder``) and loader (``PyiFrozenLoader``).
+This better matches the separation between python's built-in finders and
+loaders, and thus accommodates 3rd-party code that naively expects to
+encounter only python's built-in finders and loaders.

@@ -10,8 +10,7 @@ assignees: ''
 Welcome to the PyInstaller issue tracker! Before creating an issue, please heed the following:
 
 1. This tracker should only be used to report bugs and request features / enhancements to PyInstaller
-    - For questions and general support, use the mailing list, see
-	  <http://www.pyinstaller.org/support.html#mailing-list>
+    - For questions and general support, use the discussions forum.
 2. Use the search function before creating a new issue. Duplicates will be closed and directed to
    the original discussion.
 3. When making a bug report, make sure you provide all required information. The easier it is for
@@ -25,7 +24,7 @@ Welcome to the PyInstaller issue tracker! Before creating an issue, please heed 
 ### Context information (for bug reports)
 
 * Output of `pyinstaller --version`: ```(paste here)```
-* Version of Python: <!-- e.g. 3.7 -->
+* Version of Python: <!-- e.g. 3.11 -->
 * Platform: <!-- e.g GNU/Linux (distribution), Windows (language settings), OS X, FreeBSD -->
 * How you installed Python: <!-- e.g. python.org/downloads, conda, brew, pyenv, apt, Windows store -->
 * Did you also try this on another platform? Does it work there?

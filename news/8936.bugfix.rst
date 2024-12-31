@@ -1,0 +1,7 @@
+(macOS) Fix directory name sanitization when building macOS .app bundles
+to properly account for nested .framework bundles, and prevent mangling
+of .framework directory name of all but inner-most .framework bundles.
+For example, the ``sdl2dll/dll/SDL2_image.framework`` directory from
+``pysdl2-dll`` PyPI wheels would become mangled into
+``sdl2dll/dll/SDL2_image__dot__framework`` due to having nested
+.framework bundles in its ``Versions/A/Frameworks`` sub-directory.

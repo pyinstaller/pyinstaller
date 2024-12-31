@@ -4,11 +4,6 @@
 Notes about specific Features
 ===============================
 
-This sections describes details about specific features. For a
-:ref:`full list of features <website:features>`
-please refer to the website.
-
-
 .. _ctypes dependencies:
 
 Ctypes Dependencies
@@ -28,7 +23,7 @@ failing the goal to build self-contained PyInstaller executables::
   handle.function_call()
 
 
-Solution in |PyInstaller|
+Solution in PyInstaller
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 PyInstaller contains a pragmatic implementation of Ctypes dependencies: it
@@ -69,7 +64,7 @@ More in detail, the following restrictions apply:
 We feel that it should be enough to cover most ctypes' usages, with little or
 no modification required in your code.
 
-If |PyInstaller| does not detect a library, you can add it to your
+If PyInstaller does not detect a library, you can add it to your
 bundle by passing the respective information to :option:`--add-binary` option or
 :ref:`listing it in the .spec-file <adding binary files>`. If your frozen
 application will be able to pick up the library at run-time can not be
@@ -92,7 +87,7 @@ widen :func:`~ctypes.util.find_library` scope.
 SWIG support
 =========================
 
-|PyInstaller| tries to detect binary modules created by SWIG. This detection
+PyInstaller tries to detect binary modules created by SWIG. This detection
 requires:
 
 - The Python wrapper module must be imported somewhere in your application
@@ -118,10 +113,10 @@ implemented:
 Cython support
 ======================
 
-|PyInstaller| can follow import statements that refer to Cython C object
+PyInstaller can follow import statements that refer to Cython C object
 modules and bundle them – like for any other module implemented in C.
 
-But – again, as for any other module implemented in C – |PyInstaller| can not
+But – again, as for any other module implemented in C – PyInstaller can not
 determine if the Cython C object module is importing some Python module.
 These will typically show up as in a traceback like this
 (mind the ``.pyx`` extension)::
@@ -134,6 +129,128 @@ These will typically show up as in a traceback like this
 So if you are using a Cython C object module, which imports Python modules,
 you will have to list these as :option:`--hidden-import`.
 
+
+.. _bytecode optimization level:
+
+Bytecode Optimization Level
+===========================
+
+In unfrozen Python, the :envvar:`PYTHONOPTIMIZE` environment variable
+and the ``-O`` `command-line option
+<https://docs.python.org/3/using/cmdline.html#miscellaneous-options>`_
+control the optimization level, which is reflected in the value of the
+``optimize`` flag in :data:`sys.flags`. The optimization level determines
+how python byte-compiles pure-python modules when it loads the for the
+first time (or which version of byte-compiled modules is loaded from
+``__pycache__``, if available). For example, at the first optimization level,
+the ``__debug__`` constant becomes ``False`` and ``assert`` statements
+are optimized away, while at the second level, documentation strings are
+removed from the modules' bytecode.
+
+In a PyInstaller-frozen applications, the optimization level of the embedded
+python interpreter is controlled by setting :ref:`python interpreter options
+<specifying python interpreter options>` that are set at the build time.
+This affects the value of ``optimize`` flag in :data:`sys.flags`. However,
+as PyInstaller by default collects pure-python modules in byte-compiled
+form, the value of the ``optimize`` flag at run time has no effect on the
+bytecode of such modules. I.e., even if optimization level of python
+interpreter in the frozen application is set to the second level via
+:ref:`python interpreter options <specifying python interpreter options>`,
+``assert`` statements will continue to work, and functions will retain their
+documentation strings. In order to affect the bytecode, the optimization
+level needs to be enforced during the build, specifically when PyInstaller
+compiles bytecode of modules that are to be collected.
+
+In PyInstaller <= 6.5, the only way to affect optimization level of
+the collected python code was to set the optimization level of the python
+process in which PyInstaller was running; either by setting the
+:envvar:`PYTHONOPTIMIZE` environment variable prior to running the
+PyInstaller command, or by invoking PyInstaller as a module and setting
+the python's ``-O`` flag, for example ``python -OO -m PyInstaller <...>``.
+
+In PyInstaller 6.6, an explicit bytecode optimization setting has been
+added both to the ``Analysis`` object in the :ref:`spec file <using spec files>`
+and to the command-line interface, in the form of the :option:`--optimize`
+command-line option.
+
+
+Optimization setting in the spec file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting with PyInstaller 6.6, the constructor of the ``Analysis`` object
+in the :ref:`spec file <using spec files>` accepts an integer parameter
+called ``optimize``. This parameter directly controls the optimization
+level of bytecode for collected python modules and the program's entry-point
+script.
+
+Setting the optimization level to a fixed value (0, 1, or 2) helps
+ensuring that the collected bytecode is always compiled with the specified
+optimization level, regardless of the optimization level under which
+the build process is running. On the other hand, setting the value to -1
+will cause the bytecode optimization level to be inherited from the
+build process (the behavior of older PyInstaller versions).
+
+Note that the ``optimize`` parameter passed to ``Analysis`` affects only
+the bytecode of collected modules. The run-time optimization level of the
+embedded interpreter (reflected in the value of ``optimize`` flag in
+:data:`sys.flags` as shown at run-time) is still controlled by
+:ref:`python interpreter options <specifying python interpreter options>`
+passed to the ``EXE`` constructor, and at the spec file level, the two
+settings are *not* coupled in any way.
+
+Therefore, if you want to disable ``assert`` statements in the
+collected modules as well as ensure that ``sys.flags.optimize`` displays
+1 at run time, you need to pass ``optimize=1`` parameter to ``Analysis``
+and pass a ``[('O', None, 'OPTION')]`` to ``EXE`` (as per
+:ref:`specifying python interpreter options`).
+
+
+Using the :option:`--optimize` command-line option
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PyInstaller 6.6 introduced a new command-line option, called :option:`--optimize`.
+This option can be used with ``pyi-makespec`` when generating a
+:ref:`spec file <using spec files>` for later use, or with ``pyinstaller``
+when building directly from a .py file (i.e., with spec file generated
+on-the-fly during the build).
+
+In the generated :ref:`spec file <using spec files>`, the value passed
+via :option:`--optimize` option is passed to ``Analysis`` via the
+``optimize`` argument, and in addition, the corresponding
+:ref:`python interpreter options <specifying python interpreter options>`
+are also generated for the ``EXE``. Therefore, this is the preferred
+approach to specifying the target bytecode optimization level for the
+frozen application.
+
+If :option:`--optimize` is not used on the command-line, but
+:option:`--python-option` is used to pass the ``O``
+:ref:`python interpreter options <specifying python interpreter options>`,
+the optimization level is inferred from number of such options, and passed
+to ``Analysis`` in the generated spec file.
+
+If neither :option:`--optimize` nor :option:`--python-option` are used,
+the optimization level for the generated spec file is determined from
+the optimization level of python interpreter under which PyInstaller
+is running. In the generated spec file, the inherited optimization level
+is passed to ``Analysis`` (thus fixing the optimization level for
+subsequent builds) and corresponding ``OPTION`` entries are generated
+for ``EXE`` as necessary.
+
+
+Optimization level and the modulegraph's code-cache
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+During the import analysis process, PyInstaller's modulegraph ends up
+retrieving the code objects (bytecode) for all python modules that pass
+through analysis.
+
+If the optimization level of the PyInstaller's build process matches the
+target optimization level for collected modules, the modulegraph's
+code-object cache can be reused, which helps to speed up the build
+process.
+
+
+.. _macos multi-arch support:
 
 macOS multi-arch support
 ========================
@@ -150,7 +267,7 @@ options available for python:
   ``x86_64`` and ``arm64`` slices): recent ``universal2`` `python.org`
   builds
 
-|PyInstaller| aims to support all possible combinations stemming from
+PyInstaller aims to support all possible combinations stemming from
 the above options:
 
 - single-arch application created using corresponding single-arch python
@@ -180,15 +297,47 @@ Architecture validation during binary collection
 
 To prevent run-time issues caused by missing or mismatched architecture slices
 in binaries, the binary collection process performs strict architecture validation.
-It checks whether collected binary files contain required arch slice(s), and if
-not, the build process is aborted with an error message about the problematic
-binary.
+It checks whether collected binary files contain required arch slice(s) -- if
+not, the build process is aborted with exception of type
+``PyInstaller.utils.osx.IncompatibleBinaryArchError`` that contains a
+detailed error message about the problematic binary.
+
+The error message will typically be either ``"{name} does not contain
+slice for {target_arch}!"`` (when trying to build a ``universal2`` program
+and the collected binary is a thin single-arch file) or ``"{name} is
+incompatible with target arch {target_arch} (has arch: ...)!"`` (when
+trying to build program for foreign architecture in a partial ``universal2``
+environment and the collected binary is a thin single-arch file for the
+non-target architecture).
 
 In such cases, creating frozen application for the selected target
 architecture will not be possible unless the problem of missing arch slices
-is manually addressed (for example, by downloading the wheel corresponding to
+is manually addressed; for example, by downloading the wheel corresponding to
 the missing architecture, and stiching the offending binary files together
-using the ``lipo`` utility).
+using the ``lipo`` utility. You can also use 3rd party utilities, such as
+``delocate-merge`` from the `delocate <https://pypi.org/project/delocate>`_
+project, to merge two single-arch wheels for a package into a ``universal2``
+wheel, and then install the merged wheel into your build environment.
+
+.. versionchanged:: 4.10
+   In earlier PyInstaller versions, the architecture validation was performed
+   on all collected binaries, such as python extension modules and the
+   shared libraries referenced by those extensions. As of PyInstaller 4.10,
+   the architecture validation is limited to only python extension modules.
+
+   The individual architecture slices in a multi-arch ``universal2`` extension
+   may be linked against (slices in) ``universal2`` shared libraries, or
+   against distinct single-arch thin shared libraries. This latter case makes
+   it impossible to reliably validate architecture of the collected shared
+   libraries w.r.t. the target application architecture.
+
+   However, the extension modules do need to be fully compatible with the target
+   application architecture. Therefore, their continued validation should
+   hopefully suffice to detect attempts at using incompatible single-arch
+   python packages [*]_.
+
+.. [*] Although nothing really prevents a package from having distinct,
+   architecture-specific extension modules...
 
 
 Trimming fat binaries for single-arch targets
@@ -208,7 +357,7 @@ even if ad-hoc (i.e., without actual code-signing identity). This means
 that ``arm64`` arch slices (but possibly also ``x86_64`` ones, especially
 in ``universal2`` binaries) in collected binaries always come with signature.
 
-The processing of binaries done by |PyInstaller| (e.g., library path
+The processing of binaries done by PyInstaller (e.g., library path
 rewriting in binaries' headers) invalidates their signatures. Therefore,
 the signatures need to be re-generated, otherwise the OS refuses to load
 a binary.
@@ -225,7 +374,7 @@ with their identity. This is useful because for ``onefile`` builds,
 signing of embedded binaries cannot be performed in a post-processing step.
 
 .. note::
-   When codesign identity is specified, |PyInstaller| also turns on
+   When codesign identity is specified, PyInstaller also turns on
    *hardened runtime* by passing ``--options=runtime`` to the ``codesign``
    command. This requires the codesign identity to be a valid Apple-issued
    code signing certificate, and will not work with self-signed certificates.
@@ -245,7 +394,7 @@ done in the ``.spec`` file via ``entitlements_file=`` argument to
 App bundles
 ~~~~~~~~~~~
 
-|PyInstaller| also automatically attempts to sign `.app bundles`, either
+PyInstaller also automatically attempts to sign `.app bundles`, either
 using ad-hoc identity or actual signing identity, if provided via
 :option:`--codesign-identity` switch. In addition to passing same options as
 when signing collected binaries (identity, hardened runtime, entitlement),
@@ -256,6 +405,1446 @@ Should the signing of the bundle fail for whatever reason, the error
 message from the ``codesign`` utility will be printed to the console,
 along with a warning that manual intervention and manual signing of the
 bundle are required.
+
+
+.. _macos event forwarding and argv emulation:
+
+macOS event forwarding and argv emulation in app bundles
+========================================================
+
+The user interaction with macOS app bundles takes place via so called
+Apple Events. When the user double clicks on the application's icon, the
+application is started and receives an Open Application (``'oapp'``) event.
+Dragging a document on the application's icon or attempting to open
+an application-registered file generates an Open Document (``'odoc'``) event.
+Similarly, launching an URL with application-registered schema generates
+a Launch/Get URL (``'GURL'``) event. Typically, a long-running UI application
+installs ``Carbon`` or ``Cocoa`` event handlers (or their equivalents provided
+by higher-level UI toolkit) to handle these requests during its runtime.
+
+PyInstaller provides two aspects of support for macOS event handling;
+automatic `event forwarding`, which enables frozen application to receive
+events in ``onefile`` mode, and optional `argv emulation` for converting
+initial opening event into ``sys.argv`` arguments. Both aspects apply only
+to app bundles (i.e., the ``windowed`` bootloader variant) and not to
+POSIX (command-line) frozen applications.
+
+.. versionchanged:: 5.0
+   In earlier PyInstaller versions, `argv emulation` was always enabled
+   in ``onefile`` mode and was unavailable in ``onedir`` mode.
+   As PyInstaller 5.0, `argv emulation` must be explicitly opted-in,
+   and is available in both ``onefile`` and ``onedir`` mode.
+
+
+Event forwarding
+~~~~~~~~~~~~~~~~
+
+In PyInstaller ``onedir`` bundles, the application runs as a single
+process, and therefore receives Apple Events normally, as other macOS
+applications would.
+
+In ``onefile`` bundles, the application has a parent launcher process and
+the child process; the open document requests generated by user are
+received by the parent process, and are automatically forwarded to
+the child process, where the frozen python code is running.
+
+Event forwarding is implemented for the following types of Apple Events:
+
+ - ``kAEOpenDocuments`` (``'odoc'``): open document request
+ - ``kAEGetURL`` (``'GURL'``): open/launch URL request
+ - ``kAEReopenApplication`` (``'rapp'``): reopen application
+ - ``kAEActivate`` (``'actv'``): activate application (bring to front)
+
+
+Optional argv emulation
+~~~~~~~~~~~~~~~~~~~~~~~
+
+PyInstaller implements an optional feature called `argv emulation`,
+which can be toggled via ``argv_emulation=`` argument to ``EXE()``
+in the :ref:`.spec file <using spec files>`, or enabled on command-line
+via :option:`--argv-emulation` flag.
+
+If enabled, the bootloader performs initial Apple Event handling to
+intercept events during the application's start-up sequence, and appends
+file paths or URLs received via Open Document/URL ('odoc' and 'GURL')
+events to :data:`sys.argv`, as if they were received via command-line.
+
+This feature is intended for simple applications that do not implement
+the event handling, but still wish to process initial open document
+request. This applies only to initial open events; events that occur
+after the frozen python code is started are dispatched via event queue
+(in ``onedir`` mode directly, and forwarded to child process in ``onefile``
+mode.) and as such need to be handled via event handlers.
+
+.. note::
+   This feature is not suitable for long-running applications that may need to
+   service multiple open requests during their lifetime. Such applications
+   will require proper event handling anyay, and therefore do not benefit from
+   having initial events processed by `argv emulation`.
+
+.. warning::
+   The initial event processing performed by bootloader in ``onedir`` mode
+   may interfere with UI toolkit used by frozen python application, such
+   as ``Tcl/Tk`` via ``tkinter`` module. The symptoms may range from window
+   not being brought to front when the application startup to application
+   crash with segmentation fault.
+
+   While PyInstaller tries to mitigate the issue on its end, we recommend
+   against using `argv emulation` in combination with UI toolkits.
+
+
+Practical examples
+~~~~~~~~~~~~~~~~~~
+
+This section provides some practical examples on handling file and URL
+open events in macOS application bundles, via `argv emulation` in a simple
+one-shot program, or via installed event handlers in a GUI application.
+
+
+Registering supported file types and custom URL schemas
+-------------------------------------------------------
+
+In order for macOS application bundle to handle open operations
+on files and custom URL schemas, the OS needs to be informed what
+file types and what URL schemas the application supports. This
+is done in the bundle's ``Info.plist`` file, via ``CFBundleDocumentTypes``
+and ``CFBundleURLTypes`` entries:
+
+.. code-block:: xml
+
+   <?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+   <plist version="1.0">
+   <dict>
+     [...] <!-- preceding entries --->
+     <key>CFBundleDocumentTypes</key>
+     <array>
+       <dict>
+         <key>CFBundleTypeName</key>
+         <string>MyCustomFileType</string>
+         <key>CFBundleTypeExtensions</key>
+         <array>
+           <string>mcf</string>
+         </array>
+         <key>CFBundleTypeRole</key>
+         <string>Viewer</string>
+       </dict>
+     </array>
+     <key>CFBundleURLTypes</key>
+     <array>
+       <dict>
+         <key>CFBundleURLName</key>
+         <string>MyCustomUrlSchema</string>
+         <key>CFBundleTypeRole</key>
+         <string>Viewer</string>
+         <key>CFBundleURLSchemes</key>
+         <array>
+           <string>my-url</string>
+         </array>
+       </dict>
+     </array>
+   </dict>
+   </plist>
+
+In the above example, the application declares itself a viewer for
+made-up ``.mcf`` files, and as a viewer for URLs beginning with
+``my-url://``.
+
+PyInstaller automatically generates an ``Info.plist`` file for your
+application bundle; to have it include the entries shown above, add the
+``info_plist`` argument to the ``BUNDLE()`` directive in the
+:ref:`.spec file <using spec files>`, and set its content as follows:
+
+.. code-block:: python
+
+   app = BUNDLE(
+       # [...]
+       info_plist={
+           'CFBundleURLTypes': [{
+               'CFBundleURLName': 'MyCustomUrlSchema',
+               'CFBundleTypeRole': 'Viewer',
+               'CFBundleURLSchemes': ['my-url', ],
+           }],
+           'CFBundleDocumentTypes': [{
+               'CFBundleTypeName': 'MyCustomFileType',
+               'CFBundleTypeExtensions': ['mcf', ],
+               'CFBundleTypeRole': "Viewer",
+           }],
+       }
+   )
+
+
+Open event handling with argv emulation
+---------------------------------------
+
+Consider the following python script that began its life as a command-line
+utility, to be invoked from the terminal::
+
+  python3 img2gray.py image1.png image2.png ...
+
+The script processes each passed image, converts it to grayscale, and
+saves it next to the original, with `-gray` appended to the file name:
+
+.. code-block:: python
+
+   # img2gray.py
+   import sys
+   import os
+
+   import PIL.Image
+
+
+   if len(sys.argv) < 2:
+       print(f"Usage: {sys.argv[0]} <filename> [filenames...]")
+       sys.exit(1)
+
+   # Convert all given files
+   for input_filename in sys.argv[1:]:
+       filename, ext = os.path.splitext(input_filename)
+       output_filename = filename + '-gray' + ext
+
+       img = PIL.Image.open(input_filename)
+       img_g = img.convert('L')
+       img_g.save(output_filename)
+
+
+If you generate an application bundle (as opposed to a command-line
+POSIX application), the most likely way of user interaction will be
+dragging image files onto the bundle's icon or using ``Open with...``
+entry from the image file's context menu. Such interaction generates
+open file events, and in general requires your application code to
+implement event handling.
+
+Enabling `argv emulation` in PyInstaller causes its bootloader to
+process events during the application startup, and extend ``sys.argv``
+with any file paths or URLs that might have been received via open file
+or URL requests. This allows your application to process the received
+filenames as if they were passed via command-line, without any
+modifications to the code itself.
+
+The following :ref:`.spec file <using spec files>` provides
+a complete example for a ``onedir`` application bundle that allows
+conversion of ``.png`` and ``.jpg`` images:
+
+.. code-block:: python
+
+   # img2gray.spec
+   a = Analysis(['img2gray.py'], )
+
+   pyz = PYZ(a.pure)
+
+   exe = EXE(
+        pyz,
+        a.scripts,
+        exclude_binaries=True,
+        name='img2gray',
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=False,
+        console=False,
+        argv_emulation=True,  # enable argv emulation
+   )
+
+   coll = COLLECT(
+        exe,
+        a.binaries,
+        a.datas,
+        strip=False,
+        upx=False,
+        upx_exclude=[],
+        name='img2gray'
+   )
+
+   app = BUNDLE(
+        coll,
+        name='img2gray.app',
+        # Register .png and .jpg as supported file types
+        info_plist={
+             'CFBundleDocumentTypes': [{
+                  'CFBundleTypeName': "Convertible image types",
+                  'CFBundleTypeExtensions': [
+                       'png', 'jpg',
+                  ],
+                  'CFBundleTypeRole': "Viewer",
+             }],
+        }
+   )
+
+The user can now drag image file(s) onto the icon of the resulting ``img2gray``
+application bundle, or select ``img2gray`` under the ``Open with...`` entry
+in the image file's context menu.
+
+.. note::
+
+   The `argv emulation` handles only initial open event, which is received
+   before your frozen python code is started. If you wish to handle
+   subsequent open requests while the application is still running,
+   you need to implement proper event handling in your python code.
+
+
+Open event handling in a ``tkinter``-based GUI application
+----------------------------------------------------------
+
+The Tcl/Tk framework used by ``tkinter`` allows application to
+provide event handlers for pre-defined types of Apple Events, by
+registering `macOS-specific commands <https://www.tcl.tk/man/tcl8.6/TkCmd/tk_mac.html>`_.
+
+The handler for open file events can be registered via
+``::tk::mac::OpenDocument`` command, while the handler for open URL
+events can be registered via ``::tk::mac::LaunchURL`` command. The
+latter is available starting with Tcl/Tk 8.6.10 [*]_.
+
+.. [*] At the time of writing, python.org builds use Tcl/Tk 8.6.5, except
+       for the Python 3.9.x `macOS 64-bit universal2 installer` builds, which
+       use Tcl/Tk 8.6.10. Homebrew Python requires ``tkinter`` to be explicitly
+       installed as ``python-tk``, and uses latest version of Tcl/Tk, 8.6.11.
+       Registering ``::tk::mac::LaunchURL`` command with versions of Tcl/Tk
+       older than 8.6.10 is essentially no-op.
+
+The following application illustrates the event handling using ``tkinter``,
+by logging all received open file/URL events into a scrollable text
+widget:
+
+.. code-block:: python
+
+   # eventlogger_tk.py
+   import sys
+
+   import tkinter
+   import tkinter.scrolledtext
+
+
+   class Application:
+       def __init__(self):
+           # Create UI
+           self.window = tkinter.Tk()
+           self.window.geometry('800x600')
+           self.window.title("Tk-based event logger")
+
+           self.text_view = tkinter.scrolledtext.ScrolledText()
+           self.text_view.pack(fill=tkinter.BOTH, expand=1)
+           self.text_view.configure(state='disabled')
+
+           # Register event handlers
+           # See https://tcl.tk/man/tcl/TkCmd/tk_mac.html for list of
+           # macOS-specific commands
+           self.window.createcommand("::tk::mac::OpenDocument", self.open_document_handler)
+           self.window.createcommand("::tk::mac::LaunchURL", self.open_url_handler)  # works with Tcl/Tk >= 8.6.10
+
+       def append_message(self, msg):
+           """Append message to text view."""
+           self.text_view.configure(state='normal')
+           self.text_view.insert('end', msg + '\n')
+           self.text_view.configure(state='disabled')
+
+       def run(self):
+           """Run the main loop."""
+           app.append_message("Application started!")
+           app.append_message(f"Args: {sys.argv[1:]}")
+           self.window.mainloop()
+
+       # Event handlers
+       def open_document_handler(self, *args):
+           app.append_message(f"Open document event: {args}")
+
+       def open_url_handler(self, *args):
+           app.append_message(f"Open URL event: {args}")
+
+
+   if __name__ == '__main__':
+       app = Application()
+       app.run()
+
+
+The corresponding :ref:`.spec file <using spec files>` that builds
+a ``onedir`` application bundle with a custom file association
+(``.pyi_tk``) and a custom URL schema (``pyi-tk://``):
+
+.. code-block:: python
+
+   a = Analysis(['eventlogger_tk.py'])
+
+   pyz = PYZ(a.pure)
+
+   exe = EXE(
+       pyz,
+       a.scripts,
+       exclude_binaries=True,
+       name='eventlogger_tk',
+       debug=False,
+       bootloader_ignore_signals=False,
+       strip=False,
+       upx=False,
+       console=False,
+       argv_emulation=False,  # unnecessary as app handles events
+   )
+
+   coll = COLLECT(
+       exe,
+       a.binaries,
+       a.datas,
+       strip=False,
+       upx=False,
+       name='eventlogger_tk'
+   )
+
+   app = BUNDLE(
+       coll,
+       name='eventlogger_tk.app',
+       # Register custom protocol handler and custom file extension
+       info_plist={
+           'CFBundleURLTypes': [{
+               'CFBundleURLName': 'MyCustomUrlSchemaTk',
+               'CFBundleTypeRole': 'Viewer',
+               'CFBundleURLSchemes': ['pyi-tk'],
+           }],
+           'CFBundleDocumentTypes': [{
+               'CFBundleTypeName': 'MyCustomFileTypeTk',
+               'CFBundleTypeExtensions': [
+                   'pyi_tk',
+               ],
+               'CFBundleTypeRole': "Viewer",
+            }],
+       }
+   )
+
+
+Once running, the application logs all received open file and open URL
+requests. These are generated either by trying to open a file with
+``.pyi_tk`` extension using the UI, or using ``open`` command from
+the terminal::
+
+    $ touch file1.pyi_tk file2.pyi_tk file3.pyi_tk file4.pyi_tk
+
+    $ open file1.pyi_tk
+    $ open file2.pyi_tk
+
+    $ open pyi-tk://test1
+    $ open pyi-tk://test2
+
+    $ open file3.pyi_tk file4.pyi_tk
+
+
+Open event handling in a Qt-based GUI application
+-------------------------------------------------
+
+In Qt-based applications, open file and open URL requests are handled
+by installing application-wide event filter for `QFileOpenEvent
+<https://doc.qt.io/qt-5/qfileopenevent.html>`_.
+
+This event abstracts both open file and open URL request, with file
+open requests having ``file://`` URL schema. An event contains a
+single file name or URL, so an open request containing multiple
+targets generates corresponding number of ``QFileOpenEvent`` events.
+
+Below is an example application and its corresponding :ref:`.spec file <using spec files>`:
+
+.. code-block:: python
+
+   # eventlogger_qt.py
+   import sys
+   import signal
+
+   from PySide2 import QtCore, QtWidgets
+
+
+   class Application(QtWidgets.QApplication):
+       """
+       QtWidgets.QApplication with extra handling for macOS Open
+       document/URL events.
+       """
+       openFileRequest = QtCore.Signal(QtCore.QUrl, name='openFileRequest')
+
+       def event(self, event):
+           if event.type() == QtCore.QEvent.FileOpen:
+               # Emit signal so that main window can handle the given URL.
+               # Or open a new application window for the file, or whatever
+               # is appropriate action for your application.
+               self.openFileRequest.emit(event.url())
+               return True
+           return super().event(event)
+
+
+   class MainWindow(QtWidgets.QMainWindow):
+       """
+       Main window.
+       """
+       def __init__(self, *args, **kwargs):
+           super().__init__(*args, **kwargs)
+
+           self.resize(800, 600)
+
+           self.setWindowTitle("Qt-based event logger")
+
+           # Construct the UI
+           self.scroll_area = QtWidgets.QScrollArea()
+           self.scroll_area.setWidgetResizable(True)
+           self.setCentralWidget(self.scroll_area)
+
+           self.text_edit = QtWidgets.QTextEdit()
+           self.scroll_area.setWidget(self.text_edit)
+           self.text_edit.setReadOnly(True)
+
+       def append_message(self, msg):
+           """
+           Append message to text view.
+           """
+           self.text_edit.append(msg)
+
+       def handle_open_file_request(self, url):
+           self.append_message(f"Open request: {url.toString()}")
+
+
+   if __name__ == '__main__':
+       # Make Ctrl+C work
+       signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+       app = Application(list(sys.argv))
+
+       window = MainWindow()
+       window.show()
+
+       window.append_message("Application started!")
+       window.append_message(f"Args: {sys.argv[1:]}")
+
+       app.openFileRequest.connect(window.handle_open_file_request)
+
+       app.exec_()
+
+
+.. code-block:: python
+
+   # eventlogger_qt.spec
+   a = Analysis(['eventlogger_qt.py'])
+
+   pyz = PYZ(a.pure)
+
+   exe = EXE(
+       pyz,
+       a.scripts,
+       exclude_binaries=True,
+       name='eventlogger_qt',
+       debug=False,
+       bootloader_ignore_signals=False,
+       strip=False,
+       upx=False,
+       console=False,
+       argv_emulation=False,  # unnecessary as app handles events
+   )
+
+   coll = COLLECT(
+       exe,
+       a.binaries,
+       a.datas,
+       strip=False,
+       upx=False,
+       name='eventlogger_qt'
+   )
+
+   app = BUNDLE(
+       coll,
+       name='eventlogger_qt.app',
+       # Register custom protocol handler and custom file extension
+       info_plist={
+           'CFBundleURLTypes': [{
+               'CFBundleURLName': 'MyCustomUrlSchemaQt',
+               'CFBundleTypeRole': 'Viewer',
+               'CFBundleURLSchemes': ['pyi-qt'],
+           }],
+           'CFBundleDocumentTypes': [{
+               'CFBundleTypeName': 'MyCustomFileTypeQt',
+               'CFBundleTypeExtensions': [
+                   'pyi_qt',
+               ],
+               'CFBundleTypeRole': "Viewer",
+            }],
+       }
+   )
+
+The application behaves in the same way as its ``tkinter``-based
+counterpart, except that the associated file extension and URL
+schema have been adjusted to prevent interference between the two
+example applications.
+
+
+Initial open event
+~~~~~~~~~~~~~~~~~~
+
+This section contains notes about behavior of the initial open event
+received by appliation, as seen by the frozen python code (or the
+UI toolkit it uses).
+
+When application is opened normally, this is done via Open Application
+(``'oapp'``) event, which is the first event received by the application.
+If application is opened in response to open document or open URL request
+(i.e., it is not yet running when request is made), then the first
+received event is ``'odoc'`` or ``'GURL'``, respectively.
+
+In PyInstaller-frozen ``onefile`` bundles, the child process always
+starts with ``'oapp'`` event, regardless how the application was
+started. This is because the child is always started "normally", and
+it is the parent who receives the actual opening event; if the parent
+was opened with ``'odoc'`` or ``'GURL'`` event, then event is either
+forwarded to child or converted to ``sys.argv`` that is passed to the
+child, depending on whether `argv emulation` is enabled or not.
+
+Therefore, in ``onefile`` mode, `argv emulation` has no direct effect
+on the initial open event (as seen by the frozen python code), which is
+always ``'oapp'``.
+
+In ``onedir`` bundles, there application consists of single process,
+which receives the events. Without `argv emulation`, the initial open
+event (as seen by the frozen python code) may be either ``'oapp'``,
+``'odoc'``, or ``'GURL'``, depending on how application was started.
+
+However, if `argv emulation` is enabled in a ``onedir`` bundle, its
+processing of initial event leaves the event queue empty. The lack
+of initial open event seems to cause segmentation fault with Tcl/Tk 8.6.11
+and `Homebrew`_ Python 3.9.6 (:issue:`5581`). As a work-around, the
+bootloader attempts to submit an ``'oapp'`` event to itself, so that
+when the frozen python code inspects the event queue, it finds an
+initial open event (i.e., ``'oapp'``). These potential side effects
+of `argv emulation` on UI toolkits are the reason why we recommend
+against using them together.
+
+
+Signal handling in console Windows applications and onefile application cleanup
+===============================================================================
+
+.. _`abort`: https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/abort
+.. _`signal`: https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/signal
+.. _`SetConsoleCtrlHandler`: https://docs.microsoft.com/en-us/windows/console/setconsolectrlhandler
+.. _`ExitProcess`: https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-exitprocess
+.. _`TerminateProcess`: https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess
+
+
+The signal handling in console applications on Windows differs
+from POSIX-based operating systems, such as linux and macOS.
+While signals generated by abnormal conditions, such as ``SIGABRT``
+(abnormal termination; for example due to C code calling abort_),
+``SIGFPE`` (floating-point error), and ``SIGSEGV`` (illegal storage access),
+are generated and can be handled using handlers installed via the signal_
+function, this is not the case for signals associated with program
+interruption and termination.
+
+Specifically, interrupting a console-enabled program by pressing *Ctrl+C*
+does not generate the ``SIGINT`` signal, but rather a special *console
+control signal* called ``CTRL_C_EVENT``, which can be handled by a handler
+installed via the SetConsoleCtrlHandler_ win32 API function [#high_level_signal]_.
+Similarly, as noted in MSDN documentation on signal_, the ``SIGTERM``
+signal is not generated under Windows. Instead, there are `several
+console control signals <https://docs.microsoft.com/en-us/windows/console/handlerroutine>`_:
+
+* ``CTRL_C_EVENT``: interrupt via *Ctrl+C* key combination
+
+* ``CTRL_BREAK_EVENT``: interrupt via *Ctrl+Break* key combination
+
+* ``CTRL_CLOSE_EVENT``: closing the parent console window
+
+* ``CTRL_LOGOFF_EVENT``: a user logging off
+
+* ``CTRL_SHUTDOWN_EVENT``: system shutting down
+
+.. note::
+   As documented in SetConsoleCtrlHandler_ notes, if the process ends
+   up loading ``gdi32.dll`` or ``user32.dll`` shared library (either
+   directly or indirectly), the installed console handler will not receive
+   ``CTRL_LOGOFF_EVENT`` and ``CTRL_SHUTDOWN_EVENT`` events. The session
+   shutdown can be detected and handled only by means of setting up a
+   hidden window and processing ``WM_QUERYENDSESSION`` and ``WM_ENDSESSION``
+   window messages.
+
+When a console control signal is generated, the handler installed via
+SetConsoleCtrlHandler_ (if any) is executed *in a separate thread*,
+spawned within the program process by the operating system. In other
+words, the handler function is executed in parallel to the main program
+thread, which is necessary as the latter might be waiting on a blocking
+operation or performing an endless loop.
+
+As noted `here <https://docs.microsoft.com/en-us/windows/console/handlerroutine#remarks>`_,
+upon receiving ``CTRL_CLOSE_EVENT``, ``CTRL_LOGOFF_EVENT``, or
+``CTRL_SHUTDOWN_EVENT``, the handler function can perform any necessary
+clean-up [#handler_thread]_, and either:
+
+* call ExitProcess_ to terminate the process.
+
+* return ``FALSE`` (0). Other registered handlers are called, and if
+  none returned ``TRUE``, the default handler terminates the process
+  by calling ExitProcess_.
+
+* return ``TRUE`` (non-zero). The system terminates the process immediately,
+  without calling any other registered handler functions.
+
+In other words, all options result in eventual program termination.
+
+On the other hand, the default handler for ``CTRL_C_EVENT`` and
+``CTRL_BREAK_EVENT`` also terminates the process, but this behavior can
+be modified by suppressing the default handler by returning ``TRUE``
+in the user-installed one.
+
+Another important aspect of console control signals is that
+handling ``CTRL_CLOSE_EVENT``, ``CTRL_LOGOFF_EVENT``, and ``CTRL_SHUTDOWN_EVENT``
+is subject to system-imposed `time-outs
+<https://docs.microsoft.com/en-us/windows/console/handlerroutine#timeouts>`_
+(e.g., five seconds for the ``CTRL_CLOSE_EVENT``); if the process does
+not exit within the time-out limit, the operating system itself
+unconditionally terminates the process.
+
+The above effectively means that once the program receives such control
+signal, its termination is inevitable (i.e., the signal cannot be ignored).
+At best, the termination can be delayed to perform any necessary clean-up,
+but even this must be done within system-imposed time limits.
+
+.. [#high_level_signal] The higher-level programming languages, such as
+   python, might emulate the standard signals; but under-the-hood mechanics
+   still involve console control signals discussed in this section.
+
+.. [#handler_thread] Note that at this point, however, the program is
+   essentially a multi-threaded one, so usual multi-threading caveats
+   may apply.
+
+
+Example of console control signal handling in python application
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following code demonstrates the basic implementation of a graceful
+console application shutdown. If the application is interrupted
+by user pressing *Ctrl+C* or *Ctrl+Break*, or closed due to user
+closing the console window, the application's state is stored to a
+file, so it can be restored on a subsequent run.
+
+.. _console_counter example:
+
+.. code-block:: python
+
+   # console_counter.py
+   import sys
+   import time
+   import pathlib
+
+   import win32api  # pip install pywin32
+
+
+   def console_handler(signal):
+       print(f"Console handler (signal {signal})!")
+       global keep_running
+       keep_running = False
+       # Sleep until process either finishes or is killed by the OS
+       time.sleep(20)
+       return True
+
+
+   if __name__ == '__main__':
+       keep_running = True
+
+       # Install console handler
+       win32api.SetConsoleCtrlHandler(console_handler, 1)
+
+       # Restore state, if available
+       state_file = pathlib.Path.home() / 'counter_state.txt'
+       if state_file.is_file():
+           print(f"Restoring state from {state_file}...", file=sys.stderr)
+           try:
+               with open(state_file, 'r') as fp:
+                   counter = int(fp.readline())
+           except Exception:
+               print("Failed to restore state from file!", file=sys.stderr)
+               counter = 0
+       else:
+           print("State file does not exist!", file=sys.stderr)
+           counter = 0
+
+       print(f"Initial counter value: {counter}", file=sys.stderr)
+
+       # Main loop
+       while keep_running:
+           print(f"Counter value: {counter}")
+           counter += 1
+           time.sleep(1)
+
+       # Clean-up
+       print(f"Storing state to {state_file}...", file=sys.stderr)
+       try:
+           with open(state_file, 'w') as fp:
+               print(f"{counter}", file=fp)
+       except Exception:
+           print(f"Failed to store state to {state_file}!", file=sys.stderr)
+
+       print("Goodbye!")
+       time.sleep(1)  # Delay exit for another second
+
+The console control signal handler in the above code handles *all*
+console signals. This includes *Ctrl+C* event, which would otherwise
+generate a ``KeyboardInterrupt`` exception in the program's main
+thread [#keyboard_interrupt]_. After signalling the loop in the
+main thread to exit via the global boolean variable, the handler sleeps
+"forever". This approach works because the handler is executed in a
+separate thread, and this thread is terminated once the process ends -
+either due to main thread reaching its end, or due to the operating
+system terminating the process.
+
+The above code should work as expected when executed as an unfrozen
+python script, and also when frozen by PyInstaller as a
+:option:`onedir <--onedir>` application. However, :option:`onefile <--onefile>`
+applications frozen with PyInstaller versions prior to 5.3 exhibit a
+problem; due to the lack of console control signals handling in the parent
+application process, the latter is always terminated immediately and leaves
+behind the unpacked temporary directory.
+
+.. versionchanged:: 5.3
+   implemented handling of console control signals in the frozen
+   application's parent process, which allows us to delay its termination
+   until after the child process is terminated, and clean up the unpacked
+   temporary directory. However, various caveats still apply, as
+   discussed in the following sub-sections.
+
+.. versionchanged:: 6.0
+   due to bootloader being linked against ``user32.dll``, the installed
+   console handler cannot receive ``CTRL_LOGOFF_EVENT`` and
+   ``CTRL_SHUTDOWN_EVENT`` events anymore. This applies to the
+   bootloader-installed handler in the parent process of a onefile
+   application, as well as user-installed handler in the main application
+   process in either onefile or onedir application.
+
+.. versionchanged:: 6.10
+   the bootloader's ``CTRL_CLOSE_EVENT`` handler in onefile parent
+   process now explicitly terminates the child process after giving it
+   500 milliseconds grace period. This is necessary for proper clean up
+   of temporary files when application runs under Windows Terminal
+   (instead of ``conhost.exe``), and user closes the terminal window
+   (or tab).
+
+.. versionchanged:: 6.10
+   the bootloader in onefile parent process now sets up a hidden window
+   to receive and process ``WM_QUERYENDSESSION`` and ``WM_ENDSESSION``
+   window messages. Upon receiving the confirmed ``WM_ENDSESSION``
+   message, the parent process terminates the child process after
+   giving it 1-second grace period, before it proceeds with the
+   cleanup. This ensures that temporary files of a background-running
+   onefile application are cleaned up when user logs off or initiates
+   system shutdown or restart. The cleanup should now work regardless
+   of whether application is built in console or noconsole/windowed
+   mode, and regardless of whether splash screen is used or not.
+
+.. [#keyboard_interrupt] The ``KeyboardInterrupt`` exception could have
+   been used to terminate the loop as well. However, that would not handle
+   the ``Ctrl+Break`` key combination nor console window being closed.
+
+Onefile mode and temporary directory cleanup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :option:`onefile <--onefile>` mode in PyInstaller uses two processes.
+When the application is launched, the parent process extracts the contents
+of the embedded archive into a temporary directory, sets up the environment
+and library search paths, and launches the child process. The child process
+sets up the embedded python interpreter and runs the frozen python application.
+Meanwhile, the parent process waits for the child process to exit; when
+that happens, it cleans up the extracted temporary data, and exits.
+
+From the perspective of the parent process, it does not matter whether
+the child process exits cleanly (i.e., with success code), or exits with
+an error code (for example, python code throws an exception that is not
+handled), or exits abnormally (e.g., crashes due to abnormal operation
+raising the ``SIGABRT`` signal), or is terminated by the OS (for example,
+from the Task Manager). In all cases, after the child process exits or is
+terminated, the parent process performs the cleanup, then exits with the
+exit code that was returned from the child process.
+
+Therefore, in order for the application's temporary directory to be
+cleaned up, the parent process must never be forcefully terminated
+(for example, via the TerminateProcess_ function). If that happens,
+the clean-up code has no chance to run, and the temporary directory is
+left behind. On the other hand, from the perspective of the temporary
+directory clean-up, the child process can be terminated in any way,
+even forcefully. For the proper clean-up during a graceful shutdown
+triggered via console control signal (for example, due to *Ctrl+C*
+being pressed, or due to console window being closed), the bootloader
+in PyInstaller 5.3 and later attempts to delay the shut-down of the
+parent process so that the child process has time to exit and the main
+thread of the parent process has the chance to run the clean-up code.
+
+The following sections provide additional details on this behavior for
+different situations.
+
+
+Interrupting via Ctrl+C or Ctrl+Break
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When *Ctrl+C* or *Ctrl+Break* is pressed in the console window,
+the ``CTRL_C_EVENT`` or ``CTRL_BREAK_EVENT`` is sent to all processes
+attached to that console [#windowed_independence]_.
+
+In a :option:`onefile <--onefile>` frozen application, the parent process
+ignores/suppresses the signal, so the outcome depends on how the frozen
+python code in the child process handles the signal. If the python code
+exits (for example, no handler is installed and ``KeyboardInterrupt``
+exception interrupts the program flow), the parent process performs the
+clean-up and exits as well. If the python code in the child process
+handles the signal without shutting the child process down, the
+application keeps running.
+
+This behavior is readily available in any PyInstaller version; in
+versions prior to 5.3, the parent process explicitly ignores
+``SIGABRT`` and ``SIGBREAK`` signals, which achieves the same result
+as handling the corresponding console control signals, which is
+implemented from version 5.3 on.
+
+.. [#windowed_independence] If a :option:`windowed/noconsole <--windowed>`
+   application is started from a console, it is completely independent
+   from it as long as it has a window. If the application has no window
+   (i.e., a "hidden" application), its process does not receive
+   ``CTRL_C_EVENT`` and ``CTRL_BREAK_EVENT`` signals in response to *Ctrl+C*
+   and *Ctrl+Break* being pressed in the console, but is nevertheless
+   terminated when the console is closed. The termination seems to be
+   immediate and uncodnitional, i.e., without ``CTRL_CLOSE_EVENT`` signal
+   being received.
+
+
+Closing the console window
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When the console window is closed (by pressing *X* button on title bar),
+the ``CTRL_CLOSE_EVENT`` is sent to all processes attached to that
+console [#windowed_independence]_.
+
+In a :option:`onefile <--onefile>` frozen application, the parent process
+receives the signal and suspends the handler's execution thread for 20
+seconds. This way, the termination of the parent process is delayed, in
+order to give time to the child process (who also received the signal)
+to exit, and to the main thread of the parent process to perform cleanup
+and exit (which then also terminates the handler's execution thread).
+This behavior was implemented in PyInstaller 5.3 to ensure that closing
+the console window cleans up the application's temporary directory.
+
+In versions prior to 5.3, the ``CTRL_CLOSE_EVENT`` is not handled; the
+parent process is terminated immediately without having the chance
+to perform the cleanup, leaving the application's temporary directory
+behind.
+
+.. note::
+   The child process (i.e., the frozen python application code) might
+   install its own console control signal handler in order to perform
+   its own cleanup (for example, save the application's state). If so,
+   it is important to keep in mind the system-imposed five-second timeout,
+   and the fact that the parent process can perform the temporary directory
+   cleanup only after the child process exits. In other words, if the
+   clean up in the child process takes close to five seconds, the parent
+   process may not have a chance to peform its own clean up before the
+   OS kills the process.
+
+
+Terminating the application via the Task Manager
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Terminating the application via the Task Manager is somewhat unpredictable
+due to distinction between "Apps" and "Background processes".
+
+"Apps" are closed by sending a close request to the application.
+Such applications may close gracefully if they close their window in
+response to the request, of, if they have a console, they handle the
+resulting ``CTRL_CLOSE_EVENT`` console control signal.
+
+"Background processes" are terminated unconditionally using the
+TerminateProcess_, leaving no hope for graceful shut-down and clean
+up.
+
+The distinction between the two is based on `whether the
+program has a visible window or not
+<https://devblogs.microsoft.com/oldnewthing/20171219-00/?p=97606>`_,
+but in practice, there are additional nuances when it comes to
+console-enabled applications and applications with multiple processes.
+
+To see the detailed classification on per-process basis, right click on
+the header of the process list view in the Task Manager, and enable
+display of the ``Type`` column. The newly added column will show the
+process classification for each process, and not just for the whole
+process group.
+
+In the following sub-sections, we detail the behavior when attempting
+to shut down different processes involved with frozen applications.
+Roughly, the behavior higly depends on the following factors:
+
+* build type: :option:`onedir <--onedir>` (single-process) vs.
+  :option:`onefile <--onefile>` (two-process) PyInstaller build option.
+
+* console enabled or not: :option:`console <--console>` vs.
+  :option:`noconsole/windowed <--noconsole>` PyInstaller build option.
+
+* application has a window or not: regardless of whether an application
+  has console enabled or not, it might have a window (window + console)
+  or not (pure console-based application; or a "hidden", window-less and
+  console-less, application that runs as a background process).
+
+* how the application is launched: by double-clicking on the executable
+  ("stand-alone", with its own console window) or by running it in an
+  already-opened command prompt.
+
+
+Windowed/noconsole onedir applications
+--------------------------------------
+
+:option:`Windowed/noconsole <--noconsole>` :option:`onedir <--onedir>`
+applications are single-process applications without console, so they are
+the easiest to understand when it comes to the Task Manager and the shutdown
+behavior.
+
+If the application has a window (for example, a Qt-based GUI), it is
+treated as an "App". It is listed under "Apps", and its process name is
+listed next to the top-level entry in the list. Shutting it down via the
+*"End task"* results in a window close event being posted, which allows
+for graceful application shutdown.
+
+If the application has no window (a window-less and console-less "hidden"
+application), it is treated as a "Background process", and is listed
+under "Background processes". Shutting it down via the *"End task"*
+results in its unconditional termination, with no hope for graceful
+application shutdown.
+
+As noted in earlier sections, :option:`windowed/noconsole <--noconsole>`
+applications are independent of the console even if they are launched
+from one, as long as they have a window. On the other hand, if an
+application has no window, the shutdown of the console process results
+in the immediate and uncoditional termination of the application process
+(background process within the console).
+
+Because :option:`onedir <--onedir>` applications do not need to unpack
+their contents to the temporary directory, the termination mode does not
+really affect the clean-up from PyInstaller's perspective. But it may be
+of concern if the application wishes to perform some clean-up on its own;
+for example, saving the current state during the shutdown as was done in
+:ref:`the earlier example <console_counter example>`.
+
+
+Console-enabled onedir applications
+-----------------------------------
+
+The shutdown behavior of Task Manager and :option:`console-enabled <--console>`
+:option:`onedir <--onedir>` applications depends on whether the application
+itself has a window (for example, a Qt-based GUI application with console
+enabled) or not (a "pure" console application), and whether the application
+owns the console window or not.
+
+Pure console onedir application, ran via double-click
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running a pure-console application by double clicking on the executable
+opens a new console with the application running in it. The top-level
+entry in the process list is placed under "Apps"; however, it does not
+have a process name listed next to it. Instead, it is a group consisting
+of a *"Console Window Host"* (a "Windows process") and the actual
+application process, which is classified as an "App".
+
+Shutting down the whole group (i.e., the top-level entry) via the
+*"End task"* results in everything being unconditionally terminated.
+
+Shutting down the application process results in it receiving the
+``CTRL_CLOSE_EVENT`` for graceful shutdown.
+
+Pure console onedir application, ran in existing console
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Opening a new command prompt results in a new *"Windows Command Processor"*
+group entry being added under "Apps". It consists of a *"Console Window Host"*
+(a "Windows process") and a *"Command Prompt"* (an "App"). Running a
+pure-console application from the opened command prompt results in a
+new process being added to the existing *"Windows Command Processor"*
+group, and the process is classified as a "Background process".
+
+Therefore, shutting down the whole group results in everything
+being unconditionally terminated.
+
+Shutting down the application process results in it being
+unconditionally terminated.
+
+Shutting down the *"Command Prompt"* process results in application
+process receiving the ``CTRL_CLOSE_EVENT`` for graceful shutdown.
+
+Console-enabled onedir application with window, ran via double-click
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running a console-enabled application with a window via double-click
+behaves similarly to the corresponding pure-console application case.
+The resulting process list entry is placed under "Apps", and is a group
+consisting of a *"Console Window Host"* (a "Windows process") and the
+actual application process, which is classified as an "App".
+
+Shutting down the whole group results in everything being
+unconditionally terminated.
+
+Shutting down the application process results in it receiving the
+``CTRL_CLOSE_EVENT`` for graceful shutdown.
+
+Console-enabled onedir application with window, ran in existing console
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running a console-enabled application with a window from an existing
+command prompt does not place the application process under the existing
+*"Windows Command Processor"* group, but rather results in a new "App"
+top-level entry in the process list. This entry behaves similarly to
+the :option:`windowed <--windowed>` :option:`onedir <--onedir>` case;
+it has process name listed nex to it and shutting it down via the
+*"End task"* results in a window close event being posted, which allows
+for graceful application shutdown.
+
+Shutting down the whole *"Windows Command Processor"* closes the console,
+but the application itself keeps running (although its console handles
+likely become invalid [#cleanup_error]_).
+
+Shutting down the *"Command Prompt"* process within the *"Windows
+Command Processor"* group results in the application process receiving
+the ``CTRL_CLOSE_EVENT`` for graceful shutdown.
+
+.. [#cleanup_error] Invalid console handles might, in turn, end up
+   causing an error when the application code tries to use them, for
+   example to print a message to the (now non-existent) console.
+
+
+Console-enabled onefile applications
+------------------------------------
+
+The shutdown behavior of :option:`onefile <--onefile>` applications is
+complicated by the fact that two processes are involved, and that
+application contents need to be extracted to the temporary directory
+that should, ideally, be cleaned up when the application is shut down.
+
+Pure-console onefile application, ran via double-click
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running a pure-console application by double clicking on the executable
+opens a new console with the application running in it. The top-level
+entry in the process list is placed under "Apps", and is a group
+consisting of:
+
+* a *"Console Window Host"* (a "Windows process")
+
+* the parent process, classified as an "App"
+
+* the child process, classified as a "Background process"
+
+Shutting down the whole group results in everything
+being unconditionally terminated. The temporary directory is left behind.
+
+Shutting down the child process results in its immediate and
+unconditional termination. After the child process is terminated, the
+parent process performs temporary directory cleanup and exits, which
+also closes the console. The only potential drawback of this situation
+is that the application code cannot perform its own clean up.
+
+Shutting down the parent process results in the ``CTRL_CLOSE_EVENT``
+received by both parent and child process. After the child performs
+its cleanup (if any) and exits, the parent performs temporary directory
+cleanup and exits as well. This is the ideal situation [#slow_cleanup]_.
+
+.. [#slow_cleanup] Assuming the potential cleanup in the application code
+   does not delay the shutdown to the point where the OS ends up killing
+   the parent process before it has the chance to perform the temporary
+   directory cleanup...
+
+Pure console onefile application, ran in existing console
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running a pure-console application from the opened command prompt results
+in two new processes being added to the existing *"Windows Command Processor"*
+group, and both of them are classified as a "Background process".
+
+Shutting down the whole *"Windows Command Processor"* group results
+in everything being unconditionally terminated, and the temporary
+directory being left behind.
+
+Shutting down the parent process results in its immediate and
+unconditional termination. The console accepts input again, while the
+child process (the actual application) keeps running in the background
+(i.e., still writing its output to the console). Since the parent process
+was terminated before it could perform clean-up, the temporary directory
+is left behind.
+
+Shutting down the child process similarly results in its immediate and
+unconditional termination. After the child process is terminated, the
+parent process performs temporary directory cleanup and exits. The only
+potential drawback of this situation is that the application code
+cannot perform its own clean up.
+
+Shutting down the *"Command Prompt"* process is the best choice,
+as it results in both the parent and the child process receiving
+the ``CTRL_CLOSE_EVENT`` for graceful shutdown.
+
+But perhaps the most surefire way of closing the application in this
+case would be using *Ctrl+C* or *Ctrl+Break*, or even closing the
+console window.
+
+Console-enabled onefile application with window, ran via double-click
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running a console-enabled application with a window via double-click
+results in two top-level entries in the process list.
+
+The first entry is a group that belongs to the parent process; it contains
+a *"Console Window Host"* (a "Windows process") and the parent process,
+which is classified as an "App".
+
+The child process is listed as a separate top-level entry that is also
+classified as an "App" and has process name listed next to it.
+
+Shutting down the whole parent process group results in everything
+in that group being unconditionally terminated, while the child process
+(the actual application) keeps running. The temporary directory is
+left behind.
+
+Shutting down the parent process results in the ``CTRL_CLOSE_EVENT``
+received by both the parent and the child process. After the child
+performs its cleanup (if any) and exits, the parent performs temporary
+directory cleanup and exits as well. This is the ideal situation [#slow_cleanup]_.
+
+Shutting down the child process results in it receiving the
+``CTRL_CLOSE_EVENT`` for graceful shutdown. After the child performs
+its cleanup (if any) and exits, the parent performs temporary directory
+cleanup and exits as well. This is the ideal situation; in this case,
+the parent process performs temporary directory cleanup even if the
+child process exceeds the signal handling timeout and is forcefully
+terminated by the operating system.
+
+Console-enabled onefile application with window, ran in existing console
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running a console-enabled application with a window from the opened
+command prompt results in parent process being added to the existing
+*"Windows Command Processor"* group, as a "Background process".
+
+The child process is listed as a separate top-level entry that is
+classified as an "App" and has process name listed next to it.
+
+Shutting down the whole *"Windows Command Processor"* closes the
+console and results in immediate and unconditional termination of
+the parent process. The child process (the application itself) keeps
+running (although its console handles likely become invalid [#cleanup_error]_).
+The temporary directory is left behind.
+
+Shutting down the parent process results in its immediate and
+unconditional termination. The console is left open and accepts input
+again, while the child process (the actual application) keeps running
+in the background (i.e., still writing its output to the console).
+Since the parent process was terminated before it could perform clean-up,
+the temporary directory is left behind.
+
+Shutting down the child process results in it receiving the
+``CTRL_CLOSE_EVENT`` for graceful shutdown. After the child performs
+its cleanup (if any) and exits, the parent performs temporary directory
+cleanup and exits as well. This is the ideal situation; in this case,
+the parent process performs temporary directory cleanup even if the
+child process exceeds the signal handling timeout and is forcefully
+terminated by the operating system.
+
+Shutting down the *"Command Prompt"* process results in both the parent
+and the child application process receiving the ``CTRL_CLOSE_EVENT``
+for graceful shutdown. This is the ideal situation [#slow_cleanup]_.
+
+Windowed/noconsole onefile applications
+---------------------------------------
+
+In case of :option:`windowed/noconsole <--windowed>` :option:`onefile <--onefile>`
+applications, the application's parent process is usually classified as
+a "Background process". The classification of the child process depends
+on whether the application has a window or not.
+
+Noconsole onefile application without window, ran via double-click
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running a "hidden" application (:option:`noconsole/windowed <--windowed>`
+application without a window) by double clicking on the executable results
+in parent and child process being added to the process list as two distinct
+top-level entries, under "Background processes".
+
+Shutting down the parent process results in its immediate and
+unconditional termination. The child process (the actual application)
+keeps running. Since the parent process was terminated before it could
+perform clean-up, the temporary directory is left behind.
+
+Shutting down the child process also results in its immediate and
+unconditional termination. After the child process is terminated, the
+parent process performs temporary directory cleanup and exits. The only
+potential drawback of this situation is that the application code
+cannot perform its own clean up.
+
+Noconsole onefile application without window, ran in existing console
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running a "hidden" application from the opened command prompt results
+in two new processes being added to the existing *"Windows Command Processor"*
+group, and both of them are classified as a "Background process".
+
+Shutting down the whole *"Windows Command Processor"* group results
+in everything being unconditionally terminated, and the temporary
+directory being left behind.
+
+Shutting down the parent process results in its immediate and
+unconditional termination. The child process (the actual application)
+keeps running as a background process. Since the parent process
+was terminated before it could perform clean-up, the temporary directory
+is left behind.
+
+Shutting down the child process similarly results in its immediate and
+unconditional termination. After the child process is terminated, the
+parent process performs temporary directory cleanup and exits. The only
+potential drawback of this situation is that the application code
+cannot perform its own clean up.
+
+Shutting down the *"Command Prompt"* process closes the console, but both
+parent and child process keep on running as background processes. Their
+entries are moved from the removed *"Windows Command Processor"* group
+into a new group entry under "Background processes".
+
+Noconsole onefile application with window, ran via double-click
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running a regular GUI :option:`noconsole <--noconsole>` application via
+double click results in the parent process being classified as a
+"Background process" and the child process being classified as an "App".
+Each of them get their own top-level entry in the process list (under
+"Background processes" and under "Apps", respectively), and both have
+their process name listed next to them.
+
+Shutting down the parent process results in its immediate and
+unconditional termination. The child process (the actual application)
+keeps running. Since the parent process was terminated before it could
+perform clean-up, the temporary directory is left behind.
+
+Shutting down the child process results in a window close request (and
+the ``CTRL_CLOSE_EVENT`` signal) being sent to the child process for
+a graceful shutdown. After the child performs its cleanup (if any) and
+exits, the parent performs temporary directory cleanup and exits as
+well. This is the ideal situation; in this case, the parent process
+performs temporary directory cleanup even if the child process exceeds
+the signal handling timeout and is forcefully terminated by the
+operating system.
+
+Noconsole onefile application with window, ran in existing console
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running a regular GUI :option:`noconsole <--noconsole>` application
+from an existing console is similar to running it via double-click,
+except that the parent process (classified as a "Background process")
+is listed under the *"Windows Command Processor"* group under "Apps"
+instead of a stand-alone entry under "Background processes".
+
+Shutting down the whole *"Windows Command Processor"* closes the
+console and results in immediate and unconditional termination of
+the parent process. The child process (the application itself) keeps
+running. The temporary directory is left behind.
+
+Shutting down the parent process results in its immediate and
+unconditional termination. This affects neither console nor the
+child process, both of which keep running. Since the parent process
+was terminated before it could perform clean-up, the temporary directory
+is left behind.
+
+Shutting down the child process results in it receiving the
+``CTRL_CLOSE_EVENT`` for graceful shutdown. After the child performs
+its cleanup (if any) and exits, the parent performs temporary directory
+cleanup and exits as well. This is the ideal situation; in this case,
+the parent process performs temporary directory cleanup even if the
+child process exceeds the signal handling timeout and is forcefully
+terminated by the operating system.
+
+Shutting down the *"Command Prompt"* process results in console being
+closed and the parent process being immediately and unconditionally
+terminated. The child process keeps running. Since the parent process
+was terminated before it could perform clean-up, the temporary directory
+is left behind.
+
+
+Automatic hiding and minimization of console window under Windows
+=================================================================
+
+For console-enabled Windows applications, PyInstaller offers an option
+to automatically hide or minimize the console window *when the console
+window is owned by the program's process* (i.e., the program was not
+launched from an existing console window).
+
+Automatic minimization of console window allows a GUI application to
+put the console out of the user's way, while allowing it to be brought
+back if required. Automatic hiding of console window might be used to
+create an illusion of a hybrid application that has no console when
+launched by double-clicking on the executable, but shows console
+output when launched from existing console window.
+
+Note that the programmatic hiding/minimization of console can be easily
+implemented by application itself using win32 API via ``ctypes``.
+The advantage of having it in PyInstaller's bootloader is that:
+
+* it can be performed very early in the program's life cycle (especially
+  in case of ``onefile`` builds).
+
+* in ``onefile`` builds, the bootloader can easily determine the
+  ownership of console, regardless of parent and child process being
+  used (as the check is executed in the parent process).
+
+Also note that console hiding is different from ``windowed``/``noconsole``
+builds, which have no console at all. This option works only with
+console-enabled builds, and involves PyInstaller's bootloader
+programmatically hiding or minimizing the console.
+
+To enable this functionality, use the :option:`--hide-console` command-line
+option, or corresponding ``hide_console`` argument to ``EXE`` in the .spec
+file. Currently, four modes are supported: ``hide-early``, ``minimize-early``,
+``hide-late``, and ``minimize-late``.
+
+Depending on the setting, the console is hidden/mininized either early
+in the bootloader execution or late in the bootloader execution. The
+early option takes place as soon as the PKG archive is found. In ``onefile``
+builds, the late option takes place after application has unpacked itself
+and before it launches the child process. In ``onedir`` builds, the late
+option takes place before starting the embedded python interpreter.
+
+.. note::
+
+   Even with hiding/minimizing console early in the bootloader's execution,
+   the user might see console being opened for an instant before it is
+   hidden or minimized.
+
+   In fact, hiding console before the application's UI is brought up
+   might give the user an impression that the application has crashed.
+   Therefore, it might be preferable to have the application code to
+   implement its own programmatic hiding/minimization of the console
+   window, and have it performed only after the UI becomes visible.
+
+.. note::
+   This feature has several known caveats when ``Windows Terminal`` is
+   used as the default terminal app to host command-line applications, as
+   opposed to the old ``Windows Console Host`` (``conhost.exe``). This
+   is the default setting on contemporary Windows 11 systems [*]_.
+
+   The issues are as follows:
+
+   * terminal window can be only minimized; attempting to hide it will
+     result in minimization instead.
+
+   * if the user has configured Windows Terminal to open new tabs instead
+     of new windows, the application's console will end up attached as
+     new tab in existing window, if available. Therefore, if application
+     tries to hide/minimize its console, it will end up minimizing that
+     window (along with other tabs that it might contain).
+
+   * the Windows terminal window will likely be fully shown before it
+     ends up being minimized.
+
+   * due to timing issues, the Windows terminal might fail to be minimized
+     (although the bootloader is trying to mitigate this particular issue).
+
+   As an application developer, it is unlikely that you will have control
+   over users' default terminal app and its settings. Therefore, if you
+   are using this feature to create an illusion of a hybrid-console
+   application (that has no console when launched by double-clicking on
+   the executable, but shows console output when launched from existing
+   console window), the only reliable approach at the moment is to
+   explicitly force the application to be launched via ``conhost.exe``.
+
+   One way to achieve that (regardless of default terminal app setting)
+   is to have your application's installer (assuming you have one) create
+   a desktop (or Start Menu) shortcut that has the ``Target`` set to
+   ``conhost.exe c:\path\to\installed\application.exe``.
+
+.. [*] The setting can be found under ``System Settings → For Developers → Terminal``.
 
 .. include:: _common_definitions.txt
 

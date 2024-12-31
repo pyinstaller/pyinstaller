@@ -26,6 +26,11 @@
 		showcontent = true
 
 	[[tool.towncrier.type]]
+		directory = "deprecation"
+		name = "Deprecations"
+		showcontent = true
+
+	[[tool.towncrier.type]]
 		directory = "hooks"
 		name = "Hooks"
 		showcontent = true
@@ -65,6 +70,15 @@
 		name = "Bootloader build"
 		showcontent = true
 
+[tool.yapf]
+indent_width = 4
+column_limit = 120
+dedent_closing_brackets = true
+spaces_before_comment = "2"
+space_between_ending_comma_and_closing_bracket = 0
+coalesce_brackets = true
+blank_line_before_nested_class_or_def = false
+
 [build-system]
 # Tells pip to install wheel before trying to install PyInstaller
 # from an sdist or from Github.
@@ -72,5 +86,5 @@
 # which has issues with unicode paths.
 requires = [
 	"wheel",
-	"setuptools",
+	"setuptools >= 42.0.0",
 ]

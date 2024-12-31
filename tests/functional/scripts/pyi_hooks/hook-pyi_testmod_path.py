@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2021, PyInstaller Development Team.
+# Copyright (c) 2013-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -10,6 +10,6 @@
 #-----------------------------------------------------------------------------
 from PyInstaller.utils.hooks import collect_data_files
 
-# Since pyi_testmod_path/b lacks an __init__, it's not a module and won't be
-# found by modulegraph. So, include its contents in the filesystem.
+# Since pyi_testmod_path/a lacks an __init__, it is not a regular package and its contents will not be
+# found by modulegraph. So, collect its contents manually, and ensure they end up on filesystem.
 datas = collect_data_files('pyi_testmod_path', True, 'a')

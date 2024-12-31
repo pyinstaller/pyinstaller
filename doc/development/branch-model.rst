@@ -1,6 +1,6 @@
 .. _branch model:
 
-|PyInstaller|'s Branch Model
+PyInstaller's Branch Model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :`develop` branch: We consider `origin/develop` to be the main branch where the
@@ -12,7 +12,7 @@
   source code of HEAD always reflects a *production-ready* state. Each commit
   to master is considered a new release and will be tagged.
 
-The |PyInstaller| project doesn't use long living branches (beside `master`
+The PyInstaller project doesn't use long living branches (beside `master`
 and `develop`) as we don't support bugfixes for several major releases in
 parallel.
 

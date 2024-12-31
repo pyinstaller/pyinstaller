@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2021, PyInstaller Development Team.
+ * Copyright (c) 2013-2023, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -18,15 +18,14 @@
 #ifndef PYI_PYTHONLIB_H
 #define PYI_PYTHONLIB_H
 
-#include "pyi_archive.h"
+struct PYI_CONTEXT;
 
-int pyi_pylib_attach(ARCHIVE_STATUS *status, int *loadedNew);
-int pyi_pylib_load(ARCHIVE_STATUS *status);  /* note - pyi_pylib_attach will call this if not already loaded */
-int pyi_pylib_start_python(ARCHIVE_STATUS *status);
-int pyi_pylib_import_modules(ARCHIVE_STATUS *status);
-int pyi_pylib_install_zlibs(ARCHIVE_STATUS *status);
-int pyi_pylib_run_scripts(ARCHIVE_STATUS *status);
+int pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_install_pyz(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_pylib_run_scripts(const struct PYI_CONTEXT *pyi_ctx);
 
-void pyi_pylib_finalize(ARCHIVE_STATUS *status);
+void pyi_pylib_finalize(const struct PYI_CONTEXT *pyi_ctx);
 
-#endif  /* PYI_PYTHONLIB_H */
+#endif /* PYI_PYTHONLIB_H */

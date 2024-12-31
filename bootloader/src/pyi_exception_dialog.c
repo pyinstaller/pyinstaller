@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2021, PyInstaller Development Team.
+ * Copyright (c) 2021-2023, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -15,14 +15,17 @@
  * Implementation of unhandled exception dialog for windowed mode on Windows.
  */
 
+/* Having a header included outside of the ifdef block prevents the compilation
+ * unit from becoming empty, which is disallowed by pedantic ISO C. */
+#include "pyi_global.h"
+
 #if defined(WINDOWED) && defined(_WIN32)
 
 #include <stdio.h>
 #include <windows.h>
 #include <commctrl.h>
 
-#include "pyi_global.h"
-#include "pyi_win32_utils.h"
+#include "pyi_utils.h"
 
 
 /*
@@ -33,7 +36,7 @@
 /* The template structure must be aligned on WORD boundaries */
 #pragma pack(push, 4)
 
-typedef struct
+struct DIALOG_TEMPLATE
 {
     /* DLGTEMPLATE */
     DWORD style;
@@ -63,13 +66,13 @@ typedef struct
 
     WORD pointsize;
     WCHAR wszFont[64];
-} DIALOG_TEMPLATE;
+};
 
 #pragma pack(pop)
 
 
 /* The dialog context, which we use to pass data between callbacks */
-typedef struct
+struct DIALOG_CONTEXT
 {
     HINSTANCE hInstance;  /* Parent module instance */
     HWND hDialog;  /* Dialog handle */
@@ -80,7 +83,7 @@ typedef struct
     WCHAR *wszTraceback;
 
     /* Formatted label message */
-    WCHAR wszLabelMessage[PATH_MAX];
+    WCHAR wszLabelMessage[PYI_PATH_MAX];
 
     /* UI elements / controls */
     HWND hStaticIcon;
@@ -98,12 +101,12 @@ typedef struct
     WORD wButtonHeight;
     WORD wIconWidth;
     WORD wIconHeight;
-} DIALOG_CONTEXT;
+};
 
 
 /* Resize the dialog's contents to the new client area width and height. */
 static void
-_exception_dialog_resize(DIALOG_CONTEXT *dialog, WORD wAreaWidth, WORD wAreaHeight)
+_exception_dialog_resize(struct DIALOG_CONTEXT *dialog, WORD wAreaWidth, WORD wAreaHeight)
 {
     WORD wLabelHeight;
     WORD wPosY, wPosX, wWidth, wHeight;
@@ -177,7 +180,7 @@ _exception_dialog_resize(DIALOG_CONTEXT *dialog, WORD wAreaWidth, WORD wAreaHeig
 
 /* Initialize the dialog. */
 static void
-_exception_dialog_initialze(DIALOG_CONTEXT *dialog)
+_exception_dialog_initialze(struct DIALOG_CONTEXT *dialog)
 {
     NONCLIENTMETRICSW metrics;
     LONG lUnits;
@@ -187,7 +190,7 @@ _exception_dialog_initialze(DIALOG_CONTEXT *dialog)
      * Initialize resources
      */
     /* Format the label message */
-    swprintf(dialog->wszLabelMessage, PATH_MAX, L"Failed to execute script '%s' due to unhandled exception: %s", dialog->wszScriptName, dialog->wszExceptionMessage);
+    swprintf(dialog->wszLabelMessage, PYI_PATH_MAX, L"Failed to execute script '%ls' due to unhandled exception: %ls", dialog->wszScriptName, dialog->wszExceptionMessage);
 
     /* Estimate button dimensions */
     lUnits = GetDialogBaseUnits();
@@ -213,8 +216,11 @@ _exception_dialog_initialze(DIALOG_CONTEXT *dialog)
     /* Load the icon; LoadIconMetric() gives modern icon, but requires
      * Microsoft.Windows.Common-Controls version='6.0.0.0' dependency
      * in the manifest. */
-    // dialog->hErrorIcon = LoadIconW(NULL, MAKEINTRESOURCEW(IDI_ERROR));
-    LoadIconMetric(NULL, MAKEINTRESOURCEW(IDI_ERROR), LIM_LARGE, &dialog->hErrorIcon);
+#if 0
+    dialog->hErrorIcon = LoadIconW(NULL, IDI_ERROR);
+#else
+    LoadIconMetric(NULL, IDI_ERROR, LIM_LARGE, &dialog->hErrorIcon);
+#endif
 
     /*
      * Create UI controls
@@ -303,7 +309,7 @@ _exception_dialog_initialze(DIALOG_CONTEXT *dialog)
 
 /* Clean up dialog data */
 static void
-_exception_dialog_cleanup(DIALOG_CONTEXT *dialog)
+_exception_dialog_cleanup(struct DIALOG_CONTEXT *dialog)
 {
     /* Clean-up exception data */
     free(dialog->wszScriptName);
@@ -328,7 +334,7 @@ _exception_dialog_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg) {
         case WM_INITDIALOG: {
-            DIALOG_CONTEXT *dialog = (DIALOG_CONTEXT *)lParam;
+            struct DIALOG_CONTEXT *dialog = (struct DIALOG_CONTEXT *)lParam;
             /* Store dialog handle in the context */
             dialog->hDialog = hwnd;
             /* Set pointer to context data as dialog's user data, so we
@@ -350,7 +356,7 @@ _exception_dialog_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             return TRUE;
         }
         case WM_SIZE: {
-            DIALOG_CONTEXT *dialog = (DIALOG_CONTEXT *)GetWindowLongPtrW(hwnd, DWLP_USER);
+            struct DIALOG_CONTEXT *dialog = (struct DIALOG_CONTEXT *)GetWindowLongPtrW(hwnd, DWLP_USER);
             /* Resize dialog UI */
             _exception_dialog_resize(dialog, LOWORD(lParam), HIWORD(lParam));
             /* Redraw */
@@ -368,8 +374,8 @@ static int
 _pyi_unhandled_exception_dialog_w(const wchar_t *script_name, const wchar_t *exception_message, const wchar_t *traceback)
 {
     HINSTANCE hInstance;
-    DIALOG_TEMPLATE template;
-    DIALOG_CONTEXT dialog;
+    struct DIALOG_TEMPLATE template;
+    struct DIALOG_CONTEXT dialog;
     int ret;
 
     hInstance = GetModuleHandleW(NULL);
@@ -415,13 +421,13 @@ pyi_unhandled_exception_dialog(const char *script_name, const char *exception_me
     int ret;
 
     if (script_name) {
-        script_name_w = pyi_win32_utils_from_utf8(NULL, script_name, 0);
+        script_name_w = pyi_win32_utf8_to_wcs(script_name, NULL, 0);
     }
     if (exception_message) {
-        exception_message_w = pyi_win32_utils_from_utf8(NULL, exception_message, 0);
+        exception_message_w = pyi_win32_utf8_to_wcs(exception_message, NULL, 0);
     }
     if (traceback) {
-        traceback_w = pyi_win32_utils_from_utf8(NULL, traceback, 0);
+        traceback_w = pyi_win32_utf8_to_wcs(traceback, NULL, 0);
     }
 
     ret = _pyi_unhandled_exception_dialog_w(script_name_w, exception_message_w, traceback_w ? traceback_w : L"Failed to obtain/convert traceback!");
@@ -433,4 +439,4 @@ pyi_unhandled_exception_dialog(const char *script_name, const char *exception_me
     return ret;
 }
 
-#endif
+#endif /* defined(WINDOWED) && defined(_WIN32) */

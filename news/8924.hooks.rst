@@ -1,0 +1,2 @@
+Add hooks for ``PyQt6.QtGraphs`` and ``PyQt6.QtGraphsWidgets`` that
+were introduced in ``PyQt6`` v6.8.1 (via ``PyQt6-Graphs`` add-on package).

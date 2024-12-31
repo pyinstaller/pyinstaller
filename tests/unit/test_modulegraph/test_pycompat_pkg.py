@@ -8,6 +8,7 @@ import subprocess
 import os
 from PyInstaller.lib.modulegraph import modulegraph
 
+
 class TestModuleGraphImport (unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIsInstance'):
         def assertIsInstance(self, value, types):
@@ -27,33 +28,17 @@ class TestModuleGraphImport (unittest.TestCase):
         node = mf.find_node('pkg.api')
         self.assertIsInstance(node, modulegraph.SourceModule)
 
-        if sys.version_info[0] == 2:
-            node = mf.find_node('pkg.api2')
-            self.assertIsInstance(node, modulegraph.SourceModule)
+        node = mf.find_node('pkg.api2')
+        self.assertIsInstance(node, modulegraph.InvalidSourceModule)
 
-            node = mf.find_node('pkg.api3')
-            self.assertIsInstance(node, modulegraph.InvalidSourceModule)
+        node = mf.find_node('pkg.api3')
+        self.assertIsInstance(node, modulegraph.SourceModule)
 
-            node = mf.find_node('http.client')
-            self.assertIs(node, None)
+        node = mf.find_node('http.client')
+        self.assertIsInstance(node, modulegraph.SourceModule)
 
-            node = mf.find_node('urllib2')
-            self.assertIsInstance(node, modulegraph.SourceModule)
-
-        else:
-            node = mf.find_node('pkg.api2')
-            self.assertIsInstance(node, modulegraph.InvalidSourceModule)
-
-            node = mf.find_node('pkg.api3')
-            self.assertIsInstance(node, modulegraph.SourceModule)
-
-            node = mf.find_node('http.client')
-            self.assertIsInstance(node, modulegraph.SourceModule)
-
-            node = mf.find_node('urllib2')
-            self.assertIs(node, None)
-
-
+        node = mf.find_node('urllib2')
+        self.assertIs(node, None)
 
 
 if __name__ == "__main__":

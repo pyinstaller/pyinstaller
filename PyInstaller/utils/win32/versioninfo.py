@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2021, PyInstaller Development Team.
+# Copyright (c) 2013-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -10,14 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-
-import codecs
 import struct
 
-from PyInstaller.compat import win32api
-
-# ::TODO:: #1920 revert to using pypi version
 import pefile
+
+from PyInstaller.compat import win32api
 
 
 def pefile_check_control_flow_guard(filename):
@@ -32,92 +28,16 @@ def pefile_check_control_flow_guard(filename):
     Returns
     ----------
     bool
-        True if file is a PE file with CFG enabled. False if CFG is not
-        enabled or if file could not be processed using pefile library.
+        True if file is a PE file with CFG enabled. False if CFG is not enabled or if file could not be processed using
+        the pefile library.
     """
     try:
-        pe = pefile.PE(filename)
+        pe = pefile.PE(filename, fast_load=True)
         # https://docs.microsoft.com/en-us/windows/win32/debug/pe-format
         # IMAGE_DLLCHARACTERISTICS_GUARD_CF = 0x4000
         return bool(pe.OPTIONAL_HEADER.DllCharacteristics & 0x4000)
     except Exception:
         return False
-
-
-# TODO implement read/write version information with pefile library.
-# PE version info doc: http://msdn.microsoft.com/en-us/library/ms646981.aspx
-def pefile_read_version(filename):
-    """
-    Return structure like:
-
-    {
-        # Translation independent information.
-        # VS_FIXEDFILEINFO - Contains version information about a file. This information is language and code page independent.
-        u'FileVersion':      (1, 2, 3, 4),
-        u'ProductVersion':   (9, 10, 11, 12),
-
-        # PE files might contain several translations of version information.
-        # VS_VERSIONINFO - Depicts the organization of data in a file-version resource. It is the root structure that contains all other file-version information structures.
-        u'translations': {
-            'lang_id1' : {
-                u'Comments':         u'日本語, Unicode 対応.',
-                u'CompanyName':      u'your company.',
-                u'FileDescription':  u'your file desc.',
-                u'FileVersion':      u'1, 2, 3, 4',
-                u'InternalName':     u'your internal name.',
-                u'LegalCopyright':   u'your legal copyright.',
-                u'LegalTrademarks':  u'your legal trademarks.',
-                u'OriginalFilename': u'your original filename.',
-                u'PrivateBuild':     u'5, 6, 7, 8',
-                u'ProductName':      u'your product name',
-                u'ProductVersion':   u'9, 10, 11, 12',
-                u'SpecialBuild':     u'13, 14, 15, 16',
-            },
-
-            'lang_id2' : {
-                ...
-            }
-        }
-    }
-
-    Version info can contain multiple languages.
-    """
-    # TODO
-    vers = {
-        'FileVersion': (0, 0, 0, 0),
-        'ProductVersion': (0, 0, 0, 0),
-        'translations': {
-            'lang_id1': {
-                'Comments': '',
-                'CompanyName': '',
-                'FileDescription': '',
-                'FileVersion': '',
-                'InternalName': '',
-                'LegalCopyright': '',
-                'LegalTrademarks': '',
-                'OriginalFilename': '',
-                'PrivateBuild': '',
-                'ProductName': '',
-                'ProductVersion': '',
-                'SpecialBuild': '',
-            }
-        }
-    }
-    pe = pefile.PE(filename)
-    #ffi = pe.VS_FIXEDFILEINFO
-    #vers['FileVersion'] = (ffi.FileVersionMS >> 16, ffi.FileVersionMS & 0xFFFF, ffi.FileVersionLS >> 16, ffi.FileVersionLS & 0xFFFF)
-    #vers['ProductVersion'] = (ffi.ProductVersionMS >> 16, ffi.ProductVersionMS & 0xFFFF, ffi.ProductVersionLS >> 16, ffi.ProductVersionLS & 0xFFFF)
-    #print(pe.VS_FIXEDFILEINFO.FileVersionMS)
-    # TODO Only first available language is used for now.
-    #vers = pe.FileInfo[0].StringTable[0].entries
-    from pprint import pprint
-    pprint(pe.VS_FIXEDFILEINFO)
-    print(dir(pe.VS_FIXEDFILEINFO))
-    print(repr(pe.VS_FIXEDFILEINFO))
-    print(pe.dump_info())
-    pe.close()
-    return vers
-
 
 
 # Ensures no code from the executable is executed.
@@ -131,21 +51,26 @@ def getRaw(text):
     return text.encode('UTF-16LE')
 
 
-def decode(pathnm):
-    h = win32api.LoadLibraryEx(pathnm, 0, LOAD_LIBRARY_AS_DATAFILE)
+def read_version_info_from_executable(exe_filename):
+    """
+    Read the version information structure from the given executable's resources, and return it as an instance of
+    `VSVersionInfo` structure.
+    """
+    h = win32api.LoadLibraryEx(exe_filename, 0, LOAD_LIBRARY_AS_DATAFILE)
     res = win32api.EnumResourceNames(h, pefile.RESOURCE_TYPE['RT_VERSION'])
     if not len(res):
         return None
-    data = win32api.LoadResource(h, pefile.RESOURCE_TYPE['RT_VERSION'],
-                                 res[0])
-    vs = VSVersionInfo()
-    j = vs.fromRaw(data)
+    data = win32api.LoadResource(h, pefile.RESOURCE_TYPE['RT_VERSION'], res[0])
+    info = VSVersionInfo()
+    info.fromRaw(data)
     win32api.FreeLibrary(h)
-    return vs
+    return info
 
 
 def nextDWord(offset):
-    """ Align `offset` to the next 4-byte boundary """
+    """
+    Align `offset` to the next 4-byte boundary.
+    """
     return ((offset + 3) >> 2) << 2
 
 
@@ -162,7 +87,6 @@ class VSVersionInfo:
                           // structures (or both) that are children of the
                           // current version structure.
     """
-
     def __init__(self, ffi=None, kids=None):
         self.ffi = ffi
         self.kids = kids or []
@@ -178,14 +102,14 @@ class VSVersionInfo:
         while i < sublen:
             j = i
             i, (csublen, cvallen, ctyp, nm) = parseCommon(data, i)
-            if nm.strip() == u'StringFileInfo':
+            if nm.strip() == 'StringFileInfo':
                 sfi = StringFileInfo()
-                k = sfi.fromRaw(csublen, cvallen, nm, data, i, j+csublen)
+                k = sfi.fromRaw(csublen, cvallen, nm, data, i, j + csublen)
                 self.kids.append(sfi)
                 i = k
             else:
                 vfi = VarFileInfo()
-                k = vfi.fromRaw(csublen, cvallen, nm, data, i, j+csublen)
+                k = vfi.fromRaw(csublen, cvallen, nm, data, i, j + csublen)
                 self.kids.append(vfi)
                 i = k
             i = j + csublen
@@ -193,7 +117,7 @@ class VSVersionInfo:
         return i
 
     def toRaw(self):
-        raw_name = getRaw(u'VS_VERSION_INFO')
+        raw_name = getRaw('VS_VERSION_INFO')
         rawffi = self.ffi.toRaw()
         vallen = len(rawffi)
         typ = 0
@@ -205,46 +129,45 @@ class VSVersionInfo:
         pad2 = b''
         if sublen % 4:
             pad2 = b'\000\000'
-        tmp = b''.join([kid.toRaw() for kid in self.kids ])
+        tmp = b''.join([kid.toRaw() for kid in self.kids])
         sublen = sublen + len(pad2) + len(tmp)
-        return (struct.pack('hhh', sublen, vallen, typ)
-                + raw_name + b'\000\000' + pad + rawffi + pad2 + tmp)
+        return struct.pack('hhh', sublen, vallen, typ) + raw_name + b'\000\000' + pad + rawffi + pad2 + tmp
 
     def __eq__(self, other):
         return self.toRaw() == other
 
-    def __str__(self, indent=u''):
-        indent = indent + u'  '
-        tmp = [kid.__str__(indent+u'  ')
-               for kid in self.kids]
-        tmp = u', \n'.join(tmp)
-        return (u"""# UTF-8
-#
-# For more details about fixed file info 'ffi' see:
-# http://msdn.microsoft.com/en-us/library/ms646997.aspx
-VSVersionInfo(
-%sffi=%s,
-%skids=[
-%s
-%s]
-)
-""" % (indent, self.ffi.__str__(indent), indent, tmp, indent))
+    def __str__(self, indent=''):
+        indent = indent + '  '
+        tmp = [kid.__str__(indent + '  ') for kid in self.kids]
+        tmp = ', \n'.join(tmp)
+        return '\n'.join([
+            "# UTF-8",
+            "#",
+            "# For more details about fixed file info 'ffi' see:",
+            "# http://msdn.microsoft.com/en-us/library/ms646997.aspx",
+            "VSVersionInfo(",
+            indent + f"ffi={self.ffi.__str__(indent)},",
+            indent + "kids=[",
+            tmp,
+            indent + "]",
+            ")",
+        ])
 
     def __repr__(self):
-        return ("versioninfo.VSVersionInfo(ffi=%r, kids=%r)" %
-                (self.ffi, self.kids))
+        return "versioninfo.VSVersionInfo(ffi=%r, kids=%r)" % (self.ffi, self.kids)
 
 
 def parseCommon(data, start=0):
     i = start + 6
     (wLength, wValueLength, wType) = struct.unpack('3h', data[start:i])
-    i, text = parseUString(data, i, i+wLength)
+    i, text = parseUString(data, i, i + wLength)
     return i, (wLength, wValueLength, wType, text)
+
 
 def parseUString(data, start, limit):
     i = start
     while i < limit:
-        if data[i:i+2] == b'\000\000':
+        if data[i:i + 2] == b'\000\000':
             break
         i += 2
     text = data[start:i].decode('UTF-16LE')
@@ -276,9 +199,17 @@ class FixedFileInfo:
     DWORD dwFileDateMS;
     DWORD dwFileDateLS;
     """
-    def __init__(self, filevers=(0, 0, 0, 0), prodvers=(0, 0, 0, 0),
-                 mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1,
-                 subtype=0x0, date=(0, 0)):
+    def __init__(
+        self,
+        filevers=(0, 0, 0, 0),
+        prodvers=(0, 0, 0, 0),
+        mask=0x3f,
+        flags=0x0,
+        OS=0x40004,
+        fileType=0x1,
+        subtype=0x0,
+        date=(0, 0)
+    ):
         self.sig = 0xfeef04bd
         self.strucVersion = 0x10000
         self.fileVersionMS = (filevers[0] << 16) | (filevers[1] & 0xffff)
@@ -294,84 +225,98 @@ class FixedFileInfo:
         self.fileDateLS = date[1]
 
     def fromRaw(self, data, i):
-        (self.sig,
-         self.strucVersion,
-         self.fileVersionMS,
-         self.fileVersionLS,
-         self.productVersionMS,
-         self.productVersionLS,
-         self.fileFlagsMask,
-         self.fileFlags,
-         self.fileOS,
-         self.fileType,
-         self.fileSubtype,
-         self.fileDateMS,
-         self.fileDateLS) = struct.unpack('13L', data[i:i + 52])
+        (
+            self.sig,
+            self.strucVersion,
+            self.fileVersionMS,
+            self.fileVersionLS,
+            self.productVersionMS,
+            self.productVersionLS,
+            self.fileFlagsMask,
+            self.fileFlags,
+            self.fileOS,
+            self.fileType,
+            self.fileSubtype,
+            self.fileDateMS,
+            self.fileDateLS,
+        ) = struct.unpack('13L', data[i:i + 52])
         return i + 52
 
     def toRaw(self):
-        return struct.pack('13L', self.sig,
-                             self.strucVersion,
-                             self.fileVersionMS,
-                             self.fileVersionLS,
-                             self.productVersionMS,
-                             self.productVersionLS,
-                             self.fileFlagsMask,
-                             self.fileFlags,
-                             self.fileOS,
-                             self.fileType,
-                             self.fileSubtype,
-                             self.fileDateMS,
-                             self.fileDateLS)
+        return struct.pack(
+            '13L',
+            self.sig,
+            self.strucVersion,
+            self.fileVersionMS,
+            self.fileVersionLS,
+            self.productVersionMS,
+            self.productVersionLS,
+            self.fileFlagsMask,
+            self.fileFlags,
+            self.fileOS,
+            self.fileType,
+            self.fileSubtype,
+            self.fileDateMS,
+            self.fileDateLS,
+        )
 
     def __eq__(self, other):
         return self.toRaw() == other
 
-    def __str__(self, indent=u''):
-        fv = (self.fileVersionMS >> 16, self.fileVersionMS & 0xffff,
-              self.fileVersionLS >> 16, self.fileVersionLS & 0xFFFF)
-        pv = (self.productVersionMS >> 16, self.productVersionMS & 0xffff,
-              self.productVersionLS >> 16, self.productVersionLS & 0xFFFF)
+    def __str__(self, indent=''):
+        fv = (
+            self.fileVersionMS >> 16, self.fileVersionMS & 0xffff,
+            self.fileVersionLS >> 16, self.fileVersionLS & 0xffff,
+        )  # yapf: disable
+        pv = (
+            self.productVersionMS >> 16, self.productVersionMS & 0xffff,
+            self.productVersionLS >> 16, self.productVersionLS & 0xffff,
+        )  # yapf: disable
         fd = (self.fileDateMS, self.fileDateLS)
-        tmp = [u'FixedFileInfo(',
-            u'# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
-            u'# Set not needed items to zero 0.',
-            u'filevers=%s,' % (fv,),
-            u'prodvers=%s,' % (pv,),
-            u"# Contains a bitmask that specifies the valid bits 'flags'r",
-            u'mask=%s,' % hex(self.fileFlagsMask),
-            u'# Contains a bitmask that specifies the Boolean attributes of the file.',
-            u'flags=%s,' % hex(self.fileFlags),
-            u'# The operating system for which this file was designed.',
-            u'# 0x4 - NT and there is no need to change it.',
-            u'OS=%s,' % hex(self.fileOS),
-            u'# The general type of file.',
-            u'# 0x1 - the file is an application.',
-            u'fileType=%s,' % hex(self.fileType),
-            u'# The function of the file.',
-            u'# 0x0 - the function is not defined for this fileType',
-            u'subtype=%s,' % hex(self.fileSubtype),
-            u'# Creation date and time stamp.',
-            u'date=%s' % (fd,),
-            u')'
+        tmp = [
+            'FixedFileInfo(',
+            '# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)',
+            '# Set not needed items to zero 0.',
+            'filevers=%s,' % (fv,),
+            'prodvers=%s,' % (pv,),
+            "# Contains a bitmask that specifies the valid bits 'flags'r",
+            'mask=%s,' % hex(self.fileFlagsMask),
+            '# Contains a bitmask that specifies the Boolean attributes of the file.',
+            'flags=%s,' % hex(self.fileFlags),
+            '# The operating system for which this file was designed.',
+            '# 0x4 - NT and there is no need to change it.',
+            'OS=%s,' % hex(self.fileOS),
+            '# The general type of file.',
+            '# 0x1 - the file is an application.',
+            'fileType=%s,' % hex(self.fileType),
+            '# The function of the file.',
+            '# 0x0 - the function is not defined for this fileType',
+            'subtype=%s,' % hex(self.fileSubtype),
+            '# Creation date and time stamp.',
+            'date=%s' % (fd,),
+            ')',
         ]
-        return (u'\n'+indent+u'  ').join(tmp)
+        return f'\n{indent}  '.join(tmp)
 
     def __repr__(self):
-        fv = (self.fileVersionMS >> 16, self.fileVersionMS & 0xffff,
-              self.fileVersionLS >> 16, self.fileVersionLS & 0xffff)
-        pv = (self.productVersionMS >> 16, self.productVersionMS & 0xffff,
-              self.productVersionLS >> 16, self.productVersionLS & 0xffff)
+        fv = (
+            self.fileVersionMS >> 16, self.fileVersionMS & 0xffff,
+            self.fileVersionLS >> 16, self.fileVersionLS & 0xffff,
+        )  # yapf: disable
+        pv = (
+            self.productVersionMS >> 16, self.productVersionMS & 0xffff,
+            self.productVersionLS >> 16, self.productVersionLS & 0xffff,
+        )  # yapf: disable
         fd = (self.fileDateMS, self.fileDateLS)
-        return ('versioninfo.FixedFileInfo(filevers=%r, prodvers=%r, '
-                'mask=0x%x, flags=0x%x, OS=0x%x, '
-                'fileType=%r, subtype=0x%x, date=%r)' %
-                (fv, pv,
-                 self.fileFlagsMask, self.fileFlags, self.fileOS,
-                 self.fileType, self.fileSubtype, fd))
+        return (
+            'versioninfo.FixedFileInfo(filevers=%r, prodvers=%r, '
+            'mask=0x%x, flags=0x%x, OS=0x%x, '
+            'fileType=%r, subtype=0x%x, date=%r)' %
+            (fv, pv, self.fileFlagsMask, self.fileFlags, self.fileOS, self.fileType, self.fileSubtype, fd)
+        )
 
 
-class StringFileInfo(object):
+class StringFileInfo:
     """
     WORD        wLength;      // length of the version resource
     WORD        wValueLength; // length of the Value member in the current
@@ -382,7 +327,7 @@ class StringFileInfo(object):
     StringTable Children[];   // list of zero or more String structures
     """
     def __init__(self, kids=None):
-        self.name = u'StringFileInfo'
+        self.name = 'StringFileInfo'
         self.kids = kids or []
 
     def fromRaw(self, sublen, vallen, name, data, i, limit):
@@ -404,19 +349,15 @@ class StringFileInfo(object):
             pad = b'\000\000'
         tmp = b''.join([kid.toRaw() for kid in self.kids])
         sublen = sublen + len(pad) + len(tmp)
-        return (struct.pack('hhh', sublen, vallen, typ)
-                + raw_name + b'\000\000' + pad + tmp)
+        return struct.pack('hhh', sublen, vallen, typ) + raw_name + b'\000\000' + pad + tmp
 
     def __eq__(self, other):
         return self.toRaw() == other
 
-    def __str__(self, indent=u''):
-        newindent = indent + u'  '
-        tmp = [kid.__str__(newindent)
-               for kid in self.kids]
-        tmp = u', \n'.join(tmp)
-        return (u'%sStringFileInfo(\n%s[\n%s\n%s])'
-                % (indent, newindent, tmp, newindent))
+    def __str__(self, indent=''):
+        new_indent = indent + '  '
+        tmp = ', \n'.join(kid.__str__(new_indent) for kid in self.kids)
+        return f'{indent}StringFileInfo(\n{new_indent}[\n{tmp}\n{new_indent}])'
 
     def __repr__(self):
         return 'versioninfo.StringFileInfo(%r)' % self.kids
@@ -431,11 +372,11 @@ class StringTable:
     String Children[];    // list of zero or more String structures.
     """
     def __init__(self, name=None, kids=None):
-        self.name = name or u''
+        self.name = name or ''
         self.kids = kids or []
 
     def fromRaw(self, data, i, limit):
-        i, (cpsublen, cpwValueLength, cpwType, self.name) = parseCodePage(data, i, limit) # should be code page junk
+        i, (cpsublen, cpwValueLength, cpwType, self.name) = parseCodePage(data, i, limit)  # should be code page junk
         i = nextDWord(i)
         while i < limit:
             ss = StringStruct()
@@ -458,17 +399,15 @@ class StringTable:
             tmp.append(raw)
         tmp = b''.join(tmp)
         sublen += len(tmp)
-        return (struct.pack('hhh', sublen, vallen, typ)
-                + raw_name + b'\000\000' + tmp)
+        return struct.pack('hhh', sublen, vallen, typ) + raw_name + b'\000\000' + tmp
 
     def __eq__(self, other):
         return self.toRaw() == other
 
-    def __str__(self, indent=u''):
-        newindent = indent + u'  '
-        tmp = (u',\n%s' % newindent).join(str(kid) for kid in self.kids)
-        return (u"%sStringTable(\n%su'%s',\n%s[%s])"
-                % (indent, newindent, self.name, newindent, tmp))
+    def __str__(self, indent=''):
+        new_indent = indent + '  '
+        tmp = (',\n' + new_indent).join(str(kid) for kid in self.kids)
+        return f"{indent}StringTable(\n{new_indent}'{self.name}',\n{new_indent}[{tmp}])"
 
     def __repr__(self):
         return 'versioninfo.StringTable(%r, %r)' % (self.name, self.kids)
@@ -484,8 +423,8 @@ class StringStruct:
     String Value[];
     """
     def __init__(self, name=None, val=None):
-        self.name = name or u''
-        self.val = val or u''
+        self.name = name or ''
+        self.val = val or ''
 
     def fromRaw(self, data, i, limit):
         i, (sublen, vallen, typ, self.name) = parseCommon(data, i)
@@ -497,24 +436,21 @@ class StringStruct:
     def toRaw(self):
         raw_name = getRaw(self.name)
         raw_val = getRaw(self.val)
-        # TODO document the size of vallen and sublen.
-        vallen = len(raw_val) + 2
+        # TODO: document the size of vallen and sublen.
+        vallen = len(self.val) + 1  # Number of (wide-)characters, not bytes!
         typ = 1
         sublen = 6 + len(raw_name) + 2
         pad = b''
         if sublen % 4:
             pad = b'\000\000'
-        sublen = sublen + len(pad) + vallen
-        abcd = (struct.pack('hhh', sublen, vallen, typ)
-                + raw_name + b'\000\000' + pad
-                + raw_val + b'\000\000')
-        return abcd
+        sublen = sublen + len(pad) + (vallen * 2)
+        return struct.pack('hhh', sublen, vallen, typ) + raw_name + b'\000\000' + pad + raw_val + b'\000\000'
 
     def __eq__(self, other):
         return self.toRaw() == other
 
     def __str__(self, indent=''):
-        return u"StringStruct(u'%s', u'%s')" % (self.name, self.val)
+        return "StringStruct(%r, %r)" % (self.name, self.val)
 
     def __repr__(self):
         return 'versioninfo.StringStruct(%r, %r)' % (self.name, self.val)
@@ -553,7 +489,7 @@ class VarFileInfo:
     def toRaw(self):
         self.vallen = 0
         self.wType = 1
-        self.name = u'VarFileInfo'
+        self.name = 'VarFileInfo'
         raw_name = getRaw(self.name)
         sublen = 6 + len(raw_name) + 2
         pad = b''
@@ -561,15 +497,13 @@ class VarFileInfo:
             pad = b'\000\000'
         tmp = b''.join([kid.toRaw() for kid in self.kids])
         self.sublen = sublen + len(pad) + len(tmp)
-        return (struct.pack('hhh', self.sublen, self.vallen, self.wType)
-                + raw_name + b'\000\000' + pad + tmp)
+        return struct.pack('hhh', self.sublen, self.vallen, self.wType) + raw_name + b'\000\000' + pad + tmp
 
     def __eq__(self, other):
         return self.toRaw() == other
 
     def __str__(self, indent=''):
-        return (indent + "VarFileInfo([%s])" %
-                ', '.join(str(kid) for kid in self.kids))
+        return indent + "VarFileInfo([%s])" % ', '.join(str(kid) for kid in self.kids)
 
     def __repr__(self):
         return 'versioninfo.VarFileInfo(%r)' % self.kids
@@ -588,14 +522,14 @@ class VarStruct:
                           // and code-page identifiers
     """
     def __init__(self, name=None, kids=None):
-        self.name = name or u''
+        self.name = name or ''
         self.kids = kids or []
 
     def fromRaw(self, data, i, limit):
         i, (self.sublen, self.wValueLength, self.wType, self.name) = parseCommon(data, i)
         i = nextDWord(i)
         for j in range(0, self.wValueLength, 2):
-            kid = struct.unpack('h', data[i:i+2])[0]
+            kid = struct.unpack('h', data[i:i + 2])[0]
             self.kids.append(kid)
             i += 2
         return i
@@ -610,43 +544,61 @@ class VarStruct:
             pad = b'\000\000'
         self.sublen = sublen + len(pad) + self.wValueLength
         tmp = b''.join([struct.pack('h', kid) for kid in self.kids])
-        return (struct.pack('hhh', self.sublen, self.wValueLength, self.wType)
-                + raw_name + b'\000\000' + pad + tmp)
+        return struct.pack('hhh', self.sublen, self.wValueLength, self.wType) + raw_name + b'\000\000' + pad + tmp
 
     def __eq__(self, other):
         return self.toRaw() == other
 
-    def __str__(self, indent=u''):
-        return u"VarStruct(u'%s', %r)" % (self.name, self.kids)
+    def __str__(self, indent=''):
+        return "VarStruct('%s', %r)" % (self.name, self.kids)
 
     def __repr__(self):
         return 'versioninfo.VarStruct(%r, %r)' % (self.name, self.kids)
 
 
-def SetVersion(exenm, versionfile):
-    if isinstance(versionfile, VSVersionInfo):
-        vs = versionfile
-    else:
-        with codecs.open(versionfile, 'r', 'utf-8') as fp:
-            txt = fp.read()
-        vs = eval(txt)
+def load_version_info_from_text_file(filename):
+    """
+    Load the `VSVersionInfo` structure from its string-based (`VSVersionInfo.__str__`) serialization by reading the
+    text from the file and running it through `eval()`.
+    """
+
+    # Read and parse the version file. It may have a byte order marker or encoding cookie - respect it if it does.
+    import PyInstaller.utils.misc as miscutils
+    with open(filename, 'rb') as fp:
+        text = miscutils.decode(fp.read())
+
+    # Deserialize via eval()
+    try:
+        info = eval(text)
+    except Exception as e:
+        raise ValueError("Failed to deserialize VSVersionInfo from text-based representation!") from e
+
+    # Sanity check
+    assert isinstance(info, VSVersionInfo), \
+        f"Loaded incompatible structure type! Expected VSVersionInfo, got: {type(info)!r}"
+
+    return info
+
+
+def write_version_info_to_executable(exe_filename, info):
+    assert isinstance(info, VSVersionInfo)
 
     # Remember overlay
-    pe = pefile.PE(exenm, fast_load=True)
+    pe = pefile.PE(exe_filename, fast_load=True)
     overlay_before = pe.get_overlay()
     pe.close()
 
-    hdst = win32api.BeginUpdateResource(exenm, 0)
-    win32api.UpdateResource(hdst, pefile.RESOURCE_TYPE['RT_VERSION'], 1, vs.toRaw())
-    win32api.EndUpdateResource (hdst, 0)
+    hdst = win32api.BeginUpdateResource(exe_filename, 0)
+    win32api.UpdateResource(hdst, pefile.RESOURCE_TYPE['RT_VERSION'], 1, info.toRaw())
+    win32api.EndUpdateResource(hdst, 0)
 
     if overlay_before:
         # Check if the overlay is still present
-        pe = pefile.PE(exenm, fast_load=True)
+        pe = pefile.PE(exe_filename, fast_load=True)
         overlay_after = pe.get_overlay()
         pe.close()
 
         # If the update removed the overlay data, re-append it
         if not overlay_after:
-            with open(exenm, 'ab') as exef:
+            with open(exe_filename, 'ab') as exef:
                 exef.write(overlay_before)

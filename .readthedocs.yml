@@ -1,0 +1,18 @@
+version: 2
+
+sphinx:
+  configuration: doc/conf.py
+
+formats: all
+
+build:
+  os: ubuntu-22.04
+  tools:
+    python: '3'
+
+python:
+  install:
+    # Needed for autodoc to be able to read PyInstaller docstrings.
+    - method: pip
+      path: .
+    - requirements: doc/requirements.txt

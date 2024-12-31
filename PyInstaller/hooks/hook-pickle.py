@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2015-2021, PyInstaller Development Team.
+# Copyright (c) 2015-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -9,10 +9,5 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# only required when run as `__main__`
-excludedimports = ["argparse"]
-
-# pickle also imports `doctest`, which also is only used when run an
-# `__main__`. Anyway, excluding it made some Qt related tests fail terribly
-# with "ModuleNotFoundError: No module named '__future__'" when running the
-# executable.
+# Only required when run as `__main__`
+excludedimports = ["argparse", "doctest"]

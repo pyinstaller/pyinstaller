@@ -1,0 +1,2 @@
+The stock Linux bootloaders are now built using generic Ubuntu 18.04 and Alpine
+3.12 Docker images rather than manylinux/musllinux/dockcross.

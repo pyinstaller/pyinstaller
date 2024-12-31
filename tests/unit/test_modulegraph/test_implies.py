@@ -15,7 +15,7 @@ class ImpliesTestCase(unittest.TestCase):
                 os.path.dirname(os.path.abspath(__file__)),
                 'testpkg-relimport')
 
-        # First check that 'getopt' isn't accidently in the graph:
+        # First check that 'getopt' isn't accidentally in the graph:
         mg = modulegraph.ModuleGraph(path=[root]+sys.path)
         mg.add_script(os.path.join(root, 'script.py'))
         node = mg.find_node('mod')
@@ -45,7 +45,7 @@ class ImpliesTestCase(unittest.TestCase):
                 os.path.dirname(os.path.abspath(__file__)),
                 'testpkg-relimport')
 
-        # First check that 'getopt' isn't accidently in the graph:
+        # First check that 'getopt' isn't accidentally in the graph:
         mg = modulegraph.ModuleGraph(path=[root]+sys.path)
         mg.add_script(os.path.join(root, 'script.py'))
         node = mg.find_node('mod')

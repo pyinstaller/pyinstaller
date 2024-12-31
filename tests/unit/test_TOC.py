@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2021, PyInstaller Development Team.
+# Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -16,9 +16,8 @@ import pytest
 
 from PyInstaller.building.datastruct import TOC
 
-
 ELEMS1 = (
-    ('encodings', '/usr/lib/python2.7/encodings/__init__.py','PYMODULE'),
+    ('encodings', '/usr/lib/python2.7/encodings/__init__.py', 'PYMODULE'),
     ('_random', '/usr/lib/python2.7/lib-dynload/_random.so', 'EXTENSION'),
     ('libreadline.so.6', '/lib64/libreadline.so.6', 'BINARY'),
 )
@@ -28,9 +27,10 @@ ELEMS2 = (
     ('schubidu', '/home/otherguy/schibidu', 'PKG'),
 )
 
-ELEMS3 = (
-    ('PIL.Image.py', '/usr/lib/python2.7/encodings/__init__.py','PYMODULE'),
-)
+ELEMS3 = (('PIL.Image.py', '/usr/lib/python2.7/encodings/__init__.py', 'PYMODULE'),)
+
+# Ignore deprecation warnings for the TOC class
+pytestmark = pytest.mark.filterwarnings("ignore:TOC class is deprecated.")
 
 
 def test_init_empty():
@@ -260,14 +260,53 @@ def test_rsub_non_existing():
     assert result == expected
 
 
-# The following tests verify that case-insensitive comparisons are used on Windows
-# and only for appropriate TOC entry types
+def test_sub_after_setitem():
+    toc = TOC(ELEMS1)
+    toc[1] = ('lib-dynload/_random', '/usr/lib/python2.7/lib-dynload/_random.so', 'EXTENSION')
+    toc -= []
+    assert len(toc) == 3
+
+
+def test_sub_after_sub():
+    toc = TOC(ELEMS1)
+    toc -= [ELEMS1[0]]
+    toc -= [ELEMS1[1]]
+    expected = list(ELEMS1[2:])
+    assert toc == expected
+
+
+def test_setitem_1():
+    toc = TOC()
+    toc[:] = ELEMS1
+    for e in ELEMS1:
+        assert e in toc
+        assert e[0] in toc.filenames
+
+
+def test_setitem_2():
+    toc = TOC(ELEMS1)
+    toc[1] = ELEMS3[0]
+
+    assert ELEMS1[0] in toc
+    assert ELEMS1[0][0] in toc.filenames
+
+    assert ELEMS3[0] in toc
+    assert ELEMS3[0][0] in toc.filenames
+
+    assert ELEMS1[2] in toc
+    assert ELEMS1[2][0] in toc.filenames
+
+    for e in toc:
+        assert e[0] in toc.filenames
+
+
+# The following tests verify that case-insensitive comparisons are used on Windows and only for
+# appropriate TOC entry types
+
 
 @pytest.mark.win32
 def test_append_other_case_mixed():
-    # If a binary file is added with the same filename as an existing pymodule,
-    # it should not be added.
-
+    # If a binary file is added with the same filename as an existing pymodule, it should not be added.
     toc = TOC(ELEMS1)
     elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY')
     toc.append(elem)
@@ -277,8 +316,7 @@ def test_append_other_case_mixed():
 
 @pytest.mark.win32
 def test_append_other_case_pymodule():
-    # python modules should not use C-I comparisons. Both 'encodings' and
-    # 'EnCodIngs' should be added.
+    # Python modules should not use C-I comparisons. Both 'encodings' and 'EnCodIngs' should be added.
     toc = TOC(ELEMS1)
     elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'PYMODULE')
     toc.append(elem)
@@ -289,7 +327,7 @@ def test_append_other_case_pymodule():
 
 @pytest.mark.win32
 def test_append_other_case_binary():
-    # binary files should use C-I comparisons. 'LiBrEADlInE.so.6' should not be added.
+    # Binary files should use C-I comparisons. 'LiBrEADlInE.so.6' should not be added.
     toc = TOC(ELEMS1)
     toc.append(('LiBrEADlInE.so.6', '/lib64/libreadline.so.6', 'BINARY'))
     expected = list(ELEMS1)
@@ -298,9 +336,7 @@ def test_append_other_case_binary():
 
 @pytest.mark.win32
 def test_insert_other_case_mixed():
-    # If a binary file is added with the same filename as an existing pymodule,
-    # it should not be added
-
+    # If a binary file is added with the same filename as an existing pymodule, it should not be added.
     toc = TOC(ELEMS1)
     elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'BINARY')
     toc.insert(1, elem)
@@ -310,8 +346,7 @@ def test_insert_other_case_mixed():
 
 @pytest.mark.win32
 def test_insert_other_case_pymodule():
-    # python modules should not use C-I comparisons. Both 'encodings' and
-    # 'EnCodIngs' should be added.
+    # Python modules should not use C-I comparisons. Both 'encodings' and 'EnCodIngs' should be added.
     toc = TOC(ELEMS1)
     elem = ('EnCodIngs', '/usr/lib/python2.7/encodings.py', 'PYMODULE')
     toc.insert(1, elem)
@@ -322,7 +357,7 @@ def test_insert_other_case_pymodule():
 
 @pytest.mark.win32
 def test_insert_other_case_binary():
-    # binary files should use C-I comparisons. 'LiBrEADlInE.so.6' should not be added.
+    # Binary files should use C-I comparisons. 'LiBrEADlInE.so.6' should not be added.
     toc = TOC(ELEMS1)
     toc.insert(1, ('LiBrEADlInE.so.6', '/lib64/libreadline.so.6', 'BINARY'))
     expected = list(ELEMS1)

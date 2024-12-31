@@ -13,28 +13,28 @@ imports are done in the right way.
 #PyInstaller.building.build_main.build() function). For details, see:
 #    https://github.com/pyinstaller/pyinstaller/issues/1919#issuecomment-216016176
 
-import pkg_resources
-
 import ast
-import codecs
-import imp
-import marshal
 import os
 import pkgutil
 import sys
 import re
-from collections import deque, namedtuple
+from collections import deque, namedtuple, defaultdict
+import urllib.request
 import warnings
+import importlib.util
+import importlib.machinery
+
+# The logic in PyInstaller.compat ensures that these are available and
+# of correct version.
+if sys.version_info >= (3, 10):
+    import importlib.metadata as importlib_metadata
+else:
+    import importlib_metadata
 
 from altgraph.ObjectGraph import ObjectGraph
 from altgraph import GraphError
 
 from . import util
-from . import zipio
-from ._compat import BytesIO, StringIO, pathname2url, _READ_MODE
-
-
-BOM = codecs.BOM_UTF8.decode('utf-8')
 
 
 class BUILTIN_MODULE:
@@ -67,9 +67,7 @@ absolute imports.
 
 
 #FIXME: Leverage this rather than magic numbers below.
-DEFAULT_IMPORT_LEVEL = (
-    ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL if sys.version_info[0] == 2 else
-    ABSOLUTE_IMPORT_LEVEL)
+DEFAULT_IMPORT_LEVEL = ABSOLUTE_IMPORT_LEVEL
 """
 Constant instructing the builtin `__import__()` function to attempt the default
 import style specific to the active Python interpreter.
@@ -80,142 +78,9 @@ Specifically, under:
 * Python 3, this defaults to attempting only absolute imports.
 """
 
-# TODO: Refactor all uses of explicit filetypes in this module *AND* of the
-# imp.get_suffixes() function to use this dictionary instead. Unfortunately,
-# tests for explicit filetypes (e.g., ".py") are non-portable. Under Windows,
-# for example, both the ".py" *AND* ".pyw" filetypes signify valid uncompiled
-# Python modules.
-# TODO: The imp.get_suffixes() function (in fact, the entire "imp" package) has
-# been deprecated as of Python 3.3 by the importlib.machinery.all_suffixes()
-# function, which largely performs the same role. Unfortunately, the latter
-# function was only introduced with Python 3.3. Since PyInstaller requires
-# Python >= 3.3 when running under Python 3, refactor this as follows:
-#
-# * Under Python 2, continue calling imp.get_suffixes().
-# * Under Python 3, call importlib.machinery.all_suffixes() instead.
-_IMPORTABLE_FILETYPE_TO_METADATA = {
-    filetype: (filetype, open_mode, imp_type)
-    for filetype, open_mode, imp_type in imp.get_suffixes()
-}
-# Reverse sort by length so when comparing filenames the longest match first
-_IMPORTABLE_FILETYPE_EXTS = sorted(_IMPORTABLE_FILETYPE_TO_METADATA,
-                                   key=lambda p: len(p), reverse=True)
-"""
-Dictionary mapping the filetypes of importable files to the 3-tuple of metadata
-describing such files returned by the `imp.get_suffixes()` function whose first
-element is that filetype.
-
-This dictionary simplifies platform-portable importation of importable files,
-including:
-
-* Uncompiled modules suffixed by `.py` (as well as `.pyw` under Windows).
-* Compiled modules suffixed by either `.pyc` or `.pyo`.
-* C extensions suffixed by the platform-specific shared library filetype (e.g.,
-  `.so` under Linux, `.dll` under Windows).
-
-The keys of this dictionary are `.`-prefixed filetypes (e.g., `.py`, `.so`) or
-`-`-prefixed filetypes (e.g., `-cpython-37m.dll`[1]);
-the values of this dictionary are 3-tuples whose:
-
-1. First element is the same `.` or `-` prefixed filetype.
-1. Second element is the mode to be passed to the `open()` built-in to open
-   files of that filetype under the current platform and Python interpreter
-   (e.g., `rU` for the `.py` filetype under Python 2, `r` for the same
-   filetype under Python 3).
-1. Third element is a magic number specific to the `imp` module (e.g.,
-   `imp.C_EXTENSION` for filetypes corresponding to C extensions).
-
-[1] For example of `-cpython-m37.dll` search on
-    https://packages.msys2.org/package/mingw-w64-x86_64-python3?repo=mingw64
-"""
-
-
-
-# Modulegraph does a good job at simulating Python's, but it can not
-# handle packagepath modifications packages make at runtime.  Therefore there
-# is a mechanism whereby you can register extra paths in this map for a
-# package, and it will be honored.
-#
-# Note this is a mapping is lists of paths.
-_packagePathMap = {}
-
-# Prefix used in magic .pth files used by setuptools to create namespace
-# packages without an __init__.py file.
-#
-# The value is a list of such prefixes as the prefix varies with versions of
-# setuptools.
-_SETUPTOOLS_NAMESPACEPKG_PTHs=(
-    # setuptools 31.0.0
-    ("import sys, types, os;has_mfs = sys.version_info > (3, 5);"
-         "p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('"),
-    # distribute 0.6.10
-    ("import sys,types,os; p = os.path.join("
-         "sys._getframe(1).f_locals['sitedir'], *('"),
-    # setuptools 0.6c9, distribute 0.6.12
-    ("import sys,new,os; p = os.path.join(sys._getframe("
-         "1).f_locals['sitedir'], *('"),
-    # setuptools 28.1.0
-    ("import sys, types, os;p = os.path.join("
-         "sys._getframe(1).f_locals['sitedir'], *('"),
-    # setuptools 28.7.0
-    ("import sys, types, os;pep420 = sys.version_info > (3, 3);"
-         "p = os.path.join(sys._getframe(1).f_locals['sitedir'], *('"),
-)
-
 
 class InvalidRelativeImportError (ImportError):
     pass
-
-
-def _namespace_package_path(fqname, pathnames, path=None):
-    """
-    Return the __path__ for the python package in *fqname*.
-
-    This function uses setuptools metadata to extract information
-    about namespace packages from installed eggs.
-    """
-    working_set = pkg_resources.WorkingSet(path)
-
-    path = list(pathnames)
-
-    for dist in working_set:
-        if dist.has_metadata('namespace_packages.txt'):
-            namespaces = dist.get_metadata(
-                    'namespace_packages.txt').splitlines()
-            if fqname in namespaces:
-                nspath = os.path.join(dist.location, *fqname.split('.'))
-                if nspath not in path:
-                    path.append(nspath)
-
-    return path
-
-_strs = re.compile(r'''^\s*["']([A-Za-z0-9_]+)["'],?\s*''')  # "<- emacs happy
-
-
-def _eval_str_tuple(value):
-    """
-    Input is the repr of a tuple of strings, output
-    is that tuple.
-
-    This only works with a tuple where the members are
-    python identifiers.
-    """
-    if not (value.startswith('(') and value.endswith(')')):
-        raise ValueError(value)
-
-    orig_value = value
-    value = value[1:-1]
-
-    result = []
-    while value:
-        m = _strs.match(value)
-        if m is None:
-            raise ValueError(orig_value)
-
-        result.append(m.group(1))
-        value = value[len(m.group(0)):]
-
-    return tuple(result)
 
 
 def _path_from_importerror(exc, default):
@@ -226,64 +91,6 @@ def _path_from_importerror(exc, default):
         return m.group(1)
 
     return default
-
-
-def os_listdir(path):
-    """
-    Deprecated name
-    """
-    warnings.warn(
-        "Use zipio.listdir instead of os_listdir",
-        DeprecationWarning)
-    return zipio.listdir(path)
-
-
-def _code_to_file(co):
-    """ Convert code object to a .pyc pseudo-file """
-    if sys.version_info >= (3, 7):
-        header = imp.get_magic() + (b'\0' * 12)
-    elif sys.version_info >= (3, 4):
-        header = imp.get_magic() + (b'\0' * 8)
-    else:
-        header = imp.get_magic() + (b'\0' * 4)
-    return BytesIO(header + marshal.dumps(co))
-
-
-def moduleInfoForPath(path):
-    for (ext, readmode, typ) in imp.get_suffixes():
-        if path.endswith(ext):
-            return os.path.basename(path)[:-len(ext)], readmode, typ
-    return None
-
-
-def AddPackagePath(packagename, path):
-    warnings.warn(
-        "Use addPackagePath instead of AddPackagePath",
-        DeprecationWarning)
-    addPackagePath(packagename, path)
-
-
-def addPackagePath(packagename, path):
-    paths = _packagePathMap.get(packagename, [])
-    paths.append(path)
-    _packagePathMap[packagename] = paths
-
-
-_replacePackageMap = {}
-
-
-# This ReplacePackage mechanism allows modulefinder to work around the
-# way the _xmlplus package injects itself under the name "xml" into
-# sys.modules at runtime by calling ReplacePackage("_xmlplus", "xml")
-# before running ModuleGraph.
-def ReplacePackage(oldname, newname):
-    warnings.warn("use replacePackage instead of ReplacePackage",
-            DeprecationWarning)
-    replacePackage(oldname, newname)
-
-
-def replacePackage(oldname, newname):
-    _replacePackageMap[oldname] = newname
 
 
 #FIXME: What is this? Do we actually need this? This appears to provide
@@ -321,7 +128,7 @@ class DependencyInfo (namedtuple("DependencyInfo",
 #erroneously tests whether "module.packagepath is not None" to determine
 #whether a node is a package or not. However, "isinstance(module, Package)" is
 #a significantly more reliable test. Refactor the former into the latter.
-class Node(object):
+class Node:
     """
     Abstract base class (ABC) of all objects added to a `ModuleGraph`.
 
@@ -648,15 +455,6 @@ class Node(object):
         if self.is_global_attr(attr_name):
             self._global_attr_names.remove(attr_name)
 
-
-    def __cmp__(self, other):
-        try:
-            otherIdent = getattr(other, 'graphident')
-        except AttributeError:
-            return NotImplemented
-
-        return cmp(self.graphident, otherIdent)  # noqa: F821
-
     def __eq__(self, other):
         try:
             otherIdent = getattr(other, 'graphident')
@@ -715,10 +513,6 @@ class Node(object):
         return '%s%r' % (type(self).__name__, self.infoTuple())
 
 
-# TODO: This indirection is, frankly, unnecessary. The
-# ModuleGraph.alias_module() should directly add the desired AliasNode instance
-# to the graph rather than indirectly adding an Alias instance to the
-# "lazynodes" dictionary.
 class Alias(str):
     """
     Placeholder aliasing an existing source module to a non-existent target
@@ -739,7 +533,7 @@ class AliasNode(Node):
     non-existent target module name (i.e., the desired alias).
     """
 
-    def __init__(self, name, node):
+    def __init__(self, name, node=None):
         """
         Initialize this alias.
 
@@ -749,22 +543,28 @@ class AliasNode(Node):
             Fully-qualified name of the non-existent target module to be
             created (as an alias of the existing source module).
         node : Node
-            Graph node of the existing source module being aliased.
+            Graph node of the existing source module being aliased. Optional;
+            if not provided here, the attributes from referred node should
+            be copied later using `copyAttributesFromReferredNode` method.
         """
         super(AliasNode, self).__init__(name)
 
-        #FIXME: Why only some? Why not *EVERYTHING* except "graphident", which
-        #must remain equal to "name" for lookup purposes? This is, after all,
-        #an alias. The idea is for the two nodes to effectively be the same.
+        # Copy attributes from referred node, if provided
+        self.copyAttributesFromReferredNode(node)
 
-        # Copy some attributes from this source module into this target alias.
+    def copyAttributesFromReferredNode(self, node):
+        """
+        Copy a subset of attributes from referred node (source module) into this target alias.
+        """
+        # FIXME: Why only some? Why not *EVERYTHING* except "graphident", which
+        # must remain equal to "name" for lookup purposes? This is, after all,
+        # an alias. The idea is for the two nodes to effectively be the same.
         for attr_name in (
             'identifier', 'packagepath',
             '_global_attr_names', '_starimported_ignored_module_names',
             '_submodule_basename_to_node'):
             if hasattr(node, attr_name):
                 setattr(self, attr_name, getattr(node, attr_name))
-
 
     def infoTuple(self):
         return (self.graphident, self.identifier)
@@ -982,10 +782,7 @@ def uniq(seq):
     return [x for x in seq if not (x in seen or seen_add(x))]
 
 
-if sys.version_info[0] == 2:
-    DEFAULT_IMPORT_LEVEL = -1
-else:
-    DEFAULT_IMPORT_LEVEL = 0
+DEFAULT_IMPORT_LEVEL = 0
 
 
 class _Visitor(ast.NodeVisitor):
@@ -1011,10 +808,6 @@ class _Visitor(ast.NodeVisitor):
 
 
     def _collect_import(self, name, fromlist, level):
-        if sys.version_info[0] == 2:
-            if name == '__future__' and 'absolute_import' in (fromlist or ()):
-                self._level = 0
-
         have_star = False
         if fromlist is not None:
             fromlist = uniq(fromlist)
@@ -1119,77 +912,42 @@ class ModuleGraph(ObjectGraph):
             self.lazynodes[m] = None
         self.replace_paths = replace_paths
 
-        self.set_setuptools_nspackages()
         # Maintain own list of package path mappings in the scope of Modulegraph
         # object.
-        self._package_path_map = _packagePathMap
+        self._package_path_map = {}
 
-    def set_setuptools_nspackages(self):
-        # This is used when running in the test-suite
-        self.nspackages = self._calc_setuptools_nspackages()
+        # Legacy namespace-package paths. Initialized by scan_legacy_namespace_packages.
+        self._legacy_ns_packages = {}
 
-    def _calc_setuptools_nspackages(self):
-        # Setuptools has some magic handling for namespace
-        # packages when using 'install --single-version-externally-managed'
-        # (used by system packagers and also by pip)
-        #
-        # When this option is used namespace packages are writting to
-        # disk *without* an __init__.py file, which means the regular
-        # import machinery will not find them.
-        #
-        # We therefore explicitly look for the hack used by
-        # setuptools to get this kind of namespace packages to work.
+    def scan_legacy_namespace_packages(self):
+        """
+        Resolve extra package `__path__` entries for legacy setuptools-based
+        namespace packages, by reading `namespace_packages.txt` from dist
+        metadata.
+        """
+        legacy_ns_packages = defaultdict(lambda: set())
 
-        pkgmap = {}
+        for dist in importlib_metadata.distributions():
+            ns_packages = dist.read_text("namespace_packages.txt")
+            if ns_packages is None:
+                continue
+            ns_packages = ns_packages.splitlines()
+            # Obtain path to dist metadata directory
+            dist_path = getattr(dist, '_path')
+            if dist_path is None:
+                continue
+            for package_name in ns_packages:
+                path = os.path.join(
+                    str(dist_path.parent),  # might be zipfile.Path if in zipped .egg
+                    *package_name.split('.'),
+                )
+                legacy_ns_packages[package_name].add(path)
 
-        try:
-            from pkgutil import ImpImporter
-        except ImportError:
-            try:
-                from _pkgutil import ImpImporter
-            except ImportError:
-                ImpImporter = pkg_resources.ImpWrapper
-
-        if sys.version_info[:2] >= (3, 3):
-            import importlib.machinery
-            ImpImporter = importlib.machinery.FileFinder
-
-        for entry in self.path:
-            importer = pkg_resources.get_importer(entry)
-
-            if isinstance(importer, ImpImporter):
-                try:
-                    ldir = os.listdir(entry)
-                except os.error:
-                    continue
-
-                for fn in ldir:
-                    if fn.endswith('-nspkg.pth'):
-                        with open(os.path.join(entry, fn), _READ_MODE) as fp:
-                            for ln in fp:
-                                for pfx in _SETUPTOOLS_NAMESPACEPKG_PTHs:
-                                    if ln.startswith(pfx):
-                                        try:
-                                            start = len(pfx)-2
-                                            stop = ln.index(')', start)+1
-                                        except ValueError:
-                                            continue
-
-                                        pkg = _eval_str_tuple(ln[start:stop])
-                                        identifier = ".".join(pkg)
-                                        subdir = os.path.join(entry, *pkg)
-                                        if os.path.exists(os.path.join(subdir, '__init__.py')):
-                                            # There is a real __init__.py,
-                                            # ignore the setuptools hack
-                                            continue
-
-                                        if identifier in pkgmap:
-                                            pkgmap[identifier].append(subdir)
-                                        else:
-                                            pkgmap[identifier] = [subdir]
-                                        break
-
-        return pkgmap
+        # Convert into dictionary of lists
+        self._legacy_ns_packages = {
+            package_name: list(paths)
+            for package_name, paths in legacy_ns_packages.items()
+        }
 
     def implyNodeReference(self, node, other, edge_data=None):
         """
@@ -1344,10 +1102,7 @@ class ModuleGraph(ObjectGraph):
         name : str
             Fully-qualified name of the module whose graph node is to be found.
         create_nspkg : bool
-            Whether or not to implicitly instantiate namespace packages. If
-            `True` _and_ this name is that of a previously registered namespace
-            package (i.e., in `self.nspackages`) not already added to the
-            graph, this package will be added to the graph. Defaults to `True`.
+            Ignored.
 
         Returns
         ----------
@@ -1368,30 +1123,29 @@ class ModuleGraph(ObjectGraph):
                 # excluded module
                 m = self.createNode(ExcludedModule, name)
             elif isinstance(deps, Alias):
+                # NOTE: the AliasNode must be created and added to graph
+                # before trying to create the referred node; that might
+                # (due to recursive import analysis) lead to another
+                # attempt to resolve the aliased node (and if there is
+                # a real node that we are trying to shadow with the alias,
+                # that will end up added to the graph and prevent the
+                # alias node from being added).
+                m = self.createNode(AliasNode, name)
+
+                # Create the referred node.
                 other = self._safe_import_hook(deps, None, None).pop()
-                m = self.createNode(AliasNode, name, other)
+
+                # Copy attributes; this used to be done by AliasNode
+                # constructor, back when referred node was created before
+                # the AliasNode (and could thus be passed to its constructor).
+                m.copyAttributesFromReferredNode(other)
+
                 self.implyNodeReference(m, other)
             else:
                 m = self._safe_import_hook(name, None, None).pop()
                 for dep in deps:
                     self.implyNodeReference(m, dep)
 
-            return m
-
-        if name in self.nspackages and create_nspkg:
-            # name is a --single-version-externally-managed
-            # namespace package (setuptools/distribute)
-            pathnames = self.nspackages.pop(name)
-            m = self.createNode(NamespacePackage, name)
-
-            # FIXME: The filename must be set to a string to ensure that py2app
-            # works, it is not clear yet why that is. Setting to None would be
-            # cleaner.
-            m.filename = '-'
-            m.packagepath = _namespace_package_path(name, pathnames, self.path)
-
-            # As per comment at top of file, simulate runtime packagepath additions.
-            m.packagepath = m.packagepath + self._package_path_map.get(name, [])
             return m
 
         return None
@@ -1411,19 +1165,9 @@ class ModuleGraph(ObjectGraph):
         if m is not None:
             return m
 
-        if sys.version_info[0] != 2:
-            with open(pathname, 'rb') as fp:
-                encoding = util.guess_encoding(fp)
-
-            with open(pathname, _READ_MODE, encoding=encoding) as fp:
-                contents = fp.read() + '\n'
-            if contents.startswith(BOM):
-                # Ignore BOM at start of input
-                contents = contents[1:]
-
-        else:
-            with open(pathname, _READ_MODE) as fp:
-                contents = fp.read() + '\n'
+        with open(pathname, 'rb') as fp:
+            contents = fp.read()
+        contents = importlib.util.decode_source(contents)
 
         co_ast = compile(contents, pathname, 'exec', ast.PyCF_ONLY_AST, True)
         co = compile(co_ast, pathname, 'exec', 0, True)
@@ -1684,16 +1428,15 @@ class ModuleGraph(ObjectGraph):
         target_package = self._safe_import_module(
             target_module_headname, target_package_name, source_package)
 
-        #FIXME: Why exactly is this necessary again? This doesn't quite seem
-        #right but maybe it is. Shouldn't absolute imports only be performed if
-        #the passed "level" is either "ABSOLUTE_IMPORT_LEVEL" or
-        #"ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL" -- or, more succinctly:
-        #
-        #    if level < 1:
-
         # If this target package is *NOT* importable and a source package was
         # passed, attempt to import this target package as an absolute import.
-        if target_package is None and source_package is not None:
+        #
+        # ADDENDUM: but do this only if the passed "level" is either
+        # ABSOLUTE_IMPORT_LEVEL (0) or ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL (-1).
+        # Otherwise, an attempt at relative import of a missing sub-module
+        # (from .module import something) might pull in an unrelated
+        # but eponymous top-level module, which should not happen.
+        if target_package is None and source_package is not None and level <= ABSOLUTE_IMPORT_LEVEL:
             target_package_name = target_module_headname
             source_package = None
 
@@ -1880,15 +1623,19 @@ class ModuleGraph(ObjectGraph):
         # we cannot separate normal dlls from Python extensions.
         for path in m.packagepath:
             try:
-                names = zipio.listdir(path)
+                names = os.listdir(path)
             except (os.error, IOError):
                 self.msg(2, "can't list directory", path)
                 continue
-            for info in (moduleInfoForPath(p) for p in names):
-                if info is None:
+            for name in names:
+                for suffix in importlib.machinery.all_suffixes():
+                    if path.endswith(suffix):
+                        name = os.path.basename(path)[:-len(suffix)]
+                        break
+                else:
                     continue
-                if info[0] != '__init__':
-                    yield info[0]
+                if name != '__init__':
+                    yield name
 
 
     def alias_module(self, src_module_name, trg_module_name):
@@ -2098,33 +1845,31 @@ class ModuleGraph(ObjectGraph):
         partname = fqname.rpartition(".")[-1]
 
         if loader.is_package(partname):
-            is_nspkg = isinstance(loader, NAMESPACE_PACKAGE)
-            if is_nspkg:
-                pkgpath = loader.namespace_dirs[:]  # copy for safety
-            else:
-                pkgpath = []
-
-            newname = _replacePackageMap.get(fqname)
-            if newname:
-                fqname = newname
-            ns_pkgpath = _namespace_package_path(
-                fqname, pkgpath or [], self.path)
-
-            if (ns_pkgpath or pkgpath) and is_nspkg:
-                # this is a PEP-420 namespace package
+            if isinstance(loader, NAMESPACE_PACKAGE):
+                # This is a PEP-420 namespace package.
                 m = self.createNode(NamespacePackage, fqname)
                 m.filename = '-'
-                m.packagepath = ns_pkgpath
+                m.packagepath = loader.namespace_dirs[:]  # copy for safety
             else:
+                # Regular package.
+                #
+                # NOTE: this might be a legacy setuptools (pkg_resources)
+                # based namespace package (with __init__.py, but calling
+                # `pkg_resources.declare_namespace(__name__)`). To properly
+                # handle the case when such a package is split across
+                # multiple locations, we need to resolve the package
+                # paths via metadata.
+                ns_pkgpaths = self._legacy_ns_packages.get(fqname, [])
+
                 if isinstance(loader, ExtensionFileLoader):
                     m = self.createNode(ExtensionPackage, fqname)
                 else:
                     m = self.createNode(Package, fqname)
                 m.filename = pathname
                 # PEP-302-compliant loaders return the pathname of the
-                # `__init__`-file, not the packge directory.
+                # `__init__`-file, not the package directory.
                 assert os.path.basename(pathname).startswith('__init__.')
-                m.packagepath = [os.path.dirname(pathname)] + ns_pkgpath
+                m.packagepath = [os.path.dirname(pathname)] + ns_pkgpaths
 
             # As per comment at top of file, simulate runtime packagepath
             # additions
@@ -2140,17 +1885,42 @@ class ModuleGraph(ObjectGraph):
         elif isinstance(loader, ExtensionFileLoader):
             cls = Extension
         else:
-            src = loader.get_source(partname)
+            try:
+                src = loader.get_source(partname)
+            except (UnicodeDecodeError, SyntaxError) as e:
+                # The `UnicodeDecodeError` is typically raised here when the
+                # source file contains non-ASCII characters in some local
+                # encoding that is different from UTF-8, but fails to
+                # declare it via PEP361 encoding header. Python seems to
+                # be able to load and run such module, but we cannot retrieve
+                # the source for it via the `loader.get_source()`.
+                #
+                # The `UnicodeDecoreError` in turn triggers a `SyntaxError`
+                # when such invalid character appears on the first line of
+                # the source file (and interrupts the scan for PEP361
+                # encoding header).
+                #
+                # In such cases, we try to fall back to reading the source
+                # as raw data file.
+
+                # If `SyntaxError` was not raised during handling of
+                # a `UnicodeDecodeError`, it was likely a genuine syntax
+                # error, so re-raise it.
+                if isinstance(e, SyntaxError):
+                    if not isinstance(e.__context__, UnicodeDecodeError):
+                        raise
+
+                self.msg(2, "load_module: failed to obtain source for "
+                         f"{partname}: {e}! Falling back to reading as "
+                         "raw data!")
+
+                path = loader.get_filename(partname)
+                src = loader.get_data(path)
+
             if src is not None:
                 try:
-                    co = compile(src, pathname, 'exec', ast.PyCF_ONLY_AST,
-                                 True)
+                    co = compile(src, pathname, 'exec', ast.PyCF_ONLY_AST, True)
                     cls = SourceModule
-                    if sys.version_info[:2] == (3, 5):
-                        # In Python 3.5 some syntax problems with async
-                        # functions are only reported when compiling to
-                        # bytecode
-                        compile(co, '-', 'exec', 0, True)
                 except SyntaxError:
                     co = None
                     cls = InvalidSourceModule
@@ -2265,19 +2035,13 @@ class ModuleGraph(ObjectGraph):
                     level == ABSOLUTE_IMPORT_LEVEL and
                     type(source_module) is SourceModule and
                     target_module_partname ==
-                      '_' + source_module.identifier.rpartition('.')[2] and
-                    sys.version_info[0] == 3)
+                      '_' + source_module.identifier.rpartition('.')[2])
 
         def is_swig_wrapper(source_module):
-            # TODO Define a new function util.open_text_file() performing
-            # this logic, which is repeated numerous times in this module.
-            # FIXME: Actually, can't we just use the new compat.open()
-            # function to reliably open text files in a portable manner?
-            with open(source_module.filename, 'rb') as source_module_file:
-                encoding = util.guess_encoding(source_module_file)
-            with open(source_module.filename, _READ_MODE, encoding=encoding) \
-                    as source_module_file:
-                first_line = source_module_file.readline()
+            with open(source_module.filename, 'rb') as fp:
+                contents = fp.read()
+            contents = importlib.util.decode_source(contents)
+            first_line = contents.splitlines()[0] if contents else ''
             self.msg(5, 'SWIG wrapper candidate first line: %r' % (first_line))
             return "automatically generated by SWIG" in first_line
 
@@ -2624,13 +2388,7 @@ class ModuleGraph(ObjectGraph):
         """
 
         # For safety, guard against multiple scans of the same module by
-        # resetting this module's list of deferred target imports. While
-        # uncommon, this edge case can occur due to:
-        #
-        # * Dynamic package replacement via the replacePackage() function. For
-        #   example, the real "_xmlplus" package dynamically replaces itself
-        #   with the fake "xml" package into the "sys.modules" cache of all
-        #   currently loaded modules at runtime.
+        # resetting this module's list of deferred target imports.
         module._deferred_imports = []
 
         # Parse all imports from this module *BEFORE* adding these imports to
@@ -2847,7 +2605,15 @@ class ModuleGraph(ObjectGraph):
             # Graph node of the target module specified by the "from" portion
             # of this "from"-style star import (e.g., an import resembling
             # "from {target_module_name} import *") or ignored otherwise.
-            target_module = self._safe_import_hook(*import_info, **kwargs)[0]
+            target_modules = self._safe_import_hook(*import_info, **kwargs)
+            if not target_modules:
+                # If _safe_import_hook suppressed the module, quietly drop it.
+                # Do not create an ExcludedModule instance, because that might
+                # completely suppress the module whereas it might need to be
+                # included due to reference from another module (that does
+                # not exclude it via hook).
+                continue
+            target_module = target_modules[0]
 
             # If this is a "from"-style star import, process this import.
             if have_star:
@@ -2992,9 +2758,18 @@ class ModuleGraph(ObjectGraph):
 
                 # Get the PEP 302-compliant loader object loading this module.
                 #
-                # If this importer defines the PEP 302-compliant find_loader()
-                # method, prefer that.
-                if hasattr(importer, 'find_loader'):
+                # If this importer defines the PEP 451-compliant find_spec()
+                # method, use that, and obtain loader from spec. This should
+                # be available on python >= 3.4.
+                if hasattr(importer, 'find_spec'):
+                    loader = None
+                    spec = importer.find_spec(module_name)
+                    if spec is not None:
+                        loader = spec.loader
+                        namespace_dirs.extend(spec.submodule_search_locations or [])
+                # Else if this importer defines the PEP 302-compliant find_loader()
+                # method, use that.
+                elif hasattr(importer, 'find_loader'):
                     loader, loader_namespace_dirs = importer.find_loader(
                         module_name)
                     namespace_dirs.extend(loader_namespace_dirs)
@@ -3069,7 +2844,7 @@ class ModuleGraph(ObjectGraph):
         scripts = []
         mods = []
         for mod in self.iter_graph():
-            name = os.path.basename(mod.identifier)
+            name = os.path.basename(mod.graphident)
             if isinstance(mod, Script):
                 scripts.append((name, mod))
             else:
@@ -3084,7 +2859,7 @@ class ModuleGraph(ObjectGraph):
         print(header % {"TITLE": title}, file=out)
 
         def sorted_namelist(mods):
-            lst = [os.path.basename(mod.identifier) for mod in mods if mod]
+            lst = [os.path.basename(mod.graphident) for mod in mods if mod]
             lst.sort()
             return lst
         for name, m in mods:
@@ -3096,7 +2871,7 @@ class ModuleGraph(ObjectGraph):
                 content = contpl % {"NAME": name,
                                     "TYPE": "<tt>%s</tt>" % m.filename}
             else:
-                url = pathname2url(m.filename or "")
+                url = urllib.request.pathname2url(m.filename or "")
                 content = contpl_linked % {"NAME": name, "URL": url,
                                            'TYPE': m.__class__.__name__}
             oute, ince = map(sorted_namelist, self.get_edges(m))
@@ -3163,9 +2938,9 @@ class ModuleGraph(ObjectGraph):
 
         # find all packages (subgraphs)
         for (node, data, outgoing, incoming) in nodes:
-            nodetoident[node] = getattr(data, 'identifier', None)
+            nodetoident[node] = getattr(data, 'graphident', None)
             if isinstance(data, Package):
-                packageidents[data.identifier] = node
+                packageidents[data.graphident] = node
                 inpackages[node] = set([node])
                 packagenodes.add(node)
 
@@ -3260,8 +3035,11 @@ class ModuleGraph(ObjectGraph):
         print()
         print("%-15s %-25s %s" % ("Class", "Name", "File"))
         print("%-15s %-25s %s" % ("-----", "----", "----"))
-        for m in sorted(self.iter_graph(), key=lambda n: n.identifier):
-            print("%-15s %-25s %s" % (type(m).__name__, m.identifier, m.filename or ""))
+        for m in sorted(self.iter_graph(), key=lambda n: n.graphident):
+            if isinstance(m, AliasNode):
+                print("%-15s %-25s %s" % (type(m).__name__, m.graphident, m.identifier))
+            else:
+                print("%-15s %-25s %s" % (type(m).__name__, m.graphident, m.filename or ""))
 
     def _replace_paths_in_code(self, co):
         new_filename = original_filename = os.path.normpath(co.co_filename)
@@ -3280,22 +3058,4 @@ class ModuleGraph(ObjectGraph):
             if isinstance(consts[i], type(co)):
                 consts[i] = self._replace_paths_in_code(consts[i])
 
-        code_func = type(co)
-
-        if hasattr(co, 'replace'): # is_py38
-            return co.replace(co_consts=tuple(consts),
-                              co_filename=new_filename)
-        elif hasattr(co, 'co_kwonlyargcount'):
-            return code_func(
-                        co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
-                        co.co_stacksize, co.co_flags, co.co_code,
-                        tuple(consts), co.co_names, co.co_varnames,
-                        new_filename, co.co_name, co.co_firstlineno,
-                        co.co_lnotab, co.co_freevars, co.co_cellvars)
-        else:
-            return code_func(
-                        co.co_argcount, co.co_nlocals, co.co_stacksize,
-                        co.co_flags, co.co_code, tuple(consts), co.co_names,
-                        co.co_varnames, new_filename, co.co_name,
-                        co.co_firstlineno, co.co_lnotab,
-                        co.co_freevars, co.co_cellvars)
+        return co.replace(co_consts=tuple(consts), co_filename=new_filename)

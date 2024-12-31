@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2021, PyInstaller Development Team.
+# Copyright (c) 2021-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,15 +8,21 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-from PyInstaller.utils.hooks.qt import pyside6_library_info, \
-    get_qt_binaries, get_qt_conf_file
+
+from PyInstaller.utils.hooks import check_requirement
+from PyInstaller.utils.hooks.qt import pyside6_library_info, ensure_single_qt_bindings_package
+
+# Allow only one Qt bindings package to be collected in frozen application.
+ensure_single_qt_bindings_package("PySide6")
 
 # Only proceed if PySide6 can be imported.
 if pyside6_library_info.version is not None:
-    hiddenimports = ['shiboken6']
+    hiddenimports = ['shiboken6', 'inspect']
 
-    # Collect the ``qt.conf`` file.
-    datas = get_qt_conf_file(pyside6_library_info)
+    # Starting with PySide6 6.4.0, we need to collect PySide6.support.deprecated for | and & operators to work with
+    # Qt key and key modifiers enums. See #7249.
+    if check_requirement("PySide6 >= 6.4.0"):
+        hiddenimports += ['PySide6.support.deprecated']
 
     # Collect required Qt binaries.
-    binaries = get_qt_binaries(pyside6_library_info)
+    binaries = pyside6_library_info.collect_extra_binaries()

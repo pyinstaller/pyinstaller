@@ -7,7 +7,7 @@ Running the Test Suite
 
 To run the test-suite, please proceed as follows.
 
-1. If you don't have a git clone of |PyInstaller|, first fetch the current
+1. If you don't have a git clone of PyInstaller, first fetch the current
    development head, either using pip, …::
 
      pip download --no-deps https://github.com/pyinstaller/pyinstaller/archive/develop.zip
@@ -54,7 +54,7 @@ To run the test-suite, please proceed as follows.
 
 
 To learn how we run the test-suite in the continuous integration tests please
-have a look at |.travis.yml|_ (for GNU/Linux and OS X) and |appveyor.yml|_
+have a look at |.travis.yml|_ (for GNU/Linux and macOS) and |appveyor.yml|_
 (for Windows).
 
 

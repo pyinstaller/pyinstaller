@@ -83,7 +83,7 @@ Commit messages should provide enough information to enable a third party to
 decide if the change is relevant to them and if they need to read the change
 itself.
 
-|PyInstaller| is maintained since 2005 and we often need to
+PyInstaller is maintained since 2005 and we often need to
 comprehend years later why a certain change has been implemented as it is.
 What seemed to be obvious when the change was applied may be just obscure
 years later. The original contributor may be out of reach, while another

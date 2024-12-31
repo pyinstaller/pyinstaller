@@ -1,9 +1,9 @@
-import os, sys
+import os
+import sys
 from pathlib import Path
 
-# Import the application's "app" package.
-# This does not(!) contain a sub-module app.hook.
-import app
+# Import the application's "app" package. This does not(!) contain a sub-module app.hook.
+import app  # noqa: F401
 
 # Paths from #4141, where the script was called "main"
 #   dist/main/app.py
@@ -11,19 +11,15 @@ import app
 # Paths here:
 #   dist/pyi_issue_4141/app.py
 #   my-plugins/plugin_11/app.py
-#              123456789
 dist_main_len = len(os.path.join("dist", "main"))
 
-# Create some "plugins" in sub-directory "p"
+# Create some "plugins" in sub-directory "p".
 #
-# Each of the plugins contains a sub-module app.hook, which get
-# imported by the plugin's main module. If PyInstaller picks up the
-# application's "app" package instead of the plugin's (which is issue
-# 4141), importing sub-module app.hook will fail.
-#
+# Each plugin contains a sub-module called app.hook, which gets imported by the plugin's main module.
+# If PyInstaller picks up the application's "app" package instead of the plugin's (which is issue #4141),
+# importing the app.hook sub-module will fail.
 plugins_dir = Path("p").absolute()
-plugin_names = [chr(ord("a") + 10 + i) * (dist_main_len + i)
-                for i in range(5, -5, -1)]
+plugin_names = [chr(ord("a") + 10 + i) * (dist_main_len + i) for i in range(5, -5, -1)]
 print(plugin_names)
 
 for pn in plugin_names:

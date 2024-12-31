@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2021, PyInstaller Development Team.
+# Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -9,10 +9,11 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# This script is used by multiple tests. It checks that various paths set by the
-# bootloader are usable filenames.
+# This script is used by multiple tests.
+# It checks that various paths set by the bootloader are usable filenames.
 
-import sys, os
+import sys
+import os
 
 print("sys.executable:", ascii(sys.executable))
 
@@ -28,4 +29,3 @@ print("sys._MEIPASS:", ascii(sys._MEIPASS))
 
 if not os.path.exists(sys._MEIPASS):
     raise SystemExit("sys._MEIPASS does not exist.")
-

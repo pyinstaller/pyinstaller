@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2021, PyInstaller Development Team.
+# Copyright (c) 2013-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,250 +8,220 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
-This CArchiveReader is used only by the archieve_viewer utility.
+Python-based CArchive (PKG) reader implementation. Used only in the archive_viewer utility.
 """
 
-# TODO clean up this module
-
-import struct
 import os
+import struct
+
+from PyInstaller.loader.pyimod01_archive import ZlibArchiveReader, ArchiveReadError
 
 
-from PyInstaller.loader.pyimod02_archive import ArchiveReader
-
-
-class NotAnArchiveError(Exception):
+class NotAnArchiveError(TypeError):
     pass
 
 
-class CTOCReader(object):
+# Type codes for CArchive TOC entries
+PKG_ITEM_BINARY = 'b'  # binary
+PKG_ITEM_DEPENDENCY = 'd'  # runtime option
+PKG_ITEM_PYZ = 'z'  # zlib (pyz) - frozen Python code
+PKG_ITEM_ZIPFILE = 'Z'  # zlib (pyz) - frozen Python code
+PKG_ITEM_PYPACKAGE = 'M'  # Python package (__init__.py)
+PKG_ITEM_PYMODULE = 'm'  # Python module
+PKG_ITEM_PYSOURCE = 's'  # Python script (v3)
+PKG_ITEM_DATA = 'x'  # data
+PKG_ITEM_RUNTIME_OPTION = 'o'  # runtime option
+PKG_ITEM_SPLASH = 'l'  # splash resources
+
+
+class CArchiveReader:
     """
-    A class encapsulating the table of contents of a CArchive.
-
-    When written to disk, it is easily read from C.
+    Reader for PyInstaller's CArchive (PKG) archive.
     """
-    # (structlen, dpos, dlen, ulen, flag, typcd) followed by name
-    ENTRYSTRUCT = '!iIIIBB'
-    ENTRYLEN = struct.calcsize(ENTRYSTRUCT)
 
-    def __init__(self):
-        self.data = []
-
-    def frombinary(self, s):
-        """
-        Decode the binary string into an in memory list.
-
-        S is a binary string.
-        """
-        p = 0
-
-        while p < len(s):
-            (slen, dpos, dlen, ulen, flag, typcd) = struct.unpack(self.ENTRYSTRUCT,
-                                                        s[p:p + self.ENTRYLEN])
-            nmlen = slen - self.ENTRYLEN
-            p = p + self.ENTRYLEN
-            (nm,) = struct.unpack('%is' % nmlen, s[p:p + nmlen])
-            p = p + nmlen
-            # nm may have up to 15 bytes of padding
-            nm = nm.rstrip(b'\0')
-            nm = nm.decode('utf-8')
-            typcd = chr(typcd)
-            self.data.append((dpos, dlen, ulen, flag, typcd, nm))
-
-
-    def get(self, ndx):
-        """
-        Return the table of contents entry (tuple) at index NDX.
-        """
-        return self.data[ndx]
-
-    def __getitem__(self, ndx):
-        return self.data[ndx]
-
-    def find(self, name):
-        """
-        Return the index of the toc entry with name NAME.
-
-        Return -1 for failure.
-        """
-        for i, nm in enumerate(self.data):
-            if nm[-1] == name:
-                return i
-        return -1
-
-
-class CArchiveReader(ArchiveReader):
-    """
-    An Archive subclass that can hold arbitrary data.
-
-    This class encapsulates all files that are bundled within an executable.
-    It can contain ZlibArchive (Python .pyc files), dlls, Python C extensions
-    and all other data files that are bundled in --onefile mode.
-
-    Easily handled from C or from Python.
-    """
-    # MAGIC is useful to verify that conversion of Python data types
-    # to C structure and back works properly.
-    MAGIC = b'MEI\014\013\012\013\016'
-    HDRLEN = 0
-    LEVEL = 9
-
-    # Cookie - holds some information for the bootloader. C struct format
-    # definition. '!' at the beginning means network byte order.
-    # C struct looks like:
+    # Cookie - holds some information for the bootloader. C struct format definition. '!' at the beginning means network
+    # byte order. C struct looks like:
     #
-    #   typedef struct _cookie {
-    #       char magic[8]; /* 'MEI\014\013\012\013\016' */
-    #       uint32_t len;  /* len of entire package */
-    #       uint32_t TOC;  /* pos (rel to start) of TableOfContents */
-    #       int  TOClen;   /* length of TableOfContents */
-    #       int  pyvers;   /* new in v4 */
-    #       char pylibname[64];    /* Filename of Python dynamic library. */
-    #   } COOKIE;
+    # typedef struct _archive_cookie
+    # {
+    #     char magic[8];
+    #     uint32_t pkg_length;
+    #     uint32_t toc_offset;
+    #     uint32_t toc_length;
+    #     uint32_t python_version;
+    #     char python_libname[64];
+    # } ARCHIVE_COOKIE;
     #
-    _cookie_format = '!8sIIii64s'
-    _cookie_size = struct.calcsize(_cookie_format)
+    _COOKIE_MAGIC_PATTERN = b'MEI\014\013\012\013\016'
 
-    def __init__(self, archive_path=None, start=0, length=0, pylib_name=''):
-        """
-        Constructor.
+    _COOKIE_FORMAT = '!8sIIII64s'
+    _COOKIE_LENGTH = struct.calcsize(_COOKIE_FORMAT)
 
-        archive_path path name of file (create empty CArchive if path is None).
-        start        is the seekposition within PATH.
-        len          is the length of the CArchive (if 0, then read till EOF).
-        pylib_name   name of Python DLL which bootloader will use.
-        """
-        self.length = length
-        self._pylib_name = pylib_name
+    # TOC entry:
+    #
+    # typedef struct _toc_entry
+    # {
+    #     uint32_t entry_length;
+    #     uint32_t offset;
+    #     uint32_t length;
+    #     uint32_t uncompressed_length;
+    #     unsigned char compression_flag;
+    #     char typecode;
+    #     char name[1]; /* Variable-length name, padded to multiple of 16 */
+    # } TOC_ENTRY;
+    #
+    _TOC_ENTRY_FORMAT = '!IIIIBc'
+    _TOC_ENTRY_LENGTH = struct.calcsize(_TOC_ENTRY_FORMAT)
 
+    def __init__(self, filename):
+        self._filename = filename
+        self._start_offset = 0
+        self._toc_offset = 0
+        self._toc_length = 0
 
-        # A CArchive created from scratch starts at 0, no leading bootloader.
-        self.pkg_start = 0
-        super(CArchiveReader, self).__init__(archive_path, start)
+        self.toc = {}
+        self.options = []
 
-    def checkmagic(self):
-        """
-        Verify that self is a valid CArchive.
+        # Load TOC
+        with open(self._filename, "rb") as fp:
+            # Find cookie MAGIC pattern
+            cookie_start_offset = self._find_magic_pattern(fp, self._COOKIE_MAGIC_PATTERN)
+            if cookie_start_offset == -1:
+                raise ArchiveReadError("Could not find COOKIE magic pattern!")
 
-        Magic signature is at end of the archive.
+            # Read the whole cookie
+            fp.seek(cookie_start_offset, os.SEEK_SET)
+            cookie_data = fp.read(self._COOKIE_LENGTH)
 
-        This fuction is used by ArchiveViewer.py utility.
-        """
-        # Magic is at EOF; if we're embedded, we need to figure where that is.
-        if self.length:
-            self.lib.seek(self.start + self.length, 0)
-        else:
-            self.lib.seek(0, os.SEEK_END)
-        end_pos = self.lib.tell()
+            magic, archive_length, toc_offset, toc_length, pyvers, pylib_name = \
+                struct.unpack(self._COOKIE_FORMAT, cookie_data)
 
+            # Compute start of the the archive
+            self._start_offset = (cookie_start_offset + self._COOKIE_LENGTH) - archive_length
+
+            # Verify that Python shared library name is set
+            if not pylib_name:
+                raise ArchiveReadError("Python shared library name not set in the archive!")
+
+            # Read whole toc
+            fp.seek(self._start_offset + toc_offset)
+            toc_data = fp.read(toc_length)
+
+            self.toc, self.options = self._parse_toc(toc_data)
+
+    @staticmethod
+    def _find_magic_pattern(fp, magic_pattern):
+        # Start at the end of file, and scan back-to-start
+        fp.seek(0, os.SEEK_END)
+        end_pos = fp.tell()
+
+        # Scan from back
         SEARCH_CHUNK_SIZE = 8192
         magic_offset = -1
-        while end_pos >= len(self.MAGIC):
+        while end_pos >= len(magic_pattern):
             start_pos = max(end_pos - SEARCH_CHUNK_SIZE, 0)
             chunk_size = end_pos - start_pos
             # Is the remaining chunk large enough to hold the pattern?
-            if chunk_size < len(self.MAGIC):
+            if chunk_size < len(magic_pattern):
                 break
             # Read and scan the chunk
-            self.lib.seek(start_pos, os.SEEK_SET)
-            buf = self.lib.read(chunk_size)
-            pos = buf.rfind(self.MAGIC)
+            fp.seek(start_pos, os.SEEK_SET)
+            buf = fp.read(chunk_size)
+            pos = buf.rfind(magic_pattern)
             if pos != -1:
                 magic_offset = start_pos + pos
                 break
-            # Adjust search location for next chunk; ensure proper
-            # overlap
-            end_pos = start_pos + len(self.MAGIC) - 1
-        if magic_offset == -1:
-            raise RuntimeError("%s is not a valid %s archive file" %
-                               (self.path, self.__class__.__name__))
-        filelen = magic_offset + self._cookie_size
-        # Read the whole cookie
-        self.lib.seek(magic_offset, os.SEEK_SET)
-        buf = self.lib.read(self._cookie_size)
-        (magic, totallen, tocpos, toclen, pyvers, pylib_name) = struct.unpack(
-            self._cookie_format, buf)
-        if magic != self.MAGIC:
-            raise RuntimeError("%s is not a valid %s archive file" %
-                               (self.path, self.__class__.__name__))
+            # Adjust search location for next chunk; ensure proper overlap
+            end_pos = start_pos + len(magic_pattern) - 1
 
-        self.pkg_start = filelen - totallen
-        if self.length:
-            if totallen != self.length or self.pkg_start != self.start:
-                raise RuntimeError('Problem with embedded archive in %s' %
-                        self.path)
-        # Verify presence of Python library name.
-        if not pylib_name:
-            raise RuntimeError('Python library filename not defined in archive.')
-        self.tocpos, self.toclen = tocpos, toclen
+        return magic_offset
 
-    def loadtoc(self):
-        """
-        Load the table of contents into memory.
-        """
-        self.toc = CTOCReader()
-        self.lib.seek(self.pkg_start + self.tocpos)
-        tocstr = self.lib.read(self.toclen)
-        self.toc.frombinary(tocstr)
+    @classmethod
+    def _parse_toc(cls, data):
+        options = []
+        toc = {}
+        cur_pos = 0
+        while cur_pos < len(data):
+            # Read and parse the fixed-size TOC entry header
+            entry_length, entry_offset, data_length, uncompressed_length, compression_flag, typecode = \
+                struct.unpack(cls._TOC_ENTRY_FORMAT, data[cur_pos:(cur_pos + cls._TOC_ENTRY_LENGTH)])
+            cur_pos += cls._TOC_ENTRY_LENGTH
+            # Read variable-length name
+            name_length = entry_length - cls._TOC_ENTRY_LENGTH
+            name, *_ = struct.unpack(f'{name_length}s', data[cur_pos:(cur_pos + name_length)])
+            cur_pos += name_length
+            # Name string may contain up to 15 bytes of padding
+            name = name.rstrip(b'\0').decode('utf-8')
+
+            typecode = typecode.decode('ascii')
+
+            # The TOC should not contain duplicates, except for OPTION entries. Therefore, keep those
+            # in a separate list. With options, the rest of the entries do not make sense, anyway.
+            if typecode == 'o':
+                options.append(name)
+            else:
+                toc[name] = (entry_offset, data_length, uncompressed_length, compression_flag, typecode)
+
+        return toc, options
 
     def extract(self, name):
         """
-        Get the contents of an entry.
-
-        NAME is an entry name OR the index to the TOC.
-
-        Return the tuple (ispkg, contents).
-        For non-Python resoures, ispkg is meaningless (and 0).
-        Used by the import mechanism.
+        Extract data for the given entry name.
         """
-        if isinstance(name, str):
-            ndx = self.toc.find(name)
-            if ndx == -1:
-                return None
-        else:
-            ndx = name
-        (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
 
-        with self.lib:
-            self.lib.seek(self.pkg_start + dpos)
-            rslt = self.lib.read(dlen)
+        entry = self.toc.get(name)
+        if entry is None:
+            raise KeyError(f"No entry named {name} found in the archive!")
 
-        if flag == 1:
+        entry_offset, data_length, uncompressed_length, compression_flag, typecode = entry
+        with open(self._filename, "rb") as fp:
+            fp.seek(self._start_offset + entry_offset, os.SEEK_SET)
+            data = fp.read(data_length)
+
+        if compression_flag:
             import zlib
-            rslt = zlib.decompress(rslt)
-        if typcd == 'M':
-            return (1, rslt)
+            data = zlib.decompress(data)
 
-        return (typcd == 'M', rslt)
+        return data
 
-    def contents(self):
+    def open_embedded_archive(self, name):
         """
-        Return the names of the entries.
+        Open new archive reader for the embedded archive.
         """
-        rslt = []
-        for (dpos, dlen, ulen, flag, typcd, nm) in self.toc:
-            rslt.append(nm)
-        return rslt
 
-    def openEmbedded(self, name):
-        """
-        Open a CArchive of name NAME embedded within this CArchive.
+        entry = self.toc.get(name)
+        if entry is None:
+            raise KeyError(f"No entry named {name} found in the archive!")
 
-        This fuction is used by ArchiveViewer.py utility.
-        """
-        ndx = self.toc.find(name)
+        entry_offset, data_length, uncompressed_length, compression_flag, typecode = entry
 
-        if ndx == -1:
-            raise KeyError("Member '%s' not found in %s" % (name, self.path))
-        (dpos, dlen, ulen, flag, typcd, nm) = self.toc.get(ndx)
+        if typecode == PKG_ITEM_PYZ:
+            # Open as embedded archive, without extraction.
+            return ZlibArchiveReader(self._filename, self._start_offset + entry_offset)
+        elif typecode == PKG_ITEM_ZIPFILE:
+            raise NotAnArchiveError("Zipfile archives not supported yet!")
+        else:
+            raise NotAnArchiveError(f"Entry {name} is not a supported embedded archive!")
 
-        if typcd not in "zZ":
-            raise NotAnArchiveError('%s is not an archive' % name)
 
-        if flag:
-            raise ValueError('Cannot open compressed archive %s in place' %
-                    name)
-        return CArchiveReader(self.path, self.pkg_start + dpos, dlen)
+def pkg_archive_contents(filename, recursive=True):
+    """
+    List the contents of the PKG / CArchive. If `recursive` flag is set (the default), the contents of the embedded PYZ
+    archive is included as well.
+
+    Used by the tests.
+    """
+
+    contents = []
+
+    pkg_archive = CArchiveReader(filename)
+    for name, toc_entry in pkg_archive.toc.items():
+        *_, typecode = toc_entry
+        contents.append(name)
+        if typecode == PKG_ITEM_PYZ and recursive:
+            pyz_archive = pkg_archive.open_embedded_archive(name)
+            for name in pyz_archive.toc.keys():
+                contents.append(name)
+
+    return contents

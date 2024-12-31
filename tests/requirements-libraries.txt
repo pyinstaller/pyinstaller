@@ -8,67 +8,132 @@
 # include requirements for base testing
 -r requirements-tools.txt
 
-
-# Needs work
-# ----------
-# These packages, if updated, produce test failures. Work needs to be done on
-# these hooks. Any requirement in this list should be followed by the
-# `# pyup: ignore <https://pyup.io/docs/bot/filter/>`_ comment.
-#
-# - v. 2.2 and above fails.
-Django==2.1.8  # pyup: ignore
-# - v 21.1.0 fails; earlier versions not tested.
-keyring==19.2.0  # pyup: ignore
+# Backport of importlib.resources for python 3.8 and earlier.
+importlib_resources==6.4.5; python_version < '3.9'
 
 
 # Working
 # -------
 # These packages work with no (known) issues.
-babel==2.9.1
-future==0.18.2
-gevent==21.1.2
-pygments==2.9.0
-pyside2==5.15.2
-pyside6==6.1.0
-pyqt5==5.15.4
-pyqtwebengine==5.15.4
-pyqt6==6.1.0
-python-dateutil==2.8.2
-pytz==2021.1
-requests==2.26.0
+babel==2.16.0
+Django==5.1.4; python_version >= '3.10'
+future==1.0.0
+gevent==24.11.1; python_version >= '3.9'
+ipython==8.31.0; python_version >= '3.10'
+keyring==25.6.0; python_version >= '3.9'
+matplotlib==3.10.0; python_version >= '3.10'
+numpy==2.2.1; python_version >= '3.10'
+pandas==2.2.3; python_version >= '3.9'
+pygments==2.18.0
+PyGObject==3.50.0; sys_platform == 'linux' and python_version >= '3.9'
+# Official PySide2 wheels do not support python 3.11 or newer. Nor are they available for arm64 on macOS.
+PySide2==5.15.2.1; python_version < '3.11' and (sys_platform != 'darwin' or platform_machine != 'arm64')
+# PySide6 is a metapackage that depends on PySide6-Essentials and PySide6-Addons. Their versions are
+# usually kept in sync.
+PySide6==6.8.1; python_version >= '3.9'  # pyup: != 6.8.1.1 # Provides only macOS wheels
+PySide6-Addons==6.8.1; python_version >= '3.9'  # pyup: != 6.8.1.1 # Provides only macOS wheels
+PySide6-Essentials==6.8.1; python_version >= '3.9'  # pyup: != 6.8.1.1 # Provides only macOS wheels
+# PyQt5 and add-on packages
+# We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
+# anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
+# all platforms, while 5.15.11 are available only for macOS (and some of them only for arm64).
+PyQt5-sip==12.16.1; python_version >= '3.9'
+PyQt5==5.15.11
+PyQt3D==5.15.7
+PyQtChart==5.15.7
+PyQtDataVisualization==5.15.6
+PyQtNetworkAuth==5.15.6
+PyQtPurchasing==5.15.6
+QScintilla==2.14.1
+PyQtWebEngine==5.15.7
+# PyQt6 and add-on packages
+# The *-Qt6 packages contain Qt shared libraries; their version is therefore the version of Qt release,
+# but in contrast to Qt5 and PyQt5 bindings, the versions here must usually be kept in sync with the
+# version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
+# thus the ABI is still changing.
+PyQt6-sip==13.9.1; python_version >= '3.9'
+PyQt6==6.8.0; python_version >= '3.9'
+PyQt6-Qt6==6.8.1; python_version >= '3.9'
+PyQt6-3D==6.8.0; python_version >= '3.9'
+PyQt6-3D-Qt6==6.8.1; python_version >= '3.9'
+PyQt6-Charts==6.8.0; python_version >= '3.9'
+PyQt6-Charts-Qt6==6.8.1; python_version >= '3.9'
+PyQt6-DataVisualization==6.8.0; python_version >= '3.9'
+PyQt6-DataVisualization-Qt6==6.8.1; python_version >= '3.9'
+PyQt6-Graphs==6.8.0; python_version >= '3.9'
+PyQt6-Graphs-Qt6==6.8.1; python_version >= '3.9'
+PyQt6-NetworkAuth==6.8.0; python_version >= '3.9'
+PyQt6-NetworkAuth-Qt6==6.8.1; python_version >= '3.9'
+PyQt6-QScintilla==2.14.1; python_version >= '3.9'  # Does not have a corresponding -Qt6 package
+PyQt6-WebEngine==6.8.0; python_version >= '3.9'
+PyQt6-WebEngine-Qt6==6.8.1; python_version >= '3.9'
+python-dateutil==2.9.0.post0
+pytz==2024.2
+requests==2.32.3
+scipy==1.14.1; python_version >= '3.10'
 # simplejson is used for text_c_extension
-simplejson==3.17.3
-sphinx==2.4.4 # pyup: ignore
+simplejson==3.19.3
+sphinx==8.1.3; python_version >= '3.10'
 # Required for test_namespace_package
-sqlalchemy==1.4.22
-zope.interface==5.4.0
-Pillow==8.3.1
+sqlalchemy==2.0.36
+zope.interface==7.2
+Pillow==11.0.0; python_version >= '3.9'
 
 
 # Python versions not supported / supported for older package versions
-# -------------------------------------------------------
+# --------------------------------------------------------------------
 
-# iPython 7.17 dropped support for python 3.6
-# https://ipython.readthedocs.io/en/stable/whatsnew/version7.html#ipython-7-17
-ipython==7.25.0; python_version > '3.6'
-ipython==7.16.1; python_version <= '3.6'  # pyup: ignore
+# For every package in the above list that has a "python_version >="
+# condition, add entries with "python_version ==" for supported/tested
+# version(s) of python and pin the package to the last version that
+# supports the given python version. Make sure entries end with
+# `# pyup: ignore` to prevent them from being updated.
 
-# pandas also dropped support
-pandas==1.3.1; python_version > '3.6'
-pandas==1.1.5; python_version <= '3.6'  # pyup: ignore
 
-# so did numpy
-numpy==1.21.1; python_version > '3.6'
-numpy==1.19.4; python_version <= '3.6'  # pyup: ignore
+# Python 3.9
+# ----------
+Django==4.2.8; python_version == '3.9'  # pyup: ignore
 
-# scipy too
-scipy==1.7.0; python_version > '3.6'
-scipy==1.5.4; python_version <= '3.6'  # pyup: ignore
+numpy==2.0.1; python_version == '3.9'  # pyup: ignore
+scipy==1.13.1; python_version == '3.9'  # pyup: ignore
+matplotlib==3.9.3; python_version == '3.9'  # pyup: ignore
 
-# and matplotlib
-matplotlib==3.4.2; python_version > '3.6'
-matplotlib==3.3.4; python_version <= '3.6'  # pyup: ignore
+sphinx==7.4.7; python_version == '3.9'  # pyup: ignore
 
-# Install PyInstaller Hook Sample, to ensure that tests declared in
-# entry-points are discovered.
-https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip  # pyup: ignore
+ipython==8.18.1; python_version == '3.9'  # pyup: ignore
+
+# Python 3.8
+# ----------
+Django==4.2.8; python_version == '3.8'  # pyup: ignore
+
+numpy==1.24.3; python_version == '3.8'  # pyup: ignore
+scipy==1.10.1; python_version == '3.8'  # pyup: ignore
+pandas==2.0.3; python_version == '3.8'  # pyup: ignore
+matplotlib==3.7.3; python_version == '3.8'  # pyup: ignore
+
+PyGObject==3.48.2; sys_platform == 'linux' and python_version == '3.8'  # pyup: ignore
+
+PyQt5-sip==12.15.0; python_version == '3.8'  # pyup: ignore
+PyQt6-sip==13.8.0; python_version == '3.8'  # pyup: ignore
+PyQt6==6.7.1; python_version == '3.8'  # pyup: ignore
+PyQt6-Qt6==6.7.3; python_version == '3.8'  # pyup: ignore
+PyQt6-3D==6.7.0; python_version == '3.8'  # pyup: ignore
+PyQt6-3D-Qt6==6.7.3; python_version == '3.8'  # pyup: ignore
+PyQt6-Charts==6.7.0; python_version == '3.8'  # pyup: ignore
+PyQt6-Charts-Qt6==6.7.3; python_version == '3.8'  # pyup: ignore
+PyQt6-DataVisualization==6.7.0; python_version == '3.8'  # pyup: ignore
+PyQt6-DataVisualization-Qt6==6.7.3; python_version == '3.8'  # pyup: ignore
+PyQt6-NetworkAuth==6.7.0; python_version == '3.8'  # pyup: ignore
+PyQt6-NetworkAuth-Qt6==6.7.3; python_version == '3.8'  # pyup: ignore
+
+PySide6==6.6.3.1; python_version == '3.8'  # pyup: ignore
+PySide6-Addons==6.6.3.1; python_version == '3.8'  # pyup: ignore
+PySide6-Essentials==6.6.3.1; python_version == '3.8'  # pyup: ignore
+
+sphinx==7.1.2; python_version == '3.8'  # pyup: ignore
+
+ipython==8.12.1; python_version == '3.8'  # pyup: ignore
+
+Pillow==10.4.0; python_version == '3.8'  # pyup: ignore
+
+keyring==25.5.0; python_version == '3.8'  # pyup: ignore

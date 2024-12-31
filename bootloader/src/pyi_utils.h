@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2021, PyInstaller Development Team.
+ * Copyright (c) 2013-2023, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -12,62 +12,87 @@
  */
 
 /*
- * Portable wrapper for some utility functions like getenv/setenv,
- * file path manipulation and other shared data types or functions.
+ * Utility functions.
  */
 
-#ifndef HEADER_PYI_UTILS_H
-#define HEADER_PYI_UTILS_H
+#ifndef PYI_UTILS_H
+#define PYI_UTILS_H
 
-#include "pyi_archive.h"
+#include <stdio.h> /* FILE */
+#include <inttypes.h> /* uint64_t */
 
-// some platforms do not provide strnlen
-#ifndef HAVE_STRNLEN
-size_t strnlen(const char *str, size_t n);
-#endif
+#include "pyi_global.h" /* dylib_t */
 
-// some platforms do not provide strndup
-#ifndef HAVE_STRNDUP
-char *strndup(const char * str, size_t n);
-#endif
+struct PYI_CONTEXT;
 
 /* Environment variables. */
-
 char *pyi_getenv(const char *variable);
 int pyi_setenv(const char *variable, const char *value);
 int pyi_unsetenv(const char *variable);
 
-/* Temporary files. */
+/* Temporary top-level application directory (onefile). */
+int pyi_create_temporary_application_directory(struct PYI_CONTEXT *pyi_ctx);
 
-int pyi_create_temp_path(ARCHIVE_STATUS *status);
-void pyi_remove_temp_path(const char *dir);
+/* Recursive directory deletion. */
+int pyi_recursive_rmdir(const char *dir);
 
-/* File manipulation. */
-FILE *pyi_open_target(const char *path, const char* name_);
-int pyi_copy_file(const char *src, const char *dst, const char *filename);
+/* Misc. file/directory manipulation. */
+int pyi_create_parent_directory_tree(const struct PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename);
+int pyi_copy_file(const char *src_filename, const char *dest_filename);
 
-/* Other routines. */
-dylib_t pyi_utils_dlopen(const char *dllpath);
-int pyi_utils_dlclose(dylib_t dll);
-int pyi_utils_create_child(const char *thisfile, const ARCHIVE_STATUS *status,
-                           const int argc, char *const argv[]);
-int pyi_utils_set_environment(const ARCHIVE_STATUS *status);
+/* Shared library loading. */
+pyi_dylib_t pyi_utils_dlopen(const char *filename);
+int pyi_utils_dlclose(pyi_dylib_t handle);
 
-/* Argument handling */
-int pyi_utils_initialize_args(const int argc, char *const argv[]);
-void pyi_utils_get_args(int *argc, char ***argv);
-void pyi_utils_free_args();
+/* Child process */
+int pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx);
 
-/* Apple event handling */
-#if defined(__APPLE__) && defined(WINDOWED)
-/*
- * Watch for OpenDocument AppleEvents and add the files passed in to the
- * sys.argv command line on the Python side.
- *
- * This allows on Mac OS X to open files when a file is dragged and dropped
- * on the App icon in the OS X dock.
- */
-void pyi_process_apple_events(bool short_timeout);
-#endif  /* defined(__APPLE__) && defined(WINDOWED) */
+#if !defined(_WIN32) && !defined(__APPLE__)
+int pyi_utils_set_library_search_path(const char *path);
+#endif
 
-#endif  /* HEADER_PY_UTILS_H */
+/* Argument handling (POSIX only) */
+#if !defined(_WIN32)
+int pyi_utils_initialize_args(struct PYI_CONTEXT *pyi_ctx, const int argc, char *const argv[]);
+int pyi_utils_append_to_args(struct PYI_CONTEXT *pyi_ctx, const char *arg);
+void pyi_utils_free_args(struct PYI_CONTEXT *pyi_ctx);
+char *const *pyi_prepend_dynamic_loader_to_argv(const int argc, char *const argv[], char *const loader_filename);
+#endif
+
+/* Magic pattern matching */
+extern const unsigned char MAGIC_BASE[8];
+uint64_t pyi_utils_find_magic_pattern(FILE *fp, const unsigned char *magic, size_t magic_len);
+
+/* Security descriptor for temporary directory (Windows only) */
+#if defined(_WIN32)
+SECURITY_ATTRIBUTES *pyi_win32_initialize_security_descriptor();
+void pyi_win32_free_security_descriptor(SECURITY_ATTRIBUTES **security_attr_ref);
+#endif
+
+/* Console minimization/hiding (Windows console-enabled build only) */
+#if defined(_WIN32) && !defined(WINDOWED)
+void pyi_win32_hide_console();
+void pyi_win32_minimize_console();
+#endif
+
+/* Attempt to mitigate locked files in temporary directory that prevent its removal. */
+#if defined(_WIN32)
+int pyi_win32_mitigate_locked_temporary_directory(const struct PYI_CONTEXT *pyi_ctx);
+#endif
+
+/* Windows low-level helpers */
+#ifdef _WIN32
+
+char *pyi_win32_wcs_to_utf8(const wchar_t *src, char *dest, size_t buflen);
+wchar_t *pyi_win32_utf8_to_wcs(const char *src, wchar_t *dest, size_t buflen);
+
+int pyi_win32_is_symlink(const wchar_t *path);
+
+int pyi_win32_realpath(const wchar_t *path, wchar_t *resolved_path);
+
+int pyi_win32_is_drive_root(const wchar_t *path);
+
+#endif /* _WIN32 */
+
+
+#endif /* PYI_UTILS_H */

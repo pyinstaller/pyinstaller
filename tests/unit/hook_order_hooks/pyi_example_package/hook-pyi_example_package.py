@@ -1,1 +1,1 @@
-raise RuntimeError('I shouldn\'t be running')
+raise RuntimeError('I should not be running')

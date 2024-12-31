@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2021, PyInstaller Development Team.
+# Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -9,24 +9,23 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+# Ensure that environment variables TCL_LIBRARY and TK_LIBRARY are set properly, and that data files are collected.
+# NOTE: "library" here refers to the scripts directory as in "collection", not as a dynamic/shared library.
 
-# Ensure environment variables TCL_LIBRARY and TK_LIBRARY are set properly.
-# and data files are bundled.
-
+# NOTE: on macOS, we do collect Tcl/Tk files when the _tkinter module is linked against system copy of Tcl/Tk framework.
+# In that case, TCL_LIBRARY and TK_LIBRARY environment variables are not set by the runtime hook, and this test is
+# reduced to a basic "import tkinter" test.
 
 import glob
 import os
+import sys
 
-
-# In Python 3 module name is 'tkinter'
-try:
-    from tkinter import *
-except ImportError:
-    from Tkinter import *
+import tkinter  # noqa: F401
 
 
 def compare(test_name, expect, frozen):
     expect = os.path.normpath(expect)
+    frozen = os.path.normpath(frozen)
     print(test_name)
     print(('  Expected: ' + expect))
     print(('  Current:  ' + frozen))
@@ -42,9 +41,16 @@ def compare(test_name, expect, frozen):
         raise SystemExit('Data directory does not contain .tcl files.')
 
 
-tcl_dir = os.environ['TCL_LIBRARY']
-tk_dir = os.environ['TK_LIBRARY']
+# Tcl scripts directory
+tcl_dir = os.environ.get('TCL_LIBRARY')
+if tcl_dir:
+    compare('Tcl', os.path.join(sys.prefix, '_tcl_data'), tcl_dir)
+elif sys.platform != 'darwin':
+    raise SystemExit("TCL_LIBRARY environment variable is not set!")
 
-
-compare('Tcl', os.path.join(sys.prefix, 'tcl'), tcl_dir)
-compare('Tk', os.path.join(sys.prefix, 'tk'), tk_dir)
+# Tk scripts directory
+tk_dir = os.environ.get('TK_LIBRARY')
+if tk_dir:
+    compare('Tk', os.path.join(sys.prefix, '_tk_data'), tk_dir)
+elif sys.platform != 'darwin':
+    raise SystemExit("TK_LIBRARY environment variable is not set!")

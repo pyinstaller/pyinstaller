@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "PYINSTALLER" "1" "2021-08-01" "4.5" "PyInstaller"
-.SH NAME
-pyinstaller \- Configure and build a PyInstaller project in one run
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "PYINSTALLER" "1" "2024-11-10" "6.11.1" "PyInstaller"
+.SH NAME
+pyinstaller \- Configure and build a PyInstaller project in one run
 .\" disable justification (adjust text to left margin only)
 .ad l
 \.SH SYNOPSIS
@@ -40,10 +40,10 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .SH DESCRIPTION
 .sp
 PyInstaller is a program that freezes (packages) Python programs into
-stand\-alone executables, under Windows, GNU/Linux, Mac OS X,
+stand\-alone executables, under Windows, GNU/Linux, macOS,
 FreeBSD, OpenBSD, Solaris and AIX.
 Its main advantages over similar tools are that PyInstaller works with
-Python 3.6\-3.9, it builds smaller executables thanks to transparent
+Python 3.8\-3.11, it builds smaller executables thanks to transparent
 compression, it is fully multi\-platform, and use the OS support to load the
 dynamic libraries, thus ensuring full compatibility.
 .sp
@@ -60,51 +60,48 @@ Please see the PyInstaller Manual for more information.
 scriptname
 .INDENT 0.0
 .INDENT 3.5
-name of scriptfiles to be processed or exactly one .spec\-file. If a
-\&.spec\-file is specified, most options are unnecessary and are
-ignored.
+Name of scriptfiles to be processed or exactly one .spec file. If a .spec
+file is specified, most options are unnecessary and are ignored.
 .UNINDENT
 .UNINDENT
-.SS Optional Arguments
+.SS Options
 .INDENT 0.0
 .TP
-.B \-h\fP,\fB  \-\-help
+.B  \-h\fP,\fB  \-\-help
 show this help message and exit
 .TP
-.B \-v\fP,\fB  \-\-version
+.B  \-v\fP,\fB  \-\-version
 Show program version info and exit.
 .TP
 .BI \-\-distpath \ DIR
-Where to put the bundled app (default: .dist)
+Where to put the bundled app (default: ./dist)
 .TP
 .BI \-\-workpath \ WORKPATH
 Where to put all the temporary work files, .log, .pyz and etc. (default:
-\&.build)
+\&./build)
 .TP
-.B \-y\fP,\fB  \-\-noconfirm
-Replace output directory (default: SPECPATHdistSPECNAME) without asking
+.B  \-y\fP,\fB  \-\-noconfirm
+Replace output directory (default: SPECPATH/dist/SPECNAME) without asking
 for confirmation
 .TP
 .BI \-\-upx\-dir \ UPX_DIR
 Path to UPX utility (default: search the execution path)
 .TP
-.B \-a\fP,\fB  \-\-ascii
-Do not include unicode encoding support (default: included if available)
-.TP
-.B \-\-clean
+.B  \-\-clean
 Clean PyInstaller cache and remove temporary files before building.
 .TP
 .BI \-\-log\-level \ LEVEL
 Amount of detail in build\-time console messages. LEVEL may be one of TRACE,
-DEBUG, INFO, WARN, ERROR, CRITICAL (default: INFO).
+DEBUG, INFO, WARN, DEPRECATION, ERROR, FATAL (default: INFO). Also settable
+via and overrides the PYI_LOG_LEVEL environment variable.
 .UNINDENT
 .SS What To Generate
 .INDENT 0.0
 .TP
-.B \-D\fP,\fB  \-\-onedir
+.B  \-D\fP,\fB  \-\-onedir
 Create a one\-folder bundle containing an executable (default)
 .TP
-.B \-F\fP,\fB  \-\-onefile
+.B  \-F\fP,\fB  \-\-onefile
 Create a one\-file bundled executable.
 .TP
 .BI \-\-specpath \ DIR
@@ -113,26 +110,42 @@ Folder to store the generated spec file (default: current directory)
 .BI \-n \ NAME\fR,\fB \ \-\-name \ NAME
 Name to assign to the bundled app and spec file (default: first script\(aqs
 basename)
+.TP
+.BI \-\-contents\-directory \ CONTENTS_DIRECTORY
+For onedir builds only, specify the name of the directory in which all
+supporting files (i.e. everything except the executable itself) will be
+placed in. Use \(dq.\(dq to re\-enable old onedir layout without contents
+directory.
 .UNINDENT
 .SS What To Bundle, Where To Search
+.sp
+\-\-add\-data SOURCE:DEST
 .INDENT 0.0
-.TP
-.BI \-\-add\-data \ <SRC;DEST or SRC:DEST>
-Additional non\-binary files or folders to be added to the executable. The
-path separator is platform specific, \fBos.pathsep\fP (which is \fB;\fP on
-Windows and \fB:\fP on most unix systems) is used. This option can be used
-multiple times.
-.TP
-.BI \-\-add\-binary \ <SRC;DEST or SRC:DEST>
+.INDENT 3.5
+Additional data files or directories containing data files to be added to
+the application. The argument value should be in form of \(dqsource:dest_dir\(dq,
+where source is the path to file (or directory) to be collected, dest_dir
+is the destination directory relative to the top\-level application
+directory, and both paths are separated by a colon (:). To put a file in
+the top\-level application directory, use . as a dest_dir. This option can
+be used multiple times.
+.UNINDENT
+.UNINDENT
+.sp
+\-\-add\-binary SOURCE:DEST
+.INDENT 0.0
+.INDENT 3.5
 Additional binary files to be added to the executable. See the
-\fB\-\-add\-data\fP option for more details. This option can be used multiple
+\fB\-\-add\-data\fP option for the format. This option can be used multiple
 times.
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
 .TP
 .BI \-p \ DIR\fR,\fB \ \-\-paths \ DIR
 A path to search for imports (like using PYTHONPATH). Multiple paths are
-allowed, separated by \fB\(aq;\(aq\fP, or use this option
-multiple times. Equivalent to supplying the \fBpathex\fP argument in the spec
-file.
+allowed, separated by \fB\(aq:\(aq\fP, or use this option multiple times.
+Equivalent to supplying the \fBpathex\fP argument in the spec file.
 .TP
 .BI \-\-hidden\-import \ MODULENAME\fR,\fB \ \-\-hiddenimport \ MODULENAME
 Name an import not visible in the code of the script(s). This option can be
@@ -177,13 +190,10 @@ Optional module or package (the Python name, not the path name) that will
 be ignored (as though it was not found). This option can be used multiple
 times.
 .TP
-.BI \-\-key \ KEY
-The key used to encrypt Python bytecode.
-.TP
 .BI \-\-splash \ IMAGE_FILE
 (EXPERIMENTAL) Add an splash screen with the image IMAGE_FILE to the
-application. The splash screen can show progress updates
-while unpacking.
+application. The splash screen can display progress updates while
+unpacking.
 .UNINDENT
 .SS How To Generate
 .sp
@@ -196,7 +206,7 @@ all: All three of the following options.  \- imports: specify the \-v option
 to the underlying   Python interpreter, causing it to print a message
 each time a module is initialized, showing the   place (filename or
 built\-in module) from which it   is loaded. See
-\fI\%https://docs.python.org/3/using/cmdline.html#id4\fP\&.  \- bootloader: tell the
+\X'tty: link https://docs.python.org/3/using/cmdline.html#id4'\fI\%https://docs.python.org/3/using/cmdline.html#id4\fP\X'tty: link'\&.  \- bootloader: tell the
 bootloader to issue progress   messages while initializing and starting the
 bundled app. Used to diagnose problems with   missing imports.  \-
 noarchive: instead of storing all frozen Python   source files as an
@@ -206,40 +216,65 @@ resulting   output directory.
 .UNINDENT
 .INDENT 0.0
 .TP
-.B \-s\fP,\fB  \-\-strip
+.BI \-\-optimize \ LEVEL
+Bytecode optimization level used for collected python modules and scripts.
+For details, see the section “Bytecode Optimization Level” in PyInstaller
+manual.
+.TP
+.BI \-\-python\-option \ PYTHON_OPTION
+Specify a command\-line option to pass to the Python interpreter at runtime.
+Currently supports \(dqv\(dq (equivalent to \(dq\-\-debug imports\(dq), \(dqu\(dq, \(dqW <warning
+control>\(dq, \(dqX <xoption>\(dq, and \(dqhash_seed=<value>\(dq. For details, see the
+section \(dqSpecifying Python Interpreter Options\(dq in PyInstaller manual.
+.TP
+.B  \-s\fP,\fB  \-\-strip
 Apply a symbol\-table strip to the executable and shared libs (not
 recommended for Windows)
 .TP
-.B \-\-noupx
+.B  \-\-noupx
 Do not use UPX even if it is available (works differently between Windows
 and *nix)
 .TP
 .BI \-\-upx\-exclude \ FILE
 Prevent a binary from being compressed when using upx. This is typically
-used if upx corrupts certain binaries during compression.
-FILE is the filename of the binary without path. This option can be used
-multiple times.
+used if upx corrupts certain binaries during compression. FILE is the
+filename of the binary without path. This option can be used multiple
+times.
 .UNINDENT
 .SS Windows And Mac Os X Specific Options
 .INDENT 0.0
 .TP
-.B \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
+.B  \-c\fP,\fB  \-\-console\fP,\fB  \-\-nowindowed
 Open a console window for standard i/o (default). On Windows this option
-will have no effect if the first script is a \(aq.pyw\(aq file.
+has no effect if the first script is a \(aq.pyw\(aq file.
 .TP
-.B \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
+.B  \-w\fP,\fB  \-\-windowed\fP,\fB  \-\-noconsole
 Windows and Mac OS X: do not provide a console window for standard i/o. On
-Mac OS X this also triggers building an OS X .app bundle. On Windows this
-option will be set if the first script is a \(aq.pyw\(aq file. This option is
-ignored in *NIX systems.
+Mac OS this also triggers building a Mac OS .app bundle. On Windows this
+option is automatically set if the first script is a \(aq.pyw\(aq file. This
+option is ignored on *NIX systems.
+.UNINDENT
+.sp
+\-\-hide\-console {hide\-early,minimize\-early,minimize\-late,hide\-late}
+.INDENT 0.0
+.INDENT 3.5
+Windows only: in console\-enabled executable, have bootloader automatically
+hide or minimize the console window if the program owns the console window
+(i.e., was not launched from an existing console window).
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
 .TP
-.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or "NONE">
-FILE.ico: apply that icon to a Windows executable. FILE.exe,ID, extract the
+.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or \(dqNONE\(dq>\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or \(dqNONE\(dq>
+FILE.ico: apply the icon to a Windows executable. FILE.exe,ID: extract the
 icon with ID from an exe. FILE.icns: apply the icon to the .app bundle on
-Mac OS X. Use "NONE" to not apply any icon, thereby making the OS to show
-some default (default: apply PyInstaller\(aqs icon)
+Mac OS. If an image file is entered that isn\(aqt in the platform format (ico
+on Windows, icns on Mac), PyInstaller tries to use Pillow to translate the
+icon into the correct format (if Pillow is installed). Use \(dqNONE\(dq to not
+apply any icon, thereby making the OS show some default (default: apply
+PyInstaller\(aqs icon). This option can be used multiple times.
 .TP
-.B \-\-disable\-windowed\-traceback
+.B  \-\-disable\-windowed\-traceback
 Disable traceback dump of unhandled exception in windowed (noconsole) mode
 (Windows and macOS only), and instead display a message that this feature
 is disabled.
@@ -248,10 +283,13 @@ is disabled.
 .INDENT 0.0
 .TP
 .BI \-\-version\-file \ FILE
-add a version resource from FILE to the exe
+Add a version resource from FILE to the exe.
 .TP
-.BI \-m \ <FILE or XML>\fR,\fB \ \-\-manifest \ <FILE or XML>
-add manifest FILE or XML to the exe
+.BI \-\-manifest \ <FILE or XML>
+Add manifest FILE or XML to the exe.
+.TP
+.BI \-m \ <FILE or XML>
+Deprecated shorthand for \-\-manifest.
 .TP
 .BI \-r \ RESOURCE\fR,\fB \ \-\-resource \ RESOURCE
 Add or update a resource to a Windows executable. The RESOURCE is one to
@@ -260,36 +298,27 @@ exe/dll. For data files, at least TYPE and NAME must be specified. LANGUAGE
 defaults to 0 or may be specified as wildcard * to update all resources of
 the given TYPE and NAME. For exe/dll files, all resources from FILE will be
 added/updated to the final executable if TYPE, NAME and LANGUAGE are
-omitted or specified as wildcard *.This option can be used multiple times.
+omitted or specified as wildcard *. This option can be used multiple
+times.
 .TP
-.B \-\-uac\-admin
-Using this option creates a Manifest which will request elevation upon
-application restart.
+.B  \-\-uac\-admin
+Using this option creates a Manifest that will request elevation upon
+application start.
 .TP
-.B \-\-uac\-uiaccess
+.B  \-\-uac\-uiaccess
 Using this option allows an elevated application to work with Remote
 Desktop.
 .UNINDENT
-.SS Windows Side\-By\-Side Assembly Searching Options (Advanced)
+.SS Mac Os Specific Options
 .INDENT 0.0
 .TP
-.B \-\-win\-private\-assemblies
-Any Shared Assemblies bundled into the application will be changed into
-Private Assemblies. This means the exact versions of these assemblies will
-always be used, and any newer versions installed on user machines at the
-system level will be ignored.
-.TP
-.B \-\-win\-no\-prefer\-redirects
-While searching for Shared or Private Assemblies to bundle into the
-application, PyInstaller will prefer not to follow policies that redirect
-to newer versions, and will try to bundle the exact versions of the
-assembly.
-.UNINDENT
-.SS Mac Os X Specific Options
-.INDENT 0.0
+.B  \-\-argv\-emulation
+Enable argv emulation for macOS app bundles. If enabled, the initial open
+document/URL event is processed by the bootloader and the passed file paths
+or URLs are appended to sys.argv.
 .TP
 .BI \-\-osx\-bundle\-identifier \ BUNDLE_IDENTIFIER
-Mac OS X .app bundle identifier is used as the default unique program name
+Mac OS .app bundle identifier is used as the default unique program name
 for code signing purposes. The usual form is a hierarchical name in reverse
 DNS notation. For example: com.mycompany.department.appname (default: first
 script\(aqs basename)
@@ -314,16 +343,19 @@ only).
 .INDENT 0.0
 .TP
 .BI \-\-runtime\-tmpdir \ PATH
-Where to extract libraries and support files in \fIonefile\fP\-mode. If this
-option is given, the bootloader will ignore any temp\- folder location
+Where to extract libraries and support files in \fIonefile\fP mode. If this
+option is given, the bootloader will ignore any temp\-folder location
 defined by the run\-time OS. The \fB_MEIxxxxxx\fP\-folder will be created here.
-Please use this option only if you know what you are doing.
+Please use this option only if you know what you are doing. Note that on
+POSIX systems, PyInstaller\(aqs bootloader does NOT perform shell\-style
+environment variable expansion on the given path string. Therefore, using
+environment variables (e.g., \fB~\fP or \fB$HOME\fP) in path will NOT work.
 .TP
-.B \-\-bootloader\-ignore\-signals
+.B  \-\-bootloader\-ignore\-signals
 Tell the bootloader to ignore signals rather than forwarding them to the
-child process. Useful in situations where e.g. a supervisor process signals
-both the bootloader and child (e.g. via a process group) to avoid
-signalling the child twice.
+child process. Useful in situations where for example a supervisor process
+signals both the bootloader and the child (e.g., via a process group) to
+avoid signalling the child twice.
 .UNINDENT
 .SH ENVIRONMENT VARIABLES
 .INDENT 0.0
@@ -336,8 +368,8 @@ but is typically a subdirectory of the home directory.
 .SH SEE ALSO
 .sp
 \fBpyi\-makespec\fP(1),
-The PyInstaller Manual \fI\%https://pyinstaller.readthedocs.io/\fP,
-Project Homepage \fI\%http://www.pyinstaller.org\fP
+The PyInstaller Manual \X'tty: link https://pyinstaller.readthedocs.io/'\fI\%https://pyinstaller.readthedocs.io/\fP\X'tty: link',
+Project Homepage \X'tty: link http://www.pyinstaller.org'\fI\%http://www.pyinstaller.org\fP\X'tty: link'
 .SH AUTHOR
 Hartmut Goebel
 .SH COPYRIGHT

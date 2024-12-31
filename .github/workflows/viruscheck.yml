@@ -1,0 +1,108 @@
+name: Virus Check
+
+on:
+  schedule:
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+env:
+  python-version: 3.12
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+jobs:
+  build-bootloaders-64:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        target-arch: [64bit, 64bit-arm]
+        compiler: [gcc, msvc, clang]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.python-version }}
+
+      - name: Build bootloader (MSVC)
+        if: startsWith(matrix.compiler, 'msvc')
+        run: |
+          cd bootloader
+          python waf --target-arch=${{ matrix.target-arch }} all
+
+      - name: Build bootloader (gcc)
+        if: startsWith(matrix.compiler, 'gcc')
+        run: |
+          cd bootloader
+          python waf --gcc --target-arch=${{ matrix.target-arch }} all
+
+      - name: Build bootloader (clang)
+        if: startsWith(matrix.compiler, 'clang')
+        run: |
+          cd bootloader
+          python waf --clang --target-arch=${{ matrix.target-arch }} all
+
+      - name: Upload bootloaders (arm64)
+        if: startsWith(matrix.target-arch, '64bit-arm')
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootloaders_${{ matrix.target-arch }}_${{ matrix.compiler }}
+          path: PyInstaller\bootloader\Windows-${{ matrix.target-arch }}\*.exe
+
+      - name: Upload bootloaders (x86_64)
+        if: ${{ !startsWith(matrix.target-arch, '64bit-arm') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootloaders_${{ matrix.target-arch }}_intel_${{ matrix.compiler }}
+          path: PyInstaller\bootloader\Windows-${{ matrix.target-arch }}-intel\*.exe
+
+  build-bootloaders-32:
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.python-version }}
+
+      - name: Build bootloader
+        run: |
+          cd bootloader
+          python waf --target-arch=32bit all
+
+      - name: Upload bootloaders
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootloaders_32bit_intel_msvc
+          path: PyInstaller\bootloader\Windows-32bit-intel\*.exe
+
+  scan-for-viruses:
+    name: Upload to Virus Total
+    needs: [build-bootloaders-64, build-bootloaders-32]
+    runs-on: windows-latest
+    continue-on-error: true
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: virustotal
+      - name: VirusTotal Scan
+        uses: crazy-max/ghaction-virustotal@v4
+        with:
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          request_rate: 4
+          files: |
+            ./virustotal/bootloaders_64bit_intel_msvc/*.exe
+            ./virustotal/bootloaders_64bit_intel_gcc/*.exe
+            ./virustotal/bootloaders_64bit_intel_clang/*.exe
+            ./virustotal/bootloaders_64bit_arm_msvc/*.exe
+            ./virustotal/bootloaders_64bit_arm_gcc/*.exe
+            ./virustotal/bootloaders_64bit_arm_clang/*.exe
+            ./virustotal/bootloaders_32bit_intel_msvc/*.exe

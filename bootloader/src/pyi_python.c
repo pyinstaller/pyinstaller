@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2021, PyInstaller Development Team.
+ * Copyright (c) 2013-2023, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -11,159 +11,141 @@
  * ****************************************************************************
  */
 
-/*
- * Python.h replacements.
- */
-
 #ifdef _WIN32
-    #include <windows.h>  /* HMODULE */
+    #include <windows.h> /* HMODULE */
 #else
-    #include <dlfcn.h>  /* dlsym */
+    #include <dlfcn.h> /* dlsym */
 #endif
-#include <stddef.h>  /* ptrdiff_t */
+#include <stddef.h> /* ptrdiff_t */
 #include <stdlib.h>
 
-/* PyInstaller headers. */
 #include "pyi_global.h"
 #include "pyi_python.h"
 
-/*
- * Python Entry point declarations (see macros in pyi_python.h).
- */
-/* external variables */
-DECLVAR(Py_DontWriteBytecodeFlag);
-DECLVAR(Py_FileSystemDefaultEncoding);
-DECLVAR(Py_FrozenFlag);
-DECLVAR(Py_IgnoreEnvironmentFlag);
-DECLVAR(Py_NoSiteFlag);
-DECLVAR(Py_NoUserSiteDirectory);
-DECLVAR(Py_OptimizeFlag);
-DECLVAR(Py_VerboseFlag);
-DECLVAR(Py_UnbufferedStdioFlag);
 
-/* functions with prefix `Py_` */
-DECLPROC(Py_BuildValue);
-DECLPROC(Py_DecRef);
-DECLPROC(Py_Finalize);
-DECLPROC(Py_IncRef);
-DECLPROC(Py_Initialize);
-DECLPROC(Py_SetPath);
-DECLPROC(Py_GetPath);
-DECLPROC(Py_SetProgramName);
-DECLPROC(Py_SetPythonHome);
+/* Python functions to bind */
+PYI_DECLPROC(Py_DecRef)
+PYI_DECLPROC(Py_DecodeLocale)
+PYI_DECLPROC(Py_ExitStatusException)
+PYI_DECLPROC(Py_Finalize)
+PYI_DECLPROC(Py_InitializeFromConfig)
+PYI_DECLPROC(Py_IsInitialized)
+PYI_DECLPROC(Py_PreInitialize)
 
-/* other functions */
-DECLPROC(PyDict_GetItemString);
-DECLPROC(PyErr_Clear);
-DECLPROC(PyErr_Occurred);
-DECLPROC(PyErr_Print);
-DECLPROC(PyErr_Fetch);
-DECLPROC(PyErr_Restore);
+PYI_DECLPROC(PyConfig_Clear)
+PYI_DECLPROC(PyConfig_InitIsolatedConfig)
+PYI_DECLPROC(PyConfig_Read)
+PYI_DECLPROC(PyConfig_SetBytesString)
+PYI_DECLPROC(PyConfig_SetString)
+PYI_DECLPROC(PyConfig_SetWideStringList)
 
-DECLPROC(PyImport_AddModule);
-DECLPROC(PyImport_ExecCodeModule);
-DECLPROC(PyImport_ImportModule);
-DECLPROC(PyList_Append);
-DECLPROC(PyList_New);
-DECLPROC(PyLong_AsLong);
-DECLPROC(PyModule_GetDict);
-DECLPROC(PyObject_CallFunction);
-DECLPROC(PyObject_CallFunctionObjArgs);
-DECLPROC(PyObject_SetAttrString);
-DECLPROC(PyObject_GetAttrString);
-DECLPROC(PyObject_Str);
-DECLPROC(PyRun_SimpleString);
-DECLPROC(PySys_AddWarnOption);
-DECLPROC(PySys_SetArgvEx);
-DECLPROC(PySys_GetObject);
-DECLPROC(PySys_SetObject);
-DECLPROC(PySys_SetPath);
-DECLPROC(PyUnicode_FromString);
+PYI_DECLPROC(PyErr_Clear)
+PYI_DECLPROC(PyErr_Fetch)
+PYI_DECLPROC(PyErr_NormalizeException)
+PYI_DECLPROC(PyErr_Occurred)
+PYI_DECLPROC(PyErr_Print)
+PYI_DECLPROC(PyErr_Restore)
 
-DECLPROC(Py_DecodeLocale);
-DECLPROC(PyMem_RawFree);
-DECLPROC(PyUnicode_FromFormat);
-DECLPROC(PyUnicode_DecodeFSDefault);
-DECLPROC(PyUnicode_Decode);
-DECLPROC(PyUnicode_AsUTF8);
-DECLPROC(PyUnicode_Join);
-DECLPROC(PyUnicode_Replace);
+PYI_DECLPROC(PyEval_EvalCode)
 
-DECLPROC(PyEval_EvalCode);
-DECLPROC(PyMarshal_ReadObjectFromString);
+PYI_DECLPROC(PyImport_AddModule)
+PYI_DECLPROC(PyImport_ExecCodeModule)
+PYI_DECLPROC(PyImport_ImportModule)
+
+PYI_DECLPROC(PyMarshal_ReadObjectFromString)
+
+PYI_DECLPROC(PyMem_RawFree)
+
+PYI_DECLPROC(PyModule_GetDict)
+
+PYI_DECLPROC(PyObject_CallFunction)
+PYI_DECLPROC(PyObject_CallFunctionObjArgs)
+PYI_DECLPROC(PyObject_GetAttrString)
+PYI_DECLPROC(PyObject_SetAttrString)
+PYI_DECLPROC(PyObject_Str)
+
+PYI_DECLPROC(PyPreConfig_InitIsolatedConfig)
+
+PYI_DECLPROC(PyRun_SimpleStringFlags)
+
+PYI_DECLPROC(PyStatus_Exception)
+
+PYI_DECLPROC(PySys_GetObject)
+PYI_DECLPROC(PySys_SetObject)
+
+PYI_DECLPROC(PyUnicode_AsUTF8)
+PYI_DECLPROC(PyUnicode_Decode)
+PYI_DECLPROC(PyUnicode_DecodeFSDefault)
+PYI_DECLPROC(PyUnicode_FromFormat)
+PYI_DECLPROC(PyUnicode_FromString)
+PYI_DECLPROC(PyUnicode_Join)
+PYI_DECLPROC(PyUnicode_Replace)
+
 
 /*
- * Get all of the entry points from libpython
- * that we are interested in.
+ * Bind all required functions from python shared library.
  */
 int
-pyi_python_map_names(HMODULE dll, int pyvers)
+pyi_python_bind_functions(pyi_dylib_t dll, int python_version)
 {
-    GETVAR(dll, Py_DontWriteBytecodeFlag);
-    GETVAR(dll, Py_FileSystemDefaultEncoding);
-    GETVAR(dll, Py_FrozenFlag);
-    GETVAR(dll, Py_IgnoreEnvironmentFlag);
-    GETVAR(dll, Py_NoSiteFlag);
-    GETVAR(dll, Py_NoUserSiteDirectory);
-    GETVAR(dll, Py_OptimizeFlag);
-    GETVAR(dll, Py_VerboseFlag);
-    GETVAR(dll, Py_UnbufferedStdioFlag);
+    PYI_GETPROC(dll, Py_DecRef)
+    PYI_GETPROC(dll, Py_DecodeLocale)
+    PYI_GETPROC(dll, Py_ExitStatusException)
+    PYI_GETPROC(dll, Py_Finalize)
+    PYI_GETPROC(dll, Py_InitializeFromConfig)
+    PYI_GETPROC(dll, Py_IsInitialized)
+    PYI_GETPROC(dll, Py_PreInitialize)
 
-    /* functions with prefix `Py_` */
-    GETPROC(dll, Py_BuildValue);
-    GETPROC(dll, Py_DecRef);
-    GETPROC(dll, Py_Finalize);
-    GETPROC(dll, Py_IncRef);
-    GETPROC(dll, Py_Initialize);
+    PYI_GETPROC(dll, PyConfig_Clear)
+    PYI_GETPROC(dll, PyConfig_InitIsolatedConfig)
+    PYI_GETPROC(dll, PyConfig_Read)
+    PYI_GETPROC(dll, PyConfig_SetBytesString)
+    PYI_GETPROC(dll, PyConfig_SetString)
+    PYI_GETPROC(dll, PyConfig_SetWideStringList)
 
-    GETPROC(dll, Py_SetPath);
-    GETPROC(dll, Py_GetPath);
-    GETPROC(dll, Py_SetProgramName);
-    GETPROC(dll, Py_SetPythonHome);
+    PYI_GETPROC(dll, PyErr_Clear)
+    PYI_GETPROC(dll, PyErr_Fetch)
+    PYI_GETPROC(dll, PyErr_NormalizeException)
+    PYI_GETPROC(dll, PyErr_Occurred)
+    PYI_GETPROC(dll, PyErr_Print)
+    PYI_GETPROC(dll, PyErr_Restore)
 
-    /* other functions */
-    GETPROC(dll, PyDict_GetItemString);
-    GETPROC(dll, PyErr_Clear);
-    GETPROC(dll, PyErr_Occurred);
-    GETPROC(dll, PyErr_Print);
-    GETPROC(dll, PyErr_Fetch);
-    GETPROC(dll, PyErr_Restore);
-    GETPROC(dll, PyImport_AddModule);
-    GETPROC(dll, PyImport_ExecCodeModule);
-    GETPROC(dll, PyImport_ImportModule);
-    GETPROC(dll, PyList_Append);
-    GETPROC(dll, PyList_New);
-    GETPROC(dll, PyLong_AsLong);
-    GETPROC(dll, PyModule_GetDict);
-    GETPROC(dll, PyObject_CallFunction);
-    GETPROC(dll, PyObject_CallFunctionObjArgs);
-    GETPROC(dll, PyObject_SetAttrString);
-    GETPROC(dll, PyObject_GetAttrString);
-    GETPROC(dll, PyObject_Str);
+    PYI_GETPROC(dll, PyEval_EvalCode)
 
-    GETPROC(dll, PyRun_SimpleString);
+    PYI_GETPROC(dll, PyImport_AddModule)
+    PYI_GETPROC(dll, PyImport_ExecCodeModule)
+    PYI_GETPROC(dll, PyImport_ImportModule)
 
-    GETPROC(dll, PySys_AddWarnOption);
-    GETPROC(dll, PySys_SetArgvEx);
-    GETPROC(dll, PySys_GetObject);
-    GETPROC(dll, PySys_SetObject);
-    GETPROC(dll, PySys_SetPath);
-    GETPROC(dll, PyEval_EvalCode);
-    GETPROC(dll, PyMarshal_ReadObjectFromString);
+    PYI_GETPROC(dll, PyMarshal_ReadObjectFromString)
 
-    GETPROC(dll, PyUnicode_FromString);
+    PYI_GETPROC(dll, PyMem_RawFree)
 
-    GETPROC(dll, Py_DecodeLocale);
-    GETPROC(dll, PyMem_RawFree);
+    PYI_GETPROC(dll, PyModule_GetDict)
 
-    GETPROC(dll, PyUnicode_FromFormat);
-    GETPROC(dll, PyUnicode_Decode);
-    GETPROC(dll, PyUnicode_DecodeFSDefault);
-    GETPROC(dll, PyUnicode_AsUTF8);
-    GETPROC(dll, PyUnicode_Join);
-    GETPROC(dll, PyUnicode_Replace);
+    PYI_GETPROC(dll, PyObject_CallFunction)
+    PYI_GETPROC(dll, PyObject_CallFunctionObjArgs)
+    PYI_GETPROC(dll, PyObject_GetAttrString)
+    PYI_GETPROC(dll, PyObject_SetAttrString)
+    PYI_GETPROC(dll, PyObject_Str)
 
-    VS("LOADER: Loaded functions from Python library.\n");
+    PYI_GETPROC(dll, PyPreConfig_InitIsolatedConfig)
+
+    PYI_GETPROC(dll, PyRun_SimpleStringFlags)
+
+    PYI_GETPROC(dll, PyStatus_Exception)
+
+    PYI_GETPROC(dll, PySys_GetObject)
+    PYI_GETPROC(dll, PySys_SetObject)
+
+    PYI_GETPROC(dll, PyUnicode_AsUTF8)
+    PYI_GETPROC(dll, PyUnicode_Decode)
+    PYI_GETPROC(dll, PyUnicode_DecodeFSDefault)
+    PYI_GETPROC(dll, PyUnicode_FromFormat)
+    PYI_GETPROC(dll, PyUnicode_FromString)
+    PYI_GETPROC(dll, PyUnicode_Join)
+    PYI_GETPROC(dll, PyUnicode_Replace)
+
+    PYI_DEBUG("LOADER: loaded functions from Python shared library.\n");
 
     return 0;
 }

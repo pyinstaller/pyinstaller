@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------------
-// Copyright (c) 2020-2021, PyInstaller Development Team.
+// Copyright (c) 2020-2023, PyInstaller Development Team.
 //
 // Distributed under the terms of the GNU General Public License (version 2
 // or later) with exception for distributing the bootloader.
@@ -24,8 +24,9 @@
 // NOTE: path separator is platform dependent, hence the use of PYI_SEPSTR
 // and string concatenation...
 
-static void test_dirname(void **state) {
-    char result[PATH_MAX];
+static void test_dirname(void **state)
+{
+    char result[PYI_PATH_MAX];
 
     // pyi_path_dirname("/a1/bb/cc/dd") -> "/a1/bb/cc"
     assert_true(pyi_path_dirname(result, PYI_SEPSTR "a1" PYI_SEPSTR "bb" PYI_SEPSTR "cc" PYI_SEPSTR "dd"));
@@ -47,26 +48,27 @@ static void test_dirname(void **state) {
     assert_true(pyi_path_dirname(result, ""));
     assert_string_equal(result, PYI_CURDIRSTR);
 
-    // Test correct handling of paths that exceed PATH_MAX
-    char *path2 = (char *) malloc(PATH_MAX+10);
-    memset(path2, 'a', PATH_MAX+8);
+    // Test correct handling of paths that exceed PYI_PATH_MAX
+    char *path2 = (char *) malloc(PYI_PATH_MAX+10);
+    memset(path2, 'a', PYI_PATH_MAX+8);
     // a few bytes more
-    path2[PATH_MAX+8] = '\0';
+    path2[PYI_PATH_MAX+8] = '\0';
     assert_false(pyi_path_dirname(result, path2));
     // exact length
-    path2[PATH_MAX] = '\0';
+    path2[PYI_PATH_MAX] = '\0';
     assert_false(pyi_path_dirname(result, path2));
     // one byte less
-    path2[PATH_MAX-1] = '\0';
+    path2[PYI_PATH_MAX-1] = '\0';
     assert_true(pyi_path_dirname(result, path2));
 }
 
 
-static void test_basename(void **state) {
-    char result[PATH_MAX];
-    char input[PATH_MAX];
+static void test_basename(void **state)
+{
+    char result[PYI_PATH_MAX];
+    char input[PYI_PATH_MAX];
     // basename()'s second argument is not `const`, thus using a constant
-    // string yields to segementation fault.
+    // string yields to segmentation fault.
 
     // pyi_path_basename("/aa/bb/cc/d1d") -> "d1d"
     strcpy(input, PYI_SEPSTR "aa" PYI_SEPSTR "bb" PYI_SEPSTR "cc" PYI_SEPSTR "d1d");
@@ -101,10 +103,11 @@ static void test_basename(void **state) {
 }
 
 
-static void test_join(void **state) {
-    char path1[PATH_MAX];
-    char path2[PATH_MAX];
-    char result[PATH_MAX];
+static void test_join(void **state)
+{
+    char path1[PYI_PATH_MAX];
+    char path2[PYI_PATH_MAX];
+    char result[PYI_PATH_MAX];
     char *r;
 
     // pyi_path_join("lalala", "mememe") -> "lalala/mememe"
@@ -138,56 +141,48 @@ static void test_join(void **state) {
     assert_ptr_equal(r, &result);
     assert_string_equal(result, PYI_SEPSTR "mememe");
 
-    memset(path1, 'a', PATH_MAX); path1[PATH_MAX-1] = '\0';
-    memset(path2, 'b', PATH_MAX); path2[PATH_MAX-1] = '\0';
-    assert_int_equal(strlen(path1), PATH_MAX-1);
-    assert_int_equal(strlen(path2), PATH_MAX-1);
+    memset(path1, 'a', PYI_PATH_MAX); path1[PYI_PATH_MAX-1] = '\0';
+    memset(path2, 'b', PYI_PATH_MAX); path2[PYI_PATH_MAX-1] = '\0';
+    assert_int_equal(strlen(path1), PYI_PATH_MAX-1);
+    assert_int_equal(strlen(path2), PYI_PATH_MAX-1);
     assert_ptr_equal(NULL, pyi_path_join(result, path1, path2));
 
     // tests near max length of path1
     assert_ptr_equal(NULL, pyi_path_join(result, path1, ""));
-    path1[PATH_MAX-2] = '\0';
+    path1[PYI_PATH_MAX-2] = '\0';
     assert_ptr_equal(NULL, pyi_path_join(result, path1, ""));
-    path1[PATH_MAX-3] = '\0';
+    path1[PYI_PATH_MAX-3] = '\0';
     assert_ptr_equal(r, pyi_path_join(result, path1, ""));
-    assert_int_equal(strlen(result), PATH_MAX-2); // -2 no trailing slash in path1
+    assert_int_equal(strlen(result), PYI_PATH_MAX-2); // -2 no trailing slash in path1
     assert_ptr_equal(NULL, pyi_path_join(result, path1, "x"));
-    path1[PATH_MAX-4] = '\0';
+    path1[PYI_PATH_MAX-4] = '\0';
     assert_ptr_equal(r, pyi_path_join(result, path1, "x"));
-    assert_int_equal(strlen(result), PATH_MAX-2); // -2 no trailing slash in path1
+    assert_int_equal(strlen(result), PYI_PATH_MAX-2); // -2 no trailing slash in path1
     assert_ptr_equal(NULL, pyi_path_join(result, path1, "xx"));
 
     // tests near max length of path2
     assert_ptr_equal(NULL, pyi_path_join(result, "", path2));
     assert_ptr_equal(NULL, pyi_path_join(result, "x", path2));
-    path2[PATH_MAX-2] = '\0';
+    path2[PYI_PATH_MAX-2] = '\0';
     assert_ptr_equal(NULL, pyi_path_join(result, "", path2)); // stash takes space!
     assert_ptr_equal(NULL, pyi_path_join(result, "x", path2));
-    path2[PATH_MAX-3] = '\0';
+    path2[PYI_PATH_MAX-3] = '\0';
     assert_ptr_equal(r, pyi_path_join(result, "", path2));
     assert_ptr_equal(NULL, pyi_path_join(result, "x", path2));
-    path2[PATH_MAX-4] = '\0';
+    path2[PYI_PATH_MAX-4] = '\0';
     assert_ptr_equal(r, pyi_path_join(result, "", path2));
     assert_ptr_equal(r, pyi_path_join(result, "x", path2));
     // we don't count exactly if slashes are contained
-    assert_int_equal(strlen(result), PATH_MAX-2);
+    assert_int_equal(strlen(result), PYI_PATH_MAX-2);
     assert_ptr_equal(NULL, pyi_path_join(result, "xx", path2));
-    path2[PATH_MAX-4] = PYI_SEP;
+    path2[PYI_PATH_MAX-4] = PYI_SEP;
     assert_int_equal(path2[strlen(path2)], 0);
     assert_int_equal(path2[strlen(path2)-1], PYI_SEP);
     assert_ptr_equal(r, pyi_path_join(result, "", path2));
     // we don't count exactly if slashes are contained
-    assert_int_equal(strlen(result), PATH_MAX-3);
+    assert_int_equal(strlen(result), PYI_PATH_MAX-3);
     assert_int_equal(result[strlen(result)-1], 'b'); // trailing slash removed
     assert_ptr_equal(NULL, pyi_path_join(result, "x", path2));
-}
-
-
-int pyi_search_path(char *result, const char *appname);
-
-static void test_search_path(void **state) {
-    char result[PATH_MAX];
-    pyi_search_path(result, "my-app");
 }
 
 
@@ -201,7 +196,6 @@ int main(void)
         cmocka_unit_test(test_dirname),
         cmocka_unit_test(test_basename),
         cmocka_unit_test(test_join),
-        cmocka_unit_test(test_search_path),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

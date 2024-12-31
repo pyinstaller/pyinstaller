@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -e
+
+for architecture in x86_64 i386 aarch64 ppc64le s390x
+do
+    docker build -t pyi-glibc-$architecture --platform=linux/$architecture -f bootloader/Dockerfile.glibc .
+    docker run -v "$PWD:/io" --workdir=/io/bootloader -t pyi-glibc-$architecture python3 waf all
+done
+
+for architecture in x86_64 aarch64
+do
+    docker build -t pyi-musl-$architecture --platform=linux/$architecture -f bootloader/Dockerfile.musl .
+    docker run -v "$PWD:/io" --workdir=/io/bootloader -t pyi-musl-$architecture python3 waf all
+done

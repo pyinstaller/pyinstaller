@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2021, PyInstaller Development Team.
+# Copyright (c) 2021-2023, PyInstaller Development Team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -9,20 +9,61 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------
 
-import os
-import sys
+# The path to Qt's components may not default to the wheel layout for self-compiled PySide6 installations. Mandate the
+# wheel layout. See ``utils/hooks/qt.py`` for more details.
 
-# The path to Qt's components may not default to the wheel layout for
-# self-compiled PySide6 installations. Mandate the wheel layout. See
-# ``utils/hooks/qt.py`` for more details.
-if sys.platform.startswith('win'):
-    pyqt_path = os.path.join(sys._MEIPASS, 'PySide6')
-else:
-    pyqt_path = os.path.join(sys._MEIPASS, 'Qt', 'PySide6')
-os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
-os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')
-# Modelled after similar PATH modification in PyQt5 rthook. With PySide6,
-# this modification seems necessary for SSL DLLs to be found in onefile
-# builds (provided they were available during collection).
-if sys.platform.startswith('win') and 'PATH' in os.environ:
-    os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
+
+def _pyi_rthook():
+    import os
+    import sys
+
+    from _pyi_rth_utils import is_macos_app_bundle, prepend_path_to_environment_variable
+    from _pyi_rth_utils import qt as qt_rth_utils
+
+    # Ensure this is the only Qt bindings package in the application.
+    qt_rth_utils.ensure_single_qt_bindings_package("PySide6")
+
+    if sys.platform.startswith('win'):
+        pyqt_path = os.path.join(sys._MEIPASS, 'PySide6')
+    else:
+        pyqt_path = os.path.join(sys._MEIPASS, 'PySide6', 'Qt')
+
+    os.environ['QT_PLUGIN_PATH'] = os.path.join(pyqt_path, 'plugins')
+
+    if is_macos_app_bundle:
+        # Special handling for macOS .app bundles. To satisfy codesign requirements, we are forced to split `qml`
+        # directory into two parts; one that keeps only binaries (rooted in `Contents/Frameworks`) and one that keeps
+        # only data files (rooted in `Contents/Resources), with files from one directory tree being symlinked to the
+        # other to maintain illusion of a single mixed-content directory. As Qt seems to compute the identifier of its
+        # QML components based on location of the `qmldir` file w.r.t. the registered QML import paths, we need to
+        # register both paths, because the `qmldir` file for a component could be reached via either directory tree.
+        pyqt_path_res = os.path.normpath(
+            os.path.join(sys._MEIPASS, '..', 'Resources', os.path.relpath(pyqt_path, sys._MEIPASS))
+        )
+        os.environ['QML2_IMPORT_PATH'] = os.pathsep.join([
+            os.path.join(pyqt_path_res, 'qml'),
+            os.path.join(pyqt_path, 'qml'),
+        ])
+    else:
+        os.environ['QML2_IMPORT_PATH'] = os.path.join(pyqt_path, 'qml')
+
+    # Add `sys._MEIPASS` to `PATH` in order to ensure that `QtNetwork` can discover OpenSSL DLLs that might have been
+    # collected there (i.e., when they were not shipped with the package, and were collected from an external location).
+    if sys.platform.startswith('win'):
+        prepend_path_to_environment_variable(sys._MEIPASS, 'PATH')
+
+    # For macOS POSIX builds, we need to add `sys._MEIPASS` to `DYLD_LIBRARY_PATH` so that QtNetwork can discover
+    # OpenSSL dynamic libraries for its `openssl` TLS backend. This also prevents fallback to external locations, such
+    # as Homebrew. For .app bundles, this is unnecessary because `QtNetwork` explicitly searches `Contents/Frameworks`.
+    if sys.platform == 'darwin' and not is_macos_app_bundle:
+        prepend_path_to_environment_variable(sys._MEIPASS, 'DYLD_LIBRARY_PATH')
+
+    # Qt bindings package installed via PyPI wheels typically ensures that its bundled Qt is relocatable, by creating
+    # embedded `qt.conf` file during its initialization. This run-time generated qt.conf dynamically sets the Qt prefix
+    # path to the package's Qt directory. For bindings packages that do not create embedded `qt.conf` during their
+    # initialization (for example, conda-installed packages), try to perform this step ourselves.
+    qt_rth_utils.create_embedded_qt_conf("PySide6", pyqt_path)
+
+
+_pyi_rthook()
+del _pyi_rthook

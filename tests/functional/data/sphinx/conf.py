@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # Pyinstaller Sphinx hook test documentation build configuration file, created by
 # sphinx-quickstart on Tue Jun 30 07:56:01 2015.
 #

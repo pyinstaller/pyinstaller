@@ -1,0 +1,7 @@
+Rework the ``localpycs`` cache in the ``build`` directory to avoid relying
+on the source .py file timestamps. Some package managers (e.g., Anaconda)
+(re)set the file creation/modification time of installed files to the
+time of packaging rather than having them reflect the time of installation;
+therefore, the PyInstaller bootstrap script and modules would fail to be
+properly recompiled when switching between different versions of
+PyInstaller packaged by Anaconda.

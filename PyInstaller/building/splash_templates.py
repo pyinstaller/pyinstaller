@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Copyright (c) 2005-2021, PyInstaller Development Team.
+# Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,17 +8,16 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 # -----------------------------------------------------------------------------
-
 """
-Templates for the splash screen tcl script
+Templates for the splash screen tcl script.
 """
-from PyInstaller.compat import is_win, is_cygwin, is_darwin
+from PyInstaller.compat import is_cygwin, is_darwin, is_win
 
 ipc_script = r"""
 proc _ipc_server {channel clientaddr clientport} {
     # This function is called if a new client connects to
     # the server. This creates a channel, which calls
-    # _ipc_caller if data was send trough the connection
+    # _ipc_caller if data was send through the connection
     set client_name [format <%s:%d> $clientaddr $clientport]
 
     chan configure $channel \
@@ -64,7 +63,7 @@ set server_port [fconfigure $server_socket -sockname]
 
 # This environment variable is shared between the python and the tcl
 # interpreter and publishes the port the tcp server socket is available
-set env(_PYIBoot_SPLASH) [lindex $server_port 2]
+set env(_PYI_SPLASH_IPC) [lindex $server_port 2]
 """
 
 image_script = r"""
@@ -152,8 +151,7 @@ wm attributes . -transparentcolor magenta
 """
 
 elif is_darwin:
-    # This is untested, but should work following:
-    # https://stackoverflow.com/a/44296157/5869139
+    # This is untested, but should work following: https://stackoverflow.com/a/44296157/5869139
     transparent_setup = r"""
 wm attributes . -transparent 1
 . configure -background systemTransparent
@@ -164,22 +162,49 @@ else:
     # For Linux there is no common way to create a transparent window
     transparent_setup = r""
 
-align_windows = r"""
-# Position all widget in the window
+pack_widgets = r"""
+# Position all widgets in the window
 pack .root
 grid .root.canvas   -column 0 -row 0 -columnspan 1 -rowspan 2
+"""
 
-# Set position and mode of the window
+# Enable always-on-top behavior, by setting overrideredirect and the topmost attribute.
+position_window_on_top = r"""
+# Set position and mode of the window - always-on-top behavior
 wm overrideredirect . 1
 wm geometry         . +${x_position}+${y_position}
 wm attributes       . -topmost 1
+"""
 
+# Disable always-on-top behavior
+if is_win or is_cygwin or is_darwin:
+    # On Windows, we disable the always-on-top behavior while still setting overrideredirect
+    # (to disable window decorations), but set topmost attribute to 0.
+    position_window = r"""
+# Set position and mode of the window
+wm overrideredirect . 1
+wm geometry         . +${x_position}+${y_position}
+wm attributes       . -topmost 0
+"""
+else:
+    # On Linux, we must not use overrideredirect; instead, we set X11-specific type attribute to splash,
+    # which lets the window manager to properly handle the splash screen (without window decorations
+    # but allowing other windows to be brought to front).
+    position_window = r"""
+# Set position and mode of the window
+wm geometry         . +${x_position}+${y_position}
+wm attributes       . -type splash
+"""
+
+raise_window = r"""
 raise .
 """
 
 
-def build_script(text_options=None):
-    """ This function builds the tcl script for the splash screen """
+def build_script(text_options=None, always_on_top=False):
+    """
+    This function builds the tcl script for the splash screen.
+    """
     # Order is important!
     script = [
         ipc_script,
@@ -191,12 +216,14 @@ def build_script(text_options=None):
         # If the default font is used we need a different syntax
         if text_options['font'] == "TkDefaultFont":
             script.append(splash_canvas_default_font % text_options)
-
         else:
             script.append(splash_canvas_custom_font % text_options)
         script.append(splash_canvas_text % text_options)
 
     script.append(transparent_setup)
-    script.append(align_windows)
+
+    script.append(pack_widgets)
+    script.append(position_window_on_top if always_on_top else position_window)
+    script.append(raise_window)
 
     return '\n'.join(script)

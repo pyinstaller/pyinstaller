@@ -3,53 +3,53 @@ PyInstaller Manual
 ==================
 
 :Version: |PyInstallerVersion|
-:Homepage: |Homepage|
+:Homepage: `<https://pyinstaller.org/>`_
 :Contact: pyinstaller@googlegroups.com
 :Authors: David Cortesi, based on structure by Giovanni Bajo & William Caban, based on Gordon McMillan's manual
 :Copyright: This document has been placed in the public domain.
 
 
-|PyInstaller| bundles a Python application and all its dependencies into
-a single package.
+PyInstaller bundles a Python application and all its dependencies into a single package.
 The user can run the packaged app without installing a Python interpreter or any modules.
-|PyInstaller| supports Python 3.6 or newer,
-and correctly bundles the major Python packages
-such as numpy, PyQt, Django, wxPython, and others.
+PyInstaller supports Python 3.8 and newer, and correctly bundles many major Python packages
+such as numpy, matplotlib, PyQt, wxPython, and others.
 
-|PyInstaller| is tested against Windows, Mac OS X, and GNU/Linux.
-However, it is not a cross-compiler:
-to make a Windows app you run |PyInstaller| in Windows;
-to make a GNU/Linux app you run it in GNU/Linux, etc.
-|PyInstaller| has been used successfully with
-AIX, Solaris, FreeBSD and OpenBSD
-but testing against them is not part of our continuous integration tests.
+PyInstaller is tested against Windows, macOS, and Linux.
+However, it is not a cross-compiler; to make a Windows app you run PyInstaller on Windows,
+and to make a Linux app you run it on Linux, etc.
+x
+PyInstaller has been used successfully with AIX, Solaris, FreeBSD and OpenBSD but testing
+against them is not part of our continuous integration tests, and the development team offers
+no guarantee (all code for these platforms comes from external contributions)
+that PyInstaller will work on these platforms or that they will continue to be supported.
 
 
-What's New This Release
-~~~~~~~~~~~~~~~~~~~~~~~~
+Quickstart
+__________
 
-Release 4.0 adds support for 3rd-party packages to provide PyInstaller hooks
-along with the package. This allows Maintainers of other Python packages to
-deliver up-to-date PyInstaller hooks as part of their package.
-See our `sample project`__ for more information.
+Make sure you have the :ref:`PyInstaller Requirements` installed, and then install PyInstaller from PyPI:
 
-__ https://github.com/pyinstaller/hooksample
+.. code-block:: bash
 
-PyInstaller uses this option itself to provide updated hooks much faster:
-Many hooks are moved into the new package `pyinstaller-hooks-contrib`__,
-which is updated monthly.
-This package is installed automatically when installing PyInstaller,
-but can also be updated independently.
+    pip install -U pyinstaller
 
-__ https://github.com/pyinstaller/pyinstaller-hooks-contrib
+Open a command prompt/shell window, and navigate to the directory where your `.py` file is
+located, then build your app with the following command:
 
-Finally, this version drops support for Python 2.7,
-which is end-of-life since January 2020..
-The minimum required version is now Python 3.6.
-The last version supporting Python 2.7 was PyInstaller 3.6.
+.. code-block:: bash
+
+    pyinstaller your_program.py
+
+Your bundled application should now be available in the `dist` folder.
+
+.. note::
+
+    See :ref:`pyinstaller_not_in_path` if you get some kind of *pyinstaller
+    command not found* error.
 
 
 Contents:
+_________
 
 .. toctree::
    :maxdepth: 2
@@ -60,6 +60,7 @@ Contents:
    installation
    operating-mode
    usage
+   common-issues-and-pitfalls
    runtime-information
    spec-files
    feature-notes

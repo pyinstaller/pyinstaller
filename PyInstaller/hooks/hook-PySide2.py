@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2021, PyInstaller Development Team.
+# Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,15 +8,18 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-from PyInstaller.utils.hooks.qt import pyside2_library_info, \
-    get_qt_binaries, get_qt_conf_file
+
+from PyInstaller.utils.hooks.qt import pyside2_library_info, ensure_single_qt_bindings_package
+
+# Allow only one Qt bindings package to be collected in frozen application.
+ensure_single_qt_bindings_package("PySide2")
 
 # Only proceed if PySide2 can be imported.
 if pyside2_library_info.version is not None:
-    hiddenimports = ['shiboken2']
-
-    # Collect the ``qt.conf`` file.
-    datas = get_qt_conf_file(pyside2_library_info)
+    hiddenimports = ['shiboken2', 'inspect']
+    if pyside2_library_info.version < [5, 15]:
+        # The shiboken2 bootstrap in earlier releases requires __future__ in addition to inspect
+        hiddenimports += ['__future__']
 
     # Collect required Qt binaries.
-    binaries = get_qt_binaries(pyside2_library_info)
+    binaries = pyside2_library_info.collect_extra_binaries()

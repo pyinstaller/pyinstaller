@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2021, PyInstaller Development Team.
+# Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,71 +8,60 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
 Configure PyInstaller for the current Python installation.
 """
 
 import os
+import subprocess
 
 from PyInstaller import compat
 from PyInstaller import log as logging
-from PyInstaller.compat import is_win, is_darwin
 
 logger = logging.getLogger(__name__)
 
 
-def test_UPX(config, upx_dir):
-    logger.debug('Testing for UPX ...')
-    cmd = "upx"
+def _check_upx_availability(upx_dir):
+    logger.debug('Testing UPX availability ...')
+
+    upx_exe = "upx"
     if upx_dir:
-        cmd = os.path.normpath(os.path.join(upx_dir, cmd))
+        upx_exe = os.path.normpath(os.path.join(upx_dir, upx_exe))
 
-    hasUPX = 0
+    # Check if we can call `upx -V`.
     try:
-        vers = compat.exec_command(
-            cmd, '-V', __raise_ENOENT__=True).strip().splitlines()
-        if vers:
-            v = vers[0].split()[1]
-            try:
-                # v = "3.96-git-d7ba31cab8ce"
-                v = v.split("-")[0]
-            except Exception:
-                pass
-            hasUPX = tuple(map(int, v.split(".")))
-            if is_win and hasUPX < (1, 92):
-                logger.error('UPX is too old! Python 2.4 under Windows requires UPX 1.92+')
-                hasUPX = 0
-    except Exception as e:
-        if isinstance(e, OSError) and e.errno == 2:
-            # No such file or directory
-            pass
-        else:
-            logger.info('An exception occured when testing for UPX:')
-            logger.info('  %r', e)
-    if hasUPX:
-        is_available = 'available'
-    else:
-        is_available = 'not available'
-    logger.info('UPX is %s.', is_available)
-    config['hasUPX'] = hasUPX
-    config['upx_dir'] = upx_dir
+        output = subprocess.check_output(
+            [upx_exe, '-V'],
+            stdin=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            encoding='utf-8',
+        )
+    except Exception:
+        logger.debug('UPX is not available.')
+        return False
+
+    # Read the first line to display version string
+    try:
+        version_string = output.splitlines()[0]
+    except IndexError:
+        version_string = 'version string unavailable'
+
+    logger.debug('UPX is available: %s', version_string)
+    return True
 
 
-def _get_pyinst_cache_dir():
+def _get_pyinstaller_cache_dir():
     old_cache_dir = None
     if compat.getenv('PYINSTALLER_CONFIG_DIR'):
         cache_dir = compat.getenv('PYINSTALLER_CONFIG_DIR')
-    elif is_win:
+    elif compat.is_win:
         cache_dir = compat.getenv('LOCALAPPDATA')
         if not cache_dir:
             cache_dir = os.path.expanduser('~\\Application Data')
-    elif is_darwin:
+    elif compat.is_darwin:
         cache_dir = os.path.expanduser('~/Library/Application Support')
     else:
-        # According to XDG specification
-        # http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
+        # According to XDG specification: http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
         old_cache_dir = compat.getenv('XDG_DATA_HOME')
         if not old_cache_dir:
             old_cache_dir = os.path.expanduser('~/.local/share')
@@ -80,7 +69,7 @@ def _get_pyinst_cache_dir():
         if not cache_dir:
             cache_dir = os.path.expanduser('~/.cache')
     cache_dir = os.path.join(cache_dir, 'pyinstaller')
-    # Move old cache-dir, if any, to now location
+    # Move old cache-dir, if any, to new location.
     if old_cache_dir and not os.path.exists(cache_dir):
         old_cache_dir = os.path.join(old_cache_dir, 'pyinstaller')
         if os.path.exists(old_cache_dir):
@@ -91,9 +80,28 @@ def _get_pyinst_cache_dir():
     return cache_dir
 
 
-def get_config(upx_dir, **kw):
+def get_config(upx_dir=None):
     config = {}
-    test_UPX(config, upx_dir)
-    config['cachedir'] = _get_pyinst_cache_dir()
+
+    config['cachedir'] = _get_pyinstaller_cache_dir()
+    config['upx_dir'] = upx_dir
+
+    # Disable UPX on non-Windows. Using UPX (3.96) on modern Linux shared libraries (for example, the python3.x.so
+    # shared library) seems to result in segmentation fault when they are dlopen'd. This happens in recent versions
+    # of Fedora and Ubuntu linux, as well as in Alpine containers. On macOS, UPX (3.96) fails with
+    # UnknownExecutableFormatException on most .dylibs (and interferes with code signature on other occasions). And
+    # even when it would succeed, compressed libraries cannot be (re)signed due to failed strict validation.
+    upx_available = _check_upx_availability(upx_dir)
+    if upx_available:
+        if compat.is_win or compat.is_cygwin:
+            logger.info("UPX is available and will be used if enabled on build targets.")
+        elif os.environ.get("PYINSTALLER_FORCE_UPX", "0") != "0":
+            logger.warning(
+                "UPX is available and force-enabled on platform with known compatibility problems - use at own risk!"
+            )
+        else:
+            upx_available = False
+            logger.info("UPX is available but is disabled on non-Windows due to known compatibility problems.")
+    config['upx_available'] = upx_available
 
     return config

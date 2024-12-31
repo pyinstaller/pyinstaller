@@ -1,123 +1,112 @@
-How to Install |PyInstaller|
+How to Install PyInstaller
 ===============================
 
-|PyInstaller| is a normal Python package.
-You can download the archive from PyPi_,
-but it is easier to install using pip_ where is is available,
-for example::
+PyInstaller is available as a regular Python package.
+The source archives for released versions are available from PyPI_,
+but it is easier to install the latest version using pip_::
 
     pip install pyinstaller
 
-or upgrade to a newer version::
+.. note::
+
+    PyInstaller is split into two packages ``pyinstaller`` and
+    ``pyinstaller-hooks-contrib``. These should be kept approximately (roughly
+    within a year of each other) in sync. To that end, if you choose to pin your
+    ``pyinstaller`` version, please also pin ``pyinstaller-hooks-contrib``. If
+    you upgrade ``pyinstaller``, you will also need to upgrade
+    ``pyinstaller-hooks-contrib``.
+
+To upgrade existing PyInstaller installation to the latest version, use::
 
     pip install --upgrade pyinstaller
 
-To install the current development version use::
+To install the current development version, use::
 
     pip install https://github.com/pyinstaller/pyinstaller/tarball/develop
 
+To install directly using pip's built-in git checkout support, use::
 
-Installing in Windows
-~~~~~~~~~~~~~~~~~~~~~~~
+    pip install git+https://github.com/pyinstaller/pyinstaller
 
-For Windows, PyWin32_ or the more recent pypiwin32_, is a prerequisite.
-The latter is installed automatically when you install |PyInstaller|
-using pip_ or `easy_install`_.
-If necessary, follow the pypiwin32_ link to install it manually.
+or to install specific branch (e.g., ``develop``)::
 
-It is particularly easy to use pip-Win_ to install |PyInstaller|
-along with the correct version of PyWin32_.
-pip-Win_ also provides virtualenv_, which makes it simple
-to maintain multiple different Python interpreters and install packages
-such as |PyInstaller| in each of them.
-(For more on the uses of virtualenv, see :ref:`Supporting Multiple Platforms` below.)
+    pip install git+https://github.com/pyinstaller/pyinstaller@develop
 
-When pip-Win is working, enter this command in its Command field
-and click Run::
-
-    venv -c -i pyi-env-name
-
-This creates a new virtual environment rooted at ``C:\Python\pyi-env-name``
-and makes it the current environment.
-A new command shell
-window opens in which you can run commands within this environment.
-Enter the command ::
-
-    pip install PyInstaller
-
-Once it is installed, to use |PyInstaller|,
-
-* Start pip-Win
-* In the Command field enter ``venv pyi-env-name``
-* Click Run
-
-Then you have a command shell window in which commands such as
-`pyinstaller` execute in that Python environment.
-
-Installing in Mac OS X
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Mac OS X 10.8 comes with Python 2.7 pre-installed by Apple.
-However, Python 2.7 is end-of-life and no longer supported by |PyInstaller|,
-also
-major packages such as
-PyQt, Numpy, Matplotlib, Scipy, and the like,
-have dropped support for Python 2.7, too.
-Thus we strongly
-recommend that you install these using either `MacPorts`_ or `Homebrew`_.
-
-|PyInstaller| users report fewer problems when they use a package manager
-than when they attempt to install major packages individually.
-
-Alternatively you might install Python 3 following the
-`official guide <https://docs.python.org/3/using/mac.html>`_.
-
-
-Installing from the archive
+Installing from the source archive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If pip is not available, download the compressed archive from PyPI_.
-If you are asked to test a problem using the latest development code,
-download the compressed archive from the *develop* branch of
-`PyInstaller Downloads`_ page.
+The source code archive for released versions of PyInstaller are
+available at PyPI_ and on `PyInstaller Downloads`_ page.
 
-Expand the archive.
-Inside is a script named ``setup.py``.
-Execute ``python setup.py install``
-with administrator privilege to install or upgrade |PyInstaller|.
+.. Note::
+    Even though the source archive provides the ``setup.py`` script,
+    installation via ``python setup.py install`` has been deprecated
+    and should not be used anymore. Instead, run ``pip install .`` from
+    the unpacked source directory, as described below.
 
-For platforms other than Windows, GNU/Linux and Mac OS, you must first
-build a |bootloader| program for your platform: see :ref:`Building the Bootloader`.
-After the |bootloader| has been created,
-use ``python setup.py install`` with administrator privileges
+The installation procedure is:
+    1. Unpack the source archive.
+
+    2. Move into the unpacked source directory.
+
+    3. Run ``pip install .`` from the unpacked source directory. If
+       installing into system-wide python installation, administrator
+       privilege is required.
+
+The same procedure applies to installing from manual git checkout::
+
+    git clone https://github.com/pyinstaller/pyinstaller
+    cd pyinstaller
+    pip install .
+
+If you intend to make changes to the source code and want them to take
+effect immediately, without re-installing the package each time, you
+can install it in editable mode::
+
+    pip install -e .
+
+For platforms other than Windows, GNU/Linux and macOS, you must first
+build the bootloader for your platform: see :ref:`Building the Bootloader`.
+After the bootloader has been built, use the ``pip install .`` command
 to complete the installation.
 
 
+.. _`pyinstaller_not_in_path`:
 
-Verifying the installation
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Troubleshooting missing PyInstaller command
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-On all platforms, the command ``pyinstaller`` should now exist on the
-execution path. To verify this, enter the command::
+In a properly setup Python environment, the command ``pyinstaller`` should now
+exist on the execution path and the command below should display PyInstaller's
+version. ::
 
     pyinstaller --version
 
-The result should resemble ``3.n`` for a released version,
-and ``3.n.dev0-xxxxxx`` for a development branch.
+If the command is not found, make sure that the ``PATH`` (the executable search
+path) environment variable includes the directory that the ``pyinstaller``
+executable was installed into.
 
-If the command is not found, make sure the execution path includes
-the proper directory:
+* On Windows, this location is either of the paths returned by::
 
-* Windows: ``C:\PythonXY\Scripts`` where *XY* stands for the
-  major and minor Python version number,
-  for example ``C:\Python34\Scripts`` for Python 3.4)
-* GNU/Linux: ``/usr/bin/``
-* OS X (using the default Apple-supplied Python) ``/usr/bin``
-* OS X (using Python installed by homebrew) ``/usr/local/bin``
-* OS X (using Python installed by macports) ``/opt/local/bin``
+    import sysconfig; print(sysconfig.get_path("scripts"))
+    import site; print(site.USER_BASE + "\\Scripts")
 
-To display the current path in Windows the command is ``echo %path%``
-and in other systems, ``echo $PATH``.
+* On UNIX, this location is either of the paths returned by::
+
+    import sysconfig; print(sysconfig.get_path("scripts"))
+    import site; print(site.USER_BASE + "/bin")
+
+To display the current path in Windows the command is ``echo %PATH%`` and on
+other systems, ``echo $PATH``.
+
+.. Note::
+    If you cannot use the ``pyinstaller`` command due to the scripts
+    directory not being in ``PATH``, you can instead invoke the
+    ``PyInstaller`` module, by running ``python -m PyInstaller``
+    (pay attention to the module name, which is case sensitive).
+    This form of invocation is also useful when you have PyInstaller
+    installed in multiple python environments, and you cannot be sure
+    from which installation the ``pyinstaller`` command will be ran.
 
 
 Installed commands
@@ -139,15 +128,8 @@ The complete installation places these commands on the execution path:
 * ``pyi-grab_version`` is used to extract a version resource from a Windows
   executable.  See :ref:`Capturing Windows Version Data`.
 
-If you do not perform a complete installation
-(installing via ``pip`` or executing ``setup.py``),
-these commands will not be installed as commands.
-However, you can still execute all the functions documented below
-by running Python scripts found in the distribution folder.
-The equivalent of the ``pyinstaller`` command is
-:file:`{pyinstaller-folder}/pyinstaller.py`.
-The other commands are found in :file:`{pyinstaller-folder}/cliutils/`
-with meaningful names (``makespec.py``, etc.)
+* ``pyi-set_version`` can be used to apply previously-extracted version
+  resource to an existing Windows executable.
 
 
 .. include:: _common_definitions.txt

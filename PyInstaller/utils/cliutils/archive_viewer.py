@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2013-2021, PyInstaller Development Team.
+# Copyright (c) 2013-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,261 +8,261 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
-
 """
-Viewer for archives packaged by archive.py
+Viewer for PyInstaller-generated archives.
 """
 
 import argparse
 import os
-import pprint
 import sys
-import tempfile
-import zlib
 
-from PyInstaller.loader import pyimod02_archive
-from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
-from PyInstaller.compat import stdin_input
 import PyInstaller.log
+from PyInstaller.archive.readers import CArchiveReader, ZlibArchiveReader
 
-stack = []
-cleanup = []
+try:
+    from argcomplete import autocomplete
+except ImportError:
 
-
-def main(name, brief, debug, rec_debug, **unused_options):
-
-    global stack
-
-    if not os.path.isfile(name):
-        print(name, "is an invalid file name!", file=sys.stderr)
-        return 1
-
-    arch = get_archive(name)
-    stack.append((name, arch))
-    if debug or brief:
-        show_log(arch, rec_debug, brief)
-        raise SystemExit(0)
-    else:
-        show(name, arch)
-
-    while 1:
-        try:
-            toks = stdin_input('? ').split(None, 1)
-        except EOFError:
-            # Ctrl-D
-            print(file=sys.stderr)  # Clear line.
-            break
-        if not toks:
-            usage()
-            continue
-        if len(toks) == 1:
-            cmd = toks[0]
-            arg = ''
-        else:
-            cmd, arg = toks
-        cmd = cmd.upper()
-        if cmd == 'U':
-            if len(stack) > 1:
-                arch = stack[-1][1]
-                del stack[-1]
-            name, arch = stack[-1]
-            show(name, arch)
-        elif cmd == 'O':
-            if not arg:
-                arg = stdin_input('open name? ')
-            arg = arg.strip()
-            try:
-                arch = get_archive(arg)
-            except NotAnArchiveError as e:
-                print(e, file=sys.stderr)
-                continue
-            if arch is None:
-                print(arg, "not found", file=sys.stderr)
-                continue
-            stack.append((arg, arch))
-            show(arg, arch)
-        elif cmd == 'X':
-            if not arg:
-                arg = stdin_input('extract name? ')
-            arg = arg.strip()
-            data = get_data(arg, arch)
-            if data is None:
-                print("Not found", file=sys.stderr)
-                continue
-            filename = stdin_input('to filename? ')
-            if not filename:
-                print(repr(data))
-            else:
-                with open(filename, 'wb') as fp:
-                    fp.write(data)
-        elif cmd == 'Q':
-            break
-        else:
-            usage()
-    do_cleanup()
-
-
-def do_cleanup():
-    global stack, cleanup
-    stack = []
-    for filename in cleanup:
-        try:
-            os.remove(filename)
-        except Exception as e:
-            print("couldn't delete", filename, e.args, file=sys.stderr)
-    cleanup = []
-
-
-def usage():
-    print("U: go Up one level", file=sys.stderr)
-    print("O <name>: open embedded archive name", file=sys.stderr)
-    print("X <name>: extract name", file=sys.stderr)
-    print("Q: quit", file=sys.stderr)
-
-
-def get_archive(name):
-    if not stack:
-        if name[-4:].lower() == '.pyz':
-            return ZlibArchive(name)
-        return CArchiveReader(name)
-    parent = stack[-1][1]
-    try:
-        return parent.openEmbedded(name)
-    except KeyError:
+    def autocomplete(parser):
         return None
-    except (ValueError, RuntimeError):
-        ndx = parent.toc.find(name)
-        dpos, dlen, ulen, flag, typcd, name = parent.toc[ndx]
-        x, data = parent.extract(ndx)
-        tempfilename = tempfile.mktemp()
-        cleanup.append(tempfilename)
-        with open(tempfilename, 'wb') as fp:
-            fp.write(data)
-        if typcd == 'z':
-            return ZlibArchive(tempfilename)
-        else:
-            return CArchiveReader(tempfilename)
 
 
-def get_data(name, arch):
-    if isinstance(arch.toc, dict):
-        (ispkg, pos, length) = arch.toc.get(name, (0, None, 0))
-        if pos is None:
-            return None
-        with arch.lib:
-            arch.lib.seek(arch.start + pos)
-            return zlib.decompress(arch.lib.read(length))
-    ndx = arch.toc.find(name)
-    dpos, dlen, ulen, flag, typcd, name = arch.toc[ndx]
-    x, data = arch.extract(ndx)
-    return data
+class ArchiveViewer:
+    def __init__(self, filename, interactive_mode, recursive_mode, brief_mode):
+        self.filename = filename
+        self.interactive_mode = interactive_mode
+        self.recursive_mode = recursive_mode
+        self.brief_mode = brief_mode
 
+        self.stack = []
 
-def show(name, arch):
-    if isinstance(arch.toc, dict):
-        print(" Name: (ispkg, pos, len)")
-        toc = arch.toc
-    else:
-        print(" pos, length, uncompressed, iscompressed, type, name")
-        toc = arch.toc.data
-    pprint.pprint(toc)
+        # Recursive mode implies non-interactive mode
+        if self.recursive_mode:
+            self.interactive_mode = False
 
+    def main(self):
+        # Open top-level (initial) archive
+        archive = self._open_toplevel_archive(self.filename)
+        archive_name = os.path.basename(self.filename)
+        self.stack.append((archive_name, archive))
 
-def get_content(arch, recursive, brief, output):
-    if isinstance(arch.toc, dict):
-        toc = arch.toc
-        if brief:
-            for name, _ in toc.items():
-                output.append(name)
-        else:
-            output.append(toc)
-    else:
-        toc = arch.toc.data
-        for el in toc:
-            if brief:
-                output.append(el[5])
+        # Not-interactive mode
+        if not self.interactive_mode:
+            return self._non_interactive_processing()
+
+        # Interactive mode; show top-level archive
+        self._show_archive_contents(archive_name, archive)
+
+        # Interactive command processing
+        while True:
+            # Read command
+            try:
+                tokens = input('? ').split(None, 1)
+            except EOFError:
+                # Ctrl-D
+                print(file=sys.stderr)  # Clear line.
+                break
+
+            # Print usage?
+            if not tokens:
+                self._print_usage()
+                continue
+
+            # Process
+            command = tokens[0].upper()
+            if command == 'Q':
+                break
+            elif command == 'U':
+                self._move_up_the_stack()
+            elif command == 'O':
+                self._open_embedded_archive(*tokens[1:])
+            elif command == 'X':
+                self._extract_file(*tokens[1:])
+            elif command == 'S':
+                archive_name, archive = self.stack[-1]
+                self._show_archive_contents(archive_name, archive)
             else:
-                output.append(el)
-            if recursive:
-                if el[4] in ('z', 'a'):
-                    get_content(get_archive(el[5]), recursive, brief, output)
-                    stack.pop()
+                self._print_usage()
 
+    def _non_interactive_processing(self):
+        archive_count = 0
 
-def show_log(arch, recursive, brief):
-    output = []
-    get_content(arch, recursive, brief, output)
-    # first print all TOCs
-    for out in output:
-        if isinstance(out, dict):
-            pprint.pprint(out)
-    # then print the other entries
-    pprint.pprint([out for out in output if not isinstance(out, dict)])
+        while self.stack:
+            archive_name, archive = self.stack.pop()
+            archive_count += 1
 
+            if archive_count > 1:
+                print("")
+            self._show_archive_contents(archive_name, archive)
 
-def get_archive_content(filename):
-    """
-    Get a list of the (recursive) content of archive `filename`.
+            if not self.recursive_mode:
+                continue
 
-    This function is primary meant to be used by runtests.
-    """
-    archive = get_archive(filename)
-    stack.append((filename, archive))
-    output = []
-    get_content(archive, recursive=True, brief=True, output=output)
-    do_cleanup()
-    return output
+            # Scan for embedded archives
+            if isinstance(archive, CArchiveReader):
+                for name, (*_, typecode) in archive.toc.items():
+                    if typecode == 'z':
+                        try:
+                            embedded_archive = archive.open_embedded_archive(name)
+                        except Exception as e:
+                            print(f"Could not open embedded archive {name!r}: {e}", file=sys.stderr)
+                        self.stack.append((name, embedded_archive))
 
+    def _print_usage(self):
+        print("U: go up one level", file=sys.stderr)
+        print("O <name>: open embedded archive with given name", file=sys.stderr)
+        print("X <name>: extract file with given name", file=sys.stderr)
+        print("S: list the contents of current archive again", file=sys.stderr)
+        print("Q: quit", file=sys.stderr)
 
-class ZlibArchive(pyimod02_archive.ZlibArchiveReader):
+    def _move_up_the_stack(self):
+        if len(self.stack) > 1:
+            self.stack.pop()
+            archive_name, archive = self.stack[-1]
+            self._show_archive_contents(archive_name, archive)
+        else:
+            print("Already in the top archive!", file=sys.stderr)
 
-    def checkmagic(self):
-        """ Overridable.
-            Check to see if the file object self.lib actually has a file
-            we understand.
-        """
-        self.lib.seek(self.start)  # default - magic is at start of file.
-        if self.lib.read(len(self.MAGIC)) != self.MAGIC:
-            raise RuntimeError("%s is not a valid %s archive file"
-                               % (self.path, self.__class__.__name__))
-        if self.lib.read(len(self.pymagic)) != self.pymagic:
-            print("Warning: pyz is from a different Python version",
-                  file=sys.stderr)
-        self.lib.read(4)
+    def _open_toplevel_archive(self, filename):
+        if not os.path.isfile(filename):
+            print(f"Archive {filename} does not exist!", file=sys.stderr)
+            sys.exit(1)
+
+        if filename[-4:].lower() == '.pyz':
+            return ZlibArchiveReader(filename)
+        return CArchiveReader(filename)
+
+    def _open_embedded_archive(self, archive_name=None):
+        # Ask for name if not provided
+        if not archive_name:
+            archive_name = input('Open name? ')
+        archive_name = archive_name.strip()
+
+        # No name given; abort
+        if not archive_name:
+            return
+
+        # Open the embedded archive
+        _, parent_archive = self.stack[-1]
+
+        if not hasattr(parent_archive, 'open_embedded_archive'):
+            print("Archive does not support embedded archives!", file=sys.stderr)
+            return
+
+        try:
+            archive = parent_archive.open_embedded_archive(archive_name)
+        except Exception as e:
+            print(f"Could not open embedded archive {archive_name!r}: {e}", file=sys.stderr)
+            return
+
+        # Add to stack and display contents
+        self.stack.append((archive_name, archive))
+        self._show_archive_contents(archive_name, archive)
+
+    def _extract_file(self, name=None):
+        # Ask for name if not provided
+        if not name:
+            name = input('Extract name? ')
+        name = name.strip()
+
+        # Archive
+        archive_name, archive = self.stack[-1]
+
+        # Retrieve data
+        try:
+            if isinstance(archive, CArchiveReader):
+                data = archive.extract(name)
+            elif isinstance(archive, ZlibArchiveReader):
+                data = archive.extract(name, raw=True)
+            else:
+                raise NotImplementedError(f"Extraction from archive type {type(archive)} not implemented!")
+        except Exception as e:
+            print(f"Failed to extract data for entry {name!r} from {archive_name!r}: {e}", file=sys.stderr)
+
+        # Write to file
+        filename = input('Output filename? ')
+        if not filename:
+            print(repr(data))
+        else:
+            with open(filename, 'wb') as fp:
+                fp.write(data)
+
+    def _show_archive_contents(self, archive_name, archive):
+        if isinstance(archive, CArchiveReader):
+            if archive.options:
+                print(f"Options in {archive_name!r} (PKG/CArchive):")
+                for option in archive.options:
+                    print(f" {option}")
+            print(f"Contents of {archive_name!r} (PKG/CArchive):")
+            if self.brief_mode:
+                for name in archive.toc.keys():
+                    print(f" {name}")
+            else:
+                print(" position, length, uncompressed_length, is_compressed, typecode, name")
+                for name, (position, length, uncompressed_length, is_compressed, typecode) in archive.toc.items():
+                    print(f" {position}, {length}, {uncompressed_length}, {is_compressed}, {typecode!r}, {name!r}")
+        elif isinstance(archive, ZlibArchiveReader):
+            print(f"Contents of {archive_name!r} (PYZ):")
+            if self.brief_mode:
+                for name in archive.toc.keys():
+                    print(f" {name}")
+            else:
+                print(" typecode, position, length, name")
+                for name, (typecode, position, length) in archive.toc.items():
+                    print(f" {typecode}, {position}, {length}, {name!r}")
+        else:
+            print(f"Contents of {name} (unknown)")
+            print(f"FIXME: implement content listing for archive type {type(archive)}!")
 
 
 def run():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--log',
-                        default=False,
-                        action='store_true',
-                        dest='debug',
-                        help='Print an archive log (default: %(default)s)')
-    parser.add_argument('-r', '--recursive',
-                        default=False,
-                        action='store_true',
-                        dest='rec_debug',
-                        help='Recursively print an archive log (default: %(default)s). '
-                        'Can be combined with -r')
-    parser.add_argument('-b', '--brief',
-                        default=False,
-                        action='store_true',
-                        dest='brief',
-                        help='Print only file name. (default: %(default)s). '
-                        'Can be combined with -r')
+    parser.add_argument(
+        '-l',
+        '--list',
+        default=False,
+        action='store_true',
+        dest='listing_mode',
+        help='List the archive contents and exit (default: %(default)s).',
+    )
+    parser.add_argument(
+        '-r',
+        '--recursive',
+        default=False,
+        action='store_true',
+        dest='recursive',
+        help='Recursively print an archive log (default: %(default)s). Implies --list.',
+    )
+    parser.add_argument(
+        '-b',
+        '--brief',
+        default=False,
+        action='store_true',
+        dest='brief',
+        help='When displaying archive contents, show only file names. (default: %(default)s).',
+    )
     PyInstaller.log.__add_options(parser)
-    parser.add_argument('name', metavar='pyi_archive',
-                        help="pyinstaller archive to show content of")
+    parser.add_argument(
+        'filename',
+        metavar='pyi_archive',
+        help="PyInstaller archive to process.",
+    )
 
+    autocomplete(parser)
     args = parser.parse_args()
     PyInstaller.log.__process_options(parser, args)
 
     try:
-        raise SystemExit(main(**vars(args)))
+        viewer = ArchiveViewer(
+            filename=args.filename,
+            interactive_mode=not args.listing_mode,
+            recursive_mode=args.recursive,
+            brief_mode=args.brief,
+        )
+        viewer.main()
     except KeyboardInterrupt:
-        raise SystemExit("Aborted by user request.")
+        raise SystemExit("Aborted by user.")
+
 
 if __name__ == '__main__':
     run()
-

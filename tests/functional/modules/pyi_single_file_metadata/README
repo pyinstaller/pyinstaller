@@ -1,0 +1,4 @@
+Package metadata stored in a single-file .egg-info format, as commonly
+found in Debian/Ubuntu packages. Used by test_misc::test_single_file_metadata
+which adds this directory to its search path.
+

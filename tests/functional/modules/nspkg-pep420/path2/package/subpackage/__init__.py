@@ -1,1 +1,3 @@
-""" package.subpackage """
+"""
+package.subpackage
+"""

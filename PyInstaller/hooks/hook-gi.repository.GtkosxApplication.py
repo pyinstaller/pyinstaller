@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2021, PyInstaller Development Team.
+# Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -8,15 +8,11 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""
-Import hook for PyGObject https://wiki.gnome.org/PyGObject
-"""
 
 from PyInstaller.compat import is_darwin
-from PyInstaller.utils.hooks.gi import get_gi_typelibs
-
+from PyInstaller.utils.hooks.gi import GiModuleInfo
 
 if is_darwin:
-    binaries, datas, hiddenimports = get_gi_typelibs(
-        'GtkosxApplication', '1.0'
-    )
+    module_info = GiModuleInfo('GtkosxApplication', '1.0')
+    if module_info.available:
+        binaries, datas, hiddenimports = module_info.collect_typelib_data()

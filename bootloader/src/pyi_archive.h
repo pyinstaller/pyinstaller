@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2013-2021, PyInstaller Development Team.
+ * Copyright (c) 2013-2023, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -33,114 +33,66 @@
 #define ARCHIVE_ITEM_DATA             'x'  /* data */
 #define ARCHIVE_ITEM_RUNTIME_OPTION   'o'  /* runtime option */
 #define ARCHIVE_ITEM_SPLASH           'l'  /* splash resources */
+#define ARCHIVE_ITEM_SYMLINK          'n'  /* symbolic link */
 
-/* TOC entry for a CArchive */
-typedef struct _toc {
-    int  structlen;  /*len of this one - including full len of name */
-    uint32_t pos;    /* pos rel to start of concatenation */
-    uint32_t len;    /* len of the data (compressed) */
-    uint32_t ulen;   /* len of data (uncompressed) */
-    char cflag;      /* is it compressed (really a byte) */
-    char typcd;      /* type code -'b' binary, 'z' zlib, 'm' module,
-                      * 's' script (v3),'x' data, 'o' runtime option  */
-    char name[1];    /* the name to save it as */
-    /* starting in v5, we stretch this out to a mult of 16 */
-} TOC;
+/* Entry in PKG/CArchive TOC */
+struct TOC_ENTRY
+{
+    uint32_t entry_length; /* length of this TOC entry, including full length of the name field */
+    uint32_t offset; /* position of entry's data blob, relative to the start of PKG archive */
+    uint32_t length; /* length of compressed data blob */
+    uint32_t uncompressed_length; /* length of uncompressed data blob */
+    unsigned char compression_flag; /* compression flag (1 = compressed, 0 = uncompressed) */
+    char typecode; /* type code - see ARCHIVE_ITEM_* definitions */
+    char name[1];  /* entry name; padded to multiple of 16 */
+};
 
-/* The CArchive Cookie, from end of the archive. */
-typedef struct _cookie {
-    char magic[8];      /* 'MEI\014\013\012\013\016' */
-    uint32_t len;       /* len of entire package */
-    uint32_t TOC;       /* pos (rel to start) of TableOfContents */
-    int  TOClen;        /* length of TableOfContents */
-    int  pyvers;        /* new in v4 */
-    char pylibname[64]; /* Filename of Python dynamic library e.g. python2.7.dll. */
-} COOKIE;
+/* The PKG/CArchive cookie, from the end of the archive. */
+struct ARCHIVE_COOKIE
+{
+    char magic[8]; /* 'MEI\014\013\012\013\016' */
+    uint32_t pkg_length; /* length of the entire PKG archive */
+    uint32_t toc_offset; /* position of TOC relative to start of PKG archive */
+    uint32_t toc_length; /* length of TOC data */
+    uint32_t python_version; /* integer representing python version */
+    char python_libname[64]; /* Name of the of Python shared library (e.g., "python3.10.dll"). */
+};
 
-typedef struct _archive_status {
-    FILE * fp;
-    uint64_t pkgstart;
-    TOC *  tocbuff;
-    TOC *  tocend;
-    COOKIE cookie;
-    /*
-     * On Windows:
-     *    These strings are UTF-8 encoded (via pyi_win32_utils_to_utf8). On Python 2,
-     *    they are re-encoded to ANSI with ShortFileNames when passed to Python. On
-     *    Python 3, they are decoded back to wchar_t.
-     *
-     * On Linux/OS X:
-     *    These strings are system-provided. On Python 2, they are passed as-is to Python.
-     *    On Python 3, they are decoded to wchar_t using Py_DecodeLocale
-     *    (formerly called _Py_char2wchar) first.
-     */
-    char archivename[PATH_MAX];
-    char homepath[PATH_MAX];
-    char temppath[PATH_MAX];
-    /*
-     * Main path could be homepath or temppath. It will be temppath
-     * if temppath is available. Sometimes we do not need to know if temppath
-     * or homepath should be used. We only need to know the path. This variable
-     * is used for example to set sys.path, sys.prefix, and sys._MEIPASS.
-     */
-    char mainpath[PATH_MAX];
-    /*
-     * Flag if temporary directory is available. This usually means running
-     * executable in onefile mode. Bootloader has to behave differently
-     * in this mode.
-     */
-    bool has_temp_directory;
-    /*
-     * Flag if Python library was loaded. This indicates if it is safe
-     * to call function PI_Py_Finalize(). If Python dll is missing
-     * calling this function would cause segmentation fault.
-     */
-    bool is_pylib_loaded;
-    /*
-     * Cached command-line arguments.
-     */
-    int    argc;      /* Count of command-line arguments. */
-    char **argv;      /*
-                       * On Windows, UTF-8 encoded form of __wargv.
-                       * On OS X/Linux, as received in main()
-                       */
-} ARCHIVE_STATUS;
+/* The archive structure */
+struct ARCHIVE
+{
+    /* Full path to archive file. */
+    char filename[PYI_PATH_MAX];
 
-TOC *pyi_arch_increment_toc_ptr(const ARCHIVE_STATUS *status, const TOC* ptoc);
+    uint64_t pkg_offset; /* Offset of the PKG archive in the file */
 
-unsigned char *pyi_arch_extract(ARCHIVE_STATUS *status, TOC *ptoc);
-int pyi_arch_extract2fs(ARCHIVE_STATUS *status, TOC *ptoc);
+    struct TOC_ENTRY *toc; /* Buffer containing all TOC entries */
+    const struct TOC_ENTRY *toc_end; /* The address at which the TOC buffer ends */
 
-/**
- * Helpers for embedders
- */
-int pyi_arch_get_pyversion(ARCHIVE_STATUS *status);
-extern int pyvers;
+    /* Flag indicating that the archive contains extractable files,
+     * and thus has onefile semantics */
+    bool contains_extractable_entries;
 
-/**
- * The gory detail level
- */
-int pyi_arch_open(ARCHIVE_STATUS *status);
+    /* Pointer to SPLASH TOC entry, if available */
+    const struct TOC_ENTRY *toc_splash;
 
-/*
- * Memory allocation wrappers.
- */
-ARCHIVE_STATUS *pyi_arch_status_new();
-void pyi_arch_status_free(ARCHIVE_STATUS *status);
+    /* Python version: major * 100 + minor, e.g., 310 for python 3.10 */
+    int python_version;
 
-/*
- * Setup the paths and open the archive
- *
- * @param archivePath  The path including filename to the archive.
- *
- * @return true on success, false otherwise.
- */
-bool pyi_arch_setup(ARCHIVE_STATUS *status, char const * archivePath);
+    /* The name of python shared library */
+    char python_libname[64];
+};
 
-TOC *getFirstTocEntry(ARCHIVE_STATUS *status);
-TOC *getNextTocEntry(ARCHIVE_STATUS *status, TOC *entry);
 
-char * pyi_arch_get_option(const ARCHIVE_STATUS * status, char * optname);
-TOC *pyi_arch_find_by_name(ARCHIVE_STATUS *status, const char *name);
+/* The API */
+struct ARCHIVE *pyi_archive_open(const char *filename);
+void pyi_archive_free(struct ARCHIVE **archive_ref);
 
-#endif  /* PYI_ARCHIVE_H */
+const struct TOC_ENTRY *pyi_archive_next_toc_entry(const struct ARCHIVE *archive, const struct TOC_ENTRY *toc_entry);
+
+unsigned char *pyi_archive_extract(const struct ARCHIVE *archive, const struct TOC_ENTRY *toc_entry);
+int pyi_archive_extract2fs(const struct ARCHIVE *archive, const struct TOC_ENTRY *toc_entry, const char *output_filename);
+
+const struct TOC_ENTRY *pyi_archive_find_entry_by_name(const struct ARCHIVE *archive, const char *name);
+
+#endif /* PYI_ARCHIVE_H */
