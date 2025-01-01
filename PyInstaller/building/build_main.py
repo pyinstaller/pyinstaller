@@ -33,12 +33,13 @@ from PyInstaller.building.osx import BUNDLE
 from PyInstaller.building.splash import Splash
 from PyInstaller.building.utils import (
     _check_guts_toc, _check_guts_toc_mtime, _should_include_system_binary, format_binaries_and_datas, compile_pymodule,
-    add_suffix_to_extension, postprocess_binaries_toc_pywin32, postprocess_binaries_toc_pywin32_anaconda
+    add_suffix_to_extension, postprocess_binaries_toc_pywin32, postprocess_binaries_toc_pywin32_anaconda,
+    create_base_library_zip
 )
 from PyInstaller.compat import is_win, is_conda, is_darwin, is_linux
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import initialize_modgraph, HOOK_PRIORITY_USER_HOOKS
-from PyInstaller.depend.utils import create_py3_base_library, scan_code_for_ctypes
+from PyInstaller.depend.utils import scan_code_for_ctypes
 from PyInstaller import isolated
 from PyInstaller.utils.misc import absnormpath, get_path_to_toplevel_modules, mtime
 from PyInstaller.utils.hooks import get_package_paths
@@ -669,16 +670,6 @@ class Analysis(Target):
         self.datas = [entry for entry in self._input_datas]
         self.binaries = [entry for entry in self._input_binaries]
 
-        # TODO: find a better place where to put 'base_library.zip' and when to created it.
-        # For Python 3 it is necessary to create file 'base_library.zip' containing core Python modules. In Python 3
-        # some built-in modules are written in pure Python. base_library.zip is a way how to have those modules as
-        # "built-in".
-        libzip_filename = os.path.join(CONF['workpath'], 'base_library.zip')
-        create_py3_base_library(libzip_filename, graph=self.graph)
-        # Bundle base_library.zip as data file.
-        # Data format of TOC item: ('relative_path_in_dist_dir', 'absolute_path_on_disk', 'DATA')
-        self.datas.append((os.path.basename(libzip_filename), libzip_filename, 'DATA'))
-
         # Expand sys.path of module graph. The attribute is the set of paths to use for imports: sys.path, plus our
         # loader, plus other paths from e.g. --path option).
         self.graph.path = self.pathex + self.graph.path
@@ -872,16 +863,25 @@ class Analysis(Target):
             )
             code_cache = None
 
+        # Construct a set for look-up of modules that should end up in base_library.zip. The list of corresponding
+        # modulegraph nodes is stored in `PyiModuleGraph._base_modules` (see `PyiModuleGraph._analyze_base_modules`).
+        base_modules = set(node.identifier for node in self.graph._base_modules)
+        base_modules_toc = []
+
         pycs_dir = os.path.join(CONF['workpath'], 'localpycs')
         optim_level = self.optimize  # We could extend this with per-module settings, similar to `collect_mode`.
         for name, src_path, typecode in pure_pymodules_toc:
             assert typecode == 'PYMODULE'
             collect_mode = _get_module_collection_mode(self.graph._module_collection_mode, name, self.noarchive)
 
-            # Collect byte-compiled .pyc into PYZ archive. Embed optimization level into typecode.
+            # Collect byte-compiled .pyc into PYZ archive or base_library.zip. Embed optimization level into typecode.
             if _ModuleCollectionMode.PYZ in collect_mode:
                 optim_typecode = {0: 'PYMODULE', 1: 'PYMODULE-1', 2: 'PYMODULE-2'}[optim_level]
-                self.pure.append((name, src_path, optim_typecode))
+                toc_entry = (name, src_path, optim_typecode)
+                if name in base_modules:
+                    base_modules_toc.append(toc_entry)
+                else:
+                    self.pure.append(toc_entry)
 
             # Pure namespace packages have no source path, and cannot be collected as external data file.
             if src_path in (None, '-'):
@@ -920,6 +920,16 @@ class Analysis(Target):
                 )
 
                 self.datas.append((dest_path, obj_path, "DATA"))
+
+        # Construct base_library.zip, if applicable (the only scenario where it is not is if we are building with
+        # noarchive mode). Always remove the file before the build.
+        base_library_zip = os.path.join(CONF['workpath'], 'base_library.zip')
+        if os.path.exists(base_library_zip):
+            os.remove(base_library_zip)
+        if base_modules_toc:
+            logger.info('Creating %s...', os.path.basename(base_library_zip))
+            create_base_library_zip(base_library_zip, base_modules_toc, code_cache)
+            self.datas.append((os.path.basename(base_library_zip), base_library_zip, 'DATA'))  # Bundle as data file.
 
         # Normalize list of pure-python modules (these will end up in PYZ archive, so use specific normalization).
         self.pure = normalize_pyz_toc(self.pure)

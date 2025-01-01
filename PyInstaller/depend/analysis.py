@@ -35,7 +35,6 @@ the old ImpTracker list could do.
 
 import ast
 import os
-import re
 import sys
 import traceback
 from collections import defaultdict
@@ -261,7 +260,7 @@ class PyiModuleGraph(ModuleGraph):
         """
         Analyze dependencies of the the modules in base_library.zip.
         """
-        logger.info('Analyzing base_library.zip ...')
+        logger.info('Analyzing modules for base_library.zip ...')
         required_mods = []
         # Collect submodules from required modules in base_library.zip.
         for m in PY3_BASE_MODULES:
@@ -586,19 +585,8 @@ class PyiModuleGraph(ModuleGraph):
         We use the ModuleGraph (really, ObjectGraph) flatten() method to scan all the nodes. This is patterned after
         ModuleGraph.report().
         """
-        # Construct regular expression for matching modules that should be excluded because they are bundled in
-        # base_library.zip.
-        #
-        # This expression matches the base module name, optionally followed by a period and then any number of
-        # characters. This matches the module name and the fully qualified names of any of its submodules.
-        regex_str = '(' + '|'.join(PY3_BASE_MODULES) + r')(\.|$)'
-        module_filter = re.compile(regex_str)
-
         toc = list()
         for node in self.iter_graph(start=self._top_script_node):
-            # Skip modules that are in base_library.zip.
-            if module_filter.match(node.identifier):
-                continue
             entry = self._node_to_toc(node, typecode)
             # Append the entry. We do not check for duplicates here; the TOC normalization is left to caller.
             # However, as entries are obtained from modulegraph, there should not be any duplicates at this stage.

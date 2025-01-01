@@ -802,3 +802,33 @@ def postprocess_binaries_toc_pywin32_anaconda(binaries):
         processed_binaries.append((dest_name, src_name, typecode))
 
     return processed_binaries
+
+
+def create_base_library_zip(filename, modules_toc, code_cache=None):
+    """
+    Create a zip archive with python modules that are needed during python interpreter initialization.
+    """
+    with zipfile.ZipFile(filename, 'w') as zf:
+        for name, src_path, typecode in modules_toc:
+            # Obtain code object from cache, or compile it.
+            code = None if code_cache is None else code_cache.get(name, None)
+            if code is None:
+                optim_level = {'PYMODULE': 0, 'PYMODULE-1': 1, 'PYMODULE-2': 2}[typecode]
+                code = get_code_object(name, src_path, optimize=optim_level)
+            # Determine destination name
+            dest_name = name.replace('.', os.sep)
+            # Special case: packages have an implied `__init__` filename that needs to be added.
+            basename, ext = os.path.splitext(os.path.basename(src_path))
+            if basename == '__init__':
+                dest_name += os.sep + '__init__'
+            dest_name += '.pyc'  # Always .pyc, regardless of optimization level.
+            # Write the .pyc module
+            with io.BytesIO() as fc:
+                fc.write(compat.BYTECODE_MAGIC)
+                fc.write(struct.pack('<I', 0b01))  # PEP-552: hash-based pyc, check_source=False
+                fc.write(b'\00' * 8)  # Match behavior of `building.utils.compile_pymodule`
+                code = strip_paths_in_code(code)  # Strip paths
+                marshal.dump(code, fc)
+                # Use a ZipInfo to set timestamp for deterministic build.
+                info = zipfile.ZipInfo(dest_name)
+                zf.writestr(info, fc.getvalue())

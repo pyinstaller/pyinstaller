@@ -13,79 +13,18 @@ Utility functions related to analyzing/bundling dependencies.
 """
 
 import ctypes.util
-import io
 import os
 import re
 import shutil
-import struct
-import zipfile
 from types import CodeType
-
-import marshal
 
 from PyInstaller import compat
 from PyInstaller import log as logging
 from PyInstaller.depend import bytecode
 from PyInstaller.depend.dylib import include_library
 from PyInstaller.exceptions import ExecCommandFailed
-from PyInstaller.lib.modulegraph import modulegraph
 
 logger = logging.getLogger(__name__)
-
-
-# TODO find out if modules from base_library.zip could be somehow bundled into the .exe file.
-def create_py3_base_library(libzip_filename, graph):
-    """
-    Package basic Python modules into .zip file. The .zip file with basic modules is necessary to have on PYTHONPATH
-    for initializing libpython3 in order to run the frozen executable with Python 3.
-    """
-    # Import strip_paths_in_code locally to avoid cyclic import between building.utils and depend.utils (this module);
-    # building.utils imports depend.bindepend, which in turn imports depend.utils.
-    from PyInstaller.building.utils import strip_paths_in_code
-
-    # Construct regular expression for matching modules that should be bundled into base_library.zip. Excluded are plain
-    # 'modules' or 'submodules.ANY_NAME'. The match has to be exact - start and end of string not substring.
-    regex_modules = '|'.join([rf'(^{x}$)' for x in compat.PY3_BASE_MODULES])
-    regex_submod = '|'.join([rf'(^{x}\..*$)' for x in compat.PY3_BASE_MODULES])
-    regex_str = regex_modules + '|' + regex_submod
-    module_filter = re.compile(regex_str)
-
-    try:
-        # Remove .zip from previous run.
-        if os.path.exists(libzip_filename):
-            os.remove(libzip_filename)
-        logger.debug('Adding python files to base_library.zip')
-        # Class zipfile.PyZipFile is not suitable for PyInstaller needs.
-        with zipfile.ZipFile(libzip_filename, mode='w') as zf:
-            zf.debug = 3
-            # Sort the graph nodes by identifier to ensure repeatable builds
-            graph_nodes = list(graph.iter_graph())
-            graph_nodes.sort(key=lambda item: item.identifier)
-            for mod in graph_nodes:
-                if type(mod) in (modulegraph.SourceModule, modulegraph.Package, modulegraph.CompiledModule):
-                    # Bundling just required modules.
-                    if module_filter.match(mod.identifier):
-                        # Name inside the archive. The ZIP format specification requires forward slashes as directory
-                        # separator.
-                        if type(mod) is modulegraph.Package:
-                            new_name = mod.identifier.replace('.', '/') + '/__init__.pyc'
-                        else:
-                            new_name = mod.identifier.replace('.', '/') + '.pyc'
-
-                        # Write code to a file. This code is similar to py_compile.compile().
-                        with io.BytesIO() as fc:
-                            fc.write(compat.BYTECODE_MAGIC)
-                            fc.write(struct.pack('<I', 0b01))  # PEP-552: hash-based pyc, check_source=False
-                            fc.write(b'\00' * 8)  # Match behavior of `building.utils.compile_pymodule`
-                            code = strip_paths_in_code(mod.code)  # Strip paths
-                            marshal.dump(code, fc)
-                            # Use a ZipInfo to set timestamp for deterministic build.
-                            info = zipfile.ZipInfo(new_name)
-                            zf.writestr(info, fc.getvalue())
-
-    except Exception:
-        logger.error('base_library.zip could not be created!')
-        raise
 
 
 def scan_code_for_ctypes(co):
