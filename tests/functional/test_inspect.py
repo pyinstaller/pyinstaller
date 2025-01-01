@@ -13,8 +13,85 @@
 
 import pathlib
 
+import pytest
+
 # Directory with testing modules used in some tests.
 _MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
+
+
+# Test that we can retrieve source for a module that was collected both into PYZ archive and as a source .py file.
+@pytest.mark.parametrize('module_name', ['mypackage', 'mypackage.mod_a'], ids=['package', 'submodule'])
+def test_inspect_getsource(pyi_builder, module_name, monkeypatch):
+    pathex = _MODULES_DIR / 'pyi_inspect_getsource'
+
+    # Patch Analysis to set module_collection_mode for test package.
+    import PyInstaller.building.build_main
+
+    class _Analysis(PyInstaller.building.build_main.Analysis):
+        def __init__(self, *args, **kwargs):
+            kwargs['module_collection_mode'] = {
+                'mypackage': 'pyz+py',
+            }
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', _Analysis)
+
+    pyi_builder.test_source(
+        f"""
+        import inspect
+
+        import {module_name}
+
+        # Retrieve source via module instance.
+        source = inspect.getsource({module_name})
+        print(source)
+
+        # Check that the source starts with expected comment
+        EXPECTED_COMMENT = "# {module_name}: "
+        if not source.startswith(EXPECTED_COMMENT):
+            raise ValueError(f"Source does not start with expected comment: {{EXPECTED_COMMENT}}")
+        """,
+        pyi_args=['--paths', str(pathex)],
+    )
+
+
+# Similar to `test_inspect_getsource`, except that we are retrieving source for a function within the module.
+def test_inspect_getsource_function(pyi_builder, monkeypatch):
+    pathex = _MODULES_DIR / 'pyi_inspect_getsource'
+
+    # Patch Analysis to set module_collection_mode for test package.
+    import PyInstaller.building.build_main
+
+    class _Analysis(PyInstaller.building.build_main.Analysis):
+        def __init__(self, *args, **kwargs):
+            kwargs['module_collection_mode'] = {
+                'mypackage': 'pyz+py',
+            }
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', _Analysis)
+
+    pyi_builder.test_source("""
+        import inspect
+
+        from mypackage.mod_b import test_function
+
+        # Retrieve source for function.
+        source = inspect.getsource(test_function)
+        print(source)
+
+        # Check that the source starts with function definition
+        EXPECTED_START = "def test_function():"
+        if not source.startswith(EXPECTED_START):
+            raise ValueError(f"Source does not start with function definition: {EXPECTED_START}")
+
+        # Check that the comment is preset.
+        EXPECTED_COMMENT = "# A comment."
+        if EXPECTED_COMMENT not in source:
+            raise ValueError(f"Source does not contain expected comment: {EXPECTED_COMMENT}")
+        """,
+        pyi_args=['--paths', str(pathex)],
+    )
 
 
 # Test inspect.getmodule() on stack-frames obtained by inspect.stack(). Reproduces the issue reported by #5963 while
