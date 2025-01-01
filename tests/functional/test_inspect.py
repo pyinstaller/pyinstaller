@@ -19,23 +19,25 @@ import pytest
 _MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
 
-# Test that we can retrieve source for a module that was collected both into PYZ archive and as a source .py file.
-@pytest.mark.parametrize('module_name', ['mypackage', 'mypackage.mod_a'], ids=['package', 'submodule'])
-def test_inspect_getsource(pyi_builder, module_name, monkeypatch):
-    pathex = _MODULES_DIR / 'pyi_inspect_getsource'
-
-    # Patch Analysis to set module_collection_mode for test package.
+def _patch_collection_mode(monkeypatch, module_name):
+    # Patch Analysis to set module_collection_mode for specified package/module.
     import PyInstaller.building.build_main
 
     class _Analysis(PyInstaller.building.build_main.Analysis):
         def __init__(self, *args, **kwargs):
             kwargs['module_collection_mode'] = {
-                'mypackage': 'pyz+py',
+                module_name: 'pyz+py',
             }
             super().__init__(*args, **kwargs)
 
     monkeypatch.setattr('PyInstaller.building.build_main.Analysis', _Analysis)
 
+
+# Test that we can retrieve source for a module that was collected both into PYZ archive and as a source .py file.
+@pytest.mark.parametrize('module_name', ['mypackage', 'mypackage.mod_a'], ids=['package', 'submodule'])
+def test_inspect_getsource(pyi_builder, module_name, monkeypatch):
+    pathex = _MODULES_DIR / 'pyi_inspect_getsource'
+    _patch_collection_mode(monkeypatch, 'mypackage')
     pyi_builder.test_source(
         f"""
         import inspect
@@ -55,23 +57,56 @@ def test_inspect_getsource(pyi_builder, module_name, monkeypatch):
     )
 
 
+@pytest.mark.xfail(reason="Not supported yet.")
+def test_inspect_getsource_class_from_base_library_module(pyi_builder, monkeypatch):
+    _patch_collection_mode(monkeypatch, 'enum')
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+        import enum
+        import inspect
+
+        # Ensure that module is collected in `base_library.zip`; normalize separators before comparison.
+        BASE_LIBRARY_ZIP = os.path.normpath(os.path.join(sys._MEIPASS, 'base_library.zip'))
+        if not enum.__file__.startswith(BASE_LIBRARY_ZIP):
+            raise ValueError(f"The 'enum' module is not collected in base_library.zip: {enum.__file__}")
+
+        # Retrieve source via class (enum.Enum)
+        source = inspect.getsource(enum.Enum)
+        print(source)
+        """
+    )
+
+
+@pytest.mark.xfail(reason="Not supported yet.")
+def test_inspect_getsource_class_method_from_base_library_module(pyi_builder, monkeypatch):
+    _patch_collection_mode(monkeypatch, 'enum')
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+        import enum
+        import inspect
+
+        # Ensure that module is collected in `base_library.zip`; normalize separators before comparison.
+        BASE_LIBRARY_ZIP = os.path.normpath(os.path.join(sys._MEIPASS, 'base_library.zip'))
+        if not enum.__file__.startswith(BASE_LIBRARY_ZIP):
+            raise ValueError(f"The 'enum' module is not collected in base_library.zip: {enum.__file__}")
+
+        # Retrieve source via class method (enum.Enum.__new__)
+        source = inspect.getsource(enum.Enum.__new__)
+        print(source)
+        """
+    )
+
+
 # Similar to `test_inspect_getsource`, except that we are retrieving source for a function within the module.
 def test_inspect_getsource_function(pyi_builder, monkeypatch):
     pathex = _MODULES_DIR / 'pyi_inspect_getsource'
-
-    # Patch Analysis to set module_collection_mode for test package.
-    import PyInstaller.building.build_main
-
-    class _Analysis(PyInstaller.building.build_main.Analysis):
-        def __init__(self, *args, **kwargs):
-            kwargs['module_collection_mode'] = {
-                'mypackage': 'pyz+py',
-            }
-            super().__init__(*args, **kwargs)
-
-    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', _Analysis)
-
-    pyi_builder.test_source("""
+    _patch_collection_mode(monkeypatch, 'mypackage')
+    pyi_builder.test_source(
+        """
         import inspect
 
         from mypackage.mod_b import test_function
