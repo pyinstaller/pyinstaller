@@ -650,6 +650,10 @@ def install():
         trace("PyInstaller: zipimporter hook not found in sys.path_hooks! Prepending our finder hook to the list.")
         sys.path_hooks.insert(0, PyiFrozenFinder.path_hook)
 
+    # Monkey-patch `zipimporter.get_source` to allow loading out-of-zip source .py files for modules that are
+    # in `base_library.zip`.
+    _patch_zipimporter_get_source()
+
     # Python might have already created a `FileFinder` for `sys._MEIPASS`. Remove the entry from path importer cache,
     # so that next loading attempt creates `PyiFrozenFinder` instead. This could probably be avoided altogether if
     # we refrained from adding `sys._MEIPASS` to `sys.path` until our importer hooks is in place.
@@ -712,3 +716,46 @@ def _fixup_frozen_stdlib():
         # None in python.
         if loader_state.filename is None and orig_name != 'importlib._bootstrap':
             loader_state.filename = filename
+
+
+# Monkey-patch the `get_source` implementation of python's `zipimport.zipimporter` with our custom implementation that
+# looks up for source files in top-level application directory instead of within the zip file. This allows us to collect
+# source .py files for modules that are collected in the `base_library.zip` in the same way as for modules in the PYZ
+# archive.
+def _patch_zipimporter_get_source():
+    import zipimport
+
+    _orig_get_source = zipimport.zipimporter.get_source
+
+    def _get_source(self, fullname):
+        # Call original implementation first, in case we are dealing with a zip file other than `base_library.zip` (or
+        # if the source .py file is actually in there, for whatever reason). This also implicitly validates the module
+        # name, as it raises exception if module does not exist and returns None if module exists but the source code
+        # is not present in the archive.
+        source = _orig_get_source(self, fullname)
+        if source is not None:
+            return source
+
+        # Our override should apply only to `base_library.zip`.
+        if os.path.basename(self.archive) != 'base_library.zip':
+            return None
+
+        # Translate module/package name into .py filename in the top-level application directory.
+        if self.is_package(fullname):
+            filename = os.path.join(*fullname.split('.'), '__init__.py')
+        else:
+            filename = os.path.join(*fullname.split('.')) + '.py'
+        filename = os.path.join(_RESOLVED_TOP_LEVEL_DIRECTORY, filename)
+
+        try:
+            # Read in binary mode, then decode
+            with open(filename, 'rb') as fp:
+                source_bytes = fp.read()
+            return _decode_source(source_bytes)
+        except FileNotFoundError:
+            pass
+
+        # Source code is unavailable.
+        return None
+
+    zipimport.zipimporter.get_source = _get_source

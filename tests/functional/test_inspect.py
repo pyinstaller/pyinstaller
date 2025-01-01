@@ -57,7 +57,6 @@ def test_inspect_getsource(pyi_builder, module_name, monkeypatch):
     )
 
 
-@pytest.mark.xfail(reason="Not supported yet.")
 def test_inspect_getsource_class_from_base_library_module(pyi_builder, monkeypatch):
     _patch_collection_mode(monkeypatch, 'enum')
     pyi_builder.test_source(
@@ -79,7 +78,6 @@ def test_inspect_getsource_class_from_base_library_module(pyi_builder, monkeypat
     )
 
 
-@pytest.mark.xfail(reason="Not supported yet.")
 def test_inspect_getsource_class_method_from_base_library_module(pyi_builder, monkeypatch):
     _patch_collection_mode(monkeypatch, 'enum')
     pyi_builder.test_source(

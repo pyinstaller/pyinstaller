@@ -1,0 +1,8 @@
+Extend the ``module_collection_mode`` setting from :issue:`6945` to also
+apply to modules collected into ``base_library.zip`` archive. Implement
+discovery of source .py files for modules in ``base_library.zip`` at
+run-time. This allows collection and discovery of source .py files for
+modules in ``base_library.zip``, which might be required by frameworks
+that perform aggressive recursive introspection all way down to standard
+library modules (for example, ``torch`` JIT in combination with certain
+model implementations).
