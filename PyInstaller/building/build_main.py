@@ -889,9 +889,16 @@ class Analysis(Target):
 
             # Collect source .py file as external data file
             if _ModuleCollectionMode.PY in collect_mode:
-                dest_path = name.replace('.', os.sep)
-                # Special case: packages have an implied `__init__` filename that needs to be added.
                 basename, ext = os.path.splitext(os.path.basename(src_path))
+                # If the module is available only as a byte-compiled .pyc, we cannot collect its source.
+                if ext.lower() == '.pyc':
+                    logger.warning(
+                        'Cannot collect source .py file for module %r - module is available only as .pyc: %r',
+                        name,
+                        src_path,
+                    )
+                    continue
+                dest_path = name.replace('.', os.sep)
                 if basename == '__init__':
                     dest_path += os.sep + '__init__' + ext
                 else:
@@ -900,9 +907,8 @@ class Analysis(Target):
 
             # Collect byte-compiled .pyc file as external data file
             if _ModuleCollectionMode.PYC in collect_mode:
-                dest_path = name.replace('.', os.sep)
-                # Special case: packages have an implied `__init__` filename that needs to be added.
                 basename, ext = os.path.splitext(os.path.basename(src_path))
+                dest_path = name.replace('.', os.sep)
                 if basename == '__init__':
                     dest_path += os.sep + '__init__'
                 # Append the extension for the compiled result. In python 3.5 (PEP-488) .pyo files were replaced by
