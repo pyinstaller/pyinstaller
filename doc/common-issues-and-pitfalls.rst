@@ -122,7 +122,7 @@ sub-sections.
 Linux and Unix-like OSes
 ------------------------------
 
-On POSIX systems (with exception of macOS - see its dedicated sub-section),
+On POSIX systems (with exception of macOS and Cygwin - see their dedicated sub-sections),
 the library search path is modified via the ``LD_LIBRARY_PATH`` environment
 variable (``LIBPATH`` on AIX).
 
@@ -195,6 +195,21 @@ the external program.
     locations that are typically in ``PATH`` when running a Terminal
     session (e.g., ``/usr/local/bin``, ``/opt/homebrew/bin``) will not
     be visible to the app, unless referenced by their full path.
+
+Cygwin
+------
+
+Under Cygwin, the ``LD_LIBRARY_PATH`` environment variable is used by
+``dlopen()`` when trying to resolve a library that was given only by a
+basename (without path), while the linked dependencies of binaries and
+loaded DLLs are resolved by Windows loader, whose search path is controlled
+by the `SetDllDirectoryW <https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setdlldirectoryw>`_
+Win32 API function.
+
+The PyInstaller's bootloader sets the library search path to the top-level
+application directory (i.e., the path that is also available in ``sys._MEIPASS``)
+using *both mechanisms*; therefore, both Linux-specific and Windows-specific
+considerations from earlier sub-sections apply.
 
 
 .. _multiprocessing:

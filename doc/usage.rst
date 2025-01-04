@@ -764,6 +764,63 @@ When working with a 64-bit Python executable proceed as follows::
     $ pyinstaller <your arguments>
 
 
+.. _Platform-specific Notes - Cygwin:
+
+Cygwin
+------
+
+Cygwin-based Frozen Applications and ``cygwin1.dll``
+====================================================
+
+Under Cygwin, the PyInstaller's bootloader executable (and therefore the
+frozen application's executable) ends up being dynamically linked against
+the ``cygwin1.dll``. As noted under `Q 6.14 of the Cygwin's FAQ
+<https://www.cygwin.com/faq.html#faq.programming.static-linking>`_,
+the Cygwin library cannot be statically linked into an executable in
+order to obtain an independent, self-contained executable.
+
+This means that at run-time, the ``cygwin1.dll`` needs to be available
+to the frozen application's executable for it to be able to launch.
+Depending on the deployment scenario, this means that it needs to be
+either available in the environment (i.e., the environment's search path)
+or a copy of the DLL needs to be available *next to the executable*.
+
+On the other hand, Cygwin does not permit more than one copy of
+``cygwin1.dll``; or rather, it requires multiple copies of the DLL
+to be strictly separated, as each instance constitutes its own Cygwin
+installation/environment (see `Q 4.20 of the Cygwin FAQ
+<https://www.cygwin.com/faq.html#faq.using.multiple-copies>`_).
+Trying to run an executable with an adjacent copy of the DLL from an
+existing Cygwin environment will likely result in the application crashing.
+
+In practice, this means that if you want to create a frozen application
+that will run in an existing Cygwin environment, the application
+should not bundle a copy of ``cygwin1.dll``. On the other hand, if you
+want to create a frozen application that will run outside of a Cygwin
+environment (i.e., a "stand-alone" application that runs directly under
+Windows), the application will require a copy of ``cygwin1.dll`` -- and
+that copy needs to be placed *next to the program's executable*, regardless
+of whether ``onedir`` or ``onefile`` build mode is used.
+
+As PyInstaller cannot guess the deployment mode that you are pursuing,
+it makes no attempt to collect ``cygwin1.dll``. So if you want your
+application to run outside of an externally-provided Cygwin environment,
+you need to place a copy of ``cygwin1.dll`` next to the program's
+executable and distribute them together.
+
+.. note::
+    If you plan to create a "stand-alone" Cygwin-based frozen application
+    (i.e., distribute ``cygwin1.dll`` along with the executable), you will
+    likely want to build the bootloader with statically linked ``zlib``
+    library, in order to avoid a run-time dependency on ``cygz.dll``.
+
+    You can do so by passing ``--static-zlib`` option to ``waf`` when
+    manually building the bootloader before installing PyInstaller
+    from source, or by adding the option to ``PYINSTALLER_BOOTLOADER_WAF_ARGS``
+    environment variable if installing directly via ``pip install``.
+    For details, see :ref:`building the bootloader`.
+
+
 .. include:: _common_definitions.txt
 
 .. Emacs config:

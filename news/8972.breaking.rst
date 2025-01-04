@@ -1,4 +1,5 @@
 (Cygwin) PyInstaller does not attempt to collect ``cygwin1.dll`` anymore.
 If you want to create "stand-alone" Cygwin-based frozen application, you
 need to place a copy of the DLL next to the frozen application's
-executable, and distribute them together.
+executable, and distribute them together. See :ref:`Cygwin-specific section
+of Platform-specific Notes <Platform-specific Notes - Cygwin>` for details.

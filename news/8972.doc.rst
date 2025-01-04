@@ -1,0 +1,2 @@
+Add notes about Cygwin and ``cygwin1.dll`` under new :ref:`Cygwin-specific
+section of Platform-specific Notes <Platform-specific Notes - Cygwin>`.
