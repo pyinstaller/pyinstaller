@@ -197,26 +197,26 @@ jobs:
         run: cd bootloader && python waf --tests all
 
       - name: Download dependencies
-        run: pip download --dest=dist .[completion] && rm -f dist/pyinstaller-*.whl
         shell: bash
+        run: python -m pip download --dest=dist .[completion] && rm -f dist/pyinstaller-*.whl
 
       - name: Build wheels
         run: sh release/build-wheels
 
       - name: Install PyInstaller
-        run: pip install --no-index --find-links=dist pyinstaller[completion]
+        run: python -m pip install --no-index --find-links=dist pyinstaller[completion]
 
       - name: Check pyinstaller --help
         run: python -m PyInstaller -h
 
       - name: Install test dependencies (base tools)
         run: |
-          pip install --progress-bar=off --upgrade --requirement tests/requirements-base.txt
+          python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-base.txt
 
       - name: Install test dependencies (tools and libraries)
         if: ${{ !endsWith(matrix.python-version, '-dev') }}
         run: |
-          pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
+          python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
 
       - name: Set up extra environment variables (non-Windows)
         if: ${{ !startsWith(matrix.os, 'windows') }}
@@ -292,7 +292,7 @@ jobs:
       # Install and test PyInstaller Hook Sample, to ensure that tests declared in
       # entry-points are discovered.
       - name: Install hooksample
-        run: pip install "https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip"
+        run: python -m pip install "https://github.com/pyinstaller/hooksample/archive/v4.0rc1.zip"
 
       # Augment _pyinstaller_hooks_contrib with bogus hooks that conflict with the hooks provided by hooksample.
       # Due to (implicit) hook priority, the 3rd-party hooks should be chosen over _pyinstaller_hooks_contrib
@@ -349,7 +349,7 @@ jobs:
       - name: Create sdist
         run: |
           git clean -xfdq .
-          pip install build
+          python -m pip install build
           python -m build --sdist --outdir dist
           docker build --target=wheel-factory -t bar -f alpine.dockerfile .
 
@@ -357,7 +357,7 @@ jobs:
         run: |
           sdist="$(ls dist)"
           docker run -v "$PWD/dist:/io" bar ash -c "
-            pip install /io/$sdist
+            python -m pip install /io/$sdist
             echo 'print(1 + 1)' > test.py
             pyinstaller test.py
             ./dist/test/test
@@ -417,7 +417,7 @@ jobs:
           cd ..
 
           # Install PyInstaller.
-          pip install --progress-bar=off .[completion]
+          python -m pip install --progress-bar=off .[completion]
 
           # Make sure the help options print.
           python -m PyInstaller -h
