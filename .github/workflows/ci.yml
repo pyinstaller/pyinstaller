@@ -55,7 +55,8 @@ jobs:
             os: 'macos-13'
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout PyInstaller code
+        uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -325,12 +326,14 @@ jobs:
   test-alpine:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.x
-      - run: docker build -f alpine.dockerfile -t foo .
-      - run: >
+      - name: Checkout PyInstaller code
+        uses: actions/checkout@v4
+
+      - name: Build container
+        run: docker build -f alpine.dockerfile -t foo .
+
+      - name: Run tests in container
+        run: >
           docker run
           foo
           pytest
@@ -338,12 +341,20 @@ jobs:
 
       # Verify that installing from sdist works. This is mostly just a verification that the MANIFEST.in contains
       # all the extras needed to compile the bootloader.
-      - run: |
+      - name: Setup Python for creating sdist
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+
+      - name: Create sdist
+        run: |
           git clean -xfdq .
           pip install build
           python -m build --sdist --outdir dist
           docker build --target=wheel-factory -t bar -f alpine.dockerfile .
-      - run: |
+
+      - name: Install and test PyInstaller installed from sdist
+        run: |
           sdist="$(ls dist)"
           docker run -v "$PWD/dist:/io" bar ash -c "
             pip install /io/$sdist
@@ -365,7 +376,8 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-      - uses: msys2/setup-msys2@v2
+      - name: Setup msys2 environment
+        uses: msys2/setup-msys2@v2
         with:
           update: true
           msystem: ${{matrix.sys}}
@@ -384,13 +396,16 @@ jobs:
             mingw-w64-${{matrix.env}}-python-pywin32
             mingw-w64-${{matrix.env}}-python-pillow
 
-      - if: matrix.env != 'i686'
+      - name: Install extra msys2 packages
+        if: matrix.env != 'i686'
         # numpy and pefile are unavailable for i686. Ignore numpy and install pefile via pip
         run: pacman -S --noconfirm mingw-w64-${{matrix.env}}-python-numpy mingw-w64-${{matrix.env}}-python-pefile
 
-      - uses: actions/checkout@v4
+      - name: Checkout PyInstaller code
+        uses: actions/checkout@v4
 
-      - run: |
+      - name: Show system and python information
+        run: |
           uname -a
           python --version
 
