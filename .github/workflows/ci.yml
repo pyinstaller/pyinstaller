@@ -392,14 +392,24 @@ jobs:
             mingw-w64-${{matrix.env}}-python-pytest
             mingw-w64-${{matrix.env}}-python-pytest-xdist
             mingw-w64-${{matrix.env}}-python-pytest-timeout
-            mingw-w64-${{matrix.env}}-python-psutil
             mingw-w64-${{matrix.env}}-python-pywin32
             mingw-w64-${{matrix.env}}-python-pillow
 
-      - name: Install extra msys2 packages
+      # Some msys2 python packages are not available for i686 anymore:
+      #  - numpy
+      #  - pefile
+      #  - psutil (removed with update to psutil 6.1.1; see https://github.com/msys2/MINGW-packages/commit/7f1c75b33a5aebb89899f99f5fa656c623eeb9ed)
+      # If running in 64-bit environment, install the said packages here.
+      # Otherwise, we will run tests without these packages (note that
+      # if not installed here, `pefile` will end up installed via `pip`
+      # as part of PyInstaller's dependencies).
+      - name: Install extra msys2 packages (64-bit only)
         if: matrix.env != 'i686'
-        # numpy and pefile are unavailable for i686. Ignore numpy and install pefile via pip
-        run: pacman -S --noconfirm mingw-w64-${{matrix.env}}-python-numpy mingw-w64-${{matrix.env}}-python-pefile
+        run: >
+          pacman -S --noconfirm
+          mingw-w64-${{matrix.env}}-python-numpy
+          mingw-w64-${{matrix.env}}-python-pefile
+          mingw-w64-${{matrix.env}}-python-psutil
 
       - name: Checkout PyInstaller code
         uses: actions/checkout@v4
