@@ -1207,6 +1207,8 @@ def build(spec, distpath, workpath, clean_build):
         raise SystemExit(f'Spec file "{spec}" not found!')
     exec(code, spec_namespace)
 
+    logger.info("Build complete! The results are available in: %s", CONF['distpath'])
+
 
 def __add_options(parser):
     parser.add_argument(
