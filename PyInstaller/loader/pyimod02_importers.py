@@ -70,17 +70,37 @@ def get_pyz_toc_tree():
         return _pyz_tree
 
 
-# Fully resolve sys._MEIPASS, so we can compare fully-resolved paths to it.
-_RESOLVED_TOP_LEVEL_DIRECTORY = os.path.realpath(sys._MEIPASS)
+# Populate list of unresolved (original) and resolved paths to top-level directory, used when trying to determine
+# relative path.
+_TOP_LEVEL_DIRECTORY_PATHS = []
+
+# Original sys._MEIPASS value; ensure separators are normalized (e.g., when using msys2 python).
+_TOP_LEVEL_DIRECTORY = os.path.normpath(sys._MEIPASS)
+_TOP_LEVEL_DIRECTORY_PATHS.append(_TOP_LEVEL_DIRECTORY)
+
+# Fully resolve sys._MEIPASS in case its location is symlinked at some level; for example, system temporary directory
+# (used by onefile builds) is usually a symbolic link under macOS.
+_RESOLVED_TOP_LEVEL_DIRECTORY = os.path.realpath(_TOP_LEVEL_DIRECTORY)
+if os.path.normcase(_RESOLVED_TOP_LEVEL_DIRECTORY) != os.path.normcase(_TOP_LEVEL_DIRECTORY):
+    _TOP_LEVEL_DIRECTORY_PATHS.append(_RESOLVED_TOP_LEVEL_DIRECTORY)
 
 # If we are running as macOS .app bundle, compute the alternative top-level directory path as well.
 _is_macos_app_bundle = False
-if sys.platform == 'darwin' and _RESOLVED_TOP_LEVEL_DIRECTORY.endswith("Contents/Frameworks"):
+if sys.platform == 'darwin' and _TOP_LEVEL_DIRECTORY.endswith("Contents/Frameworks"):
     _is_macos_app_bundle = True
+
     _ALTERNATIVE_TOP_LEVEL_DIRECTORY = os.path.join(
+        os.path.dirname(_TOP_LEVEL_DIRECTORY),
+        'Resources',
+    )
+    _TOP_LEVEL_DIRECTORY_PATHS.append(_ALTERNATIVE_TOP_LEVEL_DIRECTORY)
+
+    _RESOLVED_ALTERNATIVE_TOP_LEVEL_DIRECTORY = os.path.join(
         os.path.dirname(_RESOLVED_TOP_LEVEL_DIRECTORY),
         'Resources',
     )
+    if _RESOLVED_ALTERNATIVE_TOP_LEVEL_DIRECTORY != _ALTERNATIVE_TOP_LEVEL_DIRECTORY:
+        _TOP_LEVEL_DIRECTORY_PATHS.append(_RESOLVED_ALTERNATIVE_TOP_LEVEL_DIRECTORY)
 
 
 # Helper for computing PYZ prefix tree
@@ -126,33 +146,27 @@ class PyiFrozenFinder:
             trace(f"PyInstaller: hook failed: {e}")
             raise
 
-    @staticmethod
-    def _compute_relative_path(path, top_level):
-        try:
-            relative_path = os.path.relpath(path, top_level)
-        except ValueError as e:
-            raise ImportError("Path outside of top-level application directory") from e
-
-        if relative_path.startswith('..'):
-            raise ImportError("Path outside of top-level application directory")
-
-        return relative_path
-
     def __init__(self, path):
         self._path = path  # Store original path, as given.
         self._pyz_archive = pyz_archive
 
-        # Resolve path for comparison
-        resolved_path = os.path.realpath(path)
+        # Compute relative path to the top-level application directory. Do not try to resolve the path itself, because
+        # it might contain symbolic links in parts other than the prefix that corresponds to the top-level application
+        # directory. See #8994 for an example (files symlinked from a common directory outside of the top-level
+        # application directory). Instead, try to compute relative path w.r.t. the original and the resolved top-level
+        # application directory.
+        for top_level_path in _TOP_LEVEL_DIRECTORY_PATHS:
+            try:
+                relative_path = os.path.relpath(path, top_level_path)
+            except ValueError:
+                continue  # Failed to compute relative path w.r.t. the given top-level directory path.
 
-        # Compare resolved path to resolved top-level application directory.
-        try:
-            relative_path = self._compute_relative_path(resolved_path, _RESOLVED_TOP_LEVEL_DIRECTORY)
-        except Exception:
-            if _is_macos_app_bundle:
-                relative_path = self._compute_relative_path(resolved_path, _ALTERNATIVE_TOP_LEVEL_DIRECTORY)
-            else:
-                raise
+            if relative_path.startswith('..'):
+                continue  # Relative path points outside of the given top-level directory.
+
+            break  # Successful match; stop here.
+        else:
+            raise ImportError("Failed to determine relative path w.r.t. top-level application directory.")
 
         # Ensure that path does not point to a file on filesystem. Strictly speaking, we should be checking that the
         # given path is a valid directory, but that would need to check both PYZ and filesystem. So for now, limit the

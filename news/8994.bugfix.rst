@@ -1,0 +1,7 @@
+When constructing ``PyiFrozenFinder`` for the given path and trying
+to compute the path that is relative to the top-level application
+directory, do not fully resolve the given path. Instead, try computing
+relative path using both the original and the fully resolved top-level
+application directory path. This change prevents us from potentially
+resolving symbolic links in parts of the given path that do not belong
+to the top-level application directory.
