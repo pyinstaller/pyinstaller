@@ -1,0 +1,3 @@
+(AIX) Fix spurious run-time error in bootloader when no Wflags and/or no
+Xflags are specified via bootloader's run-time options (i.e., most of the
+time).

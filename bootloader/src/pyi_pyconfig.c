@@ -209,11 +209,14 @@ pyi_runtime_options_read(const struct PYI_CONTEXT *pyi_ctx)
 
     /* Collect Wflags and Xflags for pass-through */
 
-    /* Allocate - calloc should be safe to call with num = 0 (and returns
-     * a non-NULL address that should be safe to free) */
+    /* Allocate - calloc should be safe to call with num = 0.
+     * On most platforms, when called with num = 0, calloc returns a
+     * non-NULL address that should be safe to free. On AIX, though,
+     * it returns NULL (unless _LINUX_SOURCE_COMPAT is defined, but we
+     * cannot have that defined together with _ALL_SOURCE). */
     options->wflags = calloc(num_wflags, sizeof(wchar_t *));
     options->xflags = calloc(num_xflags, sizeof(wchar_t *));
-    if (options->wflags == NULL || options->xflags == NULL) {
+    if ((num_wflags && options->wflags == NULL) || (num_xflags && options->xflags == NULL)) {
         failed = 1;
         goto end;
     }
