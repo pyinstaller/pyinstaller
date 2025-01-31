@@ -831,3 +831,47 @@ based parser rather than rolling your own using :data:`sys.argv` then
             name='example',
             console=False,
         )
+
+
+.. _common_spec_definitions:
+
+Using shared code and configuration in spec files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have multiple spec files e.g. one for each platform you build a bundle 
+for, you may wish extract common code and configuration into a dedicated 
+file. As a spec file is actually executable Python code, you can import any
+Python module - standard modules as well as your own. However, the directory
+that contains spec file is, not automatically added to the Python search path.
+ Hence, you need to manually extend said search path using ``sys.path.insert``.
+
+
+.. code-block:: python
+
+    # CommonSpec.py
+
+    datas = [
+             ( 'src/README.txt', '.' ),
+             ( '/mygame/data', 'data' ),
+             ( '/mygame/sfx/*.mp3', 'sfx' )
+             ]
+
+.. code-block:: python
+
+    # example.spec
+
+    import sys
+    import os
+
+    # SPEC is defined by PyInstaller in the context in which the spec is executed
+    sys.path.insert(0, os.path.dirname(SPEC))
+
+    import CommonSpec
+
+    a = Analysis(
+        ['example.py'],
+        pathex=[],
+        binaries=[],
+        datas=CommonSpec.datas,
+    ...
+
