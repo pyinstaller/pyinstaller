@@ -833,28 +833,34 @@ based parser rather than rolling your own using :data:`sys.argv` then
         )
 
 
-.. _common_spec_definitions:
-
 Using shared code and configuration in spec files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you have multiple spec files e.g. one for each platform you build a bundle 
-for, you may wish extract common code and configuration into a dedicated 
-file. As a spec file is actually executable Python code, you can import any
-Python module - standard modules as well as your own. However, the directory
-that contains spec file is, not automatically added to the Python search path.
- Hence, you need to manually extend said search path using ``sys.path.insert``.
+The contents of the spec file are treated as Python executable code by
+PyInstaller; i.e., it is read and executed in a similar way as a regular
+Python script. Therefore, you can have your spec file import any Python
+module -- the ones from the standard library, 3rd party modules installed
+in ``site-packages`` directory, or your own modules.
 
+If you have multiple spec files (for example, one for each platform that
+you build the frozen application for), you may wish to extract common code
+and configuration into a dedicated python module that is placed next to
+the spec files. In such cases, it is important to note that the directory
+that contains the spec file is not automatically added to the Python
+search path; therefore, to make your shared module discoverable, you need
+to add the location of the spec file (stored by PyInstaller in the global
+``SPEC`` variable) to the list of search paths in :data:`sys.path` at the
+very top of the spec file:
 
 .. code-block:: python
 
     # CommonSpec.py
 
     datas = [
-             ( 'src/README.txt', '.' ),
-             ( '/mygame/data', 'data' ),
-             ( '/mygame/sfx/*.mp3', 'sfx' )
-             ]
+        ('src/README.txt', '.'),
+        ('/mygame/data', 'data'),
+        ('/mygame/sfx/*.mp3', 'sfx')
+    ]
 
 .. code-block:: python
 
@@ -875,3 +881,5 @@ that contains spec file is, not automatically added to the Python search path.
         datas=CommonSpec.datas,
     ...
 
+
+.. _common_spec_definitions:
