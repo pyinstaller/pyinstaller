@@ -854,7 +854,7 @@ very top of the spec file:
 
 .. code-block:: python
 
-    # CommonSpec.py
+    # common_spec.py
 
     datas = [
         ('src/README.txt', '.'),
@@ -872,13 +872,13 @@ very top of the spec file:
     # SPEC is defined by PyInstaller in the context in which the spec is executed
     sys.path.insert(0, os.path.dirname(SPEC))
 
-    import CommonSpec
+    import common_spec
 
     a = Analysis(
         ['example.py'],
         pathex=[],
         binaries=[],
-        datas=CommonSpec.datas,
+        datas=common_spec.datas,
     ...
 
 
