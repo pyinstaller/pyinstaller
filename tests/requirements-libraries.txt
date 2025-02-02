@@ -12,7 +12,7 @@
 # Working
 # -------
 # These packages work with no (known) issues.
-babel==2.16.0
+babel==2.17.0
 Django==5.1.5; python_version >= '3.10'
 future==1.0.0
 gevent==24.11.1; python_version >= '3.9'
