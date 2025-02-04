@@ -57,7 +57,8 @@ def _get_tcl_tk_info():
 
     return {
         "available": True,
-        "tkinter_extension_file": _tkinter.__file__,
+        # If `_tkinter` is a built-in (as opposed to an extension), it does not have a `__file__` attribute.
+        "tkinter_extension_file": getattr(_tkinter, '__file__', None),
         "tcl_version": _tkinter.TCL_VERSION,
         "tk_version": _tkinter.TK_VERSION,
         "tcl_threaded": tcl_threaded,
@@ -110,8 +111,8 @@ class TclTkInfo:
         self.tcl_module_dir = None
 
         self.is_macos_system_framework = False
-        self.tcl_shared_library = (None, None)
-        self.tk_shared_library = (None, None)
+        self.tcl_shared_library = None
+        self.tk_shared_library = None
 
         self.data_files = []
 
@@ -136,24 +137,28 @@ class TclTkInfo:
         self.tcl_version = tuple((int(x) for x in self.tcl_version.split(".")[:2]))
         self.tk_version = tuple((int(x) for x in self.tk_version.split(".")[:2]))
 
-        # Determine full path to Tcl and Tk shared libraries against which the _tkinter extension module is linked.
-        try:
-            (
-                self.tcl_shared_library,
-                self.tk_shared_library,
-            ) = self._find_tcl_tk_shared_libraries(self.tkinter_extension_file)
-        except Exception:
-            logger.warning("%s: failed to determine Tcl and Tk shared library location!", self, exc_info=True)
+        # Determine full path to Tcl and Tk shared libraries against which the `_tkinter` extension module is linked.
+        # This can only be done when `_tkinter` is in fact an extension, and not a built-in. In the latter case, the
+        # Tcl/Tk libraries are statically linked into python shared library, so there are no shared libraries for us
+        # to discover.
+        if self.tkinter_extension_file:
+            try:
+                (
+                    self.tcl_shared_library,
+                    self.tk_shared_library,
+                ) = self._find_tcl_tk_shared_libraries(self.tkinter_extension_file)
+            except Exception:
+                logger.warning("%s: failed to determine Tcl and Tk shared library location!", self, exc_info=True)
 
-        # macOS: check if _tkinter is linked against system-provided Tcl.framework and Tk.framework. This is the case
-        # with python3 from XCode tools (and was the case with very old homebrew python builds). In such cases, we
-        # should not be collecting Tcl/Tk files.
-        if compat.is_darwin:
-            self.is_macos_system_framework = self._check_macos_system_framework(self.tcl_shared_library)
+            # macOS: check if _tkinter is linked against system-provided Tcl.framework and Tk.framework. This is the
+            # case with python3 from XCode tools (and was the case with very old homebrew python builds). In such cases,
+            # we should not be collecting Tcl/Tk files.
+            if compat.is_darwin:
+                self.is_macos_system_framework = self._check_macos_system_framework(self.tcl_shared_library)
 
-            # Emit a warning in the unlikely event that we are dealing with Teapot-distributed version of ActiveTcl.
-            if not self.is_macos_system_framework:
-                self._warn_if_using_activetcl_or_teapot(self.tcl_data_dir)
+                # Emit a warning in the unlikely event that we are dealing with Teapot-distributed version of ActiveTcl.
+                if not self.is_macos_system_framework:
+                    self._warn_if_using_activetcl_or_teapot(self.tcl_data_dir)
 
         # Infer location of Tk library/data directory. Ideally, we could infer this by running
         #

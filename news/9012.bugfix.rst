@@ -1,0 +1,9 @@
+Gracefully handle cases when ``_tkinter`` is a built-in instead of an
+extension module, and thus does not have a ``__file__`` attribute.
+Most notable example of this are `indygreg's python-build-standalone
+CPython builds <https://github.com/astral-sh/python-build-standalone>`_
+for macOS and Linux. This fixes collection of ``tkinter`` and associated
+Tcl/Tk resources when using such python builds. When trying to enable
+splash screen, a descriptive error is now raised, because splash screen
+requires shared Tcl/Tk libraries, while a built-in ``_tkinter`` seems to
+indicate that python was statically linked against Tcl/Tk libraries.

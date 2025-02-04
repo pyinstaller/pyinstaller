@@ -140,6 +140,7 @@ class Splash(Target):
             )
 
         # Check if the Tcl/Tk version is supported.
+        logger.info("Verifying Tcl/Tk compatibility with splash screen requirements")
         self._check_tcl_tk_compatibility()
 
         # Make image path relative to .spec file
@@ -396,6 +397,17 @@ class Splash(Target):
                 "The installed Tcl version is not threaded. PyInstaller only supports the splash screen "
                 "using threaded Tcl."
             )
+
+        # Ensure that Tcl and Tk shared libraries are available
+        if tcltk_info.tcl_shared_library is None or tcltk_info.tk_shared_library is None:
+            message = \
+                "Could not determine the path to Tcl and/or Tk shared library, which are required for splash screen."
+            if not tcltk_info.tkinter_extension_file:
+                message += (
+                    " The _tkinter module appears to be a built-in, which likely means that python was built with "
+                    "statically-linked Tcl/Tk libraries and is incompatible with splash screen."
+                )
+            raise SystemExit(message)
 
     def generate_script(self):
         """
