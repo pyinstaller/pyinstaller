@@ -1,0 +1,1 @@
+Add hook for ``PyQt6.QtStateMachine`` that was introduced in ``PyQt6`` v6.8.1.
