@@ -19,7 +19,7 @@ gevent==24.11.1; python_version >= '3.9'
 ipython==8.32.0; python_version >= '3.10'
 keyring==25.6.0; python_version >= '3.9'
 matplotlib==3.10.0; python_version >= '3.10'
-numpy==2.2.2; python_version >= '3.10'
+numpy==2.2.3; python_version >= '3.10'
 pandas==2.2.3; python_version >= '3.9'
 pygments==2.19.1
 PyGObject==3.50.0; sys_platform == 'linux' and python_version >= '3.9'
