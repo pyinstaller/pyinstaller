@@ -173,7 +173,9 @@ elif is_unix:
         f'libpython{_py_major}.{_py_minor}{_py_suffix}.so',
     }
 else:
-    raise SystemExit('Your platform is not yet supported. Please define constant PYDYLIB_NAMES for your platform.')
+    raise SystemExit(
+        'ERROR: Your platform is not yet supported. Please define constant PYDYLIB_NAMES for your platform.'
+    )
 
 del _py_major, _py_minor, _py_suffix
 
@@ -211,7 +213,7 @@ if is_ms_app_store:
     python_executable = os.path.join(base_prefix, os.path.basename(python_executable))
     if not os.path.exists(python_executable):
         raise SystemExit(
-            'PyInstaller cannot locate real python executable belonging to Python from Microsoft App Store!'
+            'ERROR: PyInstaller cannot locate real python executable belonging to Python from Microsoft App Store!'
         )
 
 # Bytecode magic value
@@ -243,7 +245,7 @@ if is_win:
             from win32ctypes.pywin32 import win32api  # noqa: F401, E402
         except ImportError as e:
             raise SystemExit(
-                'Could not import `pywintypes` or `win32api` from `win32ctypes.pywin32`.\n'
+                'ERROR: Could not import `pywintypes` or `win32api` from `win32ctypes.pywin32`.\n'
                 'Please make sure that `pywin32-ctypes` is installed and importable, for example:\n\n'
                 'pip install pywin32-ctypes\n'
             ) from e
@@ -397,7 +399,7 @@ def exec_command(
         print("Error running '%s':" % " ".join(cmdargs), file=sys.stderr)
         print(e, file=sys.stderr)
         print('--' * 20, file=sys.stderr)
-        raise ExecCommandFailed("Error: Executing command failed!") from e
+        raise ExecCommandFailed("ERROR: Executing command failed!") from e
     except subprocess.TimeoutExpired:
         proc.kill()
         raise
@@ -751,14 +753,14 @@ def check_requirements():
             continue
         remove = "conda remove" if is_conda else f'"{sys.executable}" -m pip uninstall {name}'
         raise SystemExit(
-            f"The '{name}' package is an obsolete backport of a standard library package and is incompatible with "
-            f"PyInstaller. Please remove this package (located in {dist.locate_file('')}) using\n    {remove}\n"
+            f"ERROR: The '{name}' package is an obsolete backport of a standard library package and is incompatible "
+            f"with PyInstaller. Please remove this package (located in {dist.locate_file('')}) using\n    {remove}\n"
             "then try again."
         )
 
     # Bail out if binutils is not installed.
     if is_linux and shutil.which("objdump") is None:
         raise SystemExit(
-            "On Linux, objdump is required. It is typically provided by the 'binutils' package "
+            "ERROR: On Linux, objdump is required. It is typically provided by the 'binutils' package "
             "installable via your Linux distribution's package manager."
         )

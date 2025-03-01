@@ -21,7 +21,7 @@ def get_windows_dir():
     """
     windir = compat.win32api.GetWindowsDirectory()
     if not windir:
-        raise SystemExit("Error: Cannot determine Windows directory!")
+        raise SystemExit("ERROR: Cannot determine Windows directory!")
     return windir
 
 

@@ -1339,8 +1339,8 @@ def ensure_single_qt_bindings_package(qt_bindings):
     elif qt_bindings != seen_qt_bindings:
         # Raise SystemExit to abort build process
         raise SystemExit(
-            "Aborting build process due to attempt to collect multiple Qt bindings packages: attempting to run hook "
-            f"for {qt_bindings!r}, while hook for {seen_qt_bindings!r} has already been run! PyInstaller does not "
+            "ERROR: Aborting build process due to attempt to collect multiple Qt bindings packages: attempting to run "
+            f"hook for {qt_bindings!r}, while hook for {seen_qt_bindings!r} has already been run! PyInstaller does not "
             "support multiple Qt bindings packages in a frozen application - either ensure that the build environment "
             "has only one Qt bindings package installed, or exclude the extraneous bindings packages via the module "
             "exclusion mechanism (--exclude command-line option, or excludes list in the spec file)."

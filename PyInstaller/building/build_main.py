@@ -481,7 +481,7 @@ class Analysis(Target):
             # Normalize script path.
             script = os.path.normpath(script)
             if not os.path.exists(script):
-                raise SystemExit("script '%s' not found" % script)
+                raise SystemExit("ERROR: script '%s' not found" % script)
             self.inputs.append(script)
 
         # Django hook requires this variable to find the script manage.py.
@@ -517,7 +517,7 @@ class Analysis(Target):
         for modnm in self.hiddenimports:
             if re.search(r"[\\/]", modnm):
                 raise SystemExit(
-                    f"Error: Invalid hiddenimport '{modnm}'. Hidden imports should be importable module names – not "
+                    f"ERROR: Invalid hiddenimport '{modnm}'. Hidden imports should be importable module names – not "
                     "file paths. i.e. use --hiddenimport=foo.bar instead of --hiddenimport=.../site-packages/foo/bar.py"
                 )
 
@@ -1204,7 +1204,7 @@ def build(spec, distpath, workpath, clean_build):
             # ... then let Python determine the encoding, since ``compile`` accepts byte strings.
             code = compile(f.read(), spec, 'exec')
     except FileNotFoundError:
-        raise SystemExit(f'Spec file "{spec}" not found!')
+        raise SystemExit(f'ERROR: Spec file "{spec}" not found!')
     exec(code, spec_namespace)
 
     logger.info("Build complete! The results are available in: %s", CONF['distpath'])

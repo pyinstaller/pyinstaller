@@ -47,7 +47,7 @@ def run():
         from PyInstaller.utils.win32 import versioninfo
         info = versioninfo.read_version_info_from_executable(args.exe_file)
         if not info:
-            raise SystemExit("Error: VersionInfo resource not found in exe")
+            raise SystemExit("ERROR: VersionInfo resource not found in exe")
         with codecs.open(args.out_filename, 'w', 'utf-8') as fp:
             fp.write(str(info))
         print(f"Version info written to: {args.out_filename!r}")

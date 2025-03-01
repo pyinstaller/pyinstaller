@@ -17,7 +17,7 @@ if pyside6_library_info.version is not None:
     # Qt6 prior to 6.2.2 contains a bug that makes it incompatible with the way PyInstaller collects
     # QtWebEngine shared libraries and resources. So exit here and now instead of producing a defunct build.
     if pyside6_library_info.version < [6, 2, 2]:
-        raise SystemExit("Error: PyInstaller's QtWebEngine support requires Qt6 6.2.2 or later!")
+        raise SystemExit("ERROR: PyInstaller's QtWebEngine support requires Qt6 6.2.2 or later!")
 
     hiddenimports, binaries, datas = add_qt6_dependencies(__file__)
 

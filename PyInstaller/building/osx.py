@@ -613,7 +613,7 @@ class BUNDLE(Target):
                 os.makedirs(dest_dir, exist_ok=True)
             except FileExistsError:
                 raise SystemExit(
-                    f"Pyinstaller needs to create a directory at {dest_dir!r}, "
+                    f"ERROR: Pyinstaller needs to create a directory at {dest_dir!r}, "
                     "but there already exists a file at that path!"
                 )
             # Copy extensions and binaries from cache. This ensures that these files undergo additional binary

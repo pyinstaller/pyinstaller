@@ -102,7 +102,7 @@ class IconFile:
         except OSError:
             # The icon file can't be opened for some reason. Stop the
             # program with an informative message.
-            raise SystemExit(f'Unable to open icon file {self.path}!')
+            raise SystemExit(f'ERROR: Unable to open icon file {self.path}!')
         with file:
             self.entries = []
             self.images = []
@@ -225,7 +225,7 @@ def CopyIcons(dstpath, srcpath):
     except pywintypes.error as W32E:
         # We could continue with no icon (i.e., just return), but it seems best to terminate the build with a message.
         raise SystemExit(
-            "Unable to load icon file {}\n    {} (Error code {})".format(srcpath, W32E.strerror, W32E.winerror)
+            "ERROR: Unable to load icon file {}\n    {} (Error code {})".format(srcpath, W32E.strerror, W32E.winerror)
         )
     hdst = win32api.BeginUpdateResource(dstpath, 0)
     if index is None:

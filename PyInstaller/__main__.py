@@ -126,7 +126,7 @@ class _PyiArgumentParser(argparse.ArgumentParser):
             bad = sep.join(options.values())
             if errmsg:
                 errmsg = "\n" + errmsg
-            raise SystemExit(f"option(s) not allowed:{sep}{bad}{errmsg}")
+            raise SystemExit(f"ERROR: option(s) not allowed:{sep}{bad}{errmsg}")
 
 
 def generate_parser() -> _PyiArgumentParser:
@@ -208,7 +208,7 @@ def run(pyi_args: list | None = None, pyi_config: dict | None = None):
             # to running the command).
             for filename in args.filenames:
                 if not os.path.isfile(filename):
-                    raise SystemExit(f"Script file {filename!r} does not exist.")
+                    raise SystemExit(f"ERROR: Script file {filename!r} does not exist.")
             spec_file = run_makespec(**vars(args))
 
         sys.argv = [spec_file, *spec_args]
@@ -311,7 +311,7 @@ def check_unsafe_privileges():
 
         if inside_win_dir:
             raise SystemExit(
-                f"Error: Do not run pyinstaller from {cwd}. cd to where your code is and run pyinstaller from there. "
+                f"ERROR: Do not run pyinstaller from {cwd}. cd to where your code is and run pyinstaller from there. "
                 "Hint: You can open a terminal where your code is by going to the parent folder in Windows file "
                 "explorer and typing cmd into the address bar."
             )

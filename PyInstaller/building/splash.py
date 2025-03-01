@@ -130,13 +130,13 @@ class Splash(Target):
         # Splash screen is not supported on macOS. It operates in a secondary thread and macOS disallows UI operations
         # in any thread other than main.
         if is_darwin:
-            raise SystemExit("Splash screen is not supported on macOS.")
+            raise SystemExit("ERROR: Splash screen is not supported on macOS.")
 
         # Ensure tkinter (and thus Tcl/Tk) is available.
         if not tcltk_info.available:
             raise SystemExit(
-                "Your platform does not support the splash screen feature, since tkinter is not installed. Please "
-                "install tkinter and try again."
+                "ERROR: Your platform does not support the splash screen feature, since tkinter is not installed. "
+                "Please install tkinter and try again."
             )
 
         # Check if the Tcl/Tk version is supported.
@@ -374,7 +374,9 @@ class Splash(Target):
 
         if is_darwin and tcltk_info.is_macos_system_framework:
             # Outdated Tcl/Tk 8.5 system framework is not supported.
-            raise SystemExit("The splash screen feature does not support macOS system framework version of Tcl/Tk.")
+            raise SystemExit(
+                "ERROR: The splash screen feature does not support macOS system framework version of Tcl/Tk."
+            )
 
         # Test if tcl/tk version is supported
         if tcl_version < (8, 6) or tk_version < (8, 6):
@@ -394,14 +396,15 @@ class Splash(Target):
         if not tcltk_info.tcl_threaded:
             # This is a feature breaking problem, so exit.
             raise SystemExit(
-                "The installed Tcl version is not threaded. PyInstaller only supports the splash screen "
+                "ERROR: The installed Tcl version is not threaded. PyInstaller only supports the splash screen "
                 "using threaded Tcl."
             )
 
         # Ensure that Tcl and Tk shared libraries are available
         if tcltk_info.tcl_shared_library is None or tcltk_info.tk_shared_library is None:
             message = \
-                "Could not determine the path to Tcl and/or Tk shared library, which are required for splash screen."
+                "ERROR: Could not determine the path to Tcl and/or Tk shared library, " \
+                "which are required for splash screen."
             if not tcltk_info.tkinter_extension_file:
                 message += (
                     " The _tkinter module appears to be a built-in, which likely means that python was built with "

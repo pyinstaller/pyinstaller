@@ -365,7 +365,7 @@ def _check_path_overlap(path):
         specerr += 1
     if specerr:
         raise SystemExit(
-            'Error: Please edit/recreate the specfile (%s) and set a different output name (e.g. "dist").' %
+            'ERROR: Please edit/recreate the specfile (%s) and set a different output name (e.g. "dist").' %
             CONF['spec']
         )
     return True
@@ -398,7 +398,7 @@ def _rmtree(path):
         )
     else:
         raise SystemExit(
-            'Error: The output directory "%s" is not empty. Please remove all its contents or use the -y option (remove'
+            'ERROR: The output directory "%s" is not empty. Please remove all its contents or use the -y option (remove'
             ' output directory without confirmation).' % path
         )
     if choice.strip().lower() == 'y':
@@ -492,7 +492,7 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
             src_root_paths = glob.glob(src_root_path_or_glob)
 
         if not src_root_paths:
-            raise SystemExit(f'Unable to find {src_root_path_or_glob!r} when adding binary and data files.')
+            raise SystemExit(f'ERROR: Unable to find {src_root_path_or_glob!r} when adding binary and data files.')
 
         for src_root_path in src_root_paths:
             if os.path.isfile(src_root_path):

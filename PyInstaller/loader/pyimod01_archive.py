@@ -121,7 +121,7 @@ class ZlibArchiveReader:
             # renamed, we cannot read from its embedded PYZ archive anymore. In such case, exit with informative
             # message.
             raise SystemExit(
-                f"{self._filename} appears to have been moved or deleted since this application was launched. "
+                f"ERROR: {self._filename} appears to have been moved or deleted since this application was launched. "
                 "Continouation from this state is impossible. Exiting now."
             )
 

@@ -498,8 +498,9 @@ class EXE(Target):
             self.contents_directory = None  # Re-enable old onedir layout without contents directory.
         elif self.contents_directory == ".." or "/" in self.contents_directory or "\\" in self.contents_directory:
             raise SystemExit(
-                f'Invalid value "{self.contents_directory}" passed to `--contents-directory` or `contents_directory`. '
-                'Exactly one directory level is required (or just "." to disable the contents directory).'
+                f'ERROR: Invalid value "{self.contents_directory}" passed to `--contents-directory` or '
+                '`contents_directory`. Exactly one directory level is required (or just "." to disable the '
+                'contents directory).'
             )
 
         if not kwargs.get('embed_manifest', True):
@@ -1149,7 +1150,7 @@ class COLLECT(Target):
             # Disallow collection outside of the dist directory.
             if os.pardir in os.path.normpath(dest_name).split(os.sep) or os.path.isabs(dest_name):
                 raise SystemExit(
-                    'Security-Alert: attempting to store file outside of the dist directory: %r. Aborting.' % dest_name
+                    'ERROR: attempting to store file outside of the dist directory: %r. Aborting.' % dest_name
                 )
             # Create parent directory structure, if necessary
             if typecode in ("EXECUTABLE", "PKG"):
@@ -1161,7 +1162,7 @@ class COLLECT(Target):
                 os.makedirs(dest_dir, exist_ok=True)
             except FileExistsError:
                 raise SystemExit(
-                    f"Pyinstaller needs to create a directory at {dest_dir!r}, "
+                    f"ERROR: Pyinstaller needs to create a directory at {dest_dir!r}, "
                     "but there already exists a file at that path!"
                 )
             if typecode in ('EXTENSION', 'BINARY'):

@@ -37,7 +37,7 @@ _env_level = os.environ.get("PYI_LOG_LEVEL", "INFO")
 try:
     level = LEVELS[_env_level.upper()]
 except KeyError:
-    raise SystemExit(f"Invalid PYI_LOG_LEVEL value '{_env_level}'. Should be one of {list(LEVELS)}.")
+    raise SystemExit(f"ERROR: Invalid PYI_LOG_LEVEL value '{_env_level}'. Should be one of {list(LEVELS)}.")
 logging.basicConfig(format=FORMAT, level=level)
 logger = getLogger('PyInstaller')
 
