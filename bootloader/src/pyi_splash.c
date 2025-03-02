@@ -177,13 +177,13 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
 int
 pyi_splash_start(struct SPLASH_CONTEXT *splash, const char *executable)
 {
-    PI_Tcl_MutexLock(&splash->context_mutex);
-
     /* Make sure shared libraries have been loaded and their symbols
      * bound. */
     if (!splash->dlls_fully_loaded) {
         return -1;
     }
+
+    PI_Tcl_MutexLock(&splash->context_mutex);
 
     /* This functions needs to be called before everything else is done
      * with Tcl, otherwise the behavior of Tcl is undefined. */
