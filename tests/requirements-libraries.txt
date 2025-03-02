@@ -16,7 +16,7 @@ babel==2.17.0
 Django==5.1.6; python_version >= '3.10'
 future==1.0.0
 gevent==24.11.1; python_version >= '3.9'
-ipython==9.0.0; python_version >= '3.10'
+ipython==9.0.0; python_version >= '3.11'
 keyring==25.6.0; python_version >= '3.9'
 matplotlib==3.10.1; python_version >= '3.10'
 numpy==2.2.3; python_version >= '3.10'
@@ -90,6 +90,7 @@ Pillow==11.1.0; python_version >= '3.9'
 # Python 3.10
 # -----------
 sphinx==8.1.3; python_version == '3.10'  # pyup: ignore
+ipython==8.32.0; python_version == '3.10' # pyup: ignore
 
 # Python 3.9
 # ----------
