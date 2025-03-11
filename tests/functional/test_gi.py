@@ -49,9 +49,25 @@ def test_gi_repository(pyi_builder, repository_name, version):
     # Test the importability of this subpackage.
     pyi_builder.test_source(
         f"""
+        import sys
+        import pathlib
+
         import gi
+
+        # Check that package/namespace can be imported
         gi.require_version('{repository_name}', '{version}')
         from gi.repository import {repository_name}
         print({repository_name})
+
+        # Check that the typelib is, in fact, loaded from the frozen application (instead of falling back to the copy
+        # that is installed on the system).
+        repo = gi.Repository.get_default()
+        typelib_path = repo.get_typelib_path('{repository_name}')
+        print("typelib path: ", typelib_path)
+
+        typelib_path = pathlib.Path(typelib_path).resolve()
+        application_path = pathlib.Path(sys._MEIPASS).resolve()
+        if application_path not in typelib_path.parents:
+            raise ValueError(f"Typelib {{str(typelib_path)!r}} is not loaded from frozen application's directory!")
         """
     )
