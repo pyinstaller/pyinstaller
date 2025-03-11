@@ -45,16 +45,38 @@ class GiModuleInfo:
         @isolated.decorate
         def _get_module_info(module, version):
             import gi
-            gi.require_version("GIRepository", "2.0")
+
+            # Ideally, we would use gi.Repository, which provides common abstraction for some of the functions we use in
+            # this codepath (e.g., `require`, `get_typelib_path`, `get_immediate_dependencies`). However, it lacks the
+            # `get_shared_library` function, which is why we are using "full" bindings via `gi.repository.GIRepository`.
+            #
+            # PyGObject 3.52.0 switched from girepository-1.0 to girepository-2.0, which means that GIRepository version
+            # has changed from 2.0 to 3.0 and some of the API has changed.
+            try:
+                gi.require_version("GIRepository", "3.0")
+                new_api = True
+            except ValueError:
+                gi.require_version("GIRepository", "2.0")
+                new_api = False
+
             from gi.repository import GIRepository
 
-            repo = GIRepository.Repository.get_default()
-            repo.require(module, version, GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
+            # The old API had `get_default` method to obtain global singleton object; it was removed in the new API,
+            # which requires creation of separate GIRepository instances.
+            if new_api:
+                repo = GIRepository.Repository()
+                repo.require(module, version, GIRepository.RepositoryLoadFlags.LAZY)
 
-            # Shared library/libraries
-            # Comma-separated list of paths to shared libraries, or None if none are associated. Convert to list.
-            sharedlibs = repo.get_shared_library(module)
-            sharedlibs = [lib.strip() for lib in sharedlibs.split(",")] if sharedlibs else []
+                # The new API returns the list of shared libraries.
+                sharedlibs = repo.get_shared_libraries(module)
+            else:
+                repo = GIRepository.Repository.get_default()
+                repo.require(module, version, GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
+
+                # Shared library/libraries
+                # Comma-separated list of paths to shared libraries, or None if none are associated. Convert to list.
+                sharedlibs = repo.get_shared_library(module)
+                sharedlibs = [lib.strip() for lib in sharedlibs.split(",")] if sharedlibs else []
 
             # Path to .typelib file
             typelib = repo.get_typelib_path(module)

@@ -1,0 +1,3 @@
+Update hook for ``PyGObject`` (``gi``) and associated helper code to
+support changes made in ``PyGObject`` v3.52 (switch from ``girepository-1.0``
+to ``girepository-2.0``).
