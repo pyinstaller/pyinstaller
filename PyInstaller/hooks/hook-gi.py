@@ -9,4 +9,18 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+from PyInstaller import compat
+from packaging.version import Version
+
+pygobject_version = Version(compat.importlib_metadata.version("pygobject")).release
+
 hiddenimports = ['gi._error', 'gi._option']
+
+# PyGObject 3.50.0 added support for `asyncio`, and attempts to import inside the `_gi` extension.
+if pygobject_version >= (3, 50, 0):
+    hiddenimports += ['asyncio']
+
+# PyGobject 3.52.0 added `gi._enum`, which needs to be added to hiddenimports due to being imported from the
+# `_gi` extension.
+if pygobject_version >= (3, 52, 0):
+    hiddenimports += ['gi._enum']
