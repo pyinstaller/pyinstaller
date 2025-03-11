@@ -394,6 +394,7 @@ jobs:
             mingw-w64-${{matrix.env}}-python-pytest-timeout
             mingw-w64-${{matrix.env}}-python-pywin32
             mingw-w64-${{matrix.env}}-python-pillow
+            mingw-w64-${{matrix.env}}-python-gobject
 
       # Some msys2 python packages are not available for i686 anymore:
       #  - numpy
