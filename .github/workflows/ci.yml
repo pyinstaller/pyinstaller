@@ -37,7 +37,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
-        os: ['windows-latest', 'ubuntu-22.04', 'macos-13', 'macos-14']
+        os: ['windows-latest', 'ubuntu-24.04', 'macos-13', 'macos-14']
         # Split macOS workflows between macos-13 (x86_64) and macos-14 (arm64)
         # runners to cover both architectures without running all combinations.
         exclude:
@@ -78,7 +78,8 @@ jobs:
             libopengl0 libegl1 \
             libpulse0 libpulse-mainloop-glib0 \
             gstreamer1.0-plugins-base libgstreamer-gl1.0-0 \
-            gir1.2-gtk-3.0 libgirepository1.0-dev \
+            gir1.2-gtk-3.0 libgirepository1.0-dev libgirepository-2.0-dev \
+            libcairo2-dev \
             libfuse2
 
       # The following locales are required by test_basic::test_user_preferred_locale
