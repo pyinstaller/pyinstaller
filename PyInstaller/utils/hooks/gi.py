@@ -65,13 +65,19 @@ class GiModuleInfo:
             # which requires creation of separate GIRepository instances.
             if new_api:
                 repo = GIRepository.Repository()
-                repo.require(module, version, GIRepository.RepositoryLoadFlags.LAZY)
+                try:
+                    repo.require(module, version, GIRepository.RepositoryLoadFlags.LAZY)
+                except ValueError:
+                    return None  # Module not available
 
                 # The new API returns the list of shared libraries.
                 sharedlibs = repo.get_shared_libraries(module)
             else:
                 repo = GIRepository.Repository.get_default()
-                repo.require(module, version, GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
+                try:
+                    repo.require(module, version, GIRepository.RepositoryLoadFlags.IREPOSITORY_LOAD_FLAG_LAZY)
+                except ValueError:
+                    return None  # Module not available
 
                 # Shared library/libraries
                 # Comma-separated list of paths to shared libraries, or None if none are associated. Convert to list.
@@ -97,13 +103,16 @@ class GiModuleInfo:
         # Try to query information; if this fails, mark module as unavailable.
         try:
             info = _get_module_info(module, self.version)
-            self.sharedlibs = info['sharedlibs']
-            self.typelib = info['typelib']
-            self.dependencies = info['dependencies']
-            self.available = True
+            if info is None:
+                logger.debug("GI module info %s %s not found.", module, self.version)
+            else:
+                logger.debug("GI module info %s %s found.", module, self.version)
+                self.sharedlibs = info['sharedlibs']
+                self.typelib = info['typelib']
+                self.dependencies = info['dependencies']
+                self.available = True
         except Exception as e:
-            logger.debug("Failed to query GI module %s %s: %s", module, self.version, e)
-            self.available = False
+            logger.warning("Failed to query GI module %s %s: %s", module, self.version, e)
 
     def get_libdir(self):
         """
