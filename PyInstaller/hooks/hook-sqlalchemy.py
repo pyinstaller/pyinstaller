@@ -13,7 +13,7 @@ import re
 import importlib.util
 
 from PyInstaller import isolated
-from PyInstaller.lib.modulegraph.modulegraph import SourceModule
+from PyInstaller.depend.modulegraph import ModuleType
 from PyInstaller.utils.hooks import check_requirement, collect_entry_point, logger
 
 datas = []
@@ -70,11 +70,11 @@ def hook(hook_api):
     hidden_imports_set = set()
     known_imports = set()
     for node in hook_api.module_graph.iter_graph(start=hook_api.module):
-        if isinstance(node, SourceModule) and node.identifier.startswith('sqlalchemy.'):
-            known_imports.add(node.identifier)
+        if node.module_type == ModuleType.PURE and node.ident.startswith('sqlalchemy.'):
+            known_imports.add(node.ident)
 
             # Read the source...
-            with open(node.filename, 'rb') as f:
+            with open(node.path, 'rb') as f:
                 source_code = f.read()
             source_code = importlib.util.decode_source(source_code)
 
