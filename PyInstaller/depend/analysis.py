@@ -35,8 +35,7 @@ the old ImpTracker list could do.
 
 import ast
 import os
-import sys
-import traceback
+import typing
 from collections import defaultdict
 from copy import deepcopy
 
@@ -50,8 +49,7 @@ from PyInstaller.compat import (
 from PyInstaller.depend import bytecode
 from PyInstaller.depend.imphook import AdditionalFilesCache, ModuleHookCache
 from PyInstaller.depend.imphookapi import (PreFindModulePathAPI, PreSafeImportModuleAPI)
-from PyInstaller.lib.modulegraph.find_modules import get_implies
-from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph, DEFAULT_IMPORT_LEVEL, ABSOLUTE_IMPORT_LEVEL, Package
+from PyInstaller.depend.modulegraph import ModuleGraph, ModuleType
 from PyInstaller.log import DEBUG, INFO, TRACE
 from PyInstaller.utils.hooks import collect_submodules, is_package
 
@@ -62,6 +60,10 @@ HOOK_PRIORITY_BUILTIN_HOOKS = -2000  # Built-in hooks. Lowest priority.
 HOOK_PRIORITY_CONTRIBUTED_HOOKS = -1000  # Hooks from pyinstaller-hooks-contrib package.
 HOOK_PRIORITY_UPSTREAM_HOOKS = 0  # Hooks provided by packages themselves, via entry-points.
 HOOK_PRIORITY_USER_HOOKS = 1000  # User-supplied hooks (command-line / spec file). Highest priority.
+
+if typing.TYPE_CHECKING:
+    from types import CodeType
+    from typing import Dict
 
 
 class PyiModuleGraph(ModuleGraph):
@@ -271,32 +273,6 @@ class PyiModuleGraph(ModuleGraph):
         # Initialize ModuleGraph.
         self._base_modules = [mod for req in required_mods for mod in self.import_hook(req)]
 
-    def add_script(self, pathname, caller=None):
-        """
-        Wrap the parent's 'run_script' method and create graph from the first script in the analysis, and save its
-        node to use as the "caller" node for all others. This gives a connected graph rather than a collection of
-        unrelated trees.
-        """
-        if self._top_script_node is None:
-            # Remember the node for the first script.
-            try:
-                self._top_script_node = super().add_script(pathname)
-            except SyntaxError:
-                print("\nSyntax error in", pathname, file=sys.stderr)
-                formatted_lines = traceback.format_exc().splitlines(True)
-                print(*formatted_lines[-4:], file=sys.stderr)
-                sys.exit(1)
-            # Create references from the top script to the base_modules in graph.
-            for node in self._base_modules:
-                self.add_edge(self._top_script_node, node)
-            # Return top-level script node.
-            return self._top_script_node
-        else:
-            if not caller:
-                # Defaults to as any additional script is called from the top-level script.
-                caller = self._top_script_node
-            return super().add_script(pathname, caller=caller)
-
     def process_post_graph_hooks(self, analysis):
         """
         For each imported module, run this module's post-graph hooks if any.
@@ -390,7 +366,7 @@ class PyiModuleGraph(ModuleGraph):
                 # integer indicating the relative level. We do not use equality comparison just in case we ever happen
                 # to get ABSOLUTE_OR_RELATIVE_IMPORT_LEVEL (-1), which is a remnant of python2 days.
                 if level > ABSOLUTE_IMPORT_LEVEL:
-                    if isinstance(source_module, Package):
+                    if source_module.module_type == ModuleType.PACKAGE:
                         # Package
                         base_module_name = source_module.identifier
                     else:
@@ -777,34 +753,30 @@ class PyiModuleGraph(ModuleGraph):
             # checking whether it is actually added by this (test-) script.
             self.add_edge(self._top_script_node, node)
 
-    def get_code_using(self, module: str) -> dict:
+    def get_code_using(self, module: str) -> "Dict[str, CodeType]":
         """
-        Find modules that import a given **module**.
+        Find modules that import a given module.
+
+        :param module: The module you're trying to find dependents for.
+        :returns: A dictionary mapping dependent module names to code types.
         """
         co_dict = {}
         pure_python_module_types = PURE_PYTHON_MODULE_TYPES | {
             'Script',
         }
-        node = self.find_node(module)
-        if node:
-            referrers = self.incoming(node)
-            for r in referrers:
-                # Under python 3.7 and earlier, if `module` is added to hidden imports, one of referrers ends up being
-                # None, causing #3825. Work around it.
-                if r is None:
-                    continue
-                # Ensure that modulegraph objects have 'code' attribute.
-                if type(r).__name__ not in pure_python_module_types:
-                    continue
-                identifier = r.identifier
-                if identifier == module or identifier.startswith(module + '.'):
+        node = self.get_module(module)
+        if node is not None:
+            dependents = self.dependents(node)
+            for dependent in dependents:
+                if dependent.ident == module or dependent.ident.startswith(module + '.'):
                     # Skip self references or references from `modules`'s own submodules.
                     continue
                 # The code object may be None if referrer ends up shadowed by eponymous directory that ends up treated
                 # as a namespace package. See #6873 for an example.
-                if r.code is None:
+                if dependent.code is None:
                     continue
-                co_dict[r.identifier] = r.code
+                co_dict[dependent.ident] = dependent.code
+
         return co_dict
 
     def metadata_required(self) -> set:
@@ -891,7 +863,7 @@ class PyiModuleGraph(ModuleGraph):
         # `node.identifier` might be an instance of `modulegraph.Alias`, hence explicit conversion to `str`.
         return [
             str(node.identifier) for node in self.iter_graph(start=self._top_script_node)
-            if type(node).__name__ == 'Package'
+            if node.module_type == ModuleType.PACKAGE
         ]
 
     def make_hook_binaries_toc(self) -> list:

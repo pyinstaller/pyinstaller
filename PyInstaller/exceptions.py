@@ -60,11 +60,3 @@ class PythonLibraryNotFoundError(SystemExit):
 class InvalidSrcDestTupleError(SystemExit):
     def __init__(self, src_dest, message):
         super().__init__(f"ERROR: Invalid (SRC, DEST_DIR) tuple: {src_dest!r}. {message}")
-
-
-class ImportlibMetadataError(SystemExit):
-    def __init__(self):
-        super().__init__(
-            "ERROR: PyInstaller requires importlib.metadata from python >= 3.10 stdlib or importlib_metadata from "
-            "importlib-metadata >= 4.6"
-        )
