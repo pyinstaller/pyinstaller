@@ -1,0 +1,8 @@
+(macOS) When assembling the executable, PyInstaller now modifies the
+Mach-O image UUID of all architecture slices in the executable, and
+sets them to a value derived from the hash of the embedded PKG archive
+and the original (bootloader's) UUID. This should ensure that different
+application executables have unique identifiers, as per
+`TN3178 <https://developer.apple.com/documentation/technotes/tn3178-checking-for-and-resolving-build-uuid-problems>`_,
+which might be required by newer macOS features, such as
+`local network privacy <https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy#Build-time-considerations>`_.

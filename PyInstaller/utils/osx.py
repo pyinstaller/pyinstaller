@@ -31,6 +31,7 @@ from macholib.mach_o import (
     LC_RPATH,
     LC_SEGMENT_64,
     LC_SYMTAB,
+    LC_UUID,
     LC_VERSION_MIN_MACOSX,
 )
 from macholib.MachO import MachO
@@ -277,6 +278,48 @@ def _get_arch_string(header):
     elif cputype == 7:
         return 'i386'  # 32-bit intel
     assert False, 'Unhandled architecture!'
+
+
+def update_exe_identifier(filename, pkg_filename):
+    """
+    Modifies the Mach-O image UUID stored in the LC_UUID command (if present) in order to ensure that different
+    frozen applications have different identifiers. See TN3178 for details on why this is required:
+    https://developer.apple.com/documentation/technotes/tn3178-checking-for-and-resolving-build-uuid-problems
+    """
+
+    # Compute hash of the PKG
+    import hashlib
+    pkg_hash = hashlib.sha1()
+    with open(pkg_filename, 'rb') as fp:
+        for chunk in iter(lambda: fp.read(8192), b""):
+            pkg_hash.update(chunk)
+
+    # Modify UUID in all arch slices of the executable.
+    executable = MachO(filename)
+    for header in executable.headers:
+        # Find LC_UUID command
+        uuid_cmd = [cmd for cmd in header.commands if cmd[0].cmd == LC_UUID]
+        if not uuid_cmd:
+            continue
+        uuid_cmd = uuid_cmd[0]
+
+        # Read the existing UUID (which is based on bootloader executable itself).
+        original_uuid = uuid_cmd[1].uuid
+
+        # Add original UUID to the hash; this is similar to what UUID v3/v5 do with namespace + name, except
+        # that in our case, the prefix UUID (namespace) is added at the end, so that PKG hash needs to be
+        # (pre)computed only once.
+        combined_hash = pkg_hash.copy()
+        combined_hash.update(original_uuid)
+
+        new_uuid = combined_hash.digest()[:16]  # Same as uuid.uuid3() / uuid.uuid5().
+        assert len(new_uuid) == 16
+
+        uuid_cmd[1].uuid = new_uuid
+
+    # Write changes
+    with open(filename, 'rb+') as fp:
+        executable.write(fp)
 
 
 class InvalidBinaryError(Exception):

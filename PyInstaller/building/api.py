@@ -835,6 +835,14 @@ class EXE(Target):
             logger.info("Removing signature(s) from EXE")
             osxutils.remove_signature_from_binary(build_name)
 
+            # Fix Mach-O image UUID(s) in executable to ensure uniqueness across different builds.
+            # NOTE: even if PKG is side-loaded, use the hash of its contents to generate the new UUID.
+            # NOTE: this step is performed *before* PKG is appended and sizes are fixed in the executable's headers;
+            # this ensures that we are operating only on original header size instead of enlarged one (which could
+            # be significantly larger in large onefile builds).
+            logger.info("Modifying Mach-O image UUID(s) in EXE")
+            osxutils.update_exe_identifier(build_name, self.pkg.name)
+
             # Append the data
             logger.info("Appending %s to EXE", append_type)
             self._append_data_to_exe(build_name, append_file)
