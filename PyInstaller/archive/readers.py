@@ -77,6 +77,7 @@ class CArchiveReader:
     def __init__(self, filename):
         self._filename = filename
         self._start_offset = 0
+        self._end_offset = 0
         self._toc_offset = 0
         self._toc_length = 0
 
@@ -97,8 +98,9 @@ class CArchiveReader:
             magic, archive_length, toc_offset, toc_length, pyvers, pylib_name = \
                 struct.unpack(self._COOKIE_FORMAT, cookie_data)
 
-            # Compute start of the the archive
-            self._start_offset = (cookie_start_offset + self._COOKIE_LENGTH) - archive_length
+            # Compute start and end offset of the the archive
+            self._end_offset = cookie_start_offset + self._COOKIE_LENGTH
+            self._start_offset = self._end_offset - archive_length
 
             # Verify that Python shared library name is set
             if not pylib_name:
@@ -184,6 +186,15 @@ class CArchiveReader:
             data = zlib.decompress(data)
 
         return data
+
+    def raw_pkg_data(self):
+        """
+        Extract complete PKG/CArchive archive from the parent file (executable).
+        """
+        total_length = self._end_offset - self._start_offset
+        with open(self._filename, "rb") as fp:
+            fp.seek(self._start_offset, os.SEEK_SET)
+            return fp.read(total_length)
 
     def open_embedded_archive(self, name):
         """
