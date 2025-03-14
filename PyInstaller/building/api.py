@@ -343,8 +343,14 @@ class PKG(Target):
             elif typecode in {'PYSOURCE', 'PYSOURCE-1', 'PYSOURCE-2', 'PYMODULE', 'PYMODULE-1', 'PYMODULE-2'}:
                 # Collect python script and modules in a TOC that will not be sorted.
                 bootstrap_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
+            elif typecode == 'PYZ':
+                # Override PYZ name in the PKG archive into PYZ.pyz, regardless of what the original name was. The
+                # bootloader looks for PYZ via the typecode and implicitly expects a single entry, so the name does
+                # not matter. However, having a fixed name matters if we want reproducibility in scenarios where
+                # multiple builds are performed within the same process (for example, on our CI).
+                archive_toc.append(('PYZ.pyz', src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
             else:
-                # PYZ, PKG, DEPENDENCY, SPLASH, SYMLINK
+                # PKG, DEPENDENCY, SPLASH, SYMLINK
                 archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
 
         # Sort content alphabetically by type and name to enable reproducible builds.
