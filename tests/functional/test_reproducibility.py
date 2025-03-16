@@ -9,6 +9,34 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+# NOTE: CPython does not, in fact, guarantee reproducibility of byte-compiled .pyc modules - see [1, 2, 3].
+#
+# In our case, the lack of .pyc reproducibility creeps up when trying to byte-compile the same module multiple times
+# *within the same python process*; the byte-compiled result of the very first attempt will differ from that of the
+# second attempt, while result of all subsequent attempts will be the same as the second attempt. Note that this does
+# not affect regular PyInstaller use (because each build is ran as a different process, so unless multiple targets are
+# built in the same .spec file, each module is byte-compiled at most once) as much as it does our test suite (where
+# multiple builds are executed within the context of the same `pytest` runner).
+#
+# The issues stemming from the non-deterministic behavior of FLAG_REF tracking can be, to some extent, mitigated by
+# post-processing the byte-code using `marshalparser` tool [4]. However, this comes at performance cost that makes it
+# unsuitable for the amount of processing done as part of our test suite. Furthermore, it does not seem to fully
+# mitigate the behavior in python >= 3.13, where additional non-reproducibility aspects were introduced by interning
+# of co_filename, co_name, and co_qualname [5].
+#
+# Therefore, to allow us to test at least some aspects of reproducibility, the tests in this file that perform multiple
+# subsequent build runs and compare results between them first perform a throw-away "calibration" build and ignore its
+# results. This should hopefully ensure reproducibility of the byte-compiled python code in subsequent, real build runs,
+# and ensure that tests work as expected regardless of the order in which they are executed (or when executed on their
+# own).
+#
+# References:
+# [1] https://github.com/astral-sh/uv/issues/10619
+# [2] https://github.com/python/cpython/issues/129724
+# [3] https://github.com/python/cpython/issues/78274
+# [4] https://pypi.org/project/marshalparser
+# [5] https://github.com/python/cpython/commit/2ba2c142a615abbd8138d253edfe02426c386961
+
 import dataclasses
 import filecmp
 import time
@@ -26,7 +54,12 @@ def test_reproducible_subsequent_builds(pyi_builder, tmp_path, monkeypatch):
     if is_win:
         monkeypatch.setenv('SOURCE_DATE_EPOCH', f"{time.time():.0f}")
 
-    # Two consecutive builds; ensure their build and dist dirs are different
+    # Two consecutive builds (preceded by a throw-away "calibration" one, as per note at the top of this file); ensure
+    # their build and dist dirs are different.
+    pyi_builder._dist_dir = tmp_path / 'dist-0'
+    pyi_builder._build_dir = tmp_path / 'build-0'
+    pyi_builder.test_script('pyi_helloworld.py')
+
     pyi_builder._dist_dir = tmp_path / 'dist-1'
     pyi_builder._build_dir = tmp_path / 'build-1'
     pyi_builder.test_script('pyi_helloworld.py')
@@ -146,12 +179,20 @@ def test_macos_executable_uuid(pyi_builder_spec, tmp_path):
             print("* program3_onedir:", self.program3_onedir)
             print("* program3_onefile:", self.program3_onefile)
 
+    # Build the test programs - throw-away "calibration" build, as per note at the top of this file.
+    pyi_builder_spec._dist_dir = tmp_path / 'dist-0'
+    pyi_builder_spec._build_dir = tmp_path / 'build-0'
+    pyi_builder_spec.test_spec(
+        'pyi_macos_executable_uuid.spec',
+        # Provide name of one application to appease the find/run-executable phase.
+        app_name='program1_onedir',
+    )
+
     # Build the test programs - first run.
     pyi_builder_spec._dist_dir = tmp_path / 'dist-1'
     pyi_builder_spec._build_dir = tmp_path / 'build-1'
     pyi_builder_spec.test_spec(
         'pyi_macos_executable_uuid.spec',
-        # Provide name of one application to appease the find/run-executable phase.
         app_name='program1_onedir',
     )
 
