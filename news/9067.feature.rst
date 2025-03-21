@@ -1,0 +1,2 @@
+Implement new hook utility function, ``PyInstaller.utils.hooks.get_installer_for_dist``,
+intended to replace ``PyInstaller.utils.hooks.get_installer``.

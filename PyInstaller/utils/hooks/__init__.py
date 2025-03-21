@@ -19,6 +19,7 @@ import fnmatch
 from pathlib import Path
 from collections import deque
 from typing import Callable
+import warnings
 
 import packaging.requirements
 
@@ -1052,6 +1053,24 @@ def copy_metadata(package_name: str, recursive: bool = False):
     return out
 
 
+def get_installer_for_dist(dist_name: str):
+    """
+    Try to find which package manager installed the specified distribution.
+
+    :param dist: Distribution name to check
+    :return: Package manager or None
+    """
+    try:
+        dist = importlib_metadata.distribution(dist_name)
+        installer_text = dist.read_text('INSTALLER')
+        if installer_text is not None:
+            return installer_text.strip()
+    except importlib_metadata.PackageNotFoundError:
+        pass
+
+    return None
+
+
 def get_installer(module: str):
     """
     Try to find which package manager installed a module.
@@ -1059,6 +1078,14 @@ def get_installer(module: str):
     :param module: Module to check
     :return: Package manager or None
     """
+
+    # Deprecation warning
+    warnings.warn(
+        "get_installer() hook utility function is deprecated. Use get_installer_for_dist() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     # Resolve distribution for given module/package name (e.g., enchant -> pyenchant).
     pkg_to_dist = importlib_metadata.packages_distributions()
     dist_names = pkg_to_dist.get(module)

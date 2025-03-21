@@ -1,0 +1,2 @@
+``PyInstaller.utils.hooks.get_installer`` hook utility function is now
+deprecated in favor of new ``PyInstaller.utils.hooks.get_installer_for_dist``.
