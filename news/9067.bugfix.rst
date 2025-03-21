@@ -1,0 +1,3 @@
+Fix detection of installer type (``conda``, ``pip``) and execution of
+corresponding installer-specific part of the ``numpy`` hook when using
+python 3.10 and ``numpy`` >= 2.0.0.

@@ -33,14 +33,14 @@
 
 from PyInstaller import compat
 from PyInstaller.utils.hooks import (
-    get_installer,
+    get_installer_for_dist,
     collect_dynamic_libs,
 )
 
 from packaging.version import Version
 
 numpy_version = Version(compat.importlib_metadata.version("numpy")).release
-numpy_installer = get_installer('numpy')
+numpy_installer = get_installer_for_dist('numpy')
 
 hiddenimports = []
 datas = []
