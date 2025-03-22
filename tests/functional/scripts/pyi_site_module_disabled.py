@@ -9,14 +9,20 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-# Test that the Pythons 'site' module is disabled and Python is not searching for any user-specific site directories.
-
-# Check that option -S is passed to Python interpreter and that sys.path has not been modified.
+# Test that the Python's `site` module is disabled and Python is not searching for any user-specific site directories;
+# in frozen application, this is effectively checking that PyInstaller's bootloader sets the `site_import` flag in the
+# `PyConfig` structure is set to 0 (equivalent of passing -S to python interpreter executable).
 
 import sys
 
-# The option -S tells Python not to import `site` on startup. If the site module has already been imported,
-# abort the test immediately.
+# With `python -S` option (and equivalent `PyConfig.site_import = 0`) set, Python should not import `site` module on
+# the startup. Therefore, check that is not imported yet.
+#
+# NOTE: in the frozen application, the module might end up imported as a dependency of another module that is imported
+# when PyInstaller's run-time hooks are imported. If the frozen test script fails at this point, it is best to check
+# what run-time hooks were ran, and what imports were made from them; this test script is very simple, so it should
+# not warrant imports of many modules with run-time hooks. However, a package like `setuptools` might end up being
+# pulled in, for example, via reference to `distutils` (for which it provides replacement).
 if 'site' in sys.modules:
     raise SystemExit('site module already imported')
 
@@ -40,5 +46,5 @@ if site.USER_SITE is not None:
 # This should never happen, USER_BASE is not a site-modules folder and is only used by distutils
 # for installing module datas.
 if site.USER_BASE is not None:
-    if site.USER_SITE in sys.path:
+    if site.USER_BASE in sys.path:
         raise SystemExit('USER_BASE found in sys.path!')
