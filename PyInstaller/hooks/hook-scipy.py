@@ -11,8 +11,9 @@
 
 import glob
 import os
+import sysconfig
 
-from PyInstaller.compat import is_win
+from PyInstaller.compat import is_win, is_linux
 from PyInstaller.utils.hooks import (
     get_module_file_attribute,
     check_requirement,
@@ -43,6 +44,12 @@ hiddenimports = ['scipy._lib.%s' % m for m in ['messagestream', "_ccallback_c", 
 # to be added to hiddenimports.
 if check_requirement("scipy >= 1.14.0"):
     hiddenimports += ['scipy._lib.array_api_compat.numpy.fft']
+
+# If scipy is provided by Debian's python3-scipy, its scipy.__config__ submodule is renamed to a dynamically imported
+# scipy.__config__${SOABI}__
+# https://salsa.debian.org/python-team/packages/scipy/-/blob/1255922cf7c52b05aa44fb733449953cd9adb815/debian/patches/scipy_config_SOABI.patch
+if is_linux and "dist-packages" in get_module_file_attribute("scipy"):
+    hiddenimports.append('scipy.__config__' + sysconfig.get_config_var('SOABI') + '__')
 
 # The `scipy._lib.array_api_compat.numpy` module performs a `from numpy import *`; in numpy 2.0.0, `numpy.f2py` was
 # added to `numpy.__all__` attribute, but at the same time, the upstream numpy hook adds `numpy.f2py` to
