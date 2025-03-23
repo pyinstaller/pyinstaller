@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import copy
 import os
-import subprocess
 import textwrap
 import fnmatch
 from pathlib import Path
@@ -1052,20 +1051,47 @@ def copy_metadata(package_name: str, recursive: bool = False):
     return out
 
 
-def get_installer(module: str):
+def get_installer(dist_name: str):
     """
-    Try to find which package manager installed a module.
+    Try to find which package manager installed the specified distribution (e.g., pip, conda, rpm) by reading INSTALLER
+    file from distribution's metadata.
 
-    :param module: Module to check
-    :return: Package manager or None
+    If the specified distribution does not exist, fall back to treating the passed name as importable package/module
+    name, and attempt to look up its associated distribution name; this matches the behavior of implementation found
+    in older PyInstaller versions (<= v6.12.0).
+
+    :param dist_name: Name of distribution to look up
+    :return: Name of package manager or None
+
+    .. versionchanged:: 6.13
+        The passed name is now first treated as a distribution name (direct look-up), and only if that fails, it is
+        treated as importable package/module name.
     """
-    # Resolve distribution for given module/package name (e.g., enchant -> pyenchant).
+
+    # First, perform direct look-up via the passed name, treating it as distribution name.
+    try:
+        dist = importlib_metadata.distribution(dist_name)
+        installer_text = dist.read_text('INSTALLER')
+        if installer_text is not None:
+            return installer_text.strip()
+        else:
+            # Distribution exists, but does not have an INSTALLER file; stop the search here.
+            return None
+    except importlib_metadata.PackageNotFoundError:
+        pass
+
+    # Fall back to treating the passed name as importable package/module name, and try to resolve its associated
+    # distribution name (e.g., enchant -> pyenchant). This requires distributions to explicitly list their top-level
+    # importable names in `top_level.txt` file in metadata, or `importlib.metadata` that can inferring top-level
+    # importable names (available in stdlib for python >= 3.11, or in importlib-metadata >= 4.8.1).
+    module_name = dist_name
     pkg_to_dist = importlib_metadata.packages_distributions()
-    dist_names = pkg_to_dist.get(module)
-    if dist_names is not None:
-        # A namespace package might result in multiple dists; take the first one...
+    dist_names = pkg_to_dist.get(module_name)
+
+    # A namespace package might result in multiple dists; take the first one that has INSTALLER file available...
+    for dist_name in dist_names or []:
         try:
-            dist = importlib_metadata.distribution(dist_names[0])
+            dist = importlib_metadata.distribution(dist_name)
             installer_text = dist.read_text('INSTALLER')
             if installer_text is not None:
                 return installer_text.strip()
@@ -1073,28 +1099,6 @@ def get_installer(module: str):
             # This might happen with eggs if the egg directory name does not match the dist name declared in the
             # metadata.
             pass
-
-    if compat.is_darwin:
-        try:
-            file_name = get_module_file_attribute(module)
-        except ImportError:
-            return None
-
-        # Attempt to resolve the module file via macports' port command
-        try:
-            output = subprocess.run(['port', 'provides', file_name],
-                                    check=True,
-                                    stdout=subprocess.PIPE,
-                                    encoding='utf-8').stdout
-            if 'is provided by' in output:
-                return 'macports'
-        except Exception:
-            pass
-
-        # Check if the file is located in homebrew's Cellar directory
-        file_name = os.path.realpath(file_name)
-        if 'Cellar' in file_name:
-            return 'homebrew'
 
     return None
 
