@@ -126,8 +126,8 @@ enhancements on these are welcome.
   above.
 
 Before using any contributed platform, you need to build the PyInstaller
-bootloader. This will happen automatically when you ``pip install
-pyinstaller`` provided that you have an appropriate C compiler (typically
+bootloader. This will happen automatically when you ``pip install pyinstaller``
+provided that you have an appropriate C compiler (typically
 either ``gcc`` or ``clang``) and zlib's development headers already installed.
 
 
