@@ -13,6 +13,7 @@ import sys
 import os
 
 from setuptools import setup
+from setuptools.command.bdist_wheel import bdist_wheel
 
 #-- plug-in building the bootloader
 
@@ -23,11 +24,6 @@ from distutils.command.build import build
 # python < 3.10, pywin32-ctypes on Windows). These dependencies are not required for the subset of functionality that is
 # used here in the `setup.py`.
 os.environ["_PYINSTALLER_SETUP_PY"] = "1"
-
-try:
-    from wheel.bdist_wheel import bdist_wheel
-except ImportError:
-    raise SystemExit("Error: Building wheels requires the 'wheel' package. Please `pip install wheel` then try again.")
 
 
 class build_bootloader(Command):

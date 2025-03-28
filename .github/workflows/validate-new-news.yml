@@ -20,7 +20,7 @@ jobs:
         run: python scripts/verify-news-fragments.py
 
       - name: Install towncrier
-        run: pip install -q -U setuptools wheel towncrier
+        run: pip install -q -U towncrier
 
       - name: Run towncrier
         run: towncrier --draft

@@ -148,7 +148,7 @@ jobs:
             ls ../PyInstaller/bootloader/Windows-64bit-arm
 
       - name: Update pip
-        run: python -m pip install --upgrade pip setuptools wheel build
+        run: python -m pip install --upgrade pip setuptools build
 
       # On (macos-14, python 3.10), (macos-13, python 3.11) and (macos-14, python 3.11)
       # combinations the initial `setuptools` installation seems to contain `.opt-1.pyc`
@@ -386,7 +386,6 @@ jobs:
             mingw-w64-${{matrix.env}}-gcc
             mingw-w64-${{matrix.env}}-python
             mingw-w64-${{matrix.env}}-python-pip
-            mingw-w64-${{matrix.env}}-python-wheel
             mingw-w64-${{matrix.env}}-python-setuptools
             mingw-w64-${{matrix.env}}-python-pywin32-ctypes
             mingw-w64-${{matrix.env}}-python-packaging
@@ -449,9 +448,9 @@ jobs:
         uses: cygwin/cygwin-install-action@master
         with:
           platform: x86_64
-          # NOTE: some of the provided packages (python39-wheel,
-          # python39-setuptools, python39-packaging, python39-pytest) are
-          # out-of-date, and we instead install PyPI wheels.
+          # NOTE: some of the provided packages (python39-setuptools,
+          # python39-packaging, python39-pytest) are out-of-date, and we instead
+          # install PyPI wheels.
           #
           # NOTE: for some reason, python39-pip depends on python39-sphinx,
           # which is an old sphinx v4.4.0 package. This version contains
@@ -482,7 +481,7 @@ jobs:
           python --version
 
       - name: Update pip and base test tools
-        run: python -m pip install --progress-bar=off --upgrade pip setuptools wheel build --requirement tests/requirements-base.txt sphinx
+        run: python -m pip install --progress-bar=off --upgrade pip setuptools --requirement tests/requirements-base.txt sphinx
 
       - name: Install PyInstaller
         run: |

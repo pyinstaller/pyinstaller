@@ -1001,7 +1001,7 @@ def copy_metadata(package_name: str, recursive: bool = False):
                     "1. uninstall the zipped egg:\n"
                     f"  pip uninstall {package_name}\n"
                     "2. make sure pip and its dependencies are up-to-date:\n"
-                    "  python -m pip install --upgrade pip wheel setuptools\n"
+                    "  python -m pip install --upgrade pip setuptools\n"
                     "3. install the package:\n"
                     f"  pip install {package_name}\n"
                     "To install a package from source, pass the path to the source directory to 'pip install' command."
