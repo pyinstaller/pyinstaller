@@ -1,0 +1,2 @@
+Onefile in combination with macOS's .app bundles will be blocked in v7.0 due to its being heavily penalised by macOS's
+security scanning and not providing a single file application anyway. Please use onedir mode instead.

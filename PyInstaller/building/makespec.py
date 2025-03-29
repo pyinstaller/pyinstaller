@@ -781,6 +781,10 @@ def main(
     hiddenimports = hiddenimports or []
     upx_exclude = upx_exclude or []
 
+    if is_darwin and onefile and not console:
+        from PyInstaller.building.osx import WINDOWED_ONEFILE_DEPRCATION
+        logger.log(logging.DEPRECATION, WINDOWED_ONEFILE_DEPRCATION)
+
     # If file extension of the first script is '.pyw', force --windowed option.
     if is_win and os.path.splitext(scripts[0])[-1] == '.pyw':
         console = False

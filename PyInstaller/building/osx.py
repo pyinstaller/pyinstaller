@@ -15,6 +15,7 @@ import plistlib
 import shutil
 import subprocess
 
+from PyInstaller import log as logging
 from PyInstaller.building.api import COLLECT, EXE
 from PyInstaller.building.datastruct import Target, logger, normalize_toc
 from PyInstaller.building.utils import _check_path_overlap, _rmtree, process_collected_binary
@@ -29,10 +30,20 @@ if is_darwin:
 # `Contents/Frameworks`, where only .framework bundle directories are allowed to have dot in name.
 DOT_REPLACEMENT = '__dot__'
 
+WINDOWED_ONEFILE_DEPRCATION = (
+    "Onefile mode in combination with macOS .app bundles (windowed mode) don't make sense (a .app bundle can not be a "
+    "single file) and clashes with macOS's security. Please migrate to onedir mode. This will become an error "
+    "in v7.0."
+)
+
 
 class BUNDLE(Target):
     def __init__(self, *args, **kwargs):
         from PyInstaller.config import CONF
+
+        for item in args:
+            if isinstance(item, EXE) and not item.exclude_binaries:
+                logger.log(logging.DEPRECATION, WINDOWED_ONEFILE_DEPRCATION)
 
         # BUNDLE only has a sense under macOS, it is a noop on other platforms.
         if not is_darwin:
