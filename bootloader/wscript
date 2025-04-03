@@ -651,6 +651,11 @@ def configure(ctx):
     # Check for presence of stdbool.h
     ctx.check(header_name='stdbool.h', mandatory=False)
 
+    # On non-Windows, check for availability of sys/sem.h, as we use SysV semaphore to synchronize onefile parent and
+    # child process. It should be available on most platforms, except for example Termux, due to its Android base.
+    if ctx.env.DEST_OS != 'win32':
+        ctx.check(header_name='sys/sem.h', mandatory=False)
+
     # The old ``function_name`` parameter to ``check_cc`` is no longer supported. This code is based on old waf
     # source at
     # https://gitlab.com/ita1024/waf/commit/62fe305d04ed37b1be1a3327a74b2fee6c458634#255b2344e5268e6a34bedd2f8c4680798344fec7.

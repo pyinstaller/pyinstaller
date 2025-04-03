@@ -1,0 +1,6 @@
+(POSIX) Have the bootloader build script check for availability of
+``sys/sem.h`` and disable the semaphore-based sync part in the onefile
+codepath if the said header is unavailable. This restores the ability to
+compile bootloader under Termux, where where ``sys/sem.h`` (and the SysV
+semaphore API) is unavailable due to deliberate lack of support for it
+in the underlying Android base.

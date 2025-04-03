@@ -31,7 +31,9 @@
 #include <signal.h> /* kill */
 #include <sys/stat.h> /* struct stat */
 #include <sys/wait.h>
-#include <sys/sem.h> /* SysV semaphore API */
+#if defined(HAVE_SYS_SEM_H)
+    #include <sys/sem.h> /* SysV semaphore API */
+#endif
 
 #include <dirent.h>
 
@@ -554,6 +556,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
      * The first choice for API would be un-named POSIX signals, but this
      * is not supported on macOS. So we use the old SysV signals API... */
 
+#if defined(HAVE_SYS_SEM_H)
     /* Argument for semctl(); according to API, we need to provide our
      * own union definition... */
     union {
@@ -586,6 +589,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
             goto cleanup;
         }
     }
+#endif /* defined(HAVE_SYS_SEM_H) */
 
     /* macOS: Apple Events handling */
 #if defined(__APPLE__) && defined(WINDOWED)
@@ -624,6 +628,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
         char *const *argv = (pyi_ctx->pyi_argv != NULL) ? pyi_ctx->pyi_argv : pyi_ctx->argv;
         const int argc = (pyi_ctx->pyi_argv != NULL) ? pyi_ctx->pyi_argc : pyi_ctx->argc;
 
+#if defined(HAVE_SYS_SEM_H)
         /* Wait on the sync semaphore */
         if (sem_id >= 0) {
             PYI_DEBUG("LOADER: waiting on sync semaphore...\n");
@@ -634,6 +639,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
                 PYI_PERROR("semop", "Failed to wait on sync semaphore!\n");
             }
         }
+#endif /* defined(HAVE_SYS_SEM_H) */
 
         /* Modify the LISTEN_PID environment variable, if necessary */
         if (_pyi_set_systemd_env() != 0) {
@@ -699,6 +705,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
         signal(signum, signal_handler);
     }
 
+#if defined(HAVE_SYS_SEM_H)
     if (sem_id >= 0) {
         PYI_DEBUG("LOADER: signalling the sync semaphore...\n");
         sem_op.sem_num = 0;
@@ -708,6 +715,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
             PYI_PERROR("semop", "Failed to signal the sync semaphore!\n");
         }
     }
+#endif /* defined(HAVE_SYS_SEM_H) */
 
 #if defined(__APPLE__) && defined(WINDOWED)
     /* macOS: forward events to child */
@@ -772,11 +780,13 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
 
 cleanup:
     /* Destroy the sync semaphore (if available) */
+#if defined(HAVE_SYS_SEM_H)
     if (sem_id >= 0) {
         if (semctl(sem_id, 0, IPC_RMID) < 0) {
             PYI_WARNING("LOADER: failed to destroy sync semaphore (errno %d)!\n", errno);
         }
     }
+#endif /* defined(HAVE_SYS_SEM_H) */
 
     /* Clean up the modified copy of command-line arguments (currently
      * applicable only to macOS windowed bootloader builds). */
