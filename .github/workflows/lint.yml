@@ -20,6 +20,11 @@ jobs:
         git fetch origin ${{ github.base_ref }}
         git fetch origin ${{ github.ref }}
         git checkout FETCH_HEAD --
+
+    # Prevent @rokm from accidentally adding U+02D9 characters instead of backticks.
+    - name: Ensure that no U+02D9 characters are present
+      run: "! git grep -I $'\u02d9'"
+
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
