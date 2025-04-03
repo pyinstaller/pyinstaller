@@ -1884,6 +1884,27 @@ class ModuleGraph(ObjectGraph):
             cls = BuiltinModule
         elif isinstance(loader, ExtensionFileLoader):
             cls = Extension
+
+            # Look for accompanying .py or .pyi file, which might allow
+            # us to perform basic import analysis for the extension.
+            def _co_from_accompanying_source(extension_filename):
+                path = os.path.dirname(extension_filename)
+                basename = os.path.basename(extension_filename).split('.')[0]
+
+                for ext in {'.py', '.pyi'}:
+                    src_filename = os.path.join(path, basename + ext)
+                    if not os.path.isfile(src_filename):
+                        continue
+
+                    try:
+                        with open(src_filename, 'rb') as fp:
+                            src = fp.read()
+                        co = compile(src, src_filename, 'exec', ast.PyCF_ONLY_AST, True)
+                        return co
+                    except Exception as e:
+                        pass
+
+            co = _co_from_accompanying_source(pathname)
         else:
             try:
                 src = loader.get_source(partname)

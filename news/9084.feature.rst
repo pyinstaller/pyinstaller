@@ -1,0 +1,4 @@
+Extend analysis code so that when extension module is encountered, it
+checks for the presence of an adjacent ``.py`` or ``.pyi`` file, and
+if present, attempt to perform import analysis on such accompanying
+source/interface file.
