@@ -721,7 +721,7 @@ def main(
         specpath = DEFAULT_SPECPATH
     else:
         # Expand starting tilde into user's home directory, as a work-around for tilde not being expanded by shell when
-        # using ˙--specpath=~/path/abc` instead of ˙--specpath ~/path/abc` (or when the path argument is quoted).
+        # using `--specpath=~/path/abc` instead of `--specpath ~/path/abc` (or when the path argument is quoted).
         specpath = os.path.expanduser(specpath)
     # If cwd is the root directory of PyInstaller, generate the .spec file in ./appname/ subdirectory.
     if specpath == HOMEPATH:

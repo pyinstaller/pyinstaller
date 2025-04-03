@@ -449,7 +449,7 @@ class Splash(Target):
     @staticmethod
     def _uses_tkinter(tkinter_file, binaries):
         # Test for _tkinter extension instead of tkinter module, because user might use a different wrapping library for
-        # Tk. Use `pathlib.PurePath˙ in comparisons to account for case normalization and separator normalization.
+        # Tk. Use `pathlib.PurePath` in comparisons to account for case normalization and separator normalization.
         tkinter_file = pathlib.PurePath(tkinter_file)
         for dest_name, src_name, typecode in binaries:
             if pathlib.PurePath(src_name) == tkinter_file:

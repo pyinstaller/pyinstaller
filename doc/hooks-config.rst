@@ -57,7 +57,7 @@ from the system ``/usr/share`` directory.
 
 **Options**
 
- * ``languages`` [*list of strings*]: list of locales (e.g., ˙en_US˙) for
+ * ``languages`` [*list of strings*]: list of locales (e.g., `en_US`) for
    which translations should be collected. By default, ``gi`` hooks
    collect all available translations.
 

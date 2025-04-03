@@ -192,7 +192,7 @@ class BUNDLE(Target):
     #
     # 4. There may not be any content in the top level of a bundle. In other words, if a bundle has a `Contents`
     #    or a `Versions` directory at its top level, there may be no other files or directories alongside them. The
-    #    sole exception is that alongside ˙Versions˙, there may be symlinks to files and directories in
+    #    sole exception is that alongside `Versions`, there may be symlinks to files and directories in
     #    `Versions/Current`. This rule is important for nested .framework bundles that we collect from python packages.
     #
     # Next, let us consider the consequences of violating each of the above requirements:
@@ -204,13 +204,13 @@ class BUNDLE(Target):
     #
     # 2. Putting code (a dylib or a .framework bundle) into `Contents/Resources` causes it to be treated as a resource;
     #    the outer signature (i.e., of the whole .app bundle) does not know that this nested content is actually a code.
-    #    Consequently, signing the bundle with ˙codesign --deep` will NOT sign binaries placed in the
+    #    Consequently, signing the bundle with `codesign --deep` will NOT sign binaries placed in the
     #    `Contents/Resources`, which may result in missing signatures when .app bundle is verified for notarization.
     #    This might be worked around by signing each binary separately, and then signing the whole bundle (without the
-    #    `--deep˙ option), but requires the user to keep track of the offending binaries.
+    #    `--deep` option), but requires the user to keep track of the offending binaries.
     #
     # 3. If a directory in `Contents/MacOS` contains a dot in the name, code-signing the bundle fails with
-    #    ˙bundle format unrecognized, invalid, or unsuitable` due to code signing machinery treating directory as a
+    #    `bundle format unrecognized, invalid, or unsuitable` due to code signing machinery treating directory as a
     #    nested .framework bundle directory.
     #
     # 4. If nested .framework bundle is malformed, the signing of the .app bundle might succeed, but subsequent
@@ -235,7 +235,7 @@ class BUNDLE(Target):
     #   `numpy/.dylibs`, `scipy/.dylibs`, etc.
     #
     #   Qt QML components may also contain a dot in their name; couple of examples from `PySide2` package:
-    #   `PySide2/Qt/qml/QtQuick.2`, ˙PySide2/Qt/qml/QtQuick/Controls.2˙, ˙PySide2/Qt/qml/QtQuick/Particles.2˙, etc.
+    #   `PySide2/Qt/qml/QtQuick.2`, `PySide2/Qt/qml/QtQuick/Controls.2`, `PySide2/Qt/qml/QtQuick/Particles.2`, etc.
     #
     #   The packages' metadata directories also invariably contain dots in the name due to version (for example,
     #   `numpy-1.24.3.dist-info`).

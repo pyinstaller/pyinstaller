@@ -336,7 +336,7 @@ assert data.splitlines() == expected_data.splitlines()
 
 # Try to get a data file in a sub-directory via two paths. The read contents should be the same.
 # If we do not provide our own resource reader, neither way of accessing works in frozen version with back-ported
-# importlib_resources (˙˙FileNotFoundError: Can't open orphan path˙˙).
+# importlib_resources (``FileNotFoundError: Can't open orphan path``).
 # It works correctly with built-in importlib.resources in python 3.9 (even if we do not implement a resource reader).
 expected_data = b"""Data entry #2 in `subpkg1/data`.\n"""
 

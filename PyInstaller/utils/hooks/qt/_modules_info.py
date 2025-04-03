@@ -76,7 +76,7 @@
 #
 # The `qt_dynamic_dependencies_dict`_ from the original approach was constructed using several information sources, as
 # documented `here
-# <https://github.com/pyinstaller/pyinstaller/blob/fbf7948be85177dd44b41217e9f039e1d176de6b/PyInstaller/utils/hooks/qt.py#L266-L362>˙_.
+# <https://github.com/pyinstaller/pyinstaller/blob/fbf7948be85177dd44b41217e9f039e1d176de6b/PyInstaller/utils/hooks/qt.py#L266-L362>`_.
 #
 # In the current approach, the relations stored in the `QT_MODULES_INFO`_ list were determined directly, by inspecting
 # the Qt source code. This requires some prior knowledge of how the Qt code is organized (repositories and individual Qt

@@ -970,7 +970,7 @@ def copy_metadata(package_name: str, recursive: bool = False):
 
         # We support only `importlib_metadata.PathDistribution`, since we need to rely on its private `_path` attribute
         # to obtain the path to metadata file/directory. But we need to account for possible sub-classes and vendored
-        # variants (`setuptools._vendor.importlib_metadata.PathDistribution˙), so just check that `_path` is available.
+        # variants (`setuptools._vendor.importlib_metadata.PathDistribution`), so just check that `_path` is available.
         if not hasattr(dist, '_path'):
             raise RuntimeError(
                 f"Unsupported distribution type {type(dist)} for {package_name} - does not have _path attribute"
@@ -985,7 +985,7 @@ def copy_metadata(package_name: str, recursive: bool = False):
         if not isinstance(src_path, Path):
             # NOTE: `src_path.parent` is also an instance of `zipfile.Path` or `zipp.Path`, and calling its `is_file()`
             # method returns False, because the root of zip file is (rightfully) considered a directory. Therefore, we
-            # convert the path to `pathlib.Path˙ by taking the parent of `src_path.parent` (which turns out to be a
+            # convert the path to `pathlib.Path` by taking the parent of `src_path.parent` (which turns out to be a
             # `pathlib.Path`) and add to it the name of the `src_path.parent` (the name of .egg file).
             try:
                 src_parent = src_path.parent.parent / src_path.parent.name

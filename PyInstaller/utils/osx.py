@@ -324,7 +324,7 @@ def update_exe_identifier(filename, pkg_filename):
 
 class InvalidBinaryError(Exception):
     """
-    Exception raised by ˙get_binary_architectures˙ when it is passed an invalid binary.
+    Exception raised by `get_binary_architectures` when it is passed an invalid binary.
     """
     pass
 

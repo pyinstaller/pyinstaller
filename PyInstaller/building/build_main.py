@@ -524,7 +524,7 @@ class Analysis(Target):
         self.hookspath = []
         # Prepend directories in `hookspath` (`--additional-hooks-dir`) to take precedence over those from the entry
         # points. Expand starting tilde into user's home directory, as a work-around for tilde not being expanded by
-        # shell when using ˙--additional-hooks-dir=~/path/abc` instead of ˙--additional-hooks-dir ~/path/abc` (or when
+        # shell when using `--additional-hooks-dir=~/path/abc` instead of `--additional-hooks-dir ~/path/abc` (or when
         # the path argument is quoted).
         if hookspath:
             self.hookspath.extend([(os.path.expanduser(path), HOOK_PRIORITY_USER_HOOKS) for path in hookspath])
@@ -1126,7 +1126,7 @@ def build(spec, distpath, workpath, clean_build):
     from PyInstaller.config import CONF
 
     # Ensure starting tilde in distpath / workpath is expanded into user's home directory. This is to work around for
-    # tilde not being expanded when using ˙--workpath=~/path/abc` instead of ˙--workpath ~/path/abc` (or when the path
+    # tilde not being expanded when using `--workpath=~/path/abc` instead of `--workpath ~/path/abc` (or when the path
     # argument is quoted). See https://github.com/pyinstaller/pyinstaller/issues/696
     distpath = os.path.abspath(os.path.expanduser(distpath))
     workpath = os.path.abspath(os.path.expanduser(workpath))

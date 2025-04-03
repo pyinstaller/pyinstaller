@@ -368,7 +368,7 @@ The following options are supported by this mechanism:
   initialized. This option is equivalent to Python's ``-v`` command-line
   option. It is automatically enabled when :ref:`verbose imports
   <getting python's verbose imports>` are enabled via PyInstaller's own
-  ˙˙--debug imports`` option.
+  ``--debug imports`` option.
 
 * ``'u'`` or ``'unbuffered'``: enable unbuffered stdout and stderr. Equivalent
   to Python's ``-u`` command-line option.

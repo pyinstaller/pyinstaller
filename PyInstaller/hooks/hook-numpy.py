@@ -108,7 +108,7 @@ if numpy_version < (1, 22, 0) or numpy_version > (1, 22, 1):
 # In numpy v2.0.0, numpy.f2py submodule has been added to numpy's `__all__` attribute. Therefore, using
 # `from numpy import *` leads to an error if `numpy.f2py` is excluded (seen in scipy 1.14). The exclusion in earlier
 # releases was not reported to cause any issues, so keep it around. Although it should be noted that it does break an
-# explicit import (i.e., ˙import numpy.f2py`) from user's code as well, because it prevents collection of other
+# explicit import (i.e., `import numpy.f2py`) from user's code as well, because it prevents collection of other
 # submodules from `numpy.f2py`.
 if numpy_version < (2, 0):
     excludedimports += [
