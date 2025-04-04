@@ -131,7 +131,7 @@ class VSVersionInfo:
             pad2 = b'\000\000'
         tmp = b''.join([kid.toRaw() for kid in self.kids])
         sublen = sublen + len(pad2) + len(tmp)
-        return struct.pack('hhh', sublen, vallen, typ) + raw_name + b'\000\000' + pad + rawffi + pad2 + tmp
+        return struct.pack('HHH', sublen, vallen, typ) + raw_name + b'\000\000' + pad + rawffi + pad2 + tmp
 
     def __eq__(self, other):
         return self.toRaw() == other
@@ -159,7 +159,7 @@ class VSVersionInfo:
 
 def parseCommon(data, start=0):
     i = start + 6
-    (wLength, wValueLength, wType) = struct.unpack('3h', data[start:i])
+    (wLength, wValueLength, wType) = struct.unpack('3H', data[start:i])
     i, text = parseUString(data, i, i + wLength)
     return i, (wLength, wValueLength, wType, text)
 
@@ -349,7 +349,7 @@ class StringFileInfo:
             pad = b'\000\000'
         tmp = b''.join([kid.toRaw() for kid in self.kids])
         sublen = sublen + len(pad) + len(tmp)
-        return struct.pack('hhh', sublen, vallen, typ) + raw_name + b'\000\000' + pad + tmp
+        return struct.pack('HHH', sublen, vallen, typ) + raw_name + b'\000\000' + pad + tmp
 
     def __eq__(self, other):
         return self.toRaw() == other
@@ -399,7 +399,7 @@ class StringTable:
             tmp.append(raw)
         tmp = b''.join(tmp)
         sublen += len(tmp)
-        return struct.pack('hhh', sublen, vallen, typ) + raw_name + b'\000\000' + tmp
+        return struct.pack('HHH', sublen, vallen, typ) + raw_name + b'\000\000' + tmp
 
     def __eq__(self, other):
         return self.toRaw() == other
@@ -444,7 +444,7 @@ class StringStruct:
         if sublen % 4:
             pad = b'\000\000'
         sublen = sublen + len(pad) + (vallen * 2)
-        return struct.pack('hhh', sublen, vallen, typ) + raw_name + b'\000\000' + pad + raw_val + b'\000\000'
+        return struct.pack('HHH', sublen, vallen, typ) + raw_name + b'\000\000' + pad + raw_val + b'\000\000'
 
     def __eq__(self, other):
         return self.toRaw() == other
@@ -497,7 +497,7 @@ class VarFileInfo:
             pad = b'\000\000'
         tmp = b''.join([kid.toRaw() for kid in self.kids])
         self.sublen = sublen + len(pad) + len(tmp)
-        return struct.pack('hhh', self.sublen, self.vallen, self.wType) + raw_name + b'\000\000' + pad + tmp
+        return struct.pack('HHH', self.sublen, self.vallen, self.wType) + raw_name + b'\000\000' + pad + tmp
 
     def __eq__(self, other):
         return self.toRaw() == other
@@ -529,7 +529,7 @@ class VarStruct:
         i, (self.sublen, self.wValueLength, self.wType, self.name) = parseCommon(data, i)
         i = nextDWord(i)
         for j in range(0, self.wValueLength, 2):
-            kid = struct.unpack('h', data[i:i + 2])[0]
+            kid = struct.unpack('H', data[i:i + 2])[0]
             self.kids.append(kid)
             i += 2
         return i
@@ -543,8 +543,8 @@ class VarStruct:
         if sublen % 4:
             pad = b'\000\000'
         self.sublen = sublen + len(pad) + self.wValueLength
-        tmp = b''.join([struct.pack('h', kid) for kid in self.kids])
-        return struct.pack('hhh', self.sublen, self.wValueLength, self.wType) + raw_name + b'\000\000' + pad + tmp
+        tmp = b''.join([struct.pack('H', kid) for kid in self.kids])
+        return struct.pack('HHH', self.sublen, self.wValueLength, self.wType) + raw_name + b'\000\000' + pad + tmp
 
     def __eq__(self, other):
         return self.toRaw() == other

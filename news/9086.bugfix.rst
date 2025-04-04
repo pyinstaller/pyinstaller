@@ -1,0 +1,6 @@
+(Windows) Fix (de)serialization of ``WORD``-typed fields in the
+``VersionInfo`` structure - it should be using 16-bit unsigned integer
+format (``'H'``) instead of signed one (``'h'``). This, for example,
+fixes the ``struct.error: 'h' format requires -32768 <= number <= 32767``
+error when ``VersionInfo`` contains a ``VarFileInfo`` / ``VarStruct``
+entry with the code page set to 65001.
