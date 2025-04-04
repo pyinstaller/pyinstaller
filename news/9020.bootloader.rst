@@ -1,0 +1,3 @@
+(Linux) Have the bootloader build script define ``_XOPEN_SOURCE=700``
+to work around a bogus check in ``sys/ipc.h`` header shipped with
+older glibc versions (<= v2.24).

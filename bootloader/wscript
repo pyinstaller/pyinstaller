@@ -539,6 +539,10 @@ def configure(ctx):
             #     _BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE
             ctx.env.append_value('DEFINES', '_DEFAULT_SOURCE')
 
+            # Required due to bogus check in `sys/ipc.h` header shipped with glibc <= 2.24.
+            # See https://github.com/pyinstaller/pyinstaller/issues/9020
+            ctx.env.append_value('DEFINES', '_XOPEN_SOURCE=700')
+
             # TODO: What other platforms support _FORTIFY_SOURCE macro? macOS?
             # TODO: macOS's CLang appears to support this macro as well. See:
             # https://marc.info/?l=cfe-dev&m=122032133830183
