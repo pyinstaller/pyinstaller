@@ -1,0 +1,5 @@
+On POSIX systems other than macOS, use POSIX semaphore API instead of
+SysV semaphore API to synchronize ``onefile`` parent and child process.
+This restores the ability to compile bootloader under Termux, where
+``sys/sem.h`` (and the SysV semaphore API) is unavailable due to deliberate
+lack of support for it in the underlying Android base.

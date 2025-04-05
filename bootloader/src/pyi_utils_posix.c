@@ -31,7 +31,21 @@
 #include <signal.h> /* kill */
 #include <sys/stat.h> /* struct stat */
 #include <sys/wait.h>
-#include <sys/sem.h> /* SysV semaphore API */
+
+#if defined(PYI_USE_POSIX_SEMAPHORE)
+    #include <sys/mman.h> /* mmap */
+    #include <semaphore.h> /* POSIX semaphore API */
+    /* Use MAP_ANON as synonym for MAP_ANONYMOUS if the latter is unavailable. */
+    #ifndef MAP_ANONYMOUS
+        #ifdef MAP_ANON
+            #define MAP_ANONYMOUS MAP_ANON
+        #else
+            #error "Neither MAP_ANONYMOUS nor MAP_ANON is defined."
+        #endif
+    #endif
+#elif defined(PYI_USE_SYSV_SEMAPHORE)
+    #include <sys/sem.h> /* SysV semaphore API */
+#endif
 
 #include <dirent.h>
 
@@ -551,9 +565,29 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
      * test (`test_onefile_signal_handling`) when performed under heavy
      * CPU load.
      *
-     * The first choice for API would be un-named POSIX signals, but this
-     * is not supported on macOS. So we use the old SysV signals API... */
+     * Our first choice of API are unnamed POSIX semaphores, which should
+     * be available on most POSIX platforms. However, they are unavailable
+     * on macOS (i.e., only stubs are implemented), so we also need to support
+     * the old SysV semaphore API... */
 
+#if defined(PYI_USE_POSIX_SEMAPHORE)
+    sem_t *sem_ptr;
+
+    /* Create anonymous shared memory region for the semaphore. */
+    PYI_DEBUG("LOADER: creating sync semaphore...\n");
+    sem_ptr = mmap(NULL, sizeof(sem_t), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    if (sem_ptr == MAP_FAILED) {
+        PYI_DEBUG("LOADER: failed to create shared memory region for sync semaphore (errno %d) - disabling sync.\n", errno);
+    } else {
+        /* Initialize semaphore with pshared=1 and value=0 (locked/acquired). */
+        if (sem_init(sem_ptr, 1, 0) < 0) {
+            PYI_DEBUG("LOADER: failed to initialize sync semaphore (errno %d) - disabling sync.\n", errno);
+            /* Unmap shared memory, and reset pointer to it for later checks. */
+            munmap(sem_ptr, sizeof(sem_t));
+            sem_ptr = MAP_FAILED;
+        }
+    }
+#elif defined(PYI_USE_SYSV_SEMAPHORE)
     /* Argument for semctl(); according to API, we need to provide our
      * own union definition... */
     union {
@@ -566,6 +600,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
     int sem_id = -1;  /* Semaphore (array) ID */
 
     /* Create semaphore */
+    PYI_DEBUG("LOADER: creating sync semaphore...\n");
     sem_id = semget(IPC_PRIVATE, 1, 0660 | IPC_CREAT | IPC_EXCL);
     if (sem_id < 0) {
         /* Allow semaphore creation to fail, for whatever reason, and
@@ -586,6 +621,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
             goto cleanup;
         }
     }
+#endif /* defined(PYI_USE_SYSV_SEMAPHORE) */
 
     /* macOS: Apple Events handling */
 #if defined(__APPLE__) && defined(WINDOWED)
@@ -625,6 +661,14 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
         const int argc = (pyi_ctx->pyi_argv != NULL) ? pyi_ctx->pyi_argc : pyi_ctx->argc;
 
         /* Wait on the sync semaphore */
+#if defined(PYI_USE_POSIX_SEMAPHORE)
+        if (sem_ptr != MAP_FAILED) {
+            PYI_DEBUG("LOADER: waiting on sync semaphore...\n");
+            if (sem_wait(sem_ptr) < 0) {
+                PYI_PERROR("sem_wait", "Failed to wait on sync semaphore!\n");
+            }
+        }
+#elif defined(PYI_USE_SYSV_SEMAPHORE)
         if (sem_id >= 0) {
             PYI_DEBUG("LOADER: waiting on sync semaphore...\n");
             sem_op.sem_num = 0;
@@ -634,6 +678,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
                 PYI_PERROR("semop", "Failed to wait on sync semaphore!\n");
             }
         }
+#endif /* defined(PYI_USE_SYSV_SEMAPHORE) */
 
         /* Modify the LISTEN_PID environment variable, if necessary */
         if (_pyi_set_systemd_env() != 0) {
@@ -699,6 +744,15 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
         signal(signum, signal_handler);
     }
 
+    /* Signal the sync semaphore */
+#if defined(PYI_USE_POSIX_SEMAPHORE)
+    if (sem_ptr != MAP_FAILED) {
+        PYI_DEBUG("LOADER: signalling the sync semaphore...\n");
+        if (sem_post(sem_ptr) < 0) {
+            PYI_PERROR("sem_post", "Failed to signal the sync semaphore!\n");
+        }
+    }
+#elif defined(PYI_USE_SYSV_SEMAPHORE)
     if (sem_id >= 0) {
         PYI_DEBUG("LOADER: signalling the sync semaphore...\n");
         sem_op.sem_num = 0;
@@ -708,6 +762,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
             PYI_PERROR("semop", "Failed to signal the sync semaphore!\n");
         }
     }
+#endif /* defined(PYI_USE_SYSV_SEMAPHORE) */
 
 #if defined(__APPLE__) && defined(WINDOWED)
     /* macOS: forward events to child */
@@ -772,11 +827,22 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
 
 cleanup:
     /* Destroy the sync semaphore (if available) */
+#if defined(PYI_USE_POSIX_SEMAPHORE)
+    if (sem_ptr != MAP_FAILED) {
+        if (sem_destroy(sem_ptr) < 0) {
+            PYI_WARNING("LOADER: failed to destroy sync semaphore (errno %d)!\n", errno);
+        }
+        if (munmap(sem_ptr, sizeof(sem_t)) < 0) {
+            PYI_WARNING("LOADER: failed to unmap shared memory of sync semaphore (errno %d)!\n", errno);
+        }
+    }
+#elif defined(PYI_USE_SYSV_SEMAPHORE)
     if (sem_id >= 0) {
         if (semctl(sem_id, 0, IPC_RMID) < 0) {
             PYI_WARNING("LOADER: failed to destroy sync semaphore (errno %d)!\n", errno);
         }
     }
+#endif /* defined(PYI_USE_SYSV_SEMAPHORE) */
 
     /* Clean up the modified copy of command-line arguments (currently
      * applicable only to macOS windowed bootloader builds). */

@@ -557,6 +557,25 @@ def configure(ctx):
         elif ctx.env.DEST_OS == 'darwin':
             ctx.env.append_value('DEFINES', '_DARWIN_C_SOURCE')
 
+        # Determine which semaphore API to use for syncing onefile parent and child process on non-Windows platforms;
+        # this is required to ensure consistent signal forwarding behavior. We prefer to use POSIX semaphores; however,
+        # they are unavailable on macOS, where we need to fall back to old SysV semaphore API.
+        semaphore_api = None
+        if not ctx.env.DEST_OS == 'darwin':
+            if ctx.check(header_name='semaphore.h', mandatory=False):
+                semaphore_api = 'posix'
+        if not semaphore_api:
+            if ctx.check(header_name='sys/sem.h', mandatory=False):
+                semaphore_api = 'sysv'
+        if not semaphore_api:
+            semaphore_api = 'none'  # For the message
+
+        ctx.msg("Using semaphore API", semaphore_api)
+        if semaphore_api == 'sysv':
+            ctx.env.append_value('DEFINES', 'PYI_USE_SYSV_SEMAPHORE')
+        elif semaphore_api == 'posix':
+            ctx.env.append_value('DEFINES', 'PYI_USE_POSIX_SEMAPHORE')
+
     if ctx.env.DEST_OS == 'win32':
         ctx.env.append_value('DEFINES', 'WIN32')
         ctx.env.append_value('CPPPATH', '../zlib')
