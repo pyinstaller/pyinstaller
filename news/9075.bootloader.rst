@@ -1,0 +1,7 @@
+(Windows) Have the parent process of ``onefile`` application always
+attempt to pre-load system copies of VC runtime DLLs, i.e.,
+``VCRUNTIME140.dll`` and ``VCRUNTIME140_1.dll``. This extends the
+pre-load work-around from :issue:`8650` that aims to resolve issues
+with bundled VC runtime DLLs not being cleaned up from the application's
+temporary directory when 3rd party DLLs are injected into the process
+(by the OS, an anti-virus program, or some 3rd party component).

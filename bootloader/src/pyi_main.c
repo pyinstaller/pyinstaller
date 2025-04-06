@@ -395,38 +395,57 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
 
     PYI_DEBUG("LOADER: application's top-level directory: %s\n", pyi_ctx->application_home_dir);
 
-    /* On Windows in onefile parent process with splash screen enabled,
-     * attempt to pre-emptively load system-wide copy of VCRUNTIME140.dll.
+    /* In onefile parent process on Windows, attempt to pre-emptively
+     * load system copies of VC runtime DLLs (e.g., VCRUNTIME140.dll
+     * and VCRUNTIME140_1.dll). The bootloader itself has no need for
+     * these DLLs - when building bootloader with MSVC, we statically
+     * link both the CRT and VC runtime into the bootloader executable
+     * (which allows the onefile executable to be launched on systems
+     * without VC redistributable installed and without having to place
+     * the VC runtime DLLs next to the executable). However, we need to
+     * prevent the bundled copies from application's temporary directory
+     * (which are used for example by python shared library loaded in
+     * the *child* process of onefile build) from being loaded into this
+     * process, because we might end up being unable to unload them and
+     * thus remove the files during the cleanup..
      *
-     * Contemporary Tcl/Tk DLLs are known to depend on VCRUNTIME140.dll,
-     * so when we load them during splash screen initialization, they will
-     * cause VCRUNTIME140.dll to be loaded as well. This happens with
-     * modified search path (see the code block below this one), and thus
-     * the bundled copy will be loaded; this is intended to accommodate
-     * systems that do not have system-wide copy of the DLL available.
-     * However, the OS and/or anti-virus programs might inject additional
-     * DLLs into the process that depend on VCRUNTIME140.dll (see the
-     * follow-up discussion under #7106); such externally loaded DLLs
-     * might prevent us from being able to unload the bundled copy of
-     * VCRUNTIME140.dll, and thus preventing proper temporary file
-     * cleanup. To work around this mess, we prefer to load system-wide
-     * copy of VCRUNTIME140.dll, if available. */
+     * This issue seems to be caused by the OS, an anti-virus program,
+     * or a 3rd party component injecting additional DLLs into our
+     * process, and those additional DLLs depending on the VC runtime.
+     * Initially, this seemed to affect only builds with splash screen
+     * (see the follow-up discussion under #7106), because we need to
+     * load Tcl/Tk DLLs, and those depend on the VC runtime; since we
+     * unload Tcl/Tk DLLs during splash screen teardown, we free the
+     * references on the VC runtime, and are usually able to also unload
+     * VC runtime DLLs. This is not the case, however, if the VC runtime
+     * DLLs remain locked due to injection of other 3rd party DLLs.
+     * #9075 has shown that injection of 3rd party DLLs and subsequent
+     * locking of VC runtime DLLs can also happen without splash screen,
+     * so we now perform this pre-load in all onefile parent processes. */
 #if defined(_WIN32)
-    if (pyi_ctx->archive->toc_splash && pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) {
-        const wchar_t *dll_name = L"VCRUNTIME140.dll";
+    if (pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) {
+        const wchar_t *dll_names[] = {
+            L"VCRUNTIME140.dll",
+            L"VCRUNTIME140_1.dll"
+        };
+        int i;
 
-        /* Avoid accidentally picking up VCRUNTIME140.dll from another
+        /* Avoid accidentally picking up the DLLs from another
          * (instance of) frozen application that might have launched
          * this instance. I.e., call SetDllDirectoryW(NULL) to reset
          * the search path modification that happens in the code block
          * that follows this one (and is inherited by child processes). */
         SetDllDirectoryW(NULL);
 
-        PYI_DEBUG_W(L"LOADER: attempting to pre-load system copy of %ls...\n", dll_name);
-        if (LoadLibraryExW(dll_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)) {
-            PYI_DEBUG_W(L"LOADER: successfully loaded system copy of %ls.\n", dll_name);
-        } else {
-            PYI_DEBUG_W(L"LOADER: could not load system copy of %ls.\n", dll_name);
+        for (i = 0; i < sizeof(dll_names) / sizeof(dll_names[0]); i++) {
+            const wchar_t *dll_name = dll_names[i];
+
+            PYI_DEBUG_W(L"LOADER: attempting to pre-load system copy of %ls...\n", dll_name);
+            if (LoadLibraryExW(dll_name, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)) {
+                PYI_DEBUG_W(L"LOADER: successfully loaded system copy of %ls.\n", dll_name);
+            } else {
+                PYI_DEBUG_W(L"LOADER: could not load system copy of %ls.\n", dll_name);
+            }
         }
     }
 #endif /* defined(_WIN32) */
