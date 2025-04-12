@@ -96,6 +96,9 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
 # compiled bootloaders. On musl systems, ldd with no arguments prints 'musl' and its version.
 is_musl = is_linux and "musl" in subprocess.run(["ldd"], capture_output=True, encoding="utf-8").stderr
 
+# Termux - terminal emulator and Linux environment app for Android.
+is_termux = is_linux and hasattr(sys, 'getandroidapilevel')
+
 # macOS version
 _macos_ver = tuple(int(x) for x in platform.mac_ver()[0].split('.')) if is_darwin else None
 
