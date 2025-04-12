@@ -97,6 +97,7 @@ def test_ctypes_util_find_library_as_default_argument():
 
 
 @pytest.mark.linux
+@pytest.mark.skipif(compat.is_termux, reason="Termux does not have libc.so")
 def test_ldconfig_cache():
     utils.load_ldconfig_cache()
 

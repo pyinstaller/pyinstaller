@@ -19,7 +19,7 @@ import re
 
 import pytest
 
-from PyInstaller.compat import is_cygwin, is_darwin, is_win
+from PyInstaller.compat import is_cygwin, is_darwin, is_termux, is_win
 from PyInstaller.utils.tests import importorskip, skipif, xfail, onedir_only, onefile_only
 
 
@@ -423,7 +423,10 @@ def test_user_preferred_locale(pyi_builder):
         """
     )
 
-    # Find executable and run additional tests with locale set via LC_ALL
+    # Find executable and run additional tests with locale set via LC_ALL.
+    if is_termux:
+        return
+
     exes = pyi_builder._find_executables('test_source')
     assert len(exes) == 1
 
