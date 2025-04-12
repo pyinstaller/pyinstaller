@@ -502,3 +502,28 @@ jobs:
         run: >
             python -m pytest
             -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
+
+  test-termux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PyInstaller code
+        uses: actions/checkout@v4
+
+      - name: Run tests in container
+        run: |
+          docker run -v"$PWD:/io" termux/termux-docker:x86_64 bash -ec '
+            echo "*** Installing system dependencies ***"
+            pkg install -y python ldd binutils
+            echo "*** Installing PyInstaller ***"
+            cp -fr /io $HOME/PyInstaller
+            cd $HOME/PyInstaller
+            cd bootloader
+            python waf all
+            cd ..
+            python -m pip install .
+            echo "*** Installing test requirements ***"
+            python -m pip install -r tests/requirements-base.txt
+            echo "*** Running tests ***"
+            export FORCE_COLOR=1
+            python -m pytest -n 4 --maxfail 3 --durations 10 tests/unit tests/functional
+          '
