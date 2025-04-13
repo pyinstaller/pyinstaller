@@ -43,15 +43,22 @@ import time
 
 import pytest
 
-from PyInstaller.compat import is_win
+from PyInstaller import compat
 
 
 def test_reproducible_subsequent_builds(pyi_builder, tmp_path, monkeypatch):
     from PyInstaller.archive.readers import CArchiveReader
 
+    # On GHA ubuntu runner, we seem to be getting occasional test failure due to differences in collected modules'
+    # bytecode, in spite of the "calibration" step below. This seems to affect only linux and python < 3.11; most
+    # often, it fails with 3.9, but 3.8 and 3.10 have also been observed to fail. Since the lack of .pyc bytecode
+    # reproducibility seems to be out of our control, xfail the test.
+    if compat.is_linux and not compat.is_py311:
+        pytest.xfail("Issues with reproducibility of collected modules' bytecode.")
+
     # On Windows, we need to set SOURCE_DATE_EPOCH for the build to be fully reproducible (i.e., the build timestamp
     # that is embedded in the executable)
-    if is_win:
+    if compat.is_win:
         monkeypatch.setenv('SOURCE_DATE_EPOCH', f"{time.time():.0f}")
 
     # Two consecutive builds (preceded by a throw-away "calibration" one, as per note at the top of this file); ensure
