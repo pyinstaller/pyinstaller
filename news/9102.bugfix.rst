@@ -1,0 +1,3 @@
+Fix detection of ``setuptools``-vendored modules (i.e., not packages)
+in the ``PyInstaller.utils.hooks.setuptools.SetuptoolsInfo`` hook utility
+class; for example, the ``setuptools/_vendor/typing_extensions.py`` module.

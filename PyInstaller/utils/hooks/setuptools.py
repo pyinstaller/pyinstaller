@@ -102,7 +102,7 @@ def _retrieve_setuptools_info():
             if candidate_file_attr is not None:
                 candidate_path = pathlib.Path(candidate_file_attr).parent.resolve()
                 is_vendored = any([
-                    setuptools_vendor_path in candidate_path.parents
+                    setuptools_vendor_path in candidate_path.parents or candidate_path == setuptools_vendor_path
                     for setuptools_vendor_path in setuptools_vendor_paths
                 ])
                 vendored_status[candidate_name] = is_vendored
