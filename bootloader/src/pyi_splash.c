@@ -113,15 +113,15 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
     }
 
     /* Copy the script into a buffer owned by SPLASH_STATUS */
-    splash->script_len = pyi_be32toh(data_header->script_len);
+    splash->script_len = pyi_be64toh(data_header->script_len);
     splash->script = (char *)calloc(1, splash->script_len + 1);
 
     /* Copy the image into a buffer owned by SPLASH_STATUS */
-    splash->image_len = pyi_be32toh(data_header->image_len);
+    splash->image_len = pyi_be64toh(data_header->image_len);
     splash->image = (char *)malloc(splash->image_len);
 
     /* Copy the requirements array into a buffer owned by SPLASH_STATUS */
-    splash->requirements_len = pyi_be32toh(data_header->requirements_len);
+    splash->requirements_len = pyi_be64toh(data_header->requirements_len);
     splash->requirements = (char *)malloc(splash->requirements_len);
 
     if (splash->script == NULL || splash->image == NULL || splash->requirements == NULL) {
@@ -133,17 +133,17 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
     /* Copy the data into their respective fields */
     memcpy(
         splash->script,
-        ((char *)data_header) + pyi_be32toh(data_header->script_offset),
+        ((char *)data_header) + pyi_be64toh(data_header->script_offset),
         splash->script_len
     );
     memcpy(
         splash->image,
-        ((char *)data_header) + pyi_be32toh(data_header->image_offset),
+        ((char *)data_header) + pyi_be64toh(data_header->image_offset),
         splash->image_len
     );
     memcpy(
         splash->requirements,
-        ((char *)data_header) + pyi_be32toh(data_header->requirements_offset),
+        ((char *)data_header) + pyi_be64toh(data_header->requirements_offset),
         splash->requirements_len
     );
 

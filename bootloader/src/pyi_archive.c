@@ -436,10 +436,10 @@ pyi_archive_open(const char *filename)
     snprintf(archive->filename, PYI_PATH_MAX, "%s", filename);
 
     /* Fix endianness of cookie fields */
-    archive_cookie.pkg_length = pyi_be32toh(archive_cookie.pkg_length);
-    archive_cookie.toc_offset = pyi_be32toh(archive_cookie.toc_offset);
-    archive_cookie.toc_length = pyi_be32toh(archive_cookie.toc_length);
-    archive_cookie.python_version = pyi_be32toh(archive_cookie.python_version);
+    archive_cookie.pkg_length = pyi_be64toh(archive_cookie.pkg_length);
+    archive_cookie.toc_offset = pyi_be64toh(archive_cookie.toc_offset);
+    archive_cookie.toc_length = pyi_be64toh(archive_cookie.toc_length);
+    archive_cookie.python_version = pyi_be64toh(archive_cookie.python_version);
 
     /* Copy python version and python shared library name from cookie */
     archive->python_version = archive_cookie.python_version;
@@ -475,10 +475,10 @@ pyi_archive_open(const char *filename)
     toc_entry = archive->toc;
     while (toc_entry < archive->toc_end) {
         /* Fixup the current TOC entry */
-        toc_entry->entry_length = pyi_be32toh(toc_entry->entry_length);
-        toc_entry->offset = pyi_be32toh(toc_entry->offset);
-        toc_entry->length = pyi_be32toh(toc_entry->length);
-        toc_entry->uncompressed_length = pyi_be32toh(toc_entry->uncompressed_length);
+        toc_entry->entry_length = pyi_be64toh(toc_entry->entry_length);
+        toc_entry->offset = pyi_be64toh(toc_entry->offset);
+        toc_entry->length = pyi_be64toh(toc_entry->length);
+        toc_entry->uncompressed_length = pyi_be64toh(toc_entry->uncompressed_length);
 
         /* Check if entry is extractable */
         archive->contains_extractable_entries |= _pyi_archive_is_extractable(toc_entry->typecode);

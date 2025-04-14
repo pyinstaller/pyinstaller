@@ -250,27 +250,34 @@
      * using ntohl(), which requires linking against ws2 library. */
     #if BYTE_ORDER == LITTLE_ENDIAN
         #if defined(_MSC_VER)
-            #include <stdlib.h>  /* _byteswap_ulong */
+            #include <stdlib.h>  /* _byteswap_ulong, _byteswap_uint64 */
             #define pyi_be32toh(x) _byteswap_ulong(x)
+            #define pyi_be64toh(x) _byteswap_uint64(x)
         #elif defined(__GNUC__) || defined(__clang__)
             #define pyi_be32toh(x) __builtin_bswap32(x)
+            #define pyi_be64toh(x) __builtin_bswap64(x)
         #else
             #error Unsupported compiler
         #endif
     #elif BYTE_ORDER == BIG_ENDIAN
         #define pyi_be32toh(x) (x)
+        #define pyi_be64toh(x) (x)
     #else
         #error Unsupported byte order
     #endif
 #else
-    /* On all non-Windows platforms, use ntohl() */
+    /* On all non-Windows platforms, use ntohl() and be64toh() */
     #ifdef __FreeBSD__
         /* freebsd issue #188316 */
         #include <arpa/inet.h>  /* ntohl */
+        #include <sys/endian.h> /* be64toh */
     #else
         #include <netinet/in.h>  /* ntohl */
+        #include <endian.h>      /* be64toh */
     #endif
     #define pyi_be32toh(x) ntohl(x)
+    #define pyi_be64toh(x) be64toh(x)
 #endif /* ifdef _WIN32 */
+
 
 #endif /* PYI_GLOBAL_H */
