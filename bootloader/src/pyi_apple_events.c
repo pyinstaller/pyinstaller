@@ -184,7 +184,7 @@ generic_forward_apple_event(
 
             PYI_DEBUG(
                 "LOADER [AppleEvent]: got param type=%x ('%c%c%c%c') size=%ld\n",
-                (UInt32)actualType,
+                (UInt64)actualType,
                 _FOURCC_CHARS(actualType),
                 (long)actualSize
             );

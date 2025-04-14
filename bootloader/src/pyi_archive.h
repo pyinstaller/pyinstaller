@@ -38,10 +38,10 @@
 /* Entry in PKG/CArchive TOC */
 struct TOC_ENTRY
 {
-    uint32_t entry_length; /* length of this TOC entry, including full length of the name field */
-    uint32_t offset; /* position of entry's data blob, relative to the start of PKG archive */
-    uint32_t length; /* length of compressed data blob */
-    uint32_t uncompressed_length; /* length of uncompressed data blob */
+    uint64_t entry_length; /* length of this TOC entry, including full length of the name field */
+    uint64_t offset; /* position of entry's data blob, relative to the start of PKG archive */
+    uint64_t length; /* length of compressed data blob */
+    uint64_t uncompressed_length; /* length of uncompressed data blob */
     unsigned char compression_flag; /* compression flag (1 = compressed, 0 = uncompressed) */
     char typecode; /* type code - see ARCHIVE_ITEM_* definitions */
     char name[1];  /* entry name; padded to multiple of 16 */
@@ -51,10 +51,10 @@ struct TOC_ENTRY
 struct ARCHIVE_COOKIE
 {
     char magic[8]; /* 'MEI\014\013\012\013\016' */
-    uint32_t pkg_length; /* length of the entire PKG archive */
-    uint32_t toc_offset; /* position of TOC relative to start of PKG archive */
-    uint32_t toc_length; /* length of TOC data */
-    uint32_t python_version; /* integer representing python version */
+    uint64_t pkg_length; /* length of the entire PKG archive */
+    uint64_t toc_offset; /* position of TOC relative to start of PKG archive */
+    uint64_t toc_length; /* length of TOC data */
+    uint64_t python_version; /* integer representing python version */
     char python_libname[64]; /* Name of the of Python shared library (e.g., "python3.10.dll"). */
 };
 

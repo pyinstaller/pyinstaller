@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Copyright (c) 2005-2023, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
@@ -7,7 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 """
 Utilities to create data structures for embedding Python modules and additional files into the executable.
 """
@@ -21,7 +21,11 @@ import zlib
 
 from PyInstaller.building.utils import get_code_object, strip_paths_in_code
 from PyInstaller.compat import BYTECODE_MAGIC, is_win, strict_collect_mode
-from PyInstaller.loader.pyimod01_archive import PYZ_ITEM_MODULE, PYZ_ITEM_NSPKG, PYZ_ITEM_PKG
+from PyInstaller.loader.pyimod01_archive import (
+    PYZ_ITEM_MODULE,
+    PYZ_ITEM_NSPKG,
+    PYZ_ITEM_PKG,
+)
 
 
 class ZlibArchiveWriter:
@@ -29,7 +33,8 @@ class ZlibArchiveWriter:
     Writer for PyInstaller's PYZ (ZlibArchive) archive. The archive is used to store collected byte-compiled Python
     modules, as individually-compressed entries.
     """
-    _PYZ_MAGIC_PATTERN = b'PYZ\0'
+
+    _PYZ_MAGIC_PATTERN = b"PYZ\0"
     _HEADER_LENGTH = 12 + 5
     _COMPRESSION_LEVEL = 6  # zlib compression level
 
@@ -48,7 +53,7 @@ class ZlibArchiveWriter:
 
         with open(filename, "wb") as fp:
             # Reserve space for the header.
-            fp.write(b'\0' * self._HEADER_LENGTH)
+            fp.write(b"\0" * self._HEADER_LENGTH)
 
             # Write entries' data and collect TOC entries
             toc = []
@@ -70,21 +75,21 @@ class ZlibArchiveWriter:
 
             fp.write(self._PYZ_MAGIC_PATTERN)
             fp.write(BYTECODE_MAGIC)
-            fp.write(struct.pack('!i', toc_offset))
+            fp.write(struct.pack("!i", toc_offset))
 
     @classmethod
     def _write_entry(cls, fp, entry, code_dict):
         name, src_path, typecode = entry
-        assert typecode in {'PYMODULE', 'PYMODULE-1', 'PYMODULE-2'}
+        assert typecode in {"PYMODULE", "PYMODULE-1", "PYMODULE-2"}
 
         typecode = PYZ_ITEM_MODULE
-        if src_path in ('-', None):
+        if src_path in ("-", None):
             # This is a NamespacePackage, modulegraph marks them by using the filename '-'. (But wants to use None,
             # so check for None, too, to be forward-compatible.)
             typecode = PYZ_ITEM_NSPKG
         else:
             src_basename, _ = os.path.splitext(os.path.basename(src_path))
-            if src_basename == '__init__':
+            if src_basename == "__init__":
                 typecode = PYZ_ITEM_PKG
         data = marshal.dumps(code_dict[name])
 
@@ -109,13 +114,14 @@ class CArchiveWriter:
 
     The archive can be read from either C (bootloader code at application's run-time) or Python (for debug purposes).
     """
-    _COOKIE_MAGIC_PATTERN = b'MEI\014\013\012\013\016'
+
+    _COOKIE_MAGIC_PATTERN = b"MEI\014\013\012\013\016"
 
     # For cookie and TOC entry structure, see `PyInstaller.archive.readers.CArchiveReader`.
-    _COOKIE_FORMAT = '!8sIIII64s'
+    _COOKIE_FORMAT = "!8sQQQQ64s"
     _COOKIE_LENGTH = struct.calcsize(_COOKIE_FORMAT)
 
-    _TOC_ENTRY_FORMAT = '!IIIIBc'
+    _TOC_ENTRY_FORMAT = "!QQQQBc"
     _TOC_ENTRY_LENGTH = struct.calcsize(_TOC_ENTRY_FORMAT)
 
     _COMPRESSION_LEVEL = 9  # zlib compression level
@@ -158,7 +164,7 @@ class CArchiveWriter:
                 toc_offset,
                 toc_length,
                 pyvers,
-                pylib_name.encode('ascii'),
+                pylib_name.encode("ascii"),
             )
 
             fp.write(cookie_data)
@@ -168,27 +174,27 @@ class CArchiveWriter:
 
         # Write OPTION entries as-is, without normalizing them. This also exempts them from duplication check,
         # allowing them to be specified multiple times.
-        if typecode == 'o':
+        if typecode == "o":
             return self._write_blob(fp, b"", dest_name, typecode)
 
         # Ensure forward slashes in paths are on Windows converted to back slashes '\\', as on Windows the bootloader
         # works only with back slashes.
         dest_name = os.path.normpath(dest_name)
-        if is_win and os.path.sep == '/':
+        if is_win and os.path.sep == "/":
             # When building under MSYS, the above path normalization uses Unix-style separators, so replace them
             # manually.
-            dest_name = dest_name.replace(os.path.sep, '\\')
+            dest_name = dest_name.replace(os.path.sep, "\\")
 
             # For symbolic link entries, also ensure that the symlink target path (stored in src_name) is using
             # Windows-style back slash separators.
-            if typecode == 'n':
-                src_name = src_name.replace(os.path.sep, '\\')
+            if typecode == "n":
+                src_name = src_name.replace(os.path.sep, "\\")
 
         # Strict pack/collect mode: keep track of the destination names, and raise an error if we try to add a duplicate
         # (a file with same destination name, subject to OS case normalization rules).
         if strict_collect_mode:
             normalized_dest = None
-            if typecode in {'s', 's1', 's2', 'm', 'M'}:
+            if typecode in {"s", "s1", "s2", "m", "M"}:
                 # Exempt python source scripts and modules from the check.
                 pass
             else:
@@ -202,18 +208,20 @@ class CArchiveWriter:
                     )
                 self._collected_names.add(normalized_dest)
 
-        if typecode == 'd':
+        if typecode == "d":
             # Dependency; merge src_name (= reference path prefix) and dest_name (= name) into single-string format that
             # is parsed by bootloader.
             return self._write_blob(fp, b"", f"{src_name}:{dest_name}", typecode)
-        elif typecode in {'s', 's1', 's2'}:
+        elif typecode in {"s", "s1", "s2"}:
             # If it is a source code file, compile it to a code object and marshal the object, so it can be unmarshalled
             # by the bootloader. For that, we need to know target optimization level, which is stored in typecode.
-            optim_level = {'s': 0, 's1': 1, 's2': 2}[typecode]
+            optim_level = {"s": 0, "s1": 1, "s2": 2}[typecode]
             code = get_code_object(dest_name, src_name, optimize=optim_level)
             code = strip_paths_in_code(code)
-            return self._write_blob(fp, marshal.dumps(code), dest_name, 's', compress=compress)
-        elif typecode in ('m', 'M'):
+            return self._write_blob(
+                fp, marshal.dumps(code), dest_name, "s", compress=compress
+            )
+        elif typecode in ("m", "M"):
             # Read the PYC file. We do not perform compilation here (in contrast to script files in the above branch),
             # so typecode does not contain optimization level information.
             with open(src_name, "rb") as in_fp:
@@ -224,13 +232,17 @@ class CArchiveWriter:
             code = strip_paths_in_code(code)
             # These module entries are loaded and executed within the bootloader, which requires only the code
             # object, without the PYC header.
-            return self._write_blob(fp, marshal.dumps(code), dest_name, typecode, compress=compress)
-        elif typecode == 'n':
+            return self._write_blob(
+                fp, marshal.dumps(code), dest_name, typecode, compress=compress
+            )
+        elif typecode == "n":
             # Symbolic link; store target name (as NULL-terminated string)
-            data = src_name.encode('utf-8') + b'\x00'
+            data = src_name.encode("utf-8") + b"\x00"
             return self._write_blob(fp, data, dest_name, typecode, compress=compress)
         else:
-            return self._write_file(fp, src_name, dest_name, typecode, compress=compress)
+            return self._write_file(
+                fp, src_name, dest_name, typecode, compress=compress
+            )
 
     def _write_blob(self, out_fp, blob: bytes, dest_name, typecode, compress=False):
         """
@@ -251,7 +263,7 @@ class CArchiveWriter:
         """
         data_offset = out_fp.tell()
         data_length = os.stat(src_name).st_size
-        with open(src_name, 'rb') as in_fp:
+        with open(src_name, "rb") as in_fp:
             if compress:
                 tmp_buffer = bytearray(16 * 1024)
                 compressor = zlib.compressobj(self._COMPRESSION_LEVEL)
@@ -264,17 +276,26 @@ class CArchiveWriter:
             else:
                 shutil.copyfileobj(in_fp, out_fp)
 
-        return (data_offset, out_fp.tell() - data_offset, data_length, int(compress), typecode, dest_name)
+        return (
+            data_offset,
+            out_fp.tell() - data_offset,
+            data_length,
+            int(compress),
+            typecode,
+            dest_name,
+        )
 
     @classmethod
     def _serialize_toc(cls, toc):
         serialized_toc = []
         for toc_entry in toc:
-            data_offset, compressed_length, data_length, compress, typecode, name = toc_entry
+            data_offset, compressed_length, data_length, compress, typecode, name = (
+                toc_entry
+            )
 
             # Encode names as UTF-8. This should be safe as standard python modules only contain ASCII-characters (and
             # standard shared libraries should have the same), and thus the C-code still can handle this correctly.
-            name = name.encode('utf-8')
+            name = name.encode("utf-8")
             name_length = len(name) + 1  # Add 1 for string-terminating zero byte.
 
             # Ensure TOC entries are aligned on 16-byte boundary, so they can be read by bootloader (C code) on
@@ -287,18 +308,19 @@ class CArchiveWriter:
 
             # Serialize
             serialized_entry = struct.pack(
-                cls._TOC_ENTRY_FORMAT + f"{name_length}s",  # "Ns" format automatically pads the string with zero bytes.
+                cls._TOC_ENTRY_FORMAT
+                + f"{name_length}s",  # "Ns" format automatically pads the string with zero bytes.
                 cls._TOC_ENTRY_LENGTH + name_length,
                 data_offset,
                 compressed_length,
                 data_length,
                 compress,
-                typecode.encode('ascii'),
+                typecode.encode("ascii"),
                 name,
             )
             serialized_toc.append(serialized_entry)
 
-        return b''.join(serialized_toc)
+        return b"".join(serialized_toc)
 
 
 class SplashWriter:
@@ -307,6 +329,7 @@ class SplashWriter:
 
     The resulting archive is added as an entry into the CArchive with the typecode PKG_ITEM_SPLASH.
     """
+
     # This struct describes the splash resources as it will be in an buffer inside the bootloader. All necessary parts
     # are bundled, the *_len and *_offset fields describe the data beyond this header definition.
     # Whereas script and image fields are binary data, the requirements fields describe an array of strings. Each string
@@ -318,22 +341,24 @@ class SplashWriter:
     #     char tk_libname[16];
     #     char tk_lib[16];
     #
-    #     uint32_t script_len;
-    #     uint32_t script_offset;
+    #     uint64_t script_len;
+    #     uint64_t script_offset;
     #
-    #     uint32_t image_len;
-    #     uint32_t image_offset;
+    #     uint64_t image_len;
+    #     uint64_t image_offset;
     #
-    #     uint32_t requirements_len;
-    #     uint32_t requirements_offset;
+    #     uint64_t requirements_len;
+    #     uint64_t requirements_offset;
     # } SPLASH_DATA_HEADER;
     #
-    _HEADER_FORMAT = '!16s 16s 16s II II II'
+    _HEADER_FORMAT = "!16s 16s 16s QQ QQ QQ"
     _HEADER_LENGTH = struct.calcsize(_HEADER_FORMAT)
 
     # The created archive is compressed by the CArchive, so no need to compress the data here.
 
-    def __init__(self, filename, name_list, tcl_libname, tk_libname, tklib, image, script):
+    def __init__(
+        self, filename, name_list, tcl_libname, tk_libname, tklib, image, script
+    ):
         """
         Writer for splash screen resources that are bundled into the CArchive as a single archive/entry.
 
@@ -350,17 +375,17 @@ class SplashWriter:
         # bootloader works only with back slashes.
         def _normalize_filename(filename):
             filename = os.path.normpath(filename)
-            if is_win and os.path.sep == '/':
+            if is_win and os.path.sep == "/":
                 # When building under MSYS, the above path normalization uses Unix-style separators, so replace them
                 # manually.
-                filename = filename.replace(os.path.sep, '\\')
+                filename = filename.replace(os.path.sep, "\\")
             return filename
 
         name_list = [_normalize_filename(name) for name in name_list]
 
         with open(filename, "wb") as fp:
             # Reserve space for the header.
-            fp.write(b'\0' * self._HEADER_LENGTH)
+            fp.write(b"\0" * self._HEADER_LENGTH)
 
             # Serialize the requirements list. This list (more an array) contains the names of all files the bootloader
             # needs to extract before the splash screen can be started. The implementation terminates every name with a
@@ -368,7 +393,7 @@ class SplashWriter:
             requirements_len = 0
             requirements_offset = fp.tell()
             for name in name_list:
-                name = name.encode('utf-8') + b'\0'
+                name = name.encode("utf-8") + b"\0"
                 fp.write(name)
                 requirements_len += len(name)
 
@@ -386,7 +411,7 @@ class SplashWriter:
                 fp.write(image)
             else:
                 # Read image into buffer
-                with open(image, 'rb') as image_fp:
+                with open(image, "rb") as image_fp:
                     image_data = image_fp.read()
                 image_len = len(image_data)
                 fp.write(image_data)
@@ -408,9 +433,9 @@ class SplashWriter:
             # Write header
             header_data = struct.pack(
                 self._HEADER_FORMAT,
-                _encode_str(tcl_libname, 'tcl_libname', 16),
-                _encode_str(tk_libname, 'tk_libname', 16),
-                _encode_str(tklib, 'tklib', 16),
+                _encode_str(tcl_libname, "tcl_libname", 16),
+                _encode_str(tk_libname, "tk_libname", 16),
+                _encode_str(tklib, "tklib", 16),
                 script_len,
                 script_offset,
                 image_len,

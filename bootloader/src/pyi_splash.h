@@ -33,20 +33,20 @@ struct SPLASH_DATA_HEADER
     char tk_lib[16];
 
     /* Splash screen script */
-    uint32_t script_len;
-    uint32_t script_offset;
+    uint64_t script_len;
+    uint64_t script_offset;
 
     /* Image data */
-    uint32_t image_len;
-    uint32_t image_offset;
+    uint64_t image_len;
+    uint64_t image_offset;
 
     /*
      * To only extract the necessary files from the archive, the following
      * two fields define an array of strings. Strings are NULL-terminated
      * and stored one after another.
      */
-    uint32_t requirements_len;
-    uint32_t requirements_offset;
+    uint64_t requirements_len;
+    uint64_t requirements_offset;
 
     /*
      * Followed by a chunk of data, including the splash screen

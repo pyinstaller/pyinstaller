@@ -1083,7 +1083,7 @@ static int
 _pyi_resolve_executable_macos(char *executable_filename)
 {
     char program_path[PYI_PATH_MAX];
-    uint32_t name_length = sizeof(program_path);
+    uint64_t name_length = sizeof(program_path);
 
     /* macOS has special function to obtain path to executable.
      * This may return a symbolic link. */

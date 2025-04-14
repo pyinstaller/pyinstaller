@@ -61,8 +61,8 @@ pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx)
      * `libpython?.?.a(libpython?.?.so)` format. */
     char *p;
     if ((p = strrchr(archive->python_libname, '.')) != NULL && strcmp(p, ".a") == 0) {
-        uint32_t pyver_major;
-        uint32_t pyver_minor;
+        uint64_t pyver_major;
+        uint64_t pyver_minor;
 
         pyver_major = archive->python_version / 100;
         pyver_minor = archive->python_version % 100;
