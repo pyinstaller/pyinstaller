@@ -23,7 +23,7 @@ import os
 from PyInstaller import compat
 
 # Note: Keep this variable as plain string so it could be updated automatically when doing a release.
-__version__ = "6.12.0-64bit.1"
+__version__ = "6.12.0+64bit-1"
 
 # Absolute path of this package's directory. Save this early so all submodules can use the absolute path. This is
 # required for example if the current directory changes prior to loading the hooks.
