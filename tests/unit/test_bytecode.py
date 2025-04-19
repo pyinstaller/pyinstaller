@@ -135,8 +135,17 @@ def test_global_functions():
     assert function_calls(code) == [('foo', [.456])]
 
     # And the unlikely case of >256 arguments to one function call.
-    code = compile_(many_arguments())
-    assert function_calls(code) == [('foo', list(range(300)))]
+    #
+    # NOTE: with python >= 3.14.0a5, this creates a list with a sequence
+    # of BUILD_LIST, LOAD*, LIST_APPEND opcodes, followed by a
+    # CALL_INTRINSIC_1 opcode with INTRINSIC_LIST_TO_TUPLE argument,
+    # and CALL_FUNCTION_EX opcode.
+    #
+    # Since we have no real use case for such lists, perform the
+    # test only on earlier python versions.
+    if not compat.is_py314:
+        code = compile_(many_arguments())
+        assert function_calls(code) == [('foo', list(range(300)))]
 
     # For loops, if statements should work. The iterable in a comprehension loop works but the statement to be executed
     # repeatedly gets its own code object and therefore requires recursion (tested later).
