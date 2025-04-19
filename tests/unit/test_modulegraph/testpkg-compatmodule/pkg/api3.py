@@ -5,6 +5,7 @@ def div(a, b):
         return a/b
 
     except ZeroDivisionError as exc:
+        print("Zero division!")
         return None
 
 class MyClass (object, metaclass=type):
