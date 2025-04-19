@@ -81,8 +81,14 @@ def test_many_int_constants():
     # co_consts is used for larger values (in combination with LOAD_CONST / LOAD_CONST_IMMORTAL).
     # In earlier python versions, co_consts is used for all constants.
     if compat.is_py314:
-        # (600 - 256) integers plus a `None` return.
-        assert len(code.co_consts) == 601 - 256
+        # In 3.14.0a7 the behavior was changed (by 55815a6); it seems that the value of very first LOAD_SMALL_INT is
+        # added to co_consts for some reason. This does not happen if there is preceding LOAD_CONST (e.g., if there
+        # is a docstring present before the code). In case this behavior change was unintended or is changed further,
+        # check if co_consts contains 0 at first index and adjust expected length accordingly...
+        expected_length = 601 - 256  # (600 - 256) integers plus a `None` return.
+        if code.co_consts[0] == 0:
+            expected_length += 1
+        assert len(code.co_consts) == expected_length
     else:
         # 600 integers plus a 'None' return.
         assert len(code.co_consts) == 601
