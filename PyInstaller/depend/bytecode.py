@@ -135,7 +135,11 @@ else:
     # PRECALL is no longer a valid key
     _OPCODES_EXTENDED_ARG = rb"`EXTENDED_ARG`"
     _OPCODES_EXTENDED_ARG2 = _OPCODES_EXTENDED_ARG
-    _OPCODES_FUNCTION_GLOBAL = rb"`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`"
+    if compat.is_py314:
+        # Python 3.14.0a7 added LOAD_FAST_BORROW.
+        _OPCODES_FUNCTION_GLOBAL = rb"`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`|`LOAD_FAST_BORROW`"
+    else:
+        _OPCODES_FUNCTION_GLOBAL = rb"`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`"
     _OPCODES_FUNCTION_LOAD = rb"`LOAD_ATTR`"
     if compat.is_py314:
         # Python 3.14.0a2 split LOAD_CONST into LOAD_CONST, LOAD_IMMORTAL_CONST, and LOAD_SMALL_INT.
@@ -257,6 +261,10 @@ def load(raw: bytes, code: CodeType) -> str:
         # python 3.14 introduced LOAD_CONST_IMMORTAL, which pushes co_consts[consti] on the stack. This is intended to
         # be a variant of LOAD_CONST for constants that are known to be immortal.
         return code.co_consts[index]
+    if compat.is_py314 and raw[-2] == opmap["LOAD_FAST_BORROW"]:
+        # python 3.14 introduced LOAD_FAST_BORROW, which pushes a borrowed reference to the local co_varnames[var_num]
+        # onto the stack.
+        return code.co_varnames[index]
 
     return code.co_names[index]
 
