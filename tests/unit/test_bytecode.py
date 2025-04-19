@@ -23,6 +23,7 @@ from PyInstaller.depend.bytecode import (
     recursive_function_calls,
     any_alias,
     finditer,
+    _cleanup_bytecode_string,  # used for sanity check in test_finditer()
 )
 
 
@@ -246,6 +247,17 @@ def test_finditer():
         # test below - it'll be the next character) which overlaps with this one so we must override regex's
         behaviour of ignoring overlapping matches to prevent these from getting lost.
     """
-    matches = list(finditer(re.compile(rb"\d+"), b"0123 4567 890 12 3 4"))
+
+    # separator: 0xFF
+    sample_string = b"0123\xFF4567\xFF890\xFF12\xFF3\xFF4"
+
+    # Sanity check - ensure that none of the characters in the sample string coincide with the opcodes that `finditer()`
+    # filters out via call to `_cleanup_bytecode_string()` (e.g., CACHE, PUSH_NULL), If that is the case, we need to
+    # pick up new separator to avoid disturbing the test. For example, original separator was space character, but its
+    # ordinal code (32) coincides with PUSH_NULL opcode in python 3.14.0a7.
+    assert sample_string == _cleanup_bytecode_string(sample_string), \
+        "One of characters in input string coincides with filtered-out opcode!"
+
+    matches = list(finditer(re.compile(rb"\d+"), sample_string))
     aligned = [i.group() for i in matches]
     assert aligned == [b"0123", b"567", b"890", b"12"]
