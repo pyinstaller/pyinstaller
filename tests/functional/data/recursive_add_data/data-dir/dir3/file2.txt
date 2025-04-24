@@ -1,0 +1,1 @@
+data-dir/dir3/file2.txt

@@ -414,3 +414,54 @@ def test_runpy_run_from_location(tmp_path, pyi_builder):
         """,
         pyi_args=['--add-data', f"{script_file}:."],
     )
+
+
+# End-to-end tests with --add-data and source paths with and without glob.
+@pytest.mark.parametrize('scenario', ['recursive_noglob', 'recursive_glob', 'top_level_files'])
+def test_recursive_add_data(pyi_builder, scenario):
+    data_dir = pathlib.Path(__file__).parent / 'data' / 'recursive_add_data' / 'data-dir'
+
+    if scenario == 'top_level_files':
+        add_data_arg = data_dir / '*.txt'
+        expected_files = [
+            "data-dir/file1.txt",
+            "data-dir/file2.txt",
+        ]
+    else:
+        if scenario == 'recursive_noglob':
+            add_data_arg = data_dir
+        else:
+            add_data_arg = data_dir / '*'
+        expected_files = [
+            "data-dir/dir1/dir1/file1.txt",
+            "data-dir/dir1/dir1/file2.txt",
+            "data-dir/dir1/dir2/file1.txt",
+            "data-dir/dir1/file1.txt",
+            "data-dir/dir2/dir1/file1.txt",
+            "data-dir/dir2/dir1/file2.txt",
+            "data-dir/dir3/dir1/file1.txt",
+            "data-dir/dir3/file1.txt",
+            "data-dir/dir3/file2.txt",
+            "data-dir/file1.txt",
+            "data-dir/file2.txt",
+        ]
+
+    pyi_builder.test_source(
+        """
+        import pathlib
+        import sys
+
+        root_directory = pathlib.Path(__file__).parent
+
+        # File names to check are passed as command-line arguments; each
+        # file is expected to contain its relative path (with POSIX separators).
+        for entry in sys.argv[1:]:
+            file_path = root_directory / entry
+            assert file_path.is_file(), f"File {str(file_path)!r} does not exist!"
+
+            content = file_path.read_text().strip()
+            assert content == entry, f"Unexpected content in {str(file_path)!r}: found {content!r}, expected {entry!r}!"
+        """,
+        pyi_args=['--add-data', f'{add_data_arg!s}:data-dir'],
+        app_args=[*expected_files],
+    )
