@@ -485,11 +485,18 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
 
         # Normalize paths.
         src_root_path_or_glob = os.path.normpath(src_root_path_or_glob)
-        if os.path.isfile(src_root_path_or_glob):
+
+        # If given source path is a file or directory path, pass it on.
+        # If not, treat it as a glob and pass on all matching paths. However, we need to preserve the directories
+        # captured by the glob - as opposed to collecting their contents into top-level target directory. Therefore,
+        # we set a flag which is used in subsequent processing to distinguish between original directory paths and
+        # directory paths that were captured by the glob.
+        if os.path.isfile(src_root_path_or_glob) or os.path.isdir(src_root_path_or_glob):
             src_root_paths = [src_root_path_or_glob]
+            was_glob = False
         else:
-            # List of the absolute paths of all source paths matching the current glob.
             src_root_paths = glob.glob(src_root_path_or_glob)
+            was_glob = True
 
         if not src_root_paths:
             raise SystemExit(f'ERROR: Unable to find {src_root_path_or_glob!r} when adding binary and data files.')
@@ -514,7 +521,12 @@ def format_binaries_and_datas(binaries_or_datas, workingdir=None):
                     #   "/top" from "/top/dir").
                     # * Normalizing the result to remove redundant relative paths (e.g., removing "./" from
                     #   "trg/./file").
-                    trg_dir = os.path.normpath(os.path.join(trg_root_dir, os.path.relpath(src_dir, src_root_path)))
+                    if was_glob:
+                        # Preserve directories captured by glob.
+                        rel_dir = os.path.relpath(src_dir, os.path.dirname(src_root_path))
+                    else:
+                        rel_dir = os.path.relpath(src_dir, src_root_path)
+                    trg_dir = os.path.normpath(os.path.join(trg_root_dir, rel_dir))
 
                     for src_file_basename in src_file_basenames:
                         src_file = os.path.join(src_dir, src_file_basename)

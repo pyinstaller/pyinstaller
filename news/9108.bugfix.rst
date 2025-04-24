@@ -1,0 +1,7 @@
+Fix behavior of :option:`--add-data` and :option:`--add-binary` when the
+given source path contains a glob that matches directories. PyInstaller
+now collects the matched directories themselves into the specified target
+directory instead of collecting their content into the specified target
+directory (i.e., the directories are preserved). This ensures that
+``--add-data data_dir:data_dir`` and ``--add-data data_dir/*:data_dir``
+end up behaving in the same way when the data directory contains sub-directories.
