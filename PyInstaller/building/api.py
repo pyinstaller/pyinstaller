@@ -17,6 +17,7 @@ is a way how PyInstaller does the dependency analysis and creates executable.
 
 import os
 import subprocess
+import sys
 import time
 import pathlib
 import shutil
@@ -31,7 +32,7 @@ from PyInstaller.building.utils import (
     compile_pymodule
 )
 from PyInstaller.building.splash import Splash  # argument type validation in EXE
-from PyInstaller.compat import is_cygwin, is_darwin, is_linux, is_win, strict_collect_mode, is_nogil
+from PyInstaller.compat import is_cygwin, is_darwin, is_linux, is_win, strict_collect_mode, is_nogil, is_aix
 from PyInstaller.depend import bindepend
 from PyInstaller.depend.analysis import get_bootstrap_modules
 import PyInstaller.utils.misc as miscutils
@@ -639,6 +640,18 @@ class EXE(Target):
         if self.python_lib is None:
             from PyInstaller.exceptions import PythonLibraryNotFoundError
             raise PythonLibraryNotFoundError()
+
+        # On AIX, the python shared library might in fact be an ar archive with shared object inside it, and needs to
+        # be `dlopen`'ed with full name (for example, `libpython3.9.a(libpython3.9.so)`. So if the library's suffix is
+        # .a, adjust the name accordingly, assuming fixed format for the shared object name. NOTE: the information about
+        # shared object name is in fact available from `ldd` but not propagated from our binary dependency analysis. If
+        # we ever need to determine the shared object's name dynamically, we could write a simple ar parser, based on
+        # information from `https://www.ibm.com/docs/en/aix/7.3?topic=formats-ar-file-format-big`.
+        if is_aix:
+            _, ext = os.path.splitext(self.python_lib)
+            if ext == '.a':
+                _py_major, _py_minor = sys.version_info[:2]
+                self.python_lib += f"(libpython{_py_major}.{_py_minor}.so)"
 
         # Normalize TOC
         self.toc = normalize_toc(self.toc)

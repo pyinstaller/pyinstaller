@@ -364,15 +364,19 @@ pyi_recursive_rmdir(const char *dir_path)
 pyi_dylib_t
 pyi_utils_dlopen(const char *filename)
 {
-    int flags = RTLD_NOW | RTLD_GLOBAL;
-
 #ifdef AIX
-    /* Append the RTLD_MEMBER to the open mode for 'dlopen()'
-     * in order to load shared object member from library. */
-    flags |= RTLD_MEMBER;
+    /* On AIX, if we are trying to load a shared object in an .a archive
+     * (e.g., `/path/to/libpython3.9.a(libpython3.9.so)`), we need to
+     * set `RTLD_MEMBER` flag. It seems that we can use this flag with
+     * regular shared library (.so) files as well, so we can get away
+     * with having it always set (otherwise, we would need to check
+     * whether the passed filename ends with ')' or not). For RTLD_MEMBER
+     * to be defined, the program needs to be compiled with _ALL_SOURCE
+     * defined, which is done globally in the `waf` build script. */
+    return dlopen(filename, RTLD_NOW | RTLD_GLOBAL | RTLD_MEMBER);
+#else
+    return dlopen(filename, RTLD_NOW | RTLD_GLOBAL);
 #endif
-
-    return dlopen(filename, flags);
 }
 
 int

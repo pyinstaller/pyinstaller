@@ -44,54 +44,7 @@ int
 pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx)
 {
     const struct ARCHIVE *archive = pyi_ctx->archive;
-    char dll_name[MAX_DLL_NAME_LEN];
-    size_t dll_name_len;
     char dll_fullpath[PYI_PATH_MAX];
-
-    /* On AIX, the name of shared library path might be an archive, because
-     * the 'ar' archives can be used for both static and shared objects.
-     * A shared library can be loaded from such an archive like this:
-     *   dlopen("libpythonX.Y.a(libpythonX.Y.so)", RTLD_MEMBER)
-     * This means that if python library name ends with '.a' suffix, we
-     * need to change it into:
-     *   libpython3.6.a(libpython3.6.so)
-     * Shared libraries whose names end with .so may be used as-is. */
-#ifdef AIX
-    /* Determine if shared lib is in `libpython?.?.so` or
-     * `libpython?.?.a(libpython?.?.so)` format. */
-    char *p;
-    if ((p = strrchr(archive->python_libname, '.')) != NULL && strcmp(p, ".a") == 0) {
-        uint32_t pyver_major;
-        uint32_t pyver_minor;
-
-        pyver_major = archive->python_version / 100;
-        pyver_minor = archive->python_version % 100;
-
-        dll_name_len = snprintf(
-            dll_name,
-            MAX_DLL_NAME_LEN,
-            "libpython%d.%d.a(libpython%d.%d.so)",
-            pyver_major,
-            pyver_minor,
-            pyver_major,
-            pyver_minor
-        );
-    } else {
-        dll_name_len = snprintf(dll_name, MAX_DLL_NAME_LEN, "%s", archive->python_libname);
-    }
-#else
-    dll_name_len = snprintf(dll_name, MAX_DLL_NAME_LEN, "%s", archive->python_libname);
-#endif
-
-    if (dll_name_len >= MAX_DLL_NAME_LEN) {
-        PYI_ERROR(
-            "Reported length (%d) of Python shared library name (%s) exceeds buffer size (%d)\n",
-            dll_name_len,
-            archive->python_libname,
-            MAX_DLL_NAME_LEN
-        );
-        return -1;
-    }
 
 #ifdef _WIN32
     /* If ucrtbase.dll exists in top-level application directory, load
@@ -111,8 +64,8 @@ pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx)
 #endif
 
     /* Look for python shared library in top-level application directory */
-    if (pyi_path_join(dll_fullpath, pyi_ctx->application_home_dir, dll_name) == NULL) {
-        PYI_ERROR("Path of Python shared library (%s) and its name (%s) exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PYI_PATH_MAX);
+    if (pyi_path_join(dll_fullpath, pyi_ctx->application_home_dir, archive->python_libname) == NULL) {
+        PYI_ERROR("Path of Python shared library (%s) and its name (%s) exceed buffer size (%d)\n", pyi_ctx->application_home_dir, archive->python_libname, PYI_PATH_MAX);
         return -1;
     }
 
