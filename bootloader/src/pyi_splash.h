@@ -24,10 +24,10 @@
 struct SPLASH_DATA_HEADER
 {
     /* Filename of the Tcl shared library, e.g., tcl86t.dll */
-    char tcl_libname[16];
+    char tcl_libname[32];
 
     /* Filename of the Tk shared library, e.g. tk86t.dll */
-    char tk_libname[16];
+    char tk_libname[32];
 
     /* Tk module library root, e.g. "tk/" */
     char tk_lib[16];
