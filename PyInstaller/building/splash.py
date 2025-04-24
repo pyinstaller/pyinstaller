@@ -19,7 +19,7 @@ from PyInstaller.archive.writers import SplashWriter
 from PyInstaller.building import splash_templates
 from PyInstaller.building.datastruct import Target
 from PyInstaller.building.utils import _check_guts_eq, _check_guts_toc, misc
-from PyInstaller.compat import is_darwin
+from PyInstaller.compat import is_aix, is_darwin
 from PyInstaller.depend import bindepend
 from PyInstaller.utils.hooks.tcl_tk import tcltk_info
 
@@ -240,6 +240,21 @@ class Splash(Target):
         self.splash_requirements = set(filter(_filter_requirement, self.splash_requirements))
 
         logger.debug("Splash Requirements: %s", self.splash_requirements)
+
+        # On AIX, the Tcl and Tk shared libraries might in fact be ar archives with shared object inside it, and need to
+        # be `dlopen`'ed with full name (for example, `libtcl.a(libtcl.so.8.6)` and `libtk.a(libtk.so.8.6)`. So if the
+        # library's suffix is .a, adjust the name accordingly, assuming fixed format for the shared object name.
+        # Adjust the names at the end of this method, because preceding steps use `self.tcl_lib` and `self.tk_lib` for
+        # filesystem-based operations and need the original filenames.
+        if is_aix:
+            _, ext = os.path.splitext(self.tcl_lib)
+            if ext == '.a':
+                tcl_major, tcl_minor = tcltk_info.tcl_version
+                self.tcl_lib += f"(libtcl.so.{tcl_major}.{tcl_minor})"
+            _, ext = os.path.splitext(self.tk_lib)
+            if ext == '.a':
+                tk_major, tk_minor = tcltk_info.tk_version
+                self.tk_lib += f"(libtk.so.{tk_major}.{tk_minor})"
 
         self.__postinit__()
 

@@ -1,0 +1,4 @@
+(AIX) Fix the name of Tcl and Tk shared libraries used by splash screen;
+if said shared libraries are ``.a`` archives, we need to load the shared
+object from the archives (e.g., ``libtcl.a(libtcl.so.8.6)`` and
+``libtk.a(libtk.so.8.6)``).
