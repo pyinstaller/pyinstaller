@@ -48,22 +48,7 @@
 #endif
 
 #include <dirent.h>
-
-/*
- * On AIX  RTLD_MEMBER  flag is only visible when _ALL_SOURCE flag is defined.
- *
- * There are quite a few issues with xlC compiler. GCC is much better,
- * Without flag _ALL_SOURCE gcc get stuck on the RTLD_MEMBER flax when
- * compiling the bootloader.
- * This fix was tested wigh gcc on AIX6.1.
- */
-#if defined(AIX) && !defined(_ALL_SOURCE)
-    #define _ALL_SOURCE
-    #include <dlfcn.h>
-    #undef  _ALL_SOURCE
-#else
-    #include <dlfcn.h>
-#endif
+#include <dlfcn.h> /* dlopen, dlclose */
 
 #ifndef SIGCLD
     #define SIGCLD SIGCHLD /* not defined on macOS */
