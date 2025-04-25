@@ -1,0 +1,4 @@
+Prevent the ``strip`` utility from being ran twice when building bootloader
+executables; fixes errors with ``strip`` utilities that disallow being
+ran against already-stripped binaries (for example, the ``strip`` utility
+on AIX).

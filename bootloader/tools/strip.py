@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 #-----------------------------------------------------------------------------
 # Copyright (c) 2014-2023, PyInstaller Development Team.
 #
@@ -9,35 +8,11 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""
-Strip a program/library after it is created. Use this tool as an example.
 
-Usage::
-
-    bld.program(features='strip', source='main.c', target='foo')
-
-By using::
-
-    @TaskGen.feature('cprogram', 'cxxprogram', 'fcprogram')
-
-
-If stripping at installation time is preferred, use the following::
-
-    import shutil, os
-    from waflib import Build
-    from waflib.Tools import ccroot
-    def copy_fun(self, src, tgt, **kw):
-        shutil.copy2(src, tgt)
-        os.chmod(tgt, kw.get('chmod', Utils.O644))
-        try:
-            tsk = kw['tsk']
-        except KeyError:
-            pass
-        else:
-            if isinstance(tsk.task, ccroot.link_task):
-                self.cmd_and_log('strip %s' % tgt)
-    Build.InstallContext.copy_fun = copy_fun
-"""
+# Strip the binary after it is created.
+#
+# Based on waf's playground example:
+# https://gitlab.com/ita1024/waf/-/blob/d976678d5f6ee5cf913b7828a7d4f345db7bf6de/playground/strip/strip_hack.py
 
 from waflib import Task, TaskGen
 
@@ -47,17 +22,38 @@ def configure(conf):
     conf.env.append_value('STRIPFLAGS', '')
 
 
-class strip(Task.Task):
+class StripTask(Task.Task):
     run_str = '${STRIP} ${STRIPFLAGS} ${SRC}'
-    color = 'BLUE'
-    after = ['cprogram', 'cshlib']
+    color = 'YELLOW'  # Same color as linking step
+    no_errcheck_out = True
+
+    def keyword(self):
+        return 'Stripping binary'
+
+    def runnable_status(self):
+        if self in self.run_after:
+            self.run_after.remove(self)
+
+        ret = super().runnable_status()
+        if ret == Task.ASK_LATER:
+            return ret
+
+        if self.generator.link_task.hasrun == Task.SUCCESS:
+            # Linking step was executed - binary was (re)created); run the strip task.
+            return Task.RUN_ME
+
+        return Task.SKIP_ME
 
 
 @TaskGen.feature('strip')
 @TaskGen.after('apply_link')
-def add_strip_task(self):
-    try:
-        link_task = self.link_task
-    except AttributeError:
+def apply_strip_to_build(self):
+    link_task = getattr(self, 'link_task', None)
+    if link_task is None:
         return
-    self.create_task('strip', link_task.outputs[0])
+
+    exe_node = self.link_task.outputs[0]
+
+    # NOTE: original implementation sets both input and output to exe_node, but with version of `waf` we are using, this
+    # raises dependency-cycle error.
+    self.create_task('StripTask', exe_node)
