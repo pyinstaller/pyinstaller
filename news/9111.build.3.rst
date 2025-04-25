@@ -1,0 +1,3 @@
+(AIX) Pass ``-X32_64`` flag to ``strip`` utility to have it transparently
+process either 32-bit or 64-bit executable, without user having to explicitly
+set the :envvar:`OBJECT_MODE`` environment variable.

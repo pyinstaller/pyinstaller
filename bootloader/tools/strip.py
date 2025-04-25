@@ -47,6 +47,15 @@ def configure(conf):
     # Additional flags to be passed to the `strip` command.
     conf.env.append_value('STRIPFLAGS', '')
 
+    # On AIX, `strip` utility needs to be explicitly told to process 32-bit object files (-X32), 64-bit object files
+    # (-X64), or either/both (-X32_64). Unless set via `OBJECT_MODE` environment variable, the default is 32-bit mode,
+    # which results in an error when we build 64-bit bootloader. Therefore, explicitly set -X32_64 to work with
+    # either 32-bit or 64-bit build. This should also eliminate potential mismatches between `OBJECT_MODE` setting
+    # (which is honored by IBM's `xlc` compiler but not by `/opt/freeware/bin/gcc`) and `--target-arch=` command-line
+    # option passed to `waf` (which can be used to force 64-bit build with `gcc`).
+    if conf.env.DEST_OS == 'aix':
+        conf.env.append_value('STRIPFLAGS', '-X32_64')
+
 
 class StripTask(Task.Task):
     run_str = '${STRIP} ${STRIPFLAGS} ${SRC}'
