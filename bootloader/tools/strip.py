@@ -23,7 +23,26 @@ def configure(conf):
     cc_path = os.path.dirname(conf.env.CC[0])
     environ = getattr(conf, 'environ', os.environ)
     env_paths = environ.get('PATH', '').split(os.pathsep)
-    conf.find_program('strip', path_list=[cc_path, *env_paths])
+
+    # Candidate name(s) for `strip` executable.
+    strip_candidate_names = ['strip']
+
+    # If we are using gcc-based or clang-based cross-compiler toolchain, prefer its version of `strip`, which should
+    # have the same name prefix as the compiler executable (for example `powerpc64le-linux-gnu-gcc` would have
+    # accompanying `powerpc64le-linux-gnu-strip`). The system might also have a "native" `strip` utility, which might
+    # not be able to handle the executables produced by cross-compiler.
+    if conf.env.CC_NAME == 'gcc' or conf.env.CC_NAME == 'clang':
+        # The actual name of gcc/clang executable.
+        cc_name = os.path.splitext(os.path.basename(conf.env.CC[0]))[0]
+        # Replace gcc/clang part in the name.
+        strip_name = cc_name.replace(conf.env.CC_NAME, 'strip')
+        # If we have a candidate name different than plain strip, prepend it to the list. Explicitly guard against
+        # failed substitution as well (strip_name == cc_name), to prevent any chance of erroneously using C compiler
+        # executable in lieu of strip utility.
+        if strip_name != 'strip' and strip_name != cc_name:
+            strip_candidate_names.insert(0, strip_name)
+
+    conf.find_program(strip_candidate_names, var='STRIP', path_list=[cc_path, *env_paths])
 
     # Additional flags to be passed to the `strip` command.
     conf.env.append_value('STRIPFLAGS', '')

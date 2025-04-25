@@ -1,0 +1,4 @@
+When building bootloader with a cross-compiler toolchain, have the build
+script look for toolchain-provided version of ``strip`` utility (for
+example, ``powerpc64le-linux-gnu-strip`` that is shipped with
+``powerpc64le-linux-gnu-gcc``) and prefer it over the system-provided one.
