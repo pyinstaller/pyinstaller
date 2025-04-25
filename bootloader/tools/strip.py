@@ -13,12 +13,19 @@
 #
 # Based on waf's playground example:
 # https://gitlab.com/ita1024/waf/-/blob/d976678d5f6ee5cf913b7828a7d4f345db7bf6de/playground/strip/strip_hack.py
+import os
 
 from waflib import Task, TaskGen
 
 
 def configure(conf):
-    conf.find_program('strip')
+    # Look for the `strip` executable; first in the same directory as the C compiler executable, then in PATH.
+    cc_path = os.path.dirname(conf.env.CC[0])
+    environ = getattr(conf, 'environ', os.environ)
+    env_paths = environ.get('PATH', '').split(os.pathsep)
+    conf.find_program('strip', path_list=[cc_path, *env_paths])
+
+    # Additional flags to be passed to the `strip` command.
     conf.env.append_value('STRIPFLAGS', '')
 
 

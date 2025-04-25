@@ -109,14 +109,6 @@ def is_musl(ctx):
     return re.search(rb'--target=\S+-musl', spec) or re.search(rb'Target: .*musl', spec)
 
 
-def find_program_next_to_cc(ctx, name, var):
-    # Tries to find a program in the same directory as cc or on the normal PATH.
-    environ = getattr(ctx, 'environ', os.environ)
-    path = [os.path.dirname(ctx.env.CC[0])]
-    path.extend(environ.get('PATH', '').split(os.pathsep))
-    ctx.find_program(name, var=var, path_list=path)
-
-
 def options(ctx):
     ctx.load('compiler_c')
 
@@ -751,10 +743,9 @@ def configure(ctx):
     if ctx.env.DEST_OS == 'linux' and ctx.check_cc(linkflags='-Wl,--as-needed', mandatory=False):
         ctx.env.append_value('LINKFLAGS', '-Wl,--as-needed')
 
+    # When not building with MSVC, strip the bootloader executables to reduce their size.
     if not is_msvc_target(ctx):
-        # This tool allows reducing the size of executables.
-        find_program_next_to_cc(ctx, 'strip', var='STRIP')
-        ctx.load('strip', tooldir='tools')
+        ctx.load('strip', tooldir='tools')  # Load strip feature/tool from ./tools directory.
 
     def windowed(name, baseenv):
         """Setup windowed environment based on `baseenv`."""
@@ -821,7 +812,6 @@ def configure(ctx):
     windowed('releasew', release_env)
 
 
-# TODO Use 'strip' command to decrease the size of compiled bootloaders.
 def build(ctx):
     if not ctx.variant:
         ctx.fatal('Call "python waf all" to compile all bootloaders.')
@@ -842,11 +832,8 @@ def build(ctx):
         # is mandatory for the given platform.
         ctx.objects(source=ctx.path.ant_glob('zlib/*.c'), target='STATIC_ZLIB', includes='zlib')
 
-    # By default strip final executables to make them smaller.
-    features = 'strip'
-    if is_msvc_target(ctx):
-        # Do not strip bootloaders when using MSVC.
-        features = ''
+    # Unless we are building with MSVC, strip bootloader executables to make them smaller.
+    features = '' if is_msvc_target(ctx) else 'strip'
 
     ctx.objects(source=ctx.path.ant_glob('src/*.c', excl="src/main.c"), includes='src windows zlib', target="OBJECTS")
 
