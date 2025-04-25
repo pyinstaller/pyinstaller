@@ -640,6 +640,9 @@ def configure(ctx):
         # Opting out of dynamically linked zlib can be done either with the --static-zlib option or with the
         # PYI_STATIC_ZLIB=1 environment variable.
         static_zlib = bool(int(os.environ.get("PYI_STATIC_ZLIB", '0'))) or ctx.options.static_zlib
+        # On AIX, use static build of bundled zlib.
+        if ctx.env.DEST_OS == 'aix':
+            static_zlib = True
         if static_zlib:
             # This serves as a signal to later on when the C code gets compiled.
             ctx.env.LIB_Z = None
@@ -861,10 +864,6 @@ def build(ctx):
             'THR',  # may be used on FreBSD
         ]
         staticlibs = []
-        if ctx.env.DEST_OS == 'aix':
-            # link statically with zlib, case sensitive
-            libs.remove('Z')
-            staticlibs.append('z')
 
         ctx.env.link_with_dynlibs = libs
         ctx.env.link_with_staticlibs = staticlibs
