@@ -510,6 +510,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
         );
         if (modify_ld_library_path) {
             if (pyi_utils_set_library_search_path(pyi_ctx->application_home_dir) < 0) {
+                PYI_ERROR("Failed to set library search path via environment variable!\n");
                 return -1;
             }
         }
@@ -894,6 +895,7 @@ _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
      * already made in the common codepath. */
 #if !defined(_WIN32) && !defined(__APPLE__) && !defined(__CYGWIN__)
     if (pyi_utils_set_library_search_path(pyi_ctx->application_home_dir) == -1) {
+        PYI_ERROR("Failed to set library search path via environment variable!\n");
         return -1;
     }
 #endif /* !defined(_WIN32) && !defined(__APPLE__) */
@@ -941,7 +943,10 @@ _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
      * where files were extracted) to the child process via
      * corresponding environment variable. */
     PYI_DEBUG("LOADER: setting _PYI_APPLICATION_HOME_DIR to %s\n", pyi_ctx->application_home_dir);
-    pyi_setenv("_PYI_APPLICATION_HOME_DIR", pyi_ctx->application_home_dir);
+    if (pyi_setenv("_PYI_APPLICATION_HOME_DIR", pyi_ctx->application_home_dir) < 0) {
+        PYI_ERROR("Failed to set application home directory via environment variable!\n");
+        return -1;
+    }
 
     /* Start the child process that will execute user's program. */
     PYI_DEBUG("LOADER: starting the child process...\n");
