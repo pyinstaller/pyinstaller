@@ -25,7 +25,7 @@ import zipfile
 
 from PyInstaller import compat
 from PyInstaller import log as logging
-from PyInstaller.compat import EXTENSION_SUFFIXES, is_darwin, is_win, is_linux
+from PyInstaller.compat import EXTENSION_SUFFIXES, is_aix, is_darwin, is_win, is_linux
 from PyInstaller.config import CONF
 from PyInstaller.exceptions import InvalidSrcDestTupleError
 from PyInstaller.utils import misc
@@ -238,6 +238,11 @@ def process_collected_binary(
         if is_darwin:
             # The default strip behavior breaks some shared libraries under macOS.
             strip_options = ["-S"]  # -S = strip only debug symbols.
+        elif is_aix:
+            # Set -X32_64 flag to have strip transparently process both 32-bit and 64-bit binaries, without user having
+            # to set OBJECT_MODE environment variable prior to the build. Also accommodates potential mixed-case
+            # scenario, for example a 32-bit utility program being collected into a 64-bit application bundle.
+            strip_options = ["-X32_64"]
 
         cmd = ["strip", *strip_options, cached_name]
         logger.info("Executing: %s", " ".join(cmd))

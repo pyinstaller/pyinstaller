@@ -388,10 +388,6 @@ Otherwise (64-bit Python), you should use the following commands::
     export OBJECT_MODE=64
     python ./waf all
 
-.. note:: The correct setting of :envvar:`OBJECT_MODE` may also be needed
-   when you use PyInstaller to package your application; for example, when
-   :option:`--strip` option is enabled.
-
 .. note:: While :envvar:`OBJECT_MODE` environment variable is honored by
    IBM's :command:`xlc_r` compiler, the :command:`gcc` compiler from *AIX
    Toolbox for Open Source Software* (found in :command:`/opt/freeware/bin/gcc`)

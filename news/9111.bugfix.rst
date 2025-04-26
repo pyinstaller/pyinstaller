@@ -1,0 +1,2 @@
+(AIX) Fix use of ``strip`` utility on collected binaries; pass the ``-x32_64``
+flag to enable transparent processing of either 32-bit or 64-bit binaries.
