@@ -361,56 +361,64 @@ Building for AIX
 * By default AIX builds 32-bit executables.
 * For 64-bit executables set the environment variable :envvar:`OBJECT_MODE`.
 
-If Python was built as a 64-bit executable
-then the AIX utilities that work with binary files
-(e.g., .o, and .a) may need the flag ``-X64``.
-Rather than provide this flag with every command,
-the preferred way to provide this setting
-is to use the environment variable :envvar:`OBJECT_MODE`.
-Depending on whether Python was build as a 32-bit or a 64-bit executable
-you may need to set or unset
-the environment variable :envvar:`OBJECT_MODE`.
+When creating a 64-bit build, the compiler and other AIX utilities that
+work with binary files (for example, the :command:`strip` utility) may
+need to be passed the ``-X64`` flag to force 64-bit mode. Rather than
+passing this flag to every command, the preferred way to provide this
+setting is to use the :envvar:`OBJECT_MODE` environment variable.
 
-To determine the size the following command can be used::
+Depending on whether you are using 32-bit or 64-bit Python build,
+you may therefore need to set or unset the :envvar:`OBJECT_MODE` environment
+variable prior to running  ``waf`` in order to build a matching type of the
+bootloader executable.
 
-    $ python -c "import sys; print(sys.maxsize <= 2**32)"
-    True
+To determine whether you are using 32-bit or 64-bit Python, use the following
+command::
 
-When the answer is ``True`` (as above) Python was build as a 32-bit
-executable.
+    python -c "import sys; print(sys.maxsize <= 2**32)"
 
-When working with a 32-bit Python executable proceed as follows::
+If the output of above command is ``True``, your Python is 32-bit, and
+you should build bootloader using the following commands::
 
     unset OBJECT_MODE
-    ./waf configure all
+    python ./waf all
 
-When working with a 64-bit Python executable proceed as follows::
+Otherwise (64-bit Python), you should use the following commands::
 
     export OBJECT_MODE=64
-    ./waf configure all
+    python ./waf all
 
-.. note:: The correct setting of :envvar:`OBJECT_MODE` is also needed when you
-   use PyInstaller to package your application.
+.. note:: The correct setting of :envvar:`OBJECT_MODE` may also be needed
+   when you use PyInstaller to package your application; for example, when
+   :option:`--strip` option is enabled.
 
-To build the bootloader you will need a compiler compatible (identical)
-with the one used to build python.
+.. note:: While :envvar:`OBJECT_MODE` environment variable is honored by
+   IBM's :command:`xlc_r` compiler, the :command:`gcc` compiler from *AIX
+   Toolbox for Open Source Software* (found in :command:`/opt/freeware/bin/gcc`)
+   does not seem to honor it. When using this compiler, you need to set
+   the target architecture by passing ``--target-arch`` option to ``waf``,
+   for example::
+
+     python ./waf all --target-arch=64bit
+
+To build the bootloader, you will need a compiler compatible (identical)
+with the one that was used to build Python itself.
 
 .. note:: Python compiled with a different version of gcc that you are using
    might not be compatible enough.
    GNU tools are not always binary compatible.
 
-If you do not know which compiler that was,
-this command can help you determine
-if the compiler was gcc or an IBM compiler::
+To identify the compiler that was used to build Python, you can use the
+following command::
 
     python -c "import sysconfig; print(sysconfig.get_config_var('CC'))"
 
-If the compiler is gcc you may need additional RPMs installed
+If the compiler is :command:`gcc` you may need additional RPMs installed
 to support the GNU run-time dependencies.
 
-When the IBM compiler is used no additional prerequisites are expected.
-The recommended value for :envvar:`CC` with the IBM compilers is
-`:command:xlc_r`.
+When the IBM compiler is used, no additional prerequisites are expected.
+The recommended value for :envvar:`CC` environment variable with the
+IBM compiler is :command:`xlc_r`.
 
 
 Building for FreeBSD
