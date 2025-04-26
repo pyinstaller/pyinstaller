@@ -258,8 +258,16 @@ def process_collected_binary(
             )
             logger.debug("Output from strip command:\n%s", p.stdout)
         except subprocess.CalledProcessError as e:
-            logger.warning("Failed to run strip on %r!", cached_name, exc_info=True)
-            logger.warning("Output from strip command:\n%s", e.stdout)
+            show_warning = True
+
+            # On AIX, strip utility raises an error when ran against already-stripped binary. Catch the corresponding
+            # message (`0654-419 The specified archive file was already stripped.`) and suppress the warning.
+            if is_aix and "0654-419" in e.stdout:
+                show_warning = False
+
+            if show_warning:
+                logger.warning("Failed to run strip on %r!", cached_name, exc_info=True)
+                logger.warning("Output from strip command:\n%s", e.stdout)
         except Exception:
             logger.warning("Failed to run strip on %r!", cached_name, exc_info=True)
 
