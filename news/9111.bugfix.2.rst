@@ -1,0 +1,3 @@
+When collecting files for splash screen, suppress warning about
+``license.terms`` not being found in the ``tk8.x`` directory; this seems
+to be the case in most Tcl/Tk installations found on POSIX systems.

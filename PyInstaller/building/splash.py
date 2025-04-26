@@ -228,7 +228,11 @@ class Splash(Target):
         def _filter_requirement(filename):
             if filename not in collected_files:
                 # Item is not bundled, so warn the user about it. This actually may happen on some tkinter installations
-                # that are missing the license.terms file.
+                # that are missing the license.terms file - as this file has no effect on operation of splash screen,
+                # suppress the warning for it.
+                if os.path.basename(filename) == 'license.terms':
+                    return False
+
                 logger.warning(
                     "The local Tcl/Tk installation is missing the file %s. The behavior of the splash screen is "
                     "therefore undefined and may be unsupported.", filename
