@@ -13,6 +13,8 @@
 
 #ifdef _WIN32
     #include <windows.h>
+#else
+    #include <dlfcn.h> /* dlerror */
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -348,14 +350,27 @@ pyi_splash_load_shared_libaries(struct SPLASH_CONTEXT *splash)
 {
     splash->dlls_fully_loaded = false;
 
+    /* Tcl */
     PYI_DEBUG("SPLASH: loading Tcl library from: %s\n", splash->tcl_libpath);
-    PYI_DEBUG("SPLASH: loading Tk library from: %s\n", splash->tk_libpath);
-
     splash->dll_tcl = pyi_utils_dlopen(splash->tcl_libpath);
-    splash->dll_tk = pyi_utils_dlopen(splash->tk_libpath);
+    if (splash->dll_tcl == 0) {
+#ifdef _WIN32
+        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Tcl DLL.\n");
+#else
+        PYI_ERROR("Failed to load Tcl shared library: %s\n", dlerror());
+#endif
+        return -1;
+    }
 
-    if (splash->dll_tcl == 0 || splash->dll_tk == 0) {
-        PYI_ERROR("SPLASH: failed to load Tcl/Tk shared libraries!\n");
+    /* Tk */
+    PYI_DEBUG("SPLASH: loading Tk library from: %s\n", splash->tk_libpath);
+    splash->dll_tk = pyi_utils_dlopen(splash->tk_libpath);
+    if (splash->dll_tk == 0) {
+#ifdef _WIN32
+        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Tk DLL.\n");
+#else
+        PYI_ERROR("Failed to load Tk shared library: %s\n", dlerror());
+#endif
         return -1;
     }
 
