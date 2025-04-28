@@ -140,6 +140,18 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
     pyi_ctx->is_onefile = pyi_ctx->archive->contains_extractable_entries;
     PYI_DEBUG("LOADER: application has %s semantics...\n", pyi_ctx->is_onefile ? "onefile" : "onedir");
 
+    /* Check if splash screen is available. */
+    pyi_ctx->has_splash = pyi_ctx->archive->toc_splash != NULL;
+    if (pyi_ctx->has_splash) {
+        /* Check if user requested splash screen to be suppressed by setting
+         * the PYINSTALLER_SUPPRESS_SPLASH_SCREEN environment variable to 1. */
+        env_var_value = pyi_getenv("PYINSTALLER_SUPPRESS_SPLASH_SCREEN");
+        if (env_var_value) {
+            pyi_ctx->suppress_splash = strcmp(env_var_value, "1") == 0;
+        }
+        free(env_var_value);
+    }
+
     /* Check if user explicitly requested environment reset via the
      * PYINSTALLER_RESET_ENVIRONMENT environment variable. In this case,
      * we unconditionally reset the environment and make this process
@@ -659,26 +671,16 @@ _pyi_main_read_runtime_options(struct PYI_CONTEXT *pyi_ctx)
 static void
 _pyi_main_setup_splash_screen(struct PYI_CONTEXT *pyi_ctx)
 {
-    char *env_suppress_splash;
-    bool suppressed = false;
     bool is_eligible = false;
 
-    /* Check if splash screen is available at all, i.e., if PKG/CArchive
-     * contains SPLASH entry. */
-    if (!pyi_ctx->archive->toc_splash) {
+    /* Check if splash screen is available at all. */
+    if (!pyi_ctx->has_splash) {
         PYI_DEBUG("LOADER: splash screen is unavailable.\n");
         return;
     }
 
-    /* Check if user requested splash screen to be suppressed by setting
-     * the PYINSTALLER_SUPPRESS_SPLASH_SCREEN environment variable to 1 */
-    env_suppress_splash = pyi_getenv("PYINSTALLER_SUPPRESS_SPLASH_SCREEN");
-    if (env_suppress_splash) {
-        suppressed = strcmp(env_suppress_splash, "1") == 0;
-    }
-    free(env_suppress_splash);
-
-    if (suppressed) {
+    /* Check if user requested splash screen to be suppressed. */
+    if (pyi_ctx->suppress_splash) {
         PYI_DEBUG("LOADER: splash screen is explicitly suppressed via environment variable!\n");
         /* Let `pyi_splash` module know that splash screen is intentionally
          * suppressed, by setting _PYI_SPLASH_IPC to 0. */

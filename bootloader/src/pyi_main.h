@@ -127,7 +127,18 @@ struct PYI_CONTEXT
     /* Main PKG archive */
     struct ARCHIVE *archive;
 
-    /* Splash screen context structure */
+    /* Flag indicating whether application contains resources for
+     * displaying splash screen or not. This does not reflect the
+     * actual run-time state of the splash screen (which might be
+     * suppressed, or fail to initialize). */
+    unsigned char has_splash;
+
+    /* Flag indicating whether user explicitly requested suppression
+     * of splash screen via `PYINSTALLER_SUPPRESS_SPLASH_SCREEN`
+     * environment variable. */
+    unsigned char suppress_splash;
+
+    /* Splash screen context structure. */
     struct SPLASH_CONTEXT *splash;
 
     /* Flag indicating whether the application's main PKG archive has
