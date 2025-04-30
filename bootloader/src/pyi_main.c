@@ -413,23 +413,14 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                 snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", executable_dir);
             }
         }
-
-        /* Special handling for onedir mode on POSIX systems other than
-         * macOS. To achieve single-process onedir mode, we need to set
-         * library search path and restart the current process. This is
-         * handled by the following helper function.
-         * NOTE: under Cygwin, we do not have to restart the process to
-         * set the search path, so skip this call.
-         */
-#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__CYGWIN__)
-        if (_pyi_main_handle_posix_onedir(pyi_ctx) < 0) {
-            return -1;
-        }
-#endif
     }
 
     PYI_DEBUG("LOADER: application's top-level directory: %s\n", pyi_ctx->application_home_dir);
 
+    /* Perform necessary modifications to library search path. Do so
+     * before we start loading bundled shared libraries (i.e., before
+     * trying to start the splash screen, if available). */
+#if defined(_WIN32)
     /* In onefile parent process on Windows, attempt to pre-emptively
      * load system copies of VC runtime DLLs (e.g., VCRUNTIME140.dll
      * and VCRUNTIME140_1.dll). The bootloader itself has no need for
@@ -457,7 +448,6 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
      * #9075 has shown that injection of 3rd party DLLs and subsequent
      * locking of VC runtime DLLs can also happen without splash screen,
      * so we now perform this pre-load in all onefile parent processes. */
-#if defined(_WIN32)
     if (pyi_ctx->is_onefile && pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) {
         const wchar_t *dll_names[] = {
             L"VCRUNTIME140.dll",
@@ -483,14 +473,11 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
             }
         }
     }
-#endif /* defined(_WIN32) */
 
-    /* On Windows and under Cygwin, add application's top-level directory
-     * to DLL search path. Do so before we start loading bundled DLLs
-     * (i.e., trying to start the splash screen). */
-#if defined(_WIN32)
+    /* Set the DLL search path using `SetDllDirectoryW()`; the change takes
+     * effect within the calling process, so we can make this call in
+     * each process and regardless of onefile vs. onedir mode. */
     if (1) {
-        /* Windows - call SetDllDirectoryW() */
         wchar_t dllpath_w[PYI_PATH_MAX];
         if (pyi_win32_utf8_to_wcs(pyi_ctx->application_home_dir, dllpath_w, PYI_PATH_MAX) == NULL) {
             PYI_ERROR("Failed to convert DLL search path!\n");
@@ -500,20 +487,20 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
         SetDllDirectoryW(dllpath_w);
     }
 #elif defined(__CYGWIN__)
+    /* Under Cygwin, `dlopen()` uses `LD_LIBRARY_PATH` environment
+     * variable for library names that do not include path to the
+     * library file. However, linked libraries are resolved using
+     * Windows' loader, which is controlled by `SetDllDirectoryW()`.
+     * Therefore, we need to modify the search path of both mechanisms.
+     *
+     * Failing to call `SetDllDirectoryW` results in dependencies
+     * of python shared library not being resolved when running the
+     * frozen application outside of the Cygwin environment.
+     *
+     * Failing to set `LD_LIBRARY_PATH` seems to cause segmentation
+     * faults in worker processes when `multiprocessing` is used
+     * (both inside and outside of the Cygwin environment). */
     if (1) {
-        /* Under Cygwin, `dlopen()` uses `LD_LIBRARY_PATH` environment
-         * variable for library names that do not include path to the
-         * library file. However, linked libraries are resolved using
-         * Windows' loader, which is controlled by `SetDllDirectoryW()`.
-         * Therefore, we need to modify the search path of both mechanisms.
-         *
-         * Failing to call `SetDllDirectoryW` results in dependencies
-         * of python shared library not being resolved when running the
-         * frozen application outside of the Cygwin environment.
-         *
-         * Failing to set `LD_LIBRARY_PATH` seems to cause segmentation
-         * faults in worker processes when `multiprocessing` is used
-         * (both inside and outside of the Cygwin environment). */
         wchar_t dllpath_w[PYI_PATH_MAX];
         bool modify_ld_library_path;
 
@@ -550,7 +537,28 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
             }
         }
     }
-#endif  /* defined(_WIN32) || defined(__CYGWIN__) */
+#elif defined(__APPLE__)
+    /* No changes to library search path are required on macOS, because
+     * we rewrite the library paths on collected binaries. */
+#else
+    /* Other POSIX OSes; we need to modify `LD_LIBRARY_PATH` or its
+     * equivalent. The modification does *not* affect this process!
+     * So in onefile mode, we are setting the environment variable for
+     * the child process. In onedir mode, we need to restart this process
+     * for the change to take effect. */
+    if (pyi_ctx->is_onefile) {
+        if (pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) {
+            if (pyi_utils_set_library_search_path(pyi_ctx->application_home_dir) == -1) {
+                PYI_ERROR("Failed to set library search path via environment variable!\n");
+                return -1;
+            }
+        }
+    } else {
+        if (_pyi_main_handle_posix_onedir(pyi_ctx) < 0) {
+            return -1;
+        }
+    }
+#endif
 
     /* Setup splash screen, if applicable */
     _pyi_main_setup_splash_screen(pyi_ctx);
@@ -897,19 +905,6 @@ _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
         pyi_win32_minimize_console();
     }
 #endif
-
-    /* On OSes other than Windows and macOS, we need to set library
-     * search path (via LD_LIBRARY_PATH or equivalent). Since the
-     * search path cannot be modified for the running process, we
-     * need to set it in the parent process, before launching the
-     * child process. Skip this call under Cygwin, because it was
-     * already made in the common codepath. */
-#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__CYGWIN__)
-    if (pyi_utils_set_library_search_path(pyi_ctx->application_home_dir) == -1) {
-        PYI_ERROR("Failed to set library search path via environment variable!\n");
-        return -1;
-    }
-#endif /* !defined(_WIN32) && !defined(__APPLE__) */
 
     /* When a windowed/noconsole process is launched on Windows, the
      * OS displays a spinning-wheel cursor to indicate that the program
