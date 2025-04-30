@@ -36,20 +36,61 @@ def test_absolute_python_path(pyi_builder):
     pyi_builder.test_script('pyi_absolute_python_path.py')
 
 
+# Test that on linux, the bootloader preserves the original process name when launching a child process (onefile mode)
+# or when restarting itself (onedir mode). This is relevant when executable is launched via symbolic link that has
+# different basename than the target executable; the process name (as stored in `/proc/self/status` or retrieved via
+# `prtctl()` with `PR_GET_NAME`) should be the basename of the symbolic link!
 @pytest.mark.linux
 @skipif(not os.path.exists('/proc/self/status'), reason='/proc/self/status does not exist')
-@pytest.mark.parametrize("symlink_name", ["symlink", "very_long_name_in_symlink", "sub/dir/program"])
-def test_symlink_basename_is_kept(pyi_builder_spec, symlink_name, tmp_path, spec_dir, script_dir):
-    def _patch_spec(spec_name, symlink_name):
-        spec_content = (spec_dir / spec_name).read_text(encoding="utf-8")
-        spec_content = spec_content.replace("@SYMLINKNAME@", symlink_name)
-        spec_content = spec_content.replace("@SCRIPTDIR@", str(script_dir))
-        spec_file = tmp_path / spec_name
-        spec_file.write_text(spec_content, encoding="utf-8")
-        return spec_file
+@onefile_only
+def test_symlink_basename_is_kept(pyi_builder, tmp_path):
+    # Build the test program and run it with actual executable for sanity check.
+    pyi_builder.test_source(
+        """
+        import os
+        import sys
 
-    spec_file = _patch_spec("symlink_basename_is_kept.spec", symlink_name)
-    pyi_builder_spec.test_spec(str(spec_file), app_name=symlink_name)
+        # Read the process name from `/proc/self/status`.
+        with open('/proc/self/status', 'r') as fh:
+            for line in fh.readlines():
+                if line.startswith('Name:'):
+                    name_from_proc = line.split(":")[1].strip()
+                    break
+
+        # The name passed via argv.
+        name_from_argv = os.path.basename(sys.argv[0])
+
+        # The process name /proc/self/status is truncated to 15 characters, so truncated argv-based name for comparison.
+        truncated_name_from_argv = name_from_argv[:15]
+
+        print(f"ARGV: {name_from_argv!r} (complete)")
+        print(f"ARGV: {truncated_name_from_argv!r} (truncated")
+        print(f"PROC: {name_from_proc!r}")
+
+        assert truncated_name_from_argv == name_from_proc
+        """
+    )
+
+    # Find executable
+    exes = pyi_builder._find_executables('test_source')
+    assert len(exes) == 1
+    program_exe = exes[0]
+
+    # Create and test with various symbolic links (short name, long name, sub-directory).
+    SYMLINK_NAMES = ["symlink", "very_long_name_in_symlink", "sub/dir/program"]
+    for symlink_name in SYMLINK_NAMES:
+        # Print banner to both stdout and stderr, as they are captured separately.
+        print(f"=== running test with {symlink_name!r} ===", file=sys.stderr)
+        print(f"=== running test with {symlink_name!r} ===", file=sys.stdout)
+
+        # Crate symbolic link
+        symlinked_exe = tmp_path / symlink_name
+        symlinked_exe.parent.mkdir(parents=True, exist_ok=True)
+
+        symlinked_exe.symlink_to(program_exe)
+
+        # Run
+        subprocess.run([symlinked_exe], check=True)
 
 
 @onedir_only
