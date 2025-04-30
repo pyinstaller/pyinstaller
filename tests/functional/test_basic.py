@@ -42,7 +42,6 @@ def test_absolute_python_path(pyi_builder):
 # `prtctl()` with `PR_GET_NAME`) should be the basename of the symbolic link!
 @pytest.mark.linux
 @skipif(not os.path.exists('/proc/self/status'), reason='/proc/self/status does not exist')
-@onefile_only
 def test_symlink_basename_is_kept(pyi_builder, tmp_path):
     # Build the test program and run it with actual executable for sanity check.
     pyi_builder.test_source(

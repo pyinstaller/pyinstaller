@@ -295,15 +295,30 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
     }
     free(env_var_value);
 
-    /* On Linux, restore process name (passed from parent process via
-     * environment variable. */
+    /* On Linux, pass the process name from the (original) parent process
+     * to child process(es) via environment variable. In onefile mode,
+     * we want child processes to have the same name as the parent process
+     * (in case executable is a symbolic link). In onedir mode, the process
+     * needs to restart itself, and we need to preserve its name between
+     * the restarts. */
 #if defined(__linux__)
-    env_var_value = pyi_getenv("_PYI_LINUX_PROCESS_NAME");
-    if (env_var_value) {
-        PYI_DEBUG("LOADER: restoring process name: %s\n", env_var_value);
-        prctl(PR_SET_NAME, env_var_value, 0, 0); /* Ignore failures */
+    if (pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT) {
+        char processname[16]; /* 16 bytes as per prctl() man page */
+
+        /* Pass the process name to child via environment variable. */
+        if (!prctl(PR_GET_NAME, processname, 0, 0)) {
+            PYI_DEBUG("LOADER: storing process name: %s\n", processname);
+            pyi_setenv("_PYI_LINUX_PROCESS_NAME", processname);
+        }
+    } else {
+        /* Restore the name from environment variable */
+        env_var_value = pyi_getenv("_PYI_LINUX_PROCESS_NAME");
+        if (env_var_value) {
+            PYI_DEBUG("LOADER: restoring process name: %s\n", env_var_value);
+            prctl(PR_SET_NAME, env_var_value, 0, 0); /* Ignore failures */
+        }
+        free(env_var_value);
     }
-    free(env_var_value);
 #endif  /* defined(__linux__) */
 
     /* Infer the process type (onefile parent, onefile child, onedir),
@@ -874,20 +889,6 @@ _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
         pyi_win32_minimize_console();
     }
 #endif
-
-    /* On Linux, pass the current process name to the child process,
-     * via custom environment variable. */
-#if defined(__linux__)
-    if (1) {
-        char processname[16]; /* 16 bytes as per prctl() man page */
-
-        /* Pass the process name to child via environment variable. */
-        if (!prctl(PR_GET_NAME, processname, 0, 0)) {
-            PYI_DEBUG("LOADER: storing process name: %s\n", processname);
-            pyi_setenv("_PYI_LINUX_PROCESS_NAME", processname);
-        }
-    }
-#endif  /* defined(__linux__) */
 
     /* On OSes other than Windows and macOS, we need to set library
      * search path (via LD_LIBRARY_PATH or equivalent). Since the

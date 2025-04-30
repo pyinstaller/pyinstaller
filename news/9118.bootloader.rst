@@ -1,0 +1,6 @@
+(Linux) The bootloader now preserves its original process name (for
+example, when executable is symlinked with different basename) when
+the ``onedir`` process restarts itself for the library-search-path
+changes to take affect. The original process name is now also
+propagated to sub-processes that are spawned using the same executable
+(for example, using Python's ``subprocess`` module and ``sys.executable``).
