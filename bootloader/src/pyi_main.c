@@ -351,6 +351,14 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
             }
 
             PYI_DEBUG("LOADER: created temporary directory: %s\n", pyi_ctx->application_home_dir);
+
+            /* Pass the path to temporary directory to the child process
+             * via corresponding environment variable. */
+            PYI_DEBUG("LOADER: setting _PYI_APPLICATION_HOME_DIR to %s\n", pyi_ctx->application_home_dir);
+            if (pyi_setenv("_PYI_APPLICATION_HOME_DIR", pyi_ctx->application_home_dir) < 0) {
+                PYI_ERROR("Failed to set application home directory via environment variable!\n");
+                return -1;
+            }
         } else {
             /* Child process; the path to ephemeral application top-level
              * directory should be available in _PYI_APPLICATION_HOME_DIR
@@ -941,15 +949,6 @@ _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx)
         TransformProcessType(&psn, kProcessTransformToBackgroundApplication);
     }
 #endif
-
-    /* Pass top-level application directory (the temporary directory
-     * where files were extracted) to the child process via
-     * corresponding environment variable. */
-    PYI_DEBUG("LOADER: setting _PYI_APPLICATION_HOME_DIR to %s\n", pyi_ctx->application_home_dir);
-    if (pyi_setenv("_PYI_APPLICATION_HOME_DIR", pyi_ctx->application_home_dir) < 0) {
-        PYI_ERROR("Failed to set application home directory via environment variable!\n");
-        return -1;
-    }
 
     /* Start the child process that will execute user's program. */
     PYI_DEBUG("LOADER: starting the child process...\n");
