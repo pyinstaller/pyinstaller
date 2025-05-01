@@ -57,11 +57,17 @@ enum PYI_PROCESS_LEVEL
     /* Used to designate *parent* process level for top-level / entry-point
      * processes. */
     PYI_PROCESS_LEVEL_UNKNOWN = -2,
+    /* Main application process of onedir application process on POSIX
+     * systems where we modify library search path via environment variable;
+     * such process needs to restart itself for changes to take effect.
+     * Also used on said POSIX systems to designate parent / launcher
+     * process in onefile applications with splash screen enabled, which
+     * similarly needs to restart itself for changes in library search
+     * path to take effect before bundled Tcl/Tk shared libraries (and
+     * their bundled dependencies) are loaded for splash screen. */
+    PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART = -1,
     /* Parent / launcher process in onefile applications; unpacks the
-     * application, and starts the main application process. This value
-     * is also used to designate original main process of onedir
-     * applications on POSIX systems (other than macOS), before the
-     * executable restarts itself. */
+     * application, and starts the main application process. */
     PYI_PROCESS_LEVEL_PARENT = 0,
     /* Main application process, which starts the python interpreter and
      * runs user's program. In onefile builds, this is a child process

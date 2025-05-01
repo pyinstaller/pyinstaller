@@ -1,0 +1,8 @@
+(POSIX) On POSIX systems where library search path is set by modifying
+``LD_LIBRARY_PATH`` environment variable (or equivalent), the parent
+process of ``onefile`` application with enabled splash screen now
+restarts itself, in order to apply library search path modification
+before splash screen is started and Tcl/Tk shared libraries are loaded.
+This ensures that bundled dependencies of Tcl/Tk shared libraries can
+be discovered and loaded, instead of having to rely on system copies
+being available.
