@@ -54,6 +54,9 @@ enum PYI_HIDE_CONSOLE
 /* Process levels */
 enum PYI_PROCESS_LEVEL
 {
+    /* Used to designate *parent* process level for top-level / entry-point
+     * processes. */
+    PYI_PROCESS_LEVEL_UNKNOWN = -2,
     /* Parent / launcher process in onefile applications; unpacks the
      * application, and starts the main application process. This value
      * is also used to designate original main process of onedir
@@ -151,8 +154,16 @@ struct PYI_CONTEXT
     /* Process level of this process. See definitions of PYI_PROCESS_LEVEL
      * enum. Used to determine whether onefile process should unpack
      * itself or expect to already be unpacked, whether splash screen
-     * should be set up or not, etc. */
-    unsigned char process_level;
+     * should be set up or not, etc.
+     *
+     * NOTE: we need to use signed integral type here, and on some
+     * platforms (e.g., AIX), `char` behaves like `unsigned char` by
+     * default - to avoid potential issues, explicitly use `signed char`. */
+    signed char process_level;
+
+    /* Process level of this process' parent process. See definitions
+     * of PYI_PROCESS_LEVEL enum. */
+    signed char parent_process_level;
 
     /* Application's top-level directory (sys._MEIPASS), where the data
      * and shared libraries are. For applications with onefile semantics,

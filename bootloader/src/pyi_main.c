@@ -226,44 +226,67 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
      *  - subprocess spawned from main application process. */
     env_var_value = pyi_getenv("_PYI_PARENT_PROCESS_LEVEL");
     if (!env_var_value || !env_var_value[0]) {
-        /* We are either parent/launcher process of a onefile application,
-         * or main/application process of a onedir application.
-         *
-         * On POSIX systems other than macOS, our onedir executables
-         * restart ourselves after setting library search path; we mark
-         * the main process before restart as parent/launcher, in order
-         * to handle restart in `_pyi_main_handle_posix_onedir`. */
-        if (pyi_ctx->is_onefile) {
-            pyi_ctx->process_level = PYI_PROCESS_LEVEL_PARENT;
-        } else {
-#if defined(_WIN32) || defined(__APPLE__)
-            /* Windows, macOS - mark as main process. */
-            pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN;
-#elif defined(__CYGWIN__)
-            /* Cygwin - mark as main process, as we do not need to restart.
-             * For explanation, see comments in Cygwin-specific part where
-             * library search path is set (further down this function). */
-            pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN;
-#else
-            /* Other POSIX systems - mark as parent/launcher due to having
-             * to restart the process, as per comment block above. */
-            pyi_ctx->process_level = PYI_PROCESS_LEVEL_PARENT;
-#endif
-        }
-    } else if (strcmp(env_var_value, "0") == 0) {
-        /* We are main application process of a onefile application,
-         * or main application process of a onedir application after
-         * restart (POSIX systems other than macOS). */
-        pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN;
-    } else if (strcmp(env_var_value, "1") == 0) {
-        /* We are a sub-process spawned from the main application process,
-         * using the same executable (e.g., via sys.executable). */
-        pyi_ctx->process_level = PYI_PROCESS_LEVEL_SUBPROCESS;
+        pyi_ctx->parent_process_level = PYI_PROCESS_LEVEL_UNKNOWN;
     } else {
-        PYI_ERROR("Invalid value in _PYI_PARENT_PROCESS_LEVEL: %s\n", env_var_value);
-        return -1;
+        char *endptr;
+         /* Due to limited value range, we use 8-bit signed int (= signed char)
+          * for storage; and we need to explicitly cast the `long` return
+          * value of `strtol()` to avoid warnings on MSVC. */
+        pyi_ctx->parent_process_level = (signed char)strtol(env_var_value, &endptr, 0);
+        if (*endptr != 0) {
+            PYI_ERROR("Invalid value in _PYI_PARENT_PROCESS_LEVEL: %s\n", env_var_value);
+            return -1;
+        }
     }
     free(env_var_value);
+
+    PYI_DEBUG("LOADER: parent process level = %d\n", pyi_ctx->parent_process_level);
+    switch (pyi_ctx->parent_process_level) {
+        case PYI_PROCESS_LEVEL_UNKNOWN: {
+            /* We are either parent/launcher process of a onefile application,
+             * or main/application process of a onedir application.
+             *
+             * On POSIX systems other than macOS, our onedir executables
+             * restart ourselves after setting library search path; we mark
+             * the main process before restart as parent/launcher, in order
+             * to handle restart in `_pyi_main_handle_posix_onedir`. */
+            if (pyi_ctx->is_onefile) {
+                pyi_ctx->process_level = PYI_PROCESS_LEVEL_PARENT;
+            } else {
+#if defined(_WIN32) || defined(__APPLE__)
+                /* Windows, macOS - mark as main process. */
+                pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN;
+#elif defined(__CYGWIN__)
+                /* Cygwin - mark as main process, as we do not need to restart.
+                 * For explanation, see comments in Cygwin-specific part where
+                 * library search path is set (further down this function). */
+                pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN;
+#else
+                /* Other POSIX systems - mark as parent/launcher due to having
+                 * to restart the process, as per comment block above. */
+                pyi_ctx->process_level = PYI_PROCESS_LEVEL_PARENT;
+#endif
+            }
+            break;
+        }
+        case PYI_PROCESS_LEVEL_PARENT: {
+            /* We are main application process of a onefile application,
+            * or main application process of a onedir application after
+            * restart (POSIX systems other than macOS). */
+            pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN;
+            break;
+        }
+        case PYI_PROCESS_LEVEL_MAIN: {
+            /* We are a sub-process spawned from the main application process,
+            * using the same executable (e.g., via sys.executable). */
+            pyi_ctx->process_level = PYI_PROCESS_LEVEL_SUBPROCESS;
+            break;
+        }
+        default: {
+            PYI_ERROR("Invalid parent process level: %d\n", pyi_ctx->parent_process_level);
+            return -1;
+        }
+    }
 
     PYI_DEBUG("LOADER: process level = %d\n", pyi_ctx->process_level);
 
@@ -272,7 +295,12 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
      * leave the environment variable unchanged, as we do not keep track
      * of levels beyond that. */
     if (pyi_ctx->process_level < PYI_PROCESS_LEVEL_SUBPROCESS) {
-        pyi_setenv("_PYI_PARENT_PROCESS_LEVEL", pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT ? "0" : "1");
+        char process_level_str[8];
+        snprintf(process_level_str, sizeof(process_level_str), "%d", pyi_ctx->process_level);
+        if (pyi_setenv("_PYI_PARENT_PROCESS_LEVEL", process_level_str) < 0) {
+            PYI_ERROR("Failed to set _PYI_PARENT_PROCESS_LEVEL environment variable!\n");
+            return -1;
+        }
     }
 
     /* Read all applicable run-time options from the PKG archive */
