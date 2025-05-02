@@ -37,8 +37,8 @@ from __future__ import annotations
 
 import fnmatch
 import json
+import pathlib
 import sys
-from pathlib import Path
 from typing import Iterable, List
 from importlib.metadata import PackagePath as _PackagePath
 
@@ -47,13 +47,13 @@ from PyInstaller.log import logger
 
 # Conda virtual environments each get their own copy of `conda-meta` so the use of `sys.prefix` instead of
 # `sys.base_prefix`, `sys.real_prefix` or anything from our `compat` module is intentional.
-CONDA_ROOT = Path(sys.prefix)
+CONDA_ROOT = pathlib.Path(sys.prefix)
 CONDA_META_DIR = CONDA_ROOT / "conda-meta"
 
 # Find all paths in `sys.path` that are inside Conda root.
 PYTHONPATH_PREFIXES = []
 for _path in sys.path:
-    _path = Path(_path)
+    _path = pathlib.Path(_path)
     try:
         PYTHONPATH_PREFIXES.append(_path.relative_to(sys.prefix))
     except ValueError:
@@ -80,7 +80,7 @@ class Distribution:
     """
     def __init__(self, json_path: str):
         try:
-            self._json_path = Path(json_path)
+            self._json_path = pathlib.Path(json_path)
             assert self._json_path.exists()
         except (TypeError, AssertionError):
             raise TypeError(
@@ -181,7 +181,7 @@ class PackagePath(_PackagePath):
         """
         Return a path-like object for this path pointing to the file's true location.
         """
-        return Path(sys.prefix) / self
+        return pathlib.Path(sys.prefix) / self
 
 
 def walk_dependency_tree(initial: str, excludes: Iterable[str] | None = None):
@@ -280,9 +280,9 @@ def files(name: str, dependencies: bool = False, excludes: list | None = None) -
 
 
 if compat.is_win:
-    lib_dir = PackagePath("Library", "bin")
+    lib_dir = pathlib.PurePath("Library", "bin")
 else:
-    lib_dir = PackagePath("lib")
+    lib_dir = pathlib.PurePath("lib")
 
 
 def collect_dynamic_libs(name: str, dest: str = ".", dependencies: bool = True, excludes: Iterable[str] | None = None):
@@ -308,8 +308,13 @@ def collect_dynamic_libs(name: str, dest: str = ".", dependencies: bool = True, 
     _files = []
     for file in files(name, dependencies, excludes):
         # A file is classified as a dynamic library if:
-        #  1) it lives inside the dedicated ``lib_dir`` DLL folder
-        if file.parent != lib_dir:
+        #  1) it lives inside the dedicated ``lib_dir`` DLL folder.
+        #
+        # NOTE: `file` is an instance of `PackagePath`, which inherits from `pathlib.PurePosixPath` even on Windows.
+        # Therefore, it does not properly handle cases when metadata paths contain Windows-style separator, which does
+        # seem to be used on some Windows installations (see #9113). Therefore, cast `file` to `pathlib.PurePath`
+        # before comparing its parent to `lib_dir` (which should also be a `pathlib.PurePath`).
+        if pathlib.PurePath(file).parent != lib_dir:
             continue
         #  2) it is a file (and not a directory or a symbolic link pointing to a directory)
         resolved_file = file.locate()
@@ -339,7 +344,7 @@ def _get_package_name(file: PackagePath):
     This function only considers single file packages e.g. ``foo.py`` or top level ``foo/__init__.py``\\ s.
     Anything else is ignored (returning ``None``).
     """
-    file = Path(file)
+    file = pathlib.Path(file)
     # TODO: Handle PEP 420 namespace packages (which are missing `__init__` module). No such Conda PEP 420 namespace
     # packages are known.
 

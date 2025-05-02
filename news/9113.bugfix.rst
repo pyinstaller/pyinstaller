@@ -1,0 +1,4 @@
+(Windows) Fix collection of DLLs from Anaconda-installed ``numpy`` and
+its depedencies (MKL, OpenBLAS, TBB, etc.) when the file paths recorded
+in the metadata end up using Windows-style separators instead of POSIX
+ones.
