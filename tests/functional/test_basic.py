@@ -20,7 +20,7 @@ import re
 import pytest
 
 from PyInstaller.compat import is_cygwin, is_darwin, is_termux, is_win
-from PyInstaller.utils.tests import importorskip, skipif, xfail, onedir_only, onefile_only
+from PyInstaller.utils.tests import importorskip, importable, skipif, xfail, onedir_only, onefile_only
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -40,9 +40,21 @@ def test_absolute_python_path(pyi_builder):
 # or when restarting itself (onedir mode). This is relevant when executable is launched via symbolic link that has
 # different basename than the target executable; the process name (as stored in `/proc/self/status` or retrieved via
 # `prtctl()` with `PR_GET_NAME`) should be the basename of the symbolic link!
+#
+# Test both variant without splash screen (the default) and with splash screen enabled; in the latter case, the onefile
+# parent process needs to restart itself, so we need to also test process name preservation in that codepath.
 @pytest.mark.linux
 @skipif(not os.path.exists('/proc/self/status'), reason='/proc/self/status does not exist')
-def test_symlink_basename_is_kept(pyi_builder, tmp_path):
+@pytest.mark.parametrize('enable_splash', [False, True], ids=['nosplash', 'splash'])
+def test_symlink_basename_is_kept(pyi_builder, tmp_path, enable_splash):
+    if enable_splash:
+        if not importable("tkinter"):
+            pytest.skip("Needs tkinter")
+        splash_image = pathlib.Path(__file__).parent / 'data' / 'splash' / 'image.png'
+        extra_args = ['--splash', str(splash_image)]
+    else:
+        extra_args = []
+
     # Build the test program and run it with actual executable for sanity check.
     pyi_builder.test_source(
         """
@@ -67,7 +79,8 @@ def test_symlink_basename_is_kept(pyi_builder, tmp_path):
         print(f"PROC: {name_from_proc!r}")
 
         assert truncated_name_from_argv == name_from_proc
-        """
+        """,
+        pyi_args=extra_args,
     )
 
     # Find executable
