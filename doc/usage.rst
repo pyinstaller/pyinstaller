@@ -581,6 +581,13 @@ The solution is to always build your app on the *oldest* version of
 GNU/Linux you mean to support.
 It should continue to work with the ``libc`` found on newer versions.
 
+Another solution is to build targeting
+`python-build-standalone <https://github.com/astral-sh/python-build-standalone>`_.
+This portable CPython build targets an 
+`old glibc version <https://gregoryszorc.com/docs/python-build-standalone/main/running.html#linux>`_
+that is highly compatible. An easy way to install python-build-standlone is
+using `uv <https://docs.astral.sh/uv/guides/install-python/>`_.
+
 The GNU/Linux standard libraries such as ``glibc`` are distributed in 64-bit
 and 32-bit versions, and these are not compatible.
 As a result you cannot bundle your app on a 32-bit system and run it
