@@ -1,0 +1,5 @@
+Add pre-safe-import-module hook for ``gi.overrides`` to properly handle
+cases where the ``gi.overrides`` package is split between
+``/usr/lib64/python3.X/site-packages/gi/overrides`` and
+``/usr/lib/python3.X/site-packages/gi/overrides`` (i.e., RPM packages
+for Fedora/RHEL and their derivatives, such as openEuler).

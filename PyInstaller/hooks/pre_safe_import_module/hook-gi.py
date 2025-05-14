@@ -24,6 +24,9 @@ def pre_safe_import_module(api):
         # The modulegraph has no way of knowing this, so we need extend the package path in this hook. Otherwise,
         # only the first location is scanned, and the `gi.repository` ends up missing.
         #
+        # ADDENDUM: it looks like the `gi.overrides` can also be split across both locations, so we need a similar
+        # hook for `gi.overrides` as well.
+        #
         # NOTE: the `get_package_paths`/`get_package_all_paths` helpers read the paths from package's spec without
         # importing the (top-level) package, so they do not catch run-time path modifications. Instead, we use
         # `get_module_attribute` to import the package in isolated process and query its `__path__` attribute.
