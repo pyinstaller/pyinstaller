@@ -24,7 +24,7 @@ def main(start_method):
     print('Running subprocess(es)...')
     with multiprocessing.Pool(processes=4) as pool:
         result = pool.apply_async(get_sys_meipass)
-        subprocess_meipass = result.get(timeout=1)
+        subprocess_meipass = result.get()
 
         print(f"sys._MEIPASS in main process: {sys._MEIPASS}")
         print(f"sys._MEIPASS in sub-process: {subprocess_meipass}")

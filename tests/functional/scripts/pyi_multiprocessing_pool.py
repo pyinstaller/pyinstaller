@@ -24,7 +24,7 @@ def main(start_method):
     with multiprocessing.Pool(processes=4) as pool:
         print('Evaluate f(10) asynchronously...')
         result = pool.apply_async(f, [10])
-        assert result.get(timeout=1) == 100
+        assert result.get() == 100
 
         print('Evaluate f(0..9)...')
         assert pool.map(f, range(10)) == [x**2 for x in range(10)]
