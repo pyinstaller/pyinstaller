@@ -20,7 +20,7 @@
 #include <stdlib.h>
 
 #include "pyi_global.h"
-#include "pyi_python.h"
+#include "pyi_dylib_python.h"
 
 
 /* Python functions to bind */

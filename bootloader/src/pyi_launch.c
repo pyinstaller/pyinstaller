@@ -31,7 +31,7 @@
 #include "pyi_main.h"
 #include "pyi_utils.h"
 #include "pyi_splash.h"
-#include "pyi_python.h"
+#include "pyi_dylib_python.h"
 #include "pyi_pythonlib.h"
 #include "pyi_exception_dialog.h"
 #include "pyi_multipkg.h"

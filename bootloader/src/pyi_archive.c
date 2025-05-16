@@ -27,7 +27,6 @@
 #include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
-#include "pyi_python.h"
 
 
 /*

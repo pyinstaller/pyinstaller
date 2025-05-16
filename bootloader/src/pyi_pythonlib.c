@@ -34,7 +34,7 @@
 #include "pyi_archive.h"
 #include "pyi_main.h"
 #include "pyi_utils.h"
-#include "pyi_python.h"
+#include "pyi_dylib_python.h"
 #include "pyi_pyconfig.h"
 
 /*

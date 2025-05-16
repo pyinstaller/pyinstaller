@@ -12,14 +12,12 @@
  */
 
 /*
- * Python.h replacements.
- *
- * We use dynamic loading -> one binary can be used with (nearly) any Python
- * version. This is the cruft necessary to do dynamic loading.
+ * Dynamic bindings of Python shared library. This header effectively
+ * replaces the Python.h header.
  */
 
-#ifndef PYI_PYTHON_H
-#define PYI_PYTHON_H
+#ifndef PYI_DYLIB_PYTHON_H
+#define PYI_DYLIB_PYTHON_H
 
 #include "pyi_global.h"
 #include <wchar.h>
@@ -224,4 +222,4 @@ PYI_EXTDECLPROC(PyObject *, PyUnicode_Join, (PyObject *, PyObject *))
 PYI_EXTDECLPROC(PyObject *, PyUnicode_Replace, (PyObject *, PyObject *, PyObject *, Py_ssize_t))
 
 
-#endif /* PYI_PYTHON_H */
+#endif /* PYI_DYLIB_PYTHON_H */

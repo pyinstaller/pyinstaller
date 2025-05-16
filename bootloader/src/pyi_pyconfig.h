@@ -21,7 +21,7 @@
 #ifndef PYI_PYCONFIG_H
 #define PYI_PYCONFIG_H
 
-#include "pyi_python.h"
+#include "pyi_dylib_python.h"
 
 struct PYI_CONTEXT;
 
