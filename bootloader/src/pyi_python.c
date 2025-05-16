@@ -14,9 +14,6 @@
 /*
  * Functions to load, initialize and launch Python interpreter.
  */
-/* size of buffer to store the name of the Python shared library */
-#define MAX_DLL_NAME_LEN 64
-
 #ifdef _WIN32
     #include <windows.h> /* HMODULE */
 #else
@@ -37,56 +34,6 @@
 #include "pyi_dylib_python.h"
 #include "pyi_pyconfig.h"
 
-/*
- * Load the Python shared library, and bind all required symbols from it.
- */
-int
-pyi_python_load_dylib(struct PYI_CONTEXT *pyi_ctx)
-{
-    const struct ARCHIVE *archive = pyi_ctx->archive;
-    char dll_fullpath[PYI_PATH_MAX];
-
-#ifdef _WIN32
-    /* If ucrtbase.dll exists in top-level application directory, load
-     * it proactively before Python library loading to avoid Python library
-     * loading failure (unresolved symbol errors) on systems with Universal
-     * CRT update not installed. */
-    if (1) {
-        char ucrtpath[PYI_PATH_MAX];
-        if (pyi_path_join(ucrtpath, pyi_ctx->application_home_dir, "ucrtbase.dll") == NULL) {
-            PYI_ERROR("Path of ucrtbase.dll (%s) and its name exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PYI_PATH_MAX);
-        }
-        if (pyi_path_exists(ucrtpath)) {
-            PYI_DEBUG("LOADER: ucrtbase.dll found: %s\n", ucrtpath);
-            pyi_utils_dlopen(ucrtpath);
-        }
-    }
-#endif
-
-    /* Look for python shared library in top-level application directory */
-    if (pyi_path_join(dll_fullpath, pyi_ctx->application_home_dir, archive->python_libname) == NULL) {
-        PYI_ERROR("Path of Python shared library (%s) and its name (%s) exceed buffer size (%d)\n", pyi_ctx->application_home_dir, archive->python_libname, PYI_PATH_MAX);
-        return -1;
-    }
-
-    PYI_DEBUG("LOADER: loading Python shared library: %s\n", dll_fullpath);
-
-    /* Load the shared libary */
-    pyi_ctx->python_dll = pyi_utils_dlopen(dll_fullpath);
-
-    if (pyi_ctx->python_dll == 0) {
-#ifdef _WIN32
-        wchar_t dll_fullpath_w[PYI_PATH_MAX];
-        pyi_win32_utf8_to_wcs(dll_fullpath, dll_fullpath_w, PYI_PATH_MAX);
-        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Python DLL '%ls'.\n", dll_fullpath_w);
-#else
-        PYI_ERROR("Failed to load Python shared library '%s': dlopen: %s\n", dll_fullpath, dlerror());
-#endif
-        return -1;
-    }
-
-    return pyi_python_bind_functions(pyi_ctx->python_dll, archive->python_version);
-}
 
 /*
  * Initialize and start python interpreter.
@@ -94,6 +41,7 @@ pyi_python_load_dylib(struct PYI_CONTEXT *pyi_ctx)
 int
 pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx)
 {
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
     struct PyiRuntimeOptions *runtime_options = NULL;
     PyConfig *config = NULL;
     PyStatus status;
@@ -109,7 +57,7 @@ pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx)
     /* Pre-initialize python. This ensures that PEP 540 UTF-8 mode is enabled
      * if necessary. */
     PYI_DEBUG("LOADER: pre-initializing embedded python interpreter...\n");
-    if (pyi_pyconfig_preinit_python(runtime_options) < 0) {
+    if (pyi_pyconfig_preinit_python(runtime_options, pyi_ctx) < 0) {
         PYI_ERROR("Failed to pre-initialize embedded python interpreter!\n");
         goto end;
     }
@@ -125,7 +73,7 @@ pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx)
 
     /* Initialize isolated configuration */
     PYI_DEBUG("LOADER: initializing interpreter configuration...\n");
-    PI_PyConfig_InitIsolatedConfig(config);
+    dylib_python->PyConfig_InitIsolatedConfig(config);
 
     /* Set program name */
     PYI_DEBUG("LOADER: setting program name...\n");
@@ -187,22 +135,22 @@ pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx)
     SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
 #endif
 
-    status = PI_Py_InitializeFromConfig(config);
+    status = dylib_python->Py_InitializeFromConfig(config);
 
 #if defined(_WIN32) && defined(LAUNCH_DEBUG)
     SetErrorMode(0);
 #endif
 
-    if (PI_PyStatus_Exception(status)) {
+    if (dylib_python->PyStatus_Exception(status)) {
         PYI_ERROR("Failed to start embedded python interpreter!\n");
         /* Dump exception information to stderr and exit the process with error code. */
-        PI_Py_ExitStatusException(status);
+        dylib_python->Py_ExitStatusException(status);
     } else {
         ret = 0; /* Succeeded */
     }
 
 end:
-    pyi_pyconfig_free(config);
+    pyi_pyconfig_free(config, pyi_ctx);
     pyi_runtime_options_free(runtime_options);
     return ret;
 }
@@ -213,6 +161,7 @@ end:
 int
 pyi_python_import_modules(const struct PYI_CONTEXT *pyi_ctx)
 {
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
     const struct ARCHIVE *archive = pyi_ctx->archive;
     const struct TOC_ENTRY *toc_entry;
     unsigned char *data;
@@ -222,11 +171,10 @@ pyi_python_import_modules(const struct PYI_CONTEXT *pyi_ctx)
 
     PYI_DEBUG("LOADER: setting sys._MEIPASS\n");
 
-    /* TODO extract function pyi_char_to_pyobject */
 #ifdef _WIN32
-    meipass_obj = PI_PyUnicode_Decode(pyi_ctx->application_home_dir, strlen(pyi_ctx->application_home_dir), "utf-8", "strict");
+    meipass_obj = dylib_python->PyUnicode_Decode(pyi_ctx->application_home_dir, strlen(pyi_ctx->application_home_dir), "utf-8", "strict");
 #else
-    meipass_obj = PI_PyUnicode_DecodeFSDefault(pyi_ctx->application_home_dir);
+    meipass_obj = dylib_python->PyUnicode_DecodeFSDefault(pyi_ctx->application_home_dir);
 #endif
 
     if (!meipass_obj) {
@@ -234,7 +182,7 @@ pyi_python_import_modules(const struct PYI_CONTEXT *pyi_ctx)
         return -1;
     }
 
-    PI_PySys_SetObject("_MEIPASS", meipass_obj);
+    dylib_python->PySys_SetObject("_MEIPASS", meipass_obj);
 
     PYI_DEBUG("LOADER: importing modules from PKG/CArchive\n");
 
@@ -249,7 +197,7 @@ pyi_python_import_modules(const struct PYI_CONTEXT *pyi_ctx)
         PYI_DEBUG("LOADER: extracted %s\n", toc_entry->name);
 
         /* Unmarshal the stored code object */
-        co = PI_PyMarshal_ReadObjectFromString((const char *)data, toc_entry->uncompressed_length);
+        co = dylib_python->PyMarshal_ReadObjectFromString((const char *)data, toc_entry->uncompressed_length);
         free(data);
 
         if (co == NULL) {
@@ -257,15 +205,15 @@ pyi_python_import_modules(const struct PYI_CONTEXT *pyi_ctx)
             mod = NULL;
         } else {
             PYI_DEBUG("LOADER: running unmarshalled code object for module %s...\n", toc_entry->name);
-            mod = PI_PyImport_ExecCodeModule(toc_entry->name, co);
+            mod = dylib_python->PyImport_ExecCodeModule(toc_entry->name, co);
             if (mod == NULL) {
                 PYI_ERROR("Module object for %s is NULL!\n", toc_entry->name);
             }
         }
 
-        if (PI_PyErr_Occurred()) {
-            PI_PyErr_Print();
-            PI_PyErr_Clear();
+        if (dylib_python->PyErr_Occurred()) {
+            dylib_python->PyErr_Print();
+            dylib_python->PyErr_Clear();
         }
 
         /* Exit on error */
@@ -285,6 +233,7 @@ pyi_python_import_modules(const struct PYI_CONTEXT *pyi_ctx)
 int
 pyi_python_install_pyz(const struct PYI_CONTEXT *pyi_ctx)
 {
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
     const struct ARCHIVE *archive = pyi_ctx->archive;
     const struct TOC_ENTRY *toc_entry;
     PyObject *archive_filename_obj;
@@ -309,11 +258,11 @@ pyi_python_install_pyz(const struct PYI_CONTEXT *pyi_ctx)
     /* Store archive filename as Python string. */
 #ifdef _WIN32
     /* Decode UTF-8 to PyUnicode */
-    archive_filename_obj = PI_PyUnicode_Decode(pyi_ctx->archive_filename, strlen(pyi_ctx->archive_filename), "utf-8", "strict");
+    archive_filename_obj = dylib_python->PyUnicode_Decode(pyi_ctx->archive_filename, strlen(pyi_ctx->archive_filename), "utf-8", "strict");
 #else
     /* Decode locale-encoded filename to PyUnicode object using Python's
      * preferred decoding method for filenames. */
-    archive_filename_obj = PI_PyUnicode_DecodeFSDefault(pyi_ctx->archive_filename);
+    archive_filename_obj = dylib_python->PyUnicode_DecodeFSDefault(pyi_ctx->archive_filename);
 #endif
 
     /* Format name plus offset; here, we assume that python's %llu format
@@ -321,8 +270,8 @@ pyi_python_install_pyz(const struct PYI_CONTEXT *pyi_ctx)
      * which we actually have no guarantee, but thankfully that does
      * seem to be the case. */
     pyz_offset = pyi_ctx->archive->pkg_offset + toc_entry->offset;
-    pyz_path_obj = PI_PyUnicode_FromFormat("%U?%llu", archive_filename_obj, pyz_offset);
-    PI_Py_DecRef(archive_filename_obj);
+    pyz_path_obj = dylib_python->PyUnicode_FromFormat("%U?%llu", archive_filename_obj, pyz_offset);
+    dylib_python->Py_DecRef(archive_filename_obj);
 
     if (pyz_path_obj == NULL) {
         PYI_ERROR("Failed to format PYZ archive path and offset\n");
@@ -330,8 +279,8 @@ pyi_python_install_pyz(const struct PYI_CONTEXT *pyi_ctx)
     }
 
     /* Store into sys._pyinstaller_pyz */
-    rc = PI_PySys_SetObject(attr_name, pyz_path_obj);
-    PI_Py_DecRef(pyz_path_obj);
+    rc = dylib_python->PySys_SetObject(attr_name, pyz_path_obj);
+    dylib_python->Py_DecRef(pyz_path_obj);
 
     if (rc != 0) {
         PYI_ERROR("Failed to store path to PYZ archive into sys.%s!\n", attr_name);
@@ -345,16 +294,18 @@ pyi_python_install_pyz(const struct PYI_CONTEXT *pyi_ctx)
 void
 pyi_python_finalize(const struct PYI_CONTEXT *pyi_ctx)
 {
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
+
     /* Ensure python library was loaded; otherwise PI_* function pointers
      * are invalid, and we have nothing to do here. */
-    if (!pyi_ctx->python_symbols_loaded) {
+    if (!dylib_python) {
         return;
     }
 
     /* Nothing to do if python interpreter was not initialized. Attempting
      * to flush streams using PyRun_SimpleStringFlags requires a valid
      * interpreter instance. */
-    if (PI_Py_IsInitialized() == 0) {
+    if (dylib_python->Py_IsInitialized() == 0) {
         return;
     }
 
@@ -365,13 +316,13 @@ pyi_python_finalize(const struct PYI_CONTEXT *pyi_ctx)
     PYI_DEBUG("LOADER: manually flushing stdout and stderr...\n");
 
     /* sys.stdout.flush() */
-    PI_PyRun_SimpleStringFlags(
+    dylib_python->PyRun_SimpleStringFlags(
         "import sys; sys.stdout.flush(); \
         (sys.__stdout__.flush if sys.__stdout__ \
         is not sys.stdout else (lambda: None))()", NULL);
 
     /* sys.stderr.flush() */
-    PI_PyRun_SimpleStringFlags(
+    dylib_python->PyRun_SimpleStringFlags(
         "import sys; sys.stderr.flush(); \
         (sys.__stderr__.flush if sys.__stderr__ \
         is not sys.stderr else (lambda: None))()", NULL);
@@ -380,5 +331,5 @@ pyi_python_finalize(const struct PYI_CONTEXT *pyi_ctx)
 
     /* Finalize the interpreter. This calls all of the atexit functions. */
     PYI_DEBUG("LOADER: cleaning up Python interpreter...\n");
-    PI_Py_Finalize();
+    dylib_python->Py_Finalize();
 }

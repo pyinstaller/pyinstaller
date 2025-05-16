@@ -269,7 +269,7 @@ end:
  * is used, which internally calls Py_DecodeLocale.
  */
 static int
-_pyi_pyconfig_set_string(PyConfig *config, wchar_t **dest_field, const char *str)
+_pyi_pyconfig_set_string(PyConfig *config, wchar_t **dest_field, const char *str, const struct DYLIB_PYTHON *dylib_python)
 {
     PyStatus status;
 
@@ -279,13 +279,13 @@ _pyi_pyconfig_set_string(PyConfig *config, wchar_t **dest_field, const char *str
     if (!str_w) {
         return -1;
     }
-    status = PI_PyConfig_SetString(config, dest_field, str_w);
+    status = dylib_python->PyConfig_SetString(config, dest_field, str_w);
     free(str_w);
 #else
-    status = PI_PyConfig_SetBytesString(config, dest_field, str);
+    status = dylib_python->PyConfig_SetBytesString(config, dest_field, str);
 #endif
 
-    return PI_PyStatus_Exception(status) ? -1 : 0;
+    return dylib_python->PyStatus_Exception(status) ? -1 : 0;
 }
 
 
@@ -299,7 +299,8 @@ _pyi_pyconfig_set_string(PyConfig *config, wchar_t **dest_field, const char *str
 PyConfig *
 pyi_pyconfig_create(const struct PYI_CONTEXT *pyi_ctx)
 {
-    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
+    const int version_id = _MAKE_VERSION_ID(dylib_python->version, pyi_ctx->nogil_enabled);
 
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PY_FLAGS, PYCONFIG_IMPL) \
@@ -330,14 +331,16 @@ pyi_pyconfig_create(const struct PYI_CONTEXT *pyi_ctx)
  * Clean up and free the PyConfig structure. No-op if passed a NULL pointer.
  */
 void
-pyi_pyconfig_free(PyConfig *config)
+pyi_pyconfig_free(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
+
     if (config == NULL) {
         return;
     }
 
     /* Clear the fields that PyConfig API allocated */
-    PI_PyConfig_Clear(config);
+    dylib_python->PyConfig_Clear(config);
 
     /* Free the allocated structure itself; was allocated using calloc
      * in pyi_pyconfig_create(). */
@@ -350,13 +353,14 @@ pyi_pyconfig_free(PyConfig *config)
 int
 pyi_pyconfig_set_program_name(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
-    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
+    const int version_id = _MAKE_VERSION_ID(dylib_python->version, pyi_ctx->nogil_enabled);
 
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PY_FLAGS, PYCONFIG_IMPL) \
     case _MAKE_VERSION_ID(PY_VERSION, PY_FLAGS): { \
         PYCONFIG_IMPL *config_impl = (PYCONFIG_IMPL *)config; \
-        if (_pyi_pyconfig_set_string(config, &config_impl->program_name, pyi_ctx->executable_filename) < 0) { \
+        if (_pyi_pyconfig_set_string(config, &config_impl->program_name, pyi_ctx->executable_filename, dylib_python) < 0) { \
             return -1; \
         } \
         return 0; \
@@ -387,13 +391,14 @@ pyi_pyconfig_set_program_name(PyConfig *config, const struct PYI_CONTEXT *pyi_ct
 int
 pyi_pyconfig_set_python_home(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
-    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
+    const int version_id = _MAKE_VERSION_ID(dylib_python->version, pyi_ctx->nogil_enabled);
 
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PY_FLAGS, PYCONFIG_IMPL) \
     case _MAKE_VERSION_ID(PY_VERSION, PY_FLAGS): { \
         PYCONFIG_IMPL *config_impl = (PYCONFIG_IMPL *)config; \
-        return _pyi_pyconfig_set_string(config, &config_impl->home, pyi_ctx->application_home_dir); \
+        return _pyi_pyconfig_set_string(config, &config_impl->home, pyi_ctx->application_home_dir, dylib_python); \
     }
     /* Macro end */
 
@@ -427,16 +432,17 @@ pyi_pyconfig_set_python_home(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx
 static int
 _pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx, int num_paths, wchar_t **paths)
 {
-    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
+    const int version_id = _MAKE_VERSION_ID(dylib_python->version, pyi_ctx->nogil_enabled);
 
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PY_FLAGS, PYCONFIG_IMPL) \
     case _MAKE_VERSION_ID(PY_VERSION, PY_FLAGS): { \
         PyStatus status; \
         PYCONFIG_IMPL *config_impl = (PYCONFIG_IMPL *)config; \
-        status = PI_PyConfig_SetWideStringList(config, &config_impl->module_search_paths, num_paths, paths); \
+        status = dylib_python->PyConfig_SetWideStringList(config, &config_impl->module_search_paths, num_paths, paths); \
         config_impl->module_search_paths_set = 1; \
-        return PI_PyStatus_Exception(status) ? -1 : 0; \
+        return dylib_python->PyStatus_Exception(status) ? -1 : 0; \
     }
     /* Macro end */
 
@@ -461,6 +467,11 @@ _pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT
 int
 pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
+#if !defined(_WIN32)
+    /* Py_DecodeLocale / PyMem_RawFree in non-Windows codepath. */
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
+#endif
+
     /* TODO: instead of stitching together char strings and converting
      * them, we could probably stitch together wide-char strings directly,
      * as `home` field in config structure has already been converted. */
@@ -492,7 +503,7 @@ pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT 
 #ifdef _WIN32
         module_search_paths_w[i] = pyi_win32_utf8_to_wcs(module_search_paths[i], NULL, 0);
 #else
-        module_search_paths_w[i] = PI_Py_DecodeLocale(module_search_paths[i], NULL);
+        module_search_paths_w[i] = dylib_python->Py_DecodeLocale(module_search_paths[i], NULL);
 #endif
         if (module_search_paths_w[i] == NULL) {
             /* Do not break; we need to initialize all elements */
@@ -517,7 +528,7 @@ end:
 #ifdef _WIN32
         free(module_search_paths_w[i]);
 #else
-        PI_PyMem_RawFree(module_search_paths_w[i]);
+        dylib_python->PyMem_RawFree(module_search_paths_w[i]);
 #endif
     }
 
@@ -531,15 +542,16 @@ end:
 static int
 _pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx, int argc, wchar_t **argv_w)
 {
-    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
+    const int version_id = _MAKE_VERSION_ID(dylib_python->version, pyi_ctx->nogil_enabled);
 
     /* Macro to avoid manual code repetition. */
     #define _IMPL_CASE(PY_VERSION, PY_FLAGS, PYCONFIG_IMPL) \
     case _MAKE_VERSION_ID(PY_VERSION, PY_FLAGS): { \
         PyStatus status; \
         PYCONFIG_IMPL *config_impl = (PYCONFIG_IMPL *)config; \
-        status = PI_PyConfig_SetWideStringList(config, &config_impl->argv, argc, argv_w); \
-        return PI_PyStatus_Exception(status) ? -1 : 0; \
+        status = dylib_python->PyConfig_SetWideStringList(config, &config_impl->argv, argc, argv_w); \
+        return dylib_python->PyStatus_Exception(status) ? -1 : 0; \
     }
     /* Macro end */
 
@@ -588,6 +600,7 @@ pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 int
 pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
     char *const *argv;
     wchar_t **argv_w;
     int argc;
@@ -613,7 +626,7 @@ pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 
     /* Convert */
     for (i = 0; i < argc; i++) {
-        argv_w[i] = PI_Py_DecodeLocale(argv[i], NULL);
+        argv_w[i] = dylib_python->Py_DecodeLocale(argv[i], NULL);
         if (argv_w[i] == NULL) {
             /* Do not break; we need to initialize all elements */
             ret = -1;
@@ -634,7 +647,7 @@ pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 end:
     /* Cleanup */
     for (i = 0; i < argc; i++) {
-        PI_PyMem_RawFree(argv_w[i]);
+        dylib_python->PyMem_RawFree(argv_w[i]);
     }
     free(argv_w);
 
@@ -650,7 +663,8 @@ end:
 int
 pyi_pyconfig_set_runtime_options(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx, const struct PyiRuntimeOptions *runtime_options)
 {
-    int version_id = _MAKE_VERSION_ID(pyi_ctx->archive->python_version, pyi_ctx->nogil_enabled);
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
+    const int version_id = _MAKE_VERSION_ID(dylib_python->version, pyi_ctx->nogil_enabled);
 
     /* *** Common options *** */
     /* Macro to avoid manual code repetition. */
@@ -675,16 +689,16 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, const struct PYI_CONTEXT *pyi
         config_impl->dev_mode = runtime_options->dev_mode; \
         /* Set W-flags, if available */ \
         if (runtime_options->num_wflags) { \
-            status = PI_PyConfig_SetWideStringList(config, &config_impl->warnoptions, runtime_options->num_wflags, runtime_options->wflags); \
-            if (PI_PyStatus_Exception(status)) { \
+            status = dylib_python->PyConfig_SetWideStringList(config, &config_impl->warnoptions, runtime_options->num_wflags, runtime_options->wflags); \
+            if (dylib_python->PyStatus_Exception(status)) { \
                 return -1; \
             } \
         } \
         /* Set X-flags, if available. Note that this is just pass-through that allows options to show up in sys._xoptions;
          * for example, for -Xutf8 or -Xdev to take effect, we need to explicitly parse them and modify PyConfig fields. */ \
         if (runtime_options->num_xflags) { \
-            status = PI_PyConfig_SetWideStringList(config, &config_impl->xoptions, runtime_options->num_xflags, runtime_options->xflags); \
-            if (PI_PyStatus_Exception(status)) { \
+            status = dylib_python->PyConfig_SetWideStringList(config, &config_impl->xoptions, runtime_options->num_xflags, runtime_options->xflags); \
+            if (dylib_python->PyStatus_Exception(status)) { \
                 return -1; \
             } \
         } \
@@ -723,12 +737,13 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, const struct PYI_CONTEXT *pyi
  * Pre-initialize python interpreter.
  */
 int
-pyi_pyconfig_preinit_python(const struct PyiRuntimeOptions *runtime_options)
+pyi_pyconfig_preinit_python(const struct PyiRuntimeOptions *runtime_options, const struct PYI_CONTEXT *pyi_ctx)
 {
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
     PyPreConfig_Common config;
     PyStatus status;
 
-    PI_PyPreConfig_InitIsolatedConfig((PyPreConfig *)&config);
+    dylib_python->PyPreConfig_InitIsolatedConfig((PyPreConfig *)&config);
 
     config.utf8_mode = runtime_options->utf8_mode;
     config.dev_mode = runtime_options->dev_mode;
@@ -737,6 +752,6 @@ pyi_pyconfig_preinit_python(const struct PyiRuntimeOptions *runtime_options)
     config.configure_locale = 1;
 
     /* Pre-initialize */
-    status = PI_Py_PreInitialize((const PyPreConfig *)&config);
-    return PI_PyStatus_Exception(status) ? -1 : 0;
+    status = dylib_python->Py_PreInitialize((const PyPreConfig *)&config);
+    return dylib_python->PyStatus_Exception(status) ? -1 : 0;
 }

@@ -23,9 +23,6 @@
 #include <wchar.h>
 
 
-/* Bind all required functions from python shared library */
-int pyi_python_bind_functions(pyi_dylib_t dll, int python_version);
-
 /*
  * Python.h replacements.
  *
@@ -150,76 +147,155 @@ typedef struct _PyPreConfig PyPreConfig;
 typedef struct _PyConfig PyConfig;
 
 
+/*
+ * Python shared library and bound functions imported from it.
+ */
+
 /* Py_ */
-PYI_EXTDECLPROC(void, Py_DecRef, (PyObject *))
-PYI_EXTDECLPROC(wchar_t *, Py_DecodeLocale, (const char *, size_t *))
-PYI_EXTDECLPROC(void, Py_ExitStatusException, (PyStatus))
-PYI_EXTDECLPROC(int, Py_Finalize, (void))
-PYI_EXTDECLPROC(PyStatus, Py_InitializeFromConfig, (PyConfig *))
-PYI_EXTDECLPROC(int, Py_IsInitialized, (void))
-PYI_EXTDECLPROC(PyStatus, Py_PreInitialize, (const PyPreConfig *))
+PYI_EXT_FUNC_PROTO(void, Py_DecRef, (PyObject *))
+PYI_EXT_FUNC_PROTO(wchar_t *, Py_DecodeLocale, (const char *, size_t *))
+PYI_EXT_FUNC_PROTO(void, Py_ExitStatusException, (PyStatus))
+PYI_EXT_FUNC_PROTO(int, Py_Finalize, (void))
+PYI_EXT_FUNC_PROTO(PyStatus, Py_InitializeFromConfig, (PyConfig *))
+PYI_EXT_FUNC_PROTO(int, Py_IsInitialized, (void))
+PYI_EXT_FUNC_PROTO(PyStatus, Py_PreInitialize, (const PyPreConfig *))
 
 /* PyConfig_ */
-PYI_EXTDECLPROC(void, PyConfig_Clear, (PyConfig *))
-PYI_EXTDECLPROC(void, PyConfig_InitIsolatedConfig, (PyConfig *))
-PYI_EXTDECLPROC(PyStatus, PyConfig_Read, (PyConfig *))
-PYI_EXTDECLPROC(PyStatus, PyConfig_SetBytesString, (PyConfig *, wchar_t **, const char *))
-PYI_EXTDECLPROC(PyStatus, PyConfig_SetString, (PyConfig *, wchar_t **, const wchar_t *))
-PYI_EXTDECLPROC(PyStatus, PyConfig_SetWideStringList, (PyConfig *, PyWideStringList *, Py_ssize_t, wchar_t **))
+PYI_EXT_FUNC_PROTO(void, PyConfig_Clear, (PyConfig *))
+PYI_EXT_FUNC_PROTO(void, PyConfig_InitIsolatedConfig, (PyConfig *))
+PYI_EXT_FUNC_PROTO(PyStatus, PyConfig_Read, (PyConfig *))
+PYI_EXT_FUNC_PROTO(PyStatus, PyConfig_SetBytesString, (PyConfig *, wchar_t **, const char *))
+PYI_EXT_FUNC_PROTO(PyStatus, PyConfig_SetString, (PyConfig *, wchar_t **, const wchar_t *))
+PYI_EXT_FUNC_PROTO(PyStatus, PyConfig_SetWideStringList, (PyConfig *, PyWideStringList *, Py_ssize_t, wchar_t **))
 
 /* PyErr_ */
-PYI_EXTDECLPROC(void, PyErr_Clear, (void) )
-PYI_EXTDECLPROC(void, PyErr_Fetch, (PyObject **, PyObject **, PyObject **))
-PYI_EXTDECLPROC(void, PyErr_NormalizeException, (PyObject **, PyObject **, PyObject **))
-PYI_EXTDECLPROC(PyObject *, PyErr_Occurred, (void) )
-PYI_EXTDECLPROC(void, PyErr_Print, (void) )
-PYI_EXTDECLPROC(void, PyErr_Restore, (PyObject *, PyObject *, PyObject *))
+PYI_EXT_FUNC_PROTO(void, PyErr_Clear, (void))
+PYI_EXT_FUNC_PROTO(void, PyErr_Fetch, (PyObject **, PyObject **, PyObject **))
+PYI_EXT_FUNC_PROTO(void, PyErr_NormalizeException, (PyObject **, PyObject **, PyObject **))
+PYI_EXT_FUNC_PROTO(PyObject *, PyErr_Occurred, (void))
+PYI_EXT_FUNC_PROTO(void, PyErr_Print, (void))
+PYI_EXT_FUNC_PROTO(void, PyErr_Restore, (PyObject *, PyObject *, PyObject *))
 
 /* PyEval */
-PYI_EXTDECLPROC(PyObject *, PyEval_EvalCode, (PyObject *, PyObject *, PyObject *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyEval_EvalCode, (PyObject *, PyObject *, PyObject *))
 
 /* PyImport_ */
-PYI_EXTDECLPROC(PyObject *, PyImport_AddModule, (const char *))
-PYI_EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (const char *, PyObject *))
-PYI_EXTDECLPROC(PyObject *, PyImport_ImportModule, (const char *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyImport_AddModule, (const char *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyImport_ExecCodeModule, (const char *, PyObject *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyImport_ImportModule, (const char *))
+
+/* PyList_ */
+PYI_EXT_FUNC_PROTO(int, PyList_Append, (PyObject *, PyObject *))
 
 /* PyMarshal_ */
-PYI_EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, Py_ssize_t))
+PYI_EXT_FUNC_PROTO(PyObject *, PyMarshal_ReadObjectFromString, (const char *, Py_ssize_t))
 
 /* PyMem_ */
-PYI_EXTDECLPROC(void, PyMem_RawFree, (void *))
+PYI_EXT_FUNC_PROTO(void, PyMem_RawFree, (void *))
 
 /* PyModule_ */
-PYI_EXTDECLPROC(PyObject *, PyModule_GetDict, (PyObject *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyModule_GetDict, (PyObject *))
 
 /* PyObject_ */
-PYI_EXTDECLPROC(PyObject *, PyObject_CallFunction, (PyObject *, char *, ...))
-PYI_EXTDECLPROC(PyObject *, PyObject_CallFunctionObjArgs, (PyObject *, ...))
-PYI_EXTDECLPROC(PyObject *, PyObject_GetAttrString, (PyObject *, const char *))
-PYI_EXTDECLPROC(int, PyObject_SetAttrString, (PyObject *, char *, PyObject *))
-PYI_EXTDECLPROC(PyObject *, PyObject_Str, (PyObject *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyObject_CallFunction, (PyObject *, char *, ...))
+PYI_EXT_FUNC_PROTO(PyObject *, PyObject_CallFunctionObjArgs, (PyObject *, ...))
+PYI_EXT_FUNC_PROTO(PyObject *, PyObject_GetAttrString, (PyObject *, const char *))
+PYI_EXT_FUNC_PROTO(int, PyObject_SetAttrString, (PyObject *, char *, PyObject *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyObject_Str, (PyObject *))
 
 /* PyPreConfig_ */
-PYI_EXTDECLPROC(void, PyPreConfig_InitIsolatedConfig, (PyPreConfig *))
+PYI_EXT_FUNC_PROTO(void, PyPreConfig_InitIsolatedConfig, (PyPreConfig *))
 
 /* PyRun_ */
-PYI_EXTDECLPROC(int, PyRun_SimpleStringFlags, (const char *, PyCompilerFlags *))
+PYI_EXT_FUNC_PROTO(int, PyRun_SimpleStringFlags, (const char *, PyCompilerFlags *))
 
 /* PyStatus_ */
-PYI_EXTDECLPROC(int, PyStatus_Exception, (PyStatus))
+PYI_EXT_FUNC_PROTO(int, PyStatus_Exception, (PyStatus))
 
 /* PySys_ */
-PYI_EXTDECLPROC(PyObject *, PySys_GetObject, (const char *))
-PYI_EXTDECLPROC(int, PySys_SetObject, (const char *, PyObject *))
+PYI_EXT_FUNC_PROTO(PyObject *, PySys_GetObject, (const char *))
+PYI_EXT_FUNC_PROTO(int, PySys_SetObject, (const char *, PyObject *))
 
 /* PyUnicode_ */
-PYI_EXTDECLPROC(const char *, PyUnicode_AsUTF8, (PyObject *))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_Decode, (const char *, Py_ssize_t, const char *, const char *))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_DecodeFSDefault, (const char *))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_FromFormat, (const char *, ...))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_FromString, (const char *))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_Join, (PyObject *, PyObject *))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_Replace, (PyObject *, PyObject *, PyObject *, Py_ssize_t))
+PYI_EXT_FUNC_PROTO(const char *, PyUnicode_AsUTF8, (PyObject *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyUnicode_Decode, (const char *, Py_ssize_t, const char *, const char *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyUnicode_DecodeFSDefault, (const char *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyUnicode_FromFormat, (const char *, ...))
+PYI_EXT_FUNC_PROTO(PyObject *, PyUnicode_FromString, (const char *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyUnicode_Join, (PyObject *, PyObject *))
+PYI_EXT_FUNC_PROTO(PyObject *, PyUnicode_Replace, (PyObject *, PyObject *, PyObject *, Py_ssize_t))
 
+/* The actual function-pointer structure */
+struct DYLIB_PYTHON
+{
+    /* Shared library handle */
+    pyi_dylib_t handle;
+
+    /* Python version, e.g. 3.8 -> 308, 3.12 -> 312 */
+    int version;
+
+    /* Function pointers for imported functions */
+    PYI_EXT_FUNC_ENTRY(Py_DecRef)
+    PYI_EXT_FUNC_ENTRY(Py_DecodeLocale)
+    PYI_EXT_FUNC_ENTRY(Py_ExitStatusException)
+    PYI_EXT_FUNC_ENTRY(Py_Finalize)
+    PYI_EXT_FUNC_ENTRY(Py_InitializeFromConfig)
+    PYI_EXT_FUNC_ENTRY(Py_IsInitialized)
+    PYI_EXT_FUNC_ENTRY(Py_PreInitialize)
+
+    PYI_EXT_FUNC_ENTRY(PyConfig_Clear)
+    PYI_EXT_FUNC_ENTRY(PyConfig_InitIsolatedConfig)
+    PYI_EXT_FUNC_ENTRY(PyConfig_Read)
+    PYI_EXT_FUNC_ENTRY(PyConfig_SetBytesString)
+    PYI_EXT_FUNC_ENTRY(PyConfig_SetString)
+    PYI_EXT_FUNC_ENTRY(PyConfig_SetWideStringList)
+
+    PYI_EXT_FUNC_ENTRY(PyErr_Clear)
+    PYI_EXT_FUNC_ENTRY(PyErr_Fetch)
+    PYI_EXT_FUNC_ENTRY(PyErr_NormalizeException)
+    PYI_EXT_FUNC_ENTRY(PyErr_Occurred)
+    PYI_EXT_FUNC_ENTRY(PyErr_Print)
+    PYI_EXT_FUNC_ENTRY(PyErr_Restore)
+
+    PYI_EXT_FUNC_ENTRY(PyEval_EvalCode)
+
+    PYI_EXT_FUNC_ENTRY(PyImport_AddModule)
+    PYI_EXT_FUNC_ENTRY(PyImport_ExecCodeModule)
+    PYI_EXT_FUNC_ENTRY(PyImport_ImportModule)
+
+    PYI_EXT_FUNC_ENTRY(PyList_Append)
+
+    PYI_EXT_FUNC_ENTRY(PyMarshal_ReadObjectFromString)
+
+    PYI_EXT_FUNC_ENTRY(PyMem_RawFree)
+
+    PYI_EXT_FUNC_ENTRY(PyModule_GetDict)
+
+    PYI_EXT_FUNC_ENTRY(PyObject_CallFunction)
+    PYI_EXT_FUNC_ENTRY(PyObject_CallFunctionObjArgs)
+    PYI_EXT_FUNC_ENTRY(PyObject_GetAttrString)
+    PYI_EXT_FUNC_ENTRY(PyObject_SetAttrString)
+    PYI_EXT_FUNC_ENTRY(PyObject_Str)
+
+    PYI_EXT_FUNC_ENTRY(PyPreConfig_InitIsolatedConfig)
+
+    PYI_EXT_FUNC_ENTRY(PyRun_SimpleStringFlags)
+
+    PYI_EXT_FUNC_ENTRY(PyStatus_Exception)
+
+    PYI_EXT_FUNC_ENTRY(PySys_GetObject)
+    PYI_EXT_FUNC_ENTRY(PySys_SetObject)
+
+    PYI_EXT_FUNC_ENTRY(PyUnicode_AsUTF8)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_Decode)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_DecodeFSDefault)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_FromFormat)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_FromString)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_Join)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_Replace)
+};
+
+struct DYLIB_PYTHON *pyi_dylib_python_load(const char *root_directory, const char *python_libname, int python_version);
+void pyi_dylib_python_cleanup(struct DYLIB_PYTHON **dylib_ref);
 
 #endif /* PYI_DYLIB_PYTHON_H */

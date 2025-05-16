@@ -172,18 +172,18 @@ pyi_launch_extract_files_from_archive(struct PYI_CONTEXT *pyi_ctx)
  * Returns a copy of message string or NULL. Must be freed by caller.
  */
 static char *
-_pyi_extract_exception_message(PyObject *pvalue)
+_pyi_extract_exception_message(PyObject *pvalue, const struct DYLIB_PYTHON *dylib_python)
 {
     PyObject *pvalue_str;
     const char *pvalue_cchar;
     char *retval = NULL;
 
-    pvalue_str = PI_PyObject_Str(pvalue);
-    pvalue_cchar = PI_PyUnicode_AsUTF8(pvalue_str);
+    pvalue_str = dylib_python->PyObject_Str(pvalue);
+    pvalue_cchar = dylib_python->PyUnicode_AsUTF8(pvalue_str);
     if (pvalue_cchar) {
         retval = strdup(pvalue_cchar);
     }
-    PI_Py_DecRef(pvalue_str);
+    dylib_python->Py_DecRef(pvalue_str);
 
     return retval;
 }
@@ -213,7 +213,8 @@ _pyi_extract_exception_traceback(
     PyObject *ptype,
     PyObject *pvalue,
     PyObject *ptraceback,
-    int fmt_mode
+    int fmt_mode,
+    const struct DYLIB_PYTHON *dylib_python
 )
 {
     PyObject *module;
@@ -221,49 +222,49 @@ _pyi_extract_exception_traceback(
 
     /* Attempt to get a full traceback, source lines will only
      * be available with --noarchive option */
-    module = PI_PyImport_ImportModule("traceback");
+    module = dylib_python->PyImport_ImportModule("traceback");
     if (module != NULL) {
-        PyObject *func = PI_PyObject_GetAttrString(module, "format_exception");
+        PyObject *func = dylib_python->PyObject_GetAttrString(module, "format_exception");
         if (func) {
             PyObject *tb = NULL;
             PyObject *tb_str = NULL;
             const char *tb_cchar = NULL;
 
-            tb = PI_PyObject_CallFunctionObjArgs(func, ptype, pvalue, ptraceback, NULL);
+            tb = dylib_python->PyObject_CallFunctionObjArgs(func, ptype, pvalue, ptraceback, NULL);
             if (tb != NULL) {
                 if (fmt_mode == PYI_TB_FMT_REPR) {
                     /* Represent the list as string */
-                    tb_str = PI_PyObject_Str(tb);
+                    tb_str = dylib_python->PyObject_Str(tb);
                 } else {
                     /* Join the list using empty string */
-                    PyObject *tb_empty = PI_PyUnicode_FromString("");
-                    tb_str = PI_PyUnicode_Join(tb_empty, tb);
-                    PI_Py_DecRef(tb_empty);
+                    PyObject *tb_empty = dylib_python->PyUnicode_FromString("");
+                    tb_str = dylib_python->PyUnicode_Join(tb_empty, tb);
+                    dylib_python->Py_DecRef(tb_empty);
                     if (fmt_mode == PYI_TB_FMT_CRLF) {
                         /* Replace LF with CRLF */
-                        PyObject *lf = PI_PyUnicode_FromString("\n");
-                        PyObject *crlf = PI_PyUnicode_FromString("\r\n");
-                        PyObject *tb_str_crlf = PI_PyUnicode_Replace(tb_str, lf, crlf, -1);
-                        PI_Py_DecRef(lf);
-                        PI_Py_DecRef(crlf);
+                        PyObject *lf = dylib_python->PyUnicode_FromString("\n");
+                        PyObject *crlf = dylib_python->PyUnicode_FromString("\r\n");
+                        PyObject *tb_str_crlf = dylib_python->PyUnicode_Replace(tb_str, lf, crlf, -1);
+                        dylib_python->Py_DecRef(lf);
+                        dylib_python->Py_DecRef(crlf);
                         /* Swap */
-                        PI_Py_DecRef(tb_str);
+                        dylib_python->Py_DecRef(tb_str);
                         tb_str = tb_str_crlf;
                     }
                 }
             }
             if (tb_str != NULL) {
-                tb_cchar = PI_PyUnicode_AsUTF8(tb_str);
+                tb_cchar = dylib_python->PyUnicode_AsUTF8(tb_str);
                 if (tb_cchar) {
                     retval = strdup(tb_cchar);
                 }
             }
-            PI_Py_DecRef(tb);
-            PI_Py_DecRef(tb_str);
+            dylib_python->Py_DecRef(tb);
+            dylib_python->Py_DecRef(tb_str);
         }
-        PI_Py_DecRef(func);
+        dylib_python->Py_DecRef(func);
     }
-    PI_Py_DecRef(module);
+    dylib_python->Py_DecRef(module);
 
     return retval;
 }
@@ -278,6 +279,7 @@ static int
 _pyi_launch_run_scripts(const struct PYI_CONTEXT *pyi_ctx)
 {
     const struct ARCHIVE *archive = pyi_ctx->archive;
+    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
     unsigned char *data;
     char buf[PYI_PATH_MAX];
     const struct TOC_ENTRY *toc_entry;
@@ -286,14 +288,14 @@ _pyi_launch_run_scripts(const struct PYI_CONTEXT *pyi_ctx)
     PyObject *main_dict;
     PyObject *code, *retval;
 
-    __main__ = PI_PyImport_AddModule("__main__");
+    __main__ = dylib_python->PyImport_AddModule("__main__");
 
     if (!__main__) {
         PYI_ERROR("Could not get __main__ module.\n");
         return -1;
     }
 
-    main_dict = PI_PyModule_GetDict(__main__);
+    main_dict = dylib_python->PyModule_GetDict(__main__);
 
     if (!main_dict) {
         PYI_ERROR("Could not get __main__ module's dict.\n");
@@ -322,26 +324,26 @@ _pyi_launch_run_scripts(const struct PYI_CONTEXT *pyi_ctx)
 
         PYI_DEBUG("LOADER: running %s.py\n", toc_entry->name);
 
-        __file__ = PI_PyUnicode_FromString(buf);
-        PI_PyObject_SetAttrString(__main__, "__file__", __file__);
-        PI_Py_DecRef(__file__);
+        __file__ = dylib_python->PyUnicode_FromString(buf);
+        dylib_python->PyObject_SetAttrString(__main__, "__file__", __file__);
+        dylib_python->Py_DecRef(__file__);
 
         /* Unmarshall code object */
-        code = PI_PyMarshal_ReadObjectFromString((const char *)data, toc_entry->uncompressed_length);
+        code = dylib_python->PyMarshal_ReadObjectFromString((const char *)data, toc_entry->uncompressed_length);
         free(data);
         if (!code) {
             PYI_ERROR("Failed to unmarshal code object for %s\n", toc_entry->name);
-            PI_PyErr_Print();
+            dylib_python->PyErr_Print();
             return -1;
         }
 
         /* Store the code object to __main__ module's _pyi_main_co
          * attribute, so it can be retrieved by PyiFrozenEntryPointLoader,
          * if necessary. */
-        PI_PyObject_SetAttrString(__main__, "_pyi_main_co", code);
+        dylib_python->PyObject_SetAttrString(__main__, "_pyi_main_co", code);
 
         /* Run it */
-        retval = PI_PyEval_EvalCode(code, main_dict, main_dict);
+        retval = dylib_python->PyEval_EvalCode(code, main_dict, main_dict);
 
         /* If retval is NULL, an error occurred. Otherwise, it is a Python object.
          * (Since we evaluate module-level code, which is not allowed to return an
@@ -367,22 +369,22 @@ _pyi_launch_run_scripts(const struct PYI_CONTEXT *pyi_ctx)
             fmt_mode = PYI_TB_FMT_LF;
 #endif
 
-            PI_PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-            PI_PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
-            msg_exc = _pyi_extract_exception_message(pvalue);
+            dylib_python->PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+            dylib_python->PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
+            msg_exc = _pyi_extract_exception_message(pvalue, dylib_python);
             if (pyi_ctx->disable_windowed_traceback) {
                 /* Traceback is disabled via option */
                 msg_tb = strdup("Traceback is disabled via bootloader option.");
             } else {
-                msg_tb = _pyi_extract_exception_traceback(ptype, pvalue, ptraceback, fmt_mode);
+                msg_tb = _pyi_extract_exception_traceback(ptype, pvalue, ptraceback, fmt_mode, dylib_python);
             }
-            PI_PyErr_Restore(ptype, pvalue, ptraceback);
+            dylib_python->PyErr_Restore(ptype, pvalue, ptraceback);
 #endif /* defined(WINDOWED) */
 
             /* If the error was SystemExit, PyErr_Print calls exit() without
              * returning. This means we won't print "Failed to execute" on
              * normal SystemExit's. */
-            PI_PyErr_Print();
+            dylib_python->PyErr_Print();
 
             /* Display error information */
 #if !defined(WINDOWED)
@@ -422,25 +424,19 @@ pyi_launch_initialize(struct PYI_CONTEXT *pyi_ctx)
     /* Nothing to do here at the moment. */
 }
 
-/*
- * Once init'ed, you might want to extractBinaries()
- * If you do, what comes after is very platform specific.
- * Once you've taken care of the platform specific details,
- * or if there are no binaries to extract, you go on
- * to pyi_launch_execute(), which is the important part.
- */
 int
 pyi_launch_execute(struct PYI_CONTEXT *pyi_ctx)
 {
     int rc = 0;
 
-    /* Load Python shared library and import symbols from it */
-    if (pyi_python_load_dylib(pyi_ctx)) {
+    /* Load Python shared library and import symbols from it. */
+    pyi_ctx->dylib_python = pyi_dylib_python_load(
+        pyi_ctx->application_home_dir,
+        pyi_ctx->archive->python_libname,
+        pyi_ctx->archive->python_version
+    );
+    if (pyi_ctx->dylib_python == NULL) {
         return -1;
-    } else {
-        /* Set the flag that lets cleanup code know that it is safe to
-         * call Python functions */
-        pyi_ctx->python_symbols_loaded = 1;
     }
 
     /* Start Python interpreter. */
@@ -477,9 +473,5 @@ pyi_launch_finalize(struct PYI_CONTEXT *pyi_ctx)
     pyi_python_finalize(pyi_ctx);
 
     /* Unload python shared library */
-    if (pyi_ctx->python_dll) {
-        PYI_DEBUG("LOADER: unloading Python shared library...\n");
-        pyi_utils_dlclose(pyi_ctx->python_dll);
-        pyi_ctx->python_dll = NULL;
-    }
+    pyi_dylib_python_cleanup(&pyi_ctx->dylib_python);
 }

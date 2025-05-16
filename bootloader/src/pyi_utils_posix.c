@@ -48,7 +48,6 @@
 #endif
 
 #include <dirent.h>
-#include <dlfcn.h> /* dlopen, dlclose */
 
 #ifndef SIGCLD
     #define SIGCLD SIGCHLD /* not defined on macOS */
@@ -355,34 +354,6 @@ pyi_recursive_rmdir(const char *dir_path)
     /* Finally, remove the directory; the return value of rmdir (0 on
      * success, -1 on error) maps directly to this function's return. */
     return rmdir(dir_path);
-}
-
-
-/**********************************************************************\
- *                  Shared library loading/unloading                  *
-\**********************************************************************/
-pyi_dylib_t
-pyi_utils_dlopen(const char *filename)
-{
-#ifdef AIX
-    /* On AIX, if we are trying to load a shared object in an .a archive
-     * (e.g., `/path/to/libpython3.9.a(libpython3.9.so)`), we need to
-     * set `RTLD_MEMBER` flag. It seems that we can use this flag with
-     * regular shared library (.so) files as well, so we can get away
-     * with having it always set (otherwise, we would need to check
-     * whether the passed filename ends with ')' or not). For RTLD_MEMBER
-     * to be defined, the program needs to be compiled with _ALL_SOURCE
-     * defined, which is done globally in the `waf` build script. */
-    return dlopen(filename, RTLD_NOW | RTLD_GLOBAL | RTLD_MEMBER);
-#else
-    return dlopen(filename, RTLD_NOW | RTLD_GLOBAL);
-#endif
-}
-
-int
-pyi_utils_dlclose(pyi_dylib_t handle)
-{
-    return dlclose(handle);
 }
 
 

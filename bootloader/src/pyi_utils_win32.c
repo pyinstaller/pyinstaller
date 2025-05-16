@@ -414,35 +414,6 @@ pyi_recursive_rmdir(const char *dir_path)
 
 
 /**********************************************************************\
- *                  Shared library loading/unloading                  *
-\**********************************************************************/
-/* Load shared/dynamic library */
-pyi_dylib_t
-pyi_utils_dlopen(const char *filename)
-{
-    wchar_t *filename_w;
-    pyi_dylib_t handle;
-
-    /* Convert UTF-8 to wide-char */
-    filename_w = pyi_win32_utf8_to_wcs(filename, NULL, 0);
-
-    /* Load shared library */
-    handle = LoadLibraryExW(filename_w, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-
-    free(filename_w);
-
-    return handle;
-}
-
-/* Unload shared library by closing its handle */
-int
-pyi_utils_dlclose(pyi_dylib_t handle)
-{
-    return FreeLibrary(handle) ? 0 : -1; /* true/false -> 0/-1 */
-}
-
-
-/**********************************************************************\
  *                  Child process spawning (onefile)                  *
 \**********************************************************************/
 static BOOL WINAPI

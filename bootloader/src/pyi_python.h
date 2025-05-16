@@ -20,7 +20,6 @@
 
 struct PYI_CONTEXT;
 
-int pyi_python_load_dylib(struct PYI_CONTEXT *pyi_ctx);
 int pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx);
 int pyi_python_import_modules(const struct PYI_CONTEXT *pyi_ctx);
 int pyi_python_install_pyz(const struct PYI_CONTEXT *pyi_ctx);

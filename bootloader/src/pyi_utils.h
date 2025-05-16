@@ -21,8 +21,6 @@
 #include <stdio.h> /* FILE */
 #include <inttypes.h> /* uint64_t */
 
-#include "pyi_global.h" /* dylib_t */
-
 struct PYI_CONTEXT;
 
 /* Environment variables. */
@@ -39,10 +37,6 @@ int pyi_recursive_rmdir(const char *dir);
 /* Misc. file/directory manipulation. */
 int pyi_create_parent_directory_tree(const struct PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename);
 int pyi_copy_file(const char *src_filename, const char *dest_filename);
-
-/* Shared library loading. */
-pyi_dylib_t pyi_utils_dlopen(const char *filename);
-int pyi_utils_dlclose(pyi_dylib_t handle);
 
 /* Child process */
 int pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx);

@@ -56,7 +56,7 @@
  * application's archive; if found, it dynamically loads the Tcl and Tk shared libraries,
  * initializes a minimal Tcl/Tk environment, and runs the splash screen in it.
  *
- * Only threaded Tcl is supported; i..e, Tcl had to be compiled with the --enable-threads
+ * Only threaded Tcl is supported; i.e., Tcl had to be compiled with the --enable-threads
  * flag, which is it by default on Windows and macOS. Many Linux distributions also come
  * with threaded Tcl installation, although it is not guaranteed. PyInstaller checks at
  * build time if Tcl is threaded and raises an error if it is not.
@@ -88,10 +88,10 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
      * mode, they are extracted into temporary/ephemeral top-level
      * application directory.
      *
-     * NOTE: the name fields in SPLASH_DATA_HEADER are 16 characters wide,
-     * and are *implicitly* NUL terminated; the build process uses zero
-     * padding and is ensuring that strings themselves have no more than
-     * 15 characters long. */
+     * NOTE: the name fields in SPLASH_DATA_HEADER have fixed width (32
+     * or 16 characters), and are *implicitly* NUL terminated; the build
+     * process uses zero padding and is ensuring that strings themselves
+     * have no more than N-1 characters long. */
 
     /* Tcl shared library */
     if (pyi_path_join(splash->tcl_libpath, pyi_ctx->application_home_dir, data_header->tcl_libname) == NULL) {
@@ -179,17 +179,19 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
 int
 pyi_splash_start(struct SPLASH_CONTEXT *splash, const char *executable)
 {
+    const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
+
     /* Make sure shared libraries have been loaded and their symbols
      * bound. */
-    if (!splash->dlls_fully_loaded) {
+    if (!dylib_tcltk) {
         return -1;
     }
 
-    PI_Tcl_MutexLock(&splash->context_mutex);
+    dylib_tcltk->Tcl_MutexLock(&splash->context_mutex);
 
     /* This functions needs to be called before everything else is done
      * with Tcl, otherwise the behavior of Tcl is undefined. */
-    PI_Tcl_FindExecutable(executable);
+    dylib_tcltk->Tcl_FindExecutable(executable);
 
     /* At the time of writing, Tcl on Windows does not support joinable
      * threads. As per https://www.tcl.tk/man/tcl/TclLib/Thread.htm:
@@ -211,7 +213,7 @@ pyi_splash_start(struct SPLASH_CONTEXT *splash, const char *executable)
      * methods provided by Tcl. This function will return TCL_ERROR if it is
      * either not implemented (Tcl is not threaded) or an error occurs.
      * Since we only support threaded Tcl, the error is fatal. */
-    if (PI_Tcl_CreateThread(
+    if (dylib_tcltk->Tcl_CreateThread(
         &splash->thread_id, /* location to store thread ID */
         _splash_init, /* procedure/function to run in the new thread */
         splash, /* parameters to pass to procedure */
@@ -219,12 +221,12 @@ pyi_splash_start(struct SPLASH_CONTEXT *splash, const char *executable)
         splash->thread_joinable ? TCL_THREAD_JOINABLE : TCL_THREAD_NOFLAGS /* flags */
     ) != TCL_OK) {
         PYI_ERROR("SPLASH: Tcl is not threaded. Only threaded Tcl is supported.\n");
-        PI_Tcl_MutexUnlock(&splash->context_mutex);
+        dylib_tcltk->Tcl_MutexUnlock(&splash->context_mutex);
         pyi_splash_finalize(splash);
         return -1;
     }
-    PI_Tcl_MutexLock(&splash->start_mutex);
-    PI_Tcl_MutexUnlock(&splash->context_mutex);
+    dylib_tcltk->Tcl_MutexLock(&splash->start_mutex);
+    dylib_tcltk->Tcl_MutexUnlock(&splash->context_mutex);
 
     PYI_DEBUG("SPLASH: created thread for Tcl interpreter.\n");
 
@@ -235,9 +237,9 @@ pyi_splash_start(struct SPLASH_CONTEXT *splash, const char *executable)
      * variable that is set by the Tcl splash screen script is always
      * propagated into python's `os.environ`, which reflects the state
      * of environment when python interpreter is initialized. */
-    PI_Tcl_ConditionWait(&splash->start_cond, &splash->start_mutex, NULL);
-    PI_Tcl_MutexUnlock(&splash->start_mutex);
-    PI_Tcl_ConditionFinalize(&splash->start_cond);
+    dylib_tcltk->Tcl_ConditionWait(&splash->start_cond, &splash->start_mutex, NULL);
+    dylib_tcltk->Tcl_MutexUnlock(&splash->start_mutex);
+    dylib_tcltk->Tcl_ConditionFinalize(&splash->start_cond);
     PYI_DEBUG("SPLASH: splash screen started.\n");
 
     return 0;
@@ -348,40 +350,15 @@ pyi_splash_is_splash_requirement(struct SPLASH_CONTEXT *splash, const char *name
 int
 pyi_splash_load_shared_libaries(struct SPLASH_CONTEXT *splash)
 {
-    splash->dlls_fully_loaded = false;
-
-    /* Tcl */
     PYI_DEBUG("SPLASH: loading Tcl library from: %s\n", splash->tcl_libpath);
-    splash->dll_tcl = pyi_utils_dlopen(splash->tcl_libpath);
-    if (splash->dll_tcl == 0) {
-#ifdef _WIN32
-        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Tcl DLL.\n");
-#else
-        PYI_ERROR("Failed to load Tcl shared library: %s\n", dlerror());
-#endif
-        return -1;
-    }
-
-    /* Tk */
     PYI_DEBUG("SPLASH: loading Tk library from: %s\n", splash->tk_libpath);
-    splash->dll_tk = pyi_utils_dlopen(splash->tk_libpath);
-    if (splash->dll_tk == 0) {
-#ifdef _WIN32
-        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Tk DLL.\n");
-#else
-        PYI_ERROR("Failed to load Tk shared library: %s\n", dlerror());
-#endif
+
+    /* Load shared libraries and bind symbols */
+    splash->dylib_tcltk = pyi_dylib_tcltk_load(splash->tcl_libpath, splash->tk_libpath);
+    if (splash->dylib_tcltk == NULL) {
+        PYI_ERROR("SPLASH: failed to load Tcl/Tk shared libraries!\n");
         return -1;
     }
-
-    /* Bind symbols */
-    if (pyi_splashlib_bind_functions(splash->dll_tcl, splash->dll_tk) < 0) {
-        return -1;
-    }
-
-    /* Tcl/Tk shared libraries are fully loaded and their symbols bound,
-     * so it is safe to use them. */
-    splash->dlls_fully_loaded = true;
 
     return 0;
 }
@@ -392,25 +369,17 @@ pyi_splash_load_shared_libaries(struct SPLASH_CONTEXT *splash)
 int
 pyi_splash_finalize(struct SPLASH_CONTEXT *splash)
 {
+    const struct DYLIB_TCLTK *dylib_tcltk;
+
     if (splash == NULL) {
         return 0;
     }
 
     /* If we failed to fully attach Tcl/Tk libraries (either because one
      * of the libraries failed to load, or because we failed to load one
-     * of the symbols from the libraries), we only need to clean up the
-     * shared libraries, in case any of them were successfully loaded. */
-    if (splash->dlls_fully_loaded != true) {
-        if (splash->dll_tk != NULL) {
-            pyi_utils_dlclose(splash->dll_tk);
-            splash->dll_tk = NULL;
-        }
-
-        if (splash->dll_tcl != NULL) {
-            pyi_utils_dlclose(splash->dll_tcl);
-            splash->dll_tcl = NULL;
-        }
-
+     * of the symbols from the libraries), there is nothing left to do. */
+    dylib_tcltk = splash->dylib_tcltk;
+    if (!dylib_tcltk) {
         return 0;
     }
 
@@ -421,7 +390,7 @@ pyi_splash_finalize(struct SPLASH_CONTEXT *splash)
      * non-NULL, and we wait for splash screen thread to signal its
      * exit) or after it (in which case, splash->interp is NULL, and
      * we can skip this part). */
-    PI_Tcl_MutexLock(&splash->exit_mutex);
+    dylib_tcltk->Tcl_MutexLock(&splash->exit_mutex);
     if (splash->interp != NULL) {
         PYI_DEBUG("SPLASH: splash screen thread still running; signalling it to shut down...\n");
 
@@ -432,13 +401,13 @@ pyi_splash_finalize(struct SPLASH_CONTEXT *splash)
         /* We need to post a fake event into the event queue in order
          * to unblock Tcl_DoOneEvent, so the Tcl main loop can exit. */
         pyi_splash_send(splash, true, NULL, NULL);
-        PI_Tcl_ConditionWait(&splash->exit_wait, &splash->exit_mutex, NULL);
-        PI_Tcl_MutexUnlock(&splash->exit_mutex);
-        PI_Tcl_ConditionFinalize(&splash->exit_wait);
+        dylib_tcltk->Tcl_ConditionWait(&splash->exit_wait, &splash->exit_mutex, NULL);
+        dylib_tcltk->Tcl_MutexUnlock(&splash->exit_mutex);
+        dylib_tcltk->Tcl_ConditionFinalize(&splash->exit_wait);
 
         PYI_DEBUG("SPLASH: splash screen thread has shut down.\n");
     } else {
-        PI_Tcl_MutexUnlock(&splash->exit_mutex);
+        dylib_tcltk->Tcl_MutexUnlock(&splash->exit_mutex);
         PYI_DEBUG("SPLASH: splash screen thread has already shut down.\n");
     }
 
@@ -446,7 +415,7 @@ pyi_splash_finalize(struct SPLASH_CONTEXT *splash)
     if (splash->thread_joinable && splash->thread_id) {
         int ret;
         PYI_DEBUG("SPLASH: joining the splash screen thread...\n");
-        ret = PI_Tcl_JoinThread(splash->thread_id, NULL); /* We do not need thread's return code */
+        ret = dylib_tcltk->Tcl_JoinThread(splash->thread_id, NULL); /* We do not need thread's return code */
         PYI_DEBUG("SPLASH: splash screen thread join %s\n", ret == TCL_OK ? "succeeded." : "failed!");
         /* ret is used only in debug messages; suppress variable-set-but-unused
          * gcc warning in non-debug build */
@@ -454,10 +423,10 @@ pyi_splash_finalize(struct SPLASH_CONTEXT *splash)
     }
 
     /* Cleanup mutexes */
-    PI_Tcl_MutexFinalize(&splash->context_mutex);
-    PI_Tcl_MutexFinalize(&splash->call_mutex);
-    PI_Tcl_MutexFinalize(&splash->start_mutex);
-    PI_Tcl_MutexFinalize(&splash->exit_mutex);
+    dylib_tcltk->Tcl_MutexFinalize(&splash->context_mutex);
+    dylib_tcltk->Tcl_MutexFinalize(&splash->call_mutex);
+    dylib_tcltk->Tcl_MutexFinalize(&splash->start_mutex);
+    dylib_tcltk->Tcl_MutexFinalize(&splash->exit_mutex);
 
     /* This function should only be called after python has been
      * destroyed with Py_Finalize. Tcl/Tk/tkinter do **not** support
@@ -468,24 +437,10 @@ pyi_splash_finalize(struct SPLASH_CONTEXT *splash)
      * its own tcl interpreter. If we finalized Tcl here, the
      * Tcl interpreter of tkinter would also be finalized, resulting
      * in a weird state of tkinter. */
-    PI_Tcl_Finalize();
+    dylib_tcltk->Tcl_Finalize();
 
-    /* If the shared libraries are not yet unloaded, unload them here,
-     * as otherwise their files cannot be deleted. */
-    if (splash->dll_tk != NULL) {
-        PYI_DEBUG("SPLASH: unloading Tk shared library...\n");
-        if (pyi_utils_dlclose(splash->dll_tk) < 0) {
-            PYI_DEBUG("SPLASH: failed to unload Tk shared library!\n");
-        }
-        splash->dll_tk = NULL;
-    }
-    if (splash->dll_tcl != NULL) {
-        PYI_DEBUG("SPLASH: unloading Tcl shared library...\n");
-        if (pyi_utils_dlclose(splash->dll_tcl) < 0) {
-            PYI_DEBUG("SPLASH: failed to unload Tcl shared library!\n");
-        }
-        splash->dll_tcl = NULL;
-    }
+    PYI_DEBUG("SPLASH: unloading Tcl/Tk shared libaries...\n");
+    pyi_dylib_tcltk_cleanup(&splash->dylib_tcltk);
 
     PYI_DEBUG("SPLASH: cleanup complete!\n");
     return 0;
@@ -573,15 +528,17 @@ _splash_event_send(
     bool async
 )
 {
-    PI_Tcl_MutexLock(mutex);
-    PI_Tcl_ThreadQueueEvent(splash->thread_id, ev, TCL_QUEUE_TAIL);
-    PI_Tcl_ThreadAlert(splash->thread_id);
+    const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
+
+    dylib_tcltk->Tcl_MutexLock(mutex);
+    dylib_tcltk->Tcl_ThreadQueueEvent(splash->thread_id, ev, TCL_QUEUE_TAIL);
+    dylib_tcltk->Tcl_ThreadAlert(splash->thread_id);
 
     if (!async) {
-        PI_Tcl_ConditionWait(cond, mutex, NULL); /* Wait for the result */
+        dylib_tcltk->Tcl_ConditionWait(cond, mutex, NULL); /* Wait for the result */
     }
 
-    PI_Tcl_MutexUnlock(mutex);
+    dylib_tcltk->Tcl_MutexUnlock(mutex);
 }
 
 /*
@@ -608,14 +565,17 @@ _splash_event_proc(Tcl_Event *ev, int flags)
     }
 
     if (!splash_event->async) {
+        struct SPLASH_CONTEXT *splash = splash_event->splash;
+        const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
+
         /* In synchronous mode, the caller thread is waiting on the
          * wait condition. Notify it that the function call has finished. */
-        PI_Tcl_MutexLock(&splash_event->splash->call_mutex);
+        dylib_tcltk->Tcl_MutexLock(&splash_event->splash->call_mutex);
 
         *splash_event->result = rc;
 
-        PI_Tcl_ConditionNotify(splash_event->done);
-        PI_Tcl_MutexUnlock(&splash_event->splash->call_mutex);
+        dylib_tcltk->Tcl_ConditionNotify(splash_event->done);
+        dylib_tcltk->Tcl_MutexUnlock(&splash_event->splash->call_mutex);
     }
 
     /* Not an error code; value 1 indicates that event has been processed. */
@@ -637,7 +597,7 @@ static int
 _pyi_splash_text_update(struct SPLASH_CONTEXT *splash, const void *user_data)
 {
     const char *text = (const char *)user_data;
-    PI_Tcl_SetVar2(splash->interp, "status_text", NULL, text, TCL_GLOBAL_ONLY);
+    splash->dylib_tcltk->Tcl_SetVar2(splash->interp, "status_text", NULL, text, TCL_GLOBAL_ONLY);
     return 0;
 }
 
@@ -683,7 +643,7 @@ pyi_splash_send(struct SPLASH_CONTEXT *splash, bool async, const void *user_data
     Tcl_Condition cond = NULL;
 
     /* Tcl will free this event once it was serviced. */
-    ev = (struct Splash_Event *)PI_Tcl_Alloc(sizeof(struct Splash_Event));
+    ev = (struct Splash_Event *)splash->dylib_tcltk->Tcl_Alloc(sizeof(struct Splash_Event));
 
     ev->ev.proc = (Tcl_EventProc *)_splash_event_proc;
     ev->splash = splash;
@@ -700,7 +660,7 @@ pyi_splash_send(struct SPLASH_CONTEXT *splash, bool async, const void *user_data
     _splash_event_send(splash, (Tcl_Event *)ev, &cond, &splash->call_mutex, async);
 
     if (!async) {
-        PI_Tcl_ConditionFinalize(&cond);
+        splash->dylib_tcltk->Tcl_ConditionFinalize(&cond);
     }
     return rc;
 }
@@ -762,20 +722,19 @@ _tcl_findLibrary_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tc
      * 	    varName		Global variable to set when done (e.g., tk_library)
      */
     int rc;
-    struct SPLASH_CONTEXT *splash;
+    struct SPLASH_CONTEXT *splash = (struct SPLASH_CONTEXT *)clientData;
+    const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
     char initScriptPath[PYI_PATH_MAX];
-
-    splash = (struct SPLASH_CONTEXT *)clientData;
 
     /* In our minimal environment, this function is only called once,
      * from Tk_Init. So we only implement the behavior for Tk. Other
      * libraries are therefore not supported. We do not check the version
      * of `tk`, since the library packed by PyInstaller at build time is
      * guaranteed to be compatible. */
-    if (strncmp(PI_Tcl_GetString(objv[4]), "tk.tcl", 64) == 0) {
-        pyi_path_join(initScriptPath, splash->tk_lib, PI_Tcl_GetString(objv[4]));
-        PI_Tcl_SetVar2(interp, "tk_library", NULL, splash->tk_lib, TCL_GLOBAL_ONLY);
-        rc = PI_Tcl_EvalFile(interp, initScriptPath);
+    if (strncmp(dylib_tcltk->Tcl_GetString(objv[4]), "tk.tcl", 64) == 0) {
+        pyi_path_join(initScriptPath, splash->tk_lib, dylib_tcltk->Tcl_GetString(objv[4]));
+        dylib_tcltk->Tcl_SetVar2(interp, "tk_library", NULL, splash->tk_lib, TCL_GLOBAL_ONLY);
+        rc = dylib_tcltk->Tcl_EvalFile(interp, initScriptPath);
         return rc;
     }
 
@@ -802,25 +761,27 @@ _tcl_source_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
      * in order  to keep its functionality available. As we know that we are
      * running an error-free script,  we do not do the checks for a valid
      * command, or at least we do it with the original `source` command. */
+    struct SPLASH_CONTEXT *splash = (struct SPLASH_CONTEXT *)clientData;
+    const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
     Tcl_Obj **_source_objv;
     int rc;
     int i;
 
     /* Check if the file to be sourced exists. The filename
      * is always the last (objc-1) parameter passed to the command */
-    if (pyi_path_exists(PI_Tcl_GetString(objv[objc - 1]))) {
+    if (pyi_path_exists(dylib_tcltk->Tcl_GetString(objv[objc - 1]))) {
         /* Create a new objv array for the original source command
          * named _source. */
-        _source_objv = (Tcl_Obj **)PI_Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
-        _source_objv[0] = PI_Tcl_NewStringObj("_source", -1);
+        _source_objv = (Tcl_Obj **)dylib_tcltk->Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
+        _source_objv[0] = dylib_tcltk->Tcl_NewStringObj("_source", -1);
 
         for (i = 1; i < objc; i++) {
             _source_objv[i] = objv[i];
         }
 
         /* Execute `_source` with the given arguments */
-        rc = PI_Tcl_EvalObjv(interp, objc, _source_objv, 0);
-        PI_Tcl_Free((char *) _source_objv);
+        rc = dylib_tcltk->Tcl_EvalObjv(interp, objc, _source_objv, 0);
+        dylib_tcltk->Tcl_Free((char *) _source_objv);
 
         return rc;
     }
@@ -865,26 +826,25 @@ static Tcl_ThreadCreateType
 _splash_init(ClientData client_data)
 {
     int err = 0;
-    struct SPLASH_CONTEXT *splash;
+    struct SPLASH_CONTEXT *splash = (struct SPLASH_CONTEXT *)client_data;
+    const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
     Tcl_Obj *image_data_obj;
 
-    splash = (struct SPLASH_CONTEXT *)client_data;
-
-    PI_Tcl_MutexLock(&splash->context_mutex);
+    dylib_tcltk->Tcl_MutexLock(&splash->context_mutex);
 
     splash->exit_main_loop = false;
 
-    splash->interp = PI_Tcl_CreateInterp();
+    splash->interp = dylib_tcltk->Tcl_CreateInterp();
 
     if (splash->thread_id == NULL) {
         /* This should never happen, but as a backup we set the field in here. */
-        splash->thread_id = PI_Tcl_GetCurrentThread();
+        splash->thread_id = dylib_tcltk->Tcl_GetCurrentThread();
     }
 
     /* In order to run a minimal Tcl interpreter, we override the `tclInit`
      * command, which is called by Tcl_Init().
      * This is a supported way of modifying Tcl's startup behavior. */
-    err |= PI_Tcl_CreateObjCommand(
+    err |= dylib_tcltk->Tcl_CreateObjCommand(
         splash->interp,
         "tclInit",
         _tclInit_Command,
@@ -893,7 +853,7 @@ _splash_init(ClientData client_data)
     ) == NULL;
 
     /* Tk_Init calls the Tcl standard library function 'tcl_findLibrary' */
-    err |= PI_Tcl_CreateObjCommand(
+    err |= dylib_tcltk->Tcl_CreateObjCommand(
         splash->interp,
         "tcl_findLibrary",
         _tcl_findLibrary_Command,
@@ -903,7 +863,7 @@ _splash_init(ClientData client_data)
 
     /* We override the exit command to terminate only this thread and not
      * the whole application. */
-    err |= PI_Tcl_CreateObjCommand(
+    err |= dylib_tcltk->Tcl_CreateObjCommand(
         splash->interp,
         "exit",
         _tcl_exit_Command,
@@ -912,8 +872,8 @@ _splash_init(ClientData client_data)
     ) == NULL;
 
     /* Replace `source` command for use in minimal environment. */
-    PI_Tcl_EvalEx(splash->interp, "rename ::source ::_source", -1, 0);
-    err |= PI_Tcl_CreateObjCommand(
+    dylib_tcltk->Tcl_EvalEx(splash->interp, "rename ::source ::_source", -1, 0);
+    err |= dylib_tcltk->Tcl_CreateObjCommand(
         splash->interp,
         "source",
         _tcl_source_Command,
@@ -925,21 +885,21 @@ _splash_init(ClientData client_data)
      * if one of them fails, the splash screen should be aborted (and
      * generally, if one fails, all of them should fail). */
     if (err) {
-        PYI_DEBUG("TCL: failed to create setup commands. Error: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
+        PYI_DEBUG("TCL: failed to create setup commands. Error: %s\n", dylib_tcltk->Tcl_GetString(dylib_tcltk->Tcl_GetObjResult(splash->interp)));
         goto cleanup;
     }
 
     /* Initialize Tcl/Tk */
-    err |= PI_Tcl_Init(splash->interp);
+    err |= dylib_tcltk->Tcl_Init(splash->interp);
 
     if (err) {
-        PYI_DEBUG("SPLASH: error while initializing Tcl: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
+        PYI_DEBUG("SPLASH: error while initializing Tcl: %s\n", dylib_tcltk->Tcl_GetString(dylib_tcltk->Tcl_GetObjResult(splash->interp)));
     }
 
-    err |= PI_Tk_Init(splash->interp);
+    err |= dylib_tcltk->Tk_Init(splash->interp);
 
     if (err) {
-        PYI_DEBUG("SPLASH: error while initializing Tk: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
+        PYI_DEBUG("SPLASH: error while initializing Tk: %s\n", dylib_tcltk->Tcl_GetString(dylib_tcltk->Tcl_GetObjResult(splash->interp)));
     }
 
     if (err) {
@@ -949,71 +909,71 @@ _splash_init(ClientData client_data)
     /* Display version of Tcl and Tk for debugging purposes. */
     PYI_DEBUG(
         "SPLASH: running Tcl version %s and Tk version %s.\n",
-        PI_Tcl_GetVar2(splash->interp, "tcl_patchLevel", NULL, TCL_GLOBAL_ONLY),
-        PI_Tcl_GetVar2(splash->interp, "tk_patchLevel", NULL, TCL_GLOBAL_ONLY)
+        dylib_tcltk->Tcl_GetVar2(splash->interp, "tcl_patchLevel", NULL, TCL_GLOBAL_ONLY),
+        dylib_tcltk->Tcl_GetVar2(splash->interp, "tk_patchLevel", NULL, TCL_GLOBAL_ONLY)
     );
 
     /* Extract the image from the splash resources, and pass it to Tcl/Tk
      * via the `_image_data` variable. */
-    image_data_obj = PI_Tcl_NewByteArrayObj(splash->image, splash->image_len);
-    PI_Tcl_SetVar2Ex(splash->interp, "_image_data", NULL, image_data_obj, TCL_GLOBAL_ONLY);
+    image_data_obj = dylib_tcltk->Tcl_NewByteArrayObj(splash->image, splash->image_len);
+    dylib_tcltk->Tcl_SetVar2Ex(splash->interp, "_image_data", NULL, image_data_obj, TCL_GLOBAL_ONLY);
 
     /* Tcl/Tk creates a copy of the image, so we can free our buffer */
     free(splash->image);
     splash->image = NULL;
 
-    err = PI_Tcl_EvalEx(splash->interp, splash->script, splash->script_len, TCL_GLOBAL_ONLY);
+    err = dylib_tcltk->Tcl_EvalEx(splash->interp, splash->script, splash->script_len, TCL_GLOBAL_ONLY);
 
     if (err) {
-        PYI_DEBUG("SPLASH: Tcl error: %s\n", PI_Tcl_GetString(PI_Tcl_GetObjResult(splash->interp)));
+        PYI_DEBUG("SPLASH: Tcl error: %s\n", dylib_tcltk->Tcl_GetString(dylib_tcltk->Tcl_GetObjResult(splash->interp)));
     }
 
     /* We need to notify the bootloader main thread that the splash screen
      * has been started and fully setup */
-    PI_Tcl_MutexLock(&splash->start_mutex);
-    PI_Tcl_ConditionNotify(&splash->start_cond);
-    PI_Tcl_MutexUnlock(&splash->start_mutex);
+    dylib_tcltk->Tcl_MutexLock(&splash->start_mutex);
+    dylib_tcltk->Tcl_ConditionNotify(&splash->start_cond);
+    dylib_tcltk->Tcl_MutexUnlock(&splash->start_mutex);
 
     /* Main loop.
      * we exit this loop from within tcl. */
-    while (PI_Tk_GetNumMainWindows() > 0 && !splash->exit_main_loop) {
+    while (dylib_tcltk->Tk_GetNumMainWindows() > 0 && !splash->exit_main_loop) {
         /* Tcl_DoOneEvent blocks this loop until an event is posted into this threads
          * event queue, only after that the condition exit_main_loop is checked again.
          * To unblock this loop while the splash screen is not visible (e.g. receives
          * no events) we post a fake event at finalization (in pyi_splash_finalize) */
-        PI_Tcl_DoOneEvent(0);
+        dylib_tcltk->Tcl_DoOneEvent(0);
     }
 
 cleanup:
     /* Synchronize with shutdown/cleanup part in pyi_splash_finalize()
      * to prevent racing against it. */
-    PI_Tcl_MutexLock(&splash->exit_mutex);
+    dylib_tcltk->Tcl_MutexLock(&splash->exit_mutex);
 
     PYI_DEBUG("SPLASH: starting clean-up in splash screen thread...\n");
 
     /* Delete the Tcl interpreter. */
-    PI_Tcl_DeleteInterp(splash->interp);
+    dylib_tcltk->Tcl_DeleteInterp(splash->interp);
     splash->interp = NULL;
 
-    PI_Tcl_MutexUnlock(&splash->context_mutex);
+    dylib_tcltk->Tcl_MutexUnlock(&splash->context_mutex);
 
     /* In case the startup fails the main thread should continue; in
      * normal startup this segment will notify no waiting condition. */
-    PI_Tcl_MutexLock(&splash->start_mutex);
-    PI_Tcl_ConditionNotify(&splash->start_cond);
-    PI_Tcl_MutexUnlock(&splash->start_mutex);
+    dylib_tcltk->Tcl_MutexLock(&splash->start_mutex);
+    dylib_tcltk->Tcl_ConditionNotify(&splash->start_cond);
+    dylib_tcltk->Tcl_MutexUnlock(&splash->start_mutex);
 
     /* Must be done before exit_wait condition is notified, because
      * we need to ensure that the main thread (which is waiting on it)
      * does not unload the Tcl library before we're done with this
      * Tcl_FinalizeThread() call. */
-    PI_Tcl_FinalizeThread();
+    dylib_tcltk->Tcl_FinalizeThread();
 
     /* We notify all conditions waiting for this thread to exit, if
      * there are any. */
-    PI_Tcl_ConditionNotify(&splash->exit_wait);
+    dylib_tcltk->Tcl_ConditionNotify(&splash->exit_wait);
     PYI_DEBUG("SPLASH: clean-up in splash screen thread complete!\n");
-    PI_Tcl_MutexUnlock(&splash->exit_mutex);
+    dylib_tcltk->Tcl_MutexUnlock(&splash->exit_mutex);
 
     TCL_THREAD_CREATE_RETURN;
 }

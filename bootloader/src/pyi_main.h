@@ -23,6 +23,7 @@
 
 struct ARCHIVE;
 struct SPLASH_CONTEXT;
+struct DYLIB_PYTHON;
 
 #if defined(__APPLE__) && defined(WINDOWED)
 struct APPLE_EVENT_HANDLER_CONTEXT;
@@ -177,14 +178,9 @@ struct PYI_CONTEXT
      * itself. */
     char application_home_dir[PYI_PATH_MAX];
 
-    /* Handle to loaded python shared library. */
-    pyi_dylib_t python_dll;
-
-    /* Flag indicating whether symbols from Python shared library have
-     * been successfully loaded. Used to gracefully handle cleanup in
-     * situations when Python shared library is successfully loaded,
-     * but we fail to import the symbols. */
-    unsigned char python_symbols_loaded;
+    /* Structure encapsulating loaded python shared library and pointers
+     * to imported functions. */
+    struct DYLIB_PYTHON *dylib_python;
 
     /* Strict unpack mode for onefile builds. This flag is dynamically
      * controlled by `PYINSTALLER_STRICT_UNPACK_MODE` environment variable

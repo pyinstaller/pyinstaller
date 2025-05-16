@@ -33,14 +33,6 @@
 #endif
 
 
-/* Type for handle to open/loaded dynamic library. */
-#ifdef _WIN32
-    #define pyi_dylib_t HMODULE
-#else
-    #define pyi_dylib_t void *
-#endif
-
-
 /* Maximum buffer size for statically allocated path-related buffers in
  * PyInstaller code. */
 #ifdef _WIN32
@@ -56,83 +48,65 @@
 #endif
 
 
-/*
- * These macros used to define variables to hold dynamically accessed
- * entry points. These are declared 'extern' in the header, and defined
- * fully later.
+/* These macros are used to define prototypes for imported functions,
+ * to define corresponding entries in the function-table structures,
+ * and to populate those entries:
+ *  - PYI_EXT_FUNC_PROTO: given function's return type, name, and arguments,
+ *    creates a typedef prototype called _PYI_{name}_TYPE.
+ *  - PYI_EXT_FUNC_ENTRY: given function's name, generates the entry
+ *    for function-table structure, under assumption that prototype has
+ *    already been defined using via PYI_EXT_FUNC_PROTO.
+ *  - PYI_EXT_FUNC_BIND: given handle to loaded shared library, name
+ *    of the symbol to bind, and pointer to destination location, attempts
+ *    to bind the function (using GetProcAddress on Windows, dlsym on
+ *    other platforms).. The destination location is typically a field in
+ *    function-table structure, defined via PYI_EXT_FUNC_ENTRY.
  */
 #ifdef _WIN32
+    typedef HMODULE pyi_dylib_t;
 
-#define PYI_EXTDECLPROC(result, name, args) \
-    typedef result (__cdecl *__PROC__ ## name) args; \
-    extern __PROC__ ## name PI_ ## name;
+    #define PYI_EXT_FUNC_PROTO(result, name, args) \
+        typedef result (__cdecl *_PYI_ ## name ## _TYPE) args;
+
+    #define PYI_EXT_FUNC_ENTRY(name) \
+        _PYI_ ## name ##_TYPE name;
+
+    /* GetProcAddress() returns FARPROC, a function pointer, which can
+     * be cast to a different function pointer. */
+    #define PYI_EXT_FUNC_BIND(handle, name, dest) \
+        dest = (_PYI_ ## name ## _TYPE)GetProcAddress(handle, #name);
 
 #else /* ifdef _WIN32 */
+    #include <dlfcn.h> /* dlsym(), dlerror() */
 
-#define PYI_EXTDECLPROC(result, name, args) \
-    typedef result (*__PROC__ ## name) args; \
-    extern __PROC__ ## name PI_ ## name;
+    typedef void * pyi_dylib_t;
+
+    #define PYI_EXT_FUNC_PROTO(result, name, args) \
+        typedef result (*_PYI_ ## name ## _TYPE) args;
+
+    #define PYI_EXT_FUNC_ENTRY(name) \
+        _PYI_ ## name ##_TYPE name;
+
+    /* dlsym() returns a void * pointer, which is an object pointer.
+     * ISO C explicitly forbids casts from object to function pointers
+     * (in theory, the two could have different storage type, although
+     * in practice, the cast should be safe on contemporary platforms).
+     * To avoid warnings when using gcc with -pedantic option turned on,
+     * we perform type-punning through union. */
+    #define PYI_EXT_FUNC_BIND(handle, name, dest) \
+        do {\
+            /* This union requires its own scope */ \
+            union { \
+                _PYI_ ## name ## _TYPE func_ptr; \
+                void *obj_ptr; \
+            } alias; \
+            /* Store object pointer */ \
+            alias.obj_ptr = dlsym(handle, #name); \
+            /* Read function pointer */ \
+            dest = alias.func_ptr; \
+        } while(0)
 
 #endif  /* ifdef _WIN32 */
-
-
-/*
- * Macros to declare and bind foreign entry points in the C file.
- * Typedefs '__PROC__...' have been done above
- */
-#ifdef _WIN32
-
-#define PYI_DECLPROC(name) \
-    __PROC__ ## name PI_ ## name = NULL;
-
-/* GetProcAddress() returns FARPROC, a function pointer, which can be
- * cast to a different function pointer. */
-#define PYI_GETPROCOPT(dll, name, sym) \
-    PI_ ## name = (__PROC__ ## name)GetProcAddress(dll, #sym)
-
-/* Note: since function names are always in ASCII, we can safely use %hs
- * to format ANSI string (obtained via stringification) into wide-char
- * message string. This alleviates the need for set of macros that would
- * achieve wide-char stringification of the function name. */
-#define PYI_GETPROC(dll, name) \
-    PYI_GETPROCOPT(dll, name, name); \
-    if (!PI_ ## name) { \
-        PYI_WINERROR_W(L"GetProcAddress", L"Failed to get address for %hs\n", #name); \
-        return -1; \
-    }
-
-#else /* ifdef _WIN32 */
-
-#define PYI_DECLPROC(name) \
-    __PROC__ ## name PI_ ## name = NULL;
-
-/* dlsym() returns a void * pointer, which is an object pointer.
- * ISO C explicitly forbids casts from object to function pointers
- * (in theory, the two could have different storage type, although
- * in practice, the cast should be safe on contemporary platforms).
- * To avoid warnings when using gcc with -pedantic option turned on,
- * we perform type punning through union. */
-#define PYI_GETPROCOPT(dll, name, sym) \
-    do {\
-        /* This union requires its own scope */ \
-        union { \
-            __PROC__ ## name func_ptr; \
-            void *obj_ptr; \
-        } alias; \
-        /* Store object pointer */ \
-        alias.obj_ptr = dlsym(dll, #sym); \
-        /* Read function pointer */ \
-        PI_ ## name = alias.func_ptr; \
-    } while(0)
-
-#define PYI_GETPROC(dll, name) \
-    PYI_GETPROCOPT(dll, name, name); \
-    if (!PI_ ## name) { \
-        PYI_ERROR("Cannot dlsym for " #name "\n"); \
-        return -1; \
-    }
-
-#endif /* ifdef _WIN32 */
 
 
 /*
