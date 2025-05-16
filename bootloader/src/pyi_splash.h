@@ -17,7 +17,7 @@
 #include "zlib.h"
 #include "pyi_global.h"
 #include "pyi_archive.h"
-#include "pyi_splashlib.h"
+#include "pyi_dylib_tcltk.h"
 
 /* Archive item header for splash data
  * This struct is a header describing the rest of this archive item */

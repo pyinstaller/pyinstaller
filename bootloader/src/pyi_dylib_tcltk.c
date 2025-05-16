@@ -11,10 +11,6 @@
  * ****************************************************************************
  */
 
-/*
- * tcl.h and tk.h replacement
- */
-
 #ifdef _WIN32
     #include <windows.h>  /* HMODULE */
 #else
@@ -24,7 +20,7 @@
 
 /* PyInstaller headers */
 #include "pyi_global.h"
-#include "pyi_splashlib.h"
+#include "pyi_dylib_tcltk.h"
 
 /* Tcl Initialization/Destruction */
 PYI_DECLPROC(Tcl_Init)

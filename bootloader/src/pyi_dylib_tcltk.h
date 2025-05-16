@@ -12,11 +12,13 @@
  */
 
 /*
- * tcl.h and tk.h replacement
+ * Dynamic bindings of Tcl and Tk shared libraries (the subset of API
+ * used by splash screen). This header effectively replaces tcl.h and tk.h
+ * headers.
  */
 
-#ifndef PYI_SPLASHLIB_H
-#define PYI_SPLASHLIB_H
+#ifndef PYI_DYLIB_TCLTK_H
+#define PYI_DYLIB_TCLTK_H
 
 #ifdef _WIN32
     #include <windows.h>
@@ -124,4 +126,4 @@ PYI_EXTDECLPROC(int, Tk_GetNumMainWindows, (void))
 /* Bind all required functions from Tcl and Tk shared libraries */
 int pyi_splashlib_bind_functions(pyi_dylib_t dll_tcl, pyi_dylib_t dll_tk);
 
-#endif /* PYI_SPLASHLIB_H */
+#endif /* PYI_DYLIB_TCLTK_H */
