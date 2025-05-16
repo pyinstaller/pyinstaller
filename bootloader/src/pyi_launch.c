@@ -32,7 +32,7 @@
 #include "pyi_utils.h"
 #include "pyi_splash.h"
 #include "pyi_dylib_python.h"
-#include "pyi_pythonlib.h"
+#include "pyi_python.h"
 #include "pyi_exception_dialog.h"
 #include "pyi_multipkg.h"
 
@@ -435,7 +435,7 @@ pyi_launch_execute(struct PYI_CONTEXT *pyi_ctx)
     int rc = 0;
 
     /* Load Python shared library and import symbols from it */
-    if (pyi_pylib_load(pyi_ctx)) {
+    if (pyi_python_load_dylib(pyi_ctx)) {
         return -1;
     } else {
         /* Set the flag that lets cleanup code know that it is safe to
@@ -443,18 +443,18 @@ pyi_launch_execute(struct PYI_CONTEXT *pyi_ctx)
         pyi_ctx->python_symbols_loaded = 1;
     }
 
-    /* Start Python. */
-    if (pyi_pylib_start_python(pyi_ctx)) {
+    /* Start Python interpreter. */
+    if (pyi_python_start_interpreter(pyi_ctx)) {
         return -1;
     }
 
     /* Import core pyinstaller modules from the executable - bootstrap */
-    if (pyi_pylib_import_modules(pyi_ctx)) {
+    if (pyi_python_import_modules(pyi_ctx)) {
         return -1;
     }
 
     /* Install PYZ archive */
-    if (pyi_pylib_install_pyz(pyi_ctx)) {
+    if (pyi_python_install_pyz(pyi_ctx)) {
         return -1;
     }
 
@@ -474,7 +474,7 @@ void
 pyi_launch_finalize(struct PYI_CONTEXT *pyi_ctx)
 {
     /* CLean up the python interpreter */
-    pyi_pylib_finalize(pyi_ctx);
+    pyi_python_finalize(pyi_ctx);
 
     /* Unload python shared library */
     if (pyi_ctx->python_dll) {

@@ -12,20 +12,20 @@
  */
 
 /*
- * Functions to load, initialize and launch Python.
+ * Functions to load, initialize and launch Python interpreter.
  */
 
-#ifndef PYI_PYTHONLIB_H
-#define PYI_PYTHONLIB_H
+#ifndef PYI_PYTHON_H
+#define PYI_PYTHON_H
 
 struct PYI_CONTEXT;
 
-int pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx);
-int pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx);
-int pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx);
-int pyi_pylib_install_pyz(const struct PYI_CONTEXT *pyi_ctx);
-int pyi_pylib_run_scripts(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_python_load_dylib(struct PYI_CONTEXT *pyi_ctx);
+int pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_python_import_modules(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_python_install_pyz(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_python_run_scripts(const struct PYI_CONTEXT *pyi_ctx);
 
-void pyi_pylib_finalize(const struct PYI_CONTEXT *pyi_ctx);
+void pyi_python_finalize(const struct PYI_CONTEXT *pyi_ctx);
 
-#endif /* PYI_PYTHONLIB_H */
+#endif /* PYI_PYTHON_H */

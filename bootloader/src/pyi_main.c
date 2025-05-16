@@ -51,7 +51,6 @@
 #include "pyi_path.h"
 #include "pyi_archive.h"
 #include "pyi_utils.h"
-#include "pyi_pythonlib.h"
 #include "pyi_launch.h"
 #include "pyi_splash.h"
 #include "pyi_apple_events.h"

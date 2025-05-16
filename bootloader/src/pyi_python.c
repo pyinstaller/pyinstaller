@@ -12,7 +12,7 @@
  */
 
 /*
- * Functions to load, initialize and launch Python.
+ * Functions to load, initialize and launch Python interpreter.
  */
 /* size of buffer to store the name of the Python shared library */
 #define MAX_DLL_NAME_LEN 64
@@ -28,7 +28,7 @@
 #include <string.h>
 
 /* PyInstaller headers. */
-#include "pyi_pythonlib.h"
+#include "pyi_python.h"
 #include "pyi_global.h"
 #include "pyi_path.h"
 #include "pyi_archive.h"
@@ -41,7 +41,7 @@
  * Load the Python shared library, and bind all required symbols from it.
  */
 int
-pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx)
+pyi_python_load_dylib(struct PYI_CONTEXT *pyi_ctx)
 {
     const struct ARCHIVE *archive = pyi_ctx->archive;
     char dll_fullpath[PYI_PATH_MAX];
@@ -92,7 +92,7 @@ pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx)
  * Initialize and start python interpreter.
  */
 int
-pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx)
+pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx)
 {
     struct PyiRuntimeOptions *runtime_options = NULL;
     PyConfig *config = NULL;
@@ -211,7 +211,7 @@ end:
  * Import (bootstrap) modules embedded in the PKG archive.
  */
 int
-pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx)
+pyi_python_import_modules(const struct PYI_CONTEXT *pyi_ctx)
 {
     const struct ARCHIVE *archive = pyi_ctx->archive;
     const struct TOC_ENTRY *toc_entry;
@@ -283,7 +283,7 @@ pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx)
  * archive reader.
  */
 int
-pyi_pylib_install_pyz(const struct PYI_CONTEXT *pyi_ctx)
+pyi_python_install_pyz(const struct PYI_CONTEXT *pyi_ctx)
 {
     const struct ARCHIVE *archive = pyi_ctx->archive;
     const struct TOC_ENTRY *toc_entry;
@@ -343,7 +343,7 @@ pyi_pylib_install_pyz(const struct PYI_CONTEXT *pyi_ctx)
 }
 
 void
-pyi_pylib_finalize(const struct PYI_CONTEXT *pyi_ctx)
+pyi_python_finalize(const struct PYI_CONTEXT *pyi_ctx)
 {
     /* Ensure python library was loaded; otherwise PI_* function pointers
      * are invalid, and we have nothing to do here. */
