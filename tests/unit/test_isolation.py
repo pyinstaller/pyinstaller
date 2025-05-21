@@ -177,6 +177,24 @@ def test_pipe_leakage():
     from psutil import Process
     parent = Process()
 
+    # On Windows, the very first `subprocess.Popen()` seems to open two additional handles, which seem to remain open
+    # for the duration of the python process. Therefore, if a subprocess is spawned before this test is ran (either as
+    # a part of a preceding test, as a part of test collection, or even as a side effect of some 3rd party package
+    # having been loaded), those two extra handles will already be part of the initially-opened handles. If not, they
+    # will show up during this test and skew the results. Therefore, run a dummy subprocess here to normalize the
+    # conditions, and ensure that the test can be ran on its own.
+    if compat.is_win:
+        import subprocess
+        import sys
+        proc = subprocess.Popen(
+            [sys.executable, '--version'],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        proc.wait()
+        del proc
+
     # Get this platform's *count open handles* method.
     open_fds = parent.num_handles if compat.is_win else parent.num_fds
     old = open_fds()
