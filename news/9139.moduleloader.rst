@@ -1,0 +1,9 @@
+Have the ``PyiFrozenLoader`` set the module's file path (i.e., the
+loader's ``path`` attribute and the module's ``__file__`` attribute)
+to the source .py file if the latter is available (i.e., was
+explicitly collected into the frozen application in addition to
+the byte-compiled module in the PYZ archive). This improves compatibility
+with 3rd-party code that naively assumes that the module's ``__file__``
+attribute always points to the source .py file, and either tries to load it
+as a source file, or attempts to perform filesystem-based operations
+under assumption that the file and/or its parent directory exist.
