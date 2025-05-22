@@ -21,6 +21,62 @@ from PyInstaller.utils.tests import importorskip, xfail
 _MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
 
+# Ensure that our module loader sets module's `__file__` attribute to source .py file, if it is available.
+def test_module_file_attribute(pyi_builder, monkeypatch):
+    # Patch Analysis to set module_collection_mode for the modules.
+    import PyInstaller.building.build_main
+
+    class _Analysis(PyInstaller.building.build_main.Analysis):
+        def __init__(self, *args, **kwargs):
+            kwargs['module_collection_mode'] = {
+                'mypackage.mod_a': 'pyz',
+                'mypackage.mod_b': 'pyz+py',
+            }
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', _Analysis)
+
+    extra_path = _MODULES_DIR / 'pyi_module_file_attribute'
+
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+
+        import mypackage.mod_a
+        import mypackage.mod_b
+
+        # This module is collected only into PYZ archive, so __file__ should point at fictional .pyc file.
+        expected_a = os.path.join(sys._MEIPASS, 'mypackage', 'mod_a.pyc')
+        file_a = mypackage.mod_a.__file__
+        loader_path_a = mypackage.mod_a.__loader__.path
+
+        print("mypackage.mod_a:", file=sys.stderr)
+        print(f" - __file__: {file_a}", file=sys.stderr)
+        print(f" - __loader__.path: {loader_path_a}", file=sys.stderr)
+        print(f" - expected: {expected_a}", file=sys.stderr)
+
+        assert file_a == expected_a
+        assert loader_path_a == expected_a
+
+        # This module is collected both into PYZ archive and as a source .py file, so __file__ should point at the
+        # source .py file.
+        expected_b = os.path.join(sys._MEIPASS, 'mypackage', 'mod_b.py')
+        file_b = mypackage.mod_b.__file__
+        loader_path_b = mypackage.mod_b.__loader__.path
+
+        print("mypackage.mod_b:", file=sys.stderr)
+        print(f" - __file__: {file_b}", file=sys.stderr)
+        print(f" - __loader__.path: {loader_path_b}", file=sys.stderr)
+        print(f" - expected: {expected_a}", file=sys.stderr)
+
+        assert file_b == expected_b
+        assert loader_path_b == expected_b
+        """,
+        pyi_args=['--path', str(extra_path)],
+    )
+
+
 def test_nameclash(pyi_builder):
     # test-case for issue #964: Nameclashes in module information gathering All pyinstaller specific module attributes
     # should be prefixed, to avoid nameclashes.
