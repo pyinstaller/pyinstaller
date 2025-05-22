@@ -71,14 +71,30 @@ def _pyi_rthook():
 
             # If filename ends with .py suffix and does not correspond to frozen entry-point script, convert it to
             # corresponding .pyc in `sys._MEIPASS` or `sys._MEIPASS/base_library.zip`.
+            #
+            # However, if the module is not part of `base_library.zip` and its source file exists, return the path
+            # to the .py file - this matches the change made in #9139, which has the `PyiFrozenLoader` set the module's
+            # file path to the source .py file if the said source .py file exists.
             if filename.endswith('.py'):
                 pyc_filename = filename + 'c'
-                prefix = BASE_LIBRARY if pyc_filename in base_library_files else SYS_PREFIX
-                return os.path.normpath(os.path.join(prefix, pyc_filename))
-        elif filename.startswith(SYS_PREFIX) and filename.endswith('.pyc'):
+                if pyc_filename in base_library_files:
+                    # .pyc file is part of base_library.zip
+                    return os.path.normpath(os.path.join(BASE_LIBRARY, pyc_filename))
+                else:
+                    # .pyc file is part of the PYZ archive; first, check if the source .py file exists...
+                    fullpath = os.path.normpath(os.path.join(SYS_PREFIX, filename))
+                    if os.path.isfile(fullpath):
+                        return fullpath
+                    # ... otherwise return full path to the (fictional) .pyc file
+                    return fullpath + 'c'
+        elif filename.startswith(SYS_PREFIX):
             # If filename is already PyInstaller-compatible, prevent any further processing (i.e., with original
             # implementation).
-            return filename
+            if filename.endswith('.pyc'):
+                return filename
+            if filename.endswith('.py') and os.path.isfile(filename):
+                return filename
+
         # Use original implementation as a fallback.
         return _orig_inspect_getsourcefile(object)
 
