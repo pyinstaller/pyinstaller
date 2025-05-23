@@ -21,6 +21,27 @@ from PyInstaller.utils.tests import importorskip, xfail
 _MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
 
+# Test that PyiFrozenLoader.get_source() works as expected when source .py file is available.
+def test_loader_get_source(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import pyi_dummy_module
+        from pyimod02_importers import PyiFrozenLoader
+
+        # Ensure the module is handled by PyiFrozenLoader.
+        loader = pyi_dummy_module.__loader__
+        assert isinstance(loader, PyiFrozenLoader)
+
+        # Check that loader.get_source() returns source from the .py file.
+        assert loader.get_source('pyi_dummy_module') is not None
+        """,
+        pyi_args=[
+            '--add-data',
+            f'{_MODULES_DIR / "pyi_dummy_module.py"}:.',
+        ]
+    )
+
+
 def test_nameclash(pyi_builder):
     # test-case for issue #964: Nameclashes in module information gathering All pyinstaller specific module attributes
     # should be prefixed, to avoid nameclashes.
