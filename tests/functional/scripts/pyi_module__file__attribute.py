@@ -10,9 +10,9 @@
 #-----------------------------------------------------------------------------
 
 # Test the value of the __file__ attribute; for a frozen package, it should be:
-#   sys.prefix/package/__init__.pyc
+#   sys.prefix/package/__init__.py
 # and for a frozen module, it should be:
-#   sys.prefix/module.pyc
+#   sys.prefix/module.py
 
 import os
 import sys
@@ -20,8 +20,8 @@ import sys
 import shutil as module
 import xml.sax as package
 
-correct_mod = os.path.join(sys.prefix, 'shutil.pyc')
-correct_pkg = os.path.join(sys.prefix, 'xml', 'sax', '__init__.pyc')
+correct_mod = os.path.join(sys.prefix, 'shutil.py')
+correct_pkg = os.path.join(sys.prefix, 'xml', 'sax', '__init__.py')
 
 # Print.
 print(('Actual   mod.__file__: %s' % module.__file__))

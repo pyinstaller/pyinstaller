@@ -41,7 +41,7 @@ from a bundled script, the PyInstaller bootloader will set the module's
 
 For example, if you import ``mypackage.mymodule`` from a bundled script, then
 the ``__file__`` attribute of that module will be ``sys._MEIPASS +
-'mypackage/mymodule.pyc'``.  So if you have a data file at
+'mypackage/mymodule.py'``.  So if you have a data file at
 ``mypackage/file.dat`` that you added to the bundle at ``mypackage/file.dat``,
 the following code will get its path (in both the non-bundled and the bundled
 case)::
@@ -107,7 +107,7 @@ Or the pathlib_ equivalent::
     path_to_dat = Path(__file__).resolve().with_name("file.dat")
 
 And ``my_script.py`` is **not** part of a package (not in a folder containing
-an ``__init_.py``), then ``__file__`` will be ``[app root]/my_script.pyc``
+an ``__init__.py``), then ``__file__`` will be ``[app root]/my_script.py``
 meaning that if you put ``file.dat`` in the root of your package, using::
 
     PyInstaller --add-data="/path/to/file.dat:."
@@ -116,7 +116,7 @@ It will be found correctly at runtime without changing ``my_script.py``.
 
 If ``__file__`` is checked from inside a package or library (say
 ``my_library.data``) then ``__file__`` will be
-``[app root]/my_library/data.pyc`` and :option:`--add-data` should mirror that::
+``[app root]/my_library/data.py`` and :option:`--add-data` should mirror that::
 
     PyInstaller --add-data="/path/to/my_library/file.dat:./my_library"
 

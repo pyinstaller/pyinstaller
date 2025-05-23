@@ -69,15 +69,25 @@ def _pyi_rthook():
             if main_file and filename == os.path.basename(main_file):
                 return main_file
 
-            # If filename ends with .py suffix and does not correspond to frozen entry-point script, convert it to
-            # corresponding .pyc in `sys._MEIPASS` or `sys._MEIPASS/base_library.zip`.
-            if filename.endswith('.py'):
-                pyc_filename = filename + 'c'
-                prefix = BASE_LIBRARY if pyc_filename in base_library_files else SYS_PREFIX
-                return os.path.normpath(os.path.join(prefix, pyc_filename))
-        elif filename.startswith(SYS_PREFIX) and filename.endswith('.pyc'):
-            # If filename is already PyInstaller-compatible, prevent any further processing (i.e., with original
-            # implementation).
+            # If the relative filename does not correspond to the frozen entry-point script, convert it to the absolute
+            # path in either `sys._MEIPASS/base_library.zip` or `sys._MEIPASS`, whichever applicable.
+            #
+            # The modules in `sys._MEIPASS/base_library.zip` are handled by python's `zipimport.zipimporter`, and have
+            # their __file__ attribute point to the .pyc file in the archive. So we match the behavior, in order to
+            # facilitate matching via __file__ attribute and use of loader's `get_source`, as per the earlier comment
+            # block.
+            #
+            # The modules in PYZ archive are handled by our `PyFrozenLoader`, which now sets the module's __file__
+            # attribute to point to where .py files would be. Therefore, we can directly merge SYS_PREFIX and filename
+            # (and if the source .py file exists, it will be loaded directly from filename, without the intermediate
+            # loader look-up).
+            pyc_filename = filename + 'c'
+            if pyc_filename in base_library_files:
+                return os.path.normpath(os.path.join(BASE_LIBRARY, pyc_filename))
+            return os.path.normpath(os.path.join(SYS_PREFIX, filename))
+        elif filename.startswith(SYS_PREFIX):
+            # If filename is already an absolute file path pointing into application's top-level directory, return it
+            # as-is and prevent any further processing.
             return filename
         # Use original implementation as a fallback.
         return _orig_inspect_getsourcefile(object)

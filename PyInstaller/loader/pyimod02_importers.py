@@ -400,15 +400,22 @@ class PyiFrozenLoader:
         self._pyz_entry_name = pyz_entry_name
         self._is_package = is_package
 
-        # Compute the module file path, as if module was located on filesyste.
+        # Compute the module file path, as if module was located on filesystem.
+        #
+        # Rather than returning path to the .pyc file, return the path to .py file - which might actually exist, if it
+        # was explicitly collected into the frozen application). This improves compliance with
+        # https://docs.python.org/3/library/importlib.html#importlib.abc.ExecutionLoader.get_filename
+        # as well as general compatibility with 3rd party code that blindly assumes that module's file path points to
+        # the source .py file.
+        #
         # NOTE: since we are using sys._MEIPASS as prefix, we need to construct path from full PYZ entry name
         # (so that a module with `name`=`jaraco.text` and `pyz_entry_name`=`setuptools._vendor.jaraco.text`
         # ends up with path set to `sys._MEIPASS/setuptools/_vendor/jaraco/text/__init__.pyc` instead of
         # `sys._MEIPASS/jaraco/text/__init__.pyc`).
         if is_package:
-            module_file = os.path.join(sys._MEIPASS, pyz_entry_name.replace('.', os.path.sep), '__init__.pyc')
+            module_file = os.path.join(sys._MEIPASS, pyz_entry_name.replace('.', os.path.sep), '__init__.py')
         else:
-            module_file = os.path.join(sys._MEIPASS, pyz_entry_name.replace('.', os.path.sep) + '.pyc')
+            module_file = os.path.join(sys._MEIPASS, pyz_entry_name.replace('.', os.path.sep) + '.py')
 
         # These properties are defined as part of importlib.abc.FileLoader. They are used by our implementation
         # (e.g., module name validation, get_filename(), get_source(), get_resource_reader()), and might also be used
@@ -504,10 +511,9 @@ class PyiFrozenLoader:
 
         https://docs.python.org/3/library/importlib.html#importlib.abc.InspectLoader.get_source
         """
-        # FIXME: according to python docs "if source code is available, then the [getfilename()] method should return
-        # the path to the source file, regardless of whether a bytecode was used to load the module.". At the moment,
-        # our implementation always returns pyc suffix.
-        filename = self.path[:-1]
+        # The `path` attribute (which is also returned from `get_filename()`) already points to where the source .py
+        # file should exist, if it is available.
+        filename = self.path
 
         try:
             # Read in binary mode, then decode

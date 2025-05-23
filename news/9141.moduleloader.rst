@@ -1,0 +1,9 @@
+Have the ``PyiFrozenLoader`` use the .py suffix instead of .pyc one
+for module's file path (the file path stored in the loader's ``path``
+attribute and the module's ``__file__`` attribute). This should improve
+compatibility with 3rd party code that assumes that the module's
+``__file__`` attribute points to the source .py file; odd-case scenarios
+such as checking for file's existence, trying to query its creation time
+or trying to read it as a source file can now be accommodated by simply
+collecting the source .py files, rather than also having to exclude the
+byte-compiled module from the PYZ archive.
