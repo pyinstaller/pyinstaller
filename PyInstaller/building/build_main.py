@@ -555,6 +555,8 @@ class Analysis(Target):
         self.module_collection_mode = module_collection_mode or {}
         self.optimize = sys.flags.optimize if optimize in {-1, None} else optimize
 
+        self._modules_outside_pyz = []
+
         # Validate the optimization level to avoid errors later on...
         if self.optimize not in {0, 1, 2}:
             raise ValueError(f"Unsupported bytecode optimization level: {self.optimize!r}")
@@ -605,6 +607,8 @@ class Analysis(Target):
         ('zipped_data', None),  # TODO check this, too
         ('datas', _check_guts_toc_mtime),
         # TODO: Need to add "dependencies"?
+
+        ('_modules_outside_pyz', _check_guts_toc_mtime),
     )
 
     def _extend_pathex(self, spec_pathex, scripts):
@@ -875,6 +879,7 @@ class Analysis(Target):
             collect_mode = _get_module_collection_mode(self.graph._module_collection_mode, name, self.noarchive)
 
             # Collect byte-compiled .pyc into PYZ archive or base_library.zip. Embed optimization level into typecode.
+            in_pyz = False
             if _ModuleCollectionMode.PYZ in collect_mode:
                 optim_typecode = {0: 'PYMODULE', 1: 'PYMODULE-1', 2: 'PYMODULE-2'}[optim_level]
                 toc_entry = (name, src_path, optim_typecode)
@@ -882,6 +887,13 @@ class Analysis(Target):
                     base_modules_toc.append(toc_entry)
                 else:
                     self.pure.append(toc_entry)
+                    in_pyz = True
+
+            # If module is not collected into PYZ archive (and is consequently not tracked in the `self.pure` TOC list),
+            # add it to the `self._modules_outside_pyz` TOC list, in order to be able to detect modifications in those
+            # modules.
+            if not in_pyz:
+                self._modules_outside_pyz.append((name, src_path, typecode))
 
             # Pure namespace packages have no source path, and cannot be collected as external data file.
             if src_path in (None, '-'):

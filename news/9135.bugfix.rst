@@ -1,0 +1,5 @@
+The `Analysis` class now keeps track of pure-python modules that are not
+collected into PYZ archive (i.e., are not listed in the ``Analysis.pure``
+TOC list); the corresponding entries are added to a separate TOC list
+that is also under modification-time check, which allows us to detect
+modifications and re-run the analysis.
