@@ -12,8 +12,17 @@
 import pytest
 
 from PyInstaller.lib.modulegraph import modulegraph
+from PyInstaller import compat
 from PyInstaller import configure
 from PyInstaller import __main__ as pyi_main
+
+# Recursion limit tests crash python interpreter with macOS builds of python >= 3.14.0a6.
+# See: https://github.com/python/cpython/issues/131543
+# Only "standard" python interpreter is affected; the free-threading variant seems to work as expected.
+pytestmark = pytest.mark.skipif(
+    compat.is_py314 and compat.is_darwin and not compat.is_nogil,
+    reason="Deep recursion crashes python interpreter.",
+)
 
 
 @pytest.fixture
