@@ -14,7 +14,6 @@ import pytest
 from PyInstaller.lib.modulegraph import modulegraph
 from PyInstaller import configure
 from PyInstaller import __main__ as pyi_main
-from PyInstaller.compat import is_win
 
 
 @pytest.fixture
@@ -55,8 +54,6 @@ def test_recursion_too_deep(large_import_chain):
     With the default recursion limit (1000), the recursion error occurs at about 115 modules, with limit 2000
     (as tested below) at about 240 modules, and with limit 5000 at about 660 modules.
     """
-    if is_win:
-        pytest.xfail("Worker is known to crash on Windows.")
     path, script = large_import_chain
     mg = modulegraph.ModuleGraph(path)
     # Increase recursion limit to 5 times of the default. Given the module import chain created above
@@ -70,8 +67,6 @@ def test_RecursionError_prints_message(tmp_path, large_import_chain, monkeypatch
     modulegraph is recursive and triggers RecursionError if nesting of imported modules is too deep.
     Ensure an informative message is printed if RecursionError occurs.
     """
-    if is_win:
-        pytest.xfail("Worker is known to crash on Windows.")
     path, script = large_import_chain
 
     default_args = [
