@@ -31,8 +31,17 @@ if sys.version_info >= (3, 10):
 else:
     import importlib_metadata
 
-from altgraph.ObjectGraph import ObjectGraph
-from altgraph import GraphError
+# The latest version of altgraph at the time of writing (v0.17.4) still
+# uses pkg_resources to query its own version. With setuptools >= 80.9.0,
+# this triggers deprecation warnings. For now, suppress them.
+with warnings.catch_warnings():
+    warnings.filterwarnings(
+        "ignore",
+        category=UserWarning,
+        message="pkg_resources is deprecated",
+    )
+    from altgraph.ObjectGraph import ObjectGraph
+    from altgraph import GraphError
 
 from . import util
 
