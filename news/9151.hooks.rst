@@ -1,0 +1,5 @@
+Remove the hook for ``packaging``; the only function of this hook was
+to add ``pkg_resources`` to hidden imports, which nowadays results in
+``pkg_resources`` (and our run-time hook for it) being unnecessarily
+collected into frozen application and, with up-to-date ``setuptools``
+triggers a deprecation warning at run-time.
