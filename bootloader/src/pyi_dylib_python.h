@@ -21,6 +21,7 @@
 
 #include "pyi_global.h"
 #include <wchar.h>
+#include <stdint.h>  /* int64_t */
 
 
 /*
@@ -134,8 +135,11 @@ typedef struct {
 /* The opaque type used with functions that accept pointer */
 typedef struct _PyPreConfig PyPreConfig;
 
-/* The opaque type used with functions that accept pointer */
+/* The opaque type used with functions that accept pointer (PEP 587) */
 typedef struct _PyConfig PyConfig;
+
+/* The opaque type used with functions that accept pointer (PEP 741) */
+typedef struct _PyInitConfig PyInitConfig;
 
 
 /*
@@ -147,17 +151,26 @@ PYI_EXT_FUNC_PROTO(void, Py_DecRef, (PyObject *))
 PYI_EXT_FUNC_PROTO(wchar_t *, Py_DecodeLocale, (const char *, size_t *))
 PYI_EXT_FUNC_PROTO(void, Py_ExitStatusException, (PyStatus))
 PYI_EXT_FUNC_PROTO(int, Py_Finalize, (void))
-PYI_EXT_FUNC_PROTO(PyStatus, Py_InitializeFromConfig, (PyConfig *))
+PYI_EXT_FUNC_PROTO(PyStatus, Py_InitializeFromConfig, (PyConfig *))  /* PEP 587 */
+PYI_EXT_FUNC_PROTO(int, Py_InitializeFromInitConfig, (PyInitConfig *))  /* PEP 741 */
 PYI_EXT_FUNC_PROTO(int, Py_IsInitialized, (void))
-PYI_EXT_FUNC_PROTO(PyStatus, Py_PreInitialize, (const PyPreConfig *))
+PYI_EXT_FUNC_PROTO(PyStatus, Py_PreInitialize, (const PyPreConfig *))  /* PEP 587 */
 
-/* PyConfig_ */
+/* PyConfig_ (PEP 587) */
 PYI_EXT_FUNC_PROTO(void, PyConfig_Clear, (PyConfig *))
 PYI_EXT_FUNC_PROTO(void, PyConfig_InitIsolatedConfig, (PyConfig *))
 PYI_EXT_FUNC_PROTO(PyStatus, PyConfig_Read, (PyConfig *))
 PYI_EXT_FUNC_PROTO(PyStatus, PyConfig_SetBytesString, (PyConfig *, wchar_t **, const char *))
 PYI_EXT_FUNC_PROTO(PyStatus, PyConfig_SetString, (PyConfig *, wchar_t **, const wchar_t *))
 PYI_EXT_FUNC_PROTO(PyStatus, PyConfig_SetWideStringList, (PyConfig *, PyWideStringList *, Py_ssize_t, wchar_t **))
+
+/* PyInitConfig_* (PEP 741) */
+PYI_EXT_FUNC_PROTO(PyInitConfig *, PyInitConfig_Create, (void))
+PYI_EXT_FUNC_PROTO(void, PyInitConfig_Free, (PyInitConfig *))
+PYI_EXT_FUNC_PROTO(int, PyInitConfig_SetInt, (PyInitConfig *, const char *, int64_t))
+PYI_EXT_FUNC_PROTO(int, PyInitConfig_SetStr, (PyInitConfig *, const char *, const char *))
+PYI_EXT_FUNC_PROTO(int, PyInitConfig_SetStrList, (PyInitConfig *, const char *, size_t, char * const *))
+PYI_EXT_FUNC_PROTO(int, PyInitConfig_GetError, (PyInitConfig *, const char **))
 
 /* PyErr_ */
 PYI_EXT_FUNC_PROTO(void, PyErr_Clear, (void))
@@ -194,7 +207,7 @@ PYI_EXT_FUNC_PROTO(PyObject *, PyObject_GetAttrString, (PyObject *, const char *
 PYI_EXT_FUNC_PROTO(int, PyObject_SetAttrString, (PyObject *, char *, PyObject *))
 PYI_EXT_FUNC_PROTO(PyObject *, PyObject_Str, (PyObject *))
 
-/* PyPreConfig_ */
+/* PyPreConfig_ (PEP 587) */
 PYI_EXT_FUNC_PROTO(void, PyPreConfig_InitIsolatedConfig, (PyPreConfig *))
 
 /* PyRun_ */
@@ -225,12 +238,16 @@ struct DYLIB_PYTHON
     /* Python version, e.g. 3.8 -> 308, 3.12 -> 312 */
     int version;
 
+    /* Flag indicating that PEP-741 API is available */
+    unsigned char has_pep741;
+
     /* Function pointers for imported functions */
     PYI_EXT_FUNC_ENTRY(Py_DecRef)
     PYI_EXT_FUNC_ENTRY(Py_DecodeLocale)
     PYI_EXT_FUNC_ENTRY(Py_ExitStatusException)
     PYI_EXT_FUNC_ENTRY(Py_Finalize)
     PYI_EXT_FUNC_ENTRY(Py_InitializeFromConfig)
+    PYI_EXT_FUNC_ENTRY(Py_InitializeFromInitConfig)
     PYI_EXT_FUNC_ENTRY(Py_IsInitialized)
     PYI_EXT_FUNC_ENTRY(Py_PreInitialize)
 
@@ -240,6 +257,13 @@ struct DYLIB_PYTHON
     PYI_EXT_FUNC_ENTRY(PyConfig_SetBytesString)
     PYI_EXT_FUNC_ENTRY(PyConfig_SetString)
     PYI_EXT_FUNC_ENTRY(PyConfig_SetWideStringList)
+
+    PYI_EXT_FUNC_ENTRY(PyInitConfig_Create)
+    PYI_EXT_FUNC_ENTRY(PyInitConfig_Free)
+    PYI_EXT_FUNC_ENTRY(PyInitConfig_SetInt)
+    PYI_EXT_FUNC_ENTRY(PyInitConfig_SetStr)
+    PYI_EXT_FUNC_ENTRY(PyInitConfig_SetStrList)
+    PYI_EXT_FUNC_ENTRY(PyInitConfig_GetError)
 
     PYI_EXT_FUNC_ENTRY(PyErr_Clear)
     PYI_EXT_FUNC_ENTRY(PyErr_Fetch)

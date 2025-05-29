@@ -147,18 +147,37 @@ static int _pyi_dylib_python_import_symbols(struct DYLIB_PYTHON *dylib)
 
     _IMPORT_FUNCTION(Py_DecRef)
     _IMPORT_FUNCTION(Py_DecodeLocale)
-    _IMPORT_FUNCTION(Py_ExitStatusException)
     _IMPORT_FUNCTION(Py_Finalize)
-    _IMPORT_FUNCTION(Py_InitializeFromConfig)
     _IMPORT_FUNCTION(Py_IsInitialized)
-    _IMPORT_FUNCTION(Py_PreInitialize)
+    _IMPORT_FUNCTION(Py_PreInitialize) /* Used in both PEP 587 and PEP 741 codepath */
 
-    _IMPORT_FUNCTION(PyConfig_Clear)
-    _IMPORT_FUNCTION(PyConfig_InitIsolatedConfig)
-    _IMPORT_FUNCTION(PyConfig_Read)
-    _IMPORT_FUNCTION(PyConfig_SetBytesString)
-    _IMPORT_FUNCTION(PyConfig_SetString)
-    _IMPORT_FUNCTION(PyConfig_SetWideStringList)
+    /* Try binding PyInitConfig_Create() to determine availability of
+     * PEP-741 API (python >= 3.14.0a2). */
+    PYI_EXT_FUNC_BIND(dylib->handle, PyInitConfig_Create, dylib->PyInitConfig_Create);
+    dylib->has_pep741 = dylib->PyInitConfig_Create != NULL;
+    if (dylib->has_pep741) {
+        /* PEP-741 functions are available - bind the required ones */
+        /*_IMPORT_FUNCTION(PyInitConfig_Create)*/ /* Already bound */
+        _IMPORT_FUNCTION(PyInitConfig_Free)
+        _IMPORT_FUNCTION(PyInitConfig_SetInt)
+        _IMPORT_FUNCTION(PyInitConfig_SetStr)
+        _IMPORT_FUNCTION(PyInitConfig_SetStrList)
+        _IMPORT_FUNCTION(PyInitConfig_GetError)
+
+        _IMPORT_FUNCTION(Py_InitializeFromInitConfig)
+    } else {
+        /* PEP-741 API is not available - we need to bind and use
+         * PEP-587 functions. */
+        _IMPORT_FUNCTION(PyConfig_Clear)
+        _IMPORT_FUNCTION(PyConfig_InitIsolatedConfig)
+        _IMPORT_FUNCTION(PyConfig_Read)
+        _IMPORT_FUNCTION(PyConfig_SetBytesString)
+        _IMPORT_FUNCTION(PyConfig_SetString)
+        _IMPORT_FUNCTION(PyConfig_SetWideStringList)
+
+        _IMPORT_FUNCTION(Py_InitializeFromConfig)
+        _IMPORT_FUNCTION(Py_ExitStatusException)
+    }
 
     _IMPORT_FUNCTION(PyErr_Clear)
     _IMPORT_FUNCTION(PyErr_Fetch)
