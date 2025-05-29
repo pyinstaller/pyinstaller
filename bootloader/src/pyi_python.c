@@ -39,6 +39,7 @@ pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx)
     const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
     struct PyiRuntimeOptions *runtime_options = NULL;
     PyConfig *config_pep587 = NULL; /* Config structure used in PEP 587 codepath */
+    PyInitConfig *config_pep741 = NULL; /* Config structure used in PEP 741 codepath */
     int ret = -1;
 
     /* Read run-time options */
@@ -57,7 +58,54 @@ pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx)
     }
 
     /* Set up python configuration. */
-    if (1) {
+    if (dylib_python->has_pep741) {
+        /* PEP 741 codepath */
+        PYI_DEBUG("LOADER: using PEP-741 API...\n");
+
+        /* Allocate the config structure and initialize it using default values
+         * of the Isolated Configuration. */
+        PYI_DEBUG("LOADER: creating PyInitConfig structure...\n");
+        config_pep741 = dylib_python->PyInitConfig_Create();
+        if (config_pep741 == NULL) {
+            PYI_ERROR("Failed to allocate PyInitConfig structure!\n");
+            goto end;
+        }
+
+        /* Set program name */
+        PYI_DEBUG("LOADER: setting program name...\n");
+        if (pyi_pyconfig_pep741_set_program_name(config_pep741, pyi_ctx) < 0) {
+            PYI_ERROR("Failed to set program name!\n");
+            goto end;
+        }
+
+        /* Set python home */
+        PYI_DEBUG("LOADER: setting python home path...\n");
+        if (pyi_pyconfig_pep741_set_python_home(config_pep741, pyi_ctx) < 0) {
+            PYI_ERROR("Failed to set python home path!\n");
+            goto end;
+        }
+
+        /* Set module search paths */
+        PYI_DEBUG("LOADER: setting module search paths...\n");
+        if (pyi_pyconfig_pep741_set_module_search_paths(config_pep741, pyi_ctx) < 0) {
+            PYI_ERROR("Failed to set module search paths!\n");
+            goto end;
+        }
+
+        /* Set arguments (sys.argv) */
+        PYI_DEBUG("LOADER: setting sys.argv...\n");
+        if (pyi_pyconfig_pep741_set_argv(config_pep741, pyi_ctx) < 0) {
+            PYI_ERROR("Failed to set sys.argv!\n");
+            goto end;
+        }
+
+        /* Apply run-time options */
+        PYI_DEBUG("LOADER: applying run-time options...\n");
+        if (pyi_pyconfig_pep741_set_runtime_options(config_pep741, pyi_ctx, runtime_options) < 0) {
+            PYI_ERROR("Failed to set run-time options!\n");
+            goto end;
+        }
+    } else {
         /* PEP 587 codepath */
         PYI_DEBUG("LOADER: using PEP-587 API...\n");
 
@@ -121,7 +169,16 @@ pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx)
         fflush(stderr);
     }
 
-    if (1) {
+    if (dylib_python->has_pep741) {
+        /* PEP 741 codepath */
+        ret = dylib_python->Py_InitializeFromInitConfig(config_pep741);
+        if (ret < 0) {
+            const char *error_message = NULL;
+            dylib_python->PyInitConfig_GetError(config_pep741, &error_message);
+            PYI_ERROR("Failed to start embedded python interpreter: %s\n", error_message);
+            ret = -1;
+        }
+    } else {
         /* PEP 587 codepath */
         PyStatus status;
 
@@ -148,7 +205,10 @@ pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx)
     }
 
 end:
-    if (1) {
+    if (dylib_python->has_pep741) {
+        /* PEP 741 codepath */
+        dylib_python->PyInitConfig_Free(config_pep741);
+    } else {
         /* PEP 587 codepath */
         pyi_pyconfig_pep587_free(config_pep587, pyi_ctx);
     }
