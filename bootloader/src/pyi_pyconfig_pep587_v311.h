@@ -11,8 +11,8 @@
  * ****************************************************************************
  */
 
-#ifndef PYI_PYCONFIG_V311_H
-#define PYI_PYCONFIG_V311_H
+#ifndef PYI_PYCONFIG_PEP587_V311_H
+#define PYI_PYCONFIG_PEP587_V311_H
 
 #include "pyi_global.h"
 #include <wchar.h>
@@ -94,4 +94,4 @@ typedef struct {
     int _is_python_build;
 } PyConfig_v311;
 
-#endif /* PYI_PYCONFIG_V311_H */
+#endif /* PYI_PYCONFIG_PEP587_V311_H */

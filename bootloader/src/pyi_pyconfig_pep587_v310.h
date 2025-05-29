@@ -11,8 +11,8 @@
  * ****************************************************************************
  */
 
-#ifndef PYI_PYCONFIG_V310_H
-#define PYI_PYCONFIG_V310_H
+#ifndef PYI_PYCONFIG_PEP587_V310_H
+#define PYI_PYCONFIG_PEP587_V310_H
 
 #include "pyi_global.h"
 #include <wchar.h>
@@ -88,4 +88,4 @@ typedef struct {
     int _isolated_interpreter;
 } PyConfig_v310;
 
-#endif /* PYI_PYCONFIG_V310_H */
+#endif /* PYI_PYCONFIG_PEP587_V310_H */

@@ -11,8 +11,8 @@
  * ****************************************************************************
  */
 
-#ifndef PYI_PYCONFIG_V313_H
-#define PYI_PYCONFIG_V313_H
+#ifndef PYI_PYCONFIG_PEP587_V313_H
+#define PYI_PYCONFIG_PEP587_V313_H
 
 #include "pyi_global.h"
 #include <wchar.h>
@@ -243,4 +243,4 @@ typedef struct {
 #undef Py_DEBUG
 #undef Py_GIL_DISABLED
 
-#endif /* PYI_PYCONFIG_V312_H */
+#endif /* PYI_PYCONFIG_PEP587_V312_H */

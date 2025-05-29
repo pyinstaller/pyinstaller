@@ -134,15 +134,6 @@ typedef struct {
 /* The opaque type used with functions that accept pointer */
 typedef struct _PyPreConfig PyPreConfig;
 
-
-/* Keep configuration structures in separate header */
-#include "pyi_pyconfig_v38.h"
-#include "pyi_pyconfig_v39.h"
-#include "pyi_pyconfig_v310.h"
-#include "pyi_pyconfig_v311.h"
-#include "pyi_pyconfig_v312.h"
-#include "pyi_pyconfig_v313.h"
-
 /* The opaque type used with functions that accept pointer */
 typedef struct _PyConfig PyConfig;
 

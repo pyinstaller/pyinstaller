@@ -12,7 +12,7 @@
  */
 
 /*
- * Functions to deal with PEP 587 python initialization configuration.
+ * Functions to deal with python initialization configuration.
  *
  * These helpers allow the rest of bootloader to pretend that PEP 587 has
  * a sane API with opaque types.
@@ -49,16 +49,17 @@ struct PyiRuntimeOptions
 struct PyiRuntimeOptions *pyi_runtime_options_read(const struct PYI_CONTEXT *pyi_ctx);
 void pyi_runtime_options_free(struct PyiRuntimeOptions *options);
 
-/* PEP 587 helpers */
-PyConfig *pyi_pyconfig_create(const struct PYI_CONTEXT *pyi_ctx);
-void pyi_pyconfig_free(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
-
-int pyi_pyconfig_set_program_name(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
-int pyi_pyconfig_set_python_home(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
-int pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
-int pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
-int pyi_pyconfig_set_runtime_options(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx, const struct PyiRuntimeOptions *runtime_options);
-
 int pyi_pyconfig_preinit_python(const struct PyiRuntimeOptions *runtime_options, const struct PYI_CONTEXT *pyi_ctx);
+
+
+/* PEP 587 helpers */
+PyConfig *pyi_pyconfig_pep587_create(const struct PYI_CONTEXT *pyi_ctx);
+void pyi_pyconfig_pep587_free(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
+
+int pyi_pyconfig_pep587_set_program_name(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
+int pyi_pyconfig_pep587_set_python_home(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
+int pyi_pyconfig_pep587_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
+int pyi_pyconfig_pep587_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx);
+int pyi_pyconfig_pep587_set_runtime_options(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx, const struct PyiRuntimeOptions *runtime_options);
 
 #endif /* PYI_PYCONFIG_H */

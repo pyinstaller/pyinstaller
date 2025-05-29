@@ -11,14 +11,14 @@
  * ****************************************************************************
  */
 
-#ifndef PYI_PYCONFIG_V39_H
-#define PYI_PYCONFIG_V39_H
+#ifndef PYI_PYCONFIG_PEP587_V312_H
+#define PYI_PYCONFIG_PEP587_V312_H
 
 #include "pyi_global.h"
 #include <wchar.h>
 
-/* PyConfig structure for Python 3.9
- * https://github.com/python/cpython/blob/v3.9.0/Include/cpython/initconfig.h
+/* PyConfig structure for Python 3.12
+ * https://github.com/python/cpython/blob/v3.12.0rc1/Include/cpython/initconfig.h
  */
 typedef struct {
     int _config_init;
@@ -30,22 +30,25 @@ typedef struct {
     int use_hash_seed;
     unsigned long hash_seed;
     int faulthandler;
-    int _use_peg_parser;
     int tracemalloc;
+    int perf_profiling;
     int import_time;
+    int code_debug_ranges;
     int show_ref_count;
     int dump_refs;
+    wchar_t *dump_refs_file;
     int malloc_stats;
     wchar_t *filesystem_encoding;
     wchar_t *filesystem_errors;
     wchar_t *pycache_prefix;
     int parse_argv;
+    PyWideStringList orig_argv;
     PyWideStringList argv;
-    wchar_t *program_name;
     PyWideStringList xoptions;
     PyWideStringList warnoptions;
     int site_import;
     int bytes_warning;
+    int warn_default_encoding;
     int inspect;
     int interactive;
     int optimization_level;
@@ -62,19 +65,25 @@ typedef struct {
     int legacy_windows_stdio;
 #endif
     wchar_t *check_hash_pycs_mode;
+    int use_frozen_modules;
+    int safe_path;
+    int int_max_str_digits;
+
     int pathconfig_warnings;
+    wchar_t *program_name;
     wchar_t *pythonpath_env;
     wchar_t *home;
+    wchar_t *platlibdir;
 
     int module_search_paths_set;
     PyWideStringList module_search_paths;
+    wchar_t *stdlib_dir;
     wchar_t *executable;
     wchar_t *base_executable;
     wchar_t *prefix;
     wchar_t *base_prefix;
     wchar_t *exec_prefix;
     wchar_t *base_exec_prefix;
-    wchar_t *platlibdir;
 
     int skip_source_first_line;
     wchar_t *run_command;
@@ -83,8 +92,7 @@ typedef struct {
 
     int _install_importlib;
     int _init_main;
-    int _isolated_interpreter;
-    PyWideStringList _orig_argv;
-} PyConfig_v39;
+    int _is_python_build;
+} PyConfig_v312;
 
-#endif /* PYI_PYCONFIG_V39_H */
+#endif /* PYI_PYCONFIG_PEP587_V312_H */

@@ -11,14 +11,14 @@
  * ****************************************************************************
  */
 
-#ifndef PYI_PYCONFIG_V38_H
-#define PYI_PYCONFIG_V38_H
+#ifndef PYI_PYCONFIG_PEP587_V39_H
+#define PYI_PYCONFIG_PEP587_V39_H
 
 #include "pyi_global.h"
 #include <wchar.h>
 
-/* PyConfig structure for Python 3.11
- * https://github.com/python/cpython/blob/v3.11.0/Include/cpython/initconfig.h
+/* PyConfig structure for Python 3.9
+ * https://github.com/python/cpython/blob/v3.9.0/Include/cpython/initconfig.h
  */
 typedef struct {
     int _config_init;
@@ -30,10 +30,10 @@ typedef struct {
     int use_hash_seed;
     unsigned long hash_seed;
     int faulthandler;
+    int _use_peg_parser;
     int tracemalloc;
     int import_time;
     int show_ref_count;
-    int show_alloc_count;
     int dump_refs;
     int malloc_stats;
     wchar_t *filesystem_encoding;
@@ -74,6 +74,7 @@ typedef struct {
     wchar_t *base_prefix;
     wchar_t *exec_prefix;
     wchar_t *base_exec_prefix;
+    wchar_t *platlibdir;
 
     int skip_source_first_line;
     wchar_t *run_command;
@@ -82,6 +83,8 @@ typedef struct {
 
     int _install_importlib;
     int _init_main;
-} PyConfig_v38;
+    int _isolated_interpreter;
+    PyWideStringList _orig_argv;
+} PyConfig_v39;
 
-#endif /* PYI_PYCONFIG_V38_H */
+#endif /* PYI_PYCONFIG_PEP587_V39_H */
