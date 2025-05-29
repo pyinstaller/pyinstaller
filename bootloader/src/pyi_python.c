@@ -121,29 +121,20 @@ pyi_python_start_interpreter(const struct PYI_CONTEXT *pyi_ctx)
         fflush(stderr);
     }
 
-    /*
-     * Py_Initialize() may rudely call abort(), and on Windows this triggers the error
-     * reporting service, which results in a dialog box that says "Close program", "Check
-     * for a solution", and also "Debug" if Visual Studio is installed. The dialog box
-     * makes it frustrating to run the test suite.
-     *
-     * For debug builds of the bootloader, disable the error reporting before calling
-     * Py_Initialize and enable it afterward.
-     */
-
-#if defined(_WIN32) && defined(LAUNCH_DEBUG)
-    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
-#endif
-
     status = dylib_python->Py_InitializeFromConfig(config);
-
-#if defined(_WIN32) && defined(LAUNCH_DEBUG)
-    SetErrorMode(0);
-#endif
 
     if (dylib_python->PyStatus_Exception(status)) {
         PYI_ERROR("Failed to start embedded python interpreter!\n");
-        /* Dump exception information to stderr and exit the process with error code. */
+        /* Dump exception information to stderr and exit the process with error code.
+         *
+         * Depending on the error type, Py_ExitStatusException() either
+         * ends up calling exit() or abort(). On Windows, the latter case
+         * triggers the error reporting service and pops up a dialog with
+         * "Close program", "Check for a solution", and "Debug" (if Visual
+         * Studio is installed). Disable this behavior via SetErrorMode() */
+#if defined(_WIN32)
+        SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+#endif
         dylib_python->Py_ExitStatusException(status);
     } else {
         ret = 0; /* Succeeded */
