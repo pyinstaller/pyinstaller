@@ -33,8 +33,15 @@ def _pyi_rthook():
     import os
     import pathlib
     import sys
+    import warnings
 
-    import pkg_resources
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            category=UserWarning,
+            message="pkg_resources is deprecated",
+        )
+        import pkg_resources
 
     import pyimod02_importers  # PyInstaller's bootstrap module
 
