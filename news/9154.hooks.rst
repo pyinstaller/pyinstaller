@@ -1,0 +1,3 @@
+Have the ``pytz`` hook exclude ``pkg_resources``, to prevent the latter
+from being collected due to a reference in the fallback resource
+loading codepath in ``pytz`` that should normally not be reached.

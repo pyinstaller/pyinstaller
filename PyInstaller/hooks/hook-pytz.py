@@ -14,3 +14,7 @@ from PyInstaller.utils.hooks import collect_data_files
 # On Linux pytz installed from distribution repository uses zoneinfo from /usr/share/zoneinfo/ and no data files might
 # be collected.
 datas = collect_data_files('pytz')
+
+# pytz references pkg_resources in a fall-back codepath that should normally not be reached; add an exclude to prevent
+# (now deprecated) pkg_resources from being pulled in the frozen application.
+excludedimports = ['pkg_resources']
