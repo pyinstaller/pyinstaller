@@ -39,11 +39,16 @@ struct PyiRuntimeOptions
     int utf8_mode;
     int dev_mode;
 
+    /* When PEP 741 API is available, use the narrow-char string arrays
+     * to collect the flags; otherwise, convert and collect them into
+     * wide-char string arrays. */
     int num_wflags;
-    wchar_t **wflags;
+    char **wflags;
+    wchar_t **wflags_w;
 
     int num_xflags;
-    wchar_t **xflags;
+    char **xflags;
+    wchar_t **xflags_w;
 };
 
 struct PyiRuntimeOptions *pyi_runtime_options_read(const struct PYI_CONTEXT *pyi_ctx);

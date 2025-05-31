@@ -57,19 +57,35 @@ pyi_runtime_options_free(struct PyiRuntimeOptions *options)
 
     /* Free the wflags array */
     if (options->num_wflags) {
-        for (i = 0; i < options->num_wflags; i++) {
-            free(options->wflags[i]);
+        if (options->wflags) {
+            for (i = 0; i < options->num_wflags; i++) {
+                free(options->wflags[i]);
+            }
+        }
+        if (options->wflags_w) {
+            for (i = 0; i < options->num_wflags; i++) {
+                free(options->wflags_w[i]);
+            }
         }
     }
     free(options->wflags);
+    free(options->wflags_w);
 
     /* Free the Xflags array */
     if (options->num_xflags) {
-        for (i = 0; i < options->num_xflags; i++) {
-            free(options->xflags[i]);
+        if (options->xflags) {
+            for (i = 0; i < options->num_xflags; i++) {
+                free(options->xflags[i]);
+            }
+        }
+        if (options->xflags_w) {
+            for (i = 0; i < options->num_xflags; i++) {
+                free(options->xflags_w[i]);
+            }
         }
     }
     free(options->xflags);
+    free(options->xflags_w);
 
     /* Free options structure itself */
     free(options);
@@ -164,6 +180,8 @@ pyi_runtime_options_read(const struct PYI_CONTEXT *pyi_ctx)
     int num_xflags = 0;
     int failed = 0;
 
+    const unsigned char use_pep741 = pyi_ctx->dylib_python->has_pep741;
+
     /* Allocate the structure */
     options = calloc(1, sizeof(struct PyiRuntimeOptions));
     if (options == NULL) {
@@ -226,16 +244,32 @@ pyi_runtime_options_read(const struct PYI_CONTEXT *pyi_ctx)
 
     /* Collect Wflags and Xflags for pass-through */
 
+    /* For PEP 741 codepath, we collect into narrow-char string arrays
+     * (options->wflags and options->xflags). For older PEP 587 codepath,
+     * we convert and collect into wide-char string arrays (options->wflags_w
+     * and options->xflags_w). This minimizes the amount of conversions
+     * and simplifies the configuration code (which can just pass string
+     * arrays to corresponding functions). */
+
     /* Allocate - calloc should be safe to call with num = 0.
      * On most platforms, when called with num = 0, calloc returns a
      * non-NULL address that should be safe to free. On AIX, though,
      * it returns NULL (unless _LINUX_SOURCE_COMPAT is defined, but we
      * cannot have that defined together with _ALL_SOURCE). */
-    options->wflags = calloc(num_wflags, sizeof(wchar_t *));
-    options->xflags = calloc(num_xflags, sizeof(wchar_t *));
-    if ((num_wflags && options->wflags == NULL) || (num_xflags && options->xflags == NULL)) {
-        failed = 1;
-        goto end;
+    if (use_pep741) {
+        options->wflags = calloc(num_wflags, sizeof(char *));
+        options->xflags = calloc(num_xflags, sizeof(char *));
+        if ((num_wflags && options->wflags == NULL) || (num_xflags && options->xflags == NULL)) {
+            failed = 1;
+            goto end;
+        }
+    } else {
+        options->wflags_w = calloc(num_wflags, sizeof(wchar_t *));
+        options->xflags_w = calloc(num_xflags, sizeof(wchar_t *));
+        if ((num_wflags && options->wflags_w == NULL) || (num_xflags && options->xflags_w == NULL)) {
+            failed = 1;
+            goto end;
+        }
     }
 
     /* Collect */
@@ -248,17 +282,39 @@ pyi_runtime_options_read(const struct PYI_CONTEXT *pyi_ctx)
         if (strncmp(toc_entry->name, "W ", 2) == 0) {
             /* Copy for pass-through */
             const char *flag = &toc_entry->name[2]; /* Skip first two characters */
-            if (_pyi_copy_xwflag(flag, &options->wflags[options->num_wflags]) < 0) {
-                failed = 1;
-                goto end;
+            if (use_pep741) {
+                /* Copy into narrow-char string array for PEP 741 codepath */
+                char *flag_dup = strdup(flag);
+                if (flag_dup == NULL) {
+                    failed = 1;
+                    goto end;
+                }
+                options->wflags[options->num_wflags] = flag_dup;
+            } else {
+                /* Convert and copy into wide-char string array for PEP 587 codepath */
+                if (_pyi_copy_xwflag(flag, &options->wflags_w[options->num_wflags]) < 0) {
+                    failed = 1;
+                    goto end;
+                }
             }
             options->num_wflags++;
         } else if (strncmp(toc_entry->name, "X ", 2) == 0) {
             /* Copy for pass-through */
             const char *flag = &toc_entry->name[2]; /* Skip first two characters */
-            if (_pyi_copy_xwflag(flag, &options->xflags[options->num_xflags]) < 0) {
-                failed = 1;
-                goto end;
+            if (use_pep741) {
+                /* Copy into narrow-char string array for PEP 741 codepath */
+                char *flag_dup = strdup(flag);
+                if (flag_dup == NULL) {
+                    failed = 1;
+                    goto end;
+                }
+                options->xflags[options->num_wflags] = flag_dup;
+            } else {
+                /* Convert and copy into wide-char string array for PEP 587 codepath */
+                if (_pyi_copy_xwflag(flag, &options->xflags_w[options->num_xflags]) < 0) {
+                    failed = 1;
+                    goto end;
+                }
             }
             options->num_xflags++;
 

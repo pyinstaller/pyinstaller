@@ -464,7 +464,7 @@ pyi_pyconfig_pep587_set_runtime_options(PyConfig *config, const struct PYI_CONTE
         config_impl->dev_mode = runtime_options->dev_mode; \
         /* Set W-flags, if available */ \
         if (runtime_options->num_wflags) { \
-            status = dylib_python->PyConfig_SetWideStringList(config, &config_impl->warnoptions, runtime_options->num_wflags, runtime_options->wflags); \
+            status = dylib_python->PyConfig_SetWideStringList(config, &config_impl->warnoptions, runtime_options->num_wflags, runtime_options->wflags_w); \
             if (dylib_python->PyStatus_Exception(status)) { \
                 return -1; \
             } \
@@ -472,7 +472,7 @@ pyi_pyconfig_pep587_set_runtime_options(PyConfig *config, const struct PYI_CONTE
         /* Set X-flags, if available. Note that this is just pass-through that allows options to show up in sys._xoptions;
          * for example, for -Xutf8 or -Xdev to take effect, we need to explicitly parse them and modify PyConfig fields. */ \
         if (runtime_options->num_xflags) { \
-            status = dylib_python->PyConfig_SetWideStringList(config, &config_impl->xoptions, runtime_options->num_xflags, runtime_options->xflags); \
+            status = dylib_python->PyConfig_SetWideStringList(config, &config_impl->xoptions, runtime_options->num_xflags, runtime_options->xflags_w); \
             if (dylib_python->PyStatus_Exception(status)) { \
                 return -1; \
             } \
