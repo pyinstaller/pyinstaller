@@ -510,7 +510,7 @@ pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT 
             ret = -1;
         }
     }
-    if (ret < -1) {
+    if (ret != 0) {
         goto end; /* Conversion of at least one path failed */
     }
 
@@ -628,12 +628,9 @@ pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
     for (i = 0; i < argc; i++) {
         argv_w[i] = dylib_python->Py_DecodeLocale(argv[i], NULL);
         if (argv_w[i] == NULL) {
-            /* Do not break; we need to initialize all elements */
             ret = -1;
+            goto end;
         }
-    }
-    if (ret < -1) {
-        goto end; /* Conversion of at least one arg failed */
     }
 
     /* Set */
