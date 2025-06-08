@@ -1,0 +1,1 @@
+Update the ``numpy`` hook for compatibility with NumPy v2.3.0.

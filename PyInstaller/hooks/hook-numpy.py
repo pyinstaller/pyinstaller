@@ -79,6 +79,12 @@ else:
     if numpy_version >= (1, 25):
         hiddenimports += ['numpy.core._multiarray_tests']
 
+# Starting with v2.3.0, we need to add `numpy._core._exceptions` to hiddenimports; in previous versions, this module
+# was picked up due to explicit import in `numpy._core._methods`, which was removed as part of cleanup in
+# https://github.com/numpy/numpy/commit/a51a4f5c10aa9b7962ff1e7e9b5f9b7d91c51489
+if numpy_version >= (2, 3, 0):
+    hiddenimports += ['numpy._core._exceptions']
+
 # This hidden import was removed from NumPy hook in v1.25.0 (https://github.com/numpy/numpy/pull/22666). According to
 # comment in the linked PR, it should have been unnecessary since v1.19.
 if compat.is_conda and numpy_version < (1, 19):
