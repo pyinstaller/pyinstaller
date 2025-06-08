@@ -20,7 +20,7 @@ ipython==9.3.0; python_version >= '3.11'
 keyring==25.6.0; python_version >= '3.9'
 matplotlib==3.10.3; python_version >= '3.10'
 numpy==2.3.0; python_version >= '3.11'
-pandas==2.2.3; python_version >= '3.9'
+pandas==2.3.0; python_version >= '3.9'
 pygments==2.19.1
 PyGObject==3.52.3; sys_platform == 'linux' and python_version >= '3.9'
 # Official PySide2 wheels do not support python 3.11 or newer. Nor are they available for arm64 on macOS.
