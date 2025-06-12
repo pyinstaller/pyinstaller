@@ -888,7 +888,7 @@ _pyi_main_setup_splash_screen(struct PYI_CONTEXT *pyi_ctx)
     }
 
     /* Load Tcl/Tk shared libraries */
-    if (pyi_splash_load_shared_libaries(pyi_ctx->splash) != 0) {
+    if (pyi_splash_load_shared_libraries(pyi_ctx->splash) != 0) {
         PYI_WARNING("Failed to load Tcl/Tk shared libraries for splash screen!\n");
         goto cleanup;
     }

@@ -209,7 +209,7 @@ class Splash(Target):
         # Scan for binary dependencies of the Tcl/Tk shared libraries, and add them to `binaries` TOC list (which
         # should really be called `dependencies` as it is not limited to binaries. But it is too late now, and
         # existing spec files depend on this naming). We specify these binary dependencies (which include the
-        # Tcl and Tk shared libaries themselves) even if the user's program uses tkinter and they would be collected
+        # Tcl and Tk shared libraries themselves) even if the user's program uses tkinter and they would be collected
         # anyway; let the collection mechanism deal with potential duplicates.
         tcltk_libs = [(os.path.basename(src_name), src_name, 'BINARY') for src_name in (self.tcl_lib, self.tk_lib)]
         self.binaries = bindepend.binary_dependency_analysis(tcltk_libs)

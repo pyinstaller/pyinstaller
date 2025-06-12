@@ -159,7 +159,7 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
  * Start the splash screen.
  *
  * As this uses bound functions from Tcl/Tk shared libraries, it must
- * be called after the shared libaries have been loaded and their
+ * be called after the shared libraries have been loaded and their
  * symbols bound.
  *
  * The splash screen needs to run in a separate thread, otherwise
@@ -348,7 +348,7 @@ pyi_splash_is_splash_requirement(struct SPLASH_CONTEXT *splash, const char *name
 
 /* Load Tcl/Tk shared libraries and bind required symbols (functions). */
 int
-pyi_splash_load_shared_libaries(struct SPLASH_CONTEXT *splash)
+pyi_splash_load_shared_libraries(struct SPLASH_CONTEXT *splash)
 {
     PYI_DEBUG("SPLASH: loading Tcl library from: %s\n", splash->tcl_libpath);
     PYI_DEBUG("SPLASH: loading Tk library from: %s\n", splash->tk_libpath);
@@ -439,7 +439,7 @@ pyi_splash_finalize(struct SPLASH_CONTEXT *splash)
      * in a weird state of tkinter. */
     dylib_tcltk->Tcl_Finalize();
 
-    PYI_DEBUG("SPLASH: unloading Tcl/Tk shared libaries...\n");
+    PYI_DEBUG("SPLASH: unloading Tcl/Tk shared libraries...\n");
     pyi_dylib_tcltk_cleanup(&splash->dylib_tcltk);
 
     PYI_DEBUG("SPLASH: cleanup complete!\n");

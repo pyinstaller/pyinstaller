@@ -129,7 +129,7 @@ struct PYI_CONTEXT;
  */
 int pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ctx);
 
-int pyi_splash_load_shared_libaries(struct SPLASH_CONTEXT *splash);
+int pyi_splash_load_shared_libraries(struct SPLASH_CONTEXT *splash);
 int pyi_splash_finalize(struct SPLASH_CONTEXT *splash);
 int pyi_splash_start(struct SPLASH_CONTEXT *splash, const char *executable);
 
