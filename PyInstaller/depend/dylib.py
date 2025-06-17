@@ -200,6 +200,7 @@ _unix_excludes = {
     r'libnss_nis.*\.so(\..*)?',
     r'libnss_nisplus.*\.so(\..*)?',
     r'libresolv\.so(\..*)?',
+    r'libsocket\.so(\..*)?',
     r'libutil\.so(\..*)?',
     # graphical interface libraries come with graphical stack (see libglvnd)
     r'libE?(Open)?GLX?(ESv1_CM|ESv2)?(dispatch)?\.so(\..*)?',

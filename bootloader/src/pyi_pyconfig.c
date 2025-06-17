@@ -24,6 +24,16 @@
 #include "pyi_main.h"
 #include "pyi_utils.h"
 
+#ifndef HAVE_WCSDUP
+wchar_t *wcsdup(const wchar_t *s)
+{
+    size_t len = wcslen(s) + 1;
+    wchar_t *new_s = malloc(len * sizeof(wchar_t));
+    if (new_s)
+        wcscpy(new_s, s);
+    return new_s;
+}
+#endif
 
 /*
  * Clean up and free the PyiRuntimeOptions structure created by

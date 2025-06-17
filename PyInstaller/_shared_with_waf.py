@@ -50,6 +50,12 @@ def _pyi_machine(machine, system):
             return "arm"
         else:
             return "intel"
+        
+    if system == "SunOS":
+        if "sun" in machine.lower() or "sun" in platform.machine().lower():
+            return "sparc"
+        else:
+            return "intel"
 
     if system != "Linux":
         # No architecture specifier for anything par Linux.
