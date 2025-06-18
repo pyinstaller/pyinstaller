@@ -686,7 +686,7 @@ def configure(ctx):
         ('unistd.h' if ctx.env.DEST_OS == 'darwin' else 'stdlib.h', 'mkdtemp'),
         ('libgen.h', 'dirname'),
         ('libgen.h', 'basename'),
-        ('wchar.h',  'wcsdup')
+        ('wchar.h', 'wcsdup')
     ):
         ctx.check(
             fragment=SNIP_FUNCTION % (header, function_name),
