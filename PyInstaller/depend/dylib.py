@@ -200,7 +200,6 @@ _unix_excludes = {
     r'libnss_nis.*\.so(\..*)?',
     r'libnss_nisplus.*\.so(\..*)?',
     r'libresolv\.so(\..*)?',
-    r'libsocket\.so(\..*)?',
     r'libutil\.so(\..*)?',
     # graphical interface libraries come with graphical stack (see libglvnd)
     r'libE?(Open)?GLX?(ESv1_CM|ESv2)?(dispatch)?\.so(\..*)?',
@@ -238,6 +237,10 @@ _aix_excludes = {
     r'libz\.a',
 }
 
+_solaris_excludes = {
+    r'libsocket\.so(\..*)?',
+}
+
 _cygwin_excludes = {
     r'cygwin1\.dll',
 }
@@ -250,6 +253,10 @@ elif compat.is_cygwin:
 elif compat.is_aix:
     # The exclude list for AIX differs from other *nix platforms.
     _excludes |= _aix_excludes
+elif compat.is_solar:
+    # The exclude list for Solaris differs from other *nix platforms.
+    _excludes |= _solaris_excludes
+    _excludes |= _unix_excludes
 elif compat.is_unix:
     # Common excludes for *nix platforms -- except AIX.
     _excludes |= _unix_excludes
