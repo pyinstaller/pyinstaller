@@ -35,6 +35,106 @@
 #include "pyi_utils.h"
 
 
+static char *_wchar_to_utf8(const wchar_t *string_w)
+{
+    char *buffer;
+    char *ptr;
+    size_t len;
+    int i;
+
+    /* For each input wide-character, the worst-case output is four bytes.
+     * Plus, we need a terminating NUL character. Make sure that the
+     * required buffer size still fits into size_t. */
+    len = wcslen(string_w);
+    if (len + 1 > (SIZE_MAX / 4)) {
+        return NULL;
+    }
+
+    buffer = malloc((len + 1) * 4);
+    if (buffer == NULL) {
+        return NULL;
+    }
+
+    ptr = buffer;
+    i = 0;
+    while (i < len) {
+        int32_t ch = string_w[i];
+        i++;
+
+        /* Handle UTF-16 surrogates (applicable only when sizeof(wchar_t) == 2);
+         * with UTF-32, these codepoints are invalid, and in the unlikely
+         * case they appear, we pass them through. */
+        if (0xD800 <= ch && ch <= 0xDBFF && i < len) {
+            int32_t next_ch = string_w[i];
+            if (0xDC00 <= next_ch && next_ch <= 0xDFFF) {
+                ch = 0x10000 + (((ch & 0x03FF) << 10) | (next_ch & 0x03FF));
+                i++;
+            }
+        }
+
+        if (ch < 0x80) {
+            *ptr++ = (char) ch;
+        } else if (ch < 0x0800) {
+            *ptr++ = (char)(0xc0 | (ch >> 6));
+            *ptr++ = (char)(0x80 | (ch & 0x3f));
+        } else if (ch < 0x10000) {
+            *ptr++ = (char)(0xe0 | (ch >> 12));
+            *ptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+            *ptr++ = (char)(0x80 | (ch & 0x3f));
+        } else {
+            *ptr++ = (char)(0xf0 | (ch >> 18));
+            *ptr++ = (char)(0x80 | ((ch >> 12) & 0x3f));
+            *ptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+            *ptr++ = (char)(0x80 | (ch & 0x3f));
+        }
+    }
+    *ptr++ = 0;
+
+    return buffer;
+}
+
+
+static char *
+_locale_encoding_to_utf8(
+    const char *string,
+    char *output_buffer,
+    size_t output_buffer_size,
+    const struct DYLIB_PYTHON *dylib_python
+)
+{
+    wchar_t *string_w;
+    char *string_utf8;
+
+    /* Convert from locale encoding to wide-char using Py_DecodeLocale() */;
+    string_w = dylib_python->Py_DecodeLocale(string, NULL);
+    if (string_w == NULL) {
+        return NULL;
+    }
+
+    /* Now convert wide-char (UTF-16 or UTF-32, depending on platform and
+     * its width of wchar_t type) to UTF-8. */
+    string_utf8 = _wchar_to_utf8(string_w);
+
+    dylib_python->PyMem_RawFree(string_w);
+
+    /* If output buffer is provided, copy the string into it. */
+    if (output_buffer) {
+        int ret;
+
+        ret = snprintf(output_buffer, output_buffer_size, "%s", string_utf8);
+        free(string_utf8);
+        if (ret < 0 || ret >= output_buffer_size) {
+            return NULL;
+        }
+        return output_buffer;
+    }
+
+    /* Otherwise, return the original UTF-8 buffer and let the caller
+     * free() it. */
+    return string_utf8;
+}
+
+
 /*
  * Set program name. Used to set sys.executable, and in early error messages.
  */
@@ -43,8 +143,16 @@ pyi_pyconfig_pep741_set_program_name(PyInitConfig *config, const struct PYI_CONT
 {
     const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
 
-    /* TODO: ensure proper conversion to UTF-8 where necessary */
+#if defined(_WIN32)
+    /* On Windows, pyi_ctx->executable_filename is already in UTF-8. */
     const char *program_name_utf8 = pyi_ctx->executable_filename;
+#else
+    char program_name_utf8[PYI_PATH_MAX];
+    if (_locale_encoding_to_utf8(pyi_ctx->executable_filename, program_name_utf8, PYI_PATH_MAX, dylib_python) == NULL) {
+        PYI_ERROR("Failed to convert executable filename to UTF-8.\n");
+        return -1;
+    }
+#endif
 
     if (dylib_python->PyInitConfig_SetStr(config, "program_name", program_name_utf8) < 0) {
         const char *error_message = NULL;
@@ -65,8 +173,16 @@ pyi_pyconfig_pep741_set_python_home(PyInitConfig *config, const struct PYI_CONTE
 {
     const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
 
-    /* TODO: ensure proper conversion to UTF-8 where necessary */
+#if defined(_WIN32)
+    /* On Windows, pyi_ctx->application_home_dir is already in UTF-8 */
     const char *python_home_utf8 = pyi_ctx->application_home_dir;
+#else
+    char python_home_utf8[PYI_PATH_MAX];
+    if (_locale_encoding_to_utf8(pyi_ctx->application_home_dir, python_home_utf8, PYI_PATH_MAX, dylib_python) == NULL) {
+        PYI_ERROR("Failed to convert application home directory to UTF-8.\n");
+        return -1;
+    }
+#endif
 
     if (dylib_python->PyInitConfig_SetStr(config, "home", python_home_utf8) < 0) {
         const char *error_message = NULL;
@@ -93,32 +209,44 @@ pyi_pyconfig_pep741_set_module_search_paths(PyInitConfig *config, const struct P
 {
     const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
 
-    char home_dir[PYI_PATH_MAX + 1];
-    char base_library_path[PYI_PATH_MAX + 1];
-    char lib_dynload_path[PYI_PATH_MAX + 1];
+    char home_dir_utf8[PYI_PATH_MAX];
+    char base_library_path_utf8[PYI_PATH_MAX];
+    char lib_dynload_path_utf8[PYI_PATH_MAX];
 
     char *module_search_paths_utf8[3];
 
-    /* TODO: ensure proper conversion to UTF-8 where necessary */
+    /* On Windows, the pyi_ctx->application_home_dir is already in UTF-8.
+     * On other platforms, we need to convert it, but then we can use
+     * the converted string as base for other paths. */
 
     /* home */
-    if (snprintf(home_dir, PYI_PATH_MAX, "%s", pyi_ctx->application_home_dir) >= PYI_PATH_MAX) {
+#if defined(_WIN32)
+    if (snprintf(home_dir_utf8, PYI_PATH_MAX, "%s", pyi_ctx->application_home_dir) >= PYI_PATH_MAX) {
+        PYI_ERROR("Failed to copy path to application home directory - path is too long!\n");
         return -1;
     }
+#else
+    if (_locale_encoding_to_utf8(pyi_ctx->application_home_dir, home_dir_utf8, PYI_PATH_MAX, dylib_python) == NULL) {
+        PYI_ERROR("Failed to convert path to application home directory to UTF-8!\n");
+        return -1;
+    }
+#endif
 
     /* home/base_library.zip */
-    if (snprintf(base_library_path, PYI_PATH_MAX, "%s%c%s", home_dir, PYI_SEP, "base_library.zip") >= PYI_PATH_MAX) {
+    if (snprintf(base_library_path_utf8, PYI_PATH_MAX, "%s%c%s", home_dir_utf8, PYI_SEP, "base_library.zip") >= PYI_PATH_MAX) {
+        PYI_ERROR("Failed to construct path to base_library.zip - path is too long!\n");
         return -1;
     }
 
     /* home/lib-dynload */
-    if (snprintf(lib_dynload_path, PYI_PATH_MAX, "%s%c%s", home_dir, PYI_SEP, "lib-dynload") >= PYI_PATH_MAX) {
+    if (snprintf(lib_dynload_path_utf8, PYI_PATH_MAX, "%s%c%s", home_dir_utf8, PYI_SEP, "lib-dynload") >= PYI_PATH_MAX) {
+        PYI_ERROR("Failed to construct path to lib-dynload directory - path is too long!\n");
         return -1;
     }
 
-    module_search_paths_utf8[0] = base_library_path;
-    module_search_paths_utf8[1] = lib_dynload_path;
-    module_search_paths_utf8[2] = home_dir;
+    module_search_paths_utf8[0] = base_library_path_utf8;
+    module_search_paths_utf8[1] = lib_dynload_path_utf8;
+    module_search_paths_utf8[2] = home_dir_utf8;
 
     if (dylib_python->PyInitConfig_SetStrList(config, "module_search_paths", 3, module_search_paths_utf8) < 0) {
         const char *error_message = NULL;
@@ -133,12 +261,11 @@ pyi_pyconfig_pep741_set_module_search_paths(PyInitConfig *config, const struct P
 
 /*
  * Set program arguments (sys.argv).
- */
-#ifdef _WIN32
-
-/* On Windows, we have the original argv available in wide-char format,
- * so we need to convert it to UTF-8 narrow-char string array. */
-
+ *
+ * On Windows, we have the original argv available in wide-char format,
+ * so we need to convert it to UTF-8 narrow-char string array. On
+ * other platforms, argv is in locale encoding, and also needs to
+ * be converted to UTF-8. */
 int
 pyi_pyconfig_pep741_set_argv(PyInitConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
@@ -149,8 +276,24 @@ pyi_pyconfig_pep741_set_argv(PyInitConfig *config, const struct PYI_CONTEXT *pyi
     char **argv_utf8;
     int i;
 
-    /* Allocate */
+#if defined(_WIN32)
     argc = pyi_ctx->argc;
+#else
+    char **argv;
+
+    /* Select original argc/argv vs. modified pyi_argc/pyi_argv */
+    if (pyi_ctx->pyi_argv != NULL) {
+        /* Modified pyi_argc/pyi_argv are available; use those */
+        argc = pyi_ctx->pyi_argc;
+        argv = pyi_ctx->pyi_argv;
+    } else {
+        /* Use original argc/argv */
+        argc = pyi_ctx->argc;
+        argv = pyi_ctx->argv;
+    }
+#endif
+
+    /* Allocate */
     argv_utf8 = calloc(argc, sizeof(char *));
     if (argv_utf8 == NULL) {
         return -1;
@@ -158,7 +301,11 @@ pyi_pyconfig_pep741_set_argv(PyInitConfig *config, const struct PYI_CONTEXT *pyi
 
     /* Convert */
     for (i = 0; i < argc; i++) {
+#if defined(_WIN32)
         argv_utf8[i] = pyi_win32_wcs_to_utf8(pyi_ctx->argv_w[i], NULL, 0);
+#else
+        argv_utf8[i] = _locale_encoding_to_utf8(argv[i], NULL, 0, dylib_python);
+#endif
         if (argv_utf8[i] == NULL) {
             ret = -1;
             goto end;
@@ -182,40 +329,6 @@ end:
 
     return ret;
 }
-
-#else
-
-int
-pyi_pyconfig_pep741_set_argv(PyInitConfig *config, const struct PYI_CONTEXT *pyi_ctx)
-{
-    const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
-
-    int argc;
-    char **argv_utf8;
-
-    /* Select original argc/argv vs. modified pyi_argc/pyi_argv */
-    /* TODO: ensure proper conversion to UTF-8 where necessary */
-    if (pyi_ctx->pyi_argv != NULL) {
-        /* Modified pyi_argc/pyi_argv are available; use those */
-        argc = pyi_ctx->pyi_argc;
-        argv_utf8 = pyi_ctx->pyi_argv;
-    } else {
-        /* Use original argc/argv */
-        argc = pyi_ctx->argc;
-        argv_utf8 = pyi_ctx->argv;
-    }
-
-    if (dylib_python->PyInitConfig_SetStrList(config, "argv", argc, argv_utf8) < 0) {
-        const char *error_message = NULL;
-        dylib_python->PyInitConfig_GetError(config, &error_message);
-        PYI_ERROR("Failed to set sys.argv: %s\n", error_message);
-        return -1;
-    }
-
-    return 0;
-}
-
-#endif
 
 
 /*
