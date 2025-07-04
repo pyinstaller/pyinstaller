@@ -13,15 +13,15 @@
 # -------
 # These packages work with no (known) issues.
 babel==2.17.0
-Django==5.2.2; python_version >= '3.10'
+Django==5.2.4; python_version >= '3.10'
 future==1.0.0
 gevent==25.5.1; python_version >= '3.9'
-ipython==9.3.0; python_version >= '3.11'
+ipython==9.4.0; python_version >= '3.11'
 keyring==25.6.0; python_version >= '3.9'
 matplotlib==3.10.3; python_version >= '3.10'
-numpy==2.3.0; python_version >= '3.11'
+numpy==2.3.1; python_version >= '3.11'
 pandas==2.3.0; python_version >= '3.9'
-pygments==2.19.1
+pygments==2.19.2
 PyGObject==3.52.3; sys_platform == 'linux' and python_version >= '3.9'
 # Official PySide2 wheels do not support python 3.11 or newer. Nor are they available for arm64 on macOS.
 PySide2==5.15.2.1; python_version < '3.11' and (sys_platform != 'darwin' or platform_machine != 'arm64')
@@ -48,25 +48,25 @@ PyQtWebEngine==5.15.7
 # but in contrast to Qt5 and PyQt5 bindings, the versions here must usually be kept in sync with the
 # version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
 # thus the ABI is still changing.
-PyQt6-sip==13.10.0; python_version >= '3.9'
-PyQt6==6.9.0; python_version >= '3.9'
-PyQt6-Qt6==6.9.0; python_version >= '3.9'
+PyQt6-sip==13.10.2; python_version >= '3.9'
+PyQt6==6.9.1; python_version >= '3.9'
+PyQt6-Qt6==6.9.1; python_version >= '3.9'
 PyQt6-3D==6.9.0; python_version >= '3.9'
-PyQt6-3D-Qt6==6.9.0; python_version >= '3.9'
+PyQt6-3D-Qt6==6.9.1; python_version >= '3.9'
 PyQt6-Charts==6.9.0; python_version >= '3.9'
-PyQt6-Charts-Qt6==6.9.0; python_version >= '3.9'
+PyQt6-Charts-Qt6==6.9.1; python_version >= '3.9'
 PyQt6-DataVisualization==6.9.0; python_version >= '3.9'
-PyQt6-DataVisualization-Qt6==6.9.0; python_version >= '3.9'
+PyQt6-DataVisualization-Qt6==6.9.1; python_version >= '3.9'
 PyQt6-Graphs==6.9.0; python_version >= '3.9'
-PyQt6-Graphs-Qt6==6.9.0; python_version >= '3.9'
+PyQt6-Graphs-Qt6==6.9.1; python_version >= '3.9'
 PyQt6-NetworkAuth==6.9.0; python_version >= '3.9'
-PyQt6-NetworkAuth-Qt6==6.9.0; python_version >= '3.9'
+PyQt6-NetworkAuth-Qt6==6.9.1; python_version >= '3.9'
 PyQt6-QScintilla==2.14.1; python_version >= '3.9'  # Does not have a corresponding -Qt6 package
 PyQt6-WebEngine==6.9.0; python_version >= '3.9'
-PyQt6-WebEngine-Qt6==6.9.0; python_version >= '3.9'
+PyQt6-WebEngine-Qt6==6.9.1; python_version >= '3.9'
 python-dateutil==2.9.0.post0
 pytz==2025.2
-requests==2.32.3
+requests==2.32.4
 scipy==1.16.0; python_version >= '3.11'
 # simplejson is used for text_c_extension
 simplejson==3.20.1
@@ -74,7 +74,7 @@ sphinx==8.3.0; python_version >= '3.11'
 # Required for test_namespace_package
 sqlalchemy==2.0.41
 zope.interface==7.2
-Pillow==11.2.1; python_version >= '3.9'
+Pillow==11.3.0; python_version >= '3.9'
 
 
 # Python versions not supported / supported for older package versions
