@@ -20,7 +20,7 @@ ipython==9.4.0; python_version >= "3.11"
 keyring==25.6.0; python_version >= "3.9"
 matplotlib==3.10.3; python_version >= "3.10"
 numpy==2.3.1; python_version >= "3.11"
-pandas==2.3.0; python_version >= "3.9"
+pandas==2.3.1; python_version >= "3.9"
 pygments==2.19.2
 PyGObject==3.52.3; sys_platform == "linux" and python_version >= "3.9"
 # Official PySide2 wheels do not support python 3.11 or newer. Nor are they available for arm64 on macOS.
@@ -70,7 +70,7 @@ requests==2.32.4
 scipy==1.16.0; python_version >= "3.11"
 # simplejson is used for text_c_extension
 simplejson==3.20.1
-sphinx==8.3.0; python_version >= "3.11"
+sphinx==8.2.3; python_version >= "3.11"
 # Required for test_namespace_package
 sqlalchemy==2.0.41
 zope.interface==7.2
