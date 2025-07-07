@@ -6,16 +6,16 @@
 # requirements-tools.txt and requirements-libraries.txt.
 
 # Work-around for a bug in execnet 1.4.1
-execnet >= 1.5.0
+execnet>=1.5.0
 
 # Testing framework.
-pytest >= 2.7.3
+pytest>=2.7.3
 
 # Plugin allowing running tests in parallel.
 pytest-xdist
 
 # Plugin to abort hanging tests.
-pytest-timeout >= 2.0.0
+pytest-timeout>=2.0.0
 
 # Allows specifying order without duplicates
 pytest-drop-dup-tests
@@ -25,4 +25,4 @@ pytest-rerunfailures
 
 # Better subprocess alternative with process tree support.
 # Not available on cygwin.
-psutil; sys_platform != 'cygwin'
+psutil; sys_platform != "cygwin"

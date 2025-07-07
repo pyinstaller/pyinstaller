@@ -16,10 +16,10 @@
 # binary PyPI wheels may be available only for released python versions
 # (i.e., they might be unavailable for pre-release versions).
 
-pywin32; sys_platform == 'win32'
+pywin32; sys_platform == "win32"
 
 lxml
 xmldiff
 
 # Used for strict validation of generated macOS .app bundles
-xattr; sys_platform == 'darwin'
+xattr; sys_platform == "darwin"

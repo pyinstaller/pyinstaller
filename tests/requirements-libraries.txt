@@ -13,28 +13,28 @@
 # -------
 # These packages work with no (known) issues.
 babel==2.17.0
-Django==5.2.4; python_version >= '3.10'
+Django==5.2.4; python_version >= "3.10"
 future==1.0.0
-gevent==25.5.1; python_version >= '3.9'
-ipython==9.4.0; python_version >= '3.11'
-keyring==25.6.0; python_version >= '3.9'
-matplotlib==3.10.3; python_version >= '3.10'
-numpy==2.3.1; python_version >= '3.11'
-pandas==2.3.0; python_version >= '3.9'
+gevent==25.5.1; python_version >= "3.9"
+ipython==9.4.0; python_version >= "3.11"
+keyring==25.6.0; python_version >= "3.9"
+matplotlib==3.10.3; python_version >= "3.10"
+numpy==2.3.1; python_version >= "3.11"
+pandas==2.3.0; python_version >= "3.9"
 pygments==2.19.2
-PyGObject==3.52.3; sys_platform == 'linux' and python_version >= '3.9'
+PyGObject==3.52.3; sys_platform == "linux" and python_version >= "3.9"
 # Official PySide2 wheels do not support python 3.11 or newer. Nor are they available for arm64 on macOS.
-PySide2==5.15.2.1; python_version < '3.11' and (sys_platform != 'darwin' or platform_machine != 'arm64')
+PySide2==5.15.2.1; python_version < "3.11" and (sys_platform != "darwin" or platform_machine != "arm64")
 # PySide6 is a metapackage that depends on PySide6-Essentials and PySide6-Addons. Their versions are
 # usually kept in sync.
-PySide6==6.9.1; python_version >= '3.9'
-PySide6-Addons==6.9.1; python_version >= '3.9'
-PySide6-Essentials==6.9.1; python_version >= '3.9'
+PySide6==6.9.1; python_version >= "3.9"
+PySide6-Addons==6.9.1; python_version >= "3.9"
+PySide6-Essentials==6.9.1; python_version >= "3.9"
 # PyQt5 and add-on packages
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
 # all platforms, while 5.15.11 are available only for macOS (and some of them only for arm64).
-PyQt5-sip==12.17.0; python_version >= '3.9'
+PyQt5-sip==12.17.0; python_version >= "3.9"
 PyQt5==5.15.11
 PyQt3D==5.15.7
 PyQtChart==5.15.7
@@ -48,33 +48,33 @@ PyQtWebEngine==5.15.7
 # but in contrast to Qt5 and PyQt5 bindings, the versions here must usually be kept in sync with the
 # version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
 # thus the ABI is still changing.
-PyQt6-sip==13.10.2; python_version >= '3.9'
-PyQt6==6.9.1; python_version >= '3.9'
-PyQt6-Qt6==6.9.1; python_version >= '3.9'
-PyQt6-3D==6.9.0; python_version >= '3.9'
-PyQt6-3D-Qt6==6.9.1; python_version >= '3.9'
-PyQt6-Charts==6.9.0; python_version >= '3.9'
-PyQt6-Charts-Qt6==6.9.1; python_version >= '3.9'
-PyQt6-DataVisualization==6.9.0; python_version >= '3.9'
-PyQt6-DataVisualization-Qt6==6.9.1; python_version >= '3.9'
-PyQt6-Graphs==6.9.0; python_version >= '3.9'
-PyQt6-Graphs-Qt6==6.9.1; python_version >= '3.9'
-PyQt6-NetworkAuth==6.9.0; python_version >= '3.9'
-PyQt6-NetworkAuth-Qt6==6.9.1; python_version >= '3.9'
-PyQt6-QScintilla==2.14.1; python_version >= '3.9'  # Does not have a corresponding -Qt6 package
-PyQt6-WebEngine==6.9.0; python_version >= '3.9'
-PyQt6-WebEngine-Qt6==6.9.1; python_version >= '3.9'
+PyQt6-sip==13.10.2; python_version >= "3.9"
+PyQt6==6.9.1; python_version >= "3.9"
+PyQt6-Qt6==6.9.1; python_version >= "3.9"
+PyQt6-3D==6.9.0; python_version >= "3.9"
+PyQt6-3D-Qt6==6.9.1; python_version >= "3.9"
+PyQt6-Charts==6.9.0; python_version >= "3.9"
+PyQt6-Charts-Qt6==6.9.1; python_version >= "3.9"
+PyQt6-DataVisualization==6.9.0; python_version >= "3.9"
+PyQt6-DataVisualization-Qt6==6.9.1; python_version >= "3.9"
+PyQt6-Graphs==6.9.0; python_version >= "3.9"
+PyQt6-Graphs-Qt6==6.9.1; python_version >= "3.9"
+PyQt6-NetworkAuth==6.9.0; python_version >= "3.9"
+PyQt6-NetworkAuth-Qt6==6.9.1; python_version >= "3.9"
+PyQt6-QScintilla==2.14.1; python_version >= "3.9"  # Does not have a corresponding -Qt6 package
+PyQt6-WebEngine==6.9.0; python_version >= "3.9"
+PyQt6-WebEngine-Qt6==6.9.1; python_version >= "3.9"
 python-dateutil==2.9.0.post0
 pytz==2025.2
 requests==2.32.4
-scipy==1.16.0; python_version >= '3.11'
+scipy==1.16.0; python_version >= "3.11"
 # simplejson is used for text_c_extension
 simplejson==3.20.1
-sphinx==8.3.0; python_version >= '3.11'
+sphinx==8.3.0; python_version >= "3.11"
 # Required for test_namespace_package
 sqlalchemy==2.0.41
 zope.interface==7.2
-Pillow==11.3.0; python_version >= '3.9'
+Pillow==11.3.0; python_version >= "3.9"
 
 
 # Python versions not supported / supported for older package versions
@@ -89,58 +89,58 @@ Pillow==11.3.0; python_version >= '3.9'
 
 # Python 3.10
 # -----------
-numpy==2.2.6; python_version == '3.10'  # pyup: ignore
-scipy==1.15.3; python_version == '3.10'  # pyup: ignore
+numpy==2.2.6; python_version == "3.10"  # pyup: ignore
+scipy==1.15.3; python_version == "3.10"  # pyup: ignore
 
-sphinx==8.1.3; python_version == '3.10'  # pyup: ignore
-ipython==8.32.0; python_version == '3.10' # pyup: ignore
+sphinx==8.1.3; python_version == "3.10"  # pyup: ignore
+ipython==8.32.0; python_version == "3.10" # pyup: ignore
 
 # Python 3.9
 # ----------
-Django==4.2.8; python_version == '3.9'  # pyup: ignore
+Django==4.2.8; python_version == "3.9"  # pyup: ignore
 
-numpy==2.0.1; python_version == '3.9'  # pyup: ignore
-scipy==1.13.1; python_version == '3.9'  # pyup: ignore
-matplotlib==3.9.3; python_version == '3.9'  # pyup: ignore
+numpy==2.0.1; python_version == "3.9"  # pyup: ignore
+scipy==1.13.1; python_version == "3.9"  # pyup: ignore
+matplotlib==3.9.3; python_version == "3.9"  # pyup: ignore
 
-sphinx==7.4.7; python_version == '3.9'  # pyup: ignore
+sphinx==7.4.7; python_version == "3.9"  # pyup: ignore
 
-ipython==8.18.1; python_version == '3.9'  # pyup: ignore
+ipython==8.18.1; python_version == "3.9"  # pyup: ignore
 
 # Python 3.8
 # ----------
-importlib_resources==6.4.5; python_version == '3.8'  # pyup: ignore
+importlib_resources==6.4.5; python_version == "3.8"  # pyup: ignore
 
-Django==4.2.8; python_version == '3.8'  # pyup: ignore
+Django==4.2.8; python_version == "3.8"  # pyup: ignore
 
-numpy==1.24.3; python_version == '3.8'  # pyup: ignore
-scipy==1.10.1; python_version == '3.8'  # pyup: ignore
-pandas==2.0.3; python_version == '3.8'  # pyup: ignore
-matplotlib==3.7.3; python_version == '3.8'  # pyup: ignore
+numpy==1.24.3; python_version == "3.8"  # pyup: ignore
+scipy==1.10.1; python_version == "3.8"  # pyup: ignore
+pandas==2.0.3; python_version == "3.8"  # pyup: ignore
+matplotlib==3.7.3; python_version == "3.8"  # pyup: ignore
 
-PyGObject==3.48.2; sys_platform == 'linux' and python_version == '3.8'  # pyup: ignore
+PyGObject==3.48.2; sys_platform == "linux" and python_version == "3.8"  # pyup: ignore
 
-PyQt5-sip==12.15.0; python_version == '3.8'  # pyup: ignore
-PyQt6-sip==13.8.0; python_version == '3.8'  # pyup: ignore
-PyQt6==6.7.1; python_version == '3.8'  # pyup: ignore
-PyQt6-Qt6==6.7.3; python_version == '3.8'  # pyup: ignore
-PyQt6-3D==6.7.0; python_version == '3.8'  # pyup: ignore
-PyQt6-3D-Qt6==6.7.3; python_version == '3.8'  # pyup: ignore
-PyQt6-Charts==6.7.0; python_version == '3.8'  # pyup: ignore
-PyQt6-Charts-Qt6==6.7.3; python_version == '3.8'  # pyup: ignore
-PyQt6-DataVisualization==6.7.0; python_version == '3.8'  # pyup: ignore
-PyQt6-DataVisualization-Qt6==6.7.3; python_version == '3.8'  # pyup: ignore
-PyQt6-NetworkAuth==6.7.0; python_version == '3.8'  # pyup: ignore
-PyQt6-NetworkAuth-Qt6==6.7.3; python_version == '3.8'  # pyup: ignore
+PyQt5-sip==12.15.0; python_version == "3.8"  # pyup: ignore
+PyQt6-sip==13.8.0; python_version == "3.8"  # pyup: ignore
+PyQt6==6.7.1; python_version == "3.8"  # pyup: ignore
+PyQt6-Qt6==6.7.3; python_version == "3.8"  # pyup: ignore
+PyQt6-3D==6.7.0; python_version == "3.8"  # pyup: ignore
+PyQt6-3D-Qt6==6.7.3; python_version == "3.8"  # pyup: ignore
+PyQt6-Charts==6.7.0; python_version == "3.8"  # pyup: ignore
+PyQt6-Charts-Qt6==6.7.3; python_version == "3.8"  # pyup: ignore
+PyQt6-DataVisualization==6.7.0; python_version == "3.8"  # pyup: ignore
+PyQt6-DataVisualization-Qt6==6.7.3; python_version == "3.8"  # pyup: ignore
+PyQt6-NetworkAuth==6.7.0; python_version == "3.8"  # pyup: ignore
+PyQt6-NetworkAuth-Qt6==6.7.3; python_version == "3.8"  # pyup: ignore
 
-PySide6==6.6.3.1; python_version == '3.8'  # pyup: ignore
-PySide6-Addons==6.6.3.1; python_version == '3.8'  # pyup: ignore
-PySide6-Essentials==6.6.3.1; python_version == '3.8'  # pyup: ignore
+PySide6==6.6.3.1; python_version == "3.8"  # pyup: ignore
+PySide6-Addons==6.6.3.1; python_version == "3.8"  # pyup: ignore
+PySide6-Essentials==6.6.3.1; python_version == "3.8"  # pyup: ignore
 
-sphinx==7.1.2; python_version == '3.8'  # pyup: ignore
+sphinx==7.1.2; python_version == "3.8"  # pyup: ignore
 
-ipython==8.12.1; python_version == '3.8'  # pyup: ignore
+ipython==8.12.1; python_version == "3.8"  # pyup: ignore
 
-Pillow==10.4.0; python_version == '3.8'  # pyup: ignore
+Pillow==10.4.0; python_version == "3.8"  # pyup: ignore
 
-keyring==25.5.0; python_version == '3.8'  # pyup: ignore
+keyring==25.5.0; python_version == "3.8"  # pyup: ignore

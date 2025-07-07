@@ -13,7 +13,7 @@
 ### Helpers for development
 
 ipython  # Better interactive Python shell.
-pyreadline ; sys_platform == 'win32'  # Colors in IPython, Windows-only package.
+pyreadline; sys_platform == "win32"  # Colors in IPython, Windows-only package.
 pycmd  # Contains 'py.cleanup' that removes all .pyc files and similar.
 
 ### Helpers for releases
