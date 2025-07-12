@@ -208,26 +208,65 @@ def binary_dependency_analysis(binaries, search_paths=None, symlink_suppression_
                 logger.debug("Adding symbolic link from %r to top-level application directory.", str(dep_dest_path))
                 output_toc.append((str(dep_dest_path.name), str(dep_dest_path), 'SYMLINK'))
 
-    # Display warnings about missing dependencies
-    seen_binaries = set([
-        os.path.normcase(os.path.basename(src_name)) for dest_name, src_name, typecode in output_toc
-        if typecode != 'SYMLINK'
-    ])
+    # Handle missing dependencies: display warnings, add missing symbolic links to top-level application directory, etc.
+    seen_binaries = {
+        os.path.normcase(os.path.basename(src_name)): (dest_name, src_name, typecode)
+        for dest_name, src_name, typecode in output_toc if typecode != 'SYMLINK'
+    }
+    existing_symlinks = set([dest_name for dest_name, src_name, typecode in output_toc if typecode == 'SYMLINK'])
+
     for dependency_name, referring_binary in missing_dependencies:
         # Ignore libraries that we would not collect in the first place.
         if not dylib.include_library(dependency_name):
             continue
-        # Apply global warning suppression rules.
-        if not dylib.warn_missing_lib(dependency_name):
-            continue
+
         # If the binary with a matching basename happens to be among the discovered binaries, suppress the message as
         # well. This might happen either because the library was collected by some other mechanism (for example, via
         # hook, or supplied by the user), or because it was discovered during the analysis of another binary (which,
         # for example, had properly set run-paths on Linux/macOS or was located next to that other analyzed binary on
         # Windows).
-        if os.path.normcase(os.path.basename(dependency_name)) in seen_binaries:
-            continue
-        logger.warning("Library not found: could not resolve %r, dependency of %r.", dependency_name, referring_binary)
+        #
+        # On non-Windows, also check if symbolic link to the discovered binary already exists in the top-level
+        # application directory, and if not, create it. This is important especially on macOS, where our library path
+        # rewriting assumes that all dependent libraries are available in the top-level application directory, or
+        # linked into it.
+        dependency_basename = os.path.normcase(os.path.basename(dependency_name))
+        dependency_toc_entry = seen_binaries.get(dependency_basename, None)
+        if dependency_toc_entry is None:
+            # Not found, emit a warning (subject to global warning suppression rules).
+            if not dylib.warn_missing_lib(dependency_name):
+                continue
+            logger.warning(
+                "Library not found: could not resolve %r, dependency of %r.", dependency_name, referring_binary
+            )
+        elif not compat.is_win:
+            # Found; generate symbolic link if necessary.
+            dependency_dest_path = pathlib.PurePath(dependency_toc_entry[0])
+            dependency_src_path = pathlib.Path(dependency_toc_entry[1])
+
+            if dependency_dest_path.parent == pathlib.PurePath('.'):
+                # The binary is collected into top-level application directory.
+                continue
+            elif dependency_basename in existing_symlinks:
+                # The symbolic link already exists.
+                continue
+
+            # Keep honoring symlink suppression patterns specified by hooks (same as in main binary dependency analysis
+            # loop).
+            if any(dependency_src_path.match(pattern) for pattern in symlink_suppression_patterns):
+                logger.info(
+                    "Missing dependency handling: skipping symbolic link from %r to top-level application directory "
+                    "due to source path matching one of symlink suppression path patterns.", str(dependency_dest_path)
+                )
+                continue
+
+            # Create the symbolic link
+            logger.info(
+                "Missing dependency handling: adding symbolic link from %r to top-level application directory.",
+                str(dependency_dest_path)
+            )
+            output_toc.append((dependency_basename, str(dependency_dest_path), 'SYMLINK'))
+            existing_symlinks.add(dependency_basename)
 
     return output_toc
 

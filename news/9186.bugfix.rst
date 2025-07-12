@@ -1,0 +1,4 @@
+(non-Windows) Ensure that binary dependency analysis creates symbolic
+links in top-level application directory for shared libraries that are
+not resolvable during binary dependency analysis but are nevertheless
+collected due to being explicitly collected by a hook or by the user.
