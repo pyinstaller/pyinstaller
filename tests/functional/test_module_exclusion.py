@@ -13,6 +13,8 @@ import pathlib
 
 import pytest
 
+from PyInstaller.utils.tests import importorskip, requires
+
 # Run the tests here in onedir mode only - onefile offers no additional insights in this context.
 pytestmark = pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
 
@@ -93,3 +95,20 @@ def test_subpackage_exclusion(pyi_builder, with_reference):
         source_code,
         pyi_args=pyi_args,
     )
+
+
+# Our hook for sqlalchemy excludes sqlalchemy.testing. Make sure explicitly importing the said subpackage works.
+# See #9193.
+@importorskip('sqlalchemy')
+def test_subpackage_exclusion_sqlalchemy_testing(pyi_builder):
+    pyi_builder.test_source("""
+        import sqlalchemy.testing
+        """)
+
+
+# Our hook for numpy excludes numpy.f2py for numpy < 2.0. Make sure explicitly importing the said subpackage works.
+@requires('numpy < 2.0')
+def test_subpackage_exclusion_numpy_f2py(pyi_builder):
+    pyi_builder.test_source("""
+        import numpy.f2py
+        """)
