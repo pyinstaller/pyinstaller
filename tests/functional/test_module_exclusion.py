@@ -13,6 +13,9 @@ import pathlib
 
 import pytest
 
+# Run the tests here in onedir mode only - onefile offers no additional insights in this context.
+pytestmark = pytest.mark.parametrize('pyi_builder', ['onedir'], indirect=True)
+
 # Directory with testing modules used in some tests.
 _MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
