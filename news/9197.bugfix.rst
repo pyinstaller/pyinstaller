@@ -1,0 +1,3 @@
+Fix a bug in module exclusion part of analysis codepath that would cause
+certain types of relative imports to be misinterpreted and thus fail to
+exclude them.

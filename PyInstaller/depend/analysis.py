@@ -397,12 +397,12 @@ class PyiModuleGraph(ModuleGraph):
                         # Module in a package; base name must be the parent package name!
                         base_module_name = '.'.join(source_module.identifier.split('.')[:-1])
 
-                    if target_module_partname:
-                        base_module_name += '.' + target_module_partname
-
                     # Adjust the base module name based on level
                     if level > 1:
                         base_module_name = '.'.join(base_module_name.split('.')[:-(level - 1)])
+
+                    if target_module_partname:
+                        base_module_name += '.' + target_module_partname
                 else:
                     base_module_name = target_module_partname
 
