@@ -406,7 +406,7 @@ class PyiModuleGraph(ModuleGraph):
                 else:
                     base_module_name = target_module_partname
 
-                def _exclude_module(module_name, excluded_imports):
+                def _exclude_module(module_name, excluded_imports, referrer_name):
                     """
                     Helper for checking whether given module should be excluded.
                     Returns the name of exclusion rule if module should be excluded, None otherwise.
@@ -416,13 +416,32 @@ class PyiModuleGraph(ModuleGraph):
                         excluded_import_parts = excluded_import.split('.')
                         match = module_name_parts[:len(excluded_import_parts)] == excluded_import_parts
                         if match:
+                            # Check if the referrer is (was!) subject to the same rule. Because if it was and was
+                            # analyzed anyway, some other import chain must have overrode the exclusion, and we should
+                            # waive it here. A package hook might exclude a part (a subpackage) of the said package to
+                            # prevent its collection when there are no external references; but when they are (for
+                            # example, user explicitly imports the said subpackage in their program), we must let the
+                            # subpackage import its submodules.
+                            referrer_name_parts = referrer_name.split('.')
+                            referrer_match = referrer_name_parts[:len(excluded_import_parts)] == excluded_import_parts
+                            if referrer_match:
+                                logger.debug(
+                                    "Deactivating suppression rule %r for module %r because it also applies to the "
+                                    "referrer (%r)...", excluded_import, module_name, referrer_name
+                                )
+                                continue
+
                             return excluded_import
                     return None
 
                 # First, check if base module name is to be excluded.
                 # This covers both basic `import a` and `import a.b.c`, as well as `from d import e, f` where base
                 # module `d` is excluded.
-                excluded_import_rule = _exclude_module(base_module_name, excluded_imports)
+                excluded_import_rule = _exclude_module(
+                    base_module_name,
+                    excluded_imports,
+                    source_module.identifier,
+                )
                 if excluded_import_rule:
                     logger.debug(
                         "Suppressing import of %r from module %r due to excluded import %r specified in a hook for %r "
@@ -437,7 +456,11 @@ class PyiModuleGraph(ModuleGraph):
                     filtered_target_attr_names = []
                     for target_attr_name in target_attr_names:
                         submodule_name = base_module_name + '.' + target_attr_name
-                        excluded_import_rule = _exclude_module(submodule_name, excluded_imports)
+                        excluded_import_rule = _exclude_module(
+                            submodule_name,
+                            excluded_imports,
+                            source_module.identifier,
+                        )
                         if excluded_import_rule:
                             logger.debug(
                                 "Suppressing import of %r from module %r due to excluded import %r specified in a hook "

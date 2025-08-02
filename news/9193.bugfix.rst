@@ -1,0 +1,6 @@
+Attempt to mitigate the issue with module exclusion when a top-level
+package hook excludes its own subpackage to prevent its collection
+in the absence of any external references; such exclusion rule would
+prevent collection of modules from such subpackage even when it is
+supposed to be collected due to an external reference (for example, an
+explicit import from the user's program).
