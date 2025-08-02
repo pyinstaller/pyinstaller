@@ -52,3 +52,44 @@ def test_module_exclusion(exclude_args, exclude_hooks, pyi_builder):
         pyi_args=pyi_args,
         run_from_path=True
     )
+
+
+# Tests for excluded subpackage from the top-level package hook. Ensure that such subpackage is excluded when the only
+# reference comes from within the corresponding top-level package (or one of its submodules/subpackages). However, if
+# the subpackage is referred from external source (e.g., user's program), then it should be collected and the exclusion
+# rule from the top-level package hook should not block collection of submodules from that subpackage.
+@pytest.mark.parametrize("with_reference", [False, True], ids=["noref", "ref"])
+def test_subpackage_exclusion(pyi_builder, with_reference):
+    pyi_args = [
+        '--paths',
+        str(_MODULES_DIR / 'pyi_excluded_subpackage' / 'modules'),
+        '--additional-hooks-dir',
+        str(_MODULES_DIR / 'pyi_excluded_subpackage' / 'hooks'),
+    ]
+
+    if with_reference:
+        # Explicit reference to excluded subpackage in user's program; we expect the subpackage to be fully collected.
+        source_code = (
+            """
+            import mypackage.optional  # is importable if its submodules are also collected.
+            assert mypackage.optional.optional_function() == 42
+            """
+        )
+    else:
+        # No reference to excluded subpackage other than in top-level package; we expect the subpackage to be excluded.
+        source_code = (
+            """
+            import importlib.util
+
+            import mypackage
+
+            # Ensure the optional subpackage is unavailable
+            optional_spec = importlib.util.find_spec('mypackage.optional')
+            assert optional_spec == None, "mypackage.optional is collected, but should not be!"
+            """
+        )
+
+    pyi_builder.test_source(
+        source_code,
+        pyi_args=pyi_args,
+    )
