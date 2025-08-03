@@ -40,7 +40,7 @@ static char *_wchar_to_utf8(const wchar_t *string_w)
     char *buffer;
     char *ptr;
     size_t len;
-    int i;
+    size_t i;
 
     /* For each input wide-character, the worst-case output is four bytes.
      * Plus, we need a terminating NUL character. Make sure that the
@@ -123,7 +123,7 @@ _locale_encoding_to_utf8(
 
         ret = snprintf(output_buffer, output_buffer_size, "%s", string_utf8);
         free(string_utf8);
-        if (ret < 0 || ret >= output_buffer_size) {
+        if (ret < 0 || (size_t)ret >= output_buffer_size) {
             return NULL;
         }
         return output_buffer;
