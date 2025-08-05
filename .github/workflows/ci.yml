@@ -514,11 +514,15 @@ jobs:
       - name: Checkout PyInstaller code
         uses: actions/checkout@v4
 
+      # Explicitly set CC=clang, to prevent `pip` from trying to build `psutil` extensions with `x86_64-linux-android-clang`,
+      # which (in contrast to `clang` and `gcc`) does not seem to set `__ANDROID_API__` and `__ANDROID_MIN_SDK_VERSION__`;
+      # consequently, `/usr/include/ifaddrs.h` header does not provide `getifaddrs()` and `freeifaddrs()`, leading to build error.
       - name: Run tests in container
         run: |
           docker run -v"$PWD:/io" termux/termux-docker:x86_64 bash -ec '
             echo "*** Installing system dependencies ***"
             pkg install -y python ldd binutils
+            export CC=clang
             echo "*** Installing PyInstaller ***"
             cp -fr /io $HOME/PyInstaller
             cd $HOME/PyInstaller
