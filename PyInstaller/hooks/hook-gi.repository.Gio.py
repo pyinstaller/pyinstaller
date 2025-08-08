@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Copyright (c) 2005-2023, PyInstaller Development Team.
+# Copyright (c) 2005-2025, PyInstaller Development Team.
 #
 # Distributed under the terms of the GNU General Public License (version 2
 # or later) with exception for distributing the bootloader.
@@ -25,23 +25,26 @@ if module_info.available:
     # Find Gio modules
     libdir = module_info.get_libdir()
     modules_pattern = None
+    gio_libdir = os.path.join(libdir, 'gio', 'modules')
+    runtime_path = 'gio_modules'
 
+    lib_ext = '*.so'
     if compat.is_win:
-        modules_pattern = os.path.join(libdir, 'gio', 'modules', '*.dll')
-    else:
-        gio_libdir = os.path.join(libdir, 'gio', 'modules')
-        if not os.path.exists(gio_libdir):
-            # homebrew installs the files elsewhere...
-            gio_libdir = os.path.join(os.path.commonprefix([compat.base_prefix, gio_libdir]), 'lib', 'gio', 'modules')
+        lib_ext = '*.dll'
 
-        if os.path.exists(gio_libdir):
-            modules_pattern = os.path.join(gio_libdir, '*.so')
-        else:
-            logger.warning('Could not determine Gio modules path!')
+    if not os.path.exists(gio_libdir):
+        # homebrew/MSYS2 may install the files elsewhere...
+        gio_libdir = os.path.join(os.path.commonprefix([compat.base_prefix, gio_libdir]), 'lib', 'gio', 'modules')
+
+    if os.path.exists(gio_libdir):
+        modules_pattern = os.path.join(gio_libdir, lib_ext)
+    else:
+        logger.warning('Could not determine Gio modules path!')
 
     if modules_pattern:
         for f in glob.glob(modules_pattern):
-            binaries.append((f, 'gio_modules'))
+            binaries.append((f, runtime_path))
+        datas.append((os.path.join(gio_libdir, 'giomodule.cache'), runtime_path))
     else:
         # To add a new platform add a new elif above with the proper is_<platform> and proper pattern for finding the
         # Gio modules on your platform.
