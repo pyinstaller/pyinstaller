@@ -244,7 +244,7 @@ jobs:
         id: run-tests
         run: >
             pytest
-            -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+            -n logical --maxfail 3 --durations 10 tests/unit tests/functional
 
       # On all platforms, create a tarball to ensure that symlinks are preserved. Avoid using compression here,
       # as the tarball will end up collected into artifact zip archive.
@@ -335,7 +335,7 @@ jobs:
           docker run
           foo
           pytest
-          -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+          -n logical --maxfail 3 --durations 10 tests/unit tests/functional
 
       # Verify that installing from sdist works. This is mostly just a verification that the MANIFEST.in contains
       # all the extras needed to compile the bootloader.
@@ -434,7 +434,7 @@ jobs:
       - name: Run tests
         run: >
             pytest
-            -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+            -n logical --maxfail 3 --durations 10 tests/unit tests/functional
 
   test-cygwin:
     runs-on: windows-latest
@@ -534,5 +534,5 @@ jobs:
             python -m pip install -r tests/requirements-base.txt
             echo "*** Running tests ***"
             export FORCE_COLOR=1
-            python -m pytest -n 4 --maxfail 3 --durations 10 tests/unit tests/functional
+            python -m pytest -n logical --maxfail 3 --durations 10 tests/unit tests/functional
           '
