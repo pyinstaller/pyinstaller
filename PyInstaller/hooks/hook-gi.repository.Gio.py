@@ -44,7 +44,9 @@ if module_info.available:
     if modules_pattern:
         for f in glob.glob(modules_pattern):
             binaries.append((f, runtime_path))
-        datas.append((os.path.join(gio_libdir, 'giomodule.cache'), runtime_path))
+        cache_file = os.path.join(gio_libdir, 'giomodule.cache')
+        if os.path.isfile(cache_file):
+            datas.append((cache_file, runtime_path))
     else:
         # To add a new platform add a new elif above with the proper is_<platform> and proper pattern for finding the
         # Gio modules on your platform.
