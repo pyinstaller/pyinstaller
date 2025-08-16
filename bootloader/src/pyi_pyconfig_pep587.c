@@ -245,10 +245,7 @@ _pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT
 int
 pyi_pyconfig_pep587_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx)
 {
-#if !defined(_WIN32)
-    /* Py_DecodeLocale / PyMem_RawFree in non-Windows codepath. */
     const struct DYLIB_PYTHON *dylib_python = pyi_ctx->dylib_python;
-#endif
 
     /* TODO: instead of stitching together char strings and converting
      * them, we could probably stitch together wide-char strings directly,
@@ -262,13 +259,16 @@ pyi_pyconfig_pep587_set_module_search_paths(PyConfig *config, const struct PYI_C
     int ret = 0;
     int i;
 
+    const int python_major = dylib_python->version / 100;
+    const int python_minor = dylib_python->version % 100;
+
     /* home/base_library.zip */
-    if (snprintf(base_library_path, PYI_PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, "base_library.zip") >= PYI_PATH_MAX) {
+    if (snprintf(base_library_path, PYI_PATH_MAX, "%s" PYI_SEPSTR "base_library.zip", pyi_ctx->application_home_dir) >= PYI_PATH_MAX) {
         return -1;
     }
 
-    /* home/lib-dynload */
-    if (snprintf(lib_dynload_path, PYI_PATH_MAX, "%s%c%s", pyi_ctx->application_home_dir, PYI_SEP, "lib-dynload") >= PYI_PATH_MAX) {
+    /* home/python3.x/lib-dynload */
+    if (snprintf(lib_dynload_path, PYI_PATH_MAX, "%s" PYI_SEPSTR "python%d.%d" PYI_SEPSTR "lib-dynload", pyi_ctx->application_home_dir, python_major, python_minor) >= PYI_PATH_MAX) {
         return -1;
     }
 

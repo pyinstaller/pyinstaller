@@ -1,0 +1,8 @@
+(POSIX) Adjust the destination directory for collected python's standard
+extensions, from ``lib-dynload`` to ``python3.x/lib-dynload`` directory,
+in order to preserve the relative relationship between the extension
+location and the (grand-parent) shared library directory that is commonly
+found in POSIX python environments. This is required for compatibility
+with upcoming Linux builds of ``astral-sh/python-build-standalone#`` that
+will set relative library paths in extensions via both ``DT_NEEDED`` and
+``DT_RPATH``.

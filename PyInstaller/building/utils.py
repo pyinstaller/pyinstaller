@@ -93,10 +93,13 @@ def destination_name_for_extension(module_name, src_name, typecode):
     src_path = pathlib.Path(src_name)
     dest_elements[-1] = src_path.name
 
-    # Extensions that originate from python's python3.x/lib-dynload directory should be diverted into lib-dynload
-    # destination directory instead of being collected into top-level application directory. See #5604.
+    # Extensions that originate from python's python3.x/lib-dynload directory should be diverted into
+    # python3.x/lib-dynload destination directory instead of being collected into top-level application directory.
+    # See #5604 for original motivation (using just lib-dynload), and #9204 for extension (using python3.x/lib-dynload).
     if src_path.parent.name == 'lib-dynload':
-        dest_elements = ['lib-dynload', *dest_elements]
+        python_dir = f'python{sys.version_info.major}.{sys.version_info.minor}'
+        if src_path.parent.parent.name == python_dir:
+            dest_elements = [python_dir, 'lib-dynload', *dest_elements]
 
     return os.path.join(*dest_elements)
 
@@ -635,7 +638,7 @@ def _should_include_system_binary(binary_tuple, exceptions):
     exclude_system_libraries method.
     """
     dest = binary_tuple[0]
-    if dest.startswith('lib-dynload'):
+    if dest.startswith(f'python{sys.version_info.major}.{sys.version_info.minor}/lib-dynload'):
         return True
     src = binary_tuple[1]
     if fnmatch.fnmatch(src, '*python*'):

@@ -215,6 +215,9 @@ pyi_pyconfig_pep741_set_module_search_paths(PyInitConfig *config, const struct P
 
     char *module_search_paths_utf8[3];
 
+    const int python_major = dylib_python->version / 100;
+    const int python_minor = dylib_python->version % 100;
+
     /* On Windows, the pyi_ctx->application_home_dir is already in UTF-8.
      * On other platforms, we need to convert it, but then we can use
      * the converted string as base for other paths. */
@@ -233,13 +236,13 @@ pyi_pyconfig_pep741_set_module_search_paths(PyInitConfig *config, const struct P
 #endif
 
     /* home/base_library.zip */
-    if (snprintf(base_library_path_utf8, PYI_PATH_MAX, "%s%c%s", home_dir_utf8, PYI_SEP, "base_library.zip") >= PYI_PATH_MAX) {
+    if (snprintf(base_library_path_utf8, PYI_PATH_MAX, "%s" PYI_SEPSTR "base_library.zip", home_dir_utf8) >= PYI_PATH_MAX) {
         PYI_ERROR("Failed to construct path to base_library.zip - path is too long!\n");
         return -1;
     }
 
-    /* home/lib-dynload */
-    if (snprintf(lib_dynload_path_utf8, PYI_PATH_MAX, "%s%c%s", home_dir_utf8, PYI_SEP, "lib-dynload") >= PYI_PATH_MAX) {
+    /* home/python3.x/lib-dynload */
+    if (snprintf(lib_dynload_path_utf8, PYI_PATH_MAX, "%s" PYI_SEPSTR "python%d.%d" PYI_SEPSTR "lib-dynload", home_dir_utf8, python_major, python_minor) >= PYI_PATH_MAX) {
         PYI_ERROR("Failed to construct path to lib-dynload directory - path is too long!\n");
         return -1;
     }

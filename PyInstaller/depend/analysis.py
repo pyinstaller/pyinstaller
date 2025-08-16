@@ -1006,7 +1006,7 @@ def get_bootstrap_modules():
         mod = __import__(mod_name)  # C extension.
         if hasattr(mod, '__file__'):
             mod_file = os.path.abspath(mod.__file__)
-            # Resolve full destination name for extension, diverting it into lib-dynload directory if
+            # Resolve full destination name for extension, diverting it into python3.x/lib-dynload directory if
             # necessary (to match behavior for extension collection introduced in #5604).
             mod_dest = destination_name_for_extension(mod_name, mod_file, 'EXTENSION')
             loader_mods.append((mod_dest, mod_file, 'EXTENSION'))

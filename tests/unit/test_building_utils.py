@@ -10,6 +10,7 @@
 #-----------------------------------------------------------------------------
 
 import os
+import sys
 import pathlib
 
 import pytest
@@ -114,8 +115,9 @@ def test_format_binaries_and_datas_with_bracket(tmp_path):
 
 
 def test_should_include_system_binary():
+    python_dir = f'python{sys.version_info.major}.{sys.version_info.minor}'
     CASES = [
-        ('lib-dynload/any', '/usr/lib64/any', [], True),
+        (f'{python_dir}/lib-dynload/any', f'/usr/lib64/{python_dir}/lib-dynload/any', [], True),
         ('libany', '/lib64/libpython.so', [], True),
         ('any', '/lib/python/site-packages/any', [], True),
         ('libany', '/etc/libany', [], True),
