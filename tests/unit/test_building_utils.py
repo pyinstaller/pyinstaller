@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import importlib.machinery
 import os
 import pathlib
 
@@ -112,51 +111,6 @@ def test_format_binaries_and_datas_with_bracket(tmp_path):
 
     res = utils.format_binaries_and_datas(datas, str(tmp_path))
     assert res == expected
-
-
-def test_add_suffix_to_extension():
-    SUFFIX = importlib.machinery.EXTENSION_SUFFIXES[0]
-    # Each test case is a tuple of four values:
-    #  * input dest_name
-    #  * output (expected) dest_name
-    #  * src
-    #  * typecode
-    # where (dest_name, src_name, typecode) is a TOC entry tuple.
-    # All paths are in POSIX format (and are converted to OS-specific path during the test itself).
-    CASES = [
-        # Stand-alone extension module
-        ('mypkg',
-         'mypkg' + SUFFIX,
-         'lib38/site-packages/mypkg' + SUFFIX,
-         'EXTENSION'),
-        # Extension module nested in a package
-        ('pkg.subpkg._extension',
-         'pkg/subpkg/_extension' + SUFFIX,
-         'lib38/site-packages/pkg/subpkg/_extension' + SUFFIX,
-         'EXTENSION'),
-        # Built-in extension originating from lib-dynload
-        ('lib-dynload/_extension',
-         'lib-dynload/_extension' + SUFFIX,
-         'lib38/lib-dynload/_extension' + SUFFIX,
-         'EXTENSION'),
-    ]  # yapf: disable
-
-    for case in CASES:
-        dest_name1 = str(pathlib.PurePath(case[0]))
-        dest_name2 = str(pathlib.PurePath(case[1]))
-        src_name = str(pathlib.PurePath(case[2]))
-        typecode = case[3]
-
-        toc = (dest_name1, src_name, typecode)
-        toc_expected = (dest_name2, src_name, typecode)
-
-        # Ensure that processing a TOC entry produces expected result.
-        toc2 = utils.add_suffix_to_extension(*toc)
-        assert toc2 == toc_expected
-
-        # Ensure that processing an already-processed TOC entry leaves it unchanged (i.e., does not mangle it).
-        toc3 = utils.add_suffix_to_extension(*toc2)
-        assert toc3 == toc2
 
 
 def test_should_include_system_binary():

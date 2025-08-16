@@ -42,7 +42,7 @@ from copy import deepcopy
 
 from PyInstaller import HOMEPATH, PACKAGEPATH
 from PyInstaller import log as logging
-from PyInstaller.building.utils import add_suffix_to_extension
+from PyInstaller.building.utils import destination_name_for_extension
 from PyInstaller.compat import (
     BAD_MODULE_TYPES, BINARY_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT, PURE_PYTHON_MODULE_TYPES, PY3_BASE_MODULES,
     VALID_MODULE_TYPES, importlib_load_source, is_win
@@ -1006,10 +1006,10 @@ def get_bootstrap_modules():
         mod = __import__(mod_name)  # C extension.
         if hasattr(mod, '__file__'):
             mod_file = os.path.abspath(mod.__file__)
-            if os.path.basename(os.path.dirname(mod_file)) == 'lib-dynload':
-                # Divert extensions originating from python's lib-dynload directory, to match behavior of #5604.
-                mod_name = os.path.join('lib-dynload', mod_name)
-            loader_mods.append(add_suffix_to_extension(mod_name, mod_file, 'EXTENSION'))
+            # Resolve full destination name for extension, diverting it into lib-dynload directory if
+            # necessary (to match behavior for extension collection introduced in #5604).
+            mod_dest = destination_name_for_extension(mod_name, mod_file, 'EXTENSION')
+            loader_mods.append((mod_dest, mod_file, 'EXTENSION'))
     loader_mods.append(('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'))
     # Loader/bootstrap modules.
     # NOTE: These modules should be kept simple without any complicated dependencies.

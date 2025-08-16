@@ -25,7 +25,7 @@ import zipfile
 
 from PyInstaller import compat
 from PyInstaller import log as logging
-from PyInstaller.compat import EXTENSION_SUFFIXES, is_aix, is_darwin, is_win, is_linux
+from PyInstaller.compat import is_aix, is_darwin, is_win, is_linux
 from PyInstaller.config import CONF
 from PyInstaller.exceptions import InvalidSrcDestTupleError
 from PyInstaller.utils import misc
@@ -77,31 +77,28 @@ def _check_guts_toc(attr_name, old_toc, new_toc, last_build):
         _check_guts_toc_mtime(attr_name, old_toc, new_toc, last_build)
 
 
-def add_suffix_to_extension(dest_name, src_name, typecode):
+def destination_name_for_extension(module_name, src_name, typecode):
     """
-    Take a TOC entry (dest_name, src_name, typecode) and adjust the dest_name for EXTENSION to include the full library
-    suffix.
+    Take a TOC entry (dest_name, src_name, typecode) and determine the full destination name for the extension.
     """
-    # No-op for non-extension
-    if typecode != 'EXTENSION':
-        return dest_name, src_name, typecode
 
-    # If dest_name completely fits into end of the src_name, it has already been processed.
-    if src_name.endswith(dest_name):
-        return dest_name, src_name, typecode
+    assert typecode == 'EXTENSION'
 
-    # Change the dotted name into a relative path. This places C extensions in the Python-standard location.
-    dest_name = dest_name.replace('.', os.sep)
-    # In some rare cases extension might already contain a suffix. Skip it in this case.
-    if os.path.splitext(dest_name)[1] not in EXTENSION_SUFFIXES:
-        # Determine the base name of the file.
-        base_name = os.path.basename(dest_name)
-        assert '.' not in base_name
-        # Use this file's existing extension. For extensions such as ``libzmq.cp36-win_amd64.pyd``, we cannot use
-        # ``os.path.splitext``, which would give only the ```.pyd`` part of the extension.
-        dest_name = dest_name + os.path.basename(src_name)[len(base_name):]
+    # The `module_name` should be the extension's importable module name, such as `psutil._psutil_linux` or
+    # `numpy._core._multiarray_umath`. Reconstruct the directory structure from parent package name(s), if any.
+    dest_elements = module_name.split('.')
 
-    return dest_name, src_name, typecode
+    # We have the base name of the extension file (the last element in the module name), but we do not know the
+    # full extension suffix. We can take that from source name; for simplicity, replace the whole base name part.
+    src_path = pathlib.Path(src_name)
+    dest_elements[-1] = src_path.name
+
+    # Extensions that originate from python's python3.x/lib-dynload directory should be diverted into lib-dynload
+    # destination directory instead of being collected into top-level application directory. See #5604.
+    if src_path.parent.name == 'lib-dynload':
+        dest_elements = ['lib-dynload', *dest_elements]
+
+    return os.path.join(*dest_elements)
 
 
 def process_collected_binary(
