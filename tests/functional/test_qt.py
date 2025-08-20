@@ -576,6 +576,11 @@ def test_Qt_QtWebEngineWidgets_PyQt6(pyi_builder):
     check_requirement('PyQt6-Qt6 == 6.6.3') and is_win,
     reason='PyQt6 6.6.3 PyPI wheels for Windows are missing Qt6WebChannelQuick shared library.'
 )
+@pytest.mark.flaky(
+    # The generated .app bundle seems to sporadically freeze during shutdown on GHA macos-14 runners.
+    condition=is_darwin,
+    reruns=1,
+)
 def test_Qt_QtWebEngineQuick_PyQt6(pyi_builder):
     _test_Qt_QtWebEngineQuick(pyi_builder, 'PyQt6')
 
@@ -593,6 +598,11 @@ def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
 @pytest.mark.skipif(
     check_requirement('PySide6 == 6.5.0') and is_win,
     reason='PySide6 6.5.0 PyPI wheels for Windows are missing opengl32sw.dll.'
+)
+@pytest.mark.flaky(
+    # The generated .app bundle seems to sporadically freeze during shutdown on GHA macos-14 runners.
+    condition=is_darwin,
+    reruns=1,
 )
 def test_Qt_QtWebEngineQuick_PySide6(pyi_builder):
     _test_Qt_QtWebEngineQuick(pyi_builder, 'PySide6')
