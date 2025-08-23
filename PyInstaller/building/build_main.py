@@ -683,10 +683,7 @@ class Analysis(Target):
 
         # Search for python shared library, which we need to collect into frozen application.
         logger.info('Looking for Python shared library...')
-        python_lib = bindepend.get_python_library_path()
-        if python_lib is None:
-            from PyInstaller.exceptions import PythonLibraryNotFoundError
-            raise PythonLibraryNotFoundError()
+        python_lib = bindepend.get_python_library_path()  # Raises PythonLibraryNotFoundError
         logger.info('Using Python shared library: %s', python_lib)
         if is_darwin and osxutils.is_framework_bundle_lib(python_lib):
             # If python library is located in macOS .framework bundle, collect the bundle, and create symbolic link to

@@ -853,70 +853,113 @@ def get_python_library_path():
     Its location can usually be inferred from the Python interpreter executable, when the latter is dynamically
     linked against the shared library.
 
-    However, some situations require extra handling due to various quirks; for example, debian-based some linux
+    However, some situations require extra handling due to various quirks; for example, Debian-based linux
     distributions statically link the Python interpreter executable against the Python library, while also providing
     a shared library variant for external users.
     """
-    def _find_lib_in_libdirs(*libdirs):
-        for libdir in libdirs:
-            for name in compat.PYDYLIB_NAMES:
-                full_path = os.path.join(libdir, name)
-                if not os.path.exists(full_path):
-                    continue
-                # Resolve potential symbolic links to achieve consistent results with linker-based search; e.g., on
-                # POSIX systems, linker resolves unversioned library names (python3.X.so) to versioned ones
-                # (libpython3.X.so.1.0) due to former being symbolic linkes to the latter. See #6831.
-                full_path = os.path.realpath(full_path)
-                if not os.path.exists(full_path):
-                    continue
-                return full_path
-        return None
 
-    # If this is Microsoft App Store Python, check the compat.base_path first. While compat.python_executable resolves
-    # to actual python.exe file, the latter contains a relative library reference that we fail to properly resolve.
-    if compat.is_ms_app_store:
-        python_libname = _find_lib_in_libdirs(compat.base_prefix)
-        if python_libname:
-            return python_libname
+    # With Windows Python builds, this is pretty straight-forward: `sys.dllhandle` provides a handle to the loaded
+    # Python DLL, and we can resolve its path using `GetModuleFileName()` from win32 API.
+    # This is applicable to python.org Windows builds, Anaconda on Windows, and MSYS2 Python.
+    if compat.is_win:
+        import _winapi
+        return _winapi.GetModuleFileName(sys.dllhandle)
 
-    # Try to get Python library name from the Python executable. It assumes that Python library is not statically
-    # linked.
+    # On other (POSIX) platforms, the name of the Python shared library is available in the `INSTSONAME` variable
+    # exposed by the `sysconfig` module. There is also the `LDLIBRARY` variable, which points to the unversioned .so
+    # symbolic link for linking purposes; however, we are interested in the actual, fully-versioned soname.
+    # This should cover all variations in the naming schemes across different platforms as well as different build
+    # options (debug build, free-threaded build, etc.).
+
+    # First, try to catch Python builds that were not made with shared library (or .framework bundle on macOS) enabled.
+    # In such builds, `INSTSONAME` seems to point to the static library, which is of no use to us.
+    is_shared = (
+        # Builds made with `--enable-shared` have `Py_ENABLE_SHARED` set to 1. This is true even for Debian-packaged
+        # Python, which has the `python` executable statically linked against the Python library.
+        sysconfig.get_config_var("Py_ENABLE_SHARED") or
+        # On macOS, builds made with `--enable-framework` have `Py_ENABLE_SHARED` set to 0, but have `PYTHONFRAMEWORK`
+        # set to a non-empty string.
+        (compat.is_darwin and sysconfig.get_config_var("PYTHONFRAMEWORK"))
+    )
+    if not is_shared:
+        from PyInstaller.exceptions import PythonLibraryNotFoundError
+        option_str = (
+            "either the `--enable-shared` or the `--enable-framework` option"
+            if compat.is_darwin else "the `--enable-shared` option"
+        )
+        raise PythonLibraryNotFoundError(
+            "Python was built without a shared library, which is required by PyInstaller. "
+            f"If you built Python from source, rebuild it with {option_str}."
+        )
+
+    expected_name = sysconfig.get_config_var('INSTSONAME')
+
+    # In Cygwin builds (and also MSYS2 python, although that should be handled by Windows-specific codepath...),
+    # INSTSONAME is available, but the name has a ".dll.a" suffix; remove that trailing ".a".
+    if (compat.is_win or compat.is_cygwin) and os.path.normcase(expected_name).endswith('.dll.a'):
+        expected_name = expected_name[:-2]
+
+    # NOTE: on macOS with .framework bundle build, INSTSONAME contains full name of the .framework library, for example
+    # `Python.framework/Versions/3.13/Python`. Pre-compute a basename for comparisons that are using only basename.
+    expected_basename = os.path.normcase(os.path.basename(expected_name))
+
+    # Try to find the expected name among the libraries against which the Python executable is linked. This assumes that
+    # the Python executable was not statically linked against the library (as is the case with Debian-packaged Python).
     imported_libraries = get_imports(compat.python_executable)  # (name, fullpath) tuples
     for _, lib_path in imported_libraries:
         if lib_path is None:
             continue  # Skip unresolved imports
-        for name in compat.PYDYLIB_NAMES:
-            if os.path.normcase(os.path.basename(lib_path)) == name:
-                # Python library found. Return absolute path to it.
-                return lib_path
+        if os.path.normcase(os.path.basename(lib_path)) == expected_basename:  # Basename comparison
+            # Python library found. Return absolute path to it.
+            return lib_path
 
-    # Work around for Python venv having VERSION.dll rather than pythonXY.dll
-    if compat.is_win and any([os.path.normcase(lib_name) == 'version.dll' for lib_name, _ in imported_libraries]):
-        pydll = 'python%d%d.dll' % sys.version_info[:2]
-        return resolve_library_path(pydll, [os.path.dirname(compat.python_executable)])
+    # As a fallback, try to find the library in several "standard" search locations...
+    def _find_lib_in_libdirs(name, *libdirs):
+        for libdir in libdirs:
+            full_path = os.path.join(libdir, name)
+            if not os.path.exists(full_path):
+                continue
+            # Resolve potential symbolic links to achieve consistent results with linker-based search; e.g., on
+            # POSIX systems, linker resolves unversioned library names (python3.X.so) to versioned ones
+            # (libpython3.X.so.1.0) due to former being symbolic linkes to the latter. See #6831.
+            full_path = os.path.realpath(full_path)
+            if not os.path.exists(full_path):
+                continue
+            return full_path
+        return None
 
     # Search the `sys.base_prefix` and `lib` directory in `sys.base_prefix`.
     # This covers various Python installations in case we fail to infer the shared library location for whatever reason;
     # Anaconda Python, `uv` and `rye` Python, etc.
     python_libname = _find_lib_in_libdirs(
+        expected_name,  # Full name
         compat.base_prefix,
         os.path.join(compat.base_prefix, 'lib'),
     )
     if python_libname:
         return python_libname
 
-    # On Unix-like systems, perform search in the configured library search locations. This should be done after
-    # exhausting all other options; it primarily caters to debian-packaged Python, but we need to make sure that we do
-    # not collect shared library from system-installed Python when the current interpreter is in fact some other Python
-    # build (for example, `uv` or `rye` Python of the same version as system-installed Python).
-    if compat.is_unix:
-        for name in compat.PYDYLIB_NAMES:
-            python_libname = resolve_library_path(name)
-            if python_libname:
-                return python_libname
+    # Perform search in the configured library search locations. This should be done after exhausting all other options;
+    # it primarily caters to Debian-packaged Python, but we need to make sure that we do not collect shared library from
+    # system-installed Python when the current interpreter is in fact some other Python build (for example, `uv` or
+    # `rye` Python of the same version as system-installed Python).
+    python_libname = resolve_library_path(expected_basename)  # Basename
+    if python_libname:
+        return python_libname
 
-    # Python library NOT found. Return None and let the caller deal with this.
-    return None
+    # Not found. Raise a PythonLibraryNotFoundError with corresponding message.
+    from PyInstaller.exceptions import PythonLibraryNotFoundError
+
+    message = f"ERROR: Python shared library ({expected_name!r}) was not found!"
+    if compat.is_linux and os.path.isfile('/etc/debian_version'):
+        # The shared library is provided by `libpython3.x` package (i.e., no need to install full `python3-dev`).
+        pkg_name = f"libpython3.{sys.version_info.minor}"
+        message += (
+            " If you are using system python on Debian/Ubuntu, you might need to install a separate package by running "
+            f"`apt install {pkg_name}`."
+        )
+
+    raise PythonLibraryNotFoundError(message)
 
 
 #- Binary vs data (re)classification

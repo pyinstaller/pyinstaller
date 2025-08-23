@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-from PyInstaller import compat
-
 
 class ExecCommandFailed(SystemExit):
     pass
@@ -54,21 +52,9 @@ class RemovedWinSideBySideSupportError(SystemExit):
         )
 
 
-_MISSING_PYTHON_LIB_MSG = \
-"""ERROR: Python library not found: {0}
-    This means your Python installation does not come with proper shared library files.
-    This usually happens due to missing development package, or unsuitable build parameters of the Python installation.
-
-    * On Debian/Ubuntu, you need to install Python development packages:
-      * apt-get install python3-dev
-      * apt-get install python-dev
-    * If you are building Python by yourself, rebuild with `--enable-shared` (or, `--enable-framework` on macOS).
-"""  # noqa: E122
-
-
-class PythonLibraryNotFoundError(IOError):
-    def __init__(self):
-        super().__init__(_MISSING_PYTHON_LIB_MSG.format(", ".join(compat.PYDYLIB_NAMES),))
+class PythonLibraryNotFoundError(SystemExit):
+    def __init__(self, message):
+        super().__init__(f"ERROR: {message}")
 
 
 class InvalidSrcDestTupleError(SystemExit):
