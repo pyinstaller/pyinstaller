@@ -881,7 +881,23 @@ def get_python_library_path():
         # set to a non-empty string.
         (compat.is_darwin and sysconfig.get_config_var("PYTHONFRAMEWORK"))
     )
-    if not is_shared:
+
+    if is_shared:
+        expected_name = sysconfig.get_config_var('INSTSONAME')
+    elif compat.is_conda:
+        # While Anaconda provides Python shared library, the interpreter executable and shared library seem to be made
+        # separately; therefore, the interpreter has `Py_ENABLE_SHARED` set to 0 and `INSTSONAME` points to a static
+        # library. And so we need to fall back to the old guess-work.
+        py_major, py_minor = sys.version_info[:2]
+        py_suffix = "t" if compat.is_nogil else ""  # TODO: does Anaconda provide debug builds with "d" suffix?
+        if compat.is_darwin:
+            # macOS
+            expected_name = f"libpython{py_major}.{py_minor}{py_suffix}.dylib"
+        else:
+            # Linux; assume any other potential POSIX builds use the same naming scheme.
+            expected_name = f"libpython{py_major}.{py_minor}{py_suffix}.so.1.0"
+    else:
+        # Raise PythonLibraryNotFoundError
         from PyInstaller.exceptions import PythonLibraryNotFoundError
         option_str = (
             "either the `--enable-shared` or the `--enable-framework` option"
@@ -891,8 +907,6 @@ def get_python_library_path():
             "Python was built without a shared library, which is required by PyInstaller. "
             f"If you built Python from source, rebuild it with {option_str}."
         )
-
-    expected_name = sysconfig.get_config_var('INSTSONAME')
 
     # In Cygwin builds (and also MSYS2 python, although that should be handled by Windows-specific codepath...),
     # INSTSONAME is available, but the name has a ".dll.a" suffix; remove that trailing ".a".
@@ -904,14 +918,16 @@ def get_python_library_path():
     expected_basename = os.path.normcase(os.path.basename(expected_name))
 
     # Try to find the expected name among the libraries against which the Python executable is linked. This assumes that
-    # the Python executable was not statically linked against the library (as is the case with Debian-packaged Python).
-    imported_libraries = get_imports(compat.python_executable)  # (name, fullpath) tuples
-    for _, lib_path in imported_libraries:
-        if lib_path is None:
-            continue  # Skip unresolved imports
-        if os.path.normcase(os.path.basename(lib_path)) == expected_basename:  # Basename comparison
-            # Python library found. Return absolute path to it.
-            return lib_path
+    # the Python executable was not statically linked against the library (as is the case with Debian-packaged Python,
+    # or Anaconda Python).
+    if is_shared:
+        imported_libraries = get_imports(compat.python_executable)  # (name, fullpath) tuples
+        for _, lib_path in imported_libraries:
+            if lib_path is None:
+                continue  # Skip unresolved imports
+            if os.path.normcase(os.path.basename(lib_path)) == expected_basename:  # Basename comparison
+                # Python library found. Return absolute path to it.
+                return lib_path
 
     # As a fallback, try to find the library in several "standard" search locations...
     def _find_lib_in_libdirs(name, *libdirs):
