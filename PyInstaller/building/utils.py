@@ -21,12 +21,12 @@ import shutil
 import struct
 import subprocess
 import sys
+import types
 import zipfile
 
 from PyInstaller import compat
 from PyInstaller import log as logging
 from PyInstaller.compat import is_aix, is_darwin, is_win, is_linux
-from PyInstaller.config import CONF
 from PyInstaller.exceptions import InvalidSrcDestTupleError
 from PyInstaller.utils import misc
 
@@ -603,30 +603,18 @@ def get_code_object(modname, filename, optimize):
     return code_object
 
 
-def strip_paths_in_code(co, new_filename=None):
-    # Paths to remove from filenames embedded in code objects
-    replace_paths = sys.path + CONF['pathex']
-    # Make sure paths end with os.sep and the longest paths are first
-    replace_paths = sorted((os.path.join(f, '') for f in replace_paths), key=len, reverse=True)
-
-    if new_filename is None:
-        original_filename = os.path.normpath(co.co_filename)
-        for f in replace_paths:
-            if original_filename.startswith(f):
-                new_filename = original_filename[len(f):]
-                break
-
-        else:
-            return co
-
-    code_func = type(co)
+def replace_filename_in_code_object(code_object, filename):
+    """
+    Recursively replace the `co_filename` in the given code object and code objects stored in its `co_consts` entries.
+    Primarily used to anonymize collected code objects, i.e., by removing the build environment's paths from them.
+    """
 
     consts = tuple(
-        strip_paths_in_code(const_co, new_filename) if isinstance(const_co, code_func) else const_co
-        for const_co in co.co_consts
+        replace_filename_in_code_object(const_co, filename) if isinstance(const_co, types.CodeType) else const_co
+        for const_co in code_object.co_consts
     )
 
-    return co.replace(co_consts=consts, co_filename=new_filename)
+    return code_object.replace(co_consts=consts, co_filename=filename)
 
 
 def _should_include_system_binary(binary_tuple, exceptions):
@@ -705,8 +693,10 @@ def compile_pymodule(name, src_path, workpath, optimize, code_cache=None):
         else:
             raise ValueError(f"Invalid python module file {src_path}; unhandled extension {ext}!")
 
-    # Strip code paths from the code object
-    code_object = strip_paths_in_code(code_object)
+    # Replace co_filename in code object with anonymized filename that does not contain full path. Construct the
+    # relative filename from module name, similar how we earlier constructed the `pyc_path`.
+    co_filename = os.path.join(*parent_dirs, mod_basename + '.py')
+    code_object = replace_filename_in_code_object(code_object, co_filename)
 
     # Write complete .pyc module to in-memory stream. Then, check if .pyc file already exists, compare contents, and
     # (re)write it only if different. This avoids unnecessary (re)writing of the file, and in turn also avoids
@@ -847,12 +837,13 @@ def create_base_library_zip(filename, modules_toc, code_cache=None):
             if basename == '__init__':
                 dest_name += os.sep + '__init__'
             dest_name += '.pyc'  # Always .pyc, regardless of optimization level.
+            # Replace full-path co_filename in code object with `dest_name` (and shorten suffix from .pyc to .py).
+            code = replace_filename_in_code_object(code, dest_name[:-1])
             # Write the .pyc module
             with io.BytesIO() as fc:
                 fc.write(compat.BYTECODE_MAGIC)
                 fc.write(struct.pack('<I', 0b01))  # PEP-552: hash-based pyc, check_source=False
                 fc.write(b'\00' * 8)  # Match behavior of `building.utils.compile_pymodule`
-                code = strip_paths_in_code(code)  # Strip paths
                 marshal.dump(code, fc)
                 # Use a ZipInfo to set timestamp for deterministic build.
                 info = zipfile.ZipInfo(dest_name)

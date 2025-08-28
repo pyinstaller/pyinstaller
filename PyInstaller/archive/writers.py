@@ -19,7 +19,7 @@ import struct
 import sys
 import zlib
 
-from PyInstaller.building.utils import get_code_object, strip_paths_in_code
+from PyInstaller.building.utils import get_code_object, replace_filename_in_code_object
 from PyInstaller.compat import BYTECODE_MAGIC, is_win, strict_collect_mode
 from PyInstaller.loader.pyimod01_archive import PYZ_ITEM_MODULE, PYZ_ITEM_NSPKG, PYZ_ITEM_PKG
 
@@ -86,7 +86,20 @@ class ZlibArchiveWriter:
             src_basename, _ = os.path.splitext(os.path.basename(src_path))
             if src_basename == '__init__':
                 typecode = PYZ_ITEM_PKG
-        data = marshal.dumps(code_dict[name])
+
+        code_object = code_dict[name]
+
+        # Replace co_filename on code object with anonymized version without absolute path to the module.
+        # Do this only for modules and packages (but not for namespace packages with dummy code objects).
+        if typecode != PYZ_ITEM_NSPKG:
+            if typecode == PYZ_ITEM_PKG:
+                co_filename = os.path.join(*name.split('.'), '__init__.py')
+            else:
+                co_filename = os.path.join(*name.split('.')) + '.py'
+            code_object = replace_filename_in_code_object(code_object, co_filename)
+
+        # Serialize
+        data = marshal.dumps(code_object)
 
         # First compress, then encrypt.
         obj = zlib.compress(data, cls._COMPRESSION_LEVEL)
@@ -211,7 +224,8 @@ class CArchiveWriter:
             # by the bootloader. For that, we need to know target optimization level, which is stored in typecode.
             optim_level = {'s': 0, 's1': 1, 's2': 2}[typecode]
             code = get_code_object(dest_name, src_name, optimize=optim_level)
-            code = strip_paths_in_code(code)
+            co_filename = dest_name + os.path.splitext(src_name)[1]  # Use dest name with suffix from source filename.
+            code = replace_filename_in_code_object(code, co_filename)
             return self._write_blob(fp, marshal.dumps(code), dest_name, 's', compress=compress)
         elif typecode in ('m', 'M'):
             # Read the PYC file. We do not perform compilation here (in contrast to script files in the above branch),
@@ -221,7 +235,8 @@ class CArchiveWriter:
             assert data[:4] == BYTECODE_MAGIC
             # Skip the PYC header, load the code object.
             code = marshal.loads(data[16:])
-            code = strip_paths_in_code(code)
+            co_filename = dest_name + '.py'  # Use dest name with added .py suffix.
+            code = replace_filename_in_code_object(code, co_filename)
             # These module entries are loaded and executed within the bootloader, which requires only the code
             # object, without the PYC header.
             return self._write_blob(fp, marshal.dumps(code), dest_name, typecode, compress=compress)

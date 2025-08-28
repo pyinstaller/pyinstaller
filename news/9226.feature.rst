@@ -1,0 +1,7 @@
+Rework the anonymization of the ``co_filename`` attribute in collected
+code objects - instead of trying to obtain anonymized relative name by
+removing known path prefixes from the original absolute-path ``co_filename``,
+we now construct the anonymized relative name directly from the collected
+module's (or script's) destination name w.r.t. its destination container
+(i.e., the ``PKG`` archive, the ``PYZ`` archive, or the ``base_library.zip``
+archive).

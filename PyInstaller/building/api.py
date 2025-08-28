@@ -28,8 +28,7 @@ from PyInstaller import log as logging
 from PyInstaller.archive.writers import CArchiveWriter, ZlibArchiveWriter
 from PyInstaller.building.datastruct import Target, _check_guts_eq, normalize_pyz_toc, normalize_toc
 from PyInstaller.building.utils import (
-    _check_guts_toc, _make_clean_directory, _rmtree, process_collected_binary, get_code_object, strip_paths_in_code,
-    compile_pymodule
+    _check_guts_toc, _make_clean_directory, _rmtree, process_collected_binary, get_code_object, compile_pymodule
 )
 from PyInstaller.building.splash import Splash  # argument type validation in EXE
 from PyInstaller.compat import is_cygwin, is_darwin, is_linux, is_win, strict_collect_mode, is_nogil, is_aix
@@ -152,9 +151,6 @@ class PYZ(Target):
                     # The module was likely written for different Python version; exclude it
                     continue
             archive_toc.append(entry)
-
-        # Remove leading parts of paths in code objects.
-        self.code_dict = {name: strip_paths_in_code(code) for name, code in self.code_dict.items()}
 
         # Create the archive
         ZlibArchiveWriter(self.name, archive_toc, code_dict=self.code_dict)
