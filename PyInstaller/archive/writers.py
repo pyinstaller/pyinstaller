@@ -77,26 +77,24 @@ class ZlibArchiveWriter:
         name, src_path, typecode = entry
         assert typecode in {'PYMODULE', 'PYMODULE-1', 'PYMODULE-2'}
 
-        typecode = PYZ_ITEM_MODULE
-        if src_path in ('-', None):
-            # This is a NamespacePackage, modulegraph marks them by using the filename '-'. (But wants to use None,
-            # so check for None, too, to be forward-compatible.)
-            typecode = PYZ_ITEM_NSPKG
-        else:
-            src_basename, _ = os.path.splitext(os.path.basename(src_path))
-            if src_basename == '__init__':
-                typecode = PYZ_ITEM_PKG
+        if src_path in {'-', None}:
+            # PEP-420 namespace package; these do not have code objects, but we still need an entry in PYZ to inform our
+            # run-time module finder/loader of the package's existence. So create a TOC entry for 0-byte data blob,
+            # and write no data.
+            return (name, (PYZ_ITEM_NSPKG, fp.tell(), 0))
 
         code_object = code_dict[name]
 
+        src_basename, _ = os.path.splitext(os.path.basename(src_path))
+        if src_basename == '__init__':
+            typecode = PYZ_ITEM_PKG
+            co_filename = os.path.join(*name.split('.'), '__init__.py')
+        else:
+            typecode = PYZ_ITEM_MODULE
+            co_filename = os.path.join(*name.split('.')) + '.py'
+
         # Replace co_filename on code object with anonymized version without absolute path to the module.
-        # Do this only for modules and packages (but not for namespace packages with dummy code objects).
-        if typecode != PYZ_ITEM_NSPKG:
-            if typecode == PYZ_ITEM_PKG:
-                co_filename = os.path.join(*name.split('.'), '__init__.py')
-            else:
-                co_filename = os.path.join(*name.split('.')) + '.py'
-            code_object = replace_filename_in_code_object(code_object, co_filename)
+        code_object = replace_filename_in_code_object(code_object, co_filename)
 
         # Serialize
         data = marshal.dumps(code_object)

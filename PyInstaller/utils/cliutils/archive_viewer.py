@@ -174,6 +174,8 @@ class ArchiveViewer:
                 data = archive.extract(name)
             elif isinstance(archive, ZlibArchiveReader):
                 data = archive.extract(name, raw=True)
+                if data is None:
+                    raise ValueError("Entry has no associated data!")
             else:
                 raise NotImplementedError(f"Extraction from archive type {type(archive)} not implemented!")
         except Exception as e:

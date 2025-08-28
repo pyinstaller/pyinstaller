@@ -560,45 +560,41 @@ def get_code_object(modname, filename, optimize):
     This is a simplifed non-performant version which circumvents __pycache__.
     """
 
-    if filename in ('-', None):
-        # This is a NamespacePackage, modulegraph marks them by using the filename '-'. (But wants to use None, so
-        # check for None, too, to be forward-compatible.)
-        logger.debug('Compiling namespace package %s', modname)
-        txt = '#\n'
-        code_object = compile(txt, filename, 'exec', optimize=optimize)
+    # Once upon a time, we compiled dummy code objects for PEP-420 namespace packages. We do not do that anymore.
+    assert filename not in {'-', None}, "Called with PEP-420 namespace package!"
+
+    _, ext = os.path.splitext(filename)
+    ext = ext.lower()
+
+    if ext == '.pyc':
+        # The module is available in binary-only form. Read the contents of .pyc file using helper function, which
+        # supports reading from either stand-alone or archive-embedded .pyc files.
+        logger.debug('Reading code object from .pyc file %s', filename)
+        pyc_data = _read_pyc_data(filename)
+        code_object = marshal.loads(pyc_data[16:])
     else:
+        # Assume this is a source .py file, but allow an arbitrary extension (other than .pyc, which is taken in
+        # the above branch). This allows entry-point scripts to have an arbitrary (or no) extension, as tested by
+        # the `test_arbitrary_ext` in `test_basic.py`.
+        logger.debug('Compiling python script/module file %s', filename)
+
+        with open(filename, 'rb') as f:
+            source = f.read()
+
+        # If entry-point script has no suffix, append .py when compiling the source. In POSIX builds, the executable
+        # has no suffix either; this causes issues with `traceback` module, as it tries to read the executable file
+        # when trying to look up the code for the entry-point script (when current working directory contains the
+        # executable).
         _, ext = os.path.splitext(filename)
-        ext = ext.lower()
+        if not ext:
+            logger.debug("Appending .py to compiled entry-point name...")
+            filename += '.py'
 
-        if ext == '.pyc':
-            # The module is available in binary-only form. Read the contents of .pyc file using helper function, which
-            # supports reading from either stand-alone or archive-embedded .pyc files.
-            logger.debug('Reading code object from .pyc file %s', filename)
-            pyc_data = _read_pyc_data(filename)
-            code_object = marshal.loads(pyc_data[16:])
-        else:
-            # Assume this is a source .py file, but allow an arbitrary extension (other than .pyc, which is taken in
-            # the above branch). This allows entry-point scripts to have an arbitrary (or no) extension, as tested by
-            # the `test_arbitrary_ext` in `test_basic.py`.
-            logger.debug('Compiling python script/module file %s', filename)
-
-            with open(filename, 'rb') as f:
-                source = f.read()
-
-            # If entry-point script has no suffix, append .py when compiling the source. In POSIX builds, the executable
-            # has no suffix either; this causes issues with `traceback` module, as it tries to read the executable file
-            # when trying to look up the code for the entry-point script (when current working directory contains the
-            # executable).
-            _, ext = os.path.splitext(filename)
-            if not ext:
-                logger.debug("Appending .py to compiled entry-point name...")
-                filename += '.py'
-
-            try:
-                code_object = compile(source, filename, 'exec', optimize=optimize)
-            except SyntaxError:
-                logger.warning("Sytnax error while compiling %s", filename)
-                raise
+        try:
+            code_object = compile(source, filename, 'exec', optimize=optimize)
+        except SyntaxError:
+            logger.warning("Sytnax error while compiling %s", filename)
+            raise
 
     return code_object
 

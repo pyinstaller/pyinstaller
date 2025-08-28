@@ -109,6 +109,10 @@ class ZlibArchiveReader:
             return None
         typecode, entry_offset, entry_length = entry
 
+        # PEP-420 namespace package does not have a data blob.
+        if typecode == PYZ_ITEM_NSPKG:
+            return None
+
         # Read data blob
         try:
             with open(self._filename, "rb") as fp:
@@ -127,7 +131,7 @@ class ZlibArchiveReader:
 
         try:
             obj = zlib.decompress(obj)
-            if typecode in (PYZ_ITEM_MODULE, PYZ_ITEM_PKG, PYZ_ITEM_NSPKG) and not raw:
+            if typecode in (PYZ_ITEM_MODULE, PYZ_ITEM_PKG) and not raw:
                 obj = marshal.loads(obj)
         except EOFError as e:
             raise ImportError(f"Failed to unmarshal PYZ entry {name!r}!") from e

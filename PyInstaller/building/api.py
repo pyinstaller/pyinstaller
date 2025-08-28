@@ -138,11 +138,12 @@ class PYZ(Target):
         logger.info("Building PYZ (ZlibArchive) %s", self.name)
 
         # Ensure code objects are available for all modules we are about to collect.
+        # NOTE: PEP-420 namespace packages (marked by src_path being set to '-') do not have code objects.
         # NOTE: `self.toc` is already sorted by names.
         archive_toc = []
         for entry in self.toc:
             name, src_path, typecode = entry
-            if name not in self.code_dict:
+            if src_path not in {'-', None} and name not in self.code_dict:
                 # The code object is not available from the ModuleGraph's cache; re-create it.
                 optim_level = {'PYMODULE': 0, 'PYMODULE-1': 1, 'PYMODULE-2': 2}[typecode]
                 try:
