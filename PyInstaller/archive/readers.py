@@ -174,7 +174,7 @@ class CArchiveReader:
 
         entry = self.toc.get(name)
         if entry is None:
-            raise KeyError(f"No entry named {name} found in the archive!")
+            raise KeyError(f"No entry named {name!r} found in the archive!")
 
         entry_offset, data_length, uncompressed_length, compression_flag, typecode = entry
         with open(self._filename, "rb") as fp:
@@ -203,7 +203,7 @@ class CArchiveReader:
 
         entry = self.toc.get(name)
         if entry is None:
-            raise KeyError(f"No entry named {name} found in the archive!")
+            raise KeyError(f"No entry named {name!r} found in the archive!")
 
         entry_offset, data_length, uncompressed_length, compression_flag, typecode = entry
 
@@ -213,7 +213,7 @@ class CArchiveReader:
         elif typecode == PKG_ITEM_ZIPFILE:
             raise NotAnArchiveError("Zipfile archives not supported yet!")
         else:
-            raise NotAnArchiveError(f"Entry {name} is not a supported embedded archive!")
+            raise NotAnArchiveError(f"Entry {name!r} is not a supported embedded archive!")
 
 
 def pkg_archive_contents(filename, recursive=True):

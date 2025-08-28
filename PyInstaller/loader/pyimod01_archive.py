@@ -106,7 +106,8 @@ class ZlibArchiveReader:
         # Look up entry
         entry = self.toc.get(name)
         if entry is None:
-            return None
+            raise KeyError(f"No entry named {name!r} found in the archive!")
+
         typecode, entry_offset, entry_length = entry
 
         # PEP-420 namespace package does not have a data blob.
