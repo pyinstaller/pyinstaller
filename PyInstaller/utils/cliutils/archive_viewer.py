@@ -180,6 +180,7 @@ class ArchiveViewer:
                 raise NotImplementedError(f"Extraction from archive type {type(archive)} not implemented!")
         except Exception as e:
             print(f"Failed to extract data for entry {name!r} from {archive_name!r}: {e}", file=sys.stderr)
+            return
 
         # Write to file
         filename = input('Output filename? ')
