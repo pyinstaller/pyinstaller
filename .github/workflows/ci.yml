@@ -1,16 +1,9 @@
 name: CI
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events for develop branch.
 on:
-  push:
+  pull_request:  # Trigger on PRs opened against develop branch
     branches:
-      - 'develop'
-  pull_request:
-    branches:
-      - '**'
-      - '!master'
-      - '!pyup/**'
+      - develop
 
 env:
   # Colored pytest output on CI despite not having a tty
