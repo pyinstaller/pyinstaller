@@ -27,10 +27,10 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: 3.8
+        python-version: 3.x
 
     - name: Install dependencies
-      run: pip install --upgrade flake8 yapf==0.32.0 toml
+      run: pip install --upgrade flake8 yapf==0.43.0 toml
 
     - name: Test that yapf has been applied
       # If this check fails for your PR, run `yapf -rip .`
