@@ -1,10 +1,9 @@
 name: Lint
 
 on:
-  pull_request:  # Trigger on PRs to develop and v4
+  pull_request:  # Trigger on PRs opened against develop branch
     branches:
       - develop
-      - v4
 
 jobs:
   run:

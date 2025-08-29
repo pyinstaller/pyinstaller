@@ -1,12 +1,11 @@
 name: CI
 
 # Controls when the action will run. Triggers the workflow on push or pull request
-# events for develop and v4 branche.
+# events for develop branch.
 on:
   push:
     branches:
       - 'develop'
-      - 'v4'
   pull_request:
     branches:
       - '**'
