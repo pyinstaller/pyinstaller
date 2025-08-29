@@ -21,7 +21,8 @@ pytest-timeout>=2.0.0
 pytest-drop-dup-tests
 
 # Rerun flaky (apple event related) tests
-pytest-rerunfailures
+# Avoid pytest-rerunfailures v16.0 due to https://github.com/pytest-dev/pytest-rerunfailures/issues/302
+pytest-rerunfailures!=16.0
 
 # Better subprocess alternative with process tree support.
 # Not available on cygwin.
