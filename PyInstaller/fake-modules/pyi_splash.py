@@ -82,7 +82,7 @@ def _initialize():
 
     :return:
     """
-    global _initialized, _ipc_socket, _ipc_socket_closed
+    global _initialized, _ipc_socket_closed
 
     # If _ipc_port is zero, the splash screen is intentionally suppressed (for example, we are in sub-process spawned
     # via sys.executable). Mark the splash screen as initialized, but do not attempt to connect.
