@@ -2,6 +2,7 @@
 name: Validate new news entries
 
 on:
+  workflow_dispatch:  # Allow workflow to be manually triggered
   pull_request:  # Trigger on PRs opened against develop branch
     branches:
       - develop
