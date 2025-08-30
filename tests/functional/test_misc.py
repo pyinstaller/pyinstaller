@@ -465,3 +465,50 @@ def test_recursive_add_data(pyi_builder, scenario):
         pyi_args=['--add-data', f'{add_data_arg!s}:data-dir'],
         app_args=[*expected_files],
     )
+
+
+# Ensure that time.sleep() works as expected in the frozen application. See #8104, #9225.
+# Separately test console/windowed builds, as they have (slightly) different bootloaders.
+@pytest.mark.parametrize('windowed', [False, True], ids=['console', 'windowed'])
+def test_time_sleep(pyi_builder, windowed):
+    pyi_builder.test_source(
+        """
+        import sys
+        import time
+        import datetime
+
+        ITERATIONS = 5
+        DELAY = 1  # seconds
+
+        elapsed = []
+        for i in range(ITERATIONS):
+            print(f"Iteration #{i+1} at {datetime.datetime.now()}", file=sys.stderr)
+            start_time = time.monotonic()
+            time.sleep(DELAY)
+            elapsed.append(time.monotonic() - start_time)
+
+        print("Elapsed times (monotonic clock):", file=sys.stderr)
+
+        test_ok = True
+        for idx, value in enumerate(elapsed):
+            delta = (value - DELAY) * 1000  # ms
+
+            # We are trying to catch cases when the elapsed time interval is *shorter* than the requested delay, which
+            # indicates mis-behaving time.sleep() as per #8104. Typically the elapsed time interval is a bit longer than
+            # the requested delay, but the delta varies depending on system scheduling and load.
+            if delta < 0:
+                status = 'TOO SHORT'
+                test_ok = False
+            else:
+                status = 'OK'
+
+            print(f" - #{idx+1}: {value:.6f} s, delta: {delta:.4f} ms ({status})", file=sys.stderr)
+
+        if test_ok:
+            print("Test passed.", file=sys.stderr)
+        else:
+            print("Test failed.", file=sys.stderr)
+            sys.exit(1)
+        """,
+        pyi_args=['--windowed'] if windowed else [],
+    )
