@@ -1,0 +1,23 @@
+[tool.towncrier]
+filename = "doc/CHANGES.rst"
+directory = "news"
+template = "news/_template.rst"
+underlines = "-~^"
+wrap = true
+package = "PyInstaller"
+title_format = "{version} ({project_date})"
+section = [ { path = "" } ]
+type = [
+    { directory = "feature", name = "Features", showcontent = true },
+    { directory = "bugfix", name = "Bugfix", showcontent = true },
+    { directory = "breaking", name = "Incompatible Changes", showcontent = true },
+    { directory = "deprecation", name = "Deprecations", showcontent = true },
+    { directory = "hooks", name = "Hooks", showcontent = true },
+    { directory = "bootloader", name = "Bootloader", showcontent = true },
+    { directory = "moduleloader", name = "Module Loader", showcontent = true },
+    { directory = "doc", name = "Documentation", showcontent = true },
+    { directory = "process", name = "Project & Process", showcontent = true },
+    { directory = "core", name = "PyInstaller Core", showcontent = true },
+    { directory = "tests", name = "Test-suite and Continuous Integration", showcontent = true },
+    { directory = "build", name = "Bootloader build", showcontent = true },
+]

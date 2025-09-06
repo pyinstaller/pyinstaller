@@ -1,0 +1,16 @@
+[flake8]
+exclude =
+   .git,
+   doc/_build,
+   doc/conf.py,
+   build,
+   dist,
+   bootloader,
+   PyInstaller/lib,
+   tests/functional/data/sphinx/conf.py,
+   tests/functional/data/name_clash_with_entry_point
+   tests/unit/test_modulegraph,
+show-source = True
+# E265 - block comment should start with '# '
+extend-ignore = E265
+max-line-length=120

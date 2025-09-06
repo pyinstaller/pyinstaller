@@ -58,7 +58,7 @@ def pytest_runtest_setup(item):
     Markers to skip tests based on the current platform.
     https://pytest.org/en/stable/example/markers.html#marking-platform-specific-tests-with-pytest
 
-    Available markers: see setup.cfg [tool:pytest] markers
+    Available markers: see pytest.ini markers
         - @pytest.mark.darwin (macOS)
         - @pytest.mark.linux (GNU/Linux)
         - @pytest.mark.win32 (Windows)
