@@ -3,9 +3,8 @@
 wheel() {
   platform="$1"
   wheel_tag="$2"
-  rm -rf build/
   echo "--- $platform ---"
-  PYI_WHEEL_TAG="$wheel_tag" PYI_PLATFORM="$platform" python -m build --no-isolation --wheel --outdir=dist . > /dev/null
+  PYI_WHEEL_TAG="$wheel_tag" PYI_PLATFORM="$platform" python -m hatchling build -t wheel
 }
 
 wheel Windows-64bit-intel win_amd64
@@ -20,5 +19,4 @@ wheel Linux-64bit-s390x manylinux2014_s390x
 wheel Linux-64bit-intel-musl musllinux_1_1_x86_64
 wheel Linux-64bit-arm-musl musllinux_1_1_aarch64
 
-rm -rf build/
-python -m build --sdist --no-isolation --outdir=dist > /dev/null
+python -m hatchling build -t sdist

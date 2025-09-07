@@ -38,12 +38,6 @@ Installing from the source archive
 The source code archive for released versions of PyInstaller are
 available at PyPI_ and on `PyInstaller Downloads`_ page.
 
-.. Note::
-    Even though the source archive provides the ``setup.py`` script,
-    installation via ``python setup.py install`` has been deprecated
-    and should not be used anymore. Instead, run ``pip install .`` from
-    the unpacked source directory, as described below.
-
 The installation procedure is:
     1. Unpack the source archive.
 

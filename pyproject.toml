@@ -1,5 +1,112 @@
+[project]
+name = "pyinstaller"
+dynamic = ["version"]
+description = "PyInstaller bundles a Python application and all its dependencies into a single package."
+readme = "README.rst"
+requires-python = ">=3.8, <3.15"
+license.text = "GPLv2-or-later with a special exception which allows to use PyInstaller to build and distribute non-free programs (including commercial ones)"
+authors = [
+    { name = "Hartmut Goebel" },
+    { name = "Giovanni Bajo" },
+    { name = "David Vierra" },
+    { name = "David Cortesi" },
+    { name = "Martin Zibricky" },
+]
+keywords = [
+    "packaging", "app", "apps", "bundle", "convert", "standalone", "executable",
+    "pyinstaller", "cxfreeze", "freeze", "py2exe", "py2app", "bbfreeze",
+]
+dependencies = [
+    "setuptools >= 42.0.0",
+    "altgraph",
+    # pefile 2024.8.26 contains performance regression that heavily impacts our binary dependency analysis
+    "pefile >= 2022.5.30, != 2024.8.26; sys_platform == 'win32'",
+    "pywin32-ctypes >= 0.2.1 ; sys_platform == 'win32'",
+    "macholib >= 1.8 ; sys_platform == 'darwin'",
+    "pyinstaller-hooks-contrib >= 2025.8",
+    "importlib_metadata >= 4.6 ; python_version < '3.10'",
+    "packaging >= 22.0",
+]
+classifiers = [
+    "Development Status :: 6 - Mature",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Other Audience",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Natural Language :: English",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: POSIX :: AIX",
+    "Operating System :: POSIX :: BSD",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: POSIX :: SunOS/Solaris",
+    "Programming Language :: C",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Interpreters",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Installation/Setup",
+    "Topic :: System :: Software Distribution",
+    "Topic :: Utilities",
+]
+
+[project.scripts]
+pyinstaller = "PyInstaller.__main__:_console_script_run"
+pyi-archive_viewer = "PyInstaller.utils.cliutils.archive_viewer:run"
+pyi-bindepend = "PyInstaller.utils.cliutils.bindepend:run"
+pyi-grab_version = "PyInstaller.utils.cliutils.grab_version:run"
+pyi-makespec = "PyInstaller.utils.cliutils.makespec:run"
+pyi-set_version = "PyInstaller.utils.cliutils.set_version:run"
+
+[project.urls]
+Homepage = "https://pyinstaller.org"
+Documentation = "https://pyinstaller.org"
+"Source Code" = "https://github.com/pyinstaller/pyinstaller"
+"Release Notes" = "https://pyinstaller.org/en/stable/CHANGES.html"
+
+[project.optional-dependencies]
+# for 3rd-party packages testing their hooks in their CI:
+hook_testing = ["pytest >= 2.7.3", "execnet >= 1.5.0", "psutil"]
+# for CLI tab completion
+completion = ["argcomplete"]
+
 [build-system]
-requires = [
-  # Required for setuptools.command.bdist_wheel.bdist_wheel
-	"setuptools >= 70.1.0",
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch]
+version.path = "PyInstaller/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["PyInstaller"]
+hooks.custom.path = "hatch_build.py"
+exclude = [
+    "PyInstaller/bootloader/",
+]
+[tool.hatch.build.targets.sdist]
+# hatchling defaults to ignoring gitignored files. Gitignored files we want
+# should be listed here.
+artifacts = [
+    "tests/unit/test_modulegraph/testdata/syspath",
+    "tests/unit/hookutils_files/hookutils_package/pyextension.pyd",
+    "tests/unit/test_modulegraph/testpkg-setuptools-namespace/src/nspkg.egg-info",
+    "tests/unit/Tree_files/pyextension.pyd",
+    "PyInstaller/bootloader/Windows-32bit-intel",  # For MSYS2
+]
+# And tracked files we don't want in sdists go here.
+exclude = [
+    "PyInstaller/bootloader/Linux-*",
 ]

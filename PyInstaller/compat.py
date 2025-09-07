@@ -29,11 +29,11 @@ import types
 from PyInstaller._shared_with_waf import _pyi_machine
 from PyInstaller.exceptions import ExecCommandFailed
 
-# setup.py sets this environment variable to avoid errors due to unmet run-time dependencies. The PyInstaller.compat
-# module is imported by setup.py to build wheels, and some dependencies that are otherwise required at run-time
-# (importlib-metadata on python < 3.10, pywin32-ctypes on Windows) might not be present while building wheels,
-# nor are they required during that phase.
-_setup_py_mode = os.environ.get('_PYINSTALLER_SETUP_PY', '0') != '0'
+# hatch_build.py sets this environment variable to avoid errors due to unmet run-time dependencies. The
+# PyInstaller.compat module is imported by hatch_build.py to build wheels, and some dependencies that are otherwise
+# required at run-time (importlib-metadata on python < 3.10, pywin32-ctypes on Windows) might not be present while
+# building wheels, nor are they required during that phase.
+_setup_py_mode = os.environ.get('_PYINSTALLER_SETUP', '0') != '0'
 
 # PyInstaller requires importlib.metadata from python >= 3.10 stdlib, or equivalent importlib-metadata >= 4.6.
 if _setup_py_mode:
