@@ -479,6 +479,7 @@ def test_time_sleep(pyi_builder, windowed):
 
         ITERATIONS = 5
         DELAY = 1  # seconds
+        TOL = 50  # milliseconds
 
         elapsed = []
         for i in range(ITERATIONS):
@@ -496,7 +497,7 @@ def test_time_sleep(pyi_builder, windowed):
             # We are trying to catch cases when the elapsed time interval is *shorter* than the requested delay, which
             # indicates mis-behaving time.sleep() as per #8104. Typically the elapsed time interval is a bit longer than
             # the requested delay, but the delta varies depending on system scheduling and load.
-            if delta < 0:
+            if delta < 0 and abs(delta) >= TOL:
                 status = 'TOO SHORT'
                 test_ok = False
             else:
