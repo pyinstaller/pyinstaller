@@ -159,7 +159,10 @@ jobs:
           import shutil
           import importlib.util
 
-          spec = importlib.util.find_spec('setuptools._vendor.importlib_resources')
+          try:
+            spec = importlib.util.find_spec('setuptools._vendor.importlib_resources')
+          except ImportError:
+            spec = None  # setuptools or setuptools._vendor does not exist
           if spec is None:
             print("Did not find setuptools-vendored copy of importlib_resources.")
             sys.exit(0)
