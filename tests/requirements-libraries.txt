@@ -75,6 +75,7 @@ sphinx==8.2.3; python_version >= "3.11"
 sqlalchemy==2.0.43
 zope.interface==7.2
 Pillow==11.3.0; python_version >= "3.9"
+setuptools==80.9.0; python_version >= "3.9"
 
 
 # Python versions not supported / supported for older package versions
@@ -146,3 +147,5 @@ Pillow==10.4.0; python_version == "3.8"  # pyup: ignore
 keyring==25.5.0; python_version == "3.8"  # pyup: ignore
 
 requests==2.32.4; python_version == "3.8"  # pyup: ignore
+
+setuptools==75.3.2; python_version == "3.8"  # pyup: ignore

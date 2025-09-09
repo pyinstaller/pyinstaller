@@ -141,7 +141,7 @@ jobs:
             ls ../PyInstaller/bootloader/Windows-64bit-arm
 
       - name: Update pip
-        run: python -m pip install --upgrade pip setuptools hatchling
+        run: python -m pip install --upgrade pip hatchling
 
       # On (macos-14, python 3.10), (macos-13, python 3.11) and (macos-14, python 3.11)
       # combinations the initial `setuptools` installation seems to contain `.opt-1.pyc`
