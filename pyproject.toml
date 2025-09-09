@@ -14,7 +14,6 @@ authors = [
 ]
 keywords = [
     "packaging", "app", "apps", "bundle", "convert", "standalone", "executable",
-    "pyinstaller", "cxfreeze", "freeze", "py2exe", "py2app", "bbfreeze",
 ]
 dependencies = [
     "setuptools >= 42.0.0",
