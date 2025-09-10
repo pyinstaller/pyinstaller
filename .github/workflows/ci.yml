@@ -143,7 +143,36 @@ jobs:
       - name: Update pip
         run: python -m pip install --upgrade pip hatchling
 
-      # On (macos-14, python 3.10), (macos-13, python 3.11) and (macos-14, python 3.11)
+      - name: Compile bootloader
+        run: cd bootloader && python waf --tests all
+
+      - name: Download dependencies
+        shell: bash
+        run: python -m pip download --dest=dist .[completion] && rm -f dist/pyinstaller-*.whl
+
+      - name: Build wheels
+        run: sh release/build-wheels
+
+      - name: Install PyInstaller
+        run: python -m pip install --no-index --find-links=dist pyinstaller[completion]
+
+      - name: Check pyinstaller --help
+        run: python -m PyInstaller -h
+
+      - name: Install test dependencies (base tools)
+        run: |
+          python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-base.txt
+
+      # Give python 3.13t same treatment as development version and avoid trying to install packges
+      # from requirements-libraries.txt. This is necessary because not all packages provide free-threaded
+      # builds of their wheels yet, and we have no way of filtering them in the requirements file.
+      # This should be remedied in python 3.14 with the new `sys_abi_feature` environment marker (PEP 780).
+      - name: Install test dependencies (tools and libraries)
+        if: ${{ !endsWith(matrix.python-version, '-dev') && matrix.python-version != '3.13t' }}
+        run: |
+          python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
+
+            # On (macos-14, python 3.10), (macos-13, python 3.11) and (macos-14, python 3.11)
       # combinations the initial `setuptools` installation seems to contain `.opt-1.pyc`
       # files in `__pycache__` directories. During the upgrade, `pip` fails to remove
       # those directories (https://github.com/pypa/pip/issues/11835).
@@ -189,35 +218,6 @@ jobs:
           for path in spec.submodule_search_locations:
             print(f"Removing {path}...")
             shutil.rmtree(path)
-
-      - name: Compile bootloader
-        run: cd bootloader && python waf --tests all
-
-      - name: Download dependencies
-        shell: bash
-        run: python -m pip download --dest=dist .[completion] && rm -f dist/pyinstaller-*.whl
-
-      - name: Build wheels
-        run: sh release/build-wheels
-
-      - name: Install PyInstaller
-        run: python -m pip install --no-index --find-links=dist pyinstaller[completion]
-
-      - name: Check pyinstaller --help
-        run: python -m PyInstaller -h
-
-      - name: Install test dependencies (base tools)
-        run: |
-          python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-base.txt
-
-      # Give python 3.13t same treatment as development version and avoid trying to install packges
-      # from requirements-libraries.txt. This is necessary because not all packages provide free-threaded
-      # builds of their wheels yet, and we have no way of filtering them in the requirements file.
-      # This should be remedied in python 3.14 with the new `sys_abi_feature` environment marker (PEP 780).
-      - name: Install test dependencies (tools and libraries)
-        if: ${{ !endsWith(matrix.python-version, '-dev') && matrix.python-version != '3.13t' }}
-        run: |
-          python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
 
       - name: Start display server
         if: startsWith(matrix.os, 'ubuntu')
