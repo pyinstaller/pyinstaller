@@ -19,10 +19,10 @@ gevent==25.8.2; python_version >= "3.9"
 ipython==9.5.0; python_version >= "3.11"
 keyring==25.6.0; python_version >= "3.9"
 matplotlib==3.10.6; python_version >= "3.10"
-numpy==2.3.2; python_version >= "3.11"
+numpy==2.3.3; python_version >= "3.11"
 pandas==2.3.2; python_version >= "3.9"
 pygments==2.19.2
-PyGObject==3.54.0; sys_platform == "linux" and python_version >= "3.9"
+PyGObject==3.54.2; sys_platform == "linux" and python_version >= "3.9"
 # Official PySide2 wheels do not support python 3.11 or newer. Nor are they available for arm64 on macOS.
 PySide2==5.15.2.1; python_version < "3.11" and (sys_platform != "darwin" or platform_machine != "arm64")
 # PySide6 is a metapackage that depends on PySide6-Essentials and PySide6-Addons. Their versions are
@@ -67,13 +67,13 @@ PyQt6-WebEngine-Qt6==6.9.2; python_version >= "3.9"
 python-dateutil==2.9.0.post0
 pytz==2025.2
 requests==2.32.5; python_version >= "3.9"
-scipy==1.16.1; python_version >= "3.11"
+scipy==1.16.2; python_version >= "3.11"
 # simplejson is used for text_c_extension
 simplejson==3.20.1
 sphinx==8.2.3; python_version >= "3.11"
 # Required for test_namespace_package
 sqlalchemy==2.0.43
-zope.interface==7.2
+zope.interface==8.0; python_version >= "3.9"
 Pillow==11.3.0; python_version >= "3.9"
 setuptools==80.9.0; python_version >= "3.9"
 
@@ -149,3 +149,5 @@ keyring==25.5.0; python_version == "3.8"  # pyup: ignore
 requests==2.32.4; python_version == "3.8"  # pyup: ignore
 
 setuptools==75.3.2; python_version == "3.8"  # pyup: ignore
+
+zope.interface==7.2; python_version == "3.8"  # pyup: ignore
