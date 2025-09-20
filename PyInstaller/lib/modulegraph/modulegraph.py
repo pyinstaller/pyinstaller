@@ -17,6 +17,7 @@ import ast
 import os
 import pkgutil
 import sys
+import types
 import re
 from collections import deque, namedtuple, defaultdict
 import urllib.request
@@ -33,15 +34,22 @@ else:
 
 # The latest version of altgraph at the time of writing (v0.17.4) still
 # uses pkg_resources to query its own version. With setuptools >= 80.9.0,
-# this triggers deprecation warnings. For now, suppress them.
-with warnings.catch_warnings():
-    warnings.filterwarnings(
-        "ignore",
-        category=UserWarning,
-        message="pkg_resources is deprecated",
-    )
+# this triggers deprecation warnings. In 2025-11-30, pkg_resources will be
+# removed altogether. Give altgraph just enough of a mocked pkg_resources that
+# it can still be imported.
+try:
+    _pkg_resources_not_imported = object()
+    _old_pkg_resources = sys.modules.get("pkg_resources", _pkg_resources_not_imported)
+    sys.modules["pkg_resources"] = fake_pkg_resources = types.SimpleNamespace()
+    fake_pkg_resources.require = lambda name: [importlib_metadata.distribution(name)]
+
     from altgraph.ObjectGraph import ObjectGraph
     from altgraph import GraphError
+finally:
+    if _old_pkg_resources is not _pkg_resources_not_imported:
+        sys.modules["pkg_resources"] = _old_pkg_resources
+    else:
+        del sys.modules["pkg_resources"]
 
 from . import util
 

@@ -1,0 +1,2 @@
+Avoid indirect usage of ``pkg_resources`` which is deprecated and scheduled to
+be removed in 2025-11-30.
