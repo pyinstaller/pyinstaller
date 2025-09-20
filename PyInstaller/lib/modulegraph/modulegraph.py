@@ -34,14 +34,36 @@ else:
 # The latest version of altgraph at the time of writing (v0.17.4) still
 # uses pkg_resources to query its own version. With setuptools >= 80.9.0,
 # this triggers deprecation warnings. For now, suppress them.
-with warnings.catch_warnings():
-    warnings.filterwarnings(
-        "ignore",
-        category=UserWarning,
-        message="pkg_resources is deprecated",
-    )
-    from altgraph.ObjectGraph import ObjectGraph
-    from altgraph import GraphError
+# If pkg_resources is unavailable (i.e., it was removed from setuptools),
+# provide our own compatibility fallback as a work-around until altgraph
+# is updated (if ever).
+try:
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            category=UserWarning,
+            message="pkg_resources is deprecated",
+        )
+        import pkg_resources
+except ImportError:
+    # altgraph uses `pkg_resources.require("altgraph")[0].version` to
+    # query its version. Provide a fake module with implementation of
+    # `require()` method that uses `importlib.metadata.distribution()`.
+    import types
+
+    pkg_resources = types.ModuleType("pkg_resources")
+    pkg_resources.require = lambda name: [importlib_metadata.distribution(name)]
+
+    sys.modules['pkg_resources'] = pkg_resources
+
+from altgraph.ObjectGraph import ObjectGraph
+from altgraph import GraphError
+
+# Remove the reference to `pkg_resources` in this module (as we do not
+# need it), and also in `sys.modules`, in case the fake module could
+# affect the analysis.
+del pkg_resources
+del sys.modules['pkg_resources']
 
 from . import util
 

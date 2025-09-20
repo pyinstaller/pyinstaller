@@ -1,0 +1,4 @@
+Work around the use of ``pkg_resources`` in ``altgraph``, in order to
+allow PyInstaller and its vendored copy of ``modulegraph`` to continue
+using ``altgraph`` v0.17.4 even after ``setuptools`` completely removes
+``pkg_resources``.
