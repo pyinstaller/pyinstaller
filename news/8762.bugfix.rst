@@ -1,0 +1,2 @@
+Work around performance issues introduced by superfluous usage of
+:func:`gc.collect` in ``pefile==2024.8.26``.

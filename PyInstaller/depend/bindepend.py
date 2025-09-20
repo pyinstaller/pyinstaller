@@ -1028,8 +1028,22 @@ if compat.is_linux:
 
 elif compat.is_win:
 
+    @functools.lru_cache()
+    def _no_op_pefile_gc():
+        # Disable pefile's reduntant and very slow call to gc.collect(). See #8762.
+        import types
+        import gc
+        import pefile
+
+        fake_gc = types.ModuleType("gc")
+        fake_gc.__dict__.update(gc.__dict__)
+        fake_gc.collect = lambda *_, **__: None
+        pefile.gc = fake_gc
+
     def _classify_binary_vs_data(filename):
         import pefile
+
+        _no_op_pefile_gc()
 
         # First check for MZ signature, which should allow us to quickly classify the majority of data files.
         try:

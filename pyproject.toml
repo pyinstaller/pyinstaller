@@ -18,8 +18,7 @@ keywords = [
 dependencies = [
     "setuptools >= 42.0.0",
     "altgraph",
-    # pefile 2024.8.26 contains performance regression that heavily impacts our binary dependency analysis
-    "pefile >= 2022.5.30, != 2024.8.26; sys_platform == 'win32'",
+    "pefile >= 2022.5.30 ; sys_platform == 'win32'",
     "pywin32-ctypes >= 0.2.1 ; sys_platform == 'win32'",
     "macholib >= 1.8 ; sys_platform == 'darwin'",
     "pyinstaller-hooks-contrib >= 2025.8",
