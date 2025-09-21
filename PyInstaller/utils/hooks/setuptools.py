@@ -65,7 +65,13 @@ def _retrieve_setuptools_info():
     # environment, setuptools-vendored version is exposed (due to location of `setuptools._vendor` being appended to
     # `sys.path`. Applicable to v71.0.0 and later.
     vendored_status = dict()
+    vendored_namespace_package_paths = dict()
     if version >= (71, 0) and setuptools_vendor is not None:
+        VENDORED_TOP_LEVEL_NAMESPACE_CANDIDATES = (
+            "backports",  # "regular" package, but has namespace semantics due to `pkgutil.extend_path()`
+            "jaraco",  # PEP-420 namespace package
+        )
+
         VENDORED_CANDIDATES = (
             "autocommand",
             "backports.tarfile",
@@ -89,7 +95,37 @@ def _retrieve_setuptools_info():
         # Resolve path(s) of `setuptools_vendor` package.
         setuptools_vendor_paths = [pathlib.Path(path).resolve() for path in setuptools_vendor.__path__]
 
-        # Process each candidate
+        # Process each candidate: top-level namespace packages
+        for candidate_name in VENDORED_TOP_LEVEL_NAMESPACE_CANDIDATES:
+            try:
+                candidate = importlib.import_module(candidate_name)
+            except ImportError:
+                continue
+
+            # Retrieve the __path__ attribute and store it, so we can re-use it in hooks without having to re-import
+            # `setuptools` and the candidate package...
+            candidate_path_attr = getattr(candidate, '__path__', [])
+            if candidate_path_attr:
+                candidate_paths = [pathlib.Path(path).resolve() for path in candidate_path_attr]
+                is_vendored = [
+                    any([
+                        setuptools_vendor_path in candidate_path.parents or candidate_path == setuptools_vendor_path
+                        for setuptools_vendor_path in setuptools_vendor_paths
+                    ]) for candidate_path in candidate_paths
+                ]
+                # For namespace packages, distinguish between "fully" vendored and "partially" vendored state; i.e.,
+                # whether the part of namespace package in the vendored directory is the only part or not.
+                if all(is_vendored):
+                    vendored_status[candidate_name] = 'fully'
+                elif any(is_vendored):
+                    vendored_status[candidate_name] = 'partially'
+                else:
+                    vendored_status[candidate_name] = False
+
+            # Store paths
+            vendored_namespace_package_paths[candidate_name] = [str(path) for path in candidate_path_attr]
+
+        # Process each candidate: modules and packages
         for candidate_name in VENDORED_CANDIDATES:
             try:
                 candidate = importlib.import_module(candidate_name)
@@ -97,7 +133,7 @@ def _retrieve_setuptools_info():
                 continue
 
             # Check the __file__ attribute (modules and regular packages). Will not work with namespace packages, but
-            # at the moment, there are none.
+            # at the moment, there are none (vendored top-level namespace packages have already been handled).
             candidate_file_attr = getattr(candidate, '__file__', None)
             if candidate_file_attr is not None:
                 candidate_path = pathlib.Path(candidate_file_attr).parent.resolve()
@@ -105,7 +141,7 @@ def _retrieve_setuptools_info():
                     setuptools_vendor_path in candidate_path.parents or candidate_path == setuptools_vendor_path
                     for setuptools_vendor_path in setuptools_vendor_paths
                 ])
-                vendored_status[candidate_name] = is_vendored
+                vendored_status[candidate_name] = is_vendored  # True/False
 
     # Collect submodules from `setuptools._vendor`, regardless of whether the vendored package is exposed or
     # not (because setuptools might need/use it either way).
@@ -159,6 +195,7 @@ def _retrieve_setuptools_info():
         "vendored_status": vendored_status,
         "vendored_modules": vendored_modules,
         "vendored_data": vendored_data,
+        "vendored_namespace_package_paths": vendored_namespace_package_paths,
     }
 
 
@@ -192,6 +229,7 @@ class SetuptoolsInfo:
         self.vendored_status = dict()
         self.vendored_modules = []
         self.vendored_data = []
+        self.vendored_namespace_package_paths = dict()
 
         try:
             setuptools_info = _retrieve_setuptools_info()
@@ -230,6 +268,48 @@ class SetuptoolsInfo:
 
 
 setuptools_info = SetuptoolsInfo()
+
+
+def pre_safe_import_module_for_top_level_namespace_packages(api):
+    """
+    A common implementation of pre_safe_import_module hook function for handling vendored top-level namespace packages
+    (i.e., `backports` and `jaraco`).
+
+    This function can be either called from the `pre_safe_import_module` function in a pre-safe-import-module hook, or
+    just imported into the hook and aliased to `pre_safe_import_module`.
+    """
+    module_name = api.module_name
+
+    # Check if the package/module is a vendored copy. This also returns False is setuptools is unavailable, because
+    # vendored module status dictionary will be empty.
+    vendored = setuptools_info.is_vendored(module_name)
+    if not vendored:
+        return
+
+    if vendored == 'fully':
+        # For a fully-vendored copy, force creation of aliases; on one hand, this aims to ensure that submodules are
+        # resolvable, but on the other, it also prevents creation of unvendored top-level package, which should not
+        # exit in this case.
+        vendored_name = f"setuptools._vendor.{module_name}"
+        logger.info(
+            "Setuptools: %r appears to be a full setuptools-vendored copy - creating alias to %r!", module_name,
+            vendored_name
+        )
+        # Create aliases for all (sub)modules
+        for aliased_name, real_vendored_name in setuptools_info.get_vendored_aliases(module_name):
+            api.add_alias_module(real_vendored_name, aliased_name)
+    elif vendored == 'partially':
+        # For a partially-vendored copy, adjust the submodule search paths, so that submodules from all locations are
+        # discoverable (especially from the setuptools vendor directory, which might not be in the search path yet).
+        search_paths = setuptools_info.vendored_namespace_package_paths.get(module_name, [])
+        logger.info(
+            "Setuptools: %r appears to be a partial setuptools-vendored copy - extending search paths to %r!",
+            module_name, search_paths
+        )
+        for path in search_paths:
+            api.append_package_path(path)
+    else:
+        logger.warning("Setuptools: %r has unhandled vendored status: %r", module_name, vendored)
 
 
 def pre_safe_import_module(api):

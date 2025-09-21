@@ -1,0 +1,4 @@
+Add pre-safe-import-module hooks for ``backports`` and ``jaraco``, in
+order to accommodate the ``setuptools``-vendored copies of these
+packages in situations when the ``setuptools`` vendor directory is not
+in python's search path at the start of the import analysis process.
