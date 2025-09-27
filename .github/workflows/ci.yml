@@ -40,11 +40,17 @@ jobs:
             os: 'macos-14'
           - python-version: '3.12'
             os: 'macos-14'
+          - python-version: '3.13t'
+            os: 'macos-14'
+          - python-version: '3.14-dev'
+            os: 'macos-14'
           - python-version: '3.9'
             os: 'macos-13'
           - python-version: '3.11'
             os: 'macos-13'
           - python-version: '3.13'
+            os: 'macos-13'
+          - python-version: '3.14t-dev'
             os: 'macos-13'
       fail-fast: false
     steps:
