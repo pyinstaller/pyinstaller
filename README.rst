@@ -41,12 +41,12 @@ but is not tested against them as part of the continuous integration tests.
 Main Advantages
 ---------------
 
-- Works out-of-the-box with any Python version 3.8-3.13.
+- Works out-of-the-box with any Python version 3.8-3.14.
 - Fully multi-platform, and uses the OS support to load the dynamic libraries,
   thus ensuring full compatibility.
 - Correctly bundles the major Python packages such as numpy, PyQt5,
   PySide2, PyQt6, PySide6, wxPython, matplotlib and others out-of-the-box.
-- Compatible with many 3rd-party packages out-of-the-box. (All the required
+- Compatible with many third-party packages out-of-the-box. (All the required
   tricks to make external packages work are already integrated.)
 - Works with code signing on macOS.
 - Bundles MS Visual C++ DLLs on Windows.
@@ -69,9 +69,9 @@ Requirements and Tested Platforms
     - 3.8-3.14. Note that Python 3.10.0 contains a bug making it unsupportable by
       PyInstaller. PyInstaller will also not work with beta releases of Python
       3.15.
-- Windows (32bit/64bit/ARM64):
+- Windows (32-bit/64-bit/ARM64):
     - PyInstaller should work on Windows 7 or newer, but we only officially support Windows 8+.
-    - Support for Python installed from the Windows store without using virtual
+    - Support for Python installed from the Windows Store without using virtual
       environments requires PyInstaller 4.4 or later.
 - Linux:
     - GNU libc based distributions on architectures ``x86_64``, ``aarch64``,
@@ -79,15 +79,15 @@ Requirements and Tested Platforms
     - musl libc based distributions on architectures ``x86_64``, ``aarch64``.
     - ldd: Console application to print the shared libraries required
       by each program or shared library. This typically can be found in
-      the distribution-package `glibc` or `libc-bin`.
+      the distribution package `glibc` or `libc-bin`.
     - objdump: Console application to display information from
       object files. This typically can be found in the
-      distribution-package `binutils`.
+      distribution package `binutils`.
     - objcopy: Console application to copy and translate object files.
-      This typically can be found in the distribution-package `binutils`,
+      This typically can be found in the distribution package `binutils`,
       too.
     - Raspberry Pi users on ``armv5``-``armv7`` should `add piwheels as an extra
-      index url <https://www.piwheels.org/>`_ then ``pip install pyinstaller``
+      index URL <https://www.piwheels.org/>`_ then ``pip install pyinstaller``
       as usual.
 - macOS (``x86_64`` or ``arm64``):
     - macOS 10.15 (Catalina) or newer.
@@ -98,7 +98,7 @@ Requirements and Tested Platforms
 Usage
 -----
 
-Basic usage is very simple, just run it against your main script:
+Basic usage is very simple: just run it against your main script:
 
 .. code:: bash
 
@@ -110,7 +110,7 @@ For more details, see the `manual`_.
 Untested Platforms
 ------------------
 
-The following platforms have been contributed and any feedback or
+The following platforms have been contributed, and any feedback or
 enhancements on these are welcome.
 
 - FreeBSD
