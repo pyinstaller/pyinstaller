@@ -98,7 +98,7 @@ Requirements and Tested Platforms
 Usage
 -----
 
-Basic usage is very simple: just run it against your main script:
+Basic usage is very simple - just run it against your main script:
 
 .. code:: bash
 
