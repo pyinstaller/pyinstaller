@@ -862,8 +862,14 @@ def get_python_library_path():
     # Python DLL, and we can resolve its path using `GetModuleFileName()` from win32 API.
     # This is applicable to python.org Windows builds, Anaconda on Windows, and MSYS2 Python.
     if compat.is_win:
-        import _winapi
-        return _winapi.GetModuleFileName(sys.dllhandle)
+        if hasattr(sys, 'dllhandle'):
+            import _winapi
+            return _winapi.GetModuleFileName(sys.dllhandle)
+        else:
+            from PyInstaller.exceptions import PythonLibraryNotFoundError
+            raise PythonLibraryNotFoundError(
+                "Python was built without a shared library, which is required by PyInstaller."
+            )
 
     # On other (POSIX) platforms, the name of the Python shared library is available in the `INSTSONAME` variable
     # exposed by the `sysconfig` module. There is also the `LDLIBRARY` variable, which points to the unversioned .so
