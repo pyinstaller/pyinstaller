@@ -1,0 +1,6 @@
+Revise the search for Python shared library from :issue:`9218` and
+the restrictions it imposes: enable the fall-back codepath with
+guess-based name for all Python builds that report ``Py_ENABLE_SHARED=0``
+instead of just for Anaconda Python (``compat.is_conda``), but limit
+the search paths in this fall-back codepath to only ``sys.base_prefix``
+and the ``lib`` directory under it.

@@ -25,6 +25,7 @@ from PyInstaller import compat
 from PyInstaller import log as logging
 from PyInstaller.depend import dylib, utils
 from PyInstaller.utils.win32 import winutils
+from PyInstaller.exceptions import PythonLibraryNotFoundError
 
 if compat.is_darwin:
     import PyInstaller.utils.osx as osxutils
@@ -866,7 +867,6 @@ def get_python_library_path():
             import _winapi
             return _winapi.GetModuleFileName(sys.dllhandle)
         else:
-            from PyInstaller.exceptions import PythonLibraryNotFoundError
             raise PythonLibraryNotFoundError(
                 "Python was built without a shared library, which is required by PyInstaller."
             )
@@ -876,9 +876,47 @@ def get_python_library_path():
     # symbolic link for linking purposes; however, we are interested in the actual, fully-versioned soname.
     # This should cover all variations in the naming schemes across different platforms as well as different build
     # options (debug build, free-threaded build, etc.).
+    #
+    # However, `INSTSONAME` points to the shared library only if shared library is enabled; in static-library builds,
+    # it points to the static library, which is of no use to us. We can check if Python was built with shared library
+    # (i.e., the `--enable-shared` option) by checking `Py_ENABLE_SHARED` variable, which should be set to 1 in this
+    # case (and 0 in the case of a static-library build). On macOS, builds made with `--enable-framework` have
+    # `Py_ENABLE_SHARED` set to 0, but have `PYTHONFRAMEWORK`set to a non-empty string.
+    #
+    # The above description is further complicated by the fact that in some Python builds, the `python` executable is
+    # built against static Python library, and the shared library is built separately and provided for development and
+    # for embedders (such as PyInstaller). Presumably, this is done for performance reasons. Also, it is enabled by the
+    # fact that on POSIX, Python extensions do not need to have the referenced Python symbols resolved at link-time;
+    # rather, these symbols can be resolved at run-time from the running Python process (and are effectively provided
+    # by the `python` executable). Such builds come in two variants. In the first variant, `Py_ENABLE_SHARED` is 0 and
+    # `INSTSONAME` points to the static library; an example of such build is Anaconda Python. In the second variant,
+    # `Py_ENABLE_SHARED` is 1 and `INSTSONAME` points to the shared library, but `python` executable is not linked
+    # against it; examples of such build are Debian-packaged Python and `astral-sh/python-build-standalone` Python.
+    #
+    # Therefore, our strategy is as follows: if we determine that shared library was enabled (via `Py_ENABLE_SHARED`
+    # on all platforms and/or via `PYTHONFRAMEWORK` on macOS), we use the name given by `INSTSONAME`. First, we try
+    # to locate it by analyzing binary dependencies of `python` executable (regular shared-library-enabled build),
+    # then fall back to standard search locations (second variant of static-executable-with-separate-shared-library).
+    # If `Py_ENABLE_SHARED` is set to 0, we try to guess the library name based on version and feature flags, but we
+    # search only `sys.base_prefix` and `lib` directory under `sys.base_prefix`; if the shared library is not found
+    # there, we assume it is unavailable and raise an error. This attempts to accommodate Anaconda python (and corner
+    # cases when we cannot reliably identify Anaconda python - see #9273) and prevent accidental bundling of
+    # system-wide Python shared library in cases when user tries to use custom Python build without shared library.
 
-    # First, try to catch Python builds that were not made with shared library (or .framework bundle on macOS) enabled.
-    # In such builds, `INSTSONAME` seems to point to the static library, which is of no use to us.
+    def _find_lib_in_libdirs(name, *libdirs):
+        for libdir in libdirs:
+            full_path = os.path.join(libdir, name)
+            if not os.path.exists(full_path):
+                continue
+            # Resolve potential symbolic links to achieve consistent results with linker-based search; e.g., on
+            # POSIX systems, linker resolves unversioned library names (python3.X.so) to versioned ones
+            # (libpython3.X.so.1.0) due to former being symbolic links to the latter. See #6831.
+            full_path = os.path.realpath(full_path)
+            if not os.path.exists(full_path):
+                continue
+            return full_path
+        return None
+
     is_shared = (
         # Builds made with `--enable-shared` have `Py_ENABLE_SHARED` set to 1. This is true even for Debian-packaged
         # Python, which has the `python` executable statically linked against the Python library.
@@ -888,12 +926,10 @@ def get_python_library_path():
         (compat.is_darwin and sysconfig.get_config_var("PYTHONFRAMEWORK"))
     )
 
-    if is_shared:
-        expected_name = sysconfig.get_config_var('INSTSONAME')
-    elif compat.is_conda:
-        # While Anaconda provides Python shared library, the interpreter executable and shared library seem to be made
-        # separately; therefore, the interpreter has `Py_ENABLE_SHARED` set to 0 and `INSTSONAME` points to a static
-        # library. And so we need to fall back to the old guess-work.
+    if not is_shared:
+        # Anaconda Python; this codepath used to be under `compat.is_conda` switch, but we may also be dealing with
+        # Anaconda Python without `conda-meta` directory (see #9273). Or some other Python build where shared library
+        # is provided but `Py_ENABLE_SHARED` is set to 0.
         py_major, py_minor = sys.version_info[:2]
         py_suffix = "t" if compat.is_nogil else ""  # TODO: does Anaconda provide debug builds with "d" suffix?
         if compat.is_darwin:
@@ -902,9 +938,23 @@ def get_python_library_path():
         else:
             # Linux; assume any other potential POSIX builds use the same naming scheme.
             expected_name = f"libpython{py_major}.{py_minor}{py_suffix}.so.1.0"
-    else:
+
+        # Allow the library to be only in `sys.base_prefix` or the `lib` directory under it. This should prevent us from
+        # picking up an unrelated copy of shared library that might happen to be available in standard search path, when
+        # we should instead be raising an error due to Python having been built without a shared library. (In true
+        # static-library builds, Python's own extension modules are usually turned into built-ins. So picking up an
+        # unrelated Python shared library that happens to be of the same version results in run-time errors due to
+        # missing extensions - because in the build that produced the shared library, those extensions are expected to
+        # be external extension modules!)
+        python_libname = _find_lib_in_libdirs(
+            expected_name,  # Full name
+            compat.base_prefix,
+            os.path.join(compat.base_prefix, 'lib'),
+        )
+        if python_libname:
+            return python_libname
+
         # Raise PythonLibraryNotFoundError
-        from PyInstaller.exceptions import PythonLibraryNotFoundError
         option_str = (
             "either the `--enable-shared` or the `--enable-framework` option"
             if compat.is_darwin else "the `--enable-shared` option"
@@ -913,6 +963,9 @@ def get_python_library_path():
             "Python was built without a shared library, which is required by PyInstaller. "
             f"If you built Python from source, rebuild it with {option_str}."
         )
+
+    # Use the library name from `INSTSONAME`.
+    expected_name = sysconfig.get_config_var('INSTSONAME')
 
     # In Cygwin builds (and also MSYS2 python, although that should be handled by Windows-specific codepath...),
     # INSTSONAME is available, but the name has a ".dll.a" suffix; remove that trailing ".a".
@@ -923,36 +976,21 @@ def get_python_library_path():
     # `Python.framework/Versions/3.13/Python`. Pre-compute a basename for comparisons that are using only basename.
     expected_basename = os.path.normcase(os.path.basename(expected_name))
 
-    # Try to find the expected name among the libraries against which the Python executable is linked. This assumes that
-    # the Python executable was not statically linked against the library (as is the case with Debian-packaged Python,
-    # or Anaconda Python).
-    if is_shared:
-        imported_libraries = get_imports(compat.python_executable)  # (name, fullpath) tuples
-        for _, lib_path in imported_libraries:
-            if lib_path is None:
-                continue  # Skip unresolved imports
-            if os.path.normcase(os.path.basename(lib_path)) == expected_basename:  # Basename comparison
-                # Python library found. Return absolute path to it.
-                return lib_path
+    # First, try to find the expected name among the libraries against which the Python executable is linked. This
+    # assumes that the Python executable was not statically linked against the library (as is the case with
+    # Debian-packaged Python or `astral-sh/python-build-standalone` Python).
+    imported_libraries = get_imports(compat.python_executable)  # (name, fullpath) tuples
+    for _, lib_path in imported_libraries:
+        if lib_path is None:
+            continue  # Skip unresolved imports
+        if os.path.normcase(os.path.basename(lib_path)) == expected_basename:  # Basename comparison
+            # Python library found. Return absolute path to it.
+            return lib_path
 
     # As a fallback, try to find the library in several "standard" search locations...
-    def _find_lib_in_libdirs(name, *libdirs):
-        for libdir in libdirs:
-            full_path = os.path.join(libdir, name)
-            if not os.path.exists(full_path):
-                continue
-            # Resolve potential symbolic links to achieve consistent results with linker-based search; e.g., on
-            # POSIX systems, linker resolves unversioned library names (python3.X.so) to versioned ones
-            # (libpython3.X.so.1.0) due to former being symbolic linkes to the latter. See #6831.
-            full_path = os.path.realpath(full_path)
-            if not os.path.exists(full_path):
-                continue
-            return full_path
-        return None
 
-    # Search the `sys.base_prefix` and `lib` directory in `sys.base_prefix`.
-    # This covers various Python installations in case we fail to infer the shared library location for whatever reason;
-    # Anaconda Python, `uv` and `rye` Python, etc.
+    # First, search the `sys.base_prefix` and `lib` directory in `sys.base_prefix`, as these locations have the closest
+    # ties to our current Python process. This caters to builds such as `astral-sh/python-build-standalone` Python.
     python_libname = _find_lib_in_libdirs(
         expected_name,  # Full name
         compat.base_prefix,
@@ -963,15 +1001,13 @@ def get_python_library_path():
 
     # Perform search in the configured library search locations. This should be done after exhausting all other options;
     # it primarily caters to Debian-packaged Python, but we need to make sure that we do not collect shared library from
-    # system-installed Python when the current interpreter is in fact some other Python build (for example, `uv` or
-    # `rye` Python of the same version as system-installed Python).
+    # system-installed Python when the current interpreter is in fact some other Python build (such as, for example,
+    # `astral-sh/python-build-standalone` Python that is handled in the preceding code block).
     python_libname = resolve_library_path(expected_basename)  # Basename
     if python_libname:
         return python_libname
 
     # Not found. Raise a PythonLibraryNotFoundError with corresponding message.
-    from PyInstaller.exceptions import PythonLibraryNotFoundError
-
     message = f"ERROR: Python shared library ({expected_name!r}) was not found!"
     if compat.is_linux and os.path.isfile('/etc/debian_version'):
         # The shared library is provided by `libpython3.x` package (i.e., no need to install full `python3-dev`).
