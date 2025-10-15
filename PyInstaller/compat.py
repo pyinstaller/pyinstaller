@@ -73,6 +73,7 @@ is_py311 = sys.version_info >= (3, 11)
 is_py312 = sys.version_info >= (3, 12)
 is_py313 = sys.version_info >= (3, 13)
 is_py314 = sys.version_info >= (3, 14)
+is_py315 = sys.version_info >= (3, 15)
 
 is_win = sys.platform.startswith('win')
 is_win_10 = is_win and (platform.win32_ver()[0] == '10')

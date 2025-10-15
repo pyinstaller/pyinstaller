@@ -3,7 +3,7 @@ name = "pyinstaller"
 dynamic = ["version"]
 description = "PyInstaller bundles a Python application and all its dependencies into a single package."
 readme = "README.rst"
-requires-python = ">=3.8, <3.15"
+requires-python = ">=3.8, <3.16"
 license.text = "GPLv2-or-later with a special exception which allows to use PyInstaller to build and distribute non-free programs (including commercial ones)"
 authors = [
     { name = "Hartmut Goebel" },
@@ -51,6 +51,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Software Development",
     "Topic :: Software Development :: Build Tools",
