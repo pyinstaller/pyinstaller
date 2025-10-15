@@ -142,9 +142,14 @@ else:
         _OPCODES_FUNCTION_GLOBAL = rb"`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`"
     _OPCODES_FUNCTION_LOAD = rb"`LOAD_ATTR`"
     if compat.is_py314:
-        # Python 3.14.0a2 split LOAD_CONST into LOAD_CONST, LOAD_IMMORTAL_CONST, and LOAD_SMALL_INT.
+        # Python 3.14.0a2 split LOAD_CONST into LOAD_CONST, LOAD_CONST_IMMORTAL, and LOAD_SMALL_INT.
         # https://github.com/python/cpython/commit/faa3272fb8d63d481a136cc0467a0cba6ed7b264
-        _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`|`LOAD_SMALL_INT`|`LOAD_CONST_IMMORTAL`"
+        # The LOAD_CONST_IMMORTAL was removed in Python 3.15.0a1
+        # https://github.com/python/cpython/commit/6dcb0fdfe0a2de083f0f1f9a568dd0a19541b863
+        if not compat.is_py315:
+            _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`|`LOAD_SMALL_INT`|`LOAD_CONST_IMMORTAL`"
+        else:
+            _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`|`LOAD_SMALL_INT`"
     else:
         _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`"
     _OPCODES_FUNCTION_CALL = rb"`CALL`|`CALL_FUNCTION_EX`"
@@ -257,9 +262,10 @@ def load(raw: bytes, code: CodeType) -> str:
     if compat.is_py314 and raw[-2] == opmap["LOAD_SMALL_INT"]:
         # python 3.14 introduced LOAD_SMALL_INT, which pushes its argument (int value < 256) on the stack
         return index
-    if compat.is_py314 and raw[-2] == opmap["LOAD_CONST_IMMORTAL"]:
+    if compat.is_py314 and not compat.is_py315 and raw[-2] == opmap["LOAD_CONST_IMMORTAL"]:
         # python 3.14 introduced LOAD_CONST_IMMORTAL, which pushes co_consts[consti] on the stack. This is intended to
-        # be a variant of LOAD_CONST for constants that are known to be immortal.
+        # be a variant of LOAD_CONST for constants that are known to be immortal. This specialized opcode was removed
+        # in python 3.15.
         return code.co_consts[index]
     if compat.is_py314 and raw[-2] == opmap["LOAD_FAST_BORROW"]:
         # python 3.14 introduced LOAD_FAST_BORROW, which pushes a borrowed reference to the local co_varnames[var_num]
