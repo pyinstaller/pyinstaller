@@ -52,7 +52,7 @@ def _pyi_machine(machine, system):
             return "intel"
 
     if system == "SunOS":
-        if machine.lower() in ("x86", "i86pc"):
+        if machine.lower() in ("x86_64", "x86", "i86pc"):
             return "intel"
         else:
             return "sparc"
