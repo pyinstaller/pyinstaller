@@ -438,7 +438,7 @@ When you build a windowed macOS app
 the spec file contains an additional statement to
 create the macOS application bundle, or app folder::
 
-    app = BUNDLE(exe,
+    app = BUNDLE(coll,
              name='myscript.app',
              icon=None,
              bundle_identifier=None)
@@ -466,7 +466,7 @@ plistlib can handle nested Python objects (which are translated to nested
 XML), and translates Python data types to the proper :file:`Info.plist`
 XML types.  Here's an example::
 
-    app = BUNDLE(exe,
+    app = BUNDLE(coll,
              name='myscript.app',
              icon=None,
              bundle_identifier=None,
