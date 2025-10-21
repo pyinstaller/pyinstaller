@@ -635,7 +635,7 @@ class Analysis(Target):
         if spec_pathex is not None:
             pathex.extend(spec_pathex)
         # Normalize paths in pathex and make them absolute.
-        return [absnormpath(p) for p in pathex]
+        return list(set(absnormpath(p) for p in pathex))
 
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):
