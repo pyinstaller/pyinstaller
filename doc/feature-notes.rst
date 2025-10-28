@@ -281,7 +281,9 @@ and produces a single-arch binary** (``x86_64`` when running on Intel Mac
 or under `rosetta2` on M1 Mac, or ``arm64`` when running on M1 Mac). The
 reason for that is that even with a ``universal2`` python environment,
 some packages may end up providing only single-arch binaries, making it
-impossible to create a functional ``universal2`` frozen application.
+impossible to create a functional ``universal2`` frozen application. See
+the following sub-section for details on architecture validation and
+possible work-arounds for dealing with single-arch packages.
 
 The alternative options, such as creating a ``universal2`` version
 of frozen application, or creating a non-native single-arch version using
@@ -290,6 +292,41 @@ can be done either by specifying the target architecture in the ``.spec``
 file via the ``target_arch=`` argument to ``EXE()``, or on command-line
 via the :option:`--target-arch` switch. Valid values are ``x86_64``, ``arm64``,
 and ``universal2``.
+
+.. note::
+   Creation of ``universal2`` frozen applications is supported only with
+   the PyInstaller's build mechanism described in this section.
+
+   While tools like ``lipo`` allow you to combine two single-arch
+   executables (i.e., an ``x86_64`` one and an ``arm64`` one) into a
+   ``universal2`` executable, this does not work with PyInstaller-built
+   executables. For example, building two single-arch PyInstaller
+   ``onefile`` executables and merging them with ``lipo`` will result
+   in an executable that will still run on only one platform; specifically,
+   the one whose executable slice happens to be last in the fat executable
+   (in a ``universal2`` executable, this is usually the ``arm64`` slice).
+
+   This is because each PyInstaller-built single-arch executable contains
+   its own embedded PKG archive, and in a ``onefile`` build, each of those
+   contains its own set of single-arch binaries (python extensions and
+   shared libraries). Once merged into fat executable, each architecture
+   slice retains its PKG archive, but the PyInstaller's bootloader code
+   in either architecture slice is able to discover and use only one PKG
+   archive, the one that occurs last (because the executable is scanned
+   back-to-front).
+
+.. note::
+   Somewhat related to the previous note, building a ``universal2``
+   application using PyInstaller's build mechanism and then using ``lipo``
+   to convert the fat executable into two single-arch thin executables
+   will also fail to produce working executables.
+
+   The reason is that in a ``universal2`` build, a single PKG archive is
+   created and embedded into the last architecture slice of the
+   ``universal2`` executable (which is usually the ``arm64`` slice).
+   Therefore, when extracting architecture slices using ``lipo``, the
+   last slice will have the PKG archive and will run correctly, while
+   the first slice will raise an error due to lack of the PKG archive.
 
 
 Architecture validation during binary collection
