@@ -1,0 +1,5 @@
+(Windows) Add support for PyPy 3.11+ on Windows.
+PyInstaller now correctly detects PyPy's shared library
+(``libpypy*.dll``) and handles PyPy-specific bytecode differences
+when analyzing dependencies.
+
