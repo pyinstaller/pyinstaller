@@ -63,6 +63,7 @@ is_64bits: bool = sys.maxsize > 2**32
 
 # Distinguish specific code for various Python versions. Variables 'is_pyXY' mean that Python X.Y and up is supported.
 # Keep even unsupported versions here to keep 3rd-party hooks working.
+is_pypy = platform.python_implementation() == "PyPy"  # Shared with downstream consumers (see PyInstaller.depend.bytecode)
 is_py35 = sys.version_info >= (3, 5)
 is_py36 = sys.version_info >= (3, 6)
 is_py37 = sys.version_info >= (3, 7)
@@ -185,8 +186,11 @@ if is_win:
             # See https://github.com/pyinstaller/pyinstaller/issues/6345
             # On the off chance that `cffi` has already been imported, store the `sys.modules` entry so we can restore
             # it after importing `pywin32-ctypes` modules.
-            orig_cffi = sys.modules.get('cffi')
-            sys.modules['cffi'] = None
+            # PyPy's win32-ctypes backend already relies on ctypes; avoid disabling cffi there to prevent ImportError.
+            block_cffi = not is_pypy
+            orig_cffi = sys.modules.get('cffi') if block_cffi else None
+            if block_cffi:
+                sys.modules['cffi'] = None
 
             from win32ctypes.pywin32 import pywintypes  # noqa: F401, E402
             from win32ctypes.pywin32 import win32api  # noqa: F401, E402
@@ -198,10 +202,11 @@ if is_win:
             ) from e
         finally:
             # Unblock `cffi`.
-            if orig_cffi is not None:
-                sys.modules['cffi'] = orig_cffi
-            else:
-                del sys.modules['cffi']
+            if block_cffi:
+                if orig_cffi is not None:
+                    sys.modules['cffi'] = orig_cffi
+                else:
+                    del sys.modules['cffi']
             del orig_cffi
 
 # macOS's platform.architecture() can be buggy, so we do this manually here. Based off the python documentation:

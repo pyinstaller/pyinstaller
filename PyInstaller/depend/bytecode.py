@@ -41,8 +41,15 @@ opmap = getattr(dis, '_all_opmap', dis.opmap)
 def _instruction_to_regex(x: str):
     """
     Get a regex-escaped opcode byte from its human readable name.
+    PyPy may not expose all CPython 3.11+ specialized opcodes; return a pattern
+    that never matches if the opcode is unavailable.
     """
-    return re.escape(bytes([opmap[x]]))
+    try:
+        return re.escape(bytes([opmap[x]]))
+    except KeyError:
+        # Opcode not available (e.g., PyPy missing specialized CPython opcodes).
+        # Return a negative lookahead that never matches so the pattern remains valid.
+        return rb"(?!)"
 
 
 def bytecode_regex(pattern: bytes, flags=re.VERBOSE | re.DOTALL):
@@ -116,20 +123,34 @@ elif not compat.is_py312:
     # As both PRECALL and CALL have the same parameter (the argument count), we need to match only up to the PRECALL.
     # The CALL_FUNCTION_EX is still present.
     # From Python 3.11b1 on, there is an EXTENDED_ARG_QUICK specialization opcode present.
-    _OPCODES_EXTENDED_ARG = rb"`EXTENDED_ARG`|`EXTENDED_ARG_QUICK`"
-    _OPCODES_EXTENDED_ARG2 = rb"`EXTENDED_ARG``EXTENDED_ARG_QUICK`"  # Special case; see note above the if/else block!
+    # PyPy may not expose all CPython 3.11+ specialized opcodes; check availability before use.
+    if 'EXTENDED_ARG_QUICK' in opmap:
+        _OPCODES_EXTENDED_ARG = rb"`EXTENDED_ARG`|`EXTENDED_ARG_QUICK`"
+        _OPCODES_EXTENDED_ARG2 = rb"`EXTENDED_ARG``EXTENDED_ARG_QUICK`"  # Special case; see note above the if/else block!
+    else:
+        _OPCODES_EXTENDED_ARG = rb"`EXTENDED_ARG`"
+        _OPCODES_EXTENDED_ARG2 = _OPCODES_EXTENDED_ARG
     _OPCODES_FUNCTION_GLOBAL = rb"`LOAD_NAME`|`LOAD_GLOBAL`|`LOAD_FAST`"
     _OPCODES_FUNCTION_LOAD = rb"`LOAD_ATTR`|`LOAD_METHOD`"
     _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`"
-    _OPCODES_FUNCTION_CALL = rb"`PRECALL`|`CALL_FUNCTION_EX`"
+    if 'PRECALL' in opmap:
+        _OPCODES_FUNCTION_CALL = rb"`PRECALL`|`CALL_FUNCTION_EX`"
+    else:
+        _OPCODES_FUNCTION_CALL = rb"`CALL_FUNCTION_EX`"
 
     # Starting with python 3.11, the bytecode is peppered with CACHE instructions (which dis module conveniently hides
     # unless show_caches=True is used). Dealing with these CACHE instructions in regex rules is going to render them
     # unreadable, so instead we pre-process the bytecode and filter the offending opcodes out.
-    _cache_instruction_filter = bytecode_regex(rb"(`CACHE`.)|(..)")
+    if 'CACHE' in opmap:
+        _cache_instruction_filter = bytecode_regex(rb"(`CACHE`.)|(..)")
 
-    def _cleanup_bytecode_string(bytecode):
-        return _cache_instruction_filter.sub(rb"\2", bytecode)
+        def _cleanup_bytecode_string(bytecode):
+            return _cache_instruction_filter.sub(rb"\2", bytecode)
+    else:
+        _cache_instruction_filter = None
+
+        def _cleanup_bytecode_string(bytecode):
+            return bytecode
 else:
     # Python 3.12 merged EXTENDED_ARG_QUICK back in to EXTENDED_ARG, and LOAD_METHOD in to LOAD_ATTR
     # PRECALL is no longer a valid key

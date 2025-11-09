@@ -866,6 +866,35 @@ def get_python_library_path():
         if hasattr(sys, 'dllhandle'):
             import _winapi
             return _winapi.GetModuleFileName(sys.dllhandle)
+        elif compat.is_pypy:
+            # PyPy on Windows may not expose sys.dllhandle; search for libpypy*.dll in standard locations.
+            py_major, py_minor = sys.version_info[:2]
+            py_suffix = "t" if compat.is_nogil else ""
+            pypy_dll_names = [
+                f'libpypy{py_major}.{py_minor}-c.dll',
+                f'libpypy{py_major}.{py_minor}{py_suffix}-c.dll',
+                f'libpypy{py_major}{py_minor}-c.dll',
+                f'libpypy{py_major}-c.dll',
+            ]
+            # Search in sys.base_prefix and lib subdirectory
+            # Note: _find_lib_in_libdirs is defined later in this function, but we can use it here
+            # since we're inside the function scope.
+            for dll_name in pypy_dll_names:
+                python_libname = _find_lib_in_libdirs(
+                    dll_name,
+                    compat.base_prefix,
+                    os.path.join(compat.base_prefix, 'lib'),
+                )
+                if python_libname:
+                    return python_libname
+            # Also try resolve_library_path as fallback
+            for dll_name in pypy_dll_names:
+                python_libname = resolve_library_path(dll_name)
+                if python_libname:
+                    return python_libname
+            raise PythonLibraryNotFoundError(
+                f"PyPy shared library not found. Searched for: {', '.join(pypy_dll_names)}"
+            )
         else:
             raise PythonLibraryNotFoundError(
                 "Python was built without a shared library, which is required by PyInstaller."
