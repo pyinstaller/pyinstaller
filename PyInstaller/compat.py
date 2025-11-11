@@ -688,6 +688,9 @@ def check_requirements():
     if sys.version_info < (3, 8):
         raise EnvironmentError('PyInstaller requires Python 3.8 or newer.')
 
+    if sys.implementation.name != "cpython":
+        raise SystemExit(f"ERROR: PyInstaller does not support {sys.implementation.name}. Only CPython is supported.")
+
     # There are some old packages which used to be backports of libraries which are now part of the standard library.
     # These backports are now unmaintained and contain only an older subset of features leading to obscure errors like
     # "enum has not attribute IntFlag" if installed.
