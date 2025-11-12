@@ -508,11 +508,18 @@ def configure(ctx):
         # For clang, also enable extra warnings and treat them as errors. Similarly to gcc, do not treat warnings about
         # unused variables and unused functions as errors.
         ctx.env.append_value(
-            'CFLAGS', [
+            'CFLAGS',
+            [
                 '-Wall',
                 '-Werror',
                 '-Wno-error=unused-variable',
                 '-Wno-error=unused-function',
+                # Passing `clang -fPIE -pie` via `CC` environment variable to create position-independent bootloader
+                # executables causes `clang` to emit following warnings when compiling object files due to `-pie`
+                # being linker-stage flag:
+                #   clang: warning: argument unused during compilation: '-pie' [-Wunused-command-line-argument]
+                # Make them non-fatal.
+                '-Wno-error=unused-command-line-argument',
             ]
         )
 
