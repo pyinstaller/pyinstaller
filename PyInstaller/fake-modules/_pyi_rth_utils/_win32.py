@@ -313,7 +313,7 @@ def secure_mkdir(dir_name):
     # Free security descriptor
     kernel32.LocalFree(security_desc)
 
-    # Exit on succeess
+    # Exit on success
     if ret != 0:
         return
 
