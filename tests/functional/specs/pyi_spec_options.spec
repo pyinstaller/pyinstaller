@@ -1,10 +1,20 @@
 # -*- mode: python ; coding: utf-8 -*-
 import argparse
+import sys
 
 # Explicitly set the program name to what the test expects to find in the output (i.e., `pyi_spec_options.spec`).
 # Starting with python 3.14, the automatically-inferred program name becomes `python -m pytest` when `pytest` is
 # launched as a module. See: https://github.com/python/cpython/commit/04bfea2d261bced371cbd64931fe2a8f64984793
-parser = argparse.ArgumentParser(prog='pyi_spec_options.spec')
+#
+# If `color` argument is available (it was added in python 3.14), use it to explicitly disable colored output.
+# Python 3.15.0a2 implemented colored warning and error messages in `argparse`, and we need to prevent this coloring
+# from being accidentally enabled, because color codes interfere with output text comparison done by the test. Normally,
+# the coloring would not be enabled for pytest-captured output streams, but this might happen, for example, if
+# `FORCE_COLOR` environment variable is set in the environment.
+if sys.version_info >= (3, 14):
+    parser = argparse.ArgumentParser(prog='pyi_spec_options.spec', color=False)
+else:
+    parser = argparse.ArgumentParser(prog='pyi_spec_options.spec')
 optional_dependencies = ["email", "gzip", "pstats"]
 parser.add_argument("--optional-dependency", choices=optional_dependencies,
                     action="append", default=[], help="help blah blah blah")
