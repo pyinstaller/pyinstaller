@@ -21,7 +21,8 @@ import pytest
 
 from PyInstaller import isolated
 from PyInstaller.compat import is_cygwin, is_darwin, is_termux, is_win
-from PyInstaller.utils.tests import importorskip, importable, skipif, xfail, onedir_only, onefile_only
+from PyInstaller.utils.tests import importorskip, skipif, xfail, onedir_only, onefile_only
+from PyInstaller.utils.hooks import can_import_module
 
 
 def test_run_from_path_environ(pyi_builder):
@@ -49,8 +50,12 @@ def test_absolute_python_path(pyi_builder):
 @pytest.mark.parametrize('enable_splash', [False, True], ids=['nosplash', 'splash'])
 def test_symlink_basename_is_kept(pyi_builder, tmp_path, enable_splash):
     if enable_splash:
-        if not importable("tkinter"):
-            pytest.skip("Needs tkinter")
+        # PyInstaller.utils.tests.importorskip('tkinter') ends up checking if the module's spec exists, but does not
+        # actually try to import the module. So we need to use `can_import_module()` hook utility function instead,
+        # which does try to import the module, and catches errors when _tkinter is unavailable or cannot be loaded due
+        # to broken dependencies.
+        if not can_import_module("tkinter"):
+            pytest.skip("tkinter cannot be imported.")
         splash_image = pathlib.Path(__file__).parent / 'data' / 'splash' / 'image.png'
         extra_args = ['--splash', str(splash_image)]
     else:

@@ -17,10 +17,14 @@ NOTE: splash screen is not supported on macOS due to incompatible design.
 import pytest
 
 from PyInstaller.compat import is_darwin, is_musl
-from PyInstaller.utils.tests import importorskip
+from PyInstaller.utils.hooks import can_import_module
 
 pytestmark = [
-    importorskip('tkinter'),
+    # PyInstaller.utils.tests.importorskip('tkinter') ends up checking if the module's spec exists, but does not
+    # actually try to import the module. So we need to use `can_import_module()` hook utility function instead, which
+    # does try to import the module, and catches errors when _tkinter is unavailable or cannot be loaded due to broken
+    # dependencies.
+    pytest.mark.skipif(not can_import_module('tkinter'), reason="tkinter cannot be imported."),
     pytest.mark.skipif(is_darwin, reason="Splash screen is not supported on macOS."),
     pytest.mark.xfail(is_musl, reason="musl + tkinter is known to cause mysterious segfaults."),
 ]
