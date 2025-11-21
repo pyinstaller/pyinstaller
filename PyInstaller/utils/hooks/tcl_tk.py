@@ -169,10 +169,13 @@ class TclTkInfo:
         # in the isolated subprocess as part of `_get_tcl_tk_info`. However, that is impractical, as it shows the empty
         # window, and on some platforms (e.g., linux) requires display server. Therefore, try to guess the location,
         # based on the following heuristic:
+        #  - if TK_LIBRARY is defined use it.
         #  - if Tk is built as macOS framework bundle, look for Scripts sub-directory in Resources directory next to
         #    the shared library.
         #  - otherwise, look for: $tcl_root/../tkX.Y, where X and Y are Tk major and minor version.
-        if compat.is_darwin and self.tk_shared_library and (
+        if "TK_LIBRARY" in os.environ:
+            self.tk_data_dir = os.environ["TK_LIBRARY"]
+        elif compat.is_darwin and self.tk_shared_library and (
             # is_framework_bundle_lib handles only fully-versioned framework library paths...
             (osxutils.is_framework_bundle_lib(self.tk_shared_library)) or
             # ... so manually handle top-level-symlinked variant for now.
