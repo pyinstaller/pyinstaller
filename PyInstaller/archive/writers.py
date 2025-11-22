@@ -222,7 +222,16 @@ class CArchiveWriter:
             # by the bootloader. For that, we need to know target optimization level, which is stored in typecode.
             optim_level = {'s': 0, 's1': 1, 's2': 2}[typecode]
             code = get_code_object(dest_name, src_name, optimize=optim_level)
-            co_filename = dest_name + os.path.splitext(src_name)[1]  # Use dest name with suffix from source filename.
+            # Construct new `co_filename` by taking destination name, and replace its suffix with the one from the code
+            # object's co_filename; this should cover all of the following cases:
+            #  - run-time hook script: the source name has a suffix (that is also present in `co_filename` produced by
+            #    `get_code_object`), destination name has no suffix.
+            #  - entry-point script with a suffix: both source name and destination name have the same suffix (and the
+            #    same suffix is also in `co_filename` produced by `get_code_object`)
+            #  - entry-point script without a suffix: neither source name nor destination name have a suffix, but
+            #    `get_code_object` adds a .py suffix to `co_filename` to mitigate potential issues with POSIX
+            #    executables and `traceback` module; we want to preserve this behavior.
+            co_filename = os.path.splitext(dest_name)[0] + os.path.splitext(code.co_filename)[1]
             code = replace_filename_in_code_object(code, co_filename)
             return self._write_blob(fp, marshal.dumps(code), dest_name, 's', compress=compress)
         elif typecode in ('m', 'M'):
