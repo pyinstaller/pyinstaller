@@ -126,7 +126,7 @@ splash_canvas_text = r"""
         -font myFont \
         -tag vartext \
         -anchor sw
-trace variable status_text w \
+trace add variable status_text write \
     [list canvas_text_update .root.canvas vartext]
 set status_text "%(default_text)s"
 """
