@@ -285,10 +285,13 @@ class TclTkInfo:
             lib_name = os.path.basename(lib_path)
             lib_name_lower = lib_name.lower()  # lower-case for comparisons
 
-            if 'tcl' in lib_name_lower:
-                tcl_lib = lib_path
-            elif 'tk' in lib_name_lower:
+            # First check for Tk library, because it is unlikely that 'tk' will appear in the name of the Tcl shared
+            # library, while 'tcl' could appear in the name of the Tk shared library. For example, Fedora 43 ships
+            # both Tcl/Tk 8.6 and 9.0, and in the latter, the libraries are named `libtcl9.0.so` and `libtcl9tk9.0.so`.
+            if 'tk' in lib_name_lower:
                 tk_lib = lib_path
+            elif 'tcl' in lib_name_lower:
+                tcl_lib = lib_path
 
         return tcl_lib, tk_lib
 
