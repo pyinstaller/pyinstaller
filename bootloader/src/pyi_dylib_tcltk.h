@@ -26,6 +26,8 @@
 
 #include "pyi_global.h"
 
+#include <stddef.h>  /* ptrdiff_t */
+
 /* Macros defined in Tcl and copied over for easier understanding of the code */
 #define TCL_OK 0
 #define TCL_ERROR 1
@@ -82,6 +84,9 @@ typedef enum
  * Tcl shared library and bound functions imported from it.
  */
 
+/* Version */
+PYI_EXT_FUNC_PROTO(void, Tcl_GetVersion, (int *, int *, int *, int *))
+
 /* Tcl Initialization/Destruction */
 PYI_EXT_FUNC_PROTO(int, Tcl_Init, (Tcl_Interp *))
 PYI_EXT_FUNC_PROTO(Tcl_Interp*, Tcl_CreateInterp, (void))
@@ -92,7 +97,8 @@ PYI_EXT_FUNC_PROTO(void, Tcl_FinalizeThread, (void))
 PYI_EXT_FUNC_PROTO(void, Tcl_DeleteInterp, (Tcl_Interp *))
 
 /* Threading */
-PYI_EXT_FUNC_PROTO(int, Tcl_CreateThread, (Tcl_ThreadId *, Tcl_ThreadCreateProc *, ClientData, int, int))
+PYI_EXT_FUNC_PROTO(int, Tcl_CreateThread_8, (Tcl_ThreadId *, Tcl_ThreadCreateProc *, ClientData, unsigned, int)) /* Tcl < 9.0: 32-bit stackSize argument */
+PYI_EXT_FUNC_PROTO(int, Tcl_CreateThread_9, (Tcl_ThreadId *, Tcl_ThreadCreateProc *, ClientData, size_t, int)) /* Tcl >= 9.0: 64-bit stackSize argument */
 PYI_EXT_FUNC_PROTO(Tcl_ThreadId, Tcl_GetCurrentThread, (void))
 PYI_EXT_FUNC_PROTO(int, Tcl_JoinThread, (Tcl_ThreadId, int *))
 PYI_EXT_FUNC_PROTO(void, Tcl_MutexLock, (Tcl_Mutex *))
@@ -101,7 +107,7 @@ PYI_EXT_FUNC_PROTO(void, Tcl_MutexFinalize, (Tcl_Mutex *))
 PYI_EXT_FUNC_PROTO(void, Tcl_ConditionFinalize, (Tcl_Condition *))
 PYI_EXT_FUNC_PROTO(void, Tcl_ConditionNotify, (Tcl_Condition *))
 PYI_EXT_FUNC_PROTO(void, Tcl_ConditionWait, (Tcl_Condition *, Tcl_Mutex *, const Tcl_Time *))
-PYI_EXT_FUNC_PROTO(void, Tcl_ThreadQueueEvent, (Tcl_ThreadId, Tcl_Event *, Tcl_QueuePosition))
+PYI_EXT_FUNC_PROTO(void, Tcl_ThreadQueueEvent, (Tcl_ThreadId, Tcl_Event *, int))
 PYI_EXT_FUNC_PROTO(void, Tcl_ThreadAlert, (Tcl_ThreadId threadId))
 
 /* Tcl interpreter manipulation */
@@ -109,16 +115,21 @@ PYI_EXT_FUNC_PROTO(const char*, Tcl_GetVar2, (Tcl_Interp *, const char *, const 
 PYI_EXT_FUNC_PROTO(const char*, Tcl_SetVar2, (Tcl_Interp *, const char *, const char *, const char *, int))
 PYI_EXT_FUNC_PROTO(Tcl_Command, Tcl_CreateObjCommand, (Tcl_Interp *, const char *, Tcl_ObjCmdProc *, ClientData, Tcl_CmdDeleteProc *))
 PYI_EXT_FUNC_PROTO(char *, Tcl_GetString, (Tcl_Obj *))
-PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_NewStringObj, (const char *, int))
-PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_NewByteArrayObj, (const unsigned char *, int))
+PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_NewStringObj_8, (const char *, int)) /* Tcl < 9.0: 32-bit length argument */
+PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_NewStringObj_9, (const char *, ptrdiff_t)) /* Tcl >= 9.0: 64-bit length argument */
+PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_NewByteArrayObj_8, (const unsigned char *, int)) /* Tcl < 9.0: 32-bit numBytes argument */
+PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_NewByteArrayObj_9, (const unsigned char *, ptrdiff_t)) /* Tcl >= 9.0: 64-bit numBytes argument */
 PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_SetVar2Ex, (Tcl_Interp *, const char *, const char *, Tcl_Obj *, int))
 PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_GetObjResult, (Tcl_Interp *))
 
 /* Evaluating scripts and memory functions */
 PYI_EXT_FUNC_PROTO(int, Tcl_EvalFile, (Tcl_Interp *, const char *))
-PYI_EXT_FUNC_PROTO(int, Tcl_EvalEx, (Tcl_Interp *, const char *, int, int))
-PYI_EXT_FUNC_PROTO(int, Tcl_EvalObjv, (Tcl_Interp *, int, Tcl_Obj * const[], int))
-PYI_EXT_FUNC_PROTO(char *, Tcl_Alloc, (unsigned int))
+PYI_EXT_FUNC_PROTO(int, Tcl_EvalEx_8, (Tcl_Interp *, const char *, int, int)) /* Tcl < 9.0: 32-bit numBytes argument */
+PYI_EXT_FUNC_PROTO(int, Tcl_EvalEx_9, (Tcl_Interp *, const char *, ptrdiff_t, int)) /* Tcl >= 9.0: 64-bit numBytes argument */
+PYI_EXT_FUNC_PROTO(int, Tcl_EvalObjv_8, (Tcl_Interp *, int, Tcl_Obj * const[], int)) /* Tcl < 9.0: 32-bit objc argument */
+PYI_EXT_FUNC_PROTO(int, Tcl_EvalObjv_9, (Tcl_Interp *, ptrdiff_t, Tcl_Obj * const[], int)) /* Tcl >= 9.0: 64-bit objc argument */
+PYI_EXT_FUNC_PROTO(char *, Tcl_Alloc_8, (unsigned)) /* Tcl < 9.0: 32-bit size argument */
+PYI_EXT_FUNC_PROTO(char *, Tcl_Alloc_9, (size_t)) /* Tcl >= 9.0: 64-bit size argument */
 PYI_EXT_FUNC_PROTO(void, Tcl_Free, (char *))
 
 /* Tk functions */
@@ -132,7 +143,12 @@ struct DYLIB_TCLTK
     pyi_dylib_t handle_tcl;
     pyi_dylib_t handle_tk;
 
+    /* Major version of Tcl */
+    int tcl_major;
+
     /* Function pointers for imported functions: Tcl */
+    PYI_EXT_FUNC_ENTRY(Tcl_GetVersion)
+
     PYI_EXT_FUNC_ENTRY(Tcl_Init)
     PYI_EXT_FUNC_ENTRY(Tcl_CreateInterp)
     PYI_EXT_FUNC_ENTRY(Tcl_FindExecutable)
@@ -141,7 +157,8 @@ struct DYLIB_TCLTK
     PYI_EXT_FUNC_ENTRY(Tcl_FinalizeThread)
     PYI_EXT_FUNC_ENTRY(Tcl_DeleteInterp)
 
-    PYI_EXT_FUNC_ENTRY(Tcl_CreateThread)
+    PYI_EXT_FUNC_ENTRY(Tcl_CreateThread_8)
+    PYI_EXT_FUNC_ENTRY(Tcl_CreateThread_9)
     PYI_EXT_FUNC_ENTRY(Tcl_GetCurrentThread)
     PYI_EXT_FUNC_ENTRY(Tcl_JoinThread)
     PYI_EXT_FUNC_ENTRY(Tcl_MutexLock)
@@ -157,15 +174,20 @@ struct DYLIB_TCLTK
     PYI_EXT_FUNC_ENTRY(Tcl_SetVar2)
     PYI_EXT_FUNC_ENTRY(Tcl_CreateObjCommand)
     PYI_EXT_FUNC_ENTRY(Tcl_GetString)
-    PYI_EXT_FUNC_ENTRY(Tcl_NewStringObj)
-    PYI_EXT_FUNC_ENTRY(Tcl_NewByteArrayObj)
+    PYI_EXT_FUNC_ENTRY(Tcl_NewStringObj_8)
+    PYI_EXT_FUNC_ENTRY(Tcl_NewStringObj_9)
+    PYI_EXT_FUNC_ENTRY(Tcl_NewByteArrayObj_8)
+    PYI_EXT_FUNC_ENTRY(Tcl_NewByteArrayObj_9)
     PYI_EXT_FUNC_ENTRY(Tcl_SetVar2Ex)
     PYI_EXT_FUNC_ENTRY(Tcl_GetObjResult)
 
     PYI_EXT_FUNC_ENTRY(Tcl_EvalFile)
-    PYI_EXT_FUNC_ENTRY(Tcl_EvalEx)
-    PYI_EXT_FUNC_ENTRY(Tcl_EvalObjv)
-    PYI_EXT_FUNC_ENTRY(Tcl_Alloc)
+    PYI_EXT_FUNC_ENTRY(Tcl_EvalEx_8)
+    PYI_EXT_FUNC_ENTRY(Tcl_EvalEx_9)
+    PYI_EXT_FUNC_ENTRY(Tcl_EvalObjv_8)
+    PYI_EXT_FUNC_ENTRY(Tcl_EvalObjv_9)
+    PYI_EXT_FUNC_ENTRY(Tcl_Alloc_8)
+    PYI_EXT_FUNC_ENTRY(Tcl_Alloc_9)
     PYI_EXT_FUNC_ENTRY(Tcl_Free)
 
     /* Function pointers for imported functions: Tk */

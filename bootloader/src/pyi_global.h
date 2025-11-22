@@ -61,6 +61,8 @@
  *    to bind the function (using GetProcAddress on Windows, dlsym on
  *    other platforms).. The destination location is typically a field in
  *    function-table structure, defined via PYI_EXT_FUNC_ENTRY.
+ *  - PYI_EXT_FUNC_BIND_EX: same as above, but with additional argument
+ *    that specifies the type name that was used with PYI_EXT_FUNC_ENTRY.
  */
 #ifdef _WIN32
     typedef HMODULE pyi_dylib_t;
@@ -73,8 +75,8 @@
 
     /* GetProcAddress() returns FARPROC, a function pointer, which can
      * be cast to a different function pointer. */
-    #define PYI_EXT_FUNC_BIND(handle, name, dest) \
-        dest = (_PYI_ ## name ## _TYPE)GetProcAddress(handle, #name);
+    #define PYI_EXT_FUNC_BIND_EX(handle, type, name, dest) \
+        dest = (_PYI_ ## type ## _TYPE)GetProcAddress(handle, #name);
 
 #else /* ifdef _WIN32 */
     #include <dlfcn.h> /* dlsym(), dlerror() */
@@ -93,11 +95,11 @@
      * in practice, the cast should be safe on contemporary platforms).
      * To avoid warnings when using gcc with -pedantic option turned on,
      * we perform type-punning through union. */
-    #define PYI_EXT_FUNC_BIND(handle, name, dest) \
+    #define PYI_EXT_FUNC_BIND_EX(handle, type, name, dest) \
         do {\
             /* This union requires its own scope */ \
             union { \
-                _PYI_ ## name ## _TYPE func_ptr; \
+                _PYI_ ## type ## _TYPE func_ptr; \
                 void *obj_ptr; \
             } alias; \
             /* Store object pointer */ \
@@ -107,6 +109,10 @@
         } while(0)
 
 #endif  /* ifdef _WIN32 */
+
+/* This simplified macro assumes that the type name passed to the
+ * PYI_EXT_FUNC_ENTRY matches the symbol name. */
+#define PYI_EXT_FUNC_BIND(handle, name, dest) PYI_EXT_FUNC_BIND_EX(handle, name, name, dest)
 
 
 /*

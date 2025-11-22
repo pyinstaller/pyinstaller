@@ -99,21 +99,30 @@ static int _pyi_dylib_tcltk_import_tcl_symbols(struct DYLIB_TCLTK *dylib)
     /* Function names always contain ASCII characters, so we can safely
      * format ANSI string (obtained via stringification) into wide-char
      * message string. */
-    #define _IMPORT_FUNCTION(name) \
-        PYI_EXT_FUNC_BIND(dylib->handle_tcl, name, dylib->name); \
-        if (!dylib->name) { \
+    #define _IMPORT_FUNCTION_EX(name, dest_name) \
+        PYI_EXT_FUNC_BIND_EX(dylib->handle_tcl, dest_name, name, dylib->dest_name); \
+        if (!dylib->dest_name) { \
             PYI_WINERROR_W(L"GetProcAddress", L"Failed to import symbol %hs from Tcl DLL.\n", #name); \
             return -1; \
         }
 #else
     /* Extend PYI_EXT_FUNC_BIND() with error handling. */
-    #define _IMPORT_FUNCTION(name) \
-        PYI_EXT_FUNC_BIND(dylib->handle_tcl, name, dylib->name); \
-        if (!dylib->name) { \
+    #define _IMPORT_FUNCTION_EX(name, dest_name) \
+        PYI_EXT_FUNC_BIND_EX(dylib->handle_tcl, dest_name, name, dylib->dest_name); \
+        if (!dylib->dest_name) { \
             PYI_ERROR("Failed to import symbol %s from Tcl shared library: %s\n", #name, dlerror()); \
             return -1; \
         }
 #endif
+
+    #define _IMPORT_FUNCTION(name) _IMPORT_FUNCTION_EX(name, name)
+
+    /* Bind the GetVersion function and query the major version of Tcl,
+     * in order to determine whether we should bind functions to prototypes
+     * with 64-bit arguments (Tcl >= 9.0) or 32-bit arguments (Tcl < 9.0). */
+    _IMPORT_FUNCTION(Tcl_GetVersion)
+    dylib->Tcl_GetVersion(&dylib->tcl_major, NULL, NULL, NULL);
+    PYI_DEBUG("DYLIB: binding Tcl with major version %d.\n", dylib->tcl_major);
 
     _IMPORT_FUNCTION(Tcl_Init)
     _IMPORT_FUNCTION(Tcl_CreateInterp)
@@ -123,7 +132,11 @@ static int _pyi_dylib_tcltk_import_tcl_symbols(struct DYLIB_TCLTK *dylib)
     _IMPORT_FUNCTION(Tcl_FinalizeThread)
     _IMPORT_FUNCTION(Tcl_DeleteInterp)
 
-    _IMPORT_FUNCTION(Tcl_CreateThread)
+    if (dylib->tcl_major >= 9) {
+        _IMPORT_FUNCTION_EX(Tcl_CreateThread, Tcl_CreateThread_9)
+    } else {
+        _IMPORT_FUNCTION_EX(Tcl_CreateThread, Tcl_CreateThread_8)
+    }
     _IMPORT_FUNCTION(Tcl_GetCurrentThread)
     _IMPORT_FUNCTION(Tcl_JoinThread)
     _IMPORT_FUNCTION(Tcl_MutexLock)
@@ -139,18 +152,30 @@ static int _pyi_dylib_tcltk_import_tcl_symbols(struct DYLIB_TCLTK *dylib)
     _IMPORT_FUNCTION(Tcl_SetVar2)
     _IMPORT_FUNCTION(Tcl_CreateObjCommand)
     _IMPORT_FUNCTION(Tcl_GetString)
-    _IMPORT_FUNCTION(Tcl_NewStringObj)
-    _IMPORT_FUNCTION(Tcl_NewByteArrayObj)
+    if (dylib->tcl_major >= 9) {
+        _IMPORT_FUNCTION_EX(Tcl_NewStringObj, Tcl_NewStringObj_9)
+        _IMPORT_FUNCTION_EX(Tcl_NewByteArrayObj, Tcl_NewByteArrayObj_9)
+    } else {
+        _IMPORT_FUNCTION_EX(Tcl_NewStringObj, Tcl_NewStringObj_8)
+        _IMPORT_FUNCTION_EX(Tcl_NewByteArrayObj, Tcl_NewByteArrayObj_8)
+    }
     _IMPORT_FUNCTION(Tcl_SetVar2Ex)
     _IMPORT_FUNCTION(Tcl_GetObjResult)
 
     _IMPORT_FUNCTION(Tcl_EvalFile)
-    _IMPORT_FUNCTION(Tcl_EvalEx)
-    _IMPORT_FUNCTION(Tcl_EvalObjv)
-    _IMPORT_FUNCTION(Tcl_Alloc)
+    if (dylib->tcl_major >= 9) {
+        _IMPORT_FUNCTION_EX(Tcl_EvalEx, Tcl_EvalEx_9)
+        _IMPORT_FUNCTION_EX(Tcl_EvalObjv, Tcl_EvalObjv_9)
+        _IMPORT_FUNCTION_EX(Tcl_Alloc, Tcl_Alloc_9)
+    } else {
+        _IMPORT_FUNCTION_EX(Tcl_EvalEx, Tcl_EvalEx_8)
+        _IMPORT_FUNCTION_EX(Tcl_EvalObjv, Tcl_EvalObjv_8)
+        _IMPORT_FUNCTION_EX(Tcl_Alloc, Tcl_Alloc_8)
+    }
     _IMPORT_FUNCTION(Tcl_Free)
 
 #undef _IMPORT_FUNCTION
+#undef _IMPORT_FUNCTION_EX
 
     return 0;
 }

@@ -180,6 +180,7 @@ int
 pyi_splash_start(struct SPLASH_CONTEXT *splash, const char *executable)
 {
     const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
+    int ret;
 
     /* Make sure shared libraries have been loaded and their symbols
      * bound. */
@@ -213,13 +214,24 @@ pyi_splash_start(struct SPLASH_CONTEXT *splash, const char *executable)
      * methods provided by Tcl. This function will return TCL_ERROR if it is
      * either not implemented (Tcl is not threaded) or an error occurs.
      * Since we only support threaded Tcl, the error is fatal. */
-    if (dylib_tcltk->Tcl_CreateThread(
-        &splash->thread_id, /* location to store thread ID */
-        _splash_init, /* procedure/function to run in the new thread */
-        splash, /* parameters to pass to procedure */
-        0, /* use default stack size */
-        splash->thread_joinable ? TCL_THREAD_JOINABLE : TCL_THREAD_NOFLAGS /* flags */
-    ) != TCL_OK) {
+     if (dylib_tcltk->tcl_major >= 9) {
+         ret = dylib_tcltk->Tcl_CreateThread_9(
+            &splash->thread_id, /* location to store thread ID */
+            _splash_init, /* procedure/function to run in the new thread */
+            splash, /* parameters to pass to procedure */
+            0, /* use default stack size */
+            splash->thread_joinable ? TCL_THREAD_JOINABLE : TCL_THREAD_NOFLAGS /* flags */
+        );
+    } else {
+        ret = dylib_tcltk->Tcl_CreateThread_8(
+            &splash->thread_id, /* location to store thread ID */
+            _splash_init, /* procedure/function to run in the new thread */
+            splash, /* parameters to pass to procedure */
+            0, /* use default stack size */
+            splash->thread_joinable ? TCL_THREAD_JOINABLE : TCL_THREAD_NOFLAGS /* flags */
+        );
+    }
+    if (ret != TCL_OK) {
         PYI_ERROR("SPLASH: Tcl is not threaded. Only threaded Tcl is supported.\n");
         dylib_tcltk->Tcl_MutexUnlock(&splash->context_mutex);
         pyi_splash_finalize(splash);
@@ -638,12 +650,18 @@ pyi_splash_update_text(struct SPLASH_CONTEXT *splash, const char *text)
 int
 pyi_splash_send(struct SPLASH_CONTEXT *splash, bool async, const void *user_data, pyi_splash_event_proc proc)
 {
+    const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
+
     int rc = 0;
     struct Splash_Event *ev;
     Tcl_Condition cond = NULL;
 
     /* Tcl will free this event once it was serviced. */
-    ev = (struct Splash_Event *)splash->dylib_tcltk->Tcl_Alloc(sizeof(struct Splash_Event));
+    if (dylib_tcltk->tcl_major >= 9) {
+        ev = (struct Splash_Event *)dylib_tcltk->Tcl_Alloc_9(sizeof(struct Splash_Event));
+    } else {
+        ev = (struct Splash_Event *)dylib_tcltk->Tcl_Alloc_8(sizeof(struct Splash_Event));
+    }
 
     ev->ev.proc = (Tcl_EventProc *)_splash_event_proc;
     ev->splash = splash;
@@ -660,7 +678,7 @@ pyi_splash_send(struct SPLASH_CONTEXT *splash, bool async, const void *user_data
     _splash_event_send(splash, (Tcl_Event *)ev, &cond, &splash->call_mutex, async);
 
     if (!async) {
-        splash->dylib_tcltk->Tcl_ConditionFinalize(&cond);
+        dylib_tcltk->Tcl_ConditionFinalize(&cond);
     }
     return rc;
 }
@@ -772,15 +790,24 @@ _tcl_source_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     if (pyi_path_exists(dylib_tcltk->Tcl_GetString(objv[objc - 1]))) {
         /* Create a new objv array for the original source command
          * named _source. */
-        _source_objv = (Tcl_Obj **)dylib_tcltk->Tcl_Alloc(sizeof(Tcl_Obj *) * objc);
-        _source_objv[0] = dylib_tcltk->Tcl_NewStringObj("_source", -1);
+        if (dylib_tcltk->tcl_major >= 9) {
+            _source_objv = (Tcl_Obj **)dylib_tcltk->Tcl_Alloc_9(sizeof(Tcl_Obj *) * objc);
+            _source_objv[0] = dylib_tcltk->Tcl_NewStringObj_9("_source", -1);
+        } else {
+            _source_objv = (Tcl_Obj **)dylib_tcltk->Tcl_Alloc_8(sizeof(Tcl_Obj *) * objc);
+            _source_objv[0] = dylib_tcltk->Tcl_NewStringObj_8("_source", -1);
+        }
 
         for (i = 1; i < objc; i++) {
             _source_objv[i] = objv[i];
         }
 
         /* Execute `_source` with the given arguments */
-        rc = dylib_tcltk->Tcl_EvalObjv(interp, objc, _source_objv, 0);
+        if (dylib_tcltk->tcl_major >= 9) {
+            rc = dylib_tcltk->Tcl_EvalObjv_9(interp, objc, _source_objv, 0);
+        } else {
+            rc = dylib_tcltk->Tcl_EvalObjv_8(interp, objc, _source_objv, 0);
+        }
         dylib_tcltk->Tcl_Free((char *) _source_objv);
 
         return rc;
@@ -872,7 +899,11 @@ _splash_init(ClientData client_data)
     ) == NULL;
 
     /* Replace `source` command for use in minimal environment. */
-    dylib_tcltk->Tcl_EvalEx(splash->interp, "rename ::source ::_source", -1, 0);
+    if (dylib_tcltk->tcl_major >= 9) {
+        dylib_tcltk->Tcl_EvalEx_9(splash->interp, "rename ::source ::_source", -1, 0);
+    } else {
+        dylib_tcltk->Tcl_EvalEx_8(splash->interp, "rename ::source ::_source", -1, 0);
+    }
     err |= dylib_tcltk->Tcl_CreateObjCommand(
         splash->interp,
         "source",
@@ -915,14 +946,22 @@ _splash_init(ClientData client_data)
 
     /* Extract the image from the splash resources, and pass it to Tcl/Tk
      * via the `_image_data` variable. */
-    image_data_obj = dylib_tcltk->Tcl_NewByteArrayObj(splash->image, splash->image_len);
+    if (dylib_tcltk->tcl_major >= 9) {
+        image_data_obj = dylib_tcltk->Tcl_NewByteArrayObj_9(splash->image, splash->image_len);
+    } else {
+        image_data_obj = dylib_tcltk->Tcl_NewByteArrayObj_8(splash->image, splash->image_len);
+    }
     dylib_tcltk->Tcl_SetVar2Ex(splash->interp, "_image_data", NULL, image_data_obj, TCL_GLOBAL_ONLY);
 
     /* Tcl/Tk creates a copy of the image, so we can free our buffer */
     free(splash->image);
     splash->image = NULL;
 
-    err = dylib_tcltk->Tcl_EvalEx(splash->interp, splash->script, splash->script_len, TCL_GLOBAL_ONLY);
+    if (dylib_tcltk->tcl_major >= 9) {
+        err = dylib_tcltk->Tcl_EvalEx_9(splash->interp, splash->script, splash->script_len, TCL_GLOBAL_ONLY);
+    } else {
+        err = dylib_tcltk->Tcl_EvalEx_8(splash->interp, splash->script, splash->script_len, TCL_GLOBAL_ONLY);
+    }
 
     if (err) {
         PYI_DEBUG("SPLASH: Tcl error: %s\n", dylib_tcltk->Tcl_GetString(dylib_tcltk->Tcl_GetObjResult(splash->interp)));
