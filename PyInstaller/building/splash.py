@@ -194,6 +194,12 @@ class Splash(Target):
             os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "utils.tcl"),
         ])
 
+        if tcltk_info.tk_version >= (9, 0):
+            self.splash_requirements.update([
+                os.path.join(tcltk_info.TK_ROOTNAME, "scaling.tcl"),
+                os.path.join(tcltk_info.TK_ROOTNAME, "tclIndex"),  # required for auto-load of scaling.tcl
+            ])
+
         logger.info("Collect Tcl/Tk data files for the splash screen")
         tcltk_tree = tcltk_info.data_files  # 3-element tuple TOC
         if self.full_tk:
