@@ -88,6 +88,9 @@ struct SPLASH_CONTEXT
      * joinable threads. */
     bool thread_joinable;
 
+    /* Path to top-level application directory */
+    char application_home_dir[PYI_PATH_MAX];
+
     /* The paths to Tcl/Tk shared libraries and Tk module library directory.
      * These are anchored to application's top-level directory (static
      * or temporary, depending on onedir vs. onefile mode). */

@@ -222,6 +222,7 @@
 /* MSVC provides _stricmp() in-lieu of POSIX strcasecmp() */
 #if defined(_WIN32) && defined(_MSC_VER)
     #define strcasecmp(string1, string2) _stricmp(string1, string2)
+    #define strncasecmp(string1, string2, count) _strnicmp(string1, string2, count)
 #endif
 
 /* Byte-order conversion macros */

@@ -93,6 +93,9 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
      * process uses zero padding and is ensuring that strings themselves
      * have no more than N-1 characters long. */
 
+    /* Top-level application directory */
+    strncpy(splash->application_home_dir, pyi_ctx->application_home_dir, PYI_PATH_MAX); /* both buffers are guaranteed to be PYI_PATH_MAX-sized */
+
     /* Tcl shared library */
     if (pyi_path_join(splash->tcl_libpath, pyi_ctx->application_home_dir, data_header->tcl_libname) == NULL) {
         PYI_WARNING("SPLASH: length of Tcl shared library path exceeds maximum path length!\n");
@@ -782,12 +785,72 @@ _tcl_source_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     struct SPLASH_CONTEXT *splash = (struct SPLASH_CONTEXT *)clientData;
     const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
     Tcl_Obj **_source_objv;
+    char *filename;
     int rc;
     int i;
 
-    /* Check if the file to be sourced exists. The filename
-     * is always the last (objc-1) parameter passed to the command */
-    if (pyi_path_exists(dylib_tcltk->Tcl_GetString(objv[objc - 1]))) {
+#if defined(LAUNCH_DEBUG)
+    PYI_DEBUG("TCL: 'source' command:\n");
+    for (i = 0; i < objc; i++) {
+        PYI_DEBUG("TCL:  - arg[%i]: %s\n", i, dylib_tcltk->Tcl_GetString(objv[i]));
+    }
+#endif
+
+    /* The filename is always the last (objc-1) parameter passed to the
+     * source command. */
+     filename = dylib_tcltk->Tcl_GetString(objv[objc - 1]);
+
+    /* Prevent loading of files that are outside of the top-level application
+     * directory. This would indicate issues with interpreter setup, which is
+     * supposed to be completely isolated. On Windows and macOS, use case-insensitive
+     * comparison to simulate case-insensitive filesystem. On Windows, we must also
+     * normalize separators, because Tcl appears to be using POSIX-style forward slash. */
+    if (1) {
+        bool ok;
+
+#if defined(_WIN32)
+        char normalized_filename[PYI_PATH_MAX];
+        if (snprintf(normalized_filename, PYI_PATH_MAX, "%s", filename) >= PYI_PATH_MAX) {
+            Tcl_Obj *error_obj;
+            PYI_DEBUG("TCL: 'source' command: path to file %s is too long!\n", filename);
+            if (dylib_tcltk->tcl_major >= 9) {
+                error_obj = dylib_tcltk->Tcl_NewStringObj_9("attempted to source file with path that exceeds maximum buffer size", -1);
+            } else {
+                error_obj = dylib_tcltk->Tcl_NewStringObj_8("attempted to source file with path that exceeds maximum buffer size", -1);
+            }
+            dylib_tcltk->Tcl_SetObjResult(interp, error_obj);
+            return TCL_ERROR;
+        } else {
+            char *p = normalized_filename;
+            while (*p != 0) {
+                if (*p == '/') {
+                    *p = '\\';
+                }
+                p++;
+            }
+            ok = strncasecmp(normalized_filename, splash->application_home_dir, strlen(splash->application_home_dir)) == 0;
+        }
+#elif defined(__APPLE__)
+        ok = strncasecmp(filename, splash->application_home_dir, strlen(splash->application_home_dir)) == 0;
+#else
+        ok = strncmp(filename, splash->application_home_dir, strlen(splash->application_home_dir)) == 0;
+#endif
+
+        if (!ok) {
+            Tcl_Obj *error_obj;
+            PYI_DEBUG("TCL: 'source' command: file %s is not rooted in top-level application directory (%s) - raising error!\n", filename, splash->application_home_dir);
+            if (dylib_tcltk->tcl_major >= 9) {
+                error_obj = dylib_tcltk->Tcl_NewStringObj_9("attempted to source file outside of top-level application directory", -1);
+            } else {
+                error_obj = dylib_tcltk->Tcl_NewStringObj_8("attempted to source file outside of top-level application directory", -1);
+            }
+            dylib_tcltk->Tcl_SetObjResult(interp, error_obj);
+            return TCL_ERROR;
+        }
+    }
+
+    /* Check if the file to be sourced exists. */
+    if (pyi_path_exists(filename)) {
         /* Create a new objv array for the original source command
          * named _source. */
         if (dylib_tcltk->tcl_major >= 9) {
@@ -803,19 +866,25 @@ _tcl_source_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         }
 
         /* Execute `_source` with the given arguments */
+        PYI_DEBUG("TCL: 'source' command: loading file: %s\n", filename);
         if (dylib_tcltk->tcl_major >= 9) {
             rc = dylib_tcltk->Tcl_EvalObjv_9(interp, objc, _source_objv, 0);
         } else {
             rc = dylib_tcltk->Tcl_EvalObjv_8(interp, objc, _source_objv, 0);
         }
         dylib_tcltk->Tcl_Free((char *) _source_objv);
+        if (rc == TCL_OK) {
+            PYI_DEBUG("TCL: 'source' command: file %s successfully loaded.\n", filename);
+        } else {
+            PYI_DEBUG("TCL: 'source' command: file %s failed to load with status code %d and message: %s.\n", filename, rc, dylib_tcltk->Tcl_GetString(dylib_tcltk->Tcl_GetObjResult(splash->interp)));
+        }
 
         return rc;
     }
 
     /* If the file does not exist, we return OK */
+    PYI_DEBUG("TCL: 'source' command: file %s does not exist - ignoring.\n", filename);
     return TCL_OK;
-
 }
 
 /*

@@ -121,6 +121,7 @@ PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_NewByteArrayObj_8, (const unsigned char *, int
 PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_NewByteArrayObj_9, (const unsigned char *, ptrdiff_t)) /* Tcl >= 9.0: 64-bit numBytes argument */
 PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_SetVar2Ex, (Tcl_Interp *, const char *, const char *, Tcl_Obj *, int))
 PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_GetObjResult, (Tcl_Interp *))
+PYI_EXT_FUNC_PROTO(void, Tcl_SetObjResult, (Tcl_Interp *, Tcl_Obj *))
 
 /* Evaluating scripts and memory functions */
 PYI_EXT_FUNC_PROTO(int, Tcl_EvalFile, (Tcl_Interp *, const char *))
@@ -180,6 +181,7 @@ struct DYLIB_TCLTK
     PYI_EXT_FUNC_ENTRY(Tcl_NewByteArrayObj_9)
     PYI_EXT_FUNC_ENTRY(Tcl_SetVar2Ex)
     PYI_EXT_FUNC_ENTRY(Tcl_GetObjResult)
+    PYI_EXT_FUNC_ENTRY(Tcl_SetObjResult)
 
     PYI_EXT_FUNC_ENTRY(Tcl_EvalFile)
     PYI_EXT_FUNC_ENTRY(Tcl_EvalEx_8)
