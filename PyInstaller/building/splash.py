@@ -182,6 +182,8 @@ class Splash(Target):
             #
             # NOTE: these paths use the *destination* layout for Tcl/Tk scripts, which uses unversioned tcl and tk
             # directories (see `PyInstaller.utils.hooks.tcl_tk.collect_tcl_tk_files`).
+            os.path.join(tcltk_info.TCL_ROOTNAME, "init.tcl"),
+            # Core Tk
             os.path.join(tcltk_info.TK_ROOTNAME, "license.terms"),
             os.path.join(tcltk_info.TK_ROOTNAME, "text.tcl"),
             os.path.join(tcltk_info.TK_ROOTNAME, "tk.tcl"),

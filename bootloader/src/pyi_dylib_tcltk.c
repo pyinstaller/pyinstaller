@@ -150,6 +150,7 @@ static int _pyi_dylib_tcltk_import_tcl_symbols(struct DYLIB_TCLTK *dylib)
 
     _IMPORT_FUNCTION(Tcl_GetVar2)
     _IMPORT_FUNCTION(Tcl_SetVar2)
+    _IMPORT_FUNCTION(Tcl_UnsetVar2)
     _IMPORT_FUNCTION(Tcl_CreateObjCommand)
     _IMPORT_FUNCTION(Tcl_GetString)
     if (dylib->tcl_major >= 9) {

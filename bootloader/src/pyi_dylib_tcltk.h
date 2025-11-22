@@ -113,6 +113,7 @@ PYI_EXT_FUNC_PROTO(void, Tcl_ThreadAlert, (Tcl_ThreadId threadId))
 /* Tcl interpreter manipulation */
 PYI_EXT_FUNC_PROTO(const char*, Tcl_GetVar2, (Tcl_Interp *, const char *, const char *, int))
 PYI_EXT_FUNC_PROTO(const char*, Tcl_SetVar2, (Tcl_Interp *, const char *, const char *, const char *, int))
+PYI_EXT_FUNC_PROTO(int, Tcl_UnsetVar2, (Tcl_Interp *, const char *, const char *, int))
 PYI_EXT_FUNC_PROTO(Tcl_Command, Tcl_CreateObjCommand, (Tcl_Interp *, const char *, Tcl_ObjCmdProc *, ClientData, Tcl_CmdDeleteProc *))
 PYI_EXT_FUNC_PROTO(char *, Tcl_GetString, (Tcl_Obj *))
 PYI_EXT_FUNC_PROTO(Tcl_Obj *, Tcl_NewStringObj_8, (const char *, int)) /* Tcl < 9.0: 32-bit length argument */
@@ -173,6 +174,7 @@ struct DYLIB_TCLTK
 
     PYI_EXT_FUNC_ENTRY(Tcl_GetVar2)
     PYI_EXT_FUNC_ENTRY(Tcl_SetVar2)
+    PYI_EXT_FUNC_ENTRY(Tcl_UnsetVar2)
     PYI_EXT_FUNC_ENTRY(Tcl_CreateObjCommand)
     PYI_EXT_FUNC_ENTRY(Tcl_GetString)
     PYI_EXT_FUNC_ENTRY(Tcl_NewStringObj_8)

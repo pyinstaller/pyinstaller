@@ -703,20 +703,74 @@ pyi_splash_send(struct SPLASH_CONTEXT *splash, bool async, const void *user_data
  * instead.
  *
  * We override the internal function, because we want to run Tcl in a very
- * minimal environment and do not want to initialize the standard library.
+ * minimal environment.
  */
 static int
 _tclInit_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     /**
-     * This function would normally do a search in some common and
-     * specific paths to find an `init.tcl` file. Once found, every script
-     * next to it would be executed (`auto.tcl`, `clock.tcl`, etc.) to
-     * define the standard library.
-     * This initialization script would normally set `$auto_path` to be
-     * the folder where `init.tcl` was found, usually the `tclX.Y` directory
-     * inside python's Tcl distribution directory.
-     */
+     * Execute the collected `init.tcl` script in order to set up Tcl's
+     * command auto-load mechanism (the `undefined` handler, the
+     * `auto_path` variable, etc).
+     *
+     * This overrides the default implementation, which searches for the
+     * `init.tcl` script in several pre-defined locations. In our case,
+     * we know exactly where to find it; similarly, we also know that all
+     * our .tcl modules are available in only one location, so try to
+     * restrict the auto-load search paths as much as possible.
+     *
+     * In earlier versions of splash screen, the implementation of this
+     * function was a no-op. However, with Tcl/Tk >= 9, it seems that the
+     * `Tk_init()` function and the modules it loads expect to be able
+     * to auto-load some of the commands provided by other Tk modules.
+     * While we could provide implementation of `undefined` handler that
+     * statically resolves the couple of commands required by the Tk
+     * modules used by splash screen, this does not work when full Tk
+     * is bundled with the application (either because this is onedir
+     * application that uses `tkinter`, or because full collection was
+     * enabled via `full_tk` flag passed to splash screen build options;
+     * in that case, additional modules are loaded (see our override
+     * for `source` command), with additional dependencies. Therefore,
+     * at least at the moment, it seems more reasonable to use the
+     * auto-load mechanism provided by `init.tcl`. */
+    int rc;
+    struct SPLASH_CONTEXT *splash = (struct SPLASH_CONTEXT *)clientData;
+    const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
+    char init_script_path[PYI_PATH_MAX];
+
+    /* Set tcl_library variable */
+    dylib_tcltk->Tcl_SetVar2(interp, "tcl_library", NULL, splash->tcl_modules_dir, TCL_GLOBAL_ONLY);
+
+    /* Unset tcl_pkgPath variable, to prevent paths from it from being
+     * added to the auto_path by init.tcl. On POSIX platforms, this variable
+     * contains hard-coded paths to system directories. */
+    dylib_tcltk->Tcl_UnsetVar2(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
+
+    /* Initialize auto_path variable with empty string. This prevents
+     * `init.tcl` from trying to initialize it from `TCLLIBPATH`
+     * environment variable, if the latter happens to be available.
+     * See: https://github.com/tcltk/tcl/blob/core-9-0-0/library/init.tcl#L44-L58 */
+    dylib_tcltk->Tcl_SetVar2(interp, "auto_path", NULL, "", TCL_GLOBAL_ONLY);
+
+    /* Run the init.tcl file */
+    pyi_path_join(init_script_path, splash->tcl_modules_dir, "init.tcl");
+    rc = dylib_tcltk->Tcl_EvalFile(interp, init_script_path);
+    if (rc == TCL_OK) {
+        PYI_DEBUG("TCL: 'tclInit' command: init.tcl successfully loaded.\n");
+    } else {
+        PYI_DEBUG("TCL: 'tclInit' command: init.tcl failed to load with status code %d and message: %s.\n", rc, dylib_tcltk->Tcl_GetString(dylib_tcltk->Tcl_GetObjResult(splash->interp)));
+        return rc;
+    }
+
+    /* On Windows, `init.tcl` seems to add not only `tcl_library` to the
+     * `auto_path`, but also its parent directory as well as `../lib`
+     * directory relative to the executable's location. In our restricted
+     * interpreter, we want none of that - so re-set the `auto_path` to
+     * contain only the `tcl_library` location. */
+    dylib_tcltk->Tcl_SetVar2(interp, "auto_path", NULL, splash->tcl_modules_dir, TCL_GLOBAL_ONLY);
+
+    PYI_DEBUG("TCL: 'tclInit' command: 'auto_path' after init: %s\n", dylib_tcltk->Tcl_GetVar2(splash->interp, "auto_path", NULL, TCL_GLOBAL_ONLY));
+
     return TCL_OK;
 }
 
