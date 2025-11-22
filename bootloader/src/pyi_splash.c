@@ -97,21 +97,21 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
     strncpy(splash->application_home_dir, pyi_ctx->application_home_dir, PYI_PATH_MAX); /* both buffers are guaranteed to be PYI_PATH_MAX-sized */
 
     /* Tcl shared library */
-    if (pyi_path_join(splash->tcl_libpath, pyi_ctx->application_home_dir, data_header->tcl_libname) == NULL) {
+    if (pyi_path_join(splash->tcl_shared_library, pyi_ctx->application_home_dir, data_header->tcl_libname) == NULL) {
         PYI_WARNING("SPLASH: length of Tcl shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }
 
     /* Tk shared library */
-    if (pyi_path_join(splash->tk_libpath, pyi_ctx->application_home_dir, data_header->tk_libname) == NULL) {
+    if (pyi_path_join(splash->tk_shared_library, pyi_ctx->application_home_dir, data_header->tk_libname) == NULL) {
         PYI_WARNING("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }
 
     /* Tk modules directory */
-    if (pyi_path_join(splash->tk_lib, pyi_ctx->application_home_dir, data_header->tk_lib) == NULL) {
+    if (pyi_path_join(splash->tk_modules_dir, pyi_ctx->application_home_dir, data_header->tk_lib) == NULL) {
         PYI_WARNING("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
@@ -365,11 +365,11 @@ pyi_splash_is_splash_requirement(struct SPLASH_CONTEXT *splash, const char *name
 int
 pyi_splash_load_shared_libraries(struct SPLASH_CONTEXT *splash)
 {
-    PYI_DEBUG("SPLASH: loading Tcl library from: %s\n", splash->tcl_libpath);
-    PYI_DEBUG("SPLASH: loading Tk library from: %s\n", splash->tk_libpath);
+    PYI_DEBUG("SPLASH: loading Tcl library from: %s\n", splash->tcl_shared_library);
+    PYI_DEBUG("SPLASH: loading Tk library from: %s\n", splash->tk_shared_library);
 
     /* Load shared libraries and bind symbols */
-    splash->dylib_tcltk = pyi_dylib_tcltk_load(splash->tcl_libpath, splash->tk_libpath);
+    splash->dylib_tcltk = pyi_dylib_tcltk_load(splash->tcl_shared_library, splash->tk_shared_library);
     if (splash->dylib_tcltk == NULL) {
         PYI_ERROR("SPLASH: failed to load Tcl/Tk shared libraries!\n");
         return -1;
@@ -745,7 +745,7 @@ _tcl_findLibrary_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tc
     int rc;
     struct SPLASH_CONTEXT *splash = (struct SPLASH_CONTEXT *)clientData;
     const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
-    char initScriptPath[PYI_PATH_MAX];
+    char init_script_path[PYI_PATH_MAX];
 
     /* In our minimal environment, this function is only called once,
      * from Tk_Init. So we only implement the behavior for Tk. Other
@@ -753,9 +753,9 @@ _tcl_findLibrary_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tc
      * of `tk`, since the library packed by PyInstaller at build time is
      * guaranteed to be compatible. */
     if (strncmp(dylib_tcltk->Tcl_GetString(objv[4]), "tk.tcl", 64) == 0) {
-        pyi_path_join(initScriptPath, splash->tk_lib, dylib_tcltk->Tcl_GetString(objv[4]));
-        dylib_tcltk->Tcl_SetVar2(interp, "tk_library", NULL, splash->tk_lib, TCL_GLOBAL_ONLY);
-        rc = dylib_tcltk->Tcl_EvalFile(interp, initScriptPath);
+        pyi_path_join(init_script_path, splash->tk_modules_dir, dylib_tcltk->Tcl_GetString(objv[4]));
+        dylib_tcltk->Tcl_SetVar2(interp, "tk_library", NULL, splash->tk_modules_dir, TCL_GLOBAL_ONLY);
+        rc = dylib_tcltk->Tcl_EvalFile(interp, init_script_path);
         return rc;
     }
 
