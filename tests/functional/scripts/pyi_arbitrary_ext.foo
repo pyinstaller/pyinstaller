@@ -1,5 +1,24 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Verify that PyInstaller can load a script from a file with an arbitrary
-# extension, not just from ``.py`` files.
-print('hello')
+# Verify that PyInstaller can load a script from a file with an arbitrary extension, not just from ``.py`` files.
+#
+# Also check that both `__file__` attribute and the `co_filename` attribute of the code object have correct suffix.
+import os
+import sys
+
+print('Hello!')
+
+# Look up and display all relevant attributes...
+print(f"__file__: {__file__}")
+loader = sys.modules[__name__].__loader__
+print(f"loader: {loader}")
+co = loader.get_code(__name__)
+print(f"co_filename: {co.co_filename}")
+
+# ... before validating them.
+# We expect the original suffix to be found on both attributes.
+# NOTE: alas, the PKG archive stores the entry-point script entries without suffix, and the bootloader currently has no
+# way of restoring those, so it always sets the `__file__` attribute with .py suffix. For now, codify this behavior.
+if getattr(sys, 'frozen', False):
+    assert os.path.splitext(__file__)[1] == '.py'
+else:
+    assert os.path.splitext(__file__)[1] == '.foo'
+assert os.path.splitext(co.co_filename)[1] == '.foo'

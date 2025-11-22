@@ -595,9 +595,14 @@ def test_hook_collect_submodules(pyi_builder, script_dir):
     )
 
 
-# Test that PyInstaller can handle a script with an arbitrary extension.
-def test_arbitrary_ext(pyi_builder):
+# Test that PyInstaller can handle a script with an arbitrary extension/suffix.
+def test_arbitrary_entry_point_script_suffix(pyi_builder):
     pyi_builder.test_script('pyi_arbitrary_ext.foo')
+
+
+# Test that PyInstaller can handle a script with no extension/suffix.
+def test_no_entry_point_script_suffix(pyi_builder):
+    pyi_builder.test_script('pyi_no_ext')
 
 
 @onefile_only
