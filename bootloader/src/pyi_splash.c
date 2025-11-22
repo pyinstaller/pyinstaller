@@ -97,22 +97,29 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
     strncpy(splash->application_home_dir, pyi_ctx->application_home_dir, PYI_PATH_MAX); /* both buffers are guaranteed to be PYI_PATH_MAX-sized */
 
     /* Tcl shared library */
-    if (pyi_path_join(splash->tcl_shared_library, pyi_ctx->application_home_dir, data_header->tcl_libname) == NULL) {
+    if (pyi_path_join(splash->tcl_shared_library, pyi_ctx->application_home_dir, data_header->tcl_shared_library_name) == NULL) {
         PYI_WARNING("SPLASH: length of Tcl shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }
 
     /* Tk shared library */
-    if (pyi_path_join(splash->tk_shared_library, pyi_ctx->application_home_dir, data_header->tk_libname) == NULL) {
+    if (pyi_path_join(splash->tk_shared_library, pyi_ctx->application_home_dir, data_header->tk_shared_library_name) == NULL) {
         PYI_WARNING("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }
 
+    /* Tcl modules directory */
+    if (pyi_path_join(splash->tcl_modules_dir, pyi_ctx->application_home_dir, data_header->tcl_module_directory_name) == NULL) {
+        PYI_WARNING("SPLASH: length of Tcl module directory path exceeds maximum path length!\n");
+        free(data_header);
+        return -1;
+    }
+
     /* Tk modules directory */
-    if (pyi_path_join(splash->tk_modules_dir, pyi_ctx->application_home_dir, data_header->tk_lib) == NULL) {
-        PYI_WARNING("SPLASH: length of Tk shared library path exceeds maximum path length!\n");
+    if (pyi_path_join(splash->tk_modules_dir, pyi_ctx->application_home_dir, data_header->tk_module_directory_name) == NULL) {
+        PYI_WARNING("SPLASH: length of Tk module directory path exceeds maximum path length!\n");
         free(data_header);
         return -1;
     }

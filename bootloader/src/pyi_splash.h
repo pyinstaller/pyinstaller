@@ -23,14 +23,17 @@
  * This struct is a header describing the rest of this archive item */
 struct SPLASH_DATA_HEADER
 {
-    /* Filename of the Tcl shared library, e.g., tcl86t.dll */
-    char tcl_libname[32];
+    /* Basename of the Tcl shared library, e.g., tcl86t.dll */
+    char tcl_shared_library_name[32];
 
-    /* Filename of the Tk shared library, e.g. tk86t.dll */
-    char tk_libname[32];
+    /* Basename of the Tk shared library, e.g. tk86t.dll */
+    char tk_shared_library_name[32];
 
-    /* Tk module library root, e.g. "tk/" */
-    char tk_lib[16];
+    /* Basename of the Tcl module directory, e.g. "tcl/" */
+    char tcl_module_directory_name[16];
+
+    /* Basename of the Tk module directory, e.g. "tk/" */
+    char tk_module_directory_name[16];
 
     /* Splash screen script */
     uint32_t script_len;
@@ -91,11 +94,12 @@ struct SPLASH_CONTEXT
     /* Path to top-level application directory */
     char application_home_dir[PYI_PATH_MAX];
 
-    /* The paths to Tcl/Tk shared libraries and Tk module library directory.
+    /* The paths to Tcl/Tk shared libraries and module directories.
      * These are anchored to application's top-level directory (static
      * or temporary, depending on onedir vs. onefile mode). */
     char tcl_shared_library[PYI_PATH_MAX];
     char tk_shared_library[PYI_PATH_MAX];
+    char tcl_modules_dir[PYI_PATH_MAX];
     char tk_modules_dir[PYI_PATH_MAX];
 
     /* The Tcl script that creates splash screen and the IPC mechanism

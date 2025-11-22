@@ -382,6 +382,7 @@ class Splash(Target):
             self.splash_requirements,
             os.path.basename(self.tcl_lib),  # tcl86t.dll
             os.path.basename(self.tk_lib),  # tk86t.dll
+            tcltk_info.TCL_ROOTNAME,
             tcltk_info.TK_ROOTNAME,
             image,
             self.script
