@@ -21,31 +21,8 @@ from PyInstaller.building.datastruct import Target
 from PyInstaller.building.utils import _check_guts_eq, _check_guts_toc, misc
 from PyInstaller.compat import is_aix, is_darwin
 from PyInstaller.depend import bindepend
-from PyInstaller.utils.hooks.tcl_tk import tcltk_info
-
-try:
-    from PIL import Image as PILImage
-except ImportError:
-    PILImage = None
 
 logger = logging.getLogger(__name__)
-
-# These requirement files are checked against the current splash screen script. If you wish to modify the splash screen
-# and run into tcl errors/bad behavior, this is a good place to start and add components your implementation of the
-# splash screen might use.
-# NOTE: these paths use the *destination* layout for Tcl/Tk scripts, which uses unversioned tcl and tk directories
-# (see `PyInstaller.utils.hooks.tcl_tk.collect_tcl_tk_files`).
-splash_requirements = [
-    # prepended tcl/tk binaries
-    os.path.join(tcltk_info.TK_ROOTNAME, "license.terms"),
-    os.path.join(tcltk_info.TK_ROOTNAME, "text.tcl"),
-    os.path.join(tcltk_info.TK_ROOTNAME, "tk.tcl"),
-    # Used for customizable font
-    os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "ttk.tcl"),
-    os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "fonts.tcl"),
-    os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "cursors.tcl"),
-    os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "utils.tcl"),
-]
 
 
 class Splash(Target):
@@ -124,7 +101,9 @@ class Splash(Target):
             frozen applications with long startup times. Default: ``True``
         :type always_on_top: bool
         """
-        from ..config import CONF
+        from PyInstaller.config import CONF
+        from PyInstaller.utils.hooks.tcl_tk import tcltk_info
+
         Target.__init__(self)
 
         # Splash screen is not supported on macOS. It operates in a secondary thread and macOS disallows UI operations
@@ -141,7 +120,7 @@ class Splash(Target):
 
         # Check if the Tcl/Tk version is supported.
         logger.info("Verifying Tcl/Tk compatibility with splash screen requirements")
-        self._check_tcl_tk_compatibility()
+        self._check_tcl_tk_compatibility(tcltk_info)
 
         # Make image path relative to .spec file
         if not os.path.isabs(image_file):
@@ -197,7 +176,20 @@ class Splash(Target):
             # application directory, which, at tme moment, is true in practically all cases.
             os.path.basename(self.tcl_lib),
             os.path.basename(self.tk_lib),
-            *splash_requirements,
+            # The list of requirements below is based on the current implementation of splash screen script. If you want
+            # to extend the splash screen functionality and run into Tcl/Tk errors, chances are that additional Tk
+            # components need to be added here.
+            #
+            # NOTE: these paths use the *destination* layout for Tcl/Tk scripts, which uses unversioned tcl and tk
+            # directories (see `PyInstaller.utils.hooks.tcl_tk.collect_tcl_tk_files`).
+            os.path.join(tcltk_info.TK_ROOTNAME, "license.terms"),
+            os.path.join(tcltk_info.TK_ROOTNAME, "text.tcl"),
+            os.path.join(tcltk_info.TK_ROOTNAME, "tk.tcl"),
+            # Used for customizable font
+            os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "ttk.tcl"),
+            os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "fonts.tcl"),
+            os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "cursors.tcl"),
+            os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "utils.tcl"),
         ])
 
         logger.info("Collect Tcl/Tk data files for the splash screen")
@@ -303,6 +295,15 @@ class Splash(Target):
     def assemble(self):
         logger.info("Building Splash %s", self.name)
 
+        # Check if PIL/pillow is available.
+        try:
+            from PIL import Image as PILImage
+        except ImportError:
+            PILImage = None
+
+        # Required to pass tcltk_info.TK_ROOTNAME to SplashWriter
+        from PyInstaller.utils.hooks.tcl_tk import tcltk_info
+
         # Function to resize a given image to fit into the area defined by max_img_size.
         def _resize_image(_image, _orig_size):
             if PILImage:
@@ -387,7 +388,7 @@ class Splash(Target):
         )
 
     @staticmethod
-    def _check_tcl_tk_compatibility():
+    def _check_tcl_tk_compatibility(tcltk_info):
         tcl_version = tcltk_info.tcl_version  # (major, minor) tuple
         tk_version = tcltk_info.tk_version
 
