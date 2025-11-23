@@ -754,6 +754,7 @@ _tclInit_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
 
     /* Run the init.tcl file */
     pyi_path_join(init_script_path, splash->tcl_modules_dir, "init.tcl");
+    PYI_DEBUG("TCL: 'tclInit' command: running init.tcl from: %s\n", init_script_path);
     rc = dylib_tcltk->Tcl_EvalFile(interp, init_script_path);
     if (rc == TCL_OK) {
         PYI_DEBUG("TCL: 'tclInit' command: init.tcl successfully loaded.\n");
@@ -808,20 +809,35 @@ _tcl_findLibrary_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tc
     const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
     char init_script_path[PYI_PATH_MAX];
 
+#if defined(LAUNCH_DEBUG)
+    int i;
+    PYI_DEBUG("TCL: 'findLibrary' command:\n");
+    for (i = 0; i < objc; i++) {
+        PYI_DEBUG("TCL:  - arg[%i]: %s\n", i, dylib_tcltk->Tcl_GetString(objv[i]));
+    }
+#endif
+
     /* In our minimal environment, this function is only called once,
      * from Tk_Init. So we only implement the behavior for Tk. Other
      * libraries are therefore not supported. We do not check the version
      * of `tk`, since the library packed by PyInstaller at build time is
      * guaranteed to be compatible. */
     if (strncmp(dylib_tcltk->Tcl_GetString(objv[4]), "tk.tcl", 64) == 0) {
-        pyi_path_join(init_script_path, splash->tk_modules_dir, dylib_tcltk->Tcl_GetString(objv[4]));
+        pyi_path_join(init_script_path, splash->tk_modules_dir, "tk.tcl");
+        PYI_DEBUG("TCL: 'findLibrary' command: running tk.tcl from: %s\n", init_script_path);
         dylib_tcltk->Tcl_SetVar2(interp, "tk_library", NULL, splash->tk_modules_dir, TCL_GLOBAL_ONLY);
         rc = dylib_tcltk->Tcl_EvalFile(interp, init_script_path);
+        if (rc == TCL_OK) {
+            PYI_DEBUG("TCL: 'findLibrary' command: tk.tcl successfully loaded.\n");
+        } else {
+            PYI_DEBUG("TCL: 'findLibrary' command: tk.tcl failed to load with status code %d and message: %s.\n", rc, dylib_tcltk->Tcl_GetString(dylib_tcltk->Tcl_GetObjResult(splash->interp)));
+        }
         return rc;
     }
 
     /* We do not expect this function to be called for any other library,
      * but just in case, return that the library was not found. */
+    PYI_DEBUG("TCL: 'findLibrary' command: unsupported library!\n");
     return TCL_ERROR;
 }
 
@@ -957,6 +973,7 @@ static int
 _tcl_exit_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
     struct SPLASH_CONTEXT *splash = (struct SPLASH_CONTEXT *)clientData;
+    PYI_DEBUG("TCL: 'exit' command: exiting main loop.\n");
     splash->exit_main_loop = true;
     return TCL_OK;
 }
