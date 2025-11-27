@@ -555,6 +555,11 @@ def configure(ctx):
         # On macOS, mkdtemp() is available only with _DARWIN_C_SOURCE.
         elif ctx.env.DEST_OS == 'darwin':
             ctx.env.append_value('DEFINES', '_DARWIN_C_SOURCE')
+        # On AIX, -pthread flag sets _THREAD_SAFE=1 instead of _REENTRANT. Having _THREAD_SAFE (or _THREAD_SAFE_ERRNO)
+        # defined enables thread-safe errno. _THREAD_SAFE is automatically defined when <pthread.h> is included, but
+        # we would need to ensure it is included at the top of every compilation unit. It is easier to define it here.
+        elif ctx.env.DEST_OS == 'aix':
+            ctx.env.append_value('DEFINES', '_THREAD_SAFE=1')
 
         # Determine which semaphore API to use for syncing onefile parent and child process on non-Windows platforms;
         # this is required to ensure consistent signal forwarding behavior. We prefer to use POSIX semaphores; however,
