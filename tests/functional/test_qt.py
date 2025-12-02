@@ -562,6 +562,11 @@ def test_Qt_QtWebEngineQuick_PySide2(pyi_builder):
 
 @requires('PyQt6 >= 6.2.2')
 @requires('PyQt6-WebEngine')  # NOTE: base Qt6 must be 6.2.2 or newer, QtWebEngine can be older
+@pytest.mark.flaky(
+    # Attempt to mitigate issues with QtWebEngine 6.10.1
+    condition=check_requirement('PyQt6-WebEngine-Qt6 == 6.10.1'),
+    reruns=1,
+)
 def test_Qt_QtWebEngineWidgets_PyQt6(pyi_builder):
     _test_Qt_QtWebEngineWidgets(pyi_builder, 'PyQt6')
 
@@ -578,7 +583,8 @@ def test_Qt_QtWebEngineWidgets_PyQt6(pyi_builder):
 )
 @pytest.mark.flaky(
     # The generated .app bundle seems to sporadically freeze during shutdown on GHA macos-14 runners.
-    condition=is_darwin,
+    # Attempt to mitigate issues with QtWebEngine 6.10.1
+    condition=is_darwin or check_requirement('PyQt6-WebEngine-Qt6 == 6.10.1'),
     reruns=1,
 )
 def test_Qt_QtWebEngineQuick_PyQt6(pyi_builder):
@@ -589,6 +595,10 @@ def test_Qt_QtWebEngineQuick_PyQt6(pyi_builder):
 @pytest.mark.skipif(
     check_requirement('PySide6 == 6.5.0') and is_win,
     reason='PySide6 6.5.0 PyPI wheels for Windows are missing opengl32sw.dll.'
+)
+@pytest.mark.flaky(
+    # Attempt to mitigate issues with QtWebEngine 6.10.1
+    condition=check_requirement('PySide6 == 6.10.1'),
 )
 def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
     _test_Qt_QtWebEngineWidgets(pyi_builder, 'PySide6')
@@ -601,7 +611,8 @@ def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
 )
 @pytest.mark.flaky(
     # The generated .app bundle seems to sporadically freeze during shutdown on GHA macos-14 runners.
-    condition=is_darwin,
+    # Attempt to mitigate issues with QtWebEngine 6.10.1
+    condition=is_darwin or check_requirement('PySide6 == 6.10.1'),
     reruns=1,
 )
 def test_Qt_QtWebEngineQuick_PySide6(pyi_builder):
