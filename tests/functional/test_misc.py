@@ -213,6 +213,10 @@ def test_single_file_metadata(pyi_builder):
 
 # Test that we can successfully package a program even if one of its modules contains non-ASCII characters in a local
 # (non-UTF8) encoding and fails to declare such encoding using PEP361 encoding header.
+#
+# Python versions prior to 3.14.1 are able to import such modules; however, starting with python 3.14.1, a SyntaxError
+# is raised. See: https://github.com/python/cpython/commit/9ff705c
+@pytest.mark.skipif(sys.version_info >= (3, 14, 1), reason="python >= 3.14.1 disallows invalid characters")
 def test_program_importing_module_with_invalid_encoding1(pyi_builder):
     # Add directory containing the my-test-package metadata to search path
     extra_path = _MODULES_DIR / "pyi_module_with_invalid_encoding"
@@ -226,6 +230,7 @@ def test_program_importing_module_with_invalid_encoding1(pyi_builder):
     )
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 14, 1), reason="python >= 3.14.1 disallows invalid characters")
 def test_program_importing_module_with_invalid_encoding2(pyi_builder):
     # Add directory containing the my-test-package metadata to search path
     extra_path = _MODULES_DIR / "pyi_module_with_invalid_encoding"
