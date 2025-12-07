@@ -13,10 +13,10 @@
 # -------
 # These packages work with no (known) issues.
 babel==2.17.0
-Django==5.2.8; python_version >= "3.10"
+Django==6.0; python_version >= "3.12"
 future==1.0.0
 gevent==25.9.1; python_version >= "3.9"
-ipython==9.7.0; python_version >= "3.11"
+ipython==9.8.0; python_version >= "3.11"
 keyring==25.7.0; python_version >= "3.9"
 matplotlib==3.10.7; python_version >= "3.10"
 numpy==2.3.5; python_version >= "3.11"
@@ -34,7 +34,7 @@ PySide6-Essentials==6.10.1; python_version >= "3.9"
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
 # all platforms, while 5.15.11 are available only for macOS (and some of them only for arm64).
-PyQt5-sip==12.17.1; python_version >= "3.9"
+PyQt5-sip==12.17.2; python_version >= "3.10"
 PyQt5==5.15.11
 PyQt3D==5.15.7
 PyQtChart==5.15.7
@@ -48,8 +48,8 @@ PyQtWebEngine==5.15.7
 # but in contrast to Qt5 and PyQt5 bindings, the versions here must usually be kept in sync with the
 # version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
 # thus the ABI is still changing.
-PyQt6-sip==13.10.2; python_version >= "3.9"
-PyQt6==6.10.0; python_version >= "3.9"
+PyQt6-sip==13.10.3; python_version >= "3.10"
+PyQt6==6.10.1; python_version >= "3.9"
 PyQt6-Qt6==6.10.1; python_version >= "3.9"
 PyQt6-3D==6.10.0; python_version >= "3.9"
 PyQt6-3D-Qt6==6.10.1; python_version >= "3.9"
@@ -70,7 +70,7 @@ requests==2.32.5; python_version >= "3.9"
 scipy==1.16.3; python_version >= "3.11"
 # simplejson is used for text_c_extension
 simplejson==3.20.2
-sphinx==9.0.0; python_version >= "3.11"
+sphinx==9.0.4; python_version >= "3.11"
 # Required for test_namespace_package
 sqlalchemy==2.0.44
 zope.interface==8.1.1; python_version >= "3.10"
@@ -87,9 +87,14 @@ setuptools==80.9.0; python_version >= "3.9"
 # supports the given python version. Make sure entries end with
 # `# pyup: ignore` to prevent them from being updated.
 
+# Python 3.11
+# -----------
+Django==5.2.9; python_version == "3.11"  # pyup: ignore
 
 # Python 3.10
 # -----------
+Django==5.2.9; python_version == "3.10"  # pyup: ignore
+
 numpy==2.2.6; python_version == "3.10"  # pyup: ignore
 scipy==1.15.3; python_version == "3.10"  # pyup: ignore
 
@@ -103,6 +108,9 @@ Django==4.2.23; python_version == "3.9"  # pyup: ignore
 numpy==2.0.2; python_version == "3.9"  # pyup: ignore
 scipy==1.13.1; python_version == "3.9"  # pyup: ignore
 matplotlib==3.9.4; python_version == "3.9"  # pyup: ignore
+
+PyQt5-sip==12.17.1; python_version == "3.9"  # pyup: ignore
+PyQt6-sip==13.10.2; python_version == "3.9"  # pyup: ignore
 
 sphinx==7.4.7; python_version == "3.9"  # pyup: ignore
 
