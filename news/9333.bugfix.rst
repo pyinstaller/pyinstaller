@@ -1,0 +1,4 @@
+Have hook for stdlib ``platform`` module exclude the ``_ios_support``
+module when ``sys.platform != 'ios'``. This prevents unnecessary
+collection of ``ctypes``-imported ``libobjc`` shared library if the
+latter happens to be available on the build system.
