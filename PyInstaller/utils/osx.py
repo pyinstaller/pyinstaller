@@ -622,6 +622,7 @@ def collect_files_from_framework_bundles(collected_files):
 
     framework_entries = set()  # Additional TOC entries for collected files. Use set for de-duplication.
     framework_paths = set()  # Registered framework paths for 2nd pass.
+    framework_symlinked_dirs = set()  # Symlinked directories for filtering in 3rd pass.
 
     # 1st pass: discover binaries from .framework bundles, and for each such binary:
     #   - collect `Info.plist`
@@ -669,12 +670,15 @@ def collect_files_from_framework_bundles(collected_files):
 
         # Reconstruct the symlink Versions/Current -> Versions/<version>.
         # This one seems to be necessary for code signing, but might be absent from .framework bundles shipped with
-        # python packages. So we always create it ourselves.
+        # python packages (i.e., PyPI wheels that do not support symlinks). So we always create it ourselves.
         framework_entries.add((str(dest_path.parent.parent / "Current"), str(dest_path.parent.name), "SYMLINK"))
+        framework_symlinked_dirs.add(dest_path.parent.parent / "Current")  # Cleanup in 3rd pass
 
         dest_framework_path = dest_path.parent.parent.parent  # Top-level .framework directory path.
 
         # Symlink the binary in the `Current` directory to the top-level .framework directory.
+        # If TOC also contains an entry for a hard-copy entry in the top-level directory, it will be replaced by this
+        # symlink entry due to how our TOC normalization works.
         framework_entries.add((
             str(dest_framework_path / dest_path.name),
             str(pathlib.PurePath("Versions/Current") / dest_path.name),
@@ -687,6 +691,7 @@ def collect_files_from_framework_bundles(collected_files):
             "Versions/Current/Resources",
             "SYMLINK",
         ))
+        framework_symlinked_dirs.add(dest_framework_path / "Resources")  # Cleanup in 3rd pass
 
         # Register the framework parent path to use in additional directories scan in subsequent pass.
         framework_paths.add(dest_framework_path)
@@ -722,6 +727,24 @@ def collect_files_from_framework_bundles(collected_files):
                 str(pathlib.PurePath("Versions/Current") / dir_name),
                 "SYMLINK",
             ))
+            framework_symlinked_dirs.add(dest_framework_path / dir_name)  # Cleanup in 3rd pass
+
+    # 3rd pass: remove TOC entries under directories for which we are trying to restore symbolic links. These may be
+    # present when a python package (i.e., a PyPI wheel) ships a .framework bundle where symlinks were mangled into hard
+    # copies (due to lack of support for symlinks in wheels) AND these hard copies are collected through use of
+    # `collect_data` / `collect_binaries` / `collect_all` (either by user or by a hook).
+    if framework_symlinked_dirs:
+        filtered_toc = []
+
+        for dest_name, src_name, typecode in collected_files:
+            dest_path = pathlib.PurePath(dest_name)
+
+            if any(dest_parent in framework_symlinked_dirs for dest_parent in dest_path.parents):
+                continue  # Inside symlinked directory; remove
+
+            filtered_toc.append((dest_name, src_name, typecode))
+    else:
+        filtered_toc = collected_files
 
     # If we encountered an invalid .framework bundle without Info.plist, warn the user that code-signing will most
     # likely fail.
@@ -731,4 +754,4 @@ def collect_files_from_framework_bundles(collected_files):
             "bundle, you will most likely not be able to code-sign it."
         )
 
-    return collected_files + sorted(framework_entries)
+    return filtered_toc + sorted(framework_entries)
