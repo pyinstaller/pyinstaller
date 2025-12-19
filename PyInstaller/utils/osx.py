@@ -609,19 +609,18 @@ def is_framework_bundle_lib(lib_path):
 def collect_files_from_framework_bundles(collected_files):
     """
     Scan the given TOC list of collected files for shared libraries that are collected from macOS .framework bundles,
-    and collect the bundles' Info.plist files. Additionally, the following symbolic links:
+    and collect the bundles' Info.plist files. Additionally, create/restore the following symbolic links:
       - `Versions/Current` pointing to the `Versions/<version>` directory containing the binary
       - `<name>` in the top-level .framework directory, pointing to `Versions/Current/<name>`
       - `Resources` in the top-level .framework directory, pointing to `Versions/Current/Resources`
       - additional directories in top-level .framework directory, pointing to their counterparts in `Versions/Current`
         directory.
 
-    Returns TOC list for the discovered Info.plist files and generated symbolic links. The list does not contain
-    duplicated entries.
+    Returns updated TOC list with added entries for the discovered Info.plist files and generated symbolic links.
     """
     invalid_framework_found = False
 
-    framework_files = set()  # Additional entries for collected files. Use set for de-duplication.
+    framework_entries = set()  # Additional TOC entries for collected files. Use set for de-duplication.
     framework_paths = set()  # Registered framework paths for 2nd pass.
 
     # 1st pass: discover binaries from .framework bundles, and for each such binary:
@@ -666,24 +665,24 @@ def collect_files_from_framework_bundles(collected_files):
                     continue
             info_plist_src = info_plist_src_top
         info_plist_dest = dest_path.parent / "Resources" / "Info.plist"
-        framework_files.add((str(info_plist_dest), str(info_plist_src), "DATA"))
+        framework_entries.add((str(info_plist_dest), str(info_plist_src), "DATA"))
 
         # Reconstruct the symlink Versions/Current -> Versions/<version>.
         # This one seems to be necessary for code signing, but might be absent from .framework bundles shipped with
         # python packages. So we always create it ourselves.
-        framework_files.add((str(dest_path.parent.parent / "Current"), str(dest_path.parent.name), "SYMLINK"))
+        framework_entries.add((str(dest_path.parent.parent / "Current"), str(dest_path.parent.name), "SYMLINK"))
 
         dest_framework_path = dest_path.parent.parent.parent  # Top-level .framework directory path.
 
         # Symlink the binary in the `Current` directory to the top-level .framework directory.
-        framework_files.add((
+        framework_entries.add((
             str(dest_framework_path / dest_path.name),
             str(pathlib.PurePath("Versions/Current") / dest_path.name),
             "SYMLINK",
         ))
 
         # Ditto for the `Resources` directory.
-        framework_files.add((
+        framework_entries.add((
             str(dest_framework_path / "Resources"),
             "Versions/Current/Resources",
             "SYMLINK",
@@ -718,7 +717,7 @@ def collect_files_from_framework_bundles(collected_files):
             if dir_name not in VALID_SUBDIRS:
                 continue
 
-            framework_files.add((
+            framework_entries.add((
                 str(dest_framework_path / dir_name),
                 str(pathlib.PurePath("Versions/Current") / dir_name),
                 "SYMLINK",
@@ -732,4 +731,4 @@ def collect_files_from_framework_bundles(collected_files):
             "bundle, you will most likely not be able to code-sign it."
         )
 
-    return sorted(framework_files)
+    return collected_files + sorted(framework_entries)
