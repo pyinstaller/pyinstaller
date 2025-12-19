@@ -695,7 +695,7 @@ def collect_files_from_framework_bundles(collected_files):
     # 2nd pass: scan for additional collected directories from .framework bundles, and create symlinks to the top-level
     # application directory. Make the outer loop go over the registered framework paths, so it becomes no-op if no
     # framework paths are registered.
-    VALID_SUBDIRS = {'Helpers', 'Resources'}
+    VALID_SUBDIRS = {'Documentation', 'Frameworks', 'Headers', 'Helpers', 'Libraries', 'Resources'}
 
     for dest_framework_path in framework_paths:
         for dest_name, src_name, typecode in collected_files:
