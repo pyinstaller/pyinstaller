@@ -618,8 +618,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
     startup_info.lpReserved = NULL;
     startup_info.lpDesktop = NULL;
     startup_info.lpTitle = NULL;
-    startup_info.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
-    startup_info.wShowWindow = SW_NORMAL;
+    startup_info.dwFlags |= STARTF_USESTDHANDLES;
     startup_info.hStdInput = _pyi_get_stream_handle(stdin);
     startup_info.hStdOutput = _pyi_get_stream_handle(stdout);
     startup_info.hStdError = _pyi_get_stream_handle(stderr);
