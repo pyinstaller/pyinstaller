@@ -1009,9 +1009,12 @@ class Analysis(Target):
         combined_toc = normalize_toc(self.datas + self.binaries)
         combined_toc = toc_process_symbolic_links(combined_toc)
 
-        # On macOS, look for binaries collected from .framework bundles, and collect their Info.plist files.
+        # On macOS, look for binaries collected from .framework bundles, collect their Info.plist files, and fix the
+        # structure to conform to code-signing requirements (i.e., Versions/Current symbolic link and symbolic links
+        # for top-level directories).
         if is_darwin:
-            combined_toc += osxutils.collect_files_from_framework_bundles(combined_toc)
+            combined_toc = osxutils.collect_files_from_framework_bundles(combined_toc)
+            combined_toc = normalize_toc(combined_toc)
 
         self.datas = []
         self.binaries = []

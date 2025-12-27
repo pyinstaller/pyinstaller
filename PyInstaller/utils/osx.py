@@ -609,20 +609,20 @@ def is_framework_bundle_lib(lib_path):
 def collect_files_from_framework_bundles(collected_files):
     """
     Scan the given TOC list of collected files for shared libraries that are collected from macOS .framework bundles,
-    and collect the bundles' Info.plist files. Additionally, the following symbolic links:
+    and collect the bundles' Info.plist files. Additionally, create/restore the following symbolic links:
       - `Versions/Current` pointing to the `Versions/<version>` directory containing the binary
       - `<name>` in the top-level .framework directory, pointing to `Versions/Current/<name>`
       - `Resources` in the top-level .framework directory, pointing to `Versions/Current/Resources`
       - additional directories in top-level .framework directory, pointing to their counterparts in `Versions/Current`
         directory.
 
-    Returns TOC list for the discovered Info.plist files and generated symbolic links. The list does not contain
-    duplicated entries.
+    Returns updated TOC list with added entries for the discovered Info.plist files and generated symbolic links.
     """
     invalid_framework_found = False
 
-    framework_files = set()  # Additional entries for collected files. Use set for de-duplication.
+    framework_entries = set()  # Additional TOC entries for collected files. Use set for de-duplication.
     framework_paths = set()  # Registered framework paths for 2nd pass.
+    framework_symlinked_dirs = set()  # Symlinked directories for filtering in 3rd pass.
 
     # 1st pass: discover binaries from .framework bundles, and for each such binary:
     #   - collect `Info.plist`
@@ -666,28 +666,32 @@ def collect_files_from_framework_bundles(collected_files):
                     continue
             info_plist_src = info_plist_src_top
         info_plist_dest = dest_path.parent / "Resources" / "Info.plist"
-        framework_files.add((str(info_plist_dest), str(info_plist_src), "DATA"))
+        framework_entries.add((str(info_plist_dest), str(info_plist_src), "DATA"))
 
         # Reconstruct the symlink Versions/Current -> Versions/<version>.
         # This one seems to be necessary for code signing, but might be absent from .framework bundles shipped with
-        # python packages. So we always create it ourselves.
-        framework_files.add((str(dest_path.parent.parent / "Current"), str(dest_path.parent.name), "SYMLINK"))
+        # python packages (i.e., PyPI wheels that do not support symlinks). So we always create it ourselves.
+        framework_entries.add((str(dest_path.parent.parent / "Current"), str(dest_path.parent.name), "SYMLINK"))
+        framework_symlinked_dirs.add(dest_path.parent.parent / "Current")  # Cleanup in 3rd pass
 
         dest_framework_path = dest_path.parent.parent.parent  # Top-level .framework directory path.
 
         # Symlink the binary in the `Current` directory to the top-level .framework directory.
-        framework_files.add((
+        # If TOC also contains an entry for a hard-copy entry in the top-level directory, it will be replaced by this
+        # symlink entry due to how our TOC normalization works.
+        framework_entries.add((
             str(dest_framework_path / dest_path.name),
             str(pathlib.PurePath("Versions/Current") / dest_path.name),
             "SYMLINK",
         ))
 
         # Ditto for the `Resources` directory.
-        framework_files.add((
+        framework_entries.add((
             str(dest_framework_path / "Resources"),
             "Versions/Current/Resources",
             "SYMLINK",
         ))
+        framework_symlinked_dirs.add(dest_framework_path / "Resources")  # Cleanup in 3rd pass
 
         # Register the framework parent path to use in additional directories scan in subsequent pass.
         framework_paths.add(dest_framework_path)
@@ -695,7 +699,7 @@ def collect_files_from_framework_bundles(collected_files):
     # 2nd pass: scan for additional collected directories from .framework bundles, and create symlinks to the top-level
     # application directory. Make the outer loop go over the registered framework paths, so it becomes no-op if no
     # framework paths are registered.
-    VALID_SUBDIRS = {'Helpers', 'Resources'}
+    VALID_SUBDIRS = {'Documentation', 'Frameworks', 'Headers', 'Helpers', 'Libraries', 'Resources'}
 
     for dest_framework_path in framework_paths:
         for dest_name, src_name, typecode in collected_files:
@@ -718,11 +722,29 @@ def collect_files_from_framework_bundles(collected_files):
             if dir_name not in VALID_SUBDIRS:
                 continue
 
-            framework_files.add((
+            framework_entries.add((
                 str(dest_framework_path / dir_name),
                 str(pathlib.PurePath("Versions/Current") / dir_name),
                 "SYMLINK",
             ))
+            framework_symlinked_dirs.add(dest_framework_path / dir_name)  # Cleanup in 3rd pass
+
+    # 3rd pass: remove TOC entries under directories for which we are trying to restore symbolic links. These may be
+    # present when a python package (i.e., a PyPI wheel) ships a .framework bundle where symlinks were mangled into hard
+    # copies (due to lack of support for symlinks in wheels) AND these hard copies are collected through use of
+    # `collect_data` / `collect_binaries` / `collect_all` (either by user or by a hook).
+    if framework_symlinked_dirs:
+        filtered_toc = []
+
+        for dest_name, src_name, typecode in collected_files:
+            dest_path = pathlib.PurePath(dest_name)
+
+            if any(dest_parent in framework_symlinked_dirs for dest_parent in dest_path.parents):
+                continue  # Inside symlinked directory; remove
+
+            filtered_toc.append((dest_name, src_name, typecode))
+    else:
+        filtered_toc = collected_files
 
     # If we encountered an invalid .framework bundle without Info.plist, warn the user that code-signing will most
     # likely fail.
@@ -732,4 +754,4 @@ def collect_files_from_framework_bundles(collected_files):
             "bundle, you will most likely not be able to code-sign it."
         )
 
-    return sorted(framework_files)
+    return filtered_toc + sorted(framework_entries)
