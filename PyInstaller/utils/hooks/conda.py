@@ -112,10 +112,13 @@ class Distribution:
         """
         dependencies = []
         # For each dependency:
-        for dependency in self.raw["depends"]:
-            # ``dependency`` is a string of the form: "[name] [version constraints]"
-            name, *version_constraints = dependency.split(maxsplit=1)
-            dependencies.append(name)
+        if "depends" in self.raw.keys():
+            for dependency in self.raw["depends"]:
+                # ``dependency`` is a string of the form: "[name] [version constraints]"
+                name, *version_constraints = dependency.split(maxsplit=1)
+                dependencies.append(name)
+        else:
+            dependencies.append("[]")
         return dependencies
 
     def _init_package_names(self):
