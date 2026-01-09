@@ -27,7 +27,7 @@ Instead of randomly changing your code or PyInstaller configuration in the hope 
 
 ### How do we know that our compiler chain (and therefore the bootloaders) really aren't infected?
 
-You can never know for sure if an executable is trustworthy but we have recompiled our bootloaders plenty of times on different machines giving bit for bit (or [as close as MSVC lets you get](https://bytepointer.com/articles/the_microsoft_rich_header.htm)) reproducibility. So unless they are all identically infected then this can't be it.
+You can never know for sure if an executable is trustworthy but we have recompiled our bootloaders plenty of times on different machines giving bit for bit (or [as close as MSVC lets you get](https://web.archive.org/web/http://bytepointer.com/articles/the_microsoft_rich_header.htm)) reproducibility. So unless they are all identically infected then this can't be it.
 
 On the other hand, we have seen through repeatedly submitting the same files for analysis at intervals that the results are far even from being consistent which puts their accuracy under serious question. We've also observed that it's not until a few days after a new release that antiviruses suddenly decide that our bootloaders are malicious.
 
