@@ -57,3 +57,8 @@ if is_linux and "dist-packages" in get_module_file_attribute("scipy"):
 # we need to add both `numpy.f2py` and all its submodules to hiddenimports here.
 if check_requirement("numpy >= 2.0.0"):
     hiddenimports += collect_submodules('numpy.f2py', filter=lambda name: name != 'numpy.f2py.tests')
+
+# Starting with scipy 1.17.0, the `scipy._cyutility` extension is imported when top-level `scipy` package is imported
+# (via import of another extension, `scipy._lib`).
+if check_requirement("scipy >= 1.17.0"):
+    hiddenimports += ['scipy._cyutility']
