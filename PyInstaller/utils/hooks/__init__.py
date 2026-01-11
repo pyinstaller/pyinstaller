@@ -849,6 +849,11 @@ def collect_data_files(
     ):
         for i, c in enumerate(cludes):
             for g in Path(pkg_dir).glob(c):
+                # The path obtained from `pathlib.Path.glob()` should already be an instance of `pathlib.Path`; however,
+                # under msys2/mingw python 3.13, it uses inconsistent mix of POSIX-style separators (for base part) and
+                # Windows separators (for the globbed part), which causes issues further down the road. Explicitly
+                # constructing a `Path` instance seems to normalize the separators and works around the problem.
+                g = Path(g)
                 if g.is_dir():
                     # Only files are sources. Subdirectories are not.
                     if i < clude_len:
