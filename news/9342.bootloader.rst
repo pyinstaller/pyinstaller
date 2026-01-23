@@ -1,4 +1,0 @@
-(Windows) When spawning ``onefile`` child process, preserve the values of
-``dwFlags` and ``wShowWindow`` in ``STARTUPINFO`` structure as inherited
-from the parent process, instead of forcing them to ``STARTF_USESHOWWINDOW``
-and ``SW_NORMAL``.

@@ -66,12 +66,12 @@ IMPORT_TYPES = [
 WARNFILE_HEADER = """\
 
 This file lists modules PyInstaller was not able to find. This does not
-necessarily mean this module is required for running your program. Python and
-Python 3rd-party packages include a lot of conditional or optional modules. For
-example the module 'ntpath' only exists on Windows, whereas the module
-'posixpath' only exists on Posix systems.
+necessarily mean these modules are required for running your program. Both
+Python's standard library and 3rd-party Python packages often conditionally
+import optional modules, some of which may be available only on certain
+platforms.
 
-Types if import:
+Types of import:
 * top-level: imported at the top-level - look at these first
 * conditional: imported within an if-statement
 * delayed: imported within a function

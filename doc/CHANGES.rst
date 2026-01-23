@@ -15,6 +15,46 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.18.0 (2026-01-13)
+-------------------
+
+Features
+~~~~~~~~
+
+* Implement support for Tcl/Tk 9 in splash screen. (:issue:`9313`)
+
+
+Bugfix
+~~~~~~
+
+* (macOS) Improve the .framework bundle fix-up code to remove file entries
+  that would be placed under restored symlinked directories. This fixes
+  file-already-exists errors at build time (onedir) or run-time (onefile)
+  when user or a hook tries to collect (all) files from a package that
+  ships a .framework bundle with symlinks mangled into hard-copies
+  (for example, due to lack of symlink support in PyPI wheels). (:issue:`9335`)
+* Have hook for stdlib ``platform`` module exclude the ``_ios_support``
+  module when ``sys.platform != 'ios'``. This prevents unnecessary
+  collection of ``ctypes``-imported ``libobjc`` shared library if the
+  latter happens to be available on the build system. (:issue:`9333`)
+
+
+Hooks
+~~~~~
+
+* Update ``scipy`` hook for compatibility with ``scipy`` 1.17.0.
+  (:issue:`9353`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (Windows) When spawning ``onefile`` child process, preserve the values of
+  ``dwFlags`` and ``wShowWindow`` in ``STARTUPINFO`` structure as inherited
+  from the parent process, instead of forcing them to ``STARTF_USESHOWWINDOW``
+  and ``SW_NORMAL``. (:issue:`9342`)
+
+
 6.17.0 (2025-11-24)
 -------------------
 

@@ -15,6 +15,7 @@ Manipulating with dynamic libraries.
 import os
 import pathlib
 import re
+import sys
 
 from PyInstaller import compat
 import PyInstaller.log as logging
@@ -364,8 +365,8 @@ _warning_suppressions = []
 if compat.is_linux:
     _warning_suppressions.append(r'ldd')
 
-# Suppress warnings about unresolvable UCRT DLLs (see issue #1566) on Windows 10 and 11.
-if compat.is_win_10 or compat.is_win_11:
+# Suppress warnings about unresolvable UCRT DLLs (see issue #1566) on Windows 10+
+if compat.is_win and sys.getwindowsversion().major >= 10:
     _warning_suppressions.append(r'api-ms-win-.*\.dll')
 
 missing_lib_warning_suppression_list = MatchList(_warning_suppressions)

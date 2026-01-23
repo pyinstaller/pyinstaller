@@ -50,14 +50,6 @@ jobs:
             os: 'macos-15-intel'
       fail-fast: false
     steps:
-      # https://github.com/actions/runner-images/issues/12545
-      # https://github.com/actions/runner-images/issues/13358
-      - name: Work around x86 macOS 15 bug for multiple CPU cores
-        if: matrix.os == 'macos-15-intel'
-        run: |
-          sudo defaults -currentHost write /Library/Preferences/com.apple.powerlogd SMCMonitorCadence 0
-          sudo killall PerfPowerServices || true
-
       - name: Checkout PyInstaller code
         uses: actions/checkout@v4
 

@@ -1,6 +1,0 @@
-(macOS) Improve the .framework bundle fix-up code to remove file entries
-that would be placed under restored symlinked directories. This fixes
-file-already-exists errors at build time (onedir) or run-time (onefile)
-when user or a hook tries to collect (all) files from a package that
-ships a .framework bundle with symlinks mangled into hard-copies
-(for example, due to lack of symlink support in PyPI wheels).
