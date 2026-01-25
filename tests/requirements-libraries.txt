@@ -20,7 +20,7 @@ ipython==9.9.0; python_version >= "3.11"
 keyring==25.7.0; python_version >= "3.9"
 matplotlib==3.10.8; python_version >= "3.10"
 numpy==2.4.1; python_version >= "3.11"
-pandas==3.0.0; python_version >= "3.9"
+pandas==3.0.0; python_version >= "3.11"
 pygments==2.19.2
 PyGObject==3.54.5; sys_platform == "linux" and python_version >= "3.9"
 # Official PySide2 wheels do not support python 3.11 or newer. Nor are they available for arm64 on macOS.
@@ -99,6 +99,7 @@ Django==5.2.9; python_version == "3.10"  # pyup: ignore
 
 numpy==2.2.6; python_version == "3.10"  # pyup: ignore
 scipy==1.15.3; python_version == "3.10"  # pyup: ignore
+pandas==2.3.3; python_version == "3.10"  # pyup: ignore
 
 sphinx==8.1.3; python_version == "3.10"  # pyup: ignore
 ipython==8.37.0; python_version == "3.10" # pyup: ignore
@@ -109,6 +110,7 @@ Django==4.2.23; python_version == "3.9"  # pyup: ignore
 
 numpy==2.0.2; python_version == "3.9"  # pyup: ignore
 scipy==1.13.1; python_version == "3.9"  # pyup: ignore
+pandas==2.3.3; python_version == "3.9"  # pyup: ignore
 matplotlib==3.9.4; python_version == "3.9"  # pyup: ignore
 
 PyQt5-sip==12.17.1; python_version == "3.9"  # pyup: ignore
