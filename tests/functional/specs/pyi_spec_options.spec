@@ -1,7 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 import argparse
 
-parser = argparse.ArgumentParser()
+# Explicitly set the program name to what the test expects to find in the output (i.e., `pyi_spec_options.spec`).
+# Starting with python 3.14, the automatically-inferred program name becomes `python -m pytest` when `pytest` is
+# launched as a module. See: https://github.com/python/cpython/commit/04bfea2d261bced371cbd64931fe2a8f64984793
+parser = argparse.ArgumentParser(prog='pyi_spec_options.spec')
 optional_dependencies = ["email", "gzip", "pstats"]
 parser.add_argument("--optional-dependency", choices=optional_dependencies,
                     action="append", default=[], help="help blah blah blah")
