@@ -1,0 +1,2 @@
+(Windows) Fix collection of ``numpy`` DLLs when ``numpy`` PyPI wheel is
+installed using ``uv`` instead of ``pip``.

@@ -62,7 +62,14 @@ if numpy_installer == 'conda':
 # automatically pick up DLLs from external `numpy.libs` directory, this does not work on Anaconda python 3.8 and 3.9
 # due to defunct `os.add_dll_directory`, which forces `delvewheel` to use the old load-order file approach. So we need
 # to explicitly ensure that load-order file as well as DLLs are collected.
-if compat.is_win and numpy_version >= (1, 26) and numpy_installer == 'pip':
+#
+# Under contemporary python versions, we might still need to explicitly collect the DLLs from `numpy.libs` directory
+# to accommodate the cases when some other package's `.lib` directory (for example, `pandas.libs`) contains a DLL
+# with the same name, and binary dependency analysis ends up resolving that one.
+#
+# The installer check compares against 'conda', because PyPI wheels might be installed by installers other than 'pip'
+# (for example, 'uv' - see #9360).
+if compat.is_win and numpy_version >= (1, 26) and numpy_installer != 'conda':
     from PyInstaller.utils.hooks import collect_delvewheel_libs_directory
     datas, binaries = collect_delvewheel_libs_directory("numpy", datas=datas, binaries=binaries)
 
