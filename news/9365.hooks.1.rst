@@ -1,0 +1,3 @@
+(Windows) Update the ``pandas`` hook to explicitly collect the DLLs
+from ``pandas.libs`` directory that has been used in Windows PyPI wheels
+since ``pandas`` 2.1.0.
