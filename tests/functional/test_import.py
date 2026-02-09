@@ -271,6 +271,7 @@ def test_import_pyi_splash(pyi_builder):
 #--- unzipped .egg support ----
 
 
+@importorskip('pkg_resources')
 def test_egg_unzipped(pyi_builder):
     pathex = _MODULES_DIR / 'pyi_test_egg' / 'pyi_egg_unzipped.egg'
     hooks_dir = _MODULES_DIR / 'pyi_test_egg' / 'hooks'
@@ -298,6 +299,7 @@ def test_egg_unzipped(pyi_builder):
     )  # yapf: disable
 
 
+@importorskip('pkg_resources')
 def test_egg_unzipped_metadata_pkg_resources(pyi_builder):
     pathex = _MODULES_DIR / 'pyi_test_egg' / 'pyi_egg_unzipped.egg'
     hooks_dir = _MODULES_DIR / 'pyi_test_egg' / 'hooks'
@@ -354,6 +356,7 @@ def test_egg_unzipped_metadata_importlib_metadata(pyi_builder):
 #--- namespaces ---
 
 
+@importorskip('pkg_resources')
 def test_nspkg1(pyi_builder):
     # Test inclusion of namespace packages implemented using pkg_resources.declare_namespace
     extra_paths = (_MODULES_DIR / 'nspkg1-pkg').glob('*.egg')
@@ -368,6 +371,7 @@ def test_nspkg1(pyi_builder):
     )
 
 
+@importorskip('pkg_resources')
 def test_nspkg1_empty(pyi_builder):
     # Test inclusion of a namespace-only packages in an zipped egg. This package only defines the namespace, nothing is
     # contained there.
@@ -382,6 +386,7 @@ def test_nspkg1_empty(pyi_builder):
     )
 
 
+@importorskip('pkg_resources')
 def test_nspkg1_bbb_zzz(pyi_builder):
     # Test inclusion of a namespace packages in an zipped egg
     extra_paths = (_MODULES_DIR / 'nspkg1-pkg').glob('*.egg')
@@ -488,6 +493,7 @@ def test_nspkg_pep420(pyi_builder):
     )
 
 
+@importorskip('pkg_resources')
 def test_nspkg_attributes(pyi_builder):
     # Test that non-PEP-420 namespace packages (e.g., the ones using
     # pkg_resources.declare_namespace) have proper attributes:
