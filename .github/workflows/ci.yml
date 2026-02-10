@@ -501,7 +501,6 @@ jobs:
             python39-pip
             python39-tkinter
 
-
       - name: Disable CRLF line endings in git checkout
         run: git config --global core.autocrlf input
 
@@ -533,6 +532,17 @@ jobs:
         run: |
           Xvfb :99 &
           echo "DISPLAY=:99" >> $GITHUB_ENV
+
+      # See the equivalent step in the "tests" job.
+      # This is a simplified version that targets pnly issue with `pkg_resources`,
+      # which arose with update to `setuptools` 82.0.0. It can be removed once
+      # the cygwin python environment comes with `setuptools` 82.0.0 or newer
+      # installed by default.
+      # NOTE: we cannot use "python" shell here, because that resolves to
+      # python in C:\hostedtoolcache\windows\Python instead of cygwin one!
+      - name: Work around potentially broken setuptools upgrade
+        run: |
+          python -c 'import importlib.util; import shutil; spec = importlib.util.find_spec("pkg_resources"); spec and spec.loader is None and shutil.rmtree(spec.submodule_search_locations[0])'
 
       - name: Run tests
         # Keep the number of pytest workers below the number of available
