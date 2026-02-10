@@ -12,8 +12,16 @@
 Print all modules exporting the entry point 'pytest11'.
 """
 
-import pkg_resources
+import sys
 
-plugins = sorted(i.module_name for i in pkg_resources.iter_entry_points("pytest11"))
+# entry_points() with group keyword argument is available in stdlib's importlib.metadata starting with python 3.10; on
+# older versions we require importlib-metadata backport (which should be available and of sufficient version due to
+# being part of PyInstaller's requirements).
+if sys.version_info >= (3, 10):
+    import importlib.metadata as importlib_metadata
+else:
+    import importlib_metadata
+
+plugins = sorted(i.module for i in importlib_metadata.entry_points(group="pytest11"))
 
 print("\n".join(plugins))
