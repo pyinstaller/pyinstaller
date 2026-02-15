@@ -74,7 +74,7 @@ sphinx==9.1.0; python_version >= "3.12"
 # Required for test_namespace_package
 sqlalchemy==2.0.46
 zope.interface==8.2; python_version >= "3.10"
-Pillow==12.1.0; python_version >= "3.10"
+Pillow==12.1.1; python_version >= "3.10"
 setuptools==82.0.0; python_version >= "3.9"
 
 
