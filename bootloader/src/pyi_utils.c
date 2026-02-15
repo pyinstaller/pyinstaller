@@ -49,7 +49,7 @@ int
 pyi_create_parent_directory_tree(const struct PYI_CONTEXT *pyi_ctx, const char *prefix_path, const char *filename)
 {
     char path[PYI_PATH_MAX];
-    char *subpath_cursor;
+    const char *subpath_cursor;
     size_t path_length;
 
     /* Ensure that combined path length does not exceed max path. */

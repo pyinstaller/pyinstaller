@@ -134,7 +134,7 @@ static char *
 _pyi_create_runtime_tmpdir(const char *runtime_tmpdir)
 {
     char directory_tree_path[PYI_PATH_MAX];
-    char *subpath_cursor;
+    const char *subpath_cursor;
 
     /* Ensure runtime_tmpdir (and thus also its sub-path components)
      * do not exceed path limit. */
