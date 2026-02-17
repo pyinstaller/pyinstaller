@@ -21,10 +21,10 @@ jobs:
         compiler: [gcc, msvc, clang]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python ${{ env.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.python-version }}
 
@@ -48,14 +48,14 @@ jobs:
 
       - name: Upload bootloaders (arm64)
         if: startsWith(matrix.target-arch, '64bit-arm')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: bootloaders_${{ matrix.target-arch }}_${{ matrix.compiler }}
           path: PyInstaller\bootloader\Windows-${{ matrix.target-arch }}\*.exe
 
       - name: Upload bootloaders (x86_64)
         if: ${{ !startsWith(matrix.target-arch, '64bit-arm') }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: bootloaders_${{ matrix.target-arch }}_intel_${{ matrix.compiler }}
           path: PyInstaller\bootloader\Windows-${{ matrix.target-arch }}-intel\*.exe
@@ -65,10 +65,10 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python ${{ env.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.python-version }}
 
@@ -78,7 +78,7 @@ jobs:
           python waf --target-arch=32bit all
 
       - name: Upload bootloaders
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: bootloaders_32bit_intel_msvc
           path: PyInstaller\bootloader\Windows-32bit-intel\*.exe
@@ -90,7 +90,7 @@ jobs:
     continue-on-error: true
     timeout-minutes: 15
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           path: virustotal
       - name: VirusTotal Scan

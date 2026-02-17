@@ -17,7 +17,7 @@ jobs:
     if: github.repository_owner == 'pyinstaller'
     runs-on: ubuntu-latest
     steps:
-      - uses: dessant/lock-threads@v5
+      - uses: dessant/lock-threads@v6
         with:
           process-only: 'issues, prs'
           issue-inactive-days: 60
