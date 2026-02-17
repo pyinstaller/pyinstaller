@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  python-version: 3.12
+  python-version: 3.x
 
 permissions:
   contents: read # to fetch code (actions/checkout)
