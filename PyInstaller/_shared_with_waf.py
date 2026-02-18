@@ -41,9 +41,9 @@ def _pyi_machine(machine, system):
     """
     # See the corresponding tests in tests/unit/test_compat.py for examples.
 
-    if platform.machine() == "sw_64" or platform.machine() == "loongarch64":
+    if machine == "sw_64" or machine == "loongarch64":
         # This explicitly inhibits cross compiling the bootloader for or on SunWay and LoongArch machine.
-        return platform.machine()
+        return machine
 
     if system == "Windows":
         if machine.lower().startswith("arm"):

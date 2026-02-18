@@ -38,6 +38,7 @@ def test_exec_command_subprocess_wrong_encoding_reports_nicely(capsys):
         ("armv7a", "arm"),
         ("arm", "arm"),
         ("aarch64", "arm"),
+        ("loongarch64", "loongarch64"),
         ("ppc64le", "ppc"),
         ("ppc64", "ppc"),
         ("ppc32le", "ppc"),
