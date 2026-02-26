@@ -122,7 +122,7 @@ def waf_entry_point(current_directory, version, wafdir):
         try:
             try:
                 run_commands()
-            except:
+            except Exception:
                 if options.pdb:
                     import pdb
                     type, value, tb = sys.exc_info()

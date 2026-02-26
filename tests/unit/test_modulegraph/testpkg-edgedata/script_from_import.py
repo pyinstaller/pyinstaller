@@ -11,13 +11,13 @@ if a == b:
 
     try:
         from pkg import toplevel_conditional_import_existing, toplevel_conditional_import_nonexisting
-    except:
+    except Exception:
         from pkg import toplevel_conditional_import2_existing
         from pkg import toplevel_conditional_import2_nonexisting
 
 try:
     from pkg import toplevel_import_existing, toplevel_import_nonexisting
-except:
+except Exception:
     from pkg import toplevel_import2_existing
     from pkg import toplevel_import2_nonexisting
 
@@ -34,13 +34,13 @@ def function():
         try:
             from pkg import function_conditional_import_existing
             from pkg import function_conditional_import_nonexisting
-        except:
+        except Exception:
             from pkg import function_conditional_import2_existing
             from pkg import function_conditional_import2_nonexisting
 
     try:
         from pkg import function_import_existing
         from pkg import function_import_nonexisting
-    except:
+    except Exception:
         from pkg import function_import2_existing
         from pkg import function_import2_nonexisting
