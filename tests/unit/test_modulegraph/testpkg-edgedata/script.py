@@ -13,14 +13,14 @@ if a == b:
     try:
         import toplevel_conditional_import_existing
         import toplevel_conditional_import_nonexisting
-    except:
+    except Exception:
         import toplevel_conditional_import2_existing
         import toplevel_conditional_import2_nonexisting
 
 try:
     import toplevel_import_existing
     import toplevel_import_nonexisting
-except:
+except Exception:
     import toplevel_import2_existing
     import toplevel_import2_nonexisting
 
@@ -39,13 +39,13 @@ def function():
         try:
             import function_conditional_import_existing
             import function_conditional_import_nonexisting
-        except:
+        except Exception:
             import function_conditional_import2_existing
             import function_conditional_import2_nonexisting
 
     try:
         import function_import_existing
         import function_import_nonexisting
-    except:
+    except Exception:
         import function_import2_existing
         import function_import2_nonexisting
