@@ -1217,11 +1217,14 @@ def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tm
     assert os.readlink(check_path) == 'mixed_dir/Dummy.framework/Versions/A/Dummy'
 
 
-# Test with symlink in a data-only directory pointing to a data file in the same directory.
-# Reproduces #9375.
+# Test with symlink in a data-only directory pointing to a data file in the same directory. Reproduces #9375.
+# This test comes in two sub-variants, with different (name-based) ordering of the file and the symbolic link; this aims
+# to verify that symbolic link does not affect classification of the parent directory type (for example, causes it to be
+# mis-classified as a mixed-content directory).
 @pytest.mark.darwin
 @onedir_only
-def test_macos_bundle_layout_symlink_inside_data_dir(pyi_builder, monkeypatch, tmp_path):
+@pytest.mark.parametrize('symlink_first', [False, True], ids=['file_first', 'symlink_first'])
+def test_macos_bundle_layout_symlink_inside_data_dir(pyi_builder, monkeypatch, tmp_path, symlink_first):
     datas = []
 
     # + data_dir: (1)
@@ -1231,7 +1234,8 @@ def test_macos_bundle_layout_symlink_inside_data_dir(pyi_builder, monkeypatch, t
     _create_test_data_file(src_path)
     datas.append((src_path, 'data_dir'))
 
-    src_path = tmp_path / 'data_dir' / 'link_to_data_file.txt'
+    SYMLINK_BASENAME = 'a_link_to_data_file.txt' if symlink_first else 'link_to_data_file.txt'
+    src_path = tmp_path / 'data_dir' / SYMLINK_BASENAME
     src_path.symlink_to('data_file.txt')
     datas.append((src_path, 'data_dir'))
 
@@ -1261,16 +1265,20 @@ def test_macos_bundle_layout_symlink_inside_data_dir(pyi_builder, monkeypatch, t
 
     # (3) The symlink is created in the `Contents/Resources` directory, and points to the file in the same directory.
     # There is no cross-linking involved, as the parent directory is cross-linked (which we verified above).
-    check_path = bundle_path / 'Contents' / 'Resources' / 'data_dir' / 'link_to_data_file.txt'
+    check_path = bundle_path / 'Contents' / 'Resources' / 'data_dir' / SYMLINK_BASENAME
     assert check_path.is_file()
     assert check_path.is_symlink()
     assert os.readlink(check_path) == 'data_file.txt'
 
 
 # Test with symlink in a binary-only directory pointing to a binary file in the same directory.
+# This test comes in two sub-variants, with different (name-based) ordering of the file and the symbolic link; this aims
+# to verify that symbolic link does not affect classification of the parent directory type (for example, causes it to be
+# mis-classified as a mixed-content directory).
 @pytest.mark.darwin
 @onedir_only
-def test_macos_bundle_layout_symlink_inside_binary_dir(pyi_builder, monkeypatch, tmp_path):
+@pytest.mark.parametrize('symlink_first', [False, True], ids=['file_first', 'symlink_first'])
+def test_macos_bundle_layout_symlink_inside_binary_dir(pyi_builder, monkeypatch, tmp_path, symlink_first):
     binaries = []
 
     # + binary_dir: (1)
@@ -1280,7 +1288,8 @@ def test_macos_bundle_layout_symlink_inside_binary_dir(pyi_builder, monkeypatch,
     _create_test_binary(src_path)
     binaries.append((src_path, 'binary_dir'))
 
-    src_path = tmp_path / 'binary_dir' / 'link_to_binary.dylib'
+    SYMLINK_BASENAME = 'a_link_to_binary.dylib' if symlink_first else 'link_to_binary.dylib'
+    src_path = tmp_path / 'binary_dir' / SYMLINK_BASENAME
     src_path.symlink_to('binary.dylib')
     binaries.append((src_path, 'binary_dir'))
 
@@ -1310,7 +1319,7 @@ def test_macos_bundle_layout_symlink_inside_binary_dir(pyi_builder, monkeypatch,
 
     # (3) The symlink is created in the `Contents/Frameworks` directory, and points to the file in the same directory.
     # There is no cross-linking involved, as the parent directory is cross-linked (which we verified above).
-    check_path = bundle_path / 'Contents' / 'Frameworks' / 'binary_dir' / 'link_to_binary.dylib'
+    check_path = bundle_path / 'Contents' / 'Frameworks' / 'binary_dir' / SYMLINK_BASENAME
     assert check_path.is_file()
     assert check_path.is_symlink()
     assert os.readlink(check_path) == 'binary.dylib'
