@@ -132,6 +132,9 @@ class BUNDLE(Target):
         # Normalize TOC
         self.toc = normalize_toc(self.toc)
 
+        # Alphabetically sort the TOC to ensure that order of processing is predictable and reproducible.
+        self.toc.sort()
+
         self.__postinit__()
 
     _GUTS = (
