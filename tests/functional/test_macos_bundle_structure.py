@@ -1215,3 +1215,189 @@ def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tm
     assert check_path.is_file()
     assert check_path.is_symlink()
     assert os.readlink(check_path) == 'mixed_dir/Dummy.framework/Versions/A/Dummy'
+
+
+# Test with symlink in a data-only directory pointing to a data file in the same directory.
+# Reproduces #9375.
+@pytest.mark.darwin
+@onedir_only
+def test_macos_bundle_layout_symlink_inside_data_dir(pyi_builder, monkeypatch, tmp_path):
+    datas = []
+
+    # + data_dir: (1)
+    #    - data_file.txt (2)
+    #    - link_to_data.txt -> data_file.txt (3)
+    src_path = tmp_path / 'data_dir' / 'data_file.txt'
+    _create_test_data_file(src_path)
+    datas.append((src_path, 'data_dir'))
+
+    src_path = tmp_path / 'data_dir' / 'link_to_data_file.txt'
+    src_path.symlink_to('data_file.txt')
+    datas.append((src_path, 'data_dir'))
+
+    bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmp_path, datas=datas)
+
+    # (1) The whole data directory is placed into `Contents/Resources`...
+    check_path = bundle_path / 'Contents' / 'Resources' / 'data_dir'
+    assert check_path.is_dir()
+    assert not check_path.is_symlink()
+
+    # ... and symlinked (at directory level) into `Contents/Frameworks`.
+    check_path = bundle_path / 'Contents' / 'Frameworks' / 'data_dir'
+    assert check_path.is_dir()
+    assert check_path.is_symlink()
+    assert os.readlink(check_path) == '../Resources/data_dir'
+
+    # (2) The data file is placed into directory in `Contents/Resources`...
+    check_path = bundle_path / 'Contents' / 'Resources' / 'data_dir' / 'data_file.txt'
+    assert check_path.is_file()
+    assert not check_path.is_symlink()
+
+    # ... but it is also reachable from `Contents/Frameworks`. The linking is done at the parent directory level,
+    # so the file itself is NOT seen as a symlink.
+    check_path = bundle_path / 'Contents' / 'Frameworks' / 'data_dir' / 'data_file.txt'
+    assert check_path.is_file()
+    assert not check_path.is_symlink()
+
+    # (3) The symlink is created in the `Contents/Resources` directory, and points to the file in the same directory.
+    # There is no cross-linking involved, as the parent directory is cross-linked (which we verified above).
+    check_path = bundle_path / 'Contents' / 'Resources' / 'data_dir' / 'link_to_data_file.txt'
+    assert check_path.is_file()
+    assert check_path.is_symlink()
+    assert os.readlink(check_path) == 'data_file.txt'
+
+
+# Test with symlink in a binary-only directory pointing to a binary file in the same directory.
+@pytest.mark.darwin
+@onedir_only
+def test_macos_bundle_layout_symlink_inside_binary_dir(pyi_builder, monkeypatch, tmp_path):
+    binaries = []
+
+    # + binary_dir: (1)
+    #    - binary.dylib (2)
+    #    - link_to_binary.dylib -> binary.dylib (3)
+    src_path = tmp_path / 'binary_dir' / 'binary.dylib'
+    _create_test_binary(src_path)
+    binaries.append((src_path, 'binary_dir'))
+
+    src_path = tmp_path / 'binary_dir' / 'link_to_binary.dylib'
+    src_path.symlink_to('binary.dylib')
+    binaries.append((src_path, 'binary_dir'))
+
+    bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmp_path, binaries=binaries)
+
+    # (1) The whole binary directory is placed into `Contents/Frameworks`...
+    check_path = bundle_path / 'Contents' / 'Frameworks' / 'binary_dir'
+    assert check_path.is_dir()
+    assert not check_path.is_symlink()
+
+    # ... and symlinked (at directory level) into Contents/Resources.
+    check_path = bundle_path / 'Contents' / 'Resources' / 'binary_dir'
+    assert check_path.is_dir()
+    assert check_path.is_symlink()
+    assert os.readlink(check_path) == '../Frameworks/binary_dir'
+
+    # (2) The binary file is placed into directory in `Contents/Frameworks`...
+    check_path = bundle_path / 'Contents' / 'Frameworks' / 'binary_dir' / 'binary.dylib'
+    assert check_path.is_file()
+    assert not check_path.is_symlink()
+
+    # ... but it is also reachable from `Contents/Resources`. The linking is done at the parent directory level,
+    # so the file itself is NOT seen as a symlink.
+    check_path = bundle_path / 'Contents' / 'Resources' / 'binary_dir' / 'binary.dylib'
+    assert check_path.is_file()
+    assert not check_path.is_symlink()
+
+    # (3) The symlink is created in the `Contents/Frameworks` directory, and points to the file in the same directory.
+    # There is no cross-linking involved, as the parent directory is cross-linked (which we verified above).
+    check_path = bundle_path / 'Contents' / 'Frameworks' / 'binary_dir' / 'link_to_binary.dylib'
+    assert check_path.is_file()
+    assert check_path.is_symlink()
+    assert os.readlink(check_path) == 'binary.dylib'
+
+
+# Test with symlinks in mixed-content directory pointing to files in the same directory.
+@pytest.mark.darwin
+@onedir_only
+def test_macos_bundle_layout_symlink_inside_mixed_dir(pyi_builder, monkeypatch, tmp_path):
+    datas = []
+    binaries = []
+
+    # + mixed_dir: (1)
+    #    - data_file.txt (2)
+    #    - binary.dylib (3)
+    #    - link_to_data_file.txt -> data_file.txt (4)
+    #    - link_to_binary.dylib -> link_to_binary.dylib (5)
+    src_path = tmp_path / 'mixed_dir' / 'data_file.txt'
+    _create_test_data_file(src_path)
+    datas.append((src_path, 'mixed_dir'))
+
+    src_path = tmp_path / 'mixed_dir' / 'binary.dylib'
+    _create_test_binary(src_path)
+    binaries.append((src_path, 'mixed_dir'))
+
+    src_path = tmp_path / 'mixed_dir' / 'link_to_data_file.txt'
+    src_path.symlink_to('data_file.txt')
+    datas.append((src_path, 'mixed_dir'))
+
+    src_path = tmp_path / 'mixed_dir' / 'link_to_binary.dylib'
+    src_path.symlink_to('binary.dylib')
+    binaries.append((src_path, 'mixed_dir'))
+
+    bundle_path = _create_app_bundle(pyi_builder, monkeypatch, tmp_path, datas=datas, binaries=binaries)
+
+    # (1) The mixed-content directory is created in both `Contents/Frameworks` and `Contents/Resources` (i.e., no
+    # linking at the directory level).
+    check_path = bundle_path / 'Contents' / 'Frameworks' / 'mixed_dir'
+    assert check_path.is_dir()
+    assert not check_path.is_symlink()
+
+    check_path = bundle_path / 'Contents' / 'Resources' / 'mixed_dir'
+    assert check_path.is_dir()
+    assert not check_path.is_symlink()
+
+    # (2) The data file is placed into directory in `Contents/Resources`...
+    check_path = bundle_path / 'Contents' / 'Resources' / 'mixed_dir' / 'data_file.txt'
+    assert check_path.is_file()
+    assert not check_path.is_symlink()
+
+    # ... and symlinked into directory in `Contents/Frameworks`.
+    check_path = bundle_path / 'Contents' / 'Frameworks' / 'mixed_dir' / 'data_file.txt'
+    assert check_path.is_file()
+    assert check_path.is_symlink()
+    assert os.readlink(check_path) == '../../Resources/mixed_dir/data_file.txt'
+
+    # (3) The binary is placed into directory in `Contents/Frameworks`...
+    check_path = bundle_path / 'Contents' / 'Frameworks' / 'mixed_dir' / 'binary.dylib'
+    assert check_path.is_file()
+    assert not check_path.is_symlink()
+
+    # ... and symlinked into directory in `Contents/Resources`.
+    check_path = bundle_path / 'Contents' / 'Resources' / 'mixed_dir' / 'binary.dylib'
+    assert check_path.is_file()
+    assert check_path.is_symlink()
+    assert os.readlink(check_path) == '../../Frameworks/mixed_dir/binary.dylib'
+
+    # (4) The symlink is replicated in both `Contents/Frameworks` and `Contents/Resources`, and points to the resource
+    # (file or symlink) in the same directory.
+    check_path = bundle_path / 'Contents' / 'Frameworks' / 'mixed_dir' / 'link_to_data_file.txt'
+    assert check_path.is_file()
+    assert check_path.is_symlink()
+    assert os.readlink(check_path) == 'data_file.txt'
+
+    check_path = bundle_path / 'Contents' / 'Resources' / 'mixed_dir' / 'link_to_data_file.txt'
+    assert check_path.is_file()
+    assert check_path.is_symlink()
+    assert os.readlink(check_path) == 'data_file.txt'
+
+    # (5) The symlink is replicated in both `Contents/Frameworks` and `Contents/Resources`, and points to the resource
+    # (file or symlink) in the same directory.
+    check_path = bundle_path / 'Contents' / 'Frameworks' / 'mixed_dir' / 'link_to_binary.dylib'
+    assert check_path.is_file()
+    assert check_path.is_symlink()
+    assert os.readlink(check_path) == 'binary.dylib'
+
+    check_path = bundle_path / 'Contents' / 'Resources' / 'mixed_dir' / 'link_to_binary.dylib'
+    assert check_path.is_file()
+    assert check_path.is_symlink()
+    assert os.readlink(check_path) == 'binary.dylib'
