@@ -280,7 +280,7 @@ def test_macos_bundle_layout_binary_only_dir(pyi_builder, monkeypatch, tmp_path)
     assert check_path.is_file()
     assert not check_path.is_symlink()
 
-    # ... but it is also reachable from `Resources/Frameworks`. The linking is done at the parent directory level,
+    # ... but it is also reachable from `Contents/Resources`. The linking is done at the parent directory level,
     # so the file itself is NOT seen as a symlink.
     check_path = bundle_path / 'Contents' / 'Resources' / 'binary_dir' / 'binary1.dylib'
     assert check_path.is_file()
@@ -432,7 +432,7 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs(pyi_builder, monkeypatch, tm
     assert check_path.is_file()
     assert not check_path.is_symlink()
 
-    # ... but it is also reachable from `Resources/Frameworks`. The linking is done at the parent directory level,
+    # ... but it is also reachable from `Contents/Resources`. The linking is done at the parent directory level,
     # so the file itself is NOT seen as a symlink.
     check_path = bundle_path / 'Contents' / 'Resources' / 'mixed_dir' / 'binary_subdir' / 'binary.dylib'
     assert check_path.is_file()
@@ -581,7 +581,7 @@ def test_macos_bundle_layout_mixed_dir_with_subdirs_and_dots(pyi_builder, monkey
     assert check_path.is_file()
     assert not check_path.is_symlink()
 
-    # ... but it is also reachable from `Resources/Frameworks`. The linking is done at the parent directory level,
+    # ... but it is also reachable from `Contents/Resources`. The linking is done at the parent directory level,
     # so the file itself is NOT seen as a symlink.
     check_path = bundle_path / 'Contents' / 'Resources' / 'mixed.dir' / '.binary_subdir' / 'binary.dylib'
     assert check_path.is_file()
@@ -719,7 +719,7 @@ def test_macos_bundle_layout_symlink_into_binary_dir(pyi_builder, monkeypatch, t
     assert check_path.is_file()
     assert not check_path.is_symlink()
 
-    # ... but it is also reachable from `Resources/Frameworks`. The linking is done at the parent directory level,
+    # ... but it is also reachable from `Contents/Resources`. The linking is done at the parent directory level,
     # so the file itself is NOT seen as a symlink.
     check_path = bundle_path / 'Contents' / 'Resources' / 'binary_dir' / 'binary.dylib'
     assert check_path.is_file()
@@ -870,7 +870,7 @@ def test_macos_bundle_layout_framework_in_top_level(pyi_builder, monkeypatch, tm
     assert check_path.is_dir()
     assert not check_path.is_symlink()
 
-    # ... but are also reachable from `Resources/Frameworks`. The linking is done at the parent directory level, so the
+    # ... but are also reachable from `Contents/Resources`. The linking is done at the parent directory level, so the
     # files/directories themselves are NOT seen as symlinks.
     check_path = bundle_path / 'Contents' / 'Resources' / 'Dummy.framework' / 'Versions'
     assert check_path.is_dir()
@@ -987,7 +987,7 @@ def test_macos_bundle_layout_framework_in_binary_dir(pyi_builder, monkeypatch, t
     assert check_path.is_file()
     assert not check_path.is_symlink()
 
-    # ... but it is also reachable from `Resources/Frameworks`. The linking is done at the parent directory level,
+    # ... but it is also reachable from `Contents/Resources`. The linking is done at the parent directory level,
     # so the file itself is NOT seen as a symlink.
     check_path = bundle_path / 'Contents' / 'Resources' / 'binary_dir' / 'binary.dylib'
     assert check_path.is_file()
@@ -1136,7 +1136,7 @@ def test_macos_bundle_layout_framework_in_mixed_dir(pyi_builder, monkeypatch, tm
     assert check_path.is_dir()
     assert not check_path.is_symlink()
 
-    # ... and symlinked into `Resources/Frameworks`.
+    # ... and symlinked into `Contents/Resources`.
     check_path = bundle_path / 'Contents' / 'Resources' / 'mixed_dir' / 'Dummy.framework'
     assert check_path.is_dir()
     assert check_path.is_symlink()
