@@ -473,6 +473,27 @@ class BUNDLE(Target):
                 # mechanism.
                 file_base_dir = 'Contents/Frameworks'
                 crosslink_base_dir = None
+            elif typecode == 'SYMLINK':
+                # Symbolic links
+                parent_dir = orig_dest_path.parent
+                if parent_dir == _TOP_LEVEL_DIR or directory_types.get(parent_dir) == _MIXED_DIR_TYPE:
+                    # Symbolic links that need to be cross-linked (because they are located in top-level directory or
+                    # in a mixed-content directory) are instead created in both locations, and point to the (relative)
+                    # resource in the same directory; so one of the targets will likely be a file, and the other will
+                    # be a symlink due to cross-linking.
+                    bundle_toc.append((os.path.join('Contents/Frameworks', orig_dest_name), src_name, typecode))
+                    bundle_toc.append((os.path.join('Contents/Resources', orig_dest_name), src_name, typecode))
+                    continue
+                elif directory_types.get(parent_dir) == _DATA_DIR_TYPE:
+                    # Symbolic link in a data-only directory; relocate to 'Contents/Resources' and do NOT cross-link
+                    # (since the whole directory will be cross-linked).
+                    file_base_dir = 'Contents/Resources'
+                    crosslink_base_dir = None
+                else:
+                    # Symbolic link in a binary-only directory; similar to data-only directory, except we relocate to
+                    # 'Contents/Frameworks'.
+                    file_base_dir = 'Contents/Frameworks'
+                    crosslink_base_dir = None
             elif typecode == 'DATA':
                 # Data file; relocate to `Contents/Resources` and cross-link it back into `Contents/Frameworks`.
                 file_base_dir = 'Contents/Resources'
@@ -488,14 +509,6 @@ class BUNDLE(Target):
             if crosslink_base_dir is not None:
                 parent_dir = orig_dest_path.parent
                 requires_crosslink = parent_dir == _TOP_LEVEL_DIR or directory_types.get(parent_dir) == _MIXED_DIR_TYPE
-
-            # Special handling for SYMLINK entries in original TOC; if we need to cross-link a symlink entry, we create
-            # it in both locations, and have each point to the (relative) resource in the same directory (so one of the
-            # targets will likely be a file, and the other will be a symlink due to cross-linking).
-            if typecode == 'SYMLINK' and requires_crosslink:
-                bundle_toc.append((os.path.join(file_base_dir, orig_dest_name), src_name, typecode))
-                bundle_toc.append((os.path.join(crosslink_base_dir, orig_dest_name), src_name, typecode))
-                continue
 
             # The file itself.
             file_dest = os.path.join(file_base_dir, orig_dest_name)
