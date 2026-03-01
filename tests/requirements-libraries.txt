@@ -67,7 +67,7 @@ PyQt6-WebEngine-Qt6==6.10.2; python_version >= "3.9"
 python-dateutil==2.9.0.post0
 pytz==2025.2
 requests==2.32.5; python_version >= "3.9"
-scipy==1.17.0; python_version >= "3.11"
+scipy==1.17.1; python_version >= "3.11"
 # simplejson is used for text_c_extension
 simplejson==3.20.2
 sphinx==9.1.0; python_version >= "3.12"
