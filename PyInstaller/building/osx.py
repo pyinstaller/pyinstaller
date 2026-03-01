@@ -333,6 +333,8 @@ class BUNDLE(Target):
         _BINARY_DIR_TYPE = 'BINARY-DIR'
         _FRAMEWORK_DIR_TYPE = 'FRAMEWORK-DIR'
 
+        _UNKNOWN_DIR_TYPE = 'UNKNOWN-DIR'  # used only in this step
+
         _TOP_LEVEL_DIR = pathlib.PurePath('.')
 
         for dest_name, src_name, typecode in toc:
@@ -351,22 +353,43 @@ class BUNDLE(Target):
                 if typecode == 'EXTENSION':
                     typecode = 'BINARY'
 
+            # Directory type as per this entry's typecode. Symbolic links are "neutral". On the off chance that a
+            # directory contains only symbolic link(s), we will override the type of "unknown" directories after this
+            # loop finishes.
+            if typecode == 'SYMLINK':
+                entry_type = _UNKNOWN_DIR_TYPE
+            elif typecode == 'BINARY':
+                entry_type = _BINARY_DIR_TYPE
+            else:
+                entry_type = _DATA_DIR_TYPE
+
             # (Re)classify parent directories
             for parent_dir in parent_dirs:
                 # Skip the top-level `.` dir. This is also the only directory that can contain EXECUTABLE and PKG
-                # entries, so we do not have to worry about.
+                # entries, so we do not have to worry about them.
                 if parent_dir == _TOP_LEVEL_DIR:
                     continue
 
-                directory_type = _BINARY_DIR_TYPE if typecode == 'BINARY' else _DATA_DIR_TYPE  # default
-                directory_type = directory_types.get(parent_dir, directory_type)
+                directory_type = directory_types.get(parent_dir, entry_type)
 
-                if directory_type == _DATA_DIR_TYPE and typecode == 'BINARY':
+                # If directory was previously marked as unknown, overwrite its type with the new one.
+                if directory_type == _UNKNOWN_DIR_TYPE:
+                    directory_type = entry_type
+
+                # Update type into mixed-content, if necessary.
+                if directory_type == _DATA_DIR_TYPE and entry_type == _BINARY_DIR_TYPE:
                     directory_type = _MIXED_DIR_TYPE
-                if directory_type == _BINARY_DIR_TYPE and typecode == 'DATA':
+                if directory_type == _BINARY_DIR_TYPE and entry_type == _DATA_DIR_TYPE:
                     directory_type = _MIXED_DIR_TYPE
 
                 directory_types[parent_dir] = directory_type
+
+        # Reclassify all "unknown" directories into "data-only"; these are directories that contain only one or more
+        # symbolic links.
+        directory_types = {
+            directory: directory_type if directory_type != _UNKNOWN_DIR_TYPE else _DATA_DIR_TYPE
+            for directory, directory_type in directory_types.items()
+        }
 
         logger.debug("Directory classification: %r", directory_types)
 
