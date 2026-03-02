@@ -34,6 +34,9 @@ def parser_to_rst(parser: ArgumentParser, cross_references=True):
     """
     Extract the ``--help`` output from an argparse parser and convert it to restructured text.
     """
+    # On python >= 3.14, disable colored output, as injected color codes interfere with the parser. On earlier python
+    # versions, this is no-op (we are setting a non-existent property).
+    parser.color = False
     help = parser.format_help()
     return help_to_rst(help, cross_references)
 
