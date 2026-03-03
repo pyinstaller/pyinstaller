@@ -183,6 +183,16 @@ def options(ctx):
         dest='macos_universal2',
     )
 
+    grp = ctx.add_option_group('Windows-specific options', 'These options have effect only on Windows.')
+    grp.add_option(
+        '--no-cfg',
+        action='store_false',
+        help="When building on Windows with MSVC, do not enable Control Flow Guard (CFG). By default, bootloader "
+        "executables are built with CFG enabled, which might cause issues with certain libraries.",
+        default=True,
+        dest='enable_cfg',
+    )
+
 
 def check_sizeof_pointer(ctx):
     def check(type, expected):
@@ -719,10 +729,12 @@ def configure(ctx):
             # 6.00 (x86, x64) and 6.02 (ARM) should be fine for our purposes.
             ctx.env.append_value('LINKFLAGS', '/SUBSYSTEM:CONSOLE')
 
-            # Enable support for Control Flow Guard
+            # Enable support for Control Flow Guard (CFG)
             # https://docs.microsoft.com/en-us/windows/win32/secbp/control-flow-guard
-            ctx.env.append_value('CFLAGS', '/guard:cf')
-            ctx.env.append_value('LINKFLAGS', '/guard:cf')
+            ctx.msg('Enable Control Flow Guard (CFG)', result='yes' if ctx.options.enable_cfg else 'no')
+            if ctx.options.enable_cfg:
+                ctx.env.append_value('CFLAGS', '/guard:cf')
+                ctx.env.append_value('LINKFLAGS', '/guard:cf')
 
             # Increase the executable's stack size from the default 1 MiB (0x100000) to 2 MB (0x1E8480) to match
             # the stack size under the Python interpreter.

@@ -1,0 +1,3 @@
+(Windows) Add new option to the ``waf`` build script, ``--no-cfg``,
+that allows bootloader to be built without Control Flow Guard (CFG)
+enabled. Applicable only when building with MSVC toolchain.
