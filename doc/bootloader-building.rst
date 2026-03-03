@@ -4,37 +4,82 @@
 Building the Bootloader
 =========================
 
-PyInstaller comes with pre-compiled bootloaders for some platforms in
-the ``bootloader`` folder of the distribution folder.
-When there is no pre-compiled bootloader for
-the current platform (operating-system and word-size),
-the pip_ setup will attempt to build one.
+PyInstaller comes with pre-compiled bootloader executables for
+commonly-used platforms. These executables are located in the
+``bootloader`` directory inside the source distribution directory,
+and are updated (rebuild) as necessary before every PyInstaller release.
+When pre-compiled bootloader executables are not available for the
+current platform (w.r.t. operating system and word-size), the package
+installation process (usually pip_ setup) will attempt to build the
+bootloader from source.
 
-If there is no precompiled bootloader for your platform,
-or if you want to modify the bootloader source,
-you need to build the bootloader.
-To do this,
+You might, however, want to build the bootloader yourself, despite the
+pre-compiled version being available for your target platform. There
+are various reasons why one might to do that, including:
 
-* Download and install Python, which is required for running :command:`waf`,
-* `git clone` or download the source from our `GitHub repository`_,
-* ``cd`` into the folder where you cloned or unpacked the source to,
+* you need to modify the bootloader's behavior in some way that
+  is specific to your application
+
+* you want to avoid anti-virus false positives that result from the
+  wide-spread use of pre-compiled bootloaders
+
+* you want to enable (or disable) a particular option exposed via the
+  bootloader's build system
+
+* you want to build with specific compiler toolchain
+
+The first two sub-sections below provide steps for **building and installing
+the bootloader from source distribution** and for **forcing bootloader
+to be rebuild as part of package installation**. The rest of sub-sections
+provide details for individual platforms.
+
+The officially supported platforms are:
+
+* GNU/Linux (using gcc)
+* Windows (using Visual C++ (VS2015 or later) or MinGW's gcc)
+* macOS (using clang)
+
+Contributed platforms are:
+
+* AIX (using gcc or xlc)
+* HP-UX  (using gcc or xlc)
+* Solaris
+
+For more information about cross-building, please read on
+and mind the section about the virtual machines
+provided in the Vagrantfile.
+
+
+Building and installing bootloader from source distribution or repository checkout
+==================================================================================
+
+To build (and install) bootloader from source distribution or repository
+checkout, follow these steps:
+
+* download and install Python, which is required for running :command:`waf`,
+
+* ``git clone`` or download the source from our `GitHub repository`_,
+* ``cd`` into the directory where you cloned the repository or unpacked the source,
 * ``cd bootloader``, and
-* make the bootloader with: ``python ./waf all``,
-* test the build by ref:`running (parts of) the test-suite
+* build the bootloader by running: ``python ./waf all``,
+* install the PyInstaller with rebuilt bootloader; first, change back
+  to the parent (top-level) directory: ``cd ..``, and
+* run ``pip install .`` or ``pip install -e .`` (for editable install)
+* test the build by :ref:`running (parts of) the test-suite
   <running-the-test-suite>`.
 
 This will produce the bootloader executables for your current platform
-(of course, for Windows these files will have the ``.exe`` extension):
+(on Windows, these files will have the ``.exe`` extension):
 
-* :file:`../PyInstaller/bootloader/{OS_ARCH}/run`,
-* :file:`../PyInstaller/bootloader/{OS_ARCH}/run_d`,
-* :file:`../PyInstaller/bootloader/{OS_ARCH}/runw` (macOS and Windows only), and
-* :file:`../PyInstaller/bootloader/{OS_ARCH}/runw_d` (macOS and Windows only).
+* :file:`PyInstaller/bootloader/{OS_ARCH}/run`,
+* :file:`PyInstaller/bootloader/{OS_ARCH}/run_d`,
+* :file:`PyInstaller/bootloader/{OS_ARCH}/runw` (macOS and Windows only), and
+* :file:`PyInstaller/bootloader/{OS_ARCH}/runw_d` (macOS and Windows only).
 
-The bootloaders architecture defaults to the machine's one, but can be changed
-using the :option:`--target-arch` option – given the appropriate compiler and
-development files are installed. E.g. to build a 32-bit bootloader on a 64-bit
-machine, run::
+The bootloader's architecture defaults to the machine's one, but can be changed
+using the ``--target-arch`` option – given the appropriate compiler and
+development files are installed. For example, to build a 32-bit bootloader on
+a 64-bit machine, run::
 
   python ./waf all --target-arch=32bit
 
@@ -42,25 +87,69 @@ machine, run::
 If this reports an error, read the detailed notes that follow,
 then ask for technical help.
 
-By setting the environment variable ``PYINSTALLER_COMPILE_BOOTLOADER``
-the pip_ setup will attempt to build the bootloader for your platform, even
-if it is already present. Doing so would execute the command ``python ./waf configure all`` upon installation. You can also pass additional arguments to the build process by setting the ``PYINSTALLER_BOOTLOADER_WAF_ARGS`` environment variable.
 
-Supported platforms are
+Forcing bootloader rebuild as part of package installation
+==========================================================
 
-* GNU/Linux (using gcc)
-* Windows (using Visual C++ (VS2015 or later) or MinGW's gcc)
-* Mac OX X (using clang)
+Instead of performing manual steps from the previous section, it is also
+possible to force bootloader to be rebuild when installing PyInstaller
+directly through `pip`_. This alternative might prove especially useful
+in setting up automated build pipelines.
 
-Contributed platforms are
+To force bootloader to be rebuilt during PyInstaller package installation, set the
+``PYINSTALLER_COMPILE_BOOTLOADER`` environment variable (to any value)
+before running `pip`_. This will cause the installation process to (re)build
+the bootloader via the equivalent of running the ``python ./waf configure all``
+command. You can pass additional arguments to the build process by setting
+the ``PYINSTALLER_BOOTLOADER_WAF_ARGS`` environment variable.
 
-* AIX (using gcc or xlc)
-* HP-UX  (using gcc or xlc)
-* Solaris
+For the above to work, you also need to ensure that:
 
-For more information about cross-building please read on
-and mind the section about the virtual machines
-provided in the Vagrantfile.
+* prior installation of PyInstaller (if present) is removed: ``pip uninstall PyInstaller``
+* any cached wheels from previous PyInstaller installation attempts are
+  removed, to prevent ``pip`` from re-using them: ``pip cache remove PyInstaller``
+* when running the ``pip install`` command, ``--no-binary=pyinstaller`` is
+  added, to ensure PyInstaller is installed from source distribution
+  (sdist), rather from a binary wheel
+
+It is also recommended to use ``--verbose`` option with ``pip install``
+command, so you can observe the bootloader's build log and verify that
+it was, in fact, rebuild (as opposed, for example, to ``pip`` simply
+re-using and installing a pre-built wheel).
+
+Therefore, the complete list of steps is as follows:
+
+.. tab:: Windows (command prompt)
+
+   .. code-block:: batch
+
+      set PYINSTALLER_COMPILE_BOOTLOADER=1
+      set "PYINSTALLER_BOOTLOADER_WAF_ARGS=--example-option=example-value --example-flag"
+      python -m pip uninstall PyInstaller
+      python -m pip cache remove PyInstaller
+      python -m pip install --verbose --no-binary=PyInstaller PyInstaller
+
+
+.. tab:: Windows (PowerShell)
+
+   .. code-block:: powershell
+
+      $env:PYINSTALLER_COMPILE_BOOTLOADER=1
+      $env:PYINSTALLER_BOOTLOADER_WAF_ARGS="--example-option=example-value --example-flag"
+      python -m pip uninstall PyInstaller
+      python -m pip cache remove PyInstaller
+      python -m pip install --verbose --no-binary=PyInstaller PyInstaller
+
+
+.. tab:: Other
+
+   .. code-block:: shell
+
+      export PYINSTALLER_COMPILE_BOOTLOADER=1
+      export PYINSTALLER_BOOTLOADER_WAF_ARGS="--example-option=example-value --example-flag"
+      python -m pip uninstall PyInstaller
+      python -m pip cache remove PyInstaller
+      python -m pip install --verbose --no-binary=PyInstaller PyInstaller
 
 
 Building for GNU/Linux
