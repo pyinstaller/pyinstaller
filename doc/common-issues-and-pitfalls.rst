@@ -534,3 +534,30 @@ win32 API function via :mod:`ctypes`, passing ``SHCNE_ASSOCCHANGED``
     shell32 = ctypes.OleDLL('shell32')
     shell32.SHChangeNotify.restype = None
     shell32.SHChangeNotify(0x08000000, 0x0000, None, None)
+
+
+.. _control flow guard:
+
+Windows executables and Control Flow Guard (CFG)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When PyInstaller's bootloader is compiled on Windows with Microsoft Visual
+C (MSVC) toolchain, the `Control Flow Guard (CFG) <https://learn.microsoft.com/en-us/windows/win32/secbp/control-flow-guard>`_
+feature is enabled by default. Therefore, the pre-compiled bootloader
+executables for Windows that are shipped with PyInstaller also have CFG
+enabled, and so do the Windows executables made with said bootloader
+executables.
+
+Control Flow Guard may interfere with libraries that need to manipulate
+control flow for whatever reason (for example, the `unicorn package from Unicorn project <https://www.unicorn-engine.org>`_),
+and cause the application to crash.
+
+In order to build an application using such library, you need to rebuild
+the bootloader with Control Flow Guard explicitly disabled. To do so,
+pass the ``--no-cfg`` option to the bootloader build script, either on
+the command-line (if building manually from unpacked source archive or
+repository checkout) or via the ``PYINSTALLER_BOOTLOADER_WAF_ARGS``
+environment variable (if using ``pip install`` in combination with
+``PYINSTALLER_COMPILE_BOOTLOADER`` environment variable).
+
+For details, see :ref:`building the bootloader`.

@@ -369,8 +369,8 @@ In all cases you may want
 You can also build the bootloaders for cygwin.
 
 
-Build using Visual Studio C++
----------------------------------
+Build using Microsoft Visual C/C++ toolchain
+--------------------------------------------
 
 * With our `wscript` file, you don't need to run ``vcvarsall.bat`` to ’switch’
   the environment between VC++ installations and target architecture. The
@@ -387,17 +387,26 @@ Build using Visual Studio C++
      `chocolatey <https://chocolatey.org/>`_ package manager.
      While at a first glance it looks like overdose, this is the easiest
      way to install the C++ build-tools. It comes down to two lines in an
-     administrative powershell::
+     administrative powershell; the `one-line-install as written on the chocolatey
+     homepage <https://chocolatey.org/install>`_ to install `chocolatey`
+     itself, followed by::
 
-       … one-line-install as written on the chocolatey homepage
        choco install -y python3 visualstudio2019-workload-vctools
+
+  .. note::
+     When building bootloader with MSVC toolchain, the Control Flow Guard
+     (CFG) feature is enabled by default. This might cause crashes in
+     libraries that need to manipulate control flow (see :ref:`here
+     <control flow guard>`). In order to build application that uses such
+     library, bootloader needs to be (re)built with CFG disabled, using
+     the ``--no-cfg`` option.
 
 * Useful Links:
 
   * `Microsoft Visual C++ Build-Tools 2015
-    <http://landinghub.visualstudio.com/visual-cpp-build-tools>`_
-  * `Microsoft Build-Tools for Visual Studio 2017.
-    <https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017>`_
+    <https://www.microsoft.com/en-us/download/details.aspx?id=48159>`_
+  * `Microsoft Build-Tools for Visual Studio 2026.
+    <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2026>`_
 
 
 After installing the C++ build-tool
