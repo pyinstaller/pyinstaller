@@ -82,6 +82,7 @@ is_cygwin = sys.platform == 'cygwin'
 is_darwin = sys.platform == 'darwin'  # macOS
 
 # Unix platforms
+is_android = sys.platform.startswith('android')
 is_linux = sys.platform.startswith('linux')
 is_solar = sys.platform.startswith('sun')  # Solaris
 is_aix = sys.platform.startswith('aix')
@@ -602,6 +603,10 @@ PY3_BASE_MODULES = {
 
 if not is_py310:
     PY3_BASE_MODULES.add('_bootlocale')
+
+if is_android and is_py313:
+    PY3_BASE_MODULES.add('_android_support')
+    PY3_BASE_MODULES.add('threading')  # dependency of _android_support
 
 # Object types of Pure Python modules in modulegraph dependency graph.
 # Pure Python modules have code object (attribute co_code).
