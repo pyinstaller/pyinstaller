@@ -76,4 +76,5 @@ class CustomBuildHook(BuildHookInterface):
         )
         self.compile_bootloader()
         if not self.bootloader_exists():
-            raise SystemExit("ERROR: Bootloaders have been compiled for the wrong platform")
+            from PyInstaller import PLATFORM
+            raise SystemExit(f"ERROR: Bootloaders have been compiled for the wrong platform (expected: {PLATFORM!r})")
