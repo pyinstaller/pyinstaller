@@ -65,6 +65,8 @@ def pytest_runtest_setup(item):
     """
     supported_platforms = SUPPORTED_OSES.intersection(mark.name for mark in item.iter_markers())
     plat = sys.platform
+    if plat == 'android':
+        plat = 'linux'
     if supported_platforms and plat not in supported_platforms:
         pytest.skip(f"does not run on {plat}")
 
