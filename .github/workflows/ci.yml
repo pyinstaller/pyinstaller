@@ -576,6 +576,7 @@ jobs:
             cd ..
             python -m pip install .
             echo "*** Installing test requirements ***"
+            pkg install -y python-psutil
             python -m pip install -r tests/requirements-base.txt
             echo "*** Running tests ***"
             export FORCE_COLOR=1
