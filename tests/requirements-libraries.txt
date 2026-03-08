@@ -65,7 +65,7 @@ PyQt6-QScintilla==2.14.1; python_version >= "3.9"  # Does not have a correspondi
 PyQt6-WebEngine==6.10.0; python_version >= "3.9"
 PyQt6-WebEngine-Qt6==6.10.2; python_version >= "3.9"
 python-dateutil==2.9.0.post0
-pytz==2025.2
+pytz==2026.1.post1
 requests==2.32.5; python_version >= "3.9"
 scipy==1.17.1; python_version >= "3.11"
 # simplejson is used for text_c_extension
