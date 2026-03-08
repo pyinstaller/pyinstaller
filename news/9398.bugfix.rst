@@ -1,0 +1,2 @@
+(Linux) Fix compatibility issues with Termux python 3.13, caused by
+platform being now reported as "android" instead of "linux" (PEP 738).

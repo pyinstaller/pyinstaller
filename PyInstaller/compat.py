@@ -83,7 +83,7 @@ is_darwin = sys.platform == 'darwin'  # macOS
 
 # Unix platforms
 is_android = sys.platform.startswith('android')
-is_linux = sys.platform.startswith('linux')
+is_linux = sys.platform.startswith('linux') or is_android  # For our intents and purposes, Android is also Linux.
 is_solar = sys.platform.startswith('sun')  # Solaris
 is_aix = sys.platform.startswith('aix')
 is_freebsd = sys.platform.startswith('freebsd')
@@ -99,6 +99,9 @@ is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
 is_musl = is_linux and "musl" in subprocess.run(["ldd"], capture_output=True, encoding="utf-8").stderr
 
 # Termux - terminal emulator and Linux environment app for Android.
+# With python >= 3.13, this could also be directly inferred from `sys.platform` or `platform.system()` (see PEP-738),
+# and `is_android` will also be set to True; this is not the case with earlier python versions (that people might still
+# have installed in their Termux environments), so for now, we keep the legacy check.
 is_termux = is_linux and hasattr(sys, 'getandroidapilevel')
 
 # macOS version
