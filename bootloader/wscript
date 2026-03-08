@@ -59,6 +59,10 @@ DESTOS_TO_SYSTEM = {
 # Map from platform.system() to waf's DEST_OS
 SYSTEM_TO_BUILDOS = {
     'Linux': 'linux',
+    # In Termux environment, `platform.system()` reports 'Android' under python >= 3.13 (PEP-738), and 'Linux' under
+    # older python versions. Compiler-based identification currently always resolves to 'linux', so we need to ensure
+    # Android is also folded back into 'linux', to avoid a message about "cross-compiling for Linux".
+    'Android': 'linux',
     'FreeBSD': 'freebsd',
     'Windows': 'win32',
     'Darwin': 'darwin',

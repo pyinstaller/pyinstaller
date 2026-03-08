@@ -57,6 +57,13 @@ def _pyi_machine(machine, system):
         else:
             return "sparc"
 
+    # Fold Android back into Linux. Currently, Termux environment is the only way to run PyInstaller on Android.
+    # Starting with python 3.13, `platform.system()` reports 'Android' (see PEP-738); earlier versions reported 'Linux'.
+    # The compiler-based target platform identification in `waf`, however, identifies target platform as Linux on all
+    # python versions.
+    if system == "Android":
+        system = "Linux"
+
     if system != "Linux":
         # No architecture specifier for anything par Linux.
         # - macOS is on two 64 bit architectures, but they are merged into one "universal2" bootloader.

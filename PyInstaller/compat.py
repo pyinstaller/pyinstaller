@@ -214,6 +214,9 @@ else:
 # Cygwin needs special handling, because platform.system() contains identifiers such as MSYS_NT-10.0-19042 and
 # CYGWIN_NT-10.0-19042 that do not fit PyInstaller's OS naming scheme. Explicitly set `system` to 'Cygwin'.
 system = 'Cygwin' if is_cygwin else platform.system()
+# Similarly, fold Android (reported by python >= 3.13 in Termux environment) back into Linux.
+if system == 'Android':
+    system = 'Linux'
 
 # Machine suffix for bootloader.
 if is_win:
