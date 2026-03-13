@@ -286,14 +286,22 @@ def get_imports(filename, search_paths=None):
     Additional list of search paths may be specified via `search_paths`, to be used as a fall-back when the
     platform-specific resolution mechanism fails to resolve a library fullpath.
     """
-    if compat.is_win:
-        if str(filename).lower().endswith(".manifest"):
-            return []
-        return _get_imports_pefile(filename, search_paths)
-    elif compat.is_darwin:
-        return _get_imports_macholib(filename, search_paths)
-    else:
-        return _get_imports_ldd(filename, search_paths)
+    # Ensure search_paths is immutable, so that it can be hashed for the purposes of caching.
+    if search_paths is not None:
+        search_paths = tuple(search_paths)
+
+    @functools.lru_cache
+    def _get_imports(filename, search_paths):
+        if compat.is_win:
+            if str(filename).lower().endswith(".manifest"):
+                return []
+            return _get_imports_pefile(filename, search_paths)
+        elif compat.is_darwin:
+            return _get_imports_macholib(filename, search_paths)
+        else:
+            return _get_imports_ldd(filename, search_paths)
+
+    return _get_imports(filename, search_paths)
 
 
 def _get_imports_pefile(filename, search_paths):
@@ -337,7 +345,7 @@ def _get_imports_pefile(filename, search_paths):
 
     # Attempt to resolve full paths to referenced DLLs. Always add the input binary's parent directory to the search
     # paths.
-    search_paths = [os.path.dirname(filename)] + (search_paths or [])
+    search_paths = (os.path.dirname(filename), *(search_paths or []))
     output = {(lib, resolve_library_path(lib, search_paths)) for lib in output}
 
     return output
