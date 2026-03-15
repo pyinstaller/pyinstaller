@@ -246,6 +246,14 @@ _cygwin_excludes = {
     r'cygwin1\.dll',
 }
 
+_termux_excludes = {
+    # These libandroid-*.so libraries seem to be part of the base system.
+    r'libandroid-glob\.so',
+    r'libandroid-posix-semaphore\.so',
+    r'libandroid-selinux\.so',
+    r'libandroid-support\.so',
+}
+
 if compat.is_win:
     _includes |= _win_includes
     _excludes |= _win_excludes
@@ -257,6 +265,10 @@ elif compat.is_aix:
 elif compat.is_solar:
     # The exclude list for Solaris differs from other *nix platforms.
     _excludes |= _solaris_excludes
+    _excludes |= _unix_excludes
+elif compat.is_termux:
+    # The exclude list for Termux has additional entries.
+    _excludes |= _termux_excludes
     _excludes |= _unix_excludes
 elif compat.is_unix:
     # Common excludes for *nix platforms -- except AIX.
