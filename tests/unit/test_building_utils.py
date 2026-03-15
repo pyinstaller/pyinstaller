@@ -16,6 +16,7 @@ import pathlib
 import pytest
 
 from PyInstaller.building import utils
+from PyInstaller.compat import is_termux
 
 
 def test_format_binaries_and_datas_not_found_raises_error(tmp_path):
@@ -116,19 +117,71 @@ def test_format_binaries_and_datas_with_bracket(tmp_path):
 
 def test_should_include_system_binary():
     python_dir = f'python{sys.version_info.major}.{sys.version_info.minor}'
-    CASES = [
-        (f'{python_dir}/lib-dynload/any', f'/usr/lib64/{python_dir}/lib-dynload/any', [], True),
-        ('libany', '/lib64/libpython.so', [], True),
-        ('any', '/lib/python/site-packages/any', [], True),
-        ('libany', '/etc/libany', [], True),
-        ('libany', '/usr/lib/libany', ['*any*'], True),
-        ('libany2', '/lib/libany2', ['libnone*', 'libany*'], True),
-        ('libnomatch', '/lib/libnomatch', ['libnone*', 'libany*'], False),
-    ]
+    python_lib = f'libpython{sys.version_info.major}.{sys.version_info.minor}.so'
+    if is_termux:
+        # NOTE: in Termux environment, /usr is symbolic link to /data/data/com.termux/files/usr
+        termux_usr = '/data/data/com.termux/files/usr'
+        CASES = (
+            # Python shared library; should be always included
+            (python_lib, f'{termux_usr}/lib/{python_lib}', [], True),
+            (python_lib, f'/usr/lib/{python_lib}', [], True),
+            # Python stdlib extension from lib-dynload directory; should be always included
+            (f'{python_dir}/lib-dynload/any.so', f'{termux_usr}/lib/{python_dir}/lib-dynload/any.so', [], True),
+            (f'{python_dir}/lib-dynload/any.so', f'/usr/lib/{python_dir}/lib-dynload/any.so', [], True),
+            # Shared library bundled with a package inside system's site-packages directory; should be always included.
+            ('mypackage/any.so', f'{termux_usr}/lib/{python_dir}/site-packages/mypackage/any.so', [], True),
+            ('mypackage/any.so', f'/usr/lib/{python_dir}/site-packages/mypackage/any.so', [], True),
+            # Some other (system) directory
+            ('libany.so', '/etc/libany.so', [], True),
+            ('libany.so', f'{termux_usr}/etc/libany.so', [], True),
+            ('libany.so', '/usr/etc/libany.so', [], True),
+            # Shared library in /data/data/com.termux/files/usr/lib (or /usr/lib), with various exception combinations.
+            ('libany.so', f'{termux_usr}/lib/libany.so', ['*any*'], True),
+            ('libany.so', '/usr/lib/libany.so', ['*any*'], True),
+            ('libany2.so', f'{termux_usr}/lib/libany2.so', ['libnone*', 'libany*'], True),
+            ('libany2.so', '/usr/lib/libany2.so', ['libnone*', 'libany*'], True),
+            ('libnomatch.so', f'{termux_usr}/lib/libnomatch.so', ['libnone*', 'libany*'], False),
+            ('libnomatch.so', '/usr/lib/libnomatch.so', ['libnone*', 'libany*'], False),
+            # Shared library in /system/lib; without and with exclusion exception
+            ('libc++.so', '/system/lib/libc++.so', [], False),
+            ('libc++.so', '/system/lib/libc++.so', ['libc*'], True),
+        )
+    else:
+        # NOTE: nowadays, /lib64 and /lib are symbolic links to their counterparts in /usr. For the sake of
+        # completeness, we explicitly test all four possibilities.
+        CASES = (
+            # Python shared library; should be always included
+            (python_lib, f'/lib64/{python_lib}', [], True),
+            (python_lib, f'/usr/lib64/{python_lib}', [], True),
+            (python_lib, f'/lib/{python_lib}', [], True),
+            (python_lib, f'/usr/lib/{python_lib}', [], True),
+            # Python stdlib extension from lib-dynload directory; should be always included
+            (f'{python_dir}/lib-dynload/any.so', f'/lib64/{python_dir}/lib-dynload/any.so', [], True),
+            (f'{python_dir}/lib-dynload/any.so', f'/usr/lib64/{python_dir}/lib-dynload/any.so', [], True),
+            (f'{python_dir}/lib-dynload/any.so', f'/lib/{python_dir}/lib-dynload/any.so', [], True),
+            (f'{python_dir}/lib-dynload/any.so', f'/usr/lib/{python_dir}/lib-dynload/any.so', [], True),
+            # Shared library bundled with a package inside system's site-packages directory; should be always included.
+            ('mypackage/any.so', f'/lib64/{python_dir}/site-packages/mypackage/any.so', [], True),
+            ('mypackage/any.so', f'/usr/lib64/{python_dir}/site-packages/mypackage/any.so', [], True),
+            ('mypackage/any.so', f'/lib/{python_dir}/site-packages/mypackage/any.so', [], True),
+            ('mypackage/any.so', f'/usr/lib/{python_dir}/site-packages/mypackage/any.so', [], True),
+            # Some other (system) directory
+            ('libany.so', '/etc/libany.so', [], True),
+            # Shared library in system library directory, with various exception combinations.
+            ('libany.so', '/lib64/libany.so', ['*any*'], True),
+            ('libany.so', '/usr/lib64/libany.so', ['*any*'], True),
+            ('libany.so', '/lib/libany.so', ['*any*'], True),
+            ('libany.so', '/usr/lib/libany.so', ['*any*'], True),
+            ('libany2.so', '/lib64/libany2.so', ['libnone*', 'libany*'], True),
+            ('libany2.so', '/usr/lib64/libany2.so', ['libnone*', 'libany*'], True),
+            ('libany2.so', '/lib/libany2.so', ['libnone*', 'libany*'], True),
+            ('libany2.so', '/lib64/libany2.so', ['libnone*', 'libany*'], True),
+            ('libnomatch.so', '/lib64/libnomatch.so', ['libnone*', 'libany*'], False),
+            ('libnomatch.so', '/usr/lib64/libnomatch.so', ['libnone*', 'libany*'], False),
+            ('libnomatch.so', '/lib/libnomatch.so', ['libnone*', 'libany*'], False),
+            ('libnomatch.so', '/usr/lib/libnomatch.so', ['libnone*', 'libany*'], False),
+        )
 
-    for case in CASES:
-        tuple = (case[0], case[1])
-        excepts = case[2]
-        expected = case[3]
-
-        assert utils._should_include_system_binary(tuple, excepts) == expected
+    for dest_path, src_path, exceptions, expected_result in CASES:
+        toc_entry = (dest_path, src_path, 'BINARY')
+        assert utils._should_include_system_binary(toc_entry, exceptions) == expected_result
