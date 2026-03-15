@@ -26,7 +26,7 @@ import zipfile
 
 from PyInstaller import compat
 from PyInstaller import log as logging
-from PyInstaller.compat import is_aix, is_darwin, is_win, is_linux
+from PyInstaller.compat import is_aix, is_darwin, is_win, is_linux, is_termux
 from PyInstaller.exceptions import InvalidSrcDestTupleError
 from PyInstaller.utils import misc
 
@@ -627,7 +627,14 @@ def _should_include_system_binary(binary_tuple, exceptions):
     src = binary_tuple[1]
     if fnmatch.fnmatch(src, '*python*'):
         return True
-    if not src.startswith('/lib') and not src.startswith('/usr/lib'):
+    if is_termux:
+        # Termux linux; system libraries are in /system/lib{,64} and /data/data/com.termux/files/usr/lib; in addition
+        # /usr is symbolic link pointing at /data/data/com.termux/files/usr
+        SYS_PREFIX = ('/system/lib', '/data/data/com.termux/files/usr/lib', '/usr/lib')
+    else:
+        # Standard linux distributions; system libraries are in /lib{,64} and /usr/lib{,64}
+        SYS_PREFIX = ('/lib', '/usr/lib')
+    if not src.startswith(SYS_PREFIX):
         return True
     for exception in exceptions:
         if fnmatch.fnmatch(dest, exception):
