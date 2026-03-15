@@ -369,16 +369,23 @@ def _get_imports_ldd(filename, search_paths):
         LDD_PATTERN = re.compile(r"^\s*(((?P<libarchive>(.*\.a))(?P<objectmember>\(.*\)))|((?P<libshared>(.*\.so))))$")
     elif compat.is_hpux:
         # Match libs of the form
-        #   'sharedlib.so => full-path-to-lib
+        #   sharedlib.so => full-path-to-lib
         # e.g.
-        #   'libpython2.7.so =>      /usr/local/lib/hpux32/libpython2.7.so'
+        #   libpython2.7.so =>      /usr/local/lib/hpux32/libpython2.7.so
         LDD_PATTERN = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
     elif compat.is_solar:
         # Match libs of the form
-        #   'sharedlib.so => full-path-to-lib
+        #   sharedlib.so => full-path-to-lib
         # e.g.
-        #   'libpython2.7.so.1.0 => /usr/local/lib/libpython2.7.so.1.0'
+        #   libpython2.7.so.1.0 => /usr/local/lib/libpython2.7.so.1.0
         # Will not match the platform specific libs starting with '/platform'
+        LDD_PATTERN = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
+    elif compat.is_termux:
+        # Match libs of the form
+        #   sharedlib.so => full-path-to-lib
+        # e.g.
+        #   libpython3.13.so => /data/data/com.termux/files/usr/lib/libpython3.13.so
+        # See: https://github.com/termux/termux-packages/blob/adb6efd/packages/ldd/ldd.in#L71-L72
         LDD_PATTERN = re.compile(r"^\s+(.*)\s+=>\s+(.*)$")
     elif compat.is_linux:
         # Match libs of the form
@@ -447,7 +454,7 @@ def _get_imports_ldd(filename, search_paths):
                 name = name or os.path.basename(lib)
                 if compat.is_linux:
                     # Skip all ld variants listed https://sourceware.org/glibc/wiki/ABIList
-                    # plus musl's ld-musl-*.so.*.
+                    # plus musl's ld-musl-*.so.* and Termux' ld-android.so.
                     if re.fullmatch(r"ld(64)?(-linux|-musl)?(-.+)?\.so(\..+)?", os.path.basename(lib)):
                         continue
             if name[:10] in ('linux-gate', 'linux-vdso'):

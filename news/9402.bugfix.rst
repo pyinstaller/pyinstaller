@@ -1,0 +1,3 @@
+(Linux) Fix binary dependency analysis in Termux environment; previously,
+no binary dependencies would be reported due to mismatched ``ldd`` output
+pattern.
