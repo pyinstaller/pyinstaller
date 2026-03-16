@@ -1,0 +1,4 @@
+Remove warning about non-existing ``tclX`` module directory; in some Tcl
+distributions (e.g., Debian-packaged Tcl), this directory is located
+under the main library/data directory, and therefore the stand-alone
+directory neither exists nor needs to be explicitly collected.
