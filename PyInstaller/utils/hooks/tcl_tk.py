@@ -200,7 +200,9 @@ class TclTkInfo:
             )
 
         # Infer location of Tcl module directory. The modules directory is separate from the library/data one, and
-        # is located at $tcl_root/../tclX, where X is the major Tcl version.
+        # is located at $tcl_root/../tclX, where X is the major Tcl version. In some Tcl distributions (for example,
+        # Debian-packaged Tcl), this directory is located under library/data directory ($tcl_root); in such cases,
+        # we do not need to worry about it.
         self.tcl_module_dir = os.path.join(
             os.path.dirname(self.tcl_data_dir),
             f"tcl{self.tcl_version[0]}",
@@ -230,7 +232,7 @@ class TclTkInfo:
             else:
                 logger.warning("%s: Tk library/data directory %r does not exist!", self, self.tk_data_dir)
 
-            # Collect Tcl modules from modules directory
+            # Collect Tcl modules from optional modules directory
             if os.path.isdir(self.tcl_module_dir):
                 self.data_files += self._collect_files_from_directory(
                     self.tcl_module_dir,
