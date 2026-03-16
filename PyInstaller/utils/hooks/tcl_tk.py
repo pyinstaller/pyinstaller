@@ -236,8 +236,6 @@ class TclTkInfo:
                     self.tcl_module_dir,
                     prefix=os.path.basename(self.tcl_module_dir),
                 )
-            else:
-                logger.warning("%s: Tcl module directory %r does not exist!", self, self.tcl_module_dir)
 
     @staticmethod
     def _collect_files_from_directory(root, prefix=None, excludes=None):
