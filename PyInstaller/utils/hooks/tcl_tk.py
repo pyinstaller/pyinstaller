@@ -200,11 +200,18 @@ class TclTkInfo:
             )
 
         # Infer location of Tcl module directory. The modules directory is separate from the library/data one, and
-        # is located at $tcl_root/../tclX, where X is the major Tcl version.
-        self.tcl_module_dir = os.path.join(
-            os.path.dirname(self.tcl_data_dir),
-            f"tcl{self.tcl_version[0]}",
-        )
+        # is located at $tcl_root/../tclX, where X is the version.
+        for i in 1, 2:
+            tcl_name = f"tcl{'.'.join(str(v) for v in self.tcl_version[:i])}"
+            temp = os.path.join(os.path.dirname(self.tcl_data_dir), tcl_name)
+            if os.path.isdir(temp):
+                self.tcl_module_dir = temp
+                break
+        else:
+            self.tcl_module_dir = os.path.join(
+                os.path.dirname(self.tcl_data_dir),
+                f"tcl{self.tcl_version[0]}"
+            )
 
         # Find all data files
         if self.is_macos_system_framework:
