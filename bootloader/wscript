@@ -84,13 +84,6 @@ else:
 is_cross = None
 
 
-def machine(ctx):
-    """
-    Determine path to bootloader based on C compiler target.
-    """
-    return _shared_with_waf._pyi_machine(ctx.env.DEST_CPU, DESTOS_TO_SYSTEM[ctx.env.DEST_OS])
-
-
 def is_msvc_target(ctx):
     """
     clang may be compiled to use either MSVC's headers or mingw's. If it's the former, it inherits some of MSVC's
@@ -227,7 +220,7 @@ def check_sizeof_pointer(ctx):
 @conf
 def detect_arch(ctx):
     """
-    Handle --target-arch options, or use the same architecture as the compiler.
+    Handle --target-arch options, or use the compiler's default architecture.
     """
     try:
         system = DESTOS_TO_SYSTEM[ctx.env.DEST_OS]
@@ -237,7 +230,6 @@ def detect_arch(ctx):
     # Get arch values either from CLI or detect it.
     if ctx.options.target_arch:
         arch = ctx.options.target_arch
-        ctx.msg('Platform', '%s-%s manually chosen' % (system, arch))
         ctx.env.ARCH_FLAGS_REQUIRED = True
         if arch == '64bit-arm':
             arch = '64bit'
@@ -246,19 +238,28 @@ def detect_arch(ctx):
         # PyInstaller uses the result of platform.architecture() to determine the bits and this is testing the pointer
         # size (via module struct). We do the same here.
         arch = "%sbit" % (8 * check_sizeof_pointer(ctx))
-        _machine = machine(ctx)
-        if _machine is not None:
-            plat = '%s-%s-%s detected based on compiler' % (system, arch, _machine)
-        else:
-            plat = '%s-%s detected based on compiler' % (system, arch)
-        ctx.msg('Platform', plat)
         ctx.env.ARCH_FLAGS_REQUIRED = False
     if arch not in ('32bit', '64bit'):
         ctx.fatal('Unrecognized target architecture: %s' % arch)
 
-    # Pass return values as environment variables.
-    ctx.env.PYI_ARCH = arch  # '32bit' or '64bit'
+    # Normalize target CPU architecture into identifiers that PyInstaller uses at run-time to look up bootloader
+    # executable.
+    machine = _shared_with_waf._pyi_machine(ctx.env.DEST_CPU, system)
+
+    # Display full platform info
+    full_platform = f'{system}-{arch}-{machine}' if machine is not None else f'{system}-{arch}'
+    if ctx.options.target_arch:
+        ctx.msg('Platform', f'{full_platform} manually chosen')
+    else:
+        ctx.msg('Platform', f'{full_platform} detected based on compiler')
+
+    # Pass return values as environment variables:
+    #  - PYI_SYSTEM: normalized name of target OS
+    #  - PYI_MACHINE: normalized name of target CPU architecture
+    #  - PYI_ARCH: '32bit' or '64bit'
     ctx.env.PYI_SYSTEM = system
+    ctx.env.PYI_MACHINE = machine
+    ctx.env.PYI_ARCH = arch
 
 
 @conf
@@ -276,7 +277,7 @@ def set_arch_flags(ctx):
 
     if ctx.env.DEST_OS == 'win32' and ctx.env.CC_NAME == 'msvc':
         # Set msvc linkflags based on architecture.
-        if machine(ctx) == 'arm':
+        if ctx.env.PYI_MACHINE == 'arm':
             ctx.env.append_value('LINKFLAGS', '/MACHINE:ARM64')
         elif ctx.env.PYI_ARCH == '32bit':
             ctx.env.append_value('LINKFLAGS', '/MACHINE:X86')
@@ -353,7 +354,7 @@ def set_arch_flags(ctx):
 
     # Other compiler - not msvc.
     else:
-        if machine(ctx) == 'sw_64':
+        if ctx.env.PYI_MACHINE == 'sw_64':
             # The gcc has no '-m64' option under sw64 machine, but the __x86_64__ macro needs to be defined.
             ctx.env.append_value('CCDEFINES', '__x86_64__')
         # This ensures proper compilation with 64-bit gcc and 32-bit Python or vice versa or with manually
@@ -853,8 +854,8 @@ def build(ctx):
     install_path = os.path.join(os.getcwd(), '../PyInstaller/bootloader', ctx.env.PYI_SYSTEM + "-" + ctx.env.PYI_ARCH)
     install_path = os.path.normpath(install_path)
 
-    if machine(ctx) and ctx.env.DEST_OS != 'darwin':
-        install_path += '-' + machine(ctx)
+    if ctx.env.PYI_MACHINE and ctx.env.DEST_OS != 'darwin':
+        install_path += '-' + ctx.env.PYI_MACHINE
 
     if ctx.is_musl():
         install_path += "-musl"
@@ -909,7 +910,7 @@ def build(ctx):
 
     # This warning is deliberately at the end of the build, in the hopes that it will be more visible amongst all the
     # other stuff written to stdout.
-    if machine(ctx) and machine(ctx) == "unknown":
+    if ctx.env.PYI_MACHINE and ctx.env.PYI_MACHINE == "unknown":
         Logs.log.warning(
             "The target architecture reported by the compiler '%s' was not recognised and defaulted to 'unknown'. You "
             "should verify that `PyInstaller.compat.machine` is also 'unknown' on the target machine. If it is not, "
