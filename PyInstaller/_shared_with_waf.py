@@ -16,7 +16,6 @@ in here are standard library ones. Within reason, it is preferable that this fil
 many compiler docker images still have only Python 2 installed.
 """
 
-import platform
 import re
 
 
@@ -40,10 +39,6 @@ def _pyi_machine(machine, system):
     differentiation, and trust that anyone mixing armv6l with armv6h knows what they are doing.
     """
     # See the corresponding tests in tests/unit/test_compat.py for examples.
-
-    if platform.machine() == "sw_64" or platform.machine() == "loongarch64":
-        # This explicitly inhibits cross compiling the bootloader for or on SunWay and LoongArch machine.
-        return platform.machine()
 
     if system == "Windows":
         if machine.lower().startswith("arm"):
@@ -89,6 +84,10 @@ def _pyi_machine(machine, system):
         return "mips"
     if machine.startswith("riscv"):
         return "riscv"
+    if machine.startswith(("sw_", "sunway")):
+        return "sunway"
+    if machine.startswith("loongarch"):
+        return "loongarch"
     # Machines with no known aliases :)
     if machine in ("s390x",):
         return machine

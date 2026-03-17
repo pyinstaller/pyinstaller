@@ -45,6 +45,10 @@ def test_exec_command_subprocess_wrong_encoding_reports_nicely(capsys):
         ("s390x", "s390x"),
         ("mips", "mips"),
         ("mips64", "mips"),
+        ("sunway", "sunway"),
+        ("sw_64", "sunway"),
+        ("loongarch", "loongarch"),
+        ("loongarch64", "loongarch"),
         ("something-alien", "unknown"),
     ]
 )
