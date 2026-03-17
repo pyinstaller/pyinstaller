@@ -1,0 +1,6 @@
+Rework the handling of unknown target CPU architectures in the bootloader
+build script, and add identification for ``loongsoon`` and ``sunway`` to
+the bundled copy of ``waflib``. The bootloader directories for these
+platforms now use PyInstaller's normalized platform name (i.e.,
+``Linux-64bit-loongarch`` and ``Linux-64bit-sunway`` instead of
+former ``Linux-64bit-loongarch64`` and``Linux-64bit-sw_64``).

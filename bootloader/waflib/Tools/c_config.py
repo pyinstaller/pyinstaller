@@ -38,6 +38,10 @@ MACRO_TO_DESTOS = {
     '__native_client__': 'nacl'
 }
 MACRO_TO_DEST_CPU = {
+    # define __sw_64__ check before __x86_64__, just in case the note in
+    # PyInstaller's bootloader build script about __x86_64__ also being
+    # defined is true...
+    '__sw_64__': 'sunway',
     '__x86_64__': 'x86_64',
     '__amd64__': 'x86_64',
     '__i386__': 'x86',
@@ -59,6 +63,7 @@ MACRO_TO_DEST_CPU = {
     '__xtensa__': 'xtensa',
     '__e2k__': 'e2k',
     '__riscv': 'riscv',
+    '__loongarch__': 'loongarch',
 }
 
 
