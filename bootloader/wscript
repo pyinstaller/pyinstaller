@@ -243,8 +243,16 @@ def detect_arch(ctx):
         ctx.fatal('Unrecognized target architecture: %s' % arch)
 
     # Normalize target CPU architecture into identifiers that PyInstaller uses at run-time to look up bootloader
-    # executable.
-    machine = _shared_with_waf._pyi_machine(ctx.env.DEST_CPU, system)
+    # executable. The value in `ctx.env.DEST_CPU` is waf's identifier, based on macro definitions set up by the
+    # compiler. It is empty when identification fails. See `MACRO_TO_DEST_CPU` in `waflib/Tools/c_config.py`.
+    machine = ctx.env.DEST_CPU
+    if not machine:
+        # waf failed to identify target CPU - assume platform that we are building on. This implicitly breaks
+        # cross-compiling for unidentified platforms, as compiled bootloaders will end up being placed in incorrect
+        # directory.
+        machine = platform.machine()
+        ctx.msg("Failed to identify target CPU - assuming", machine)
+    machine = _shared_with_waf._pyi_machine(machine, system)
 
     # Display full platform info
     full_platform = f'{system}-{arch}-{machine}' if machine is not None else f'{system}-{arch}'
