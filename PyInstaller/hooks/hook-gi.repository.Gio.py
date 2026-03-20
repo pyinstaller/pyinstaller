@@ -22,6 +22,9 @@ module_info = GiModuleInfo('Gio', '2.0')
 if module_info.available:
     binaries, datas, hiddenimports = module_info.collect_typelib_data()
 
+    # Collect platform-specific module, otherwise it may be opportunistically loaded from the run-time system.
+    hiddenimports += ['gi.repository.Gio' + ('Win32' if compat.is_win else 'Unix')]
+
     # Find Gio modules
     libdir = module_info.get_libdir()
     modules_pattern = None

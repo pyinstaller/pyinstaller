@@ -24,6 +24,9 @@ def hook(hook_api):
 
     binaries, datas, hiddenimports = module_info.collect_typelib_data()
 
+    # Collect platform-specific module, otherwise it may be opportunistically loaded from the run-time system.
+    hiddenimports += ['gi.repository.GLib' + ('Win32' if is_win else 'Unix')]
+
     # Collect translations
     lang_list = get_hook_config(hook_api, "gi", "languages")
     datas += collect_glib_translations('glib20', lang_list)

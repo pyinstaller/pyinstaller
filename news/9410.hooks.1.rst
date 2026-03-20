@@ -1,0 +1,5 @@
+Update ``gi.repository.Gio`` hook to collect corresponding platform-specific
+typelib (``GioWin32`` or ``GioUnix``), and add hooks for these modules.
+This aims to prevent potential run-time errors, either because the typelib
+is missing, or because it was opportunistically loaded from the run-time
+system and happens to be of incompatible version.
