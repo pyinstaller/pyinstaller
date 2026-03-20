@@ -55,19 +55,35 @@ def test_gi_repository(pyi_builder, repository_name, version):
         import gi
 
         # Check that package/namespace can be imported
+        print("Importing module...", file=sys.stderr)
         gi.require_version('{repository_name}', '{version}')
         from gi.repository import {repository_name}
-        print({repository_name})
+        print(f"  Imported: {{{repository_name}}}", file=sys.stderr)
 
         # Check that the typelib is, in fact, loaded from the frozen application (instead of falling back to the copy
         # that is installed on the system).
+        print("Checking that module's typelib is loaded from frozen application...", file=sys.stderr)
         repo = gi.Repository.get_default()
         typelib_path = repo.get_typelib_path('{repository_name}')
-        print("typelib path: ", typelib_path)
+        print(f"  Typelib path: {{typelib_path}}", file=sys.stderr)
 
         typelib_path = pathlib.Path(typelib_path).resolve()
         application_path = pathlib.Path(sys._MEIPASS).resolve()
         if application_path not in typelib_path.parents:
             raise ValueError(f"Typelib {{str(typelib_path)!r}} is not loaded from frozen application's directory!")
+
+        # Similarly, ensure that all gi.repository sub-modules that are now registered in sys.modules (i.e., were loaded
+        # during the above import of the target module) are also loaded from the frozen application. This aims to catch
+        # implicit dependencies that were missed during collection, and are therefore loaded from the system.
+        print("Checking all loaded gi.repository sub-modules...", file=sys.stderr)
+        for module_name, module in sys.modules.items():
+            if not module_name.startswith('gi.repository.'):
+                continue
+            module_path = module.__path__[0]
+            module_path = pathlib.Path(module_path).resolve()
+            print(f"  Module: {{module_name!r}}, path: {{module_path!r}}", file=sys.stderr)
+
+            if application_path not in module_path.parents:
+                raise ValueError(f"Typelib {{str(module_path)!r}} is not loaded from frozen application's directory!")
         """
     )
