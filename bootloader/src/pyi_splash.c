@@ -767,8 +767,11 @@ _tclInit_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
      * `auto_path`, but also its parent directory as well as `../lib`
      * directory relative to the executable's location. In our restricted
      * interpreter, we want none of that - so re-set the `auto_path` to
-     * contain only the `tcl_library` location. */
-    dylib_tcltk->Tcl_SetVar2(interp, "auto_path", NULL, splash->tcl_modules_dir, TCL_GLOBAL_ONLY);
+     * contain only the `tcl_library` location. NOTE: `auto_path` should
+     * be a list, as Tk initialization will append additional paths to
+     * it. */
+    dylib_tcltk->Tcl_UnsetVar2(interp, "auto_path", NULL, TCL_GLOBAL_ONLY);
+    dylib_tcltk->Tcl_SetVar2(interp, "auto_path", NULL, splash->tcl_modules_dir, TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
 
     PYI_DEBUG("TCL: 'tclInit' command: 'auto_path' after init: %s\n", dylib_tcltk->Tcl_GetVar2(splash->interp, "auto_path", NULL, TCL_GLOBAL_ONLY));
 
