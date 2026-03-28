@@ -88,11 +88,25 @@ package require Tk
 
 set image_width [image width splash_image]
 set image_height [image height splash_image]
-set display_width [winfo screenwidth .]
-set display_height [winfo screenheight .]
 
-set x_position [expr {int(0.5*($display_width - $image_width))}]
-set y_position [expr {int(0.5*($display_height - $image_height))}]
+# If bootloader set $_pyi_screen_geometry array (advanced splash-screen
+# centering modes that are available on some platforms), use values from it.
+# Otherwise, try to center splash screen using information obtained via
+# winfo screenwidth and screenheight command.
+if {[info exists _pyi_screen_geometry]} {
+    set display_x $_pyi_screen_geometry(x)
+    set display_y $_pyi_screen_geometry(y)
+    set display_width $_pyi_screen_geometry(width)
+    set display_height $_pyi_screen_geometry(height)
+} else {
+    set display_x 0
+    set display_y 0
+    set display_width [winfo screenwidth .]
+    set display_height [winfo screenheight .]
+}
+
+set x_position [expr {int($display_x + 0.5*($display_width - $image_width))}]
+set y_position [expr {int($display_y + 0.5*($display_height - $image_height))}]
 
 # Toplevel frame in which all widgets should be positioned
 frame .root
