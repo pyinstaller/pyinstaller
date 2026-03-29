@@ -27,9 +27,9 @@ PyGObject==3.56.2; sys_platform == "linux" and python_version >= "3.10"
 PySide2==5.15.2.1; python_version < "3.11" and (sys_platform != "darwin" or platform_machine != "arm64")
 # PySide6 is a metapackage that depends on PySide6-Essentials and PySide6-Addons. Their versions are
 # usually kept in sync.
-PySide6==6.11.0; python_version >= "3.9"
-PySide6-Addons==6.11.0; python_version >= "3.9"
-PySide6-Essentials==6.11.0; python_version >= "3.9"
+PySide6==6.11.0; python_version >= "3.10"
+PySide6-Addons==6.11.0; python_version >= "3.10"
+PySide6-Essentials==6.11.0; python_version >= "3.10"
 # PyQt5 and add-on packages
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
@@ -118,6 +118,10 @@ PyGObject==3.54.5; sys_platform == "linux" and python_version == "3.9"  # pyup: 
 
 PyQt5-sip==12.17.1; python_version == "3.9"  # pyup: ignore
 PyQt6-sip==13.10.2; python_version == "3.9"  # pyup: ignore
+
+PySide6==6.10.2; python_version == "3.9"  # pyup: ignore
+PySide6-Addons==6.10.2; python_version == "3.9"  # pyup: ignore
+PySide6-Essentials==6.10.2; python_version == "3.9"  # pyup: ignore
 
 sphinx==7.4.7; python_version == "3.9"  # pyup: ignore
 
