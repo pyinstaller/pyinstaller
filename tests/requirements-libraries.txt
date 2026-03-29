@@ -21,7 +21,7 @@ keyring==25.7.0; python_version >= "3.9"
 matplotlib==3.10.8; python_version >= "3.10"
 numpy==2.4.3; python_version >= "3.11"
 pandas==3.0.1; python_version >= "3.11"
-pygments==2.19.2
+pygments==2.20.0; python_version >= "3.9"
 PyGObject==3.56.2; sys_platform == "linux" and python_version >= "3.10"
 # Official PySide2 wheels do not support python 3.11 or newer. Nor are they available for arm64 on macOS.
 PySide2==5.15.2.1; python_version < "3.11" and (sys_platform != "darwin" or platform_machine != "arm64")
@@ -176,3 +176,5 @@ requests==2.32.4; python_version == "3.8"  # pyup: ignore
 setuptools==75.3.2; python_version == "3.8"  # pyup: ignore
 
 zope.interface==7.2; python_version == "3.8"  # pyup: ignore
+
+pygments==2.19.2; python_version == "3.8"  # pyup: ignore
