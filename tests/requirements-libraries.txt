@@ -49,21 +49,21 @@ PyQtWebEngine==5.15.7
 # version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
 # thus the ABI is still changing.
 PyQt6-sip==13.11.1; python_version >= "3.10"
-PyQt6==6.11.0; python_version >= "3.9"
-PyQt6-Qt6==6.11.0; python_version >= "3.9"
-PyQt6-3D==6.11.0; python_version >= "3.9"
-PyQt6-3D-Qt6==6.11.0; python_version >= "3.9"
-PyQt6-Charts==6.11.0; python_version >= "3.9"
-PyQt6-Charts-Qt6==6.11.0; python_version >= "3.9"
-PyQt6-DataVisualization==6.11.0; python_version >= "3.9"
-PyQt6-DataVisualization-Qt6==6.11.0; python_version >= "3.9"
-PyQt6-Graphs==6.11.0; python_version >= "3.9"
-PyQt6-Graphs-Qt6==6.11.0; python_version >= "3.9"
-PyQt6-NetworkAuth==6.11.0; python_version >= "3.9"
-PyQt6-NetworkAuth-Qt6==6.11.0; python_version >= "3.9"
+PyQt6==6.11.0; python_version >= "3.10"
+PyQt6-Qt6==6.11.0; python_version >= "3.10"
+PyQt6-3D==6.11.0; python_version >= "3.10"
+PyQt6-3D-Qt6==6.11.0; python_version >= "3.10"
+PyQt6-Charts==6.11.0; python_version >= "3.10"
+PyQt6-Charts-Qt6==6.11.0; python_version >= "3.10"
+PyQt6-DataVisualization==6.11.0; python_version >= "3.10"
+PyQt6-DataVisualization-Qt6==6.11.0; python_version >= "3.10"
+PyQt6-Graphs==6.11.0; python_version >= "3.10"
+PyQt6-Graphs-Qt6==6.11.0; python_version >= "3.10"
+PyQt6-NetworkAuth==6.11.0; python_version >= "3.10"
+PyQt6-NetworkAuth-Qt6==6.11.0; python_version >= "3.10"
 PyQt6-QScintilla==2.14.1; python_version >= "3.9"  # Does not have a corresponding -Qt6 package
-PyQt6-WebEngine==6.11.0; python_version >= "3.9"
-PyQt6-WebEngine-Qt6==6.11.0; python_version >= "3.9"
+PyQt6-WebEngine==6.11.0; python_version >= "3.10"
+PyQt6-WebEngine-Qt6==6.11.0; python_version >= "3.10"
 python-dateutil==2.9.0.post0
 pytz==2026.1.post1
 requests==2.33.1; python_version >= "3.10"
@@ -118,6 +118,21 @@ PyGObject==3.54.5; sys_platform == "linux" and python_version == "3.9"  # pyup: 
 
 PyQt5-sip==12.17.1; python_version == "3.9"  # pyup: ignore
 PyQt6-sip==13.10.2; python_version == "3.9"  # pyup: ignore
+
+PyQt6==6.10.2; python_version == "3.9"  # pyup: ignore
+PyQt6-Qt6==6.10.2; python_version == "3.9"  # pyup: ignore
+PyQt6-3D==6.10.0; python_version == "3.9"  # pyup: ignore
+PyQt6-3D-Qt6==6.10.2; python_version == "3.9"  # pyup: ignore
+PyQt6-Charts==6.10.0; python_version == "3.9"  # pyup: ignore
+PyQt6-Charts-Qt6==6.10.2; python_version == "3.9"  # pyup: ignore
+PyQt6-DataVisualization==6.10.0; python_version == "3.9"  # pyup: ignore
+PyQt6-DataVisualization-Qt6==6.10.2; python_version == "3.9"  # pyup: ignore
+PyQt6-Graphs==6.10.0; python_version == "3.9"  # pyup: ignore
+PyQt6-Graphs-Qt6==6.10.2; python_version == "3.9"  # pyup: ignore
+PyQt6-NetworkAuth==6.10.0; python_version == "3.9"  # pyup: ignore
+PyQt6-NetworkAuth-Qt6==6.10.2; python_version == "3.9"  # pyup: ignore
+PyQt6-WebEngine==6.10.0; python_version == "3.9"  # pyup: ignore
+PyQt6-WebEngine-Qt6==6.10.2; python_version == "3.9"  # pyup: ignore
 
 PySide6==6.10.2; python_version == "3.9"  # pyup: ignore
 PySide6-Addons==6.10.2; python_version == "3.9"  # pyup: ignore
