@@ -82,12 +82,19 @@ def test_matplotlib(pyi_builder, monkeypatch, backend_name, qt_bindings):
         # Enable the desired backend *BEFORE* plotting with this backend.
         matplotlib.use({backend_name!r})
 
-        # A runtime hook should force Matplotlib to create its configuration directory in a temporary directory
-        # rather than in $HOME/.matplotlib.
-        configdir = os.environ['MPLCONFIGDIR']
+        # For Matplotlib < 3.0, a runtime hook should force Matplotlib to create its configuration directory in
+        # a temporary directory rather than in $HOME/.matplotlib. For Matplotlib >= 3.0, the runtime hook leaves
+        # MPLCONFIGDIR alone, so that Matplotlib can reuse its font cache across application runs.
+        mpl_version = tuple(int(x) for x in matplotlib.__version__.split('.')[:2] if x.isdigit())
+        configdir = os.environ.get('MPLCONFIGDIR')
         print(f'MPLCONFIGDIR: {{configdir}}')
-        if not configdir.startswith(tempfile.gettempdir()):
-            raise SystemExit('MPLCONFIGDIR not pointing to temp directory.')
+        if mpl_version and mpl_version[0] < 3:
+            if not configdir or not configdir.startswith(tempfile.gettempdir()):
+                raise SystemExit('MPLCONFIGDIR not pointing to temp directory.')
+        else:
+            # The PyInstaller rthook must not have redirected MPLCONFIGDIR into a throwaway temp directory.
+            if configdir and configdir.startswith(tempfile.gettempdir()):
+                raise SystemExit('MPLCONFIGDIR unexpectedly overridden to a temp directory.')
 
         # Test access to the standard 'mpl_toolkits' namespace package installed with Matplotlib.
         # Note that this import was reported to fail under Matplotlib 1.3.0.

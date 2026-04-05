@@ -1,0 +1,5 @@
+Skip the ``MPLCONFIGDIR`` override in the ``matplotlib`` run-time hook when
+``matplotlib`` >= 3.0 is installed.
+The override was a workaround for a limitation in older ``matplotlib``
+versions, and its unconditional use caused the font cache to be rebuilt on
+every application start, noticeably slowing startup.
