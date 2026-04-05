@@ -68,22 +68,6 @@ static Tcl_ThreadCreateProc _splash_init;
 struct Splash_Event;
 
 
-/* Splash screen centering modes */
-enum SPLASH_CENTER_MODE
-{
-    /* No additional bootloader processing; have the splash screen script
-     * fall back to the  `winfo screenwidth` and `winfo screenheight` */
-    SPLASH_CENTER_DEFAULT = 0,
-    /* Center on virtual screen */
-    SPLASH_CENTER_VIRTUAL_SCREEN = 1,
-    /* Center on primary monitor / screen */
-    SPLASH_CENTER_PRIMARY_SCREEN = 2,
-    /* Center on active monitor / screen; i.e., where mouse cursor is at
-     * the time when application is launched. */
-    SPLASH_CENTER_ACTIVE_SCREEN = 3
-};
-
-
 /*
  * Initialize the splash screen context by reading its data and defining
  * the necessary paths and resources.
@@ -718,13 +702,16 @@ pyi_splash_send(struct SPLASH_CONTEXT *splash, bool async, const void *user_data
  */
 static void _pyi_splash_setup_centering_mode (struct SPLASH_CONTEXT *splash)
 {
-    /* This functionality is supported only on Windows. */
-#if defined(_WIN32)
     const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
 
     char *env_var_value;
     int centering_mode;
-    int x, y, width, height;
+
+    int x = 0;
+    int y = 0;
+    int width = 0;
+    int height= 0;
+    int status = -1;
 
     char var_value[64];
 
@@ -746,69 +733,45 @@ static void _pyi_splash_setup_centering_mode (struct SPLASH_CONTEXT *splash)
         free(env_var_value);
     }
 
+    /* If default centering mode is used, nothing needs to be done here. */
     switch (centering_mode) {
         case SPLASH_CENTER_DEFAULT: {
-            PYI_DEBUG_W(L"SPLASH: 'default' center mode - nothing to do!\n");
+            PYI_DEBUG("SPLASH: 'default' center mode - nothing to do!\n");
             return;
         }
         case SPLASH_CENTER_VIRTUAL_SCREEN: {
-            PYI_DEBUG_W(L"SPLASH: 'virtual' center mode...\n");
-
-            /* NOTE: this is not DPI aware, and will likely give wrong
-             * results with mixed-DPI screens... */
-            x = 0;
-            y = 0;
-            width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-            height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+            PYI_DEBUG("SPLASH: 'virtual' center mode...\n");
             break;
         }
-        case SPLASH_CENTER_PRIMARY_SCREEN:
+        case SPLASH_CENTER_PRIMARY_SCREEN: {
+            PYI_DEBUG("SPLASH: 'primary' center mode...\n");
+            break;
+        }
         case SPLASH_CENTER_ACTIVE_SCREEN:  {
-            POINT mouse_pos;
-            HMONITOR monitor;
-            MONITORINFO monitor_info;
-
-            if (centering_mode == SPLASH_CENTER_PRIMARY_SCREEN) {
-                PYI_DEBUG_W(L"SPLASH: 'primary' center mode...\n");
-                mouse_pos.x = 0;
-                mouse_pos.y = 0;
-                monitor = MonitorFromPoint(mouse_pos, MONITOR_DEFAULTTOPRIMARY);
-            } else {
-                PYI_DEBUG_W(L"SPLASH: 'active' center mode...\n");
-                if (!GetCursorPos(&mouse_pos)) {
-                    PYI_DEBUG_W(L"SPLASH: failed to obtain cursor position!\n");
-                    return;
-                }
-                monitor = MonitorFromPoint(mouse_pos, MONITOR_DEFAULTTONEAREST);
-            }
-
-            if (!monitor) {
-                PYI_DEBUG_W(L"SPLASH: failed to obtain monitor handle!\n");
-                return;
-            }
-
-            /* Query monitor info */
-            memset(&monitor_info, 0, sizeof(MONITORINFO));
-            monitor_info.cbSize = sizeof(MONITORINFO);
-            if (!GetMonitorInfoW(monitor, &monitor_info)) {
-                PYI_DEBUG_W(L"SPLASH: failed to query monitor info!\n");
-                return;
-            }
-
-            x = monitor_info.rcMonitor.left;
-            y = monitor_info.rcMonitor.top;
-            width = monitor_info.rcMonitor.right - monitor_info.rcMonitor.left;
-            height = monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top;
-
+            PYI_DEBUG("SPLASH: 'active' center mode...\n");
             break;
         }
         default: {
-            PYI_DEBUG_W(L"SPLASH: unhandled centering mode: %d\n", centering_mode);
+            PYI_DEBUG("SPLASH: unhandled centering mode: %d\n", centering_mode);
             return;
         }
     }
 
-    PYI_DEBUG_W(L"SPLASH: storing monitor geometry: x=%d, y=%d, width=%d, height=%d\n", x, y, width, height);
+    /* Platform-specific implementation */
+#if defined(_WIN32)
+    status = _pyi_splash_setup_centering_mode_win32(centering_mode, &x, &y, &width, &height);
+#elif !defined(__APPLE__)
+    status = _pyi_splash_setup_centering_mode_x11(centering_mode, &x, &y, &width, &height);
+#else
+    PYI_DEBUG("SPLASH: splash screen centering is not supported on this platform!\n");
+    status = -1;
+#endif
+
+    if (status != 0) {
+        return;
+    }
+
+    PYI_DEBUG("SPLASH: storing monitor geometry: x=%d, y=%d, width=%d, height=%d\n", x, y, width, height);
 
     /* Store values in an array */
     snprintf(var_value, 64, "%d", x);
@@ -822,9 +785,6 @@ static void _pyi_splash_setup_centering_mode (struct SPLASH_CONTEXT *splash)
 
     snprintf(var_value, 64, "%d", height);
     dylib_tcltk->Tcl_SetVar2(splash->interp, "_pyi_screen_geometry", "height", var_value, TCL_GLOBAL_ONLY);
-#else
-    (void)splash; /* unused */
-#endif
 }
 
 /* ----------------------------------------------------------------------------------------- */
