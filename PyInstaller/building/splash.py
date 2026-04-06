@@ -393,7 +393,8 @@ class Splash(Target):
             tcltk_info.TCL_ROOTNAME,
             tcltk_info.TK_ROOTNAME,
             image,
-            self.script
+            self.script,
+            0  # default centering mode
         )
 
     @staticmethod

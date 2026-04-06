@@ -159,6 +159,9 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
         splash->requirements_len
     );
 
+    /* Copy default centering mode */
+    splash->centering_mode = pyi_be32toh(data_header->centering_mode);
+
     /* Free raw header data */
     free(data_header);
 
@@ -715,8 +718,8 @@ static void _pyi_splash_setup_centering_mode (struct SPLASH_CONTEXT *splash)
 
     char var_value[64];
 
-    /* TODO: use a default that is set at build time. */
-    centering_mode = SPLASH_CENTER_DEFAULT;
+    /* Default centering mode set at build time. */
+    centering_mode = splash->centering_mode;
 
     /* Allow user to override the mode at run-time via environment variable */
     env_var_value = pyi_getenv("PYINSTALLER_SPLASH_SCREEN_CENTER");

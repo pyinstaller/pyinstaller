@@ -66,6 +66,9 @@ struct SPLASH_DATA_HEADER
     uint32_t requirements_len;
     uint32_t requirements_offset;
 
+    /* Centering mode set at build time. */
+    uint32_t centering_mode;
+
     /*
      * Followed by a chunk of data, including the splash screen
      * script, the image, and the required files array.
@@ -139,6 +142,9 @@ struct SPLASH_CONTEXT
     /* Structure that encapsulates loaded Tcl and Tk shared library and
      * pointers to imported functions. */
     struct DYLIB_TCLTK *dylib_tcltk;
+
+    /* Splash screen centering mode; see SPLASH_CENTER_MODE enum. */
+    int centering_mode;
 };
 
 typedef int (pyi_splash_event_proc)(struct SPLASH_CONTEXT *, const void *);
