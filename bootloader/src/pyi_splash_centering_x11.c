@@ -70,7 +70,18 @@ static void pyi_dylib_xlib_cleanup(struct DYLIB_XLIB **dylib_ref)
 static struct DYLIB_XLIB *pyi_dylib_xlib_load()
 {
     struct DYLIB_XLIB *dylib;
+
+#ifdef AIX
+#ifdef AIX64
+    const char *libname = "libX11.a(shr_64.o)"; /* 64-bit object in .a archive */
+#else
+    const char *libname = "libX11.a(shr4.o)"; /* 32-bit object in .a archive */
+#endif
+    const int dlopen_flags = RTLD_NOW | RTLD_GLOBAL | RTLD_MEMBER;
+#else
     const char *libname = "libX11.so.6";
+    const int dlopen_flags = RTLD_NOW | RTLD_GLOBAL;
+#endif
 
     /* Allocate structure */
     dylib = (struct DYLIB_XLIB *)calloc(1, sizeof(struct DYLIB_XLIB));
@@ -80,7 +91,7 @@ static struct DYLIB_XLIB *pyi_dylib_xlib_load()
     }
 
     /* Load shared library */
-    dylib->handle = dlopen(libname, RTLD_NOW | RTLD_GLOBAL);
+    dylib->handle = dlopen(libname, dlopen_flags);
     if (dylib->handle == NULL) {
         PYI_ERROR("Failed to load Xlib shared library '%s': %s\n", libname, dlerror());
         goto cleanup;
@@ -164,7 +175,20 @@ static void pyi_dylib_xinerama_cleanup(struct DYLIB_XINERAMA **dylib_ref)
 static struct DYLIB_XINERAMA *pyi_dylib_xinerama_load()
 {
     struct DYLIB_XINERAMA *dylib;
+
+#ifdef AIX
+    /* On AIX, the Xinerama extension is part of monolithic Xext
+     * extension library. */
+#ifdef AIX64
+    const char *libname = "libXext.a(shr_64.o)"; /* 64-bit object in .a archive */
+#else
+    const char *libname = "libXext.a(shr.o)"; /* 32-bit object in .a archive */
+#endif
+    const int dlopen_flags = RTLD_NOW | RTLD_GLOBAL | RTLD_MEMBER;
+#else
     const char *libname = "libXinerama.so.1";
+    const int dlopen_flags = RTLD_NOW | RTLD_GLOBAL;
+#endif
 
     /* Allocate structure */
     dylib = (struct DYLIB_XINERAMA *)calloc(1, sizeof(struct DYLIB_XINERAMA));
@@ -174,7 +198,7 @@ static struct DYLIB_XINERAMA *pyi_dylib_xinerama_load()
     }
 
     /* Load shared library */
-    dylib->handle = dlopen(libname, RTLD_NOW | RTLD_GLOBAL);
+    dylib->handle = dlopen(libname, dlopen_flags);
     if (dylib->handle == NULL) {
         PYI_ERROR("Failed to load Xinerama shared library '%s': %s\n", libname, dlerror());
         goto cleanup;
