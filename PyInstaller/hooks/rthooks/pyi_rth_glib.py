@@ -25,7 +25,7 @@ def _pyi_rthook():
         if pyi_data_dir not in xdg_data_dirs:
             xdg_data_dirs = pyi_data_dir + os.pathsep + xdg_data_dirs
     else:
-        xdg_data_dirs = pyi_data_dir
+        xdg_data_dirs = pyi_data_dir + os.pathsep + '/usr/local/share/' + os.pathsep + '/usr/share/'
     os.environ['XDG_DATA_DIRS'] = xdg_data_dirs
 
     # Cleanup aux variables
