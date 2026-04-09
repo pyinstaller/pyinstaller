@@ -1,0 +1,2 @@
+Document known issues with using splash screen in ``onedir`` GUI-based
+applications.

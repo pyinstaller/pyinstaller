@@ -207,7 +207,7 @@ Splash Screen *(Experimental)*
     the Tcl/Tk (or rather, the underlying GUI toolkit) on macOS.
 
 Some applications may require a splash screen as soon as the application
-(bootloader) has been started, because especially in onefile mode large
+(bootloader) has been started, because especially in ``onefile`` mode large
 applications may have long extraction/startup times, while the bootloader
 prepares everything, where the user cannot judge whether the application
 was started successfully or not.
@@ -242,8 +242,11 @@ system, as it is not bundled. If the font is not available, a fallback font is u
 If the splash screen is configured to show text, it will automatically (as onefile archive)
 display the name of the file that is currently being unpacked, this acts as a progress bar.
 
+.. Warning::
+    While splash screen can be enabled in either ``onefile`` or ``onedir`` mode,
+    using it in ``onedir`` mode may cause issues with your application's own UI -
+    see :ref:`splash screen onedir issues`.
 
-.. _splash screen centering:
 
 .. _splash screen centering:
 
@@ -306,6 +309,42 @@ This module must be imported within the Python program. The usage is as follows:
 Of course the import should be in a ``try ... except`` block, in case the program is
 used externally as a normal Python script, without a bootloader.
 For a detailed description see :ref:`pyi_splash Module`.
+
+
+.. _splash screen onedir issues:
+
+Issues caused by splash screen in ``onedir`` applications
+---------------------------------------------------------
+
+Splash screen was primarily designed for ``onefile`` mode, to indicate
+the application activity and progress during extraction to the temporary
+directory. In this mode, the splash screen and your application's own UI
+(if any) run in different processes; the splash screen runs in the parent
+process of the onefile application, while the application's UI runs in
+the child process of the onefile application (which is the main application
+process).
+
+While splash screen can be also used with ``onedir`` applications, be aware
+that in this mode, both the splash screen and the application's own UI run
+in the same process. This might have implications for the application's own
+windows, which are instantiated and shown after the splash screen's window,
+and might manifest in subtle issues, independently of whether your application
+also uses ``tkinter`` or some other UI framework.
+
+So far, the following issues have been observed:
+
+- :issue:`8338` (Windows): using splash screen in ``onedir`` application causes
+  focus issues in windows and dialogs shown by the application; closing the splash
+  screen might send other application windows to the background.
+- :issue:`9394` (Windows): using splash screen in ``onedir`` application that
+  uses ``tkinter`` prevents the default/application-wide window icon from
+  being set via ``Tk.iconphoto()``.
+
+These issues likely stem from the fact that splash screen is the first
+displayed window in the process, and therefore the OS ends up treating it
+as the "main" application window. A proper fix would likely require the
+redesign of splash screen to run in a separate process rather than in
+a secondary thread of the main process.
 
 
 .. _defining the extraction location:
