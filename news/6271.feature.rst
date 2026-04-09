@@ -1,0 +1,2 @@
+Initial support for setting :ref:`alternative splash screen centering modes
+<splash screen centering>` for multi-monitor setups.

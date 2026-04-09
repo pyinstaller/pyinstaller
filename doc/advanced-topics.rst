@@ -235,6 +235,12 @@ the following variables are used:
   not to be shown, and functions of :mod:`pyi_splash` module become no-op
   without raising errors or warnings.
 
+.. envvar:: PYINSTALLER_SPLASH_SCREEN_CENTER
+
+  Setting this environment variable allows user to override the :ref:`splash
+  screen centering mode <splash screen centering>` at run-time. Valid values
+  are: ``default``, ``primary``, ``virtual``, ``active``.
+
 .. envvar:: PYINSTALLER_RESET_ENVIRONMENT
 
   Setting this environment variable to 1 causes the bootloader to reset

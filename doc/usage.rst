@@ -243,8 +243,49 @@ If the splash screen is configured to show text, it will automatically (as onefi
 display the name of the file that is currently being unpacked, this acts as a progress bar.
 
 
+.. _splash screen centering:
+
+.. _splash screen centering:
+
+Splash screen centering
+-----------------------
+
+By default, the splash screen script attempts to center the splash screen based on screen
+dimensions obtained by the Tk's ``winfo`` command (i.e., ``winfo screenwidth`` and
+``winfo screenheight``). In the case of multi-monitor setups, this may result in a platform-specific
+behavior; on Windows, the size of the primary screen seems to be reported, while on other platforms,
+the size of the whole virtual screen seems to be reported.
+
+Therefore, the splash screen implementation provides additional centering modes, where the target
+screen dimensions are obtained by bootloader using low-level platform-specific API, and passed to
+the splash screen script for centering purposes. The preferred splash screen centering mode can
+be set at build-time via the ``center`` argument passed to :ref:`the Splash target in the spec file
+<splash screen target>`, or via the :option:`--splash-center` command-line option when generating
+the spec file. The centering mode can be overridden at run-time using the :envvar:`PYINSTALLER_SPLASH_SCREEN_CENTER`
+environment variable.
+
+The following modes can be set at either build-time and the run-time:
+
+- **default**: have the splash screen script use Tk's ``winfo`` to obtain platform-specific screen
+  dimensions. No additional information is required from the bootloader.
+
+- **primary**: have the bootloader use low-level API to obtain dimensions of the primary screen,
+  so that splash screen is centered on the primary monitor.
+
+- **virtual**: have the bootloader use low-level API to obtain dimensions of the whole virtual
+  screen, so that splash screen is centered on the virtual screen.
+
+- **active**: have the bootloader use low-level API to obtain mouse cursor position, and obtain the
+  dimensions of corresponding screen. This way, the splash screen is centered on "active" monitor,
+  i.e., the one where the mouse cursor is located at the time when application is started. This mode
+  is currently supported only on Windows - on other platforms, **primary** mode is used instead.
+
+If the bootloader cannot obtain the required information, the splash screen script falls back to
+using the information obtained via the ``winfo`` command.
+
+
 The ``pyi_splash`` Module
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 The splash screen is controlled from within Python by the :mod:`pyi_splash` module, which can
 be imported at runtime. This module **cannot** be installed by a package manager
