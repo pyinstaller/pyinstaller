@@ -1,0 +1,3 @@
+Document the "glowing magenta border" problem in splash screen when
+splash screen image contains semi-transparent pixels (for example,
+due to feathered edges).

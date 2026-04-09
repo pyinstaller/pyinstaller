@@ -222,6 +222,24 @@ image, so non-rectangular splash screens can also be displayed.
     Tcl/Tk platform limitations. The ``-transparentcolor`` and ``-transparent`` wm attributes
     used by PyInstaller are not available to Linux.
 
+.. Note::
+    On Windows, the transparency in splash screen is implemented by marking the
+    ``magenta`` color (``#ff00ff``) as transparent color, and overlaying the
+    splash screen image over magenta background. This has two implications.
+
+    First, any region of splash screen image that uses magenta color will be rendered as
+    transparent; if splash screen originally contains magenta regions, they should
+    be changed to a slightly different color instead (for example, ``#ff00fe``).
+
+    Second, **semi-transparent pixels in the splash screen image are not supported, and
+    will be rendered as a shade of magenta color that depends on transparency of
+    each pixel**, due to image being overlaid on magenta background. For example, if
+    splash screen image contains **feathered edges** (i.e., smooth edges made up of
+    semi-transparent pixels), these will end up manifesting as magenta-colored glow around
+    the opaque part of the splash screen - see :issue:`8579`. To mitigate this problem,
+    use an image processing utility to convert your image into a hard-cut transparent
+    image, where every pixel is either fully transparent or fully opaque.
+
 This splash screen is based on `Tcl/Tk`_, which is the same library used by the Python
 module `tkinter`_. PyInstaller bundles the dynamic libraries of tcl and tk into the
 application at compile time. These are loaded into the bootloader at startup of the
