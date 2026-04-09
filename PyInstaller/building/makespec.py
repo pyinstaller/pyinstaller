@@ -400,6 +400,13 @@ def __add_options(parser):
         help="(EXPERIMENTAL) Add an splash screen with the image IMAGE_FILE to the application. The splash screen can "
         "display progress updates while unpacking.",
     )
+    g.add_argument(
+        '--splash-center',
+        dest='splash_center',
+        default=None,
+        choices={'default', 'primary', 'virtual', 'active'},
+        help="Splash screen centering mode. See the splash screen documentation for details.",
+    )
 
     g = parser.add_argument_group('How to generate')
     g.add_argument(
@@ -703,6 +710,7 @@ def main(
     argv_emulation=False,
     hide_console=None,
     optimize=None,
+    splash_center=None,
     **_kwargs
 ):
     # Default values for onefile and console when not explicitly specified on command-line (indicated by None)
@@ -808,7 +816,13 @@ def main(
     )
 
     if splash:
-        splash_init = splashtmpl % {'splash_image': splash}
+        splash_options = ""
+        if splash_center:
+            splash_options = f"\n    center={splash_center!r},"
+        splash_init = splashtmpl % {
+            'splash_image': splash,
+            'splash_options': splash_options,
+        }
         splash_binaries = "\n    splash.binaries,"
         splash_target = "\n    splash,"
     else:

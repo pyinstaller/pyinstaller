@@ -100,6 +100,19 @@ class Splash(Target):
             applications) can cover the splash screen by user bringing them to front. This might be useful for
             frozen applications with long startup times. Default: ``True``
         :type always_on_top: bool
+        :keyword center:
+            Splash screen centering mode: ``'default'``, ``'primary'``, ``'virtual'``, or ``'active'``. In the default
+            mode, the splash screen script computes the position using screen dimensions obtained via Tk's ``winfo``
+            command, which has platform-specific behavior in multi-monitor setups; on Windows, it seems to return the
+            size of the primary monitor, while on other platforms, it seems to return the size of the whole virtual
+            screen. In other modes, the bootloader attempts to query the target screen size (and position) using
+            platform-specific low-level API, and supply the information to splash screen script; in ``primary`` mode,
+            the size of primary screen is queried, and in ``virtual`` mode, the size of whole virtual screen is queried.
+            The ``active`` mode is supported only on Windows; the bootloader attempts to obtain position of mouse cursor
+            at the time when application is launched, and queries the size (and position) of the corresponding screen.
+            If the required information cannot be obtained and exposed by the bootloader, the splash screen script
+            falls back to the information provided by the ``winfo`` command. Default: ``'default'``
+        :type center: str
         """
         from PyInstaller.config import CONF
         from PyInstaller.utils.hooks.tcl_tk import tcltk_info
@@ -136,6 +149,11 @@ class Splash(Target):
         self.script_name = kwargs.get("script_name", None)
         self.minify_script = kwargs.get("minify_script", True)
         self.max_img_size = kwargs.get("max_img_size", (760, 480))
+
+        self.center = kwargs.get("center", "default").lower()
+        if self.center not in self._CENTER_MODES:
+            valid_modes = list(self._CENTER_MODES.keys())
+            raise ValueError(f"Invalid center mode {self.center!r}! Must be one of: {valid_modes!r}")
 
         # text options
         self.text_pos = kwargs.get("text_pos", None)
@@ -262,6 +280,13 @@ class Splash(Target):
 
         self.__postinit__()
 
+    _CENTER_MODES = {
+        'default': SplashWriter._SPLASH_CENTER_DEFAULT,
+        'primary': SplashWriter._SPLASH_CENTER_PRIMARY_SCREEN,
+        'virtual': SplashWriter._SPLASH_CENTER_VIRTUAL_SCREEN,
+        'active': SplashWriter._SPLASH_CENTER_ACTIVE_SCREEN,
+    }
+
     _GUTS = (
         # input parameters
         ('image_file', _check_guts_eq),
@@ -276,6 +301,7 @@ class Splash(Target):
         ('full_tk', _check_guts_eq),
         ('minify_script', _check_guts_eq),
         ('max_img_size', _check_guts_eq),
+        ('center', _check_guts_eq),
         # calculated/analysed values
         ('uses_tkinter', _check_guts_eq),
         ('script', _check_guts_eq),
@@ -394,7 +420,7 @@ class Splash(Target):
             tcltk_info.TK_ROOTNAME,
             image,
             self.script,
-            0  # default centering mode
+            self._CENTER_MODES[self.center],
         )
 
     @staticmethod
