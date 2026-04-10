@@ -1,0 +1,4 @@
+Prevent the run-time hook for ``gi.repository.GLib`` from overriding
+the implicit default value of the ``XDG_DATA_DIRS`` environment
+variable (i.e., ``/usr/local/share/:/usr/share/``) when adding the
+frozen application's top-level directory to the list of data directories.
