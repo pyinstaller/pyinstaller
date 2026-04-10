@@ -1,0 +1,2 @@
+Fix the ``forkserver`` spawn mode of ``multiprocessing`` under python
+3.13.13, 3.14.4, and the upcoming 3.15.
