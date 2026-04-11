@@ -256,7 +256,13 @@ def test_program_importing_module_with_invalid_encoding2(pyi_builder):
 def test_bundled_shell_script(pyi_builder, tmp_path):
     script_file = tmp_path / "test_script.sh"
     with open(script_file, "w", encoding="utf-8") as fp:
-        print('#!/bin/sh', file=fp)
+        if compat.is_termux:
+            # In Termux environment, /usr is usually a symbolic link to ${PREFIX}; but it may also not exist. So use
+            # ${PREFIX} directly...
+            prefix = os.environ.get('PREFIX', '/usr')
+            print(f'#!{prefix}/bin/env sh', file=fp)
+        else:
+            print('#!/usr/bin/env sh', file=fp)
         print('echo "Hello world!"', file=fp)
     script_file.chmod(0o755)
 
