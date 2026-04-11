@@ -35,6 +35,8 @@ def test_linux_non_unicode_path(pyi_builder, monkeypatch):
     pyi_builder._dist_dir = pyi_builder._dist_dir / unicode_filename
 
     tmp = pyi_builder._tmp_path / f"{unicode_filename}_TMP"
+    tmp.mkdir()
+
     monkeypatch.setenv('LC_ALL', 'C')
     monkeypatch.setenv('TMPDIR', str(tmp))
     monkeypatch.setenv('TMP', str(tmp))
@@ -51,6 +53,8 @@ def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
     pyi_builder._dist_dir = pyi_builder._dist_dir / unicode_filename
 
     tmp = pyi_builder._tmp_path / f"{unicode_filename}_TMP"
+    tmp.mkdir()
+
     monkeypatch.setenv('TMPDIR', str(tmp))
     monkeypatch.setenv('TMP', str(tmp))
 
@@ -66,6 +70,8 @@ def test_win_codepage_path(pyi_builder, monkeypatch):
     pyi_builder._dist_dir = pyi_builder._dist_dir / cp_filename
 
     tmp = pyi_builder._tmp_path / f"{cp_filename}_TMP"
+    tmp.mkdir()
+
     monkeypatch.setenv('TMPDIR', str(tmp))
     monkeypatch.setenv('TMP', str(tmp))
 
@@ -87,6 +93,8 @@ def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
         pytest.xfail("Administrator privileges required to strip ShortFileName.")
 
     tmp = pyi_builder._tmp_path / f"{cp_filename}_TMP"
+    tmp.mkdir()
+
     monkeypatch.setenv('TMPDIR', str(tmp))
     monkeypatch.setenv('TMP', str(tmp))
 
@@ -103,6 +111,8 @@ def test_win_non_codepage_path(pyi_builder, monkeypatch):
 
     # To test what happens with a non-ANSI tempdir, we will also need to pass the TMP environ as wide chars.
     tmp = pyi_builder._tmp_path / f"{non_cp_filename}_TMP"
+    tmp.mkdir()
+
     monkeypatch.setenv('TMPDIR', str(tmp))
     monkeypatch.setenv('TMP', str(tmp))
 
