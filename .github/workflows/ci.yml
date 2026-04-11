@@ -568,6 +568,9 @@ jobs:
         run: |
           docker run -v"$PWD:/io" termux/termux-docker:x86_64 bash -ec '
             echo "*** Installing system dependencies ***"
+            ln -sf ${PREFIX}/etc/termux/mirrors/default ${PREFIX}/etc/termux/chosen_mirrors
+            pkg update
+            pkg upgrade -y
             pkg install -y python ldd binutils
             export CC=clang
             echo "*** Installing PyInstaller ***"
