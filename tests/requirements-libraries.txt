@@ -73,7 +73,7 @@ simplejson==3.20.2
 sphinx==9.1.0; python_version >= "3.12"
 # Required for test_namespace_package
 sqlalchemy==2.0.49
-zope.interface==8.2; python_version >= "3.10"
+zope.interface==8.3; python_version >= "3.10"
 Pillow==12.2.0; python_version >= "3.10"
 setuptools==82.0.1; python_version >= "3.9"
 
