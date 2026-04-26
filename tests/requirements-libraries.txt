@@ -18,7 +18,7 @@ future==1.0.0
 gevent==26.4.0; python_version >= "3.9"
 ipython==9.13.0; python_version >= "3.12"
 keyring==25.7.0; python_version >= "3.9"
-matplotlib==3.10.8; python_version >= "3.10"
+matplotlib==3.10.9; python_version >= "3.10"
 numpy==2.4.4; python_version >= "3.11"
 pandas==3.0.2; python_version >= "3.11"
 pygments==2.20.0; python_version >= "3.9"
