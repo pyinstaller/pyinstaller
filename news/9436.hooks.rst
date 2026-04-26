@@ -1,0 +1,2 @@
+Prevent ``_ios_support`` and ``libobjc.so`` from being collected on non-IOS
+platforms if :mod:`webbrowser` is imported.
