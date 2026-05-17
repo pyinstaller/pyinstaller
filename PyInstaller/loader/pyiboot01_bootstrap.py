@@ -48,9 +48,20 @@ def _pyi_bootstrap():
     # Importing 'encodings' module in a run-time hook is not enough, since some run-time hooks require this module, and
     # the order of running the code from the run-time hooks is not defined.
     try:
-        import encodings  # noqa: F401
+        import encodings
     except ImportError:
-        pass
+        encodings = None
+
+    # Starting with python 3.15.0b1, the `encodings` package is frozen (in the cpython sense), along with some of its
+    # submodules; see https://github.com/python/cpython/commit/0012686d92fe51f426bcd6797e2f2a50ad4ac74. Consequently,
+    # the `encodings/__init__.pyc` module from our `base_library.zip` is not used anymore, and so the `encodings`
+    # directory in our base library archive is not searched, albeit it contains all non-frozen encoding modules.
+    # Therefore, we need to manually add that directory to `encodings.__path__`, otherwise we end up missing support
+    # for most of encodings.
+    if encodings and hasattr(encodings, '__path__'):
+        encodings_dir = os.path.join(sys._MEIPASS, 'base_library.zip', 'encodings')
+        if encodings_dir not in encodings.__path__:
+            encodings.__path__.append(encodings_dir)
 
     # In the Python interpreter 'warnings' module is imported when 'sys.warnoptions' is not empty. Mimic this behavior.
     if sys.warnoptions:
