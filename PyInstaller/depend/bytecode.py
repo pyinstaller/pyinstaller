@@ -144,12 +144,18 @@ else:
     if compat.is_py314:
         # Python 3.14.0a2 split LOAD_CONST into LOAD_CONST, LOAD_CONST_IMMORTAL, and LOAD_SMALL_INT.
         # https://github.com/python/cpython/commit/faa3272fb8d63d481a136cc0467a0cba6ed7b264
+        #
         # The LOAD_CONST_IMMORTAL was removed in Python 3.15.0a1
         # https://github.com/python/cpython/commit/6dcb0fdfe0a2de083f0f1f9a568dd0a19541b863
+        #
+        # LOAD_COMMON_CONSTANT was added in Python 3.14.0a1...
+        # https://github.com/python/cpython/commit/98e855fcc1f1d490c803565e84cb611b3f057e45
+        # and was extended with additional common constants in 3.15.0b1
+        # https://github.com/python/cpython/commit/7c9ad27dd1fc9e05149b471b055f18ad64cd05f3
         if not compat.is_py315:
-            _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`|`LOAD_SMALL_INT`|`LOAD_CONST_IMMORTAL`"
+            _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`|`LOAD_SMALL_INT`|`LOAD_COMMON_CONSTANT`|`LOAD_CONST_IMMORTAL`"
         else:
-            _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`|`LOAD_SMALL_INT`"
+            _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`|`LOAD_SMALL_INT`|`LOAD_COMMON_CONSTANT`"
     else:
         _OPCODES_FUNCTION_ARGS = rb"`LOAD_CONST`"
     _OPCODES_FUNCTION_CALL = rb"`CALL`|`CALL_FUNCTION_EX`"
@@ -271,6 +277,10 @@ def load(raw: bytes, code: CodeType) -> str:
         # python 3.14 introduced LOAD_FAST_BORROW, which pushes a borrowed reference to the local co_varnames[var_num]
         # onto the stack.
         return code.co_varnames[index]
+    if compat.is_py314 and raw[-2] == opmap["LOAD_COMMON_CONSTANT"]:
+        # python 3.14 introduced LOAD_COMMON_CONSTANT, which pushes an identifier of a pre-defined constant onto the
+        # stack. Python 3.15 added more such constants - including None, True, False, and -1.
+        return dis._common_constants[index]
 
     return code.co_names[index]
 

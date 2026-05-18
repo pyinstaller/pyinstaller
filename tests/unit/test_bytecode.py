@@ -122,6 +122,22 @@ def test_global_functions():
     code = compile_("foo('a')")
     assert function_calls(code) == [('foo', ['a'])]
 
+    # With common constants, which have special opcodes in python 3.15.
+    code = compile_("foo(None)")
+    assert function_calls(code) == [('foo', [None])]
+
+    code = compile_("foo(True)")
+    assert function_calls(code) == [('foo', [True])]
+
+    code = compile_("foo(False)")
+    assert function_calls(code) == [('foo', [False])]
+
+    code = compile_("foo('')")
+    assert function_calls(code) == [('foo', [''])]
+
+    code = compile_("foo(-1)")
+    assert function_calls(code) == [('foo', [-1])]
+
     # Having >256 constants will take us into extended arg territory where multiple byte-pair instructions are needed
     # to reference the constant. If everything works, we should not notice the difference.
     code = compile_(many_int_constants() + "foo(.123)")
