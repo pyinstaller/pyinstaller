@@ -2560,19 +2560,37 @@ class ModuleGraph(ObjectGraph):
                 # Python >=2.5: LOAD_CONST flags, LOAD_CONST names, IMPORT_NAME name
                 #
                 # Python 3.14 split LOAD_CONST into LOAD_CONST, LOAD_CONST_IMMORTAL,
-                # and LOAD_SMALL_INT. The former two can be used to load the names,
-                # while LOAD_SMALL_INT can be also used to load the flags.
+                # and LOAD_SMALL_INT. The former two can be used to load the names
+                # (i.e., the fromlist argument), while LOAD_SMALL_INT can be also used
+                # to load the flags (i.e., the level argument).
                 if sys.version_info >= (3, 14):
-                    assert prev_insts[-2].opname in {'LOAD_CONST', 'LOAD_CONST_IMMORTAL', 'LOAD_SMALL_INT'}
-                    assert prev_insts[-1].opname in {'LOAD_CONST', 'LOAD_CONST_IMMORTAL'}
+                    EXPECTED_OPCODES_LEVEL = {
+                        'LOAD_CONST',
+                        'LOAD_CONST_IMMORTAL',
+                        'LOAD_SMALL_INT',
+                    }
+                    EXPECTED_OPCODES_FROMLIST = {
+                        'LOAD_CONST',
+                        'LOAD_CONST_IMMORTAL',
+                    }
                 else:
-                    assert prev_insts[-2].opname == 'LOAD_CONST'
-                    assert prev_insts[-1].opname == 'LOAD_CONST'
+                    EXPECTED_OPCODES_LEVEL = {
+                        'LOAD_CONST',
+                    }
+                    EXPECTED_OPCODES_FROMLIST = {
+                        'LOAD_CONST',
+                    }
+
+                assert prev_insts[-2].opname in EXPECTED_OPCODES_LEVEL, \
+                    f"Unexpected opcode used to push level argument: {prev_insts[-2].opname}"
+                assert prev_insts[-1].opname in EXPECTED_OPCODES_FROMLIST, \
+                    f"Unexpected opcode used to push fromlist argument: {prev_insts[-1].opname}"
 
                 level = prev_insts[-2].argval
                 fromlist = prev_insts[-1].argval
 
-                assert fromlist is None or type(fromlist) is tuple
+                assert fromlist is None or type(fromlist) is tuple, \
+                    f"Unexpected type of fromlistargument: {type(fromlist)}"
                 target_module_partname = inst.argval
 
                 #FIXME: The exact same logic appears in _collect_import(),
