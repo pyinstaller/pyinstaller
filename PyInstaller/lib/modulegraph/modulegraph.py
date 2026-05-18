@@ -2562,8 +2562,21 @@ class ModuleGraph(ObjectGraph):
                 # Python 3.14 split LOAD_CONST into LOAD_CONST, LOAD_CONST_IMMORTAL,
                 # and LOAD_SMALL_INT. The former two can be used to load the names
                 # (i.e., the fromlist argument), while LOAD_SMALL_INT can be also used
-                # to load the flags (i.e., the level argument).
-                if sys.version_info >= (3, 14):
+                # to load the flags (i.e., the level argument). LOAD_CONST_IMMORTAL was
+                # subsequently removed in Python 3.15.
+                #
+                # Python 3.14 also introduced LOAD_COMMON_CONSTANT, which was extended
+                # in python 3.15 to cover the None constant.
+                if sys.version_info >= (3, 15):
+                    EXPECTED_OPCODES_LEVEL = {
+                        'LOAD_CONST',
+                        'LOAD_SMALL_INT',
+                    }
+                    EXPECTED_OPCODES_FROMLIST = {
+                        'LOAD_CONST',
+                        'LOAD_COMMON_CONSTANT',
+                    }
+                elif sys.version_info >= (3, 14):
                     EXPECTED_OPCODES_LEVEL = {
                         'LOAD_CONST',
                         'LOAD_CONST_IMMORTAL',
@@ -2572,6 +2585,7 @@ class ModuleGraph(ObjectGraph):
                     EXPECTED_OPCODES_FROMLIST = {
                         'LOAD_CONST',
                         'LOAD_CONST_IMMORTAL',
+                        'LOAD_COMMON_CONSTANT',
                     }
                 else:
                     EXPECTED_OPCODES_LEVEL = {
