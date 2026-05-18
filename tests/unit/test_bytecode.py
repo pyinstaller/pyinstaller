@@ -88,6 +88,12 @@ def test_many_int_constants():
         expected_length = 601 - 256  # (600 - 256) integers plus a `None` return.
         if code.co_consts[0] == 0:
             expected_length += 1
+
+        # In python 3.15.0b1, None became a common constant (loaded via LOAD_COMMON_CONSTANT), so it is not included
+        # in co_consts anymore.
+        if compat.is_py315:
+            expected_length -= 1
+
         assert len(code.co_consts) == expected_length
     else:
         # 600 integers plus a 'None' return.
@@ -99,14 +105,23 @@ def test_many_str_constants():
     # Only the variable name 'a'.
     assert code.co_names == ('a',)
 
-    # 300 string constants plus a 'None' return.
-    assert len(code.co_consts) == 301
+    # 300 string constants plus a 'None' return. Since python 3.15.0b1, 'None' is a common constant and is not included
+    # in co_consts anymore.
+    if compat.is_py315:
+        assert len(code.co_consts) == 300
+    else:
+        assert len(code.co_consts) == 301
 
 
 def test_many_globals():
     code: CodeType = compile_(many_globals())
     assert len(code.co_names) == 300
-    assert len(code.co_consts) == 2
+    # 1 string constant plus a 'None'. Since python 3.15.0b1, 'None' is a common constant and is not included in
+    # co_consts anymore.
+    if compat.is_py315:
+        assert len(code.co_consts) == 1
+    else:
+        assert len(code.co_consts) == 2
 
 
 def test_global_functions():
