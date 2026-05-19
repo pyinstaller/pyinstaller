@@ -73,10 +73,13 @@ class TestPythonBehaviour(object):
 
         return data
 
+    # These tests currently fail under python 3.15 due to https://github.com/python/cpython/issues/149671.
+    @pytest.mark.skipif(sys.version_info >= (3, 15), reason="python/cpython#149671")
     def testToplevel(self, install_testpkg):
         m = self.importModule('nspkg.module', install_testpkg)
         assert m == 'nspkg.module'
 
+    @pytest.mark.skipif(sys.version_info >= (3, 15), reason="python/cpython#149671")
     def testSub(self, install_testpkg):
         m = self.importModule('nspkg.nssubpkg.sub', install_testpkg)
         assert m == 'nspkg.nssubpkg.sub'
