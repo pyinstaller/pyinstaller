@@ -2,7 +2,6 @@ import unittest
 from PyInstaller.lib.modulegraph import modulegraph
 import os
 import sys
-import shutil
 import warnings
 from altgraph import Graph
 from PyInstaller.compat import is_win, is_cygwin
@@ -585,22 +584,28 @@ class TestModuleGraph (unittest.TestCase):
 
             self.assertRaises(ImportError, graph._find_module, 'xml', None)
 
+            # This part of test used to be done with the `shutil` module; however, in python 3.15.0b1, `xml` added an
+            # import of `re`, which introduces a dependency chain that ends up pulling in `shutil`. This causes
+            # `graph._find_module('shutil', None)` to raise an `ImportError` due to module having already been seen.
+            # See: https://github.com/python/cpython/commit/a76d9573e45dc11cb0909154fa3e68591dfab85f
+            # Therefore, we now use a different stdlib module; i.e., `compileall`.
             self.assertEqual(record, [])
-            m = mockedgraph._find_module('shutil', None)
+            m = mockedgraph._find_module('compileall', None)
             self.assertEqual(record, [
-                ('shutil', graph.path),
+                ('compileall', graph.path),
             ])
             self.assertTrue(isinstance(m, tuple))
             self.assertEqual(len(m), 2)
-            srcfn = shutil.__file__
+
+            import compileall
+            srcfn = compileall.__file__
             if srcfn.endswith('.pyc'):
                 srcfn = srcfn[:-1]
             self.assertEqual(os.path.realpath(m[0]), os.path.realpath(srcfn))
             self.assertIsInstance(m[1], SourceFileLoader)
 
-            m2 = graph._find_module('shutil', None)
+            m2 = graph._find_module('compileall', None)
             self.assertEqual(m[1:], m2[1:])
-
 
             record[:] = []
             m = mockedgraph._find_module('sax', xml.packagepath, xml)
