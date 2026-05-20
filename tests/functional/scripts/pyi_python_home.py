@@ -13,11 +13,14 @@
 
 import sys
 
-print(('sys._MEIPASS: ' + sys._MEIPASS))
-print(('sys.prefix: ' + sys.prefix))
-print(('sys.exec_prefix: ' + sys.exec_prefix))
+PATHS_TO_TEST = ['prefix', 'exec_prefix', 'base_prefix', 'base_exec_prefix']
 
-if not sys.prefix == sys._MEIPASS:
-    raise SystemExit('sys.prefix is not set to path as in sys._MEIPASS.')
-if not sys.exec_prefix == sys._MEIPASS:
-    raise SystemExit('sys.exec_prefix is not set to path as in sys._MEIPASS.')
+# Display all paths before doing actual comparison
+print(f"sys._MEIPASS: {sys._MEIPASS!r}", file=sys.stderr)
+for name in PATHS_TO_TEST:
+    print(f"sys.{name}: {getattr(sys, name)!r}", file=sys.stderr)
+
+for name in PATHS_TO_TEST:
+    path = getattr(sys, name)
+    if path != sys._MEIPASS:
+        raise SystemExit(f"sys.{name} ({path!r}) != sys._MEIPASS ({sys._MEIPASS!r})")
