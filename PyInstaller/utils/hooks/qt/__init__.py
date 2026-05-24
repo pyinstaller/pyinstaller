@@ -707,7 +707,7 @@ class QtLibraryInfo:
         elif compat.is_linux:
             return self._collect_qtnetwork_openssl_linux(openssl_version)
         else:
-            logger.warning("%s: QtNetwork: collection of OpenSSL not implemented for this platform!")
+            logger.warning("%s: QtNetwork: collection of OpenSSL not implemented for this platform!", self)
             return []
 
     def _collect_qtnetwork_openssl_windows(self, openssl_version):
@@ -1011,7 +1011,7 @@ class QtLibraryInfo:
 
             # Warn if plugin file does not exist
             if not plugin_file.is_file():
-                logger.warn("%s: QML plugin binary %r does not exist!", str(plugin_file))
+                logger.warning("%s: QML plugin binary %r does not exist!", self, str(plugin_file))
                 continue
 
             plugin_binaries.add(plugin_file)
