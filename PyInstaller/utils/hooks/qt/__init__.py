@@ -1043,6 +1043,12 @@ class QtLibraryInfo:
             else:
                 if (entry / "qmldir").is_file():
                     continue
+                # Sometimes, QML plugin directories end up containing sub-directories with left-over object files, which
+                # should not have been distributed with the wheel (for example, `qml/Qt/labs/assetdownloader` in PySide6
+                # 6.11.1 wheels). We should not be collecting these files; least of all because they end up failing
+                # PyInstaller's strict codesigning check (enabled on macOS CI)...
+                if entry.name in {'objects-Debug', 'objects-RelWithDebInfo'} and entry.is_dir():
+                    continue
             datas.append(entry)
 
         return binaries, datas
