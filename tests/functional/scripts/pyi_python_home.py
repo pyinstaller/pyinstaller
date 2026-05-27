@@ -11,6 +11,7 @@
 
 # PYTHONHOME (sys.prefix) has to be same as sys._MEIPASS.
 
+import os
 import sys
 
 PATHS_TO_TEST = ['prefix', 'exec_prefix', 'base_prefix', 'base_exec_prefix']
@@ -20,7 +21,9 @@ print(f"sys._MEIPASS: {sys._MEIPASS!r}", file=sys.stderr)
 for name in PATHS_TO_TEST:
     print(f"sys.{name}: {getattr(sys, name)!r}", file=sys.stderr)
 
+# NOTE: use os.path.normpath() to ensure invariance w.r.t. separator, which may differ between what is used by
+# bootloader and python itself - for example, under msys2/mingw python on Windows.
 for name in PATHS_TO_TEST:
-    path = getattr(sys, name)
-    if path != sys._MEIPASS:
+    path = os.path.normpath(getattr(sys, name))
+    if path != os.path.normpath(sys._MEIPASS):
         raise SystemExit(f"sys.{name} ({path!r}) != sys._MEIPASS ({sys._MEIPASS!r})")
