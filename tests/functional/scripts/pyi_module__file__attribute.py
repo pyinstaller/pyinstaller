@@ -20,17 +20,19 @@ import sys
 import shutil as module
 import xml.sax as package
 
-correct_mod = os.path.join(sys.prefix, 'shutil.py')
-correct_pkg = os.path.join(sys.prefix, 'xml', 'sax', '__init__.py')
+expected_mod = os.path.join(sys.prefix, 'shutil.py')
+expected_pkg = os.path.join(sys.prefix, 'xml', 'sax', '__init__.py')
 
 # Print.
-print(('Actual   mod.__file__: %s' % module.__file__))
-print(('Expected mod.__file__: %s' % correct_mod))
-print(('Actual   pkg.__file__: %s' % package.__file__))
-print(('Expected pkg.__file__: %s' % correct_pkg))
+print(f'Actual   mod.__file__: {module.__file__}', file=sys.stderr)
+print(f'Expected mod.__file__: {expected_mod}', file=sys.stderr)
+print(f'Actual   pkg.__file__: {package.__file__}', file=sys.stderr)
+print(f'Expected pkg.__file__: {expected_pkg}', file=sys.stderr)
 
-# Test correct values.
-if not module.__file__ == correct_mod:
+# Compare.
+# NOTE: use os.path.normpath() to ensure invariance w.r.t. separator, which may differ between what is used by
+# bootloader and python itself - for example, under msys2/mingw python on Windows.
+if os.path.normpath(module.__file__) != os.path.normpath(expected_mod):
     raise SystemExit('MODULE.__file__ attribute is wrong.')
-if not package.__file__ == correct_pkg:
+if os.path.normpath(package.__file__) != os.path.normpath(expected_pkg):
     raise SystemExit('PACKAGE.__file__ attribute is wrong.')
