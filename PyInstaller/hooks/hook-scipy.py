@@ -42,7 +42,10 @@ hiddenimports = ['scipy._lib.%s' % m for m in ['messagestream', "_ccallback_c", 
 
 # In scipy 1.14.0, `scipy._lib.array_api_compat.numpy` added a programmatic import of its `.fft` submodule, which needs
 # to be added to hiddenimports.
-if check_requirement("scipy >= 1.14.0"):
+# In scipy 1.18.0rc1, `scipy._lib.array_api_compat` was renamed to `scipy._external.array_api_compat`.
+if check_requirement("scipy >= 1.18.0rc1"):
+    hiddenimports += ['scipy._external.array_api_compat.numpy.fft']
+elif check_requirement("scipy >= 1.14.0"):
     hiddenimports += ['scipy._lib.array_api_compat.numpy.fft']
 
 # If scipy is provided by Debian's python3-scipy, its scipy.__config__ submodule is renamed to a dynamically imported

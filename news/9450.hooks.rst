@@ -1,0 +1,1 @@
+Update ``scipy`` hook for compatibility with upcoming ``scipy`` v1.18.0.
