@@ -16,7 +16,7 @@ import sys
 
 import pytest
 
-from PyInstaller.utils.tests import importorskip, xfail, onedir_only
+from PyInstaller.utils.tests import importable, importorskip, xfail, onedir_only
 
 pytestmark = [
     importorskip('scipy'),
@@ -35,6 +35,7 @@ pytestmark = [
         'scipy.cluster',
         'scipy.constants',
         'scipy.datasets',
+        'scipy.differentiate',
         'scipy.fft',
         'scipy.fftpack',
         'scipy.integrate',
@@ -54,6 +55,8 @@ pytestmark = [
 )
 @onedir_only
 def test_scipy(pyi_builder, module):
+    if not importable(module):
+        pytest.skip(f"Can't import {module!r}.")
     pyi_builder.test_source(f"""
         import {module}
         """)
