@@ -435,7 +435,7 @@ class AppBuilder:
                     try:
                         stdout, stderr = process.communicate(timeout=1)
                         self._display_message('RUN-EXE', 'Process stopped.')
-                    except (psutil.TimeoutExpired, subprocess.TimeoutExpire):
+                    except (psutil.TimeoutExpired, subprocess.TimeoutExpired):
                         self._display_message('RUN-EXE', 'Failed to stop the process (or its child process(es))!')
 
         self._display_message('RUN-EXE', f'Done! Return code: {retcode}')
