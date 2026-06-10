@@ -366,6 +366,8 @@ class AppBuilder:
         # for at least the specified amount of time, which is useful in "interactive" test applications that are not
         # expected exit on their own.
         stdout = stderr = None
+        cleanup_required = True
+        pytest_exception = None
         try:
             timeout = runtime if runtime else _EXE_TIMEOUT
             stdout, stderr = process.communicate(timeout=timeout)
@@ -374,6 +376,11 @@ class AppBuilder:
             self._display_message(
                 'RUN-EXE', f'Process exited on its own after {elapsed:.1f} seconds with return code {retcode}.'
             )
+            cleanup_required = False  # No cleanup required
+        except pytest.fail.Exception as e:
+            # This might be thrown by pytest-timeout when using "signal" timeout mode.
+            self._display_message('RUN-EXE', f'Caught pytest.fail.Exception: {e}')
+            pytest_exception = e  # Store exception, so we can re-raise it after cleanup.
         except (subprocess.TimeoutExpired) if psutil is None else (psutil.TimeoutExpired, subprocess.TimeoutExpired):
             if runtime:
                 # When 'runtime' is set, the expired timeout is a good sign that the executable was running successfully
@@ -385,6 +392,7 @@ class AppBuilder:
                 self._display_message('RUN-EXE', f'Timeout while running executable (timeout: {timeout} seconds)!')
                 retcode = 1
 
+        if cleanup_required:
             if psutil is None:
                 # We are using subprocess.Popen(). Without psutil, we have no access to process tree; this poses a
                 # problem for onefile builds, where we would need to first kill the child (main application) process,
@@ -437,6 +445,11 @@ class AppBuilder:
                         self._display_message('RUN-EXE', 'Process stopped.')
                     except (psutil.TimeoutExpired, subprocess.TimeoutExpired):
                         self._display_message('RUN-EXE', 'Failed to stop the process (or its child process(es))!')
+
+        # If we caught pytest.fail.Exception exception earlier, re-raise it now
+        if pytest_exception:
+            self._display_message('RUN-EXE', 'Re-raising pytest.fail.Exception exception...')
+            raise pytest_exception
 
         self._display_message('RUN-EXE', f'Done! Return code: {retcode}')
 
