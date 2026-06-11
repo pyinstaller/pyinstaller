@@ -273,7 +273,7 @@ def test_module_attributes(tmp_path, pyi_builder):
         app_args=app_args,
     )
 
-    with open(output_file, 'r') as fp:
+    with open(output_file, 'r', encoding='utf-8') as fp:
         import json
         output_frozen = json.load(fp)
 
