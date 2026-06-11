@@ -20,7 +20,7 @@ import re
 import pytest
 
 from PyInstaller import isolated
-from PyInstaller.compat import is_cygwin, is_darwin, is_termux, is_win
+from PyInstaller.compat import is_cygwin, is_darwin, is_termux, is_win, is_py311
 from PyInstaller.utils.tests import importorskip, skipif, xfail, onedir_only, onefile_only
 from PyInstaller.utils.hooks import can_import_module
 
@@ -463,10 +463,15 @@ def test_standard_stream_encoding(stream, tmp_path, pyi_builder):
     # For non-interactive stdout/stderr, assume locale encoding (on Windows, this will be ANSI codepage). This fixes the
     # test when running with pytest and capturing output.
     unfrozen_stream = getattr(sys, stream)
-    unfrozen_encoding = (
-        str(unfrozen_stream.encoding) if unfrozen_stream.isatty() else locale.getpreferredencoding(False)
-    )
-    print(f"Unfrozen encoding: {frozen_encoding}")
+    if unfrozen_stream.isatty():
+        unfrozen_encoding = str(unfrozen_stream.encoding)
+    else:
+        # `locale.getpreferredencoding()` is affected by UTF-8 mode, which is not enabled in the frozen test program,
+        # but might be enabled in the unfrozen python (i.e., `python -Xutf8 -m pytest ...`). Therefore, its use emits
+        # a `EncodingWarning: UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.`
+        # under python 3.11 and newer, and we should heed its advice...
+        unfrozen_encoding = locale.getencoding() if is_py311 else locale.getpreferredencoding(False)
+    print(f"Unfrozen encoding: {unfrozen_encoding}")
 
     # Normalize encoding names - "UTF-8" should be the same as "utf8".
     unfrozen_encoding = codecs.lookup(unfrozen_encoding).name
