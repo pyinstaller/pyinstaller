@@ -570,7 +570,7 @@ def test_startupinfo_flags(pyi_builder, tmp_path, windowed):
 
         subprocess.run([program_exe, output_file], check=True, startupinfo=si)
 
-        with open(output_file, 'r') as fp:
+        with open(output_file, 'r', encoding='utf-8') as fp:
             results = json.load(fp)
 
         if enabled:

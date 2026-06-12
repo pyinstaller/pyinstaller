@@ -37,7 +37,7 @@ FIELDS = {"dwFlags", "wShowWindow"}
 result = {field: getattr(si, field) for field in FIELDS}
 
 if len(sys.argv) > 1:
-    with open(sys.argv[1], 'w') as fp:
+    with open(sys.argv[1], 'w', encoding='utf-8') as fp:
         json.dump(result, fp)
 else:
     print(json.dumps(result))
