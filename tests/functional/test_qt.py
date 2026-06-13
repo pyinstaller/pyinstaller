@@ -78,12 +78,17 @@ def test_Qt_QtWidgets(pyi_builder, QtPyLib):
         window.setWindowTitle('Hello world!')
         window.show()
 
-        # Exit Qt when the main loop becomes idle.
+        # Exit the application 5 seconds after entering the main loop.
+        # Emit a debug message every second until shutdown to show that application's main loop is processing events
+        # after the application window is shown.
+        for i in range(5):
+            QTimer.singleShot(i * 1000, lambda i=i: print(f"Timer event at {{i}} second(s)!", file=sys.stderr))
+
         def _shutdown_program():
             print("Shutting down application from timer callback...", file=sys.stderr)
             app.exit()
 
-        QTimer.singleShot(0, _shutdown_program)
+        QTimer.singleShot(5000, _shutdown_program)
 
         print("Entering application's main loop...", file=sys.stderr)
         if is_qt6:
@@ -149,12 +154,17 @@ def test_Qt_QtQml(pyi_builder, QtPyLib):
         if not engine.rootObjects():
             raise RuntimeError("No root objects loaded from QML!")
 
-        # Exit Qt when the main loop becomes idle.
+        # Exit the application 5 seconds after entering the main loop.
+        # Emit a debug message every second until shutdown to show that application's main loop is processing events
+        # after the application window is shown.
+        for i in range(5):
+            QTimer.singleShot(i * 1000, lambda i=i: print(f"Timer event at {{i}} second(s)!", file=sys.stderr))
+
         def _shutdown_program():
             print("Shutting down application from timer callback...", file=sys.stderr)
             app.exit()
 
-        QTimer.singleShot(0, _shutdown_program)
+        QTimer.singleShot(5000, _shutdown_program)
 
         print("Entering application's main loop...", file=sys.stderr)
         if is_qt6:
@@ -315,12 +325,17 @@ def test_Qt_Ui_file(pyi_builder, data_dir, QtPyLib):
             window = loader.load(ui_file)
         window.show()
 
-        # Exit Qt when the main loop becomes idle.
+        # Exit the application 5 seconds after entering the main loop.
+        # Emit a debug message every second until shutdown to show that application's main loop is processing events
+        # after the application window is shown.
+        for i in range(5):
+            QTimer.singleShot(i * 1000, lambda i=i: print(f"Timer event at {{i}} second(s)!", file=sys.stderr))
+
         def _shutdown_program():
             print("Shutting down application from timer callback...", file=sys.stderr)
             app.exit()
 
-        QTimer.singleShot(0, _shutdown_program)
+        QTimer.singleShot(5000, _shutdown_program)
 
         # Run the main loop
         print("Entering application's main loop...", file=sys.stderr)
