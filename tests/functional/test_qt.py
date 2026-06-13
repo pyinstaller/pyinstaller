@@ -70,19 +70,30 @@ def test_Qt_QtWidgets(pyi_builder, QtPyLib):
 
         is_qt6 = '{QtPyLib}' in {{'PySide6', 'PyQt6'}}
 
+        print("Instantiating QApplication...", file=sys.stderr)
         app = QApplication(sys.argv)
+
+        print("Creating window...", file=sys.stderr)
         window = QWidget()
         window.setWindowTitle('Hello world!')
         window.show()
 
         # Exit Qt when the main loop becomes idle.
-        QTimer.singleShot(0, app.exit)
+        def _shutdown_program():
+            print("Shutting down application from timer callback...", file=sys.stderr)
+            app.exit()
 
+        QTimer.singleShot(0, _shutdown_program)
+
+        print("Entering application's main loop...", file=sys.stderr)
         if is_qt6:
             # Qt6: exec_() is deprecated in PySide6 and removed from PyQt6 in favor of exec()
             res = app.exec()
         else:
             res = app.exec_()
+        print("Exited application's main loop!", file=sys.stderr)
+
+        print("Calling sys.exit()...", file=sys.stderr)
         sys.exit(res)
         """, **USE_WINDOWED_KWARG
     )
@@ -118,8 +129,13 @@ def test_Qt_QtQml(pyi_builder, QtPyLib):
         # https://github.com/pyinstaller/pyinstaller/issues/3711.
         #
         # In Qt5, the style name is lower case ('imagine'), whereas in Qt6, it is capitalized ('Imagine')
+        print("Instantiating QGuiApplication...", file=sys.stderr)
         app = QGuiApplication(sys.argv + ['-style', 'Imagine' if is_qt6 else 'imagine'])
+
+        print("Instantiating QQmlApplicationEngine...", file=sys.stderr)
         engine = QQmlApplicationEngine()
+
+        print("Loading application QML...", file=sys.stderr)
         engine.loadData(b'''
             import QtQuick 2.11
             import QtQuick.Controls 2.4
@@ -131,17 +147,26 @@ def test_Qt_QtQml(pyi_builder, QtPyLib):
             ''', QUrl())
 
         if not engine.rootObjects():
-            sys.exit(-1)
+            raise RuntimeError("No root objects loaded from QML!")
 
         # Exit Qt when the main loop becomes idle.
-        QTimer.singleShot(0, app.exit)
+        def _shutdown_program():
+            print("Shutting down application from timer callback...", file=sys.stderr)
+            app.exit()
 
+        QTimer.singleShot(0, _shutdown_program)
+
+        print("Entering application's main loop...", file=sys.stderr)
         if is_qt6:
             # Qt6: exec_() is deprecated in PySide6 and removed from PyQt6 in favor of exec()
             res = app.exec()
         else:
             res = app.exec_()
+        print("Exited application's main loop!", file=sys.stderr)
+
         del engine
+
+        print("Calling sys.exit()...", file=sys.stderr)
         sys.exit(res)
         """, **USE_WINDOWED_KWARG
     )
@@ -261,6 +286,7 @@ def test_Qt_Ui_file(pyi_builder, data_dir, QtPyLib):
         is_qt6 = '{QtPyLib}' in {{'PyQt6', 'PySide6'}}
         is_pyqt = '{QtPyLib}' in {{'PyQt5', 'PyQt6'}}
 
+        print("Instantiating QApplication...", file=sys.stderr)
         app = QApplication(sys.argv)
 
         # In Qt6, QtQuick supports multiple render APIs and automatically selects one.
@@ -275,6 +301,7 @@ def test_Qt_Ui_file(pyi_builder, data_dir, QtPyLib):
                 pass
 
         # Load the UI
+        print("Loading application UI...", file=sys.stderr)
         ui_file = os.path.join(os.path.dirname(__file__), 'gui.ui')
         if is_pyqt:
             # Use PyQt.uic
@@ -289,14 +316,22 @@ def test_Qt_Ui_file(pyi_builder, data_dir, QtPyLib):
         window.show()
 
         # Exit Qt when the main loop becomes idle.
-        QTimer.singleShot(0, app.exit)
+        def _shutdown_program():
+            print("Shutting down application from timer callback...", file=sys.stderr)
+            app.exit()
+
+        QTimer.singleShot(0, _shutdown_program)
 
         # Run the main loop
+        print("Entering application's main loop...", file=sys.stderr)
         if is_qt6:
             # Qt6: exec_() is deprecated in PySide6 and removed from PyQt6 in favor of exec()
             res = app.exec()
         else:
             res = app.exec_()
+        print("Exited application's main loop!", file=sys.stderr)
+
+        print("Calling sys.exit()...", file=sys.stderr)
         sys.exit(res)
         """,
         # Collect the .ui file into top-level application directory.
@@ -370,6 +405,7 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
         # Disable QtWebEngine/chromium sanbox, if necessary
         if {disable_sandbox}:
             import os
+            print("Disabling QtWebEngine/Chromium sandbox (QTWEBENGINE_DISABLE_SANDBOX=1)...", file=sys.stderr)
             os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
 
         from {qt_flavor}.QtWidgets import QApplication
@@ -393,6 +429,7 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
             </html>
         '''
 
+        print("Instantiating QApplication...", file=sys.stderr)
         app = QApplication(sys.argv)
 
         class JSResultTester:
@@ -425,6 +462,7 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
                 print("Exiting application's main loop...", file=sys.stderr)
                 app.quit()
 
+        print("Instantiating QWebEngineView and loading test web page...", file=sys.stderr)
         view = QWebEngineView()
         view.setHtml(WEB_PAGE_HTML)
         view.show()
@@ -456,6 +494,7 @@ def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
         # Disable QtWebEngine/chromium sanbox, if necessary
         if {disable_sandbox}:
             import os
+            print("Disabling QtWebEngine/Chromium sandbox (QTWEBENGINE_DISABLE_SANDBOX=1)...", file=sys.stderr)
             os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
 
         from {qt_flavor}.QtGui import QGuiApplication
@@ -469,10 +508,16 @@ def _test_Qt_QtWebEngineQuick(pyi_builder, qt_flavor):
             from {qt_flavor}.QtWebEngine import QtWebEngine as QtWebEngineQuick
 
         # Must be called before QGuiApplication is instantiated!
+        print("Initializing QtWebEngineQuick...", file=sys.stderr)
         QtWebEngineQuick.initialize()
 
+        print("Instantiating QGuiApplication...", file=sys.stderr)
         app = QGuiApplication(sys.argv)
+
+        print("Instantiating QQmlApplicationEngine...", file=sys.stderr)
         engine = QQmlApplicationEngine()
+
+        print("Loading application QML...", file=sys.stderr)
         engine.loadData(b'''
             import QtQuick 2.0
             import QtQuick.Window 2.0
