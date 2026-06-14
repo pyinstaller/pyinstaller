@@ -423,23 +423,23 @@ jobs:
             mingw-w64-${{matrix.env}}-python
             mingw-w64-${{matrix.env}}-python-pip
             mingw-w64-${{matrix.env}}-python-setuptools
-            mingw-w64-${{matrix.env}}-python-pywin32-ctypes
             mingw-w64-${{matrix.env}}-python-packaging
             mingw-w64-${{matrix.env}}-python-pytest
             mingw-w64-${{matrix.env}}-python-pytest-xdist
             mingw-w64-${{matrix.env}}-python-pytest-timeout
-            mingw-w64-${{matrix.env}}-python-pywin32
-            mingw-w64-${{matrix.env}}-python-gobject
 
       # Some msys2 python packages are not available for i686 anymore:
       #  - numpy
       #  - pefile
       #  - psutil (removed with update to psutil 6.1.1; see https://github.com/msys2/MINGW-packages/commit/7f1c75b33a5aebb89899f99f5fa656c623eeb9ed)
       #  - pillow (see https://github.com/msys2/MINGW-packages/commit/a7d88c34aa36adce78ba71633711412a24d8792c)
+      #  - pywin32-ctypes (see https://github.com/msys2/MINGW-packages/commit/a8bba24b7d3abf45c8d5b3c67af5058c754f6f11)
+      #  - pywin32 (see https://github.com/msys2/MINGW-packages/commit/a8bba24b7d3abf45c8d5b3c67af5058c754f6f11)
+      #  - pygobject (see https://github.com/msys2/MINGW-packages/commit/a8bba24b7d3abf45c8d5b3c67af5058c754f6f11)
       # If running in 64-bit environment, install the said packages here.
       # Otherwise, we will run tests without these packages (note that
-      # if not installed here, `pefile` will end up installed via `pip`
-      # as part of PyInstaller's dependencies).
+      # if not installed here, `pefile` and `pywin32-ctypes` will end
+      # up installed via `pip` as part of PyInstaller's dependencies).
       - name: Install extra msys2 packages (64-bit only)
         if: matrix.env != 'i686'
         run: >
@@ -448,6 +448,9 @@ jobs:
           mingw-w64-${{matrix.env}}-python-pefile
           mingw-w64-${{matrix.env}}-python-psutil
           mingw-w64-${{matrix.env}}-python-pillow
+          mingw-w64-${{matrix.env}}-python-pywin32-ctypes
+          mingw-w64-${{matrix.env}}-python-pywin32
+          mingw-w64-${{matrix.env}}-python-gobject
 
       - name: Checkout PyInstaller code
         uses: actions/checkout@v6
