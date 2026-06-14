@@ -16,7 +16,7 @@ NOTE: splash screen is not supported on macOS due to incompatible design.
 
 import pytest
 
-from PyInstaller.compat import is_darwin, is_musl
+from PyInstaller import compat
 from PyInstaller.utils.hooks import can_import_module
 
 pytestmark = [
@@ -25,8 +25,9 @@ pytestmark = [
     # does try to import the module, and catches errors when _tkinter is unavailable or cannot be loaded due to broken
     # dependencies.
     pytest.mark.skipif(not can_import_module('tkinter'), reason="tkinter cannot be imported."),
-    pytest.mark.skipif(is_darwin, reason="Splash screen is not supported on macOS."),
-    pytest.mark.xfail(is_musl, reason="musl + tkinter is known to cause mysterious segfaults."),
+    pytest.mark.skipif(compat.is_darwin, reason="Splash screen is not supported on macOS."),
+    pytest.mark.xfail(compat.is_musl, reason="musl + tkinter is known to cause mysterious segfaults."),
+    pytest.mark.skipif(compat.is_py315 and compat.is_win, reason="tkinter and Tcl/Tk are broken in python 3.15.0b2."),
 ]
 
 
