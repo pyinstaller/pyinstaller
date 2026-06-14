@@ -20,7 +20,7 @@ import re
 import pytest
 
 from PyInstaller import isolated
-from PyInstaller.compat import is_cygwin, is_darwin, is_termux, is_win, is_py311
+from PyInstaller import compat
 from PyInstaller.utils.tests import importorskip, skipif, xfail, onedir_only, onefile_only
 from PyInstaller.utils.hooks import can_import_module
 
@@ -419,9 +419,9 @@ def test_python_makefile(pyi_builder, distutils):
 
 
 def test_set_icon(pyi_builder, data_dir):
-    if is_win:
+    if compat.is_win:
         args = ['--icon', str(data_dir / 'pyi_icon.ico')]
-    elif is_darwin:
+    elif compat.is_darwin:
         # On macOS icon is applied only for windowed mode.
         args = ['--windowed', '--icon', str(data_dir / 'pyi_icon.icns')]
     else:
@@ -460,24 +460,35 @@ def test_standard_stream_encoding(stream, tmp_path, pyi_builder):
     frozen_encoding = frozen_encoding_file.read_text(encoding='utf-8')
     print(f"Frozen encoding: {frozen_encoding}")
 
-    # For non-interactive stdout/stderr, assume locale encoding (on Windows, this will be ANSI codepage). This fixes the
-    # test when running with pytest and capturing output.
-    unfrozen_stream = getattr(sys, stream)
-    if unfrozen_stream.isatty():
-        unfrozen_encoding = str(unfrozen_stream.encoding)
+    # Starting with python 3.15, the UTF-8 mode is on by default (PEP-686); since we do not explicitly disable when
+    # building the frozen test application, the expected stream encoding is always UTF-8.
+    # In earlier python versions, the UTF-8 mode is not enabled by default, and we do not explicitly enable it when
+    # building the frozen test application. Therefore, the encoding of streams also depends on whether they are
+    # redirected (for example, when using `pytest` and capturing the output). For regular streams, we expect the same
+    # encoding as in streams of the parent test process; for redirected streams, assume locale encoding (on Windows,
+    # this will be ANSI codepage).
+    if compat.is_py315:
+        expected_encoding = 'utf-8'
     else:
-        # `locale.getpreferredencoding()` is affected by UTF-8 mode, which is not enabled in the frozen test program,
-        # but might be enabled in the unfrozen python (i.e., `python -Xutf8 -m pytest ...`). Therefore, its use emits
-        # a `EncodingWarning: UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.`
-        # under python 3.11 and newer, and we should heed its advice...
-        unfrozen_encoding = locale.getencoding() if is_py311 else locale.getpreferredencoding(False)
-    print(f"Unfrozen encoding: {unfrozen_encoding}")
+        unfrozen_stream = getattr(sys, stream)
+        if unfrozen_stream.isatty():
+            expected_encoding = str(unfrozen_stream.encoding)
+        else:
+            # `locale.getpreferredencoding()` is affected by UTF-8 mode, which is not enabled in the frozen test
+            # program, but might be enabled in the unfrozen python (i.e., `python -Xutf8 -m pytest ...`). Therefore,
+            # its use emits an `EncodingWarning: UTF-8 Mode affects locale.getpreferredencoding(). Consider
+            # locale.getencoding() instead.` under python 3.11 and later, and we should heed its advice...
+            if compat.is_py311:
+                expected_encoding = locale.getencoding()
+            else:
+                expected_encoding = locale.getpreferredencoding(False)
+    print(f"Expected encoding: {expected_encoding}")
 
     # Normalize encoding names - "UTF-8" should be the same as "utf8".
-    unfrozen_encoding = codecs.lookup(unfrozen_encoding).name
+    expected_encoding = codecs.lookup(expected_encoding).name
     frozen_encoding = codecs.lookup(frozen_encoding).name
 
-    assert frozen_encoding == unfrozen_encoding
+    assert frozen_encoding == expected_encoding
 
 
 def test_site_module_disabled(pyi_builder):
@@ -539,7 +550,7 @@ def test_user_preferred_locale(pyi_builder):
     )
 
     # Find executable and run additional tests with locale set via LC_ALL.
-    if is_termux:
+    if compat.is_termux:
         return
 
     exes = pyi_builder._find_executables('test_source')
@@ -822,7 +833,7 @@ def test_sys_executable(pyi_builder, append_pkg, monkeypatch):
 
     # Expected executable basename
     exe_basename = 'test_source'
-    if is_win or is_cygwin:
+    if compat.is_win or compat.is_cygwin:
         exe_basename += '.exe'
 
     pyi_builder.test_source(
