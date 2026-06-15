@@ -15,7 +15,7 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
-6.16.0 (2026-06-13)
+6.21.0 (2026-06-13)
 -------------------
 
 Features
