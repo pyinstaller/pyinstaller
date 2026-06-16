@@ -22,7 +22,7 @@ pip install -Uq twine
 read -n1 -P 'nano is about to be opened so that you can edit PyInstaller\'s version. When it does, write the new version then save and quit. Press any key to proceed: '
 nano +21 PyInstaller/__init__.py
 set new_version (cat PyInstaller/__init__.py | string match -rg "__version__ = '(.+)'")
-towncrier --yes
+towncrier build --yes --version $new_version
 sh -c 'cd doc && make man'
 
 # Insert a section for this release into the credits file.
