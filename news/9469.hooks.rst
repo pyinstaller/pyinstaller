@@ -1,0 +1,3 @@
+Update the ``matplotlib.backends`` hook to automatically collect dist
+metadata for backends that are discovered via ``matplotlib.backend``
+entry point (Matplotlib >= 3.9).

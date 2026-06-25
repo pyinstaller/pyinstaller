@@ -10,7 +10,7 @@
 #-----------------------------------------------------------------------------
 
 from PyInstaller.compat import is_darwin
-from PyInstaller.utils.hooks import logger, get_hook_config
+from PyInstaller.utils.hooks import copy_metadata, logger, get_hook_config
 from PyInstaller import isolated
 
 
@@ -211,6 +211,22 @@ def _collect_all_importable_backends():
     return importable_backends
 
 
+def _find_dists_for_backends(backends):
+    """
+    Return list of dist names for backends that are not built into matplotlib.
+    """
+    from PyInstaller.compat import importlib_metadata
+
+    backend_modules = set(backends.values())  # set of backend module names
+
+    backend_dists = set()
+    for entry_point in importlib_metadata.entry_points(group="matplotlib.backend"):
+        if entry_point.module in backend_modules:
+            backend_dists.add(entry_point.dist.name)
+
+    return sorted(backend_dists)
+
+
 def hook(hook_api):
     # Backend collection setting
     backends_method = get_hook_config(hook_api, 'matplotlib', 'backends')
@@ -235,8 +251,16 @@ def hook(hook_api):
         # Resolve backend names into module names
         backends = _resolve_backend_modules(backend_names)
 
+    # Resolve dists for backends that are not built into matplotlib
+    backend_dists = _find_dists_for_backends(backends)
+
     # Display the final list of selected backends
     logger.info("Selected matplotlib backends: %r", sorted(backends.keys()))
+    logger.info("Extra dists for selected matplotlib backends: %r", backend_dists)
 
     # Set module names as hiddenimports
     hook_api.add_imports(*list(backends.values()))
+
+    # Copy metadata for extra dists
+    for dist_name in backend_dists:
+        hook_api.add_datas(copy_metadata(dist_name))
