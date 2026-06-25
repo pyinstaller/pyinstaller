@@ -1,0 +1,2 @@
+Update the Matplotlib backends hook to use the backend registry API when
+listing all available backends, fixing compatibility with Matplotlib 3.11.

@@ -35,8 +35,14 @@ def _list_available_mpl_backends():
     """
     Returns the names of all available matplotlib backends.
     """
-    import matplotlib
-    return matplotlib.rcsetup.all_backends
+    try:
+        from matplotlib.backends import backend_registry
+    except ImportError:
+        import matplotlib
+
+        return matplotlib.rcsetup.all_backends
+
+    return backend_registry.list_all()
 
 
 @isolated.decorate
