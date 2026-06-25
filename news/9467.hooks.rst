@@ -1,0 +1,5 @@
+Update the ``matplotlib.backends`` hook to obtain the list of available
+Matplotlib backends from the new backends registry, if available
+(Matplotlib >= 3.9). Fixes compatibility with Matplotlib >= 3.11, which
+removed the old list of available backends that was superseded by the
+backends registry.

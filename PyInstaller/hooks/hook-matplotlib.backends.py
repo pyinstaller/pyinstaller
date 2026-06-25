@@ -35,8 +35,16 @@ def _list_available_mpl_backends():
     """
     Returns the names of all available matplotlib backends.
     """
-    import matplotlib
-    return matplotlib.rcsetup.all_backends
+    try:
+        # In matplotlib >= 3.9, the lists of all available / built-in backends can be obtained from
+        # `matplotlib.backends.backend_registry`
+        from matplotlib.backends import backend_registry
+        return backend_registry.list_all()
+    except ImportError:
+        # In earlier versions, the list is available in `matplotlib.rcsetup.all_backends`; this was deprecated in
+        # matplotlib 3.9 and removed in 3.11.
+        import matplotlib
+        return matplotlib.rcsetup.all_backends
 
 
 @isolated.decorate
@@ -81,7 +89,8 @@ def _backend_module_name(name):
     """
     Converts matplotlib backend name to its corresponding module name.
 
-    Equivalent to matplotlib.cbook._backend_module_name().
+    Equivalent to `matplotlib.backends.registry.BackendRegistry._backend_module_name()` in matplotlib >= 3.9.0 or
+    `matplotlib.cbook._backend_module_name()` in earlier versions.
     """
     if name.startswith("module://"):
         return name[9:]

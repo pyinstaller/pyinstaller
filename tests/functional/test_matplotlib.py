@@ -130,9 +130,14 @@ def test_matplotlib_all_backends(pyi_builder, monkeypatch, tmp_path):
         import json
         import importlib.util
 
-        import matplotlib
-
-        backends = matplotlib.rcsetup.all_backends
+        try:
+            # matplotlib >= 3.9
+            from matplotlib.backends import backend_registry
+            backends = backend_registry.list_all()
+        except ImportError:
+            # matplotlib < 3.9
+            import matplotlib
+            backends = matplotlib.rcsetup.all_backends
 
         def _backend_module_name(name):
             if name.startswith("module://"):
@@ -173,9 +178,14 @@ def test_matplotlib_all_backends(pyi_builder, monkeypatch, tmp_path):
     def _get_unfrozen_backends():
         import importlib
 
-        import matplotlib
-
-        backends = matplotlib.rcsetup.all_backends
+        try:
+            # matplotlib >= 3.9
+            from matplotlib.backends import backend_registry
+            backends = backend_registry.list_all()
+        except ImportError:
+            # matplotlib < 3.9
+            import matplotlib
+            backends = matplotlib.rcsetup.all_backends
 
         def _backend_module_name(name):
             if name.startswith("module://"):
