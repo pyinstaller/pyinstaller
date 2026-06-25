@@ -175,9 +175,12 @@ def _collect_all_importable_backends(hook_api):
     if not is_darwin:
         exclude_backends |= {'CocoaAgg', 'MacOSX'}
 
+    # Starting with matplotlib 3.9, the backend names are lower-case...
+    exclude_backends = {backend.lower() for backend in exclude_backends}
+
     # For safety, attempt to import each backend in an isolated sub-process.
     for backend_name in backend_names:
-        if backend_name in exclude_backends:
+        if backend_name.lower() in exclude_backends:
             logger.info('  Matplotlib backend %r: excluded', backend_name)
             continue
 
