@@ -31,20 +31,31 @@ def _get_configured_default_backend():
 
 
 @isolated.decorate
-def _list_available_mpl_backends():
+def _resolve_backend_modules(backends):
     """
-    Returns the names of all available matplotlib backends.
+    Returns the names of all available matplotlib backends and their corresponding module names.
     """
     try:
         # In matplotlib >= 3.9, the lists of all available / built-in backends can be obtained from
-        # `matplotlib.backends.backend_registry`
+        # `matplotlib.backends.backend_registry`.
+        #
+        # NOTE: `backend_registry.list_all()` loads entry-points, and therefore we need to call it even if we already
+        # have a list of backend names to resolve; otherwise, `_backend_module_name()` fails to resolve modules for
+        # backends that are loaded via entry-points.
         from matplotlib.backends import backend_registry
-        return backend_registry.list_all()
+        all_backends = backend_registry.list_all()
+        _backend_module_name = backend_registry._backend_module_name
     except ImportError:
-        # In earlier versions, the list is available in `matplotlib.rcsetup.all_backends`; this was deprecated in
-        # matplotlib 3.9 and removed in 3.11.
+        # In earlier versions, the list of all backends available in `matplotlib.rcsetup.all_backends`; this was
+        # deprecated in matplotlib 3.9 and removed in 3.11.
         import matplotlib
-        return matplotlib.rcsetup.all_backends
+        all_backends = matplotlib.rcsetup.all_backends
+        from matplotlib.cbook import _backend_module_name
+
+    if not backends:
+        backends = all_backends
+
+    return {backend: _backend_module_name(backend) for backend in backends}
 
 
 @isolated.decorate
@@ -54,7 +65,8 @@ def _check_mpl_backend_importable(module_name):
 
     Exceptions are propagated to caller.
     """
-    __import__(module_name)
+    import importlib
+    importlib.import_module(module_name)
 
 
 # Bytecode scanning
@@ -85,22 +97,14 @@ def _recursive_scan_code_objects_for_mpl_use(co):
     return backends
 
 
-def _backend_module_name(name):
-    """
-    Converts matplotlib backend name to its corresponding module name.
-
-    Equivalent to `matplotlib.backends.registry.BackendRegistry._backend_module_name()` in matplotlib >= 3.9.0 or
-    `matplotlib.cbook._backend_module_name()` in earlier versions.
-    """
-    if name.startswith("module://"):
-        return name[9:]
-    return f"matplotlib.backends.backend_{name.lower()}"
-
-
 def _autodetect_used_backends(hook_api):
     """
-    Returns a list of automatically-discovered matplotlib backends in use, or the name of the default matplotlib
-    backend. Implements the 'auto' backend selection method.
+    Tries to auto-select matplotlib backend(s) to collect into frozen application (the 'auto' backend selection method),
+    using the following semantics:
+     - scan the code for use of matplotlib.use() to auto-discover used backend(s)
+     - try to determine the configured default backend
+     - try to select first importable backend from hard-coded list of platform-specific defaults
+    Returns dictionary of backend names and their corresponding module names.
     """
     # Scan the code for matplotlib.use()
     modulegraph = hook_api.analysis.graph
@@ -124,7 +128,7 @@ def _autodetect_used_backends(hook_api):
             "backend of choice is not in this list, either add a `matplotlib.use()` call to your code, or configure "
             "the backend collection via hook options (see: %s).", used_backends, HOOK_CONFIG_DOCS
         )
-        return used_backends
+        return _resolve_backend_modules(used_backends)
 
     # Determine the default matplotlib backend.
     #
@@ -142,7 +146,7 @@ def _autodetect_used_backends(hook_api):
     default_backend = _get_configured_default_backend()  # isolated sub-process
     if default_backend:
         logger.info("Found configured default matplotlib backend: %s", default_backend)
-        return [default_backend]
+        return _resolve_backend_modules([default_backend])
 
     # `QtAgg` supersedes `Qt5Agg`; however, we keep `Qt5Agg` in the candidate list to support older versions of
     # matplotlib that do not have `QtAgg`.
@@ -151,29 +155,30 @@ def _autodetect_used_backends(hook_api):
         candidates = ["MacOSX"] + candidates
     logger.info("Trying determine the default backend as first importable candidate from the list: %r", candidates)
 
-    for candidate in candidates:
+    candidates = _resolve_backend_modules(candidates)  # [name] -> {name: module_name}
+    for name, module_name in candidates.items():
         try:
-            module_name = _backend_module_name(candidate)
             _check_mpl_backend_importable(module_name)  # NOTE: uses an isolated sub-process.
         except Exception:
             continue
-        return [candidate]
+        return {name: module_name}
 
     # Fall back to headless Agg backend
     logger.info("None of the backend candidates could be imported; falling back to headless Agg!")
-    return ['Agg']
+    return _resolve_backend_modules(['Agg'])
 
 
-def _collect_all_importable_backends(hook_api):
+def _collect_all_importable_backends():
     """
-    Returns a list of all importable matplotlib backends. Implements the 'all' backend selection method.
+    Return a dictionary of all importable matplotlib backends and their corresponding module names.
+    Implements the 'all' backend selection method.
     """
-    # List of the human-readable names of all available backends.
-    backend_names = _list_available_mpl_backends()  # NOTE: retrieved in an isolated sub-process.
-    logger.info("All available matplotlib backends: %r", backend_names)
+    # Get names and corresponding module names for all available backends.
+    available_backends = _resolve_backend_modules(None)  # NOTE: retrieved in an isolated sub-process.
+    logger.info("All available matplotlib backends: %r", list(available_backends.keys()))
 
     # Try to import the module(s).
-    importable_backends = []
+    importable_backends = {}
 
     # List of backends to exclude; Qt4 is not supported by PyInstaller anymore.
     exclude_backends = {'Qt4Agg', 'Qt4Cairo'}
@@ -188,13 +193,12 @@ def _collect_all_importable_backends(hook_api):
     exclude_backends = {backend.lower() for backend in exclude_backends}
 
     # For safety, attempt to import each backend in an isolated sub-process.
-    for backend_name in backend_names:
+    for backend_name, module_name in available_backends.items():
         if backend_name.lower() in exclude_backends:
             logger.info('  Matplotlib backend %r: excluded', backend_name)
             continue
 
         try:
-            module_name = _backend_module_name(backend_name)
             _check_mpl_backend_importable(module_name)  # NOTE: uses an isolated sub-process.
         except Exception:
             # Backend is not importable, for whatever reason.
@@ -202,7 +206,7 @@ def _collect_all_importable_backends(hook_api):
             continue
 
         logger.info('  Matplotlib backend %r: added', backend_name)
-        importable_backends.append(backend_name)
+        importable_backends[backend_name] = module_name
 
     return importable_backends
 
@@ -216,10 +220,10 @@ def hook(hook_api):
     # Select backend(s)
     if backends_method == 'auto':
         logger.info("Matplotlib backend selection method: automatic discovery of used backends")
-        backend_names = _autodetect_used_backends(hook_api)
+        backends = _autodetect_used_backends(hook_api)
     elif backends_method == 'all':
         logger.info("Matplotlib backend selection method: collection of all importable backends")
-        backend_names = _collect_all_importable_backends(hook_api)
+        backends = _collect_all_importable_backends()
     else:
         logger.info("Matplotlib backend selection method: user-provided name(s)")
         if isinstance(backends_method, str):
@@ -228,11 +232,11 @@ def hook(hook_api):
             assert isinstance(backends_method, list), "User-provided backend name(s) must be either a string or a list!"
             backend_names = backends_method
 
-    # Deduplicate and sort the list of selected backends before displaying it.
-    backend_names = sorted(set(backend_names))
+        # Resolve backend names into module names
+        backends = _resolve_backend_modules(backend_names)
 
-    logger.info("Selected matplotlib backends: %r", backend_names)
+    # Display the final list of selected backends
+    logger.info("Selected matplotlib backends: %r", sorted(backends.keys()))
 
     # Set module names as hiddenimports
-    module_names = [_backend_module_name(backend) for backend in backend_names]  # backend name -> module name
-    hook_api.add_imports(*module_names)
+    hook_api.add_imports(*list(backends.values()))

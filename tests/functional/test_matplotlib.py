@@ -133,16 +133,15 @@ def test_matplotlib_all_backends(pyi_builder, monkeypatch, tmp_path):
         try:
             # matplotlib >= 3.9
             from matplotlib.backends import backend_registry
+
             backends = backend_registry.list_all()
+            _backend_module_name = backend_registry._backend_module_name
         except ImportError:
             # matplotlib < 3.9
             import matplotlib
-            backends = matplotlib.rcsetup.all_backends
 
-        def _backend_module_name(name):
-            if name.startswith("module://"):
-                return name[9:]
-            return f"matplotlib.backends.backend_{name.lower()}"
+            backends = matplotlib.rcsetup.all_backends
+            from matplotlib.cbook import _backend_module_name
 
         backend_info = []
         for backend in backends:
@@ -181,16 +180,15 @@ def test_matplotlib_all_backends(pyi_builder, monkeypatch, tmp_path):
         try:
             # matplotlib >= 3.9
             from matplotlib.backends import backend_registry
+
             backends = backend_registry.list_all()
+            _backend_module_name = backend_registry._backend_module_name
         except ImportError:
             # matplotlib < 3.9
             import matplotlib
-            backends = matplotlib.rcsetup.all_backends
 
-        def _backend_module_name(name):
-            if name.startswith("module://"):
-                return name[9:]
-            return f"matplotlib.backends.backend_{name.lower()}"
+            backends = matplotlib.rcsetup.all_backends
+            from matplotlib.cbook import _backend_module_name
 
         backend_info = []
         for backend in backends:
