@@ -12,9 +12,13 @@
 Functional tests for Matplotlib.
 """
 
+import json
+import sys
+
 import pytest
 
-from PyInstaller.utils.tests import importorskip
+from PyInstaller import isolated
+from PyInstaller.utils.tests import importorskip, onedir_only
 from PyInstaller.utils.hooks import check_requirement
 
 # List of tuples "(backend_name, qt_bindings)", where:
@@ -98,3 +102,104 @@ def test_matplotlib(pyi_builder, monkeypatch, backend_name, qt_bindings):
         """,
         pyi_args=pyi_args,
     )
+
+
+# Check that "all backends" collection mode in fact collects all available backends.
+@importorskip('matplotlib')
+@onedir_only
+def test_matplotlib_all_backends(pyi_builder, monkeypatch, tmp_path):
+    # Patch Analysis to set backend collection mode via hooksconfig
+    import PyInstaller.building.build_main
+
+    class _Analysis(PyInstaller.building.build_main.Analysis):
+        def __init__(self, *args, **kwargs):
+            kwargs['hooksconfig'] = {
+                "matplotlib": {
+                    "backends": "all",
+                }
+            }
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.Analysis', _Analysis)
+
+    # Test program; retrieve backends in frozen matplotlib
+    result_file = tmp_path / 'results.txt'
+    pyi_builder.test_source(
+        """
+        import sys
+        import json
+        import importlib.util
+
+        import matplotlib
+
+        backends = matplotlib.rcsetup.all_backends
+
+        def _backend_module_name(name):
+            if name.startswith("module://"):
+                return name[9:]
+            return f"matplotlib.backends.backend_{name.lower()}"
+
+        backend_info = []
+        for backend in backends:
+            backend_module = _backend_module_name(backend)
+
+            # Check that module is available (but not that it is actually importable)
+            spec = importlib.util.find_spec(backend_module)
+            exists = spec is not None
+
+            backend_info.append((backend, backend_module, exists))
+
+        print("Matplotlib backends:", file=sys.stderr)
+        for name, module, exists in backend_info:
+            print(f"  name={name}, module={module}, exists={exists}", file=sys.stderr)
+
+        if len(sys.argv) > 1:
+            with open(sys.argv[1], "w") as fp:
+                json.dump(backend_info, fp)
+        """,
+        app_args=[str(result_file)],
+    )
+
+    with open(result_file, "r", encoding="utf-8") as fp:
+        frozen_backends_info = json.load(fp)
+
+    frozen_backends_info = sorted(frozen_backends_info)
+    print("Backends in frozen matplotlib:", file=sys.stderr)
+    for name, module, exists in frozen_backends_info:
+        print(f"  name={name}, module={module}, exists={exists}", file=sys.stderr)
+
+    # Importable backends in unfrozen matplotlib
+    @isolated.decorate
+    def _get_unfrozen_backends():
+        import importlib
+
+        import matplotlib
+
+        backends = matplotlib.rcsetup.all_backends
+
+        def _backend_module_name(name):
+            if name.startswith("module://"):
+                return name[9:]
+            return f"matplotlib.backends.backend_{name.lower()}"
+
+        backend_info = []
+        for backend in backends:
+            backend_module = _backend_module_name(backend)
+
+            try:
+                importlib.import_module(backend_module)
+                importable = True
+            except Exception:
+                importable = False
+
+            backend_info.append([backend, backend_module, importable])
+
+        return backend_info
+
+    unfrozen_backends_info = sorted(_get_unfrozen_backends())
+    print("Importable backends in unfrozen matplotlib:", file=sys.stderr)
+    for name, module, importable in unfrozen_backends_info:
+        print(f"  name={name}, module={module}, importable={importable}", file=sys.stderr)
+
+    # The available backends in frozen matplotlib should be the ones that are importable in unfrozen matplotlib.
+    assert frozen_backends_info == unfrozen_backends_info
