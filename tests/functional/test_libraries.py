@@ -35,14 +35,45 @@ def test_gevent_monkey(pyi_builder):
 # The tkinter module may be available for import, but not actually importable due to missing shared libraries.
 # Therefore, we need to use `can_import_module`-based skip decorator instead of `@importorskip`.
 @pytest.mark.skipif(not can_import_module("tkinter"), reason="tkinter cannot be imported.")
-def test_tkinter(pyi_builder):
-    pyi_builder.test_script('pyi_lib_tkinter.py')
+def test_tkinter_tcl_library_dir(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import sys
+        import pathlib
+        import tkinter
+
+        # Query the location of Tcl library/data directory.
+        tcl = tkinter.Tcl()
+        tcl_data_dir = tcl.eval("info library")
+
+        print(f"Tcl directory: {tcl_data_dir}", file=sys.stderr)
+
+        if tcl_data_dir == "//zipfs:/lib/tcl/tcl_library":
+            # Tcl/Tk 9 with data embedded in shared library
+            print("Tcl data is embedded in shared library!", file=sys.stderr)
+        elif (
+            sys.platform == 'darwin' and
+            tcl_data_dir == "/System/Library/Frameworks/Tcl.framework/Versions/8.5/Resources/Scripts"
+        ):
+            # macOS python build with system Tcl/Tk .framework
+            print("System Tcl/Tk .framework on macOS", file=sys.stderr)
+        else:
+            # Check that Tcl data directory is collected in frozen application
+            application_dir = pathlib.Path(sys._MEIPASS).resolve()
+            tcl_data_dir = pathlib.Path(tcl_data_dir).resolve()
+
+            if application_dir not in tcl_data_dir.parents:
+                raise SystemExit(
+                    f"Tcl data directory {str(tcl_data_dir)!r} is not located inside {str(application_dir)!r}"
+                )
+        """
+    )
 
 
-# In contrast to test_tkinter, which performs basic import test and verifies that the environment variables are properly
-# set, this is a full functional test; we try to create a Tk window with label and button, and register a timer to shut
-# down the application. Doing so verifies that all Tcl/Tk files (e.g., .tcl scripts from library directories) are
-# properly collected.
+# In contrast to test_tkinter_tcl_library_dir, which performs basic import test and verifies that the path to Tcl
+# library directory is set properly, this is a full functional test; we try to create a Tk window with label and
+# button, and register a timer to shut down the application. Doing so verifies that all Tcl/Tk files (e.g., .tcl
+# scripts from library directories) are properly collected.
 #
 # The prerequisite for this test is that tkinter can be used unfrozen, so try instantiating a window in a subprocess
 # to verify that this is the case. This check should cover the following scenarios:
