@@ -183,6 +183,9 @@ class TclTkInfo:
         #  - otherwise, look for: $tcl_root/../tkX.Y, where X and Y are Tk major and minor version.
         if "TK_LIBRARY" in os.environ:
             self.tk_data_dir = os.environ["TK_LIBRARY"]
+        elif self.tcl_data_dir.startswith('//zipfs:/'):
+            # Tcl shared library has embedded library/data archive, so assume that the same is true for Tk...
+            self.tk_data_dir = '//zipfs:/lib/tk/tk_library'
         elif compat.is_darwin and self.tk_shared_library and (
             # is_framework_bundle_lib handles only fully-versioned framework library paths...
             (osxutils.is_framework_bundle_lib(self.tk_shared_library)) or
@@ -217,7 +220,10 @@ class TclTkInfo:
         else:
             # Collect Tcl and Tk scripts from their corresponding library/data directories. See comment at the
             # definition of TK_ROOTNAME and TK_ROOTNAME variables.
-            if os.path.isdir(self.tcl_data_dir):
+            if self.tcl_data_dir.startswith('//zipfs:/'):
+                # Tcl 9 with library/data archive embedded in shared library
+                pass
+            elif os.path.isdir(self.tcl_data_dir):
                 self.data_files += self._collect_files_from_directory(
                     self.tcl_data_dir,
                     prefix=self.TCL_ROOTNAME,
@@ -227,7 +233,10 @@ class TclTkInfo:
                 logger.warning("%s: Tcl library/data directory %r does not exist!", self, self.tcl_data_dir)
                 self.tcl_data_missing = True
 
-            if os.path.isdir(self.tk_data_dir):
+            if self.tk_data_dir.startswith('//zipfs:/'):
+                # Tk 9 with library/data archive embedded in shared library
+                pass
+            elif os.path.isdir(self.tk_data_dir):
                 self.data_files += self._collect_files_from_directory(
                     self.tk_data_dir,
                     prefix=self.TK_ROOTNAME,
