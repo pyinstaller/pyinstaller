@@ -11,7 +11,7 @@
 
 import pytest
 
-from PyInstaller import compat
+from PyInstaller.compat import is_win, is_linux
 from PyInstaller.utils.tests import importorskip, skipif, requires
 from PyInstaller.utils.hooks import can_import_module
 
@@ -35,7 +35,6 @@ def test_gevent_monkey(pyi_builder):
 # The tkinter module may be available for import, but not actually importable due to missing shared libraries.
 # Therefore, we need to use `can_import_module`-based skip decorator instead of `@importorskip`.
 @pytest.mark.skipif(not can_import_module("tkinter"), reason="tkinter cannot be imported.")
-@pytest.mark.skipif(compat.is_py315 and compat.is_win, reason="tkinter is broken in python 3.15.0b2.")
 def test_tkinter(pyi_builder):
     pyi_builder.test_script('pyi_lib_tkinter.py')
 
@@ -154,7 +153,6 @@ def test_zope_interface(pyi_builder):
 # Therefore, we need to use `can_import_module`-based skip decorator instead of `@importorskip`.
 @importorskip('idlelib')
 @pytest.mark.skipif(not can_import_module("tkinter"), reason="tkinter cannot be imported.")
-@pytest.mark.skipif(compat.is_py315 and compat.is_win, reason="tkinter is broken in python 3.15.0b2.")
 def test_idlelib(pyi_builder):
     pyi_builder.test_source(
         """
@@ -166,7 +164,7 @@ def test_idlelib(pyi_builder):
 
 @importorskip('keyring')
 @skipif(
-    compat.is_linux,
+    is_linux,
     reason="SecretStorage backend on linux requires active D-BUS session and initialized keyring, and may "
     "need to unlock the keyring via UI prompt."
 )
@@ -338,7 +336,7 @@ def test_pyexcelerate(pyi_builder):
 
 
 @importorskip('usb')
-@pytest.mark.skipif(compat.is_linux, reason='libusb_exit segfaults on some linuxes')
+@pytest.mark.skipif(is_linux, reason='libusb_exit segfaults on some linuxes')
 def test_usb(pyi_builder):
     # See if the usb package is supported on this platform.
     try:
@@ -409,7 +407,7 @@ def test_pandas_plotting_matplotlib(pyi_builder):
 
 
 @importorskip('win32ctypes')
-@pytest.mark.skipif(not compat.is_win, reason='pywin32-ctypes is supported only on Windows')
+@pytest.mark.skipif(not is_win, reason='pywin32-ctypes is supported only on Windows')
 @pytest.mark.parametrize('submodule', ['win32api', 'win32cred', 'pywintypes'])
 def test_pywin32ctypes(pyi_builder, submodule):
     pyi_builder.test_source(f"""
