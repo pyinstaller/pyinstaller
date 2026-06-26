@@ -338,8 +338,8 @@ class SplashWriter:
     # {
     #     char tcl_shared_library_name[32];
     #     char tk_shared_library_name[32];
-    #     char tcl_module_directory_name[16];
-    #     char tk_module_directory_name[16];
+    #     char tcl_module_directory_name[32];
+    #     char tk_module_directory_name[32];
     #
     #     uint32_t script_len;
     #     uint32_t script_offset;
@@ -353,7 +353,7 @@ class SplashWriter:
     #     uint32_t centering_mode;
     # } SPLASH_DATA_HEADER;
     #
-    _HEADER_FORMAT = '!32s 32s 16s 16s II II II I'
+    _HEADER_FORMAT = '!32s 32s 32s 32s II II II I'
     _HEADER_LENGTH = struct.calcsize(_HEADER_FORMAT)
 
     # Centering mode values - keep in sync with values defined in `bootloader/src/pyi_splash.h`!
@@ -454,8 +454,8 @@ class SplashWriter:
                 self._HEADER_FORMAT,
                 _encode_str(tcl_shared_library_name, 'tcl_shared_library_name', 32),
                 _encode_str(tk_shared_library_name, 'tk_shared_library_name', 32),
-                _encode_str(tcl_module_directory_name, 'tcl_module_directory_name', 16),
-                _encode_str(tk_module_directory_name, 'tk_module_directory_name', 16),
+                _encode_str(tcl_module_directory_name, 'tcl_module_directory_name', 32),
+                _encode_str(tk_module_directory_name, 'tk_module_directory_name', 32),
                 script_len,
                 script_offset,
                 image_len,

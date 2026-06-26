@@ -194,35 +194,42 @@ class Splash(Target):
             # application directory, which, at tme moment, is true in practically all cases.
             os.path.basename(self.tcl_lib),
             os.path.basename(self.tk_lib),
-            # The list of requirements below is based on the current implementation of splash screen script. If you want
-            # to extend the splash screen functionality and run into Tcl/Tk errors, chances are that additional Tk
-            # components need to be added here.
-            #
-            # NOTE: these paths use the *destination* layout for Tcl/Tk scripts, which uses unversioned tcl and tk
-            # directories (see `PyInstaller.utils.hooks.tcl_tk.collect_tcl_tk_files`).
-            os.path.join(tcltk_info.TCL_ROOTNAME, "init.tcl"),
-            # Core Tk
-            os.path.join(tcltk_info.TK_ROOTNAME, "license.terms"),
-            os.path.join(tcltk_info.TK_ROOTNAME, "text.tcl"),
-            os.path.join(tcltk_info.TK_ROOTNAME, "tk.tcl"),
-            # Used for customizable font
-            os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "ttk.tcl"),
-            os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "fonts.tcl"),
-            os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "cursors.tcl"),
-            os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "utils.tcl"),
         ])
 
-        if tcltk_info.tk_version >= (9, 0):
+        # The list of requirements below is based on the current implementation of splash screen script. If you want
+        # to extend the splash screen functionality and run into Tcl/Tk errors, chances are that additional Tk
+        # components need to be added here.
+        tcltk_embedded_data = tcltk_info.tcl_data_dir.startswith('//zipfs:/')
+        if tcltk_embedded_data:
+            logger.info("Splash screen will use data files embedded in Tcl/Tk shared libraries")
+        else:
+            logger.info("Collecting Tcl/Tk data files for the splash screen")
+
             self.splash_requirements.update([
-                os.path.join(tcltk_info.TK_ROOTNAME, "scaling.tcl"),
-                os.path.join(tcltk_info.TK_ROOTNAME, "tclIndex"),  # required for auto-load of scaling.tcl
+                # NOTE: these paths use the *destination* layout for Tcl/Tk scripts, which uses unversioned tcl and tk
+                # directories (see `PyInstaller.utils.hooks.tcl_tk.collect_tcl_tk_files`).
+                os.path.join(tcltk_info.TCL_ROOTNAME, "init.tcl"),
+                # Core Tk
+                os.path.join(tcltk_info.TK_ROOTNAME, "license.terms"),
+                os.path.join(tcltk_info.TK_ROOTNAME, "text.tcl"),
+                os.path.join(tcltk_info.TK_ROOTNAME, "tk.tcl"),
+                # Used for customizable font
+                os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "ttk.tcl"),
+                os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "fonts.tcl"),
+                os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "cursors.tcl"),
+                os.path.join(tcltk_info.TK_ROOTNAME, "ttk", "utils.tcl"),
             ])
 
-        logger.info("Collect Tcl/Tk data files for the splash screen")
-        tcltk_tree = tcltk_info.data_files  # 3-element tuple TOC
-        if self.full_tk:
-            # The user wants a full copy of Tk, so make all Tk files a requirement.
-            self.splash_requirements.update(entry[0] for entry in tcltk_tree)
+            if tcltk_info.tk_version >= (9, 0):
+                self.splash_requirements.update([
+                    os.path.join(tcltk_info.TK_ROOTNAME, "scaling.tcl"),
+                    os.path.join(tcltk_info.TK_ROOTNAME, "tclIndex"),  # required for auto-load of scaling.tcl
+                ])
+
+            tcltk_tree = tcltk_info.data_files  # 3-element tuple TOC
+            if self.full_tk:
+                # The user wants a full copy of Tk, so make all Tk files a requirement.
+                self.splash_requirements.update(entry[0] for entry in tcltk_tree)
 
         # Scan for binary dependencies of the Tcl/Tk shared libraries, and add them to `binaries` TOC list (which
         # should really be called `dependencies` as it is not limited to binaries. But it is too late now, and
@@ -236,8 +243,9 @@ class Splash(Target):
         self.splash_requirements.update(entry[0] for entry in self.binaries)
 
         # If the user's program does not use tkinter, add resources from Tcl/Tk tree to the dependencies list.
-        # Do so only for the resources that are part of splash requirements.
-        if not self.uses_tkinter:
+        # Do so only for the resources that are part of splash requirements. Not applicable for cases where
+        # data is embedded in Tcl/Tk shared libraries.
+        if not self.uses_tkinter and not tcltk_embedded_data:
             self.binaries.extend(entry for entry in tcltk_tree if entry[0] in self.splash_requirements)
 
         # Check if all requirements were found.
@@ -261,7 +269,7 @@ class Splash(Target):
         # Remove all files which were not found.
         self.splash_requirements = set(filter(_filter_requirement, self.splash_requirements))
 
-        logger.debug("Splash Requirements: %s", self.splash_requirements)
+        logger.debug("Splash requirements: %s", self.splash_requirements)
 
         # On AIX, the Tcl and Tk shared libraries might in fact be ar archives with shared object inside it, and need to
         # be `dlopen`'ed with full name (for example, `libtcl.a(libtcl.so.8.6)` and `libtk.a(libtk.so.8.6)`. So if the
@@ -277,6 +285,13 @@ class Splash(Target):
             if ext == '.a':
                 tk_major, tk_minor = tcltk_info.tk_version
                 self.tk_lib += f"(libtk.so.{tk_major}.{tk_minor})"
+
+        if tcltk_embedded_data:
+            self.tcl_data_dir = tcltk_info.tcl_data_dir
+            self.tk_data_dir = tcltk_info.tk_data_dir
+        else:
+            self.tcl_data_dir = tcltk_info.TCL_ROOTNAME
+            self.tk_data_dir = tcltk_info.TK_ROOTNAME
 
         self.__postinit__()
 
@@ -307,6 +322,8 @@ class Splash(Target):
         ('script', _check_guts_eq),
         ('tcl_lib', _check_guts_eq),
         ('tk_lib', _check_guts_eq),
+        ('tcl_data_dir', _check_guts_eq),
+        ('tk_data_dir', _check_guts_eq),
         ('splash_requirements', _check_guts_eq),
         ('binaries', _check_guts_toc),
         # internal value
@@ -334,9 +351,6 @@ class Splash(Target):
             from PIL import Image as PILImage
         except ImportError:
             PILImage = None
-
-        # Required to pass tcltk_info.TK_ROOTNAME to SplashWriter
-        from PyInstaller.utils.hooks.tcl_tk import tcltk_info
 
         # Function to resize a given image to fit into the area defined by max_img_size.
         def _resize_image(_image, _orig_size):
@@ -416,8 +430,8 @@ class Splash(Target):
             self.splash_requirements,
             os.path.basename(self.tcl_lib),  # tcl86t.dll
             os.path.basename(self.tk_lib),  # tk86t.dll
-            tcltk_info.TCL_ROOTNAME,
-            tcltk_info.TK_ROOTNAME,
+            self.tcl_data_dir,
+            self.tk_data_dir,
             image,
             self.script,
             self._CENTER_MODES[self.center],

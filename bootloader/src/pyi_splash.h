@@ -44,11 +44,17 @@ struct SPLASH_DATA_HEADER
     /* Basename of the Tk shared library, e.g. tk86t.dll */
     char tk_shared_library_name[32];
 
-    /* Basename of the Tcl module directory, e.g. "tcl/" */
-    char tcl_module_directory_name[16];
+    /* Name of the Tcl module directory; either a base name (e.g., "_tcl_data")
+     * for directory in application's top-level directory, or a path with
+     * "//zipfs:/" prefix (e.g., "//zipfs:/lib/tcl/tcl_library") when Tcl
+     * data is embedded in shared library. */
+    char tcl_module_directory_name[32];
 
-    /* Basename of the Tk module directory, e.g. "tk/" */
-    char tk_module_directory_name[16];
+    /* Name of the Tk module directory; either a base name (e.g., "_tk_data")
+     * for directory in application's top-level directory, or a path with
+     * "//zipfs:/" prefix (e.g., "//zipfs:/lib/tk/tk_library") when Tk
+     * data is embedded in shared library. */
+    char tk_module_directory_name[32];
 
     /* Splash screen script */
     uint32_t script_len;

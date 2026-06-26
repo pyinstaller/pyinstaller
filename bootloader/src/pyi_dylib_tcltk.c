@@ -176,6 +176,13 @@ static int _pyi_dylib_tcltk_import_tcl_symbols(struct DYLIB_TCLTK *dylib)
     }
     _IMPORT_FUNCTION(Tcl_Free)
 
+    /* zipfs support is available in Tcl >= 9.0 */
+    if (dylib->tcl_major >= 9) {
+        _IMPORT_FUNCTION(TclZipfs_Mount)
+        /* NOTE: we do not need to bind TclZipfs_Unmount, as mounted
+         * filesystems are implicitly removed by Tcl_Finalize() */
+    }
+
 #undef _IMPORT_FUNCTION
 #undef _IMPORT_FUNCTION_EX
 

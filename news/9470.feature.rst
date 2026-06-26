@@ -1,0 +1,3 @@
+Implement support for Tcl/Tk 9 builds with embedded data archives in
+``tkinter`` hooks and the splash screen. Tcl/Tk 9 with embedded data
+is used, for example, in python.org Windows builds of Python 3.15.0b3.

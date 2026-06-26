@@ -69,6 +69,16 @@ struct Splash_Event;
 
 
 /*
+ * Check whether given path starts with //zipfs:/ prefix; returns 1 if
+ * it does, 0 if it does not.
+ */
+static int
+_is_zipfs_path (const char *path)
+{
+    return strncmp(path, "//zipfs:/", 9) == 0;
+}
+
+/*
  * Initialize the splash screen context by reading its data and defining
  * the necessary paths and resources.
  */
@@ -111,17 +121,29 @@ pyi_splash_setup(struct SPLASH_CONTEXT *splash, const struct PYI_CONTEXT *pyi_ct
     }
 
     /* Tcl modules directory */
-    if (pyi_path_join(splash->tcl_modules_dir, pyi_ctx->application_home_dir, data_header->tcl_module_directory_name) == NULL) {
-        PYI_WARNING("SPLASH: length of Tcl module directory path exceeds maximum path length!\n");
-        free(data_header);
-        return -1;
+    if (_is_zipfs_path(data_header->tcl_module_directory_name)) {
+        /* Tcl module directory is "//zipfs:/lib/tcl/tcl_library"; copy it as-is */
+        snprintf(splash->tcl_modules_dir, PYI_PATH_MAX, "%s", data_header->tcl_module_directory_name);
+    } else {
+        /* Construct the Tcl module directory path by combining path to top-level application directory and given directory name */
+        if (pyi_path_join(splash->tcl_modules_dir, pyi_ctx->application_home_dir, data_header->tcl_module_directory_name) == NULL) {
+            PYI_WARNING("SPLASH: length of Tcl module directory path exceeds maximum path length!\n");
+            free(data_header);
+            return -1;
+        }
     }
 
     /* Tk modules directory */
-    if (pyi_path_join(splash->tk_modules_dir, pyi_ctx->application_home_dir, data_header->tk_module_directory_name) == NULL) {
-        PYI_WARNING("SPLASH: length of Tk module directory path exceeds maximum path length!\n");
-        free(data_header);
-        return -1;
+    if (_is_zipfs_path(data_header->tk_module_directory_name)) {
+        /* Tk module directory is "//zipfs:/lib/tk/tk_library"; copy it as-is */
+        snprintf(splash->tk_modules_dir, PYI_PATH_MAX, "%s", data_header->tk_module_directory_name);
+    } else {
+        /* Construct the Tk module directory path by combining path to top-level application directory and given directory name */
+        if (pyi_path_join(splash->tk_modules_dir, pyi_ctx->application_home_dir, data_header->tk_module_directory_name) == NULL) {
+            PYI_WARNING("SPLASH: length of Tk module directory path exceeds maximum path length!\n");
+            free(data_header);
+            return -1;
+        }
     }
 
     /* Copy the script into a buffer owned by SPLASH_STATUS */
@@ -850,7 +872,21 @@ _tclInit_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
     dylib_tcltk->Tcl_SetVar2(interp, "auto_path", NULL, "", TCL_GLOBAL_ONLY);
 
     /* Run the init.tcl file */
-    pyi_path_join(init_script_path, splash->tcl_modules_dir, "init.tcl");
+    if (_is_zipfs_path(splash->tcl_modules_dir)) {
+        /* zipfs uses POSIX-style separators! */
+        if (snprintf(init_script_path, PYI_PATH_MAX, "%s/init.tcl", splash->tcl_modules_dir) >= PYI_PATH_MAX) {
+            Tcl_Obj *error_obj;
+            if (dylib_tcltk->tcl_major >= 9) {
+                error_obj = dylib_tcltk->Tcl_NewStringObj_9("path to init.tcl exceeds maximum buffer size", -1);
+            } else {
+                error_obj = dylib_tcltk->Tcl_NewStringObj_8("path to init.tcl exceeds maximum buffer size", -1);
+            }
+            dylib_tcltk->Tcl_SetObjResult(interp, error_obj);
+            return TCL_ERROR;
+        }
+    } else {
+        pyi_path_join(init_script_path, splash->tcl_modules_dir, "init.tcl");
+    }
     PYI_DEBUG("TCL: 'tclInit' command: running init.tcl from: %s\n", init_script_path);
     rc = dylib_tcltk->Tcl_EvalFile(interp, init_script_path);
     if (rc == TCL_OK) {
@@ -923,7 +959,21 @@ _tcl_findLibrary_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tc
      * of `tk`, since the library packed by PyInstaller at build time is
      * guaranteed to be compatible. */
     if (strncmp(dylib_tcltk->Tcl_GetString(objv[4]), "tk.tcl", 64) == 0) {
-        pyi_path_join(init_script_path, splash->tk_modules_dir, "tk.tcl");
+        if (_is_zipfs_path(splash->tk_modules_dir)) {
+            /* zipfs uses POSIX-style separators! */
+            if (snprintf(init_script_path, PYI_PATH_MAX, "%s/tk.tcl", splash->tk_modules_dir) >= PYI_PATH_MAX) {
+                Tcl_Obj *error_obj;
+                if (dylib_tcltk->tcl_major >= 9) {
+                    error_obj = dylib_tcltk->Tcl_NewStringObj_9("path to tk.tcl exceeds maximum buffer size", -1);
+                } else {
+                    error_obj = dylib_tcltk->Tcl_NewStringObj_8("path to tk.tcl exceeds maximum buffer size", -1);
+                }
+                dylib_tcltk->Tcl_SetObjResult(interp, error_obj);
+                return TCL_ERROR;
+            }
+        } else {
+            pyi_path_join(init_script_path, splash->tk_modules_dir, "tk.tcl");
+        }
         PYI_DEBUG("TCL: 'findLibrary' command: running tk.tcl from: %s\n", init_script_path);
         dylib_tcltk->Tcl_SetVar2(interp, "tk_library", NULL, splash->tk_modules_dir, TCL_GLOBAL_ONLY);
         rc = dylib_tcltk->Tcl_EvalFile(interp, init_script_path);
@@ -963,6 +1013,7 @@ _tcl_source_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
     Tcl_Obj **_source_objv;
     char *filename;
+    int is_zipfs;
     int rc;
     int i;
 
@@ -977,12 +1028,15 @@ _tcl_source_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
      * source command. */
      filename = dylib_tcltk->Tcl_GetString(objv[objc - 1]);
 
+    /* Is the given file path a zipfs resource? */
+    is_zipfs = _is_zipfs_path(filename);
+
     /* Prevent loading of files that are outside of the top-level application
      * directory. This would indicate issues with interpreter setup, which is
      * supposed to be completely isolated. On Windows and macOS, use case-insensitive
      * comparison to simulate case-insensitive filesystem. On Windows, we must also
      * normalize separators, because Tcl appears to be using POSIX-style forward slash. */
-    if (1) {
+    if (!is_zipfs) {
         bool ok;
 
 #if defined(_WIN32)
@@ -1026,8 +1080,9 @@ _tcl_source_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         }
     }
 
-    /* Check if the file to be sourced exists. */
-    if (pyi_path_exists(filename)) {
+    /* Check if the file to be sourced exists; but let the original source command
+     * deal with missing zipfs resources. */
+    if (is_zipfs || pyi_path_exists(filename)) {
         /* Create a new objv array for the original source command
          * named _source. */
         if (dylib_tcltk->tcl_major >= 9) {
@@ -1099,7 +1154,7 @@ _tcl_exit_Command(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 static Tcl_ThreadCreateType
 _splash_init(ClientData client_data)
 {
-    int err = 0;
+    int err;
     struct SPLASH_CONTEXT *splash = (struct SPLASH_CONTEXT *)client_data;
     const struct DYLIB_TCLTK *dylib_tcltk = splash->dylib_tcltk;
     Tcl_Obj *image_data_obj;
@@ -1115,10 +1170,51 @@ _splash_init(ClientData client_data)
         splash->thread_id = dylib_tcltk->Tcl_GetCurrentThread();
     }
 
+    /* Mount embdedded Tcl/Tk data archives, if necessary.
+     * NOTE: the mounted archives are automatically cleaned up when we call
+     * Tcl_Finalize() (which calls TclFinalizeFilesystem(), which in turn
+     * calls TclZipfsFinalize()), so once they are mounted, we do not need
+     * to worry about them anymore. */
+    if (_is_zipfs_path(splash->tcl_modules_dir)) {
+        if (!dylib_tcltk->TclZipfs_Mount) {
+            PYI_DEBUG("TCL: need to mount Tcl data archive, but TclZipfs_Mount() is not available!\n");
+            goto cleanup;
+        }
+        PYI_DEBUG("TCL: mounting embedded Tcl data archive...\n");
+        err = dylib_tcltk->TclZipfs_Mount(
+            splash->interp,
+            splash->tcl_shared_library,
+            "//zipfs:/lib/tcl",
+            NULL
+        );
+        if (err != TCL_OK) {
+            PYI_DEBUG("TCL: failed to mount embedded Tcl data archive!. Error: %s\n", dylib_tcltk->Tcl_GetString(dylib_tcltk->Tcl_GetObjResult(splash->interp)));
+            goto cleanup;
+        }
+    }
+
+    if (_is_zipfs_path(splash->tk_modules_dir)) {
+        if (!dylib_tcltk->TclZipfs_Mount) {
+            PYI_DEBUG("TCL: need to mount Tk data archive, but TclZipfs_Mount() is not available!\n");
+            goto cleanup;
+        }
+        PYI_DEBUG("TCL: mounting embedded Tk data archive...\n");
+        err = dylib_tcltk->TclZipfs_Mount(
+            splash->interp,
+            splash->tk_shared_library,
+            "//zipfs:/lib/tk",
+            NULL
+        );
+        if (err != TCL_OK) {
+            PYI_DEBUG("TCL: failed to mount embedded Tcl data archive!. Error: %s\n", dylib_tcltk->Tcl_GetString(dylib_tcltk->Tcl_GetObjResult(splash->interp)));
+            goto cleanup;
+        }
+    }
+
     /* In order to run a minimal Tcl interpreter, we override the `tclInit`
      * command, which is called by Tcl_Init().
      * This is a supported way of modifying Tcl's startup behavior. */
-    err |= dylib_tcltk->Tcl_CreateObjCommand(
+    err = dylib_tcltk->Tcl_CreateObjCommand(
         splash->interp,
         "tclInit",
         _tclInit_Command,

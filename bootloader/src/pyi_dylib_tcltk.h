@@ -136,6 +136,9 @@ PYI_EXT_FUNC_PROTO(char *, Tcl_Alloc_8, (unsigned)) /* Tcl < 9.0: 32-bit size ar
 PYI_EXT_FUNC_PROTO(char *, Tcl_Alloc_9, (size_t)) /* Tcl >= 9.0: 64-bit size argument */
 PYI_EXT_FUNC_PROTO(void, Tcl_Free, (char *))
 
+/* Zipfs */
+PYI_EXT_FUNC_PROTO(int, TclZipfs_Mount, (Tcl_Interp *, const char *, const char *, const char *))
+
 /* Tk functions */
 PYI_EXT_FUNC_PROTO(int, Tk_Init, (Tcl_Interp *))
 PYI_EXT_FUNC_PROTO(int, Tk_GetNumMainWindows, (void))
@@ -195,6 +198,8 @@ struct DYLIB_TCLTK
     PYI_EXT_FUNC_ENTRY(Tcl_Alloc_8)
     PYI_EXT_FUNC_ENTRY(Tcl_Alloc_9)
     PYI_EXT_FUNC_ENTRY(Tcl_Free)
+
+    PYI_EXT_FUNC_ENTRY(TclZipfs_Mount)
 
     /* Function pointers for imported functions: Tk */
     PYI_EXT_FUNC_ENTRY(Tk_Init)
