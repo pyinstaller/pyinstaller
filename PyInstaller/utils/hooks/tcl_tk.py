@@ -115,6 +115,9 @@ class TclTkInfo:
         self.tk_data_dir = None
         self.tcl_module_dir = None
 
+        self.tcl_data_missing = False
+        self.tk_data_missing = False
+
         self.is_macos_system_framework = False
         self.tcl_shared_library = None
         self.tk_shared_library = None
@@ -222,6 +225,7 @@ class TclTkInfo:
                 )
             else:
                 logger.warning("%s: Tcl library/data directory %r does not exist!", self, self.tcl_data_dir)
+                self.tcl_data_missing = True
 
             if os.path.isdir(self.tk_data_dir):
                 self.data_files += self._collect_files_from_directory(
@@ -231,6 +235,7 @@ class TclTkInfo:
                 )
             else:
                 logger.warning("%s: Tk library/data directory %r does not exist!", self, self.tk_data_dir)
+                self.tk_data_missing = True
 
             # Collect Tcl modules from optional modules directory
             if os.path.isdir(self.tcl_module_dir):

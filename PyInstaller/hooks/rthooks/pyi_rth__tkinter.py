@@ -14,23 +14,22 @@ def _pyi_rthook():
     import os
     import sys
 
+    # Set path to Tcl and Tk library directories, if they exist.
     # The directory names must match TCL_ROOTNAME and TK_ROOTNAME constants defined in `PyInstaller.utils.hooks.tcl_tk`.
+    #
+    # Usually, these library directories are collected by the build process, and the lack of directories should be
+    # considered an error. However, there are also various scenarios where this is not the case; for example, system
+    # Tcl/Tk framework being used on macOS, or a Windows build of Tcl/Tk 9 with DLL-embedded library .zip archives, and
+    # so on. The build process should have more information about particular scenario, so an error should be raised
+    # during build process as necessary.
     tcldir = os.path.join(sys._MEIPASS, '_tcl_data')
     tkdir = os.path.join(sys._MEIPASS, '_tk_data')
 
-    # Notify "tkinter" of data directories. On macOS, we do not collect data directories if system Tcl/Tk framework is
-    # used. On other OSes, we always collect them, so their absence is considered an error.
-    is_darwin = sys.platform == 'darwin'
-
     if os.path.isdir(tcldir):
         os.environ["TCL_LIBRARY"] = tcldir
-    elif not is_darwin:
-        raise FileNotFoundError('Tcl data directory "%s" not found.' % tcldir)
 
     if os.path.isdir(tkdir):
         os.environ["TK_LIBRARY"] = tkdir
-    elif not is_darwin:
-        raise FileNotFoundError('Tk data directory "%s" not found.' % tkdir)
 
 
 _pyi_rthook()

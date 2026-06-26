@@ -1,0 +1,3 @@
+Rework the standard and run-time hook for ``_tkinter`` so that error
+about missing Tcl/Tk data directories is raised at build time rather
+than at run time.
