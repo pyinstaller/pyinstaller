@@ -19,7 +19,7 @@ gevent==26.5.0; python_version >= "3.9"
 ipython==9.15.0; python_version >= "3.12"
 keyring==25.7.0; python_version >= "3.9"
 matplotlib==3.11.0; python_version >= "3.11"
-numpy==2.5.0; python_version >= "3.11"
+numpy==2.5.0; python_version >= "3.12"
 pandas==3.0.3; python_version >= "3.11"
 pygments==2.20.0; python_version >= "3.9"
 PyGObject==3.56.3; sys_platform == "linux" and python_version >= "3.10"
@@ -91,6 +91,7 @@ setuptools==82.0.1; python_version >= "3.9"
 # -----------
 Django==5.2.9; python_version == "3.11"  # pyup: ignore
 
+numpy==2.4.6; python_version == "3.11"  # pyup: ignore
 scipy==1.17.1; python_version == "3.11"  # pyup: ignore
 
 sphinx==9.0.4; python_version == "3.11"  # pyup: ignore
