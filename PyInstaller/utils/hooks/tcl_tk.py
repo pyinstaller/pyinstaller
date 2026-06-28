@@ -47,10 +47,16 @@ def _get_tcl_tk_info():
     # Query the location of Tcl library/data directory.
     tcl_data_dir = tcl.eval("info library")
 
+    # Query the version of the loaded Tcl library. Normally, this matches `_tkinter.TCL_VERSION` (which is the
+    # version of Tcl headers that the `_tkinter` module was compiled against); in case there is a mismatch, the
+    # actual run-time version should be authoritative for our purposes (although it also likely means that the
+    # `_tkinter` module is defunc...).
+    tcl_runtime_version = tcl.eval("info tclversion")
+
     # Check if Tcl/Tk is built with multi-threaded support (built with --enable-threads), as indicated by the presence
     # of optional `threaded` member in `tcl_platform` array. Tcl 9.0 removed the --enable-threads flag, and is always
     # built with multi-threaded support (and thus the `threaded` array member has been removed).
-    TCL_MAJOR = int(_tkinter.TCL_VERSION.split(".")[0])
+    TCL_MAJOR = int(tcl_runtime_version.split(".")[0])
     if TCL_MAJOR >= 9:
         tcl_threaded = True
     else:
@@ -68,6 +74,7 @@ def _get_tcl_tk_info():
         "tk_version": _tkinter.TK_VERSION,
         "tcl_threaded": tcl_threaded,
         "tcl_data_dir": tcl_data_dir,
+        "_tcl_runtime_version": tcl_runtime_version,
     }
 
 
@@ -144,6 +151,20 @@ class TclTkInfo:
         # Parse Tcl/Tk version into (major, minor) tuple.
         self.tcl_version = tuple((int(x) for x in self.tcl_version.split(".")[:2]))
         self.tk_version = tuple((int(x) for x in self.tk_version.split(".")[:2]))
+
+        self._tcl_runtime_version = tuple((int(x) for x in self._tcl_runtime_version.split(".")[:2]))
+
+        if self.tcl_version != self._tcl_runtime_version:
+            # Mismatch between the Tcl headers used to build `_tkinter`, and the Tcl library that the module was
+            # ultimately linked against. Assume that the same mismatch exists with Tk, and use the Tcl run-time version
+            # as source of truth for version of both Tcl and Tk.
+            logger.warning(
+                "%s: mismatch between the version of loaded Tcl library %r and version of Tcl headers that were used "
+                "to build _tkinter %r - forcing version of both Tcl and Tk to %r!", self, self._tcl_runtime_version,
+                self.tcl_version, self._tcl_runtime_version
+            )
+            self.tcl_version = self._tcl_runtime_version
+            self.tk_version = self._tcl_runtime_version
 
         # Determine full path to Tcl and Tk shared libraries against which the `_tkinter` extension module is linked.
         # This can only be done when `_tkinter` is in fact an extension, and not a built-in. In the latter case, the
