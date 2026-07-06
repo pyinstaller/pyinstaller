@@ -1,0 +1,2 @@
+(Linux) Fix regression that prevented automatic collection of wayland
+shared libraries that are bundled with ``pywayland`` binary wheels.

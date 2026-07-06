@@ -222,7 +222,7 @@ _unix_excludes = {
     r'libxcb-dri.*\.so(\..*)?',
     # system running a Wayland compositor should already have these libraries
     # in versions that should not conflict with system drivers, unlike bundled
-    r'libwayland.*\.so(\..*)?',
+    r'libwayland-(client|cursor|egl|server)\.so(\..*)?',
 }
 
 _aix_excludes = {
