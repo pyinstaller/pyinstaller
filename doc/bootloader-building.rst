@@ -36,7 +36,7 @@ provide details for individual platforms.
 The officially supported platforms are:
 
 * GNU/Linux (using gcc)
-* Windows (using Visual C++ (VS2015 or later) or MinGW's gcc)
+* Windows (using Visual C++ (VS2017 or later) or MinGW's gcc)
 * macOS (using clang)
 
 Contributed platforms are:
@@ -332,7 +332,7 @@ between three options:
    This is why the bootloaders delivered with PyInstaller are build using
    Visual Studio C++ compiler.
 
-   Visual Studio 2015 or later is required.
+   Visual Studio 2017 or later is required.
 
 
 2. Using the `MinGW-w64`_ suite.
@@ -403,11 +403,11 @@ Build using Microsoft Visual C/C++ toolchain
 
 * Useful Links:
 
-  * `Microsoft Visual C++ Build-Tools 2015
-    <https://www.microsoft.com/en-us/download/details.aspx?id=48159>`_
-  * `Microsoft Build-Tools for Visual Studio 2026.
-    <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2026>`_
-
+  * `Microsoft Build-Tools for Visual Studio 2017 (direct download) <https://aka.ms/vs/15/release/vs_buildtools.exe>`_
+  * `Microsoft Build-Tools for Visual Studio 2019 (direct download) <https://aka.ms/vs/16/release/vs_buildtools.exe>`_
+  * `Microsoft Build-Tools for Visual Studio 2022 (direct download) <https://aka.ms/vs/17/release/vs_buildtools.exe>`_
+  * `Microsoft Build-Tools for Visual Studio 2026 (direct download) <https://aka.ms/vs/stable/vs_BuildTools.exe>`_
+  * `Microsoft Build-Tools for Visual Studio 2026 (main download page) <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2026>`_
 
 After installing the C++ build-tool
 you can build the bootloader as shown above.
