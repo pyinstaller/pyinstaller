@@ -49,8 +49,8 @@ static int
 _pyi_archive_extract_compressed(FILE *archive_fp, const struct TOC_ENTRY *toc_entry, FILE *out_fp, unsigned char *out_ptr)
 {
     const size_t CHUNK_SIZE = 8192;
-    unsigned char *buffer_in = NULL;
-    unsigned char *buffer_out = NULL;
+    unsigned char buffer_in[8192];
+    unsigned char buffer_out[8192];
     uint64_t remaining_size;
     z_stream zstream;
     int rc = -1;
@@ -65,18 +65,6 @@ _pyi_archive_extract_compressed(FILE *archive_fp, const struct TOC_ENTRY *toc_en
     if (rc != Z_OK) {
         PYI_ERROR("Failed to extract %s: inflateInit() failed with return code %d!\n", toc_entry->name, rc);
         return -1;
-    }
-
-    /* Allocate I/O buffers */
-    buffer_in = (unsigned char *)malloc(CHUNK_SIZE);
-    if (buffer_in == NULL) {
-        PYI_PERROR("malloc", "Failed to extract %s: failed to allocate temporary input buffer!\n", toc_entry->name);
-        goto cleanup;
-    }
-    buffer_out = (unsigned char *)malloc(CHUNK_SIZE);
-    if (buffer_out == NULL) {
-        PYI_PERROR("malloc", "Failed to extract %s: failed to allocate temporary output buffer!\n", toc_entry->name);
-        goto cleanup;
     }
 
     /* Decompress until deflate stream ends or end of file is reached */
@@ -133,8 +121,6 @@ decompress_end:
 
 cleanup:
     inflateEnd(&zstream);
-    free(buffer_in);
-    free(buffer_out);
 
     return rc;
 }
@@ -147,18 +133,11 @@ static int
 _pyi_archive_extract2fs_uncompressed(FILE *archive_fp, const struct TOC_ENTRY *toc_entry, FILE *out_fp)
 {
     const size_t CHUNK_SIZE = 8192;
-    unsigned char *buffer;
+    unsigned char buffer[8192];
     uint64_t remaining_size;
     int rc = 0;
 
-    /* Allocate temporary buffer for a single chunk */
-    buffer = (unsigned char *)malloc(CHUNK_SIZE);
-    if (buffer == NULL) {
-        PYI_PERROR("malloc", "Failed to extract %s: failed to allocate temporary buffer!\n", toc_entry->name);
-        return -1;
-    }
-
-    /* ... and copy it, chunk by chunk */
+    /* Copy data, chunk by chunk */
     remaining_size = toc_entry->uncompressed_length;
     while (remaining_size > 0) {
         size_t chunk_size = (CHUNK_SIZE < remaining_size) ? CHUNK_SIZE : (size_t)remaining_size;
@@ -174,7 +153,7 @@ _pyi_archive_extract2fs_uncompressed(FILE *archive_fp, const struct TOC_ENTRY *t
         }
         remaining_size -= chunk_size;
     }
-    free(buffer);
+
     return rc;
 }
 
