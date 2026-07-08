@@ -161,14 +161,8 @@
         #define PYI_DEBUG(...) pyi_debug_message(__VA_ARGS__)
         #define PYI_DEBUG_W(...) pyi_debug_message_w(__VA_ARGS__)
     #else
-        /* MSVC does not allow empty vararg macro; but clang + MSVC does */
-        #if defined(_MSC_VER) && !defined(__clang__)
-            #define PYI_DEBUG
-            #define PYI_DEBUG_W
-        #else
-            #define PYI_DEBUG(...)
-            #define PYI_DEBUG_W(...)
-        #endif
+        #define PYI_DEBUG(...)
+        #define PYI_DEBUG_W(...)
     #endif /* defined(LAUNCH_DEBUG) */
 #else /* defined(_WIN32) */
     /* POSIX; display error messages to stderr. */
