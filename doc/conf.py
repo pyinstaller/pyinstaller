@@ -56,6 +56,9 @@ for (contents, path) in [
     if not path.exists() or path.read_text() != contents:
         path.write_text(contents)
 
+# Emphasise placeholders in option directives (sphinx >= 5.1).
+option_emphasise_placeholders = True
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.

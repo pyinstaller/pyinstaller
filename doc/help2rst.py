@@ -79,13 +79,20 @@ def parser_to_rst(parser: argparse.ArgumentParser, section_references=True, opti
                 default = formatter._get_default_metavar_for_positional(action)
                 args_string = ' '.join(formatter._metavar_formatter(action, default)(1))
 
-                option_parts.append(args_string)
+                option_parts.append(args_string)  # Note: do not use placeholder curly braces here!
             else:
                 option_parts.append(', '.join(action.option_strings))
                 if action.nargs != 0:
                     # Option with value argument(s)
                     default = formatter._get_default_metavar_for_optional(action)
                     args_string = formatter._format_args(action, default)
+
+                    # If `.. option::` directive is used, escape the curly braces that are used for choices. Then add
+                    # curly braces around the argument string, so we can use `option_emphasise_placeholders` option.
+                    if option_directive:
+                        args_string = args_string.replace('{', r'\{')
+                        args_string = args_string.replace('}', r'\}')
+                        args_string = '{' + args_string + '}'
 
                     option_parts.append(args_string)
 
