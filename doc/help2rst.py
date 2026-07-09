@@ -47,6 +47,12 @@ def parser_to_rst(parser: argparse.ArgumentParser, section_references=True, opti
     parser.color = False  # No-op in python < 3.14
     formatter = parser._get_formatter()  # Used to simplify arguments formatting
 
+    # If this is special PyInstaller parser with forbidden makespec options, create a set for lookup.
+    if hasattr(parser, '_pyi_action_groups'):
+        makespec_options = set(parser._pyi_action_groups.get('makespec', []))
+    else:
+        makespec_options = set()
+
     # Go over positionals, optionals, and user-defined groups
     for action_group in parser._action_groups:
         # Check actions in a group, and skip groups where help for all actions are suppressed.
@@ -116,6 +122,16 @@ def parser_to_rst(parser: argparse.ArgumentParser, section_references=True, opti
 
                 # Apply indent
                 rst_lines += [4 * ' ' + line for line in body_lines]
+
+            # Add note for options that are disallowed
+            if makespec_options and action in makespec_options:
+                rst_lines += [
+                    '',
+                    4 * ' ' + '.. note::',
+                    '',
+                    8 * ' ' + "This option is not allowed when building from .spec file.",
+                    '',
+                ]
 
             rst_lines.append('')
 
