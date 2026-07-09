@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
 #-----------------------------------------------------------------------------
-# Copyright (c) 2015-2023, PyInstaller Development Team.
+# Copyright (c) 2015-2026, PyInstaller Development Team.
 # Copyright (c) 2015-2020, Hartmut Goebel.
 #
 # Distributed under the terms of the GNU General Public License (version 2
@@ -10,125 +9,109 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-"""
-This script reformats the output of `myprog --help` to decent rst.
 
-There are two sphinx plugins which could replace this eventually:
-  - https://github.com/ashb/sphinx-argparse
-  - https://github.com/gaborbernat/sphinx-argparse-cli
-The former's output looks really nice, but lacks support for cross-referencing arguments. The latter supports
-cross-referencing, but its output looks hideous. Hopefully either one of them will eventually evolve into something
-we can use.
-
-The main functions here are parser_to_rst() and help_to_rst(). Throughout this code the, **cross_references** option
-controls whether or not section headings and options should be given cross reference targets.
-"""
-
-from textwrap import indent, wrap, dedent
-import re
-from argparse import ArgumentParser
-from functools import partial
+import argparse
+import textwrap
 
 
-def parser_to_rst(parser: ArgumentParser, cross_references=True):
+def parser_to_rst(parser: argparse.ArgumentParser, section_references=True, option_directive=True):
     """
-    Extract the ``--help`` output from an argparse parser and convert it to restructured text.
+    Extract the option groups and option description from an argparse parser, and generate restructured text to be used
+    with sphinx-generated documentation.
+
+    There are two sphinx plugins which could replace this eventually:
+    - https://github.com/ashb/sphinx-argparse
+    - https://github.com/gaborbernat/sphinx-argparse-cli
+    The former's output looks really nice, but lacks support for cross-referencing arguments. The latter supports
+    cross-referencing, but its output looks hideous. Hopefully either one of them will eventually evolve into something
+    we can use.
+
+    Parameters
+    ----------
+    hook_type : ArgumentParser
+        Instance of argument parser from which options should be extracted.
+    section_references : bool
+        Flag indicating whether to add a reference directive to each option-group section or not. These can be used for
+        cross-referencing from other parts of documentation
+    option_directives : bool
+        Flag indicating whether to use `.. option::` directive or not.
+
+    Returns
+    ----------
+    str
+        Restructured text with extracted option description.
     """
-    # On python >= 3.14, disable colored output, as injected color codes interfere with the parser. On earlier python
-    # versions, this is no-op (we are setting a non-existent property).
-    parser.color = False
-    help = parser.format_help()
-    return help_to_rst(help, cross_references)
 
+    rst_lines = []
 
-# Matches headings followed by indented blocks.
-SECTION_REGEX = re.compile(
-    r"""
-    # A non-empty line with no indentation.
-    ^\S.*\n
+    parser.color = False  # No-op in python < 3.14
+    formatter = parser._get_formatter()  # Used to simplify arguments formatting
 
-    # Followed by a non-zero number of either blank lines or indented lines.
-    (?:(?:\ +.*)?\n)+
-""", re.MULTILINE | re.VERBOSE
-)
+    # Go over positionals, optionals, and user-defined groups
+    for action_group in parser._action_groups:
+        # Check actions in a group, and skip groups where help for all actions are suppressed.
+        active_actions = [action for action in action_group._group_actions if action.help != argparse.SUPPRESS]
+        if not active_actions:
+            continue
 
+        # Capitalize group title
+        title = action_group.title.title()
 
-def help_to_rst(help: str, cross_references=True):
-    """
-    Convert the output of a ``cli --help`` call to rst.
-    """
-    summary, *sections = SECTION_REGEX.findall(help)
+        # Optional section reference (for cross-referencing)
+        if section_references:
+            rst_lines.append(f".. _`{title}`:")
+            rst_lines.append('')
 
-    # We could stick the summary (``usage: pyinstaller [-h] [--help] ...``) into a code block, but it is pretty
-    # unhelpful, so I choose to omit it.
-    sections = "\n".join(section_to_rst(section, cross_references) for section in sections)
+        # Section title, and corresponding amount of underscores
+        rst_lines.append(title)
+        rst_lines.append('-' * len(title))
+        rst_lines.append('')
 
-    return sections
+        # All actions in the group
+        for action in active_actions:
+            # Prepare parts of the option string:
+            # .. option:: -n, --option-name, --option-alias OPTION_ARGS
+            option_parts = []
+            if option_directive:
+                option_parts.append('.. option::')
 
+            if not action.option_strings:
+                default = formatter._get_default_metavar_for_positional(action)
+                args_string = ' '.join(formatter._metavar_formatter(action, default)(1))
 
-def section_to_rst(section: str, cross_references=True) -> str:
-    """
-    Convert a single option group's ``--help`` output to rst.
+                option_parts.append(args_string)
+            else:
+                option_parts.append(', '.join(action.option_strings))
+                if action.nargs != 0:
+                    # Option with value argument(s)
+                    default = formatter._get_default_metavar_for_optional(action)
+                    args_string = formatter._format_args(action, default)
 
-    This generates a heading for the option group followed by each option within that group.
-    """
-    title, body = section.split("\n", maxsplit=1)
+                    option_parts.append(args_string)
 
-    rst_title = rst_headerise(title, cross_references)
-    rst_body = OPTION_REGEX.sub(partial(option_to_rst, cross_references=cross_references), body)
+            rst_lines.append(' '.join(option_parts))
 
-    return rst_title + rst_body
+            rst_lines.append('')
 
+            if action.help:
+                body = action.help
 
-OPTION_REGEX = re.compile(
-    r"""
-    # Matches:
-    #   --name, --other-name, -n VALUE  Some description
-    #                                   and some more description.
+                # Escape characters which turn into invalid rst.
+                body = body.replace('*', r'\*')
 
-    # An option name prefixed with at least 1 space.
-    ^(\ +)(.*?)
-    # Optionally followed by at least 2 spaces and the start of the description.
-    (?:\ {2,}(.*))?\n
+                # Wrap
+                body_lines = textwrap.wrap(
+                    body,
+                    width=75,
+                    break_on_hyphens=False,
+                    break_long_words=False,
+                )
 
-    # More lines of description.
-    # Each line starts with more spaces than which prefixed the option name (so as to avoid picking up the next option).
-    # Blank lines are allowed.
-    (((?:\1\ +(.*))?\n)*)
+                # Apply indent
+                rst_lines += [4 * ' ' + line for line in body_lines]
 
-""", re.MULTILINE | re.VERBOSE
-)
+            rst_lines.append('')
 
+        rst_lines.append('')
 
-def option_to_rst(m: re.Match, cross_references=True) -> str:
-    """
-    Convert a single option to rst.
-
-    The output should look like::
-
-        .. option:: --option-name -n
-
-            The help for that option nicely text-wrapped.
-    """
-    name = m.group(2)
-    assert name
-    body = " ".join(i for i in m.group(3, 4) if i)
-    # Escape characters which turn into invalid rst.
-    body = body.replace("*", r"\*")
-    # Re-wrap the help block.
-    body = "\n".join(wrap(dedent(body), width=75, break_on_hyphens=False, break_long_words=False))
-
-    template = ".. option:: {}\n\n{}\n\n" if cross_references else "{}\n\n{}\n\n"
-
-    return template.format(name, indent(body, "    "))
-
-
-def rst_headerise(title: str, cross_references=True) -> str:
-    """
-    Create a title with the correct length '---' underline.
-    """
-    title = title.strip(" \n:").title()
-    out = f"{title}\n{'-' * len(title)}\n\n"
-    if cross_references:
-        out = f".. _`{title}`:\n\n" + out
-    return out
+    return '\n'.join(rst_lines)
