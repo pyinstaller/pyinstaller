@@ -376,6 +376,13 @@ class AppBuilder:
             self._display_message(
                 'RUN-EXE', f'Process exited on its own after {elapsed:.1f} seconds with return code {retcode}.'
             )
+            if runtime and elapsed < runtime:
+                self._display_message(
+                    'RUN-EXE',
+                    f'Process exited after {elapsed:.1f} seconds, but run-time of {runtime:.1f} seconds was expected!',
+                )
+                retcode = 1
+
             cleanup_required = False  # No cleanup required
         except pytest.fail.Exception as e:
             # This might be thrown by pytest-timeout when using "signal" timeout mode.
