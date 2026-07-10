@@ -21,13 +21,13 @@ with_tkinter = os.environ.get('_TEST_SPLASH_WITH_TKINTER', '0')
 if with_tkinter != '0':
     # Force tkinter collection via hiddenimports; this simulates a program importing tkinter.
     a = Analysis(
-        ['../scripts/pyi_interact_pyi_splash.py'],
+        ['../scripts/pyi_splash_screen.py'],
         hiddenimports=['tkinter'],
     )
 else:
     # On some systems tkinter is included automatically; explicitly exclude it.
     a = Analysis(
-        ['../scripts/pyi_interact_pyi_splash.py'],
+        ['../scripts/pyi_splash_screen.py'],
         excludes=['tkinter', '_tkinter'],
     )
 

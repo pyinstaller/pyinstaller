@@ -10,28 +10,32 @@
 # -----------------------------------------------------------------------------
 
 # This script establishes a simple communication with the bootloader to test the functions.
-# If an error is detected, the program is closed before the timeout and thus counts as failed.
-# The error can occur in different areas.
 
-from time import sleep
+import sys
+import time
 
 
 def main():
     # Init pyi_splash / connect to the bootloader.
+    print("Importing pyi_splash...", file=sys.stderr)
     import pyi_splash
 
     # Simulate users program startup.
-    sleep(1)
+    time.sleep(1)
+    print("Updating text...", file=sys.stderr)
     pyi_splash.update_text("This is a test text")
-    sleep(2)
+    time.sleep(2)
+    print("Updating text again...", file=sys.stderr)
     pyi_splash.update_text("Second time's a charm")
 
     # Close the splash screen to check if that works.
-    sleep(1)
+    time.sleep(1)
+    print("Closing splash screen...", file=sys.stderr)
     pyi_splash.close()
 
-    # Wait for the timeout.
-    sleep(20)
+    # Exit
+    time.sleep(1)
+    print("End of program reached!", file=sys.stderr)
 
 
 if __name__ == '__main__':

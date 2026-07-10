@@ -30,9 +30,7 @@ pytestmark = [
 ]
 
 
-# Test that splash screen is successfully started. This is an "interactive"
-# test (see test_interactive.py), where we expect the program to run for
-# specified amount of time, before we terminate it.
+# Test that splash screen is successfully started.
 @pytest.mark.parametrize("build_mode", ['onedir', 'onefile'])
 @pytest.mark.parametrize("with_tkinter", [False, True], ids=['notkinter', 'tkinter'])
 def test_splash_screen_running(pyi_builder_spec, capfd, monkeypatch, build_mode, with_tkinter):
@@ -41,10 +39,7 @@ def test_splash_screen_running(pyi_builder_spec, capfd, monkeypatch, build_mode,
     if with_tkinter:
         monkeypatch.setenv('_TEST_SPLASH_WITH_TKINTER', '1')
 
-    pyi_builder_spec.test_spec(
-        'spec_with_splash.spec',
-        runtime=10,  # Interactive test - terminate test program after 10 seconds.
-    )
+    pyi_builder_spec.test_spec('spec_with_splash.spec')
 
     out, err = capfd.readouterr()
     assert 'SPLASH: splash screen started' in err, \
