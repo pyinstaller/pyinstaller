@@ -368,6 +368,7 @@ class AppBuilder:
         stdout = stderr = None
         cleanup_required = True
         pytest_exception = None
+        custom_exception = None
         try:
             timeout = runtime if runtime else _EXE_TIMEOUT
             stdout, stderr = process.communicate(timeout=timeout)
@@ -381,7 +382,7 @@ class AppBuilder:
                     'RUN-EXE',
                     f'Process exited after {elapsed:.1f} seconds, but run-time of {runtime:.1f} seconds was expected!',
                 )
-                retcode = 1
+                custom_exception = RuntimeError("Process did not reach the expected run-time!")
 
             cleanup_required = False  # No cleanup required
         except pytest.fail.Exception as e:
@@ -397,7 +398,7 @@ class AppBuilder:
             else:
                 # Executable is still running and it is not interactive. Clean up the process tree, and fail the test.
                 self._display_message('RUN-EXE', f'Timeout while running executable (timeout: {timeout} seconds)!')
-                retcode = 1
+                custom_exception = RuntimeError(f"Timeout while running executable (timeout: {timeout} seconds)!")
 
         if cleanup_required:
             if psutil is None:
@@ -457,6 +458,10 @@ class AppBuilder:
         if pytest_exception:
             self._display_message('RUN-EXE', 'Re-raising pytest.fail.Exception exception...')
             raise pytest_exception
+
+        # If the above code set a custom exception, raise it now
+        if custom_exception:
+            raise custom_exception
 
         self._display_message('RUN-EXE', f'Done! Return code: {retcode}')
 
