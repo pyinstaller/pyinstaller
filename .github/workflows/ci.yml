@@ -254,6 +254,12 @@ jobs:
         run: |
           echo "PYTEST_DEBUG_TEMPROOT=$RUNNER_TEMP" >> $GITHUB_ENV
 
+      # Attempt to mitigate test failures on x86_64 macOS runners due to lost time slices.
+      - name: Allow single re-run of every failed test
+        if: ${{ startsWith(matrix.os, 'macos') && endsWith(matrix.os, 'intel') }}
+        run: |
+          echo "PYTEST_ADDOPTS=--reruns=1" >> $GITHUB_ENV
+
       - name: Run tests
         id: run-tests
         run: >
