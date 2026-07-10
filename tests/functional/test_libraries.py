@@ -32,6 +32,27 @@ def test_gevent_monkey(pyi_builder):
         """)
 
 
+@importorskip('IPython')
+def test_ipython(pyi_builder, capfd):
+    pyi_builder.test_source(
+        """
+        import os
+        import sys
+
+        # Redirect sys.stdin to devnull to force IPython console to automatically exit
+        with open(os.devnull, 'r') as sys.stdin:
+            import IPython
+            print("Calling IPython.embed()...", file=sys.stderr)
+            IPython.embed(header="Hello from embedded IPython!")
+            print("End of program reached!", file=sys.stderr)
+        """
+    )
+
+    out, err = capfd.readouterr()
+    assert 'Hello from embedded IPython!' in out, \
+        f"Cannot find hello string in captured output:\n{out}"
+
+
 # The tkinter module may be available for import, but not actually importable due to missing shared libraries.
 # Therefore, we need to use `can_import_module`-based skip decorator instead of `@importorskip`.
 @pytest.mark.skipif(not can_import_module("tkinter"), reason="tkinter cannot be imported.")
