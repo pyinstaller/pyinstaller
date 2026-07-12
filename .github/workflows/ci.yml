@@ -259,6 +259,9 @@ jobs:
         if: ${{ startsWith(matrix.os, 'macos') && endsWith(matrix.os, 'intel') }}
         run: |
           echo "PYTEST_ADDOPTS=--reruns=1" >> $GITHUB_ENV
+          # This is necessary to activate re-runs on tests in test_qt.py that have @pytest.mark.flaky() marker
+          # with condition argument.
+          echo "PYINSTALLER_TEST_FORCE_FLAKY_RERUN=1" >> $GITHUB_ENV
 
       - name: Run tests
         id: run-tests

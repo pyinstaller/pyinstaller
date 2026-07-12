@@ -19,6 +19,13 @@ from PyInstaller.utils.hooks import check_requirement, can_import_module
 from PyInstaller.utils.hooks.qt import get_qt_library_info
 from PyInstaller.utils.tests import importorskip, requires, skipif, onedir_only
 
+# Several tests in this module have a @pytest.mark.flaky() with `condition` argument, which allows us to perform re-runs
+# only under special conditions (for example, specific version of Qt bindings, specific OS, etc.). However, having a
+# falsy `condition` argument precludes us from enabling re-runs globally by adding `--reruns=1` to `pytest` arguments;
+# at the time of writing (`pytest-rerunfailures` v16.4), this is true even if `--reruns-mode append` is used. Therefore,
+# we use a special environment variable that allows us to manually activate the reruns for marked tests.
+force_flaky_rerun = os.environ.get("PYINSTALLER_TEST_FORCE_FLAKY_RERUN", "0") == "1"
+
 
 def qt_param(qt_flavor, *args, **kwargs):
     """
@@ -624,7 +631,7 @@ def test_Qt_QtWebEngineQuick_PySide2(pyi_builder):
 @requires('PyQt6-WebEngine')  # NOTE: base Qt6 must be 6.2.2 or newer, QtWebEngine can be older
 @pytest.mark.flaky(
     # Attempt to mitigate issues with QtWebEngine 6.10.1
-    condition=check_requirement('PyQt6-WebEngine-Qt6 == 6.10.1'),
+    condition=force_flaky_rerun or check_requirement('PyQt6-WebEngine-Qt6 == 6.10.1'),
     reruns=1,
 )
 def test_Qt_QtWebEngineWidgets_PyQt6(pyi_builder):
@@ -644,7 +651,7 @@ def test_Qt_QtWebEngineWidgets_PyQt6(pyi_builder):
 @pytest.mark.flaky(
     # The generated .app bundle seems to sporadically freeze during shutdown on GHA macos-14 runners.
     # Attempt to mitigate issues with QtWebEngine 6.10.1
-    condition=is_darwin or check_requirement('PyQt6-WebEngine-Qt6 == 6.10.1'),
+    condition=force_flaky_rerun or is_darwin or check_requirement('PyQt6-WebEngine-Qt6 == 6.10.1'),
     reruns=1,
 )
 def test_Qt_QtWebEngineQuick_PyQt6(pyi_builder):
@@ -658,7 +665,8 @@ def test_Qt_QtWebEngineQuick_PyQt6(pyi_builder):
 )
 @pytest.mark.flaky(
     # Attempt to mitigate issues with QtWebEngine 6.10.1
-    condition=check_requirement('PySide6 == 6.10.1'),
+    condition=force_flaky_rerun or check_requirement('PySide6 == 6.10.1'),
+    reruns=1,
 )
 def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
     _test_Qt_QtWebEngineWidgets(pyi_builder, 'PySide6')
@@ -672,7 +680,7 @@ def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
 @pytest.mark.flaky(
     # The generated .app bundle seems to sporadically freeze during shutdown on GHA macos-14 runners.
     # Attempt to mitigate issues with QtWebEngine 6.10.1
-    condition=is_darwin or check_requirement('PySide6 == 6.10.1'),
+    condition=force_flaky_rerun or is_darwin or check_requirement('PySide6 == 6.10.1'),
     reruns=1,
 )
 def test_Qt_QtWebEngineQuick_PySide6(pyi_builder):
