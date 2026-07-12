@@ -13,7 +13,7 @@
 # -------
 # These packages work with no (known) issues.
 babel==2.18.0
-Django==6.0.6; python_version >= "3.12"
+Django==6.0.7; python_version >= "3.12"
 future==1.0.0
 gevent==26.5.0; python_version >= "3.9"
 ipython==9.15.0; python_version >= "3.12"
