@@ -886,35 +886,54 @@ def test_standard_streams_in_windowed_mode(pyi_builder, tmp_path):
 
 
 @pytest.mark.win32
-def test_subprocess_in_windowed_mode(pyi_builder):
+def test_subprocess_in_windowed_mode(pyi_builder, tmp_path):
     """Test invoking subprocesses from a PyInstaller app built in windowed mode."""
 
+    # See comment in the `test_standard_streams_in_windowed_mode` above.
+    error_file = tmp_path / 'error.txt'
+
     pyi_builder.test_source(
-        fr"""
-        from subprocess import PIPE, run
-        from unittest import TestCase
+        r"""
+        import sys
 
-        # Lazily use unittest's rich assertEqual() for assertions with builtin diagnostics.
-        assert_equal = TestCase().assertEqual
+        try:
+            from subprocess import PIPE, run
+            from unittest import TestCase
 
-        # Path to python interpreter
-        python = {sys.executable!r}
+            # Lazily use unittest's rich assertEqual() for assertions with builtin diagnostics.
+            assert_equal = TestCase().assertEqual
 
-        # Run with empty command to ensure interpreter works.
-        run([python, "-c", ""], check=True)
+            # Path to python interpreter, passed as first argument.
+            python = sys.argv[1]
 
-        # Verify that stdin, stdout and stderr still work and haven't been muddled.
-        p = run([python, "-c", "print('foo')"], stdout=PIPE, universal_newlines=True)
-        assert_equal(p.stdout, "foo\n", p.stdout)
+            # Run with empty command to ensure interpreter works.
+            run([python, "-c", ""], check=True)
 
-        p = run([python, "-c", r"import sys; sys.stderr.write('bar\n')"], stderr=PIPE, universal_newlines=True)
-        assert_equal(p.stderr, "bar\n", p.stderr)
+            # Verify that stdin, stdout and stderr still work and haven't been muddled.
+            p = run([python, "-c", "print('foo')"], stdout=PIPE, encoding='utf-8')
+            assert_equal(p.stdout, "foo\n", p.stdout)
 
-        p = run([python], input="print('foo')\nprint('bar')\n", stdout=PIPE, universal_newlines=True)
-        assert_equal(p.stdout, "foo\nbar\n", p.stdout)
+            p = run([python, "-c", r"import sys; sys.stderr.write('bar\n')"], stderr=PIPE, encoding='utf-8')
+            assert_equal(p.stderr, "bar\n", p.stderr)
+
+            p = run([python], input="print('foo')\nprint('bar')\n", stdout=PIPE, encoding='utf-8')
+            assert_equal(p.stdout, "foo\nbar\n", p.stdout)
+        except Exception as e:
+            try:
+                error_file = sys.argv[2]
+                with open(error_file, "w", encoding="utf-8") as fp:
+                    import traceback
+                    fp.write(traceback.format_exc())
+            except Exception:
+                sys.exit(1)
         """,
-        pyi_args=["--windowed"]
+        pyi_args=["--windowed"],
+        app_args=[str(sys.executable), str(error_file)],
     )
+
+    if error_file.is_file():
+        error_text = error_file.read_text(encoding='utf-8')
+        pytest.fail(f"Test program wrote error file (see below)!\n{error_text}")
 
 
 def test_package_entry_point_name_collision(pyi_builder):
