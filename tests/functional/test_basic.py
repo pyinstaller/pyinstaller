@@ -886,10 +886,10 @@ def test_standard_streams_in_windowed_mode(pyi_builder, tmp_path):
 
 
 @pytest.mark.win32
-def test_subprocess_in_windowed_mode(pyi_windowed_builder):
+def test_subprocess_in_windowed_mode(pyi_builder):
     """Test invoking subprocesses from a PyInstaller app built in windowed mode."""
 
-    pyi_windowed_builder.test_source(
+    pyi_builder.test_source(
         fr"""
         from subprocess import PIPE, run
         from unittest import TestCase

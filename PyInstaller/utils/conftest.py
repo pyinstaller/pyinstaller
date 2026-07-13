@@ -566,18 +566,3 @@ def pyi_builder_spec(tmp_path, request, monkeypatch, pyi_modgraph):
     if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
         if tmp_path.exists():
             shutil.rmtree(tmp_path, ignore_errors=True)
-
-
-@pytest.fixture
-def pyi_windowed_builder(pyi_builder: AppBuilder):
-    """A pyi_builder equivalent for testing --windowed applications."""
-
-    # psutil.Popen() somehow bypasses an application's windowed/console mode so that any application built in
-    # --windowed mode but invoked with psutil still receives valid std{in,out,err} handles and behaves exactly like
-    # a console application. In short, testing windowed mode with psutil is a null test. We must instead use subprocess.
-
-    def _run_executable_(args, exe_path, prog_env, prog_cwd):
-        return subprocess.run([exe_path, *args], env=prog_env, cwd=prog_cwd).returncode
-
-    pyi_builder._run_executable_ = _run_executable_
-    yield pyi_builder
