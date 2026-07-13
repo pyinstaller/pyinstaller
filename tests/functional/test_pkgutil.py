@@ -203,7 +203,6 @@ def test_pkgutil_iter_modules_macos_app_bundle(script_dir, tmp_path, pyi_builder
             exe,
             args=[package, '--output-file', str(out_frozen)],
             run_from_path=False,
-            runtime=None,
         )
         assert rc == 0
         results_frozen = _read_results_file(out_frozen)

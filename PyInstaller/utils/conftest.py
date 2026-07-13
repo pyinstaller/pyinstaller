@@ -200,9 +200,7 @@ class AppBuilder:
         print(f'[APP-BUILDER:{step_name}] {message}', file=sys.stdout)
         print(f'[APP-BUILDER:{step_name}] {message}', file=sys.stderr)
 
-    def test_script(
-        self, script, pyi_args=None, app_name=None, app_args=None, runtime=None, run_from_path=False, **kwargs
-    ):
+    def test_script(self, script, pyi_args=None, app_name=None, app_args=None, run_from_path=False, **kwargs):
         """
         Main method to wrap all phases of testing a Python script.
 
@@ -210,15 +208,9 @@ class AppBuilder:
         :param pyi_args: Additional arguments to pass to PyInstaller when creating executable.
         :param app_name: Name of the executable. This is equivalent to argument --name=APPNAME.
         :param app_args: Additional arguments to pass to
-        :param runtime: Time in seconds how long to keep executable running.
         :param toc_log: List of modules that are expected to be bundled with the executable.
         """
         __tracebackhide__ = True
-
-        # Skip interactive tests (the ones with `runtime` set) if `psutil` is unavailable, as we need it to properly
-        # clean up the process tree.
-        if runtime and psutil is None:
-            pytest.skip('Interactive tests require psutil for proper cleanup.')
 
         if pyi_args is None:
             pyi_args = []
@@ -243,17 +235,16 @@ class AppBuilder:
             pytest.fail(f'Building of {script} failed.')
 
         self._display_message('TEST-SCRIPT', 'Build finished, now running executable...')
-        self._test_executables(app_name, args=app_args, runtime=runtime, run_from_path=run_from_path, **kwargs)
+        self._test_executables(app_name, args=app_args, run_from_path=run_from_path, **kwargs)
         self._display_message('TEST-SCRIPT', 'Running executable finished.')
 
-    def _test_executables(self, name, args, runtime, run_from_path, **kwargs):
+    def _test_executables(self, name, args, run_from_path, **kwargs):
         """
         Run created executable to make sure it works.
 
         Multipackage-tests generate more than one exe-file and all of them have to be run.
 
         :param args: CLI options to pass to the created executable.
-        :param runtime: Time in seconds how long to keep the executable running.
 
         :return: Exit code of the executable.
         """
@@ -268,7 +259,7 @@ class AppBuilder:
             if toc_log.exists():
                 if not self._examine_executable(exe, toc_log):
                     pytest.fail(f'Matching .toc of {exe} failed.')
-            retcode = self._run_executable(exe, args, run_from_path, runtime)
+            retcode = self._run_executable(exe, args, run_from_path)
             if retcode != kwargs.get('retcode', 0):
                 pytest.fail(f'Running exe {exe} failed with return-code {retcode}.')
 
@@ -309,7 +300,7 @@ class AppBuilder:
                     exes.append(prog)
         return exes
 
-    def _run_executable(self, prog, args, run_from_path, runtime):
+    def _run_executable(self, prog, args, run_from_path):
         """
         Run executable created by PyInstaller.
 
@@ -350,9 +341,9 @@ class AppBuilder:
         args = [prog_name] + args
         # Using sys.stdout/sys.stderr for subprocess fixes printing messages in Windows command prompt. Py.test is then
         # able to collect stdout/sterr messages and display them if a test fails.
-        return self._run_executable_(args, exe_path, prog_env, prog_cwd, runtime)
+        return self._run_executable_(args, exe_path, prog_env, prog_cwd)
 
-    def _run_executable_(self, args, exe_path, prog_env, prog_cwd, runtime):
+    def _run_executable_(self, args, exe_path, prog_env, prog_cwd):
         # Use psutil.Popen, if available; otherwise, fall back to subprocess.Popen
         popen_implementation = subprocess.Popen if psutil is None else psutil.Popen
 
@@ -370,35 +361,22 @@ class AppBuilder:
         pytest_exception = None
         custom_exception = None
         try:
-            timeout = runtime if runtime else _EXE_TIMEOUT
+            timeout = _EXE_TIMEOUT
             stdout, stderr = process.communicate(timeout=timeout)
             elapsed = time.time() - start_time
             retcode = process.returncode
             self._display_message(
                 'RUN-EXE', f'Process exited on its own after {elapsed:.1f} seconds with return code {retcode}.'
             )
-            if runtime and elapsed < runtime:
-                self._display_message(
-                    'RUN-EXE',
-                    f'Process exited after {elapsed:.1f} seconds, but run-time of {runtime:.1f} seconds was expected!',
-                )
-                custom_exception = RuntimeError("Process did not reach the expected run-time!")
-
             cleanup_required = False  # No cleanup required
         except pytest.fail.Exception as e:
             # This might be thrown by pytest-timeout when using "signal" timeout mode.
             self._display_message('RUN-EXE', f'Caught pytest.fail.Exception: {e}')
             pytest_exception = e  # Store exception, so we can re-raise it after cleanup.
         except (subprocess.TimeoutExpired) if psutil is None else (psutil.TimeoutExpired, subprocess.TimeoutExpired):
-            if runtime:
-                # When 'runtime' is set, the expired timeout is a good sign that the executable was running successfully
-                # for the specified time.
-                self._display_message('RUN-EXE', f'Process reached expected run-time of {runtime} seconds.')
-                retcode = 0
-            else:
-                # Executable is still running and it is not interactive. Clean up the process tree, and fail the test.
-                self._display_message('RUN-EXE', f'Timeout while running executable (timeout: {timeout} seconds)!')
-                custom_exception = RuntimeError(f"Timeout while running executable (timeout: {timeout} seconds)!")
+            # Timeout while running the executable; clean up the process tree, then raise exception to fail the test.
+            self._display_message('RUN-EXE', f'Timeout while running executable (timeout: {timeout} seconds)!')
+            custom_exception = RuntimeError(f"Timeout while running executable (timeout: {timeout} seconds)!")
 
         if cleanup_required:
             if psutil is None:
@@ -598,8 +576,8 @@ def pyi_windowed_builder(pyi_builder: AppBuilder):
     # --windowed mode but invoked with psutil still receives valid std{in,out,err} handles and behaves exactly like
     # a console application. In short, testing windowed mode with psutil is a null test. We must instead use subprocess.
 
-    def _run_executable_(args, exe_path, prog_env, prog_cwd, runtime):
-        return subprocess.run([exe_path, *args], env=prog_env, cwd=prog_cwd, timeout=runtime).returncode
+    def _run_executable_(args, exe_path, prog_env, prog_cwd):
+        return subprocess.run([exe_path, *args], env=prog_env, cwd=prog_cwd).returncode
 
     pyi_builder._run_executable_ = _run_executable_
     yield pyi_builder
