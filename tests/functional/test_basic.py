@@ -847,6 +847,45 @@ def test_sys_executable(pyi_builder, append_pkg, monkeypatch):
 
 
 @pytest.mark.win32
+def test_standard_streams_in_windowed_mode(pyi_builder, tmp_path):
+    # NOTE: this is windowed/noconsole win32 test, and unhandled exceptions bring up unhandled exception dialog, which
+    # blocks the test until the timeout. Therefore, exception messages are recorded in a text file, which allows us to
+    # fail the test with a detailed error message.
+    error_file = tmp_path / 'error.txt'
+
+    pyi_builder.test_source(
+        """
+        import sys
+
+        try:
+            # In a windowed/noconsole build, all streams should be None.
+            # With contemporary PyInstaller versions, this applies to both underscored and "regular" variables.
+            assert sys.__stdin__ is None, f"sys.__stdin__ is not None: {sys.__stdin__}"
+            assert sys.__stdout__ is None, f"sys.__stdout__ is not None: {sys.__stdout__}"
+            assert sys.__stderr__ is None, f"sys.__stderr__ is not None: {sys.__stderr__}"
+
+            assert sys.stdin is None, f"sys.stdin is not None: {sys.stdin}"
+            assert sys.stdout is None, f"sys.stdout is not None: {sys.stdout}"
+            assert sys.stderr is None, f"sys.stderr is not None: {sys.stderr}"
+        except Exception as e:
+            try:
+                error_file = sys.argv[1]
+                with open(error_file, "w", encoding="utf-8") as fp:
+                    import traceback
+                    fp.write(traceback.format_exc())
+            except Exception:
+                sys.exit(1)
+        """,
+        pyi_args=['--windowed'],
+        app_args=[str(error_file)],
+    )
+
+    if error_file.is_file():
+        error_text = error_file.read_text(encoding='utf-8')
+        pytest.fail(f"Test program wrote error file (see below)!\n{error_text}")
+
+
+@pytest.mark.win32
 def test_subprocess_in_windowed_mode(pyi_windowed_builder):
     """Test invoking subprocesses from a PyInstaller app built in windowed mode."""
 
