@@ -230,11 +230,13 @@ class AppBuilder:
         self.script = str(script)  # might be a pathlib.Path at this point!
         assert os.path.exists(self.script), f'Script {self.script!r} not found.'
 
+        start_time = time.time()
         self._display_message('TEST-SCRIPT', 'Starting build...')
         if not self._test_building(args=pyi_args):
             pytest.fail(f'Building of {script} failed.')
 
-        self._display_message('TEST-SCRIPT', 'Build finished, now running executable...')
+        elapsed = time.time() - start_time
+        self._display_message('TEST-SCRIPT', f'Build finished in {elapsed:.1f} seconds, now running executable...')
         self._test_executables(app_name, args=app_args, run_from_path=run_from_path, **kwargs)
         self._display_message('TEST-SCRIPT', 'Running executable finished.')
 
