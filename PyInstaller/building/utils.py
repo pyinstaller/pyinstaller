@@ -16,7 +16,6 @@ import io
 import marshal
 import os
 import pathlib
-import platform
 import shutil
 import struct
 import subprocess
@@ -173,7 +172,7 @@ def process_collected_binary(
 
     # Prepare cache directory path. Cache is tied to python major/minor version, but also to various processing options.
     pyver = f'py{sys.version_info[0]}{sys.version_info[1]}'
-    arch = platform.architecture()[0]
+    arch = compat.architecture
     cache_dir = os.path.join(
         CONF['cachedir'],
         f'bincache{use_strip:d}{use_upx:d}{pyver}{arch}',
