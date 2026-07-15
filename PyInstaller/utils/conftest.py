@@ -153,8 +153,9 @@ def data_dir(
 
 
 class AppBuilder:
-    def __init__(self, tmp_path, request, bundle_mode):
+    def __init__(self, tmp_path, bincache_path, request, bundle_mode):
         self._tmp_path = tmp_path
+        self._bincache_path = bincache_path
         self._request = request
         self._mode = bundle_mode
         self._spec_dir = tmp_path
@@ -482,8 +483,8 @@ class AppBuilder:
         pyi_args = [self.script, *default_args, *args]
         # TODO: fix return code in running PyInstaller programmatically.
         PYI_CONFIG = configure.get_config()
-        # Override CACHEDIR for PyInstaller; relocate cache into `self._tmp_path`.
-        PYI_CONFIG['cachedir'] = str(self._tmp_path)
+        # Override CACHEDIR for PyInstaller; relocate cache into `self._bincache_path`.
+        PYI_CONFIG['cachedir'] = str(self._bincache_path)
 
         pyi_main.run(pyi_args, PYI_CONFIG)
         retcode = 0
@@ -528,9 +529,15 @@ def pyi_modgraph():
     initialize_modgraph()
 
 
+# Per-session binary cache directory.
+@pytest.fixture(scope='session')
+def pyi_bincache(tmp_path_factory):
+    return tmp_path_factory.mktemp("pyi-bincache-")
+
+
 # Run by default test as onedir and onefile.
 @pytest.fixture(params=['onedir', 'onefile'])
-def pyi_builder(tmp_path, monkeypatch, request, pyi_modgraph):
+def pyi_builder(tmp_path, monkeypatch, request, pyi_modgraph, pyi_bincache):
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'])
     # PyInstaller or a test case might manipulate 'sys.path'. Reset it for every test.
@@ -541,7 +548,7 @@ def pyi_builder(tmp_path, monkeypatch, request, pyi_modgraph):
     # as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    yield AppBuilder(tmp_path, request, request.param)
+    yield AppBuilder(tmp_path, pyi_bincache, request, request.param)
 
     # Clean up the temporary directory of a successful test
     if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
@@ -551,7 +558,7 @@ def pyi_builder(tmp_path, monkeypatch, request, pyi_modgraph):
 
 # Fixture for .spec based tests. With .spec it does not make sense to differentiate onefile/onedir mode.
 @pytest.fixture
-def pyi_builder_spec(tmp_path, request, monkeypatch, pyi_modgraph):
+def pyi_builder_spec(tmp_path, request, monkeypatch, pyi_modgraph, pyi_bincache):
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'])
     # Set current working directory to
@@ -562,7 +569,7 @@ def pyi_builder_spec(tmp_path, request, monkeypatch, pyi_modgraph):
     # as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    yield AppBuilder(tmp_path, request, None)
+    yield AppBuilder(tmp_path, pyi_bincache, request, None)
 
     # Clean up the temporary directory of a successful test
     if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
