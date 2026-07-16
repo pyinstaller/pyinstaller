@@ -254,11 +254,12 @@ jobs:
         run: |
           echo "PYTEST_DEBUG_TEMPROOT=$RUNNER_TEMP" >> $GITHUB_ENV
 
-      # Attempt to mitigate test failures on x86_64 macOS runners due to lost time slices.
-      - name: Allow single re-run of every failed test
+      # Attempt to mitigate test failures on x86_64 macOS runners due to slow(er) builds. Increase the default
+      # test timeout from 10 minutes to 15 minutes, and allow a single re-run of every failed test.
+      - name: Mitigate issues with slow(er) builds
         if: ${{ startsWith(matrix.os, 'macos') && endsWith(matrix.os, 'intel') }}
         run: |
-          echo "PYTEST_ADDOPTS=--reruns=1 --reruns-delay=30" >> $GITHUB_ENV
+          echo "PYTEST_ADDOPTS=--timeout=900 --reruns=1 --reruns-delay=30" >> $GITHUB_ENV
           # This is necessary to activate re-runs on tests in test_qt.py that have @pytest.mark.flaky() marker
           # with condition argument.
           echo "PYINSTALLER_TEST_FORCE_FLAKY_RERUN=1" >> $GITHUB_ENV
