@@ -18,6 +18,7 @@
 #ifdef _WIN32
     #include <windows.h>
     #include <wchar.h>
+    #include <tlhelp32.h> /* CreateToolhelp32Snapshot, Process32FirstW, Process32NextW */
 #else
     #include <unistd.h>
     #include <signal.h>  /* raise */
@@ -43,7 +44,10 @@
 
 #if defined(__APPLE__)
     #include <mach-o/dyld.h>  /* _NSGetExecutablePath() */
+    #include <libproc.h> /* proc_pidpath() */
 #endif
+
+#include <sys/stat.h>  /* stat() */
 
 /* PyInstaller headers. */
 #include "pyi_main.h"
@@ -92,6 +96,8 @@ static int _pyi_main_onefile_parent(struct PYI_CONTEXT *pyi_ctx);
 
 static int _pyi_main_resolve_executable(struct PYI_CONTEXT *pyi_context);
 static int _pyi_main_resolve_pkg_archive(struct PYI_CONTEXT *pyi_context);
+
+static int _pyi_main_onefile_child_security_check(struct PYI_CONTEXT *pyi_context);
 
 
 int
@@ -456,6 +462,14 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
             }
 
             free(env_var_value);
+
+            /* Perform additional security validation to prevent an attacker
+             * from tricking us into using an arbitrary _PYI_APPLICATION_HOME_DIR
+             * via spoofed _PYI_ARCHIVE_FILE and _PYI_PARENT_PROCESS_LEVEL.
+             * See: https://github.com/pyinstaller/pyinstaller/security/advisories/GHSA-9fxf-4qw3-ghmr */
+            if (_pyi_main_onefile_child_security_check(pyi_ctx) < 0) {
+                return -1;
+            }
         }
     } else {
         char executable_dir[PYI_PATH_MAX];
@@ -1509,4 +1523,238 @@ _pyi_main_resolve_pkg_archive(struct PYI_CONTEXT *pyi_ctx)
     }
 
     return 0;
+}
+
+
+/**********************************************************************\
+ *        Additional security check for onefile child process         *
+\**********************************************************************/
+#ifdef _WIN32
+
+static int
+_pyi_main_onefile_child_security_check_win32(struct PYI_CONTEXT *pyi_ctx)
+{
+    DWORD pid;
+    DWORD ppid;
+
+    HANDLE process_snapshot;
+    PROCESSENTRY32W process_entry;
+    BOOL entry_found;
+
+    HANDLE process_handle;
+    wchar_t parent_executable_w[PYI_PATH_MAX];
+    char parent_executable[PYI_PATH_MAX];
+    DWORD parent_executable_length;
+
+    /* Current process ID, for look-up in the process snapshot */
+    pid = GetCurrentProcessId();
+
+    /* Take the process snapshot */
+    process_snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (process_snapshot == INVALID_HANDLE_VALUE) {
+        PYI_ERROR_W(L"Security validation failure: could not obtain process snapshot!\n");
+        return -1;
+    }
+
+    /* Walk the process snapshot to find entry for our process, and get
+     * parent process ID from it. */
+    process_entry.dwSize = sizeof(PROCESSENTRY32);
+    if (!Process32FirstW(process_snapshot, &process_entry)) {
+        PYI_ERROR_W(L"Security validation failure: could not walk the process snapshot!\n");
+        CloseHandle(process_snapshot);
+        return -1;
+    }
+
+    entry_found = FALSE;
+    do {
+        if (process_entry.th32ProcessID == pid) {
+            ppid = process_entry.th32ParentProcessID;
+            entry_found = TRUE;
+            break;
+        }
+    } while(Process32NextW(process_snapshot, &process_entry));
+
+    CloseHandle(process_snapshot);
+
+    if (!entry_found) {
+        PYI_ERROR_W(L"Security validation failure: could not determine parent process ID!\n");
+        return -1;
+    }
+
+    /* Now try to query process for its executable name.
+     * QueryFullProcessImageNameW() seems to return a fully-resolved
+     * path to the executable, even when the parent process is launched
+     * via symbolic link. */
+    process_handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, ppid);
+    if (process_handle == INVALID_HANDLE_VALUE) {
+        PYI_ERROR_W(L"Security validation failure: failed to obtain information about parent proces!\n");
+        return -1;
+    }
+
+    parent_executable_length = PYI_PATH_MAX;
+    if (!QueryFullProcessImageNameW(process_handle, 0, parent_executable_w, &parent_executable_length)) {
+        PYI_ERROR_W(L"Security validation failure: failed to obtain executable path for parent proces!\n");
+        CloseHandle(process_handle);
+        return -1;
+    }
+
+    CloseHandle(process_handle);
+
+    PYI_DEBUG_W(L"SECURITY: parent process executable: %ls\n", parent_executable_w);
+
+    /* Convert to UTF-8 for comparison */
+    if (!pyi_win32_wcs_to_utf8(parent_executable_w, parent_executable, PYI_PATH_MAX)) {
+        PYI_ERROR_W(L"Security validation failure: failed to convert parent process executable path to UTF-8!\n");
+        return -1;
+    }
+
+    /* Ensure that same executable is used */
+    if (strcmp(parent_executable, pyi_ctx->executable_filename) != 0) {
+        PYI_ERROR_W(L"Security validation failure: parent process has different executable!\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+#elif __APPLE__
+
+static int
+_pyi_main_onefile_child_security_check_macos(struct PYI_CONTEXT *pyi_ctx)
+{
+    /* Try to look up the executable of the parent process - it should
+     * be the same as that of the current process. */
+    pid_t ppid;
+    char parent_executable[PYI_PATH_MAX];
+
+    /* Get parent PID and corresponding executable name. proc_pidpath()
+     * seems to return a fully-resolved path to the executable, even
+     * when the parent process was launched via symbolic link. */
+    ppid = getppid();
+    proc_pidpath(ppid, parent_executable, sizeof(parent_executable));
+
+    PYI_DEBUG("SECURITY: parent process executable: %s\n", parent_executable);
+
+    /* Ensure that same executable is used */
+    if (strcmp(parent_executable, pyi_ctx->executable_filename) != 0) {
+        PYI_ERROR("Security validation failure: parent process has different executable!\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+#else
+
+static int
+_pyi_main_onefile_child_security_check_posix(struct PYI_CONTEXT *pyi_ctx)
+{
+    /* Try to look up the executable of the parent process - it should
+     * be the same as that of the current process. */
+    pid_t ppid;
+    ssize_t name_len = -1;
+    char proc_path[PYI_PATH_MAX];
+    char parent_executable[PYI_PATH_MAX];
+
+    struct stat executable_stat;
+    struct stat application_home_dir_stat;
+
+#if defined(__linux__) || defined(__CYGWIN__)
+    const char *proc_path_fmt = "/proc/%d/exe";
+#elif defined(__FreeBSD__)
+    const char *proc_path_fmt = "/proc/%d/file";
+#elif defined(__sun)
+    const char *proc_path_fmt = "/proc/%d/path/a.out";
+#else
+    const char *proc_path_fmt = NULL;
+#endif
+
+    if (!proc_path_fmt) {
+        return 0; /* Unsupported POSIX platform - skip the check */
+    }
+
+    /* Get parent PID */
+    ppid = getppid();
+
+    /* Try to look up the /proc entry. The entry points at "true" file
+     * location, i.e., fully canonicalized and with all symbolic links
+     * resolved. */
+    if (snprintf(proc_path, PYI_PATH_MAX, proc_path_fmt, ppid) >= PYI_PATH_MAX) {
+        PYI_ERROR("Security validation failure: could not format /proc entry path!\n");
+        return -1;
+    }
+
+    name_len = readlink(proc_path, parent_executable, PYI_PATH_MAX - 1);
+    if (name_len == -1) {
+        PYI_ERROR("Security validation failure: could not determine the executable path for parent process!\n");
+        return -1;
+    }
+
+    /* Output is not yet NULL-terminated, so we need to do it using returned byte count. */
+    parent_executable[name_len] = 0;
+
+    PYI_DEBUG("SECURITY: parent process executable: %s\n", parent_executable);
+
+    /* Ensure that same executable is used */
+    if (strcmp(parent_executable, pyi_ctx->executable_filename) != 0) {
+        PYI_ERROR("Security validation failure: parent process has different executable!\n");
+        return -1;
+    }
+
+    /* Additional checks for executables with setuid bit */
+    if (stat(pyi_ctx->executable_filename, &executable_stat) < 0) {
+        PYI_ERROR("Security validation failure: could not stat() the executable!\n");
+        return -1;
+    }
+
+    if (executable_stat.st_mode & S_ISUID) {
+        uid_t euid;
+        uid_t permissions;
+
+        PYI_DEBUG("SECURITY: setuid bit is set - verifying owner and permissions of application's home directory...\n");
+
+        if (stat(pyi_ctx->application_home_dir, &application_home_dir_stat) < 0) {
+            PYI_ERROR("Security validation failure: could not stat() the application's home directory!\n");
+            return -1;
+        }
+
+        /* Ensure that owner ID of application's temporary directory matches the effective user ID */
+        euid = geteuid();
+        if (application_home_dir_stat.st_uid != euid) {
+            PYI_ERROR(
+                "Security validation failure: owner ID of application's home directory (%d) does not match the effective user ID (%d)!\n",
+                application_home_dir_stat.st_uid, euid
+            );
+            return -1;
+        }
+
+        /* Ensure that the application's home directory has permissions used by bootloader when
+         * creating ephemeral application directory (i.e., S_IRWXU = 0700) */
+        permissions = application_home_dir_stat.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+        if (permissions != S_IRWXU) {
+            PYI_ERROR("Security validation failure: application's home directory has invalid permissions (0%o)!\n", permissions);
+            return -1;
+        }
+    } else {
+        PYI_DEBUG("SECURITY: setuid bit is not set.\n");
+    }
+
+    return 0;
+}
+
+#endif
+
+static int
+_pyi_main_onefile_child_security_check(struct PYI_CONTEXT *pyi_ctx)
+{
+    PYI_DEBUG("SECURITY: performing additional security validation for onefile child process...\n");
+
+    /* Use OS-specific implementation */
+#ifdef _WIN32
+    return _pyi_main_onefile_child_security_check_win32(pyi_ctx);
+#elif __APPLE__
+    return _pyi_main_onefile_child_security_check_macos(pyi_ctx);
+#else
+    return _pyi_main_onefile_child_security_check_posix(pyi_ctx);
+#endif
 }

@@ -1,0 +1,12 @@
+Implement additional validation of inherited environment for ``onefile``
+execution codepaths, in order to prevent execution with spoofed environment;
+see `GHSA-9fxf-4qw3-ghmr <https://github.com/pyinstaller/pyinstaller/security/advisories/GHSA-9fxf-4qw3-ghmr>`_.
+When running as a child ``onefile`` process (i.e., the main application
+process or worker sub-process spawned via ``sys.excutable``), the bootloader
+now attempts to look up the parent process ID, and resolve its executable.
+The path to the parent process' executable must match that of the current
+process' executable, otherwise an error is raised. This check is
+implemented on Windows, macOS, and POSIX platforms where the look-up
+is possible through ``procfs`` filesystem; this includes Linux, Cygwin,
+FreeBSD, and Solaris, but not OpenBSD nor AIX. For additional
+compatibility implications, see the **Breaking changes** section.

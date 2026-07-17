@@ -1,0 +1,13 @@
+(POSIX) When running as a ``onefile`` child process and the executable
+has ``setuid`` bit set, the bootloader now validates the owner and
+permissions on the (inherited) temporary directory. The owner ID of the
+temporary directory must match the effective user ID under which the
+process is running, and permissions on the temporary directory are need
+to be `0700`. This might (further) break applications that start in
+privileged mode and then attempt to drop privileges without transferring
+the ownership of the temporary directory to the unprivileged user;
+while formerly this would result in the main application process locking
+itself (as well as any sub-processes spawned by it via ``sys.executable``)
+from the temporary directory, it will now also cause any subprocess
+spawned via ``sys.excutable`` to fail the security validation the
+bootloader.
