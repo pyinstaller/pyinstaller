@@ -31,7 +31,7 @@ class ZlibArchiveWriter:
     """
     _PYZ_MAGIC_PATTERN = b'PYZ\0'
     _HEADER_LENGTH = 12 + 5
-    _COMPRESSION_LEVEL = 6  # zlib compression level
+    _COMPRESSION_LEVEL = int(os.environ.get("PYINSTALLER_ZLIB_COMPRESSION_LEVEL", 6))  # zlib compression level
 
     def __init__(self, filename, entries, code_dict=None):
         """
@@ -129,7 +129,7 @@ class CArchiveWriter:
     _TOC_ENTRY_FORMAT = '!IIIIBc'
     _TOC_ENTRY_LENGTH = struct.calcsize(_TOC_ENTRY_FORMAT)
 
-    _COMPRESSION_LEVEL = 9  # zlib compression level
+    _COMPRESSION_LEVEL = int(os.environ.get("PYINSTALLER_ZLIB_COMPRESSION_LEVEL", 9))  # zlib compression level
 
     def __init__(self, filename, entries, pylib_name):
         """

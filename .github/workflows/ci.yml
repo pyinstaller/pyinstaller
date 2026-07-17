@@ -20,6 +20,8 @@ env:
   PYINSTALLER_VERIFY_BUNDLE_SIGNATURE: 1
   # Enable PEP 597 EncodingWarnings
   PYTHONWARNDEFAULTENCODING: true
+  # Use minimal compression for speed
+  PYINSTALLER_ZLIB_COMPRESSION_LEVEL: 1
 
 permissions:
   contents: read # to fetch code (actions/checkout)
