@@ -1319,7 +1319,7 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename, char
      * In that case, /proc/self/exe points to the ld.so executable, and we need
      * to ignore it. */
 #if defined(__linux__)
-    if (_pyi_is_ld_linux_so(executable_filename) == true) {
+    if (name_len != -1 && _pyi_is_ld_linux_so(executable_filename) == true) {
         PYI_DEBUG("LOADER: resolved executable file %s is ld.so dynamic linker/loader - storing its name.\n", executable_filename);
         strncpy(loader_filename, executable_filename, PYI_PATH_MAX); /* both buffers are guaranteed to be PYI_PATH_MAX-sized */
         name_len = -1;
