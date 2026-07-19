@@ -1,0 +1,1 @@
+(macOS) Document Finder's working-directory behavior.

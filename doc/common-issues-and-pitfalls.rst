@@ -189,7 +189,16 @@ the external program.
 .. Note::
     If you are building a `macOS .app bundle <macOS app bundles>`_, you
     should be aware that when launched from Finder, the app process runs
-    in an environment with reduced set of environment variables.
+    with a launch context that differs from a Terminal session.
+    In particular, its current working directory is not the directory that
+    contains the app bundle and is commonly ``/``.
+    Therefore, a relative file path can resolve to a different location between
+    a Terminal launch and a Finder launch.
+    For portable bundled-resource location, anchor paths to ``__file__``; see
+    :ref:`run-time information`.
+
+    The process also runs in an environment with a reduced set of environment
+    variables.
     Most notably, the ``PATH`` environment variable is set to only
     ``/usr/bin:/bin:/usr/sbin:/sbin``. Therefore, programs installed in
     locations that are typically in ``PATH`` when running a Terminal
