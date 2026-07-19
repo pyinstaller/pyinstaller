@@ -18,7 +18,7 @@ future==1.0.0
 gevent==26.5.0; python_version >= "3.9"
 ipython==9.15.0; python_version >= "3.12"
 keyring==25.7.0; python_version >= "3.9"
-matplotlib==3.11.0; python_version >= "3.11"
+matplotlib==3.11.1; python_version >= "3.11"
 numpy==2.5.1; python_version >= "3.12"
 pandas==3.0.3; python_version >= "3.11"  # pyup: != 3.0.4  # yanked
 pygments==2.20.0; python_version >= "3.9"
