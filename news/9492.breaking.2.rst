@@ -1,0 +1,3 @@
+(OpenBSD, AIX) Running ``onefile`` executables with ``setuid`` bit set
+is explicitly disallowed, due to lack of support for verifying the
+executable of the parent process and security implications.

@@ -1651,6 +1651,7 @@ _pyi_main_onefile_child_security_check_posix(struct PYI_CONTEXT *pyi_ctx)
 {
     /* Try to look up the executable of the parent process - it should
      * be the same as that of the current process. */
+    int has_setuid;
     pid_t ppid;
     ssize_t name_len = -1;
     char proc_path[PYI_PATH_MAX];
@@ -1669,8 +1670,25 @@ _pyi_main_onefile_child_security_check_posix(struct PYI_CONTEXT *pyi_ctx)
     const char *proc_path_fmt = NULL;
 #endif
 
+    /* Check if executable has setuid bit set */
+    if (stat(pyi_ctx->executable_filename, &executable_stat) < 0) {
+        PYI_ERROR("Security validation failure: could not stat() the executable!\n");
+        return -1;
+    }
+    has_setuid = executable_stat.st_mode & S_ISUID;
+    PYI_DEBUG("SECURITY: setuid bit set: %d\n", has_setuid);
+
+    /* Handle unsupported POSIX platforms, where we have no way to look up
+     * the parent executable. Disallow setuid-enabled executables, otherwise
+     * skip the check. */
     if (!proc_path_fmt) {
-        return 0; /* Unsupported POSIX platform - skip the check */
+        if (has_setuid) {
+            PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this platform!\n");
+            return -1;
+        } else {
+            PYI_DEBUG("SECURITY: unsupported platform - skipping check for non-setuid executable!\n");
+            return 0;
+        }
     }
 
     /* Get parent PID */
@@ -1702,12 +1720,7 @@ _pyi_main_onefile_child_security_check_posix(struct PYI_CONTEXT *pyi_ctx)
     }
 
     /* Additional checks for executables with setuid bit */
-    if (stat(pyi_ctx->executable_filename, &executable_stat) < 0) {
-        PYI_ERROR("Security validation failure: could not stat() the executable!\n");
-        return -1;
-    }
-
-    if (executable_stat.st_mode & S_ISUID) {
+    if (has_setuid) {
         uid_t euid;
         uid_t permissions;
 
@@ -1735,8 +1748,6 @@ _pyi_main_onefile_child_security_check_posix(struct PYI_CONTEXT *pyi_ctx)
             PYI_ERROR("Security validation failure: application's home directory has invalid permissions (0%o)!\n", permissions);
             return -1;
         }
-    } else {
-        PYI_DEBUG("SECURITY: setuid bit is not set.\n");
     }
 
     return 0;
