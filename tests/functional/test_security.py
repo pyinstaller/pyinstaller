@@ -16,10 +16,12 @@ import subprocess
 import sys
 
 from PyInstaller import compat
+from PyInstaller.utils.tests import skipif
 
 
 # Check whether application's top level directory can be hijacked via manipulation of _PYI_ environment variables.
 # See: https://github.com/pyinstaller/pyinstaller/security/advisories/GHSA-9fxf-4qw3-ghmr
+@skipif(compat.is_aix or compat.is_openbsd or compat.is_hpux, reason="Mitigation is not available on this platform.")
 def test_application_home_directory_hijack(pyi_builder, tmp_path):
     mode = pyi_builder._mode  # Original mode
 
