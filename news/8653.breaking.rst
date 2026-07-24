@@ -1,0 +1,6 @@
+UPX is not enabled by default anymore (even if available and supported
+on the target OS, i.e., Windows). Instead of opting out of its use with
+:option:`noupx`, it must now be explicitly opted in using :option:`upx`,
+or by setting ``upx=True`` in the spec file. The change applies only to
+newly-generated spec files (including spec files that are generated
+on-the-fly).
