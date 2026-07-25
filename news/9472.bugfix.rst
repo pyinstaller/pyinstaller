@@ -1,0 +1,3 @@
+Fix ``--contents-directory`` values containing backslashes (e.g. Windows-style
+paths) being written to the generated .spec file as unescaped string literals,
+which silently turned escape sequences such as ``\t`` into control characters.

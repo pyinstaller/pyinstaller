@@ -761,7 +761,7 @@ def main(
         # The the text value 'None' means - use default icon.
         icon_file = 'None'
     if contents_directory:
-        exe_options += "\n    contents_directory='%s'," % (contents_directory or "_internal")
+        exe_options += "\n    contents_directory=%r," % (contents_directory,)
     if hide_console:
         exe_options += "\n    hide_console='%s'," % hide_console
 

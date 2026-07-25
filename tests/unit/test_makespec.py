@@ -80,3 +80,51 @@ def test_add_data(capsys):
     options = parser.parse_args(["--add-data=a:b", "--add-data=c:d", "--add-binary=e:f"])
     assert options.datas == [("a", "b"), ("c", "d")]
     assert options.binaries == [("e", "f")]
+
+
+def test_contents_directory_backslash_escaped(tmp_path):
+    """
+    A Windows-style ``--contents-directory`` must be written to the .spec file as a valid Python
+    string literal; using plain interpolation turned ``env\\test`` into a literal tab character.
+    """
+    script = tmp_path / "app.py"
+    script.write_text("print(1)\n")
+
+    parser = argparse.ArgumentParser()
+    makespec.__add_options(parser)
+    options = vars(parser.parse_args([r"--contents-directory=env\test"]))
+    options["specpath"] = str(tmp_path)
+    options["name"] = "app"
+
+    spec_file = makespec.main([str(script)], **options)
+
+    namespace = {}
+
+    def _EXE(*args, **kwargs):
+        namespace.update(kwargs)
+
+    class _Analysis:
+        def __init__(self, *args, **kwargs):
+            self.pure = []
+            self.binaries = []
+            self.datas = []
+            self.scripts = []
+            self.zipfiles = []
+            self.zipped_data = []
+            self.dependencies = []
+
+    with open(spec_file) as fp:
+        source = fp.read()
+
+    exec(
+        compile(source, spec_file, "exec"),
+        {
+            "EXE": _EXE,
+            "Analysis": _Analysis,
+            "PYZ": lambda *args, **kwargs: None,
+            "COLLECT": lambda *args, **kwargs: None,
+            "BUNDLE": lambda *args, **kwargs: None,
+        },
+    )
+
+    assert namespace["contents_directory"] == r"env\test"
