@@ -45,7 +45,10 @@ def make_path_spec_relative(filename, spec_dir):
     else:
         filename = os.path.abspath(filename)
         # Make it relative.
-        filename = os.path.relpath(filename, start=spec_dir)
+        try:
+            filename = os.path.relpath(filename, start=spec_dir)
+        except ValueError:
+            pass
         return filename
 
 
