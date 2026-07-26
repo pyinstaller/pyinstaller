@@ -1,0 +1,7 @@
+(POSIX) Executables built in ``onedir`` mode with ``setuid`` bit set
+now validate the owner and permissions on their contents directory
+(typically the ``_internal`` directory); the owner ID must match the
+effective user ID under which the process is running, and the
+permissions on the directory need to be `0700`. This aims to prevent
+unprivileged users from modifying contents of an application that
+runs in privileged mode.

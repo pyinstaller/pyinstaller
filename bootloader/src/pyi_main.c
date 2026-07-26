@@ -540,6 +540,13 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                 snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", executable_dir);
             }
         }
+
+        /* Check ownership and permissions on the top-level application
+         * directory (applicable only on POSIX and only if setuid bit
+         * is set; otherwise, this check is a no-op) */
+        if (pyi_security_verify_application_home_dir(pyi_ctx) < 0) {
+            return -1;
+        }
     }
 
     PYI_DEBUG("LOADER: application's top-level directory: %s\n", pyi_ctx->application_home_dir);
