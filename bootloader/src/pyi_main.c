@@ -313,6 +313,14 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
              * splash-screen-enabled onefile application after restart.
              * Applicable only to POSIX systems other than macOS and Cygwin. */
             if (pyi_ctx->is_onefile) {
+                /* Check that build has splash screen enabled; otherwise,
+                 * we might be dealing with a spoofed environment that is
+                 * trying to trick us into executing this particular
+                 * codepath... */
+                if (!pyi_ctx->has_splash) {
+                    PYI_ERROR("Security validation failure: unexpected process level!\n");
+                    return -1;
+                }
                 pyi_ctx->process_level = PYI_PROCESS_LEVEL_PARENT;
             } else {
                 pyi_ctx->process_level = PYI_PROCESS_LEVEL_MAIN;
