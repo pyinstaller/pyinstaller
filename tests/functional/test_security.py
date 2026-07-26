@@ -15,14 +15,40 @@ import pathlib
 import subprocess
 import sys
 
+import pytest
+
 from PyInstaller import compat
 from PyInstaller.utils.tests import skipif
+
+# PYI_PROCESS_LEVEL enum values from bootloader/src/pyi_main.h
+PYI_PROCESS_LEVEL_UNKNOWN = -2
+PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART = -1
+PYI_PROCESS_LEVEL_PARENT = 0
+PYI_PROCESS_LEVEL_MAIN = 1
+PYI_PROCESS_LEVEL_SUBPROCESS = 2
 
 
 # Check whether application's top level directory can be hijacked via manipulation of _PYI_ environment variables.
 # See: https://github.com/pyinstaller/pyinstaller/security/advisories/GHSA-9fxf-4qw3-ghmr
 @skipif(compat.is_aix or compat.is_openbsd or compat.is_hpux, reason="Mitigation is not available on this platform.")
-def test_application_home_directory_hijack(pyi_builder, tmp_path):
+@pytest.mark.parametrize(
+    'parent_level',
+    [
+        PYI_PROCESS_LEVEL_UNKNOWN,
+        PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART,
+        PYI_PROCESS_LEVEL_PARENT,
+        PYI_PROCESS_LEVEL_MAIN,
+        PYI_PROCESS_LEVEL_SUBPROCESS,
+    ],
+    ids=[
+        'UNKNOWN',
+        'PARENT_NEEDS_RESTART',
+        'PARENT',
+        'MAIN',
+        'SUBPROCESS',
+    ],
+)
+def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
     mode = pyi_builder._mode  # Original mode
 
     # Create files with secrets
@@ -103,11 +129,8 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path):
         # within the bootloader...
         archive_path = archive_path.replace('/', '\\')
     fake_env['_PYI_ARCHIVE_FILE'] = archive_path
-    # Make the process believe it already has a parent. In onedir build, this would mean that the process is a worker
-    # sub-process spawned from the main application process. In onefile build, this would mean that the process is the
-    # main application process, and should use the ephemeral top-level application directory that was prepared by its
-    # parent.
-    fake_env['_PYI_PARENT_PROCESS_LEVEL'] = '0'
+    # Try to trick process into running a specific codepath by manipulating its parent level.
+    fake_env['_PYI_PARENT_PROCESS_LEVEL'] = str(parent_level)
     # Try to hijack the top-level application directory
     fake_env['_PYI_APPLICATION_HOME_DIR'] = str(fake_app_dir)
 
@@ -127,16 +150,39 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path):
     else:
         print("Captured stderr: N/A")
 
+    # PYI_PROCESS_LEVEL_SUBPROCESS should be an invalid *parent* process level, regardless of mode.
+    if parent_level == PYI_PROCESS_LEVEL_SUBPROCESS:
+        assert p.returncode not in {0, 42}
+        assert f"Invalid parent process level: {parent_level}" in p.stderr
+        return
+
+    # PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART should be invalid on Windows, macOS, and Cygwin, regardless of mode.
+    non_posix = compat.is_win or compat.is_darwin or compat.is_cygwin
+    if non_posix and parent_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART:
+        assert p.returncode not in {0, 42}
+        assert f"Invalid parent process level: {parent_level}" in p.stderr
+        return
+
     if mode == 'onedir':
         # In onedir build, the _PYI_APPLICATION_HOME_DIR environment variable should not be used at all - so the test
-        # application should run normally - even if it is tricked into believing to be a sub-process of a onedir main
+        # application should run normally, even if it is tricked into believing to be a sub-process of a onedir main
         # application process...
         assert p.returncode == 0
     else:
-        # Onefile mode - the test application should exit with non-zero return code. However, the error code should
-        # also not be 42, which is used by the test program to indicate that it read the secret file in top-level
-        # application directory and found it to be different from the expected one.
-        assert p.returncode not in {0, 42}
-        # Check for specific error message, which indicates that the process exited due to failed security validation
-        # in the bootloader.
-        assert "Security validation failure: parent process has different executable!" in p.stderr
+        # Onefile mode
+        if parent_level == PYI_PROCESS_LEVEL_UNKNOWN:
+            # This is same as _PYI_PARENT_PROCESS_LEVEL not being set at all; the process should run as parent process
+            # of onefile application and set up new environment. Thus, the test application should run normally.
+            assert p.returncode == 0
+        elif parent_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART:
+            # This level is valid only in POSIX onefile builds with splash screen enabled. On non-POSIX systems, it
+            # should exit with message about unrecognized level (handled by an earlier check). On POSIX systems, it
+            # should similarly exit with message about unexpected level, since splash screen is not enabled on the
+            # build; if it were enabled, the validation of directory name would fail instead.
+            assert p.returncode not in {0, 42}
+            assert "Security validation failure: unexpected process level!" in p.stderr or \
+                "Security validation failure: unexpected name of application's home directory!" in p.stderr
+        else:  # PYI_PROCESS_LEVEL_PARENT, PYI_PROCESS_LEVEL_MAIN
+            # The process is supposed to be either These should fail the parent process verification in the bootloader.
+            assert p.returncode not in {0, 42}
+            assert "Security validation failure: parent process has different executable!" in p.stderr
