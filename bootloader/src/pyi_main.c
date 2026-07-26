@@ -403,6 +403,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
      * and based on that, determine the application's top-level directory. */
     if (pyi_ctx->is_onefile) {
         bool create_temp_dir;
+        bool is_parent = true;
 
         if (pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART) {
             /* POSIX build with splash screen enabled; before restart. */
@@ -423,6 +424,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                 "main application process" : "spawned subprocess"
             );
             create_temp_dir = false; /* inherit */
+            is_parent = false; /* child process */
         }
 
         if (create_temp_dir) {
@@ -483,11 +485,30 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
              * from tricking us into using an arbitrary _PYI_APPLICATION_HOME_DIR
              * via spoofed _PYI_ARCHIVE_FILE and _PYI_PARENT_PROCESS_LEVEL.
              * See: https://github.com/pyinstaller/pyinstaller/security/advisories/GHSA-9fxf-4qw3-ghmr */
-            if (pyi_security_verify_parent_proces(pyi_ctx) < 0) {
-                return -1;
-            }
-            if (pyi_security_verify_application_home_dir(pyi_ctx) < 0) {
-                return -1;
+            if (is_parent) {
+                /* This codepath should be reached only in onefile POSIX
+                 * builds with splash screen, where the parent process
+                 * needs to set LD_LIBRARY_PATH and restart itself before
+                 * running splash screen. In this case, we cannot verify
+                 * the parent process; but we can verify the inherited
+                 * top-level application directory, on the off chance
+                 * that executable has setuid bit set... */
+                if (pyi_security_verify_application_home_dir(pyi_ctx) < 0) {
+                    return -1;
+                }
+            } else {
+                /* This is supposed to be a onefile child process; therefore,
+                 * its parent should be a valid onefile process, and should
+                 * be using the same executable... */
+                if (pyi_security_verify_parent_proces(pyi_ctx) < 0) {
+                    return -1;
+                }
+                /* Check ownership and permissions on the inherited top-level
+                 * application directory (applicable only on POSIX and only
+                 * if setuid bit is set; otherwise, this check is a no-op) */
+                if (pyi_security_verify_application_home_dir(pyi_ctx) < 0) {
+                    return -1;
+                }
             }
         }
     } else {
