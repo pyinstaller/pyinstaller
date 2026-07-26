@@ -148,6 +148,12 @@ struct PYI_CONTEXT
      * environment variable. */
     unsigned char suppress_splash;
 
+    /* Flag indicating whether the executable has `setuid` bit set or
+     * not. Applicable only to POSIX platforms, where it is used to
+     * toggle additional security checks. On other platforms, the value
+     * is left at 0. */
+    unsigned char has_setuid;
+
     /* Splash screen context structure. */
     struct SPLASH_CONTEXT *splash;
 

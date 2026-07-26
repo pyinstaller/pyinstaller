@@ -127,6 +127,23 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
     }
     PYI_DEBUG("LOADER: executable file: %s\n", pyi_ctx->executable_filename);
 
+    /* Check if executable set setuid bit set (POSIX platforms only). */
+#if !defined(_WIN32) && !defined(__APPLE__)
+    if (1) {
+        struct stat executable_stat;
+
+        if (stat(pyi_ctx->executable_filename, &executable_stat) < 0) {
+            PYI_ERROR("Security validation failure: could not stat() the executable!\n");
+            return -1;
+        }
+        pyi_ctx->has_setuid = (executable_stat.st_mode & S_ISUID) == S_ISUID;
+
+        if (pyi_ctx->has_setuid) {
+            PYI_DEBUG("SECURITY: executable has setuid bit set.\n");
+        }
+    }
+#endif
+
     /* Resolve main PKG archive - embedded or side-loaded. */
     if (_pyi_main_resolve_pkg_archive(pyi_ctx) < 0) {
         return -1;
@@ -1651,13 +1668,11 @@ _pyi_main_onefile_child_security_check_posix(struct PYI_CONTEXT *pyi_ctx)
 {
     /* Try to look up the executable of the parent process - it should
      * be the same as that of the current process. */
-    int has_setuid;
     pid_t ppid;
     ssize_t name_len = -1;
     char proc_path[PYI_PATH_MAX];
     char parent_executable[PYI_PATH_MAX];
 
-    struct stat executable_stat;
     struct stat application_home_dir_stat;
 
 #if defined(__linux__) || defined(__CYGWIN__)
@@ -1670,19 +1685,11 @@ _pyi_main_onefile_child_security_check_posix(struct PYI_CONTEXT *pyi_ctx)
     const char *proc_path_fmt = NULL;
 #endif
 
-    /* Check if executable has setuid bit set */
-    if (stat(pyi_ctx->executable_filename, &executable_stat) < 0) {
-        PYI_ERROR("Security validation failure: could not stat() the executable!\n");
-        return -1;
-    }
-    has_setuid = executable_stat.st_mode & S_ISUID;
-    PYI_DEBUG("SECURITY: setuid bit set: %d\n", has_setuid);
-
     /* Handle unsupported POSIX platforms, where we have no way to look up
      * the parent executable. Disallow setuid-enabled executables, otherwise
      * skip the check. */
     if (!proc_path_fmt) {
-        if (has_setuid) {
+        if (pyi_ctx->has_setuid) {
             PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this platform!\n");
             return -1;
         } else {
@@ -1720,7 +1727,7 @@ _pyi_main_onefile_child_security_check_posix(struct PYI_CONTEXT *pyi_ctx)
     }
 
     /* Additional checks for executables with setuid bit */
-    if (has_setuid) {
+    if (pyi_ctx->has_setuid) {
         uid_t euid;
         uid_t permissions;
 
