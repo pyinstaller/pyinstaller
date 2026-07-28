@@ -32,6 +32,7 @@
 
 #include "pyi_global.h"
 #include "pyi_main.h"
+#include "pyi_path.h"
 #include "pyi_utils.h"
 
 
@@ -246,9 +247,13 @@ pyi_security_verify_parent_proces(const struct PYI_CONTEXT *pyi_ctx)
 /**********************************************************************\
  *            Verification of application's home directory            *
 \**********************************************************************/
-/* Verify that application's top-level / home directory has correct owner
- * and permissions. Currently implemented only on POSIX platforms, where,
- * if the executable has setuid bit set, we require:
+/* Verify the application's top-level / home directory.
+ *
+ * In onefile mode, check that the directory's name matches the format
+ * used by PyInstaller's bootloader.
+ *
+ * On POSIX platforms, perform additional check for executables with
+ * setuid bit set; in that case, we require:
  *  - the owner ID of the top-level application directory to match the
  *    effective user ID
  *  - permissions on the top-level application directory to be set to
@@ -261,19 +266,10 @@ pyi_security_verify_parent_proces(const struct PYI_CONTEXT *pyi_ctx)
  * it should ensure that setuid-enabled onedir executable has an
  * accompanying contents directory that cannot be modified by a
  * non-privileged user. */
-#if defined(_WIN32) || defined(__APPLE__)
+#if !defined(_WIN32) && !defined(__APPLE__)
 
-int
-pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx)
-{
-    (void)pyi_ctx;
-    return 0;
-}
-
-#else
-
-int
-pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx)
+static int
+pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *pyi_ctx)
 {
     uid_t euid;
     uid_t permissions;
@@ -281,11 +277,11 @@ pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx)
 
     /* Applicable only to executables with setuid bit set. */
     if (!pyi_ctx->has_setuid) {
-        PYI_DEBUG("SECURITY: setuid bit is not set - skipping verification of application's home directory.\n");
+        PYI_DEBUG("SECURITY: setuid bit is not set - skipping verification of owner/permissions of application's home directory.\n");
         return 0;
     }
 
-    PYI_DEBUG("SECURITY: setuid bit is set - verifying application's home directory...\n");
+    PYI_DEBUG("SECURITY: setuid bit is set - verifying owner/permissions of application's home directory...\n");
 
     if (stat(pyi_ctx->application_home_dir, &application_home_dir_stat) < 0) {
         PYI_ERROR("Security validation failure: could not stat() the application's home directory!\n");
@@ -325,3 +321,58 @@ pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx)
 }
 
 #endif
+
+
+int
+pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx)
+{
+    /* In onefile mode, the application home directory name should have
+     * distrinct, PyInstaller-specific format: _MEIXXXXXX */
+    if (pyi_ctx->is_onefile) {
+        char basename[PYI_PATH_MAX];
+        size_t name_len;
+
+        if (!pyi_path_basename(basename, pyi_ctx->application_home_dir)) {
+            PYI_ERROR("Security validation failure: failed to obtain name of application's home directory!\n");
+            return -1;
+        }
+
+        PYI_DEBUG("SECURITY: verifying the name of application's home directory (%s)...\n", basename);
+
+        /* Verify the length of the name:
+         *  - Windows: _MEI + process ID number (in decimal format) + suffix
+         *    added by _wtempnam(); so we check that the name is longer than
+         *    four characters...
+         *  - other platforms: _MEI + six random characters added by mkdtemp();
+         *    so we check that the name is exactly ten characters long... */
+        name_len = strlen(basename);
+
+#ifdef _WIN32
+        if (name_len < 4) {
+            PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
+            return -1;
+        }
+#else
+        if (name_len != 10) {
+            PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
+            return -1;
+        }
+#endif
+
+        /* Verify the prefix */
+        if (strncmp("_MEI", basename, 4) != 0) {
+            PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
+            return -1;
+        }
+    }
+
+    /* POSIX: additional owner/permissions validation when setuid bit is
+     * set on the executable */
+#if !defined(_WIN32) && !defined(__APPLE__)
+    if (pyi_security_verify_application_home_dir_permissions(pyi_ctx) < 0) {
+        return -1;
+    }
+#endif
+
+    return 0;
+}
