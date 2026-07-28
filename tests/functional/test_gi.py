@@ -87,3 +87,29 @@ def test_gi_repository(pyi_builder, repository_name, version):
                 raise ValueError(f"Typelib {{str(module_path)!r}} is not loaded from frozen application's directory!")
         """
     )
+
+
+# GST_PLUGIN_PATH must point at the directory where the gi.repository.Gst hook puts the plugins.
+@importorskip('gi.repository.Gst')
+def test_gi_gst_plugin_path(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import os
+        import sys
+
+        import gi
+        gi.require_version('Gst', '1.0')
+        from gi.repository import Gst
+
+        search_paths = os.environ['GST_PLUGIN_PATH'].split(os.pathsep)
+        print(f"GST_PLUGIN_PATH entries: {search_paths}", file=sys.stderr)
+
+        plugin_dir = os.path.join(sys._MEIPASS, 'gst_plugins')
+        if plugin_dir not in search_paths:
+            raise ValueError(f"Plugin directory {plugin_dir!r} is not in GST_PLUGIN_PATH: {search_paths}")
+
+        missing = [path for path in search_paths if not os.path.isdir(path)]
+        if missing:
+            raise ValueError(f"GST_PLUGIN_PATH contains non-existent directories: {missing}")
+        """
+    )
