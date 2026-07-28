@@ -271,7 +271,7 @@ pyi_create_temporary_application_directory(struct PYI_CONTEXT *pyi_ctx)
     PYI_DEBUG_W(L"LOADER: attempting to create temporary application directory under %ls\n", tempdir_path);
 
     /* Create _MEI + PID prefix */
-    swprintf(prefix, 16, L"_MEI%d", _getpid());
+    swprintf(prefix, 16, L"_MEI%08x", _getpid());
 
     /* Windows does not have a race-free function to create a temporary
      * directory. Thus, we rely on _tempnam, and simply try several times

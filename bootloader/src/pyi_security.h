@@ -22,6 +22,6 @@
 struct PYI_CONTEXT;
 
 int pyi_security_verify_parent_proces(const struct PYI_CONTEXT *pyi_ctx);
-int pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx, unsigned int prefix_pid);
 
 #endif /* PYI_SECURITY_H */

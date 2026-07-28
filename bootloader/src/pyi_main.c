@@ -18,7 +18,7 @@
 #ifdef _WIN32
     #include <windows.h>
     #include <wchar.h>
-    #include <tlhelp32.h> /* CreateToolhelp32Snapshot, Process32FirstW, Process32NextW */
+    #include <process.h> /* _getpid */
 #else
     #include <unistd.h>
     #include <signal.h>  /* raise */
@@ -498,10 +498,17 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                  * builds with splash screen, where the parent process
                  * needs to set LD_LIBRARY_PATH and restart itself before
                  * running splash screen. In this case, we cannot verify
-                 * the parent process; but we can verify the inherited
-                 * top-level application directory, on the off chance
-                 * that executable has setuid bit set... */
-                if (pyi_security_verify_application_home_dir(pyi_ctx) < 0) {
+                 * the parent process, but we can verify the inherited
+                 * top-level application directory; specifically, its
+                 * name should start with _MEI and should include the
+                 * PID of *this* process. If setuid bit is set on the
+                 * executable, also check owner/permissions on the directory. */
+#if defined(_WIN32)
+                unsigned int prefix_pid = _getpid();
+#else
+                unsigned int prefix_pid = getpid();
+#endif
+                if (pyi_security_verify_application_home_dir(pyi_ctx, prefix_pid) < 0) {
                     return -1;
                 }
             } else {
@@ -511,10 +518,15 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                 if (pyi_security_verify_parent_proces(pyi_ctx) < 0) {
                     return -1;
                 }
-                /* Check ownership and permissions on the inherited top-level
-                 * application directory (applicable only on POSIX and only
-                 * if setuid bit is set; otherwise, this check is a no-op) */
-                if (pyi_security_verify_application_home_dir(pyi_ctx) < 0) {
+                /* Verify the name of the application's home directory.
+                 * Its name should start with _MEI prefix; for now, skip
+                 * the PID part of the check (by passing 0), as that
+                 * would require us to find the parent onefile process
+                 * (which might be more than one level up the ancestry
+                 * tree for worker sub-processes). On POSIX, if setuid
+                 * bit is set on the executable, also check owner/permissions
+                 * on the directory. */
+                if (pyi_security_verify_application_home_dir(pyi_ctx, 0) < 0) {
                     return -1;
                 }
             }
@@ -549,10 +561,10 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
             }
         }
 
-        /* Check ownership and permissions on the top-level application
-         * directory (applicable only on POSIX and only if setuid bit
-         * is set; otherwise, this check is a no-op) */
-        if (pyi_security_verify_application_home_dir(pyi_ctx) < 0) {
+        /* On POSIX platforms, if setuid bit is set on the executable,
+         * check owner/permissions on the top-level application's directory
+         * to ensure its contents are accessible only to the effective user. */
+        if (pyi_security_verify_application_home_dir(pyi_ctx, 0) < 0) {
             return -1;
         }
     }

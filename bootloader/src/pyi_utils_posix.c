@@ -184,6 +184,8 @@ _pyi_format_and_create_tmpdir(char *tmpdir_path)
 {
     size_t path_len;
     unsigned char needs_separator;
+    char prefix[32];
+    int prefix_len;
 
     /* Compute length of the given temporary directory path - to ensure
      * that strcat operations below do not exceed buffer length. */
@@ -193,16 +195,18 @@ _pyi_format_and_create_tmpdir(char *tmpdir_path)
      * it should not, but on macOS, the value from $TMPDIR does. */
     needs_separator = tmpdir_path[path_len - 1] != PYI_SEP;
 
-    /* Add separator , _MEI, and six X characters required by mkdtemp */
-    path_len += needs_separator + 4 + 6;
-    if (path_len >= PYI_PATH_MAX) {
+    /* Add separator, "_MEI", PID in %08x format, and six X characters
+     * required by mkdtemp() */
+    prefix_len = snprintf(prefix, 32, "%s" "_MEI" "%08x" "XXXXXX", needs_separator ? PYI_SEPSTR : "", getpid());
+    if (prefix_len < 0 || prefix_len >= 32) {
         return -1;
     }
 
-    if (needs_separator) {
-        strcat(tmpdir_path, PYI_SEPSTR);
+    if (path_len + prefix_len + 1 >= PYI_PATH_MAX) {
+        return -1;
     }
-    strcat(tmpdir_path, "_MEIXXXXXX");
+
+    strcat(tmpdir_path, prefix);
 
     /* Try creating the directory */
     if (mkdtemp(tmpdir_path) == NULL) {

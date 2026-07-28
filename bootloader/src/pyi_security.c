@@ -324,13 +324,16 @@ pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *p
 
 
 int
-pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx)
+pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx, unsigned int prefix_pid)
 {
     /* In onefile mode, the application home directory name should have
      * distrinct, PyInstaller-specific format: _MEIXXXXXX */
     if (pyi_ctx->is_onefile) {
         char basename[PYI_PATH_MAX];
         size_t name_len;
+
+        char expected_prefix[32];
+        int expected_prefix_len;
 
         if (!pyi_path_basename(basename, pyi_ctx->application_home_dir)) {
             PYI_ERROR("Security validation failure: failed to obtain name of application's home directory!\n");
@@ -340,27 +343,40 @@ pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx)
         PYI_DEBUG("SECURITY: verifying the name of application's home directory (%s)...\n", basename);
 
         /* Verify the length of the name:
-         *  - Windows: _MEI + process ID number (in decimal format) + suffix
-         *    added by _wtempnam(); so we check that the name is longer than
-         *    four characters...
-         *  - other platforms: _MEI + six random characters added by mkdtemp();
-         *    so we check that the name is exactly ten characters long... */
+         *  - Windows: _MEI + process ID number (%08x format) + suffix
+         *    added by _wtempnam(); so we check that the name is at least
+         *    12 characters long...
+         *  - other platforms: _MEI + process ID number (%08x format) +
+         *    six random characters added by mkdtemp(); so we check that
+         *    the name is exactly 18 characters long... */
         name_len = strlen(basename);
 
 #ifdef _WIN32
-        if (name_len < 4) {
+        if (name_len < 12) {
             PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
             return -1;
         }
 #else
-        if (name_len != 10) {
+        if (name_len != 18) {
             PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
             return -1;
         }
 #endif
 
         /* Verify the prefix */
-        if (strncmp("_MEI", basename, 4) != 0) {
+        if (prefix_pid > 0) {
+            expected_prefix_len = snprintf(expected_prefix, 32, "_MEI%08x", prefix_pid);
+        } else {
+            expected_prefix_len = snprintf(expected_prefix, 32, "_MEI");
+        }
+        if (expected_prefix_len < 0 || expected_prefix_len >= 32) {
+            PYI_ERROR("Security validation failure: failed to format expected name prefix!\n");
+            return -1;
+        }
+
+        PYI_DEBUG("SECURITY: expected prefix: %s\n", expected_prefix);
+
+        if (strncmp(basename, expected_prefix, expected_prefix_len) != 0) {
             PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
             return -1;
         }
