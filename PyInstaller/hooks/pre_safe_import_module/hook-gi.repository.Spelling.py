@@ -9,5 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+
 def pre_safe_import_module(api):
     api.add_runtime_module(api.module_name)
