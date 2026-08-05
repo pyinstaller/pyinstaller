@@ -1,0 +1,5 @@
+(NetBSD) Fix ``KeyError: 'netbsd'`` when compiling the bootloader, by adding
+NetBSD to the ``DESTOS_TO_SYSTEM`` and ``SYSTEM_TO_BUILDOS`` tables.
+Also add the missing ``OpenBSD`` entry to ``SYSTEM_TO_BUILDOS``, so that a
+native build on either system is no longer misreported as a
+cross-compilation.
