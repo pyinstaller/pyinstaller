@@ -89,11 +89,12 @@ is_solar = sys.platform.startswith('sun')  # Solaris
 is_aix = sys.platform.startswith('aix')
 is_freebsd = sys.platform.startswith('freebsd')
 is_openbsd = sys.platform.startswith('openbsd')
+is_netbsd = sys.platform.startswith('netbsd')
 is_hpux = sys.platform.startswith('hp-ux')
 
 # Some code parts are similar to several unix platforms (e.g. Linux, Solaris, AIX).
 # macOS is not considered as unix since there are many platform-specific details for Mac in PyInstaller.
-is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd
+is_unix = is_linux or is_solar or is_aix or is_freebsd or is_hpux or is_openbsd or is_netbsd
 
 # Linux distributions such as Alpine or OpenWRT use musl as their libc implementation and resultantly need specially
 # compiled bootloaders. On musl systems, ldd with no arguments prints 'musl' and its version.

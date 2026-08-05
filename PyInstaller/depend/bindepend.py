@@ -818,7 +818,7 @@ def _resolve_library_path_unix(name):
                 paths.append('/usr/local/lib/hpux32')
             else:
                 paths.append('/usr/local/lib/hpux64')
-        elif compat.is_freebsd or compat.is_openbsd:
+        elif compat.is_freebsd or compat.is_openbsd or compat.is_netbsd:
             paths.append('/usr/local/lib')
         lib = lib_search_func(name, paths)
 
