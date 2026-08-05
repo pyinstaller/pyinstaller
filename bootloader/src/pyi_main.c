@@ -1297,22 +1297,30 @@ _pyi_find_progam_in_search_path(const char *name, char *result_path)
 static int
 _pyi_resolve_executable_posix(const char *argv0, char *executable_filename, char *loader_filename)
 {
-    /* On Linux, Cygwin, FreeBSD, and Solaris, we try /proc entry first.
+    /* On supported platforms, we try the /proc entry first.
      * The entry points at "true" file location, i.e., fully canonicalized
      * and with all symbolic links resolved. */
     ssize_t name_len = -1;
 
 #if defined(__linux__) || defined(__CYGWIN__)
-    name_len = readlink("/proc/self/exe", executable_filename, PYI_PATH_MAX - 1);  /* Linux, Cygwin */
+    const char *proc_path = "/proc/self/exe";
 #elif defined(__FreeBSD__)
-    name_len = readlink("/proc/curproc/file", executable_filename, PYI_PATH_MAX - 1);  /* FreeBSD */
+    const char *proc_path = "/proc/curproc/file";
 #elif defined(__sun)
-    name_len = readlink("/proc/self/path/a.out", executable_filename, PYI_PATH_MAX - 1);  /* Solaris */
+    const char *proc_path = "/proc/self/path/a.out";
+#else
+    const char *proc_path = NULL; /* Unsupported */
 #endif
 
-    if (name_len != -1) {
-        /* Output is not yet NULL-terminated, so we need to do it using returned byte count. */
-        executable_filename[name_len] = 0;
+    if (proc_path) {
+        PYI_DEBUG("LOADER: trying to resolve executable file via /proc entry...\n");
+        name_len = readlink(proc_path, executable_filename, PYI_PATH_MAX - 1);
+        if (name_len != -1) {
+            /* Output is not yet NULL-terminated, so we need to do it using returned byte count. */
+            executable_filename[name_len] = 0;
+        }
+    } else {
+        PYI_DEBUG("LOADER: executable resolution via /proc entry is not supported...\n");
     }
 
     /* On linux, we might have been launched using custom ld.so dynamic loader.
@@ -1327,6 +1335,7 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename, char
 #endif
 
     if (name_len != -1) {
+        PYI_DEBUG("LOADER: executable file resolved via /proc entry\n");
         return 0;
     }
 
