@@ -1298,10 +1298,11 @@ static int
 _pyi_resolve_executable_posix(const char *argv0, char *executable_filename, char *loader_filename)
 {
     /* On supported platforms, we try the /proc entry first.
-     * The entry points at "true" file location, i.e., fully canonicalized
-     * and with all symbolic links resolved. */
-    ssize_t name_len = -1;
-
+     * On some platforms, the entry points at "true" file location,
+     * i.e., canonical and with all symbolic links resolved; on others
+     * (e.g., NetBSD), the entry is neither canonical nor fully resolved.
+     * So to be safe, always pass the symlink to realpath() for full
+     * resolution. */
 #if defined(__linux__) || defined(__CYGWIN__) || defined(__NetBSD__)
     const char *proc_path = "/proc/self/exe";
 #elif defined(__FreeBSD__)
@@ -1314,27 +1315,26 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename, char
 
     if (proc_path) {
         PYI_DEBUG("LOADER: trying to resolve executable file via /proc entry...\n");
-        name_len = readlink(proc_path, executable_filename, PYI_PATH_MAX - 1);
-        if (name_len != -1) {
-            /* Output is not yet NULL-terminated, so we need to do it using returned byte count. */
-            executable_filename[name_len] = 0;
+        if (realpath(proc_path, executable_filename) == NULL) {
+            executable_filename[0] = 0;
         }
     } else {
         PYI_DEBUG("LOADER: executable resolution via /proc entry is not supported...\n");
+        executable_filename[0] = 0;
     }
 
     /* On linux, we might have been launched using custom ld.so dynamic loader.
      * In that case, /proc/self/exe points to the ld.so executable, and we need
      * to ignore it. */
 #if defined(__linux__)
-    if (name_len != -1 && _pyi_is_ld_linux_so(executable_filename) == true) {
+    if (executable_filename[0] != 0 && _pyi_is_ld_linux_so(executable_filename) == true) {
         PYI_DEBUG("LOADER: resolved executable file %s is ld.so dynamic linker/loader - storing its name.\n", executable_filename);
         strncpy(loader_filename, executable_filename, PYI_PATH_MAX); /* both buffers are guaranteed to be PYI_PATH_MAX-sized */
-        name_len = -1;
+        executable_filename[0] = 0;
     }
 #endif
 
-    if (name_len != -1) {
+    if (executable_filename[0] != 0) {
         PYI_DEBUG("LOADER: executable file resolved via /proc entry\n");
         return 0;
     }
