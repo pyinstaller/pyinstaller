@@ -1302,7 +1302,7 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename, char
      * and with all symbolic links resolved. */
     ssize_t name_len = -1;
 
-#if defined(__linux__) || defined(__CYGWIN__)
+#if defined(__linux__) || defined(__CYGWIN__) || defined(__NetBSD__)
     const char *proc_path = "/proc/self/exe";
 #elif defined(__FreeBSD__)
     const char *proc_path = "/proc/curproc/file";
