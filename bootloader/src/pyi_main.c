@@ -1159,7 +1159,7 @@ int pyi_main_onefile_parent_cleanup(struct PYI_CONTEXT *pyi_ctx)
 /**********************************************************************\
  *                     Executable file resolution                     *
 \**********************************************************************/
-#ifdef _WIN32
+#if defined(_WIN32)
 
 static int
 _pyi_resolve_executable_win32(char *executable_filename)
@@ -1207,7 +1207,7 @@ _pyi_resolve_executable_win32(char *executable_filename)
     return 0;
 }
 
-#elif __APPLE__
+#elif defined(__APPLE__)
 
 static int
 _pyi_resolve_executable_macos(char *executable_filename)
@@ -1384,9 +1384,9 @@ static int
 _pyi_main_resolve_executable(struct PYI_CONTEXT *pyi_ctx)
 {
     /* Resolve using OS-specific implementation */
-#ifdef _WIN32
+#if defined(_WIN32)
     return _pyi_resolve_executable_win32(pyi_ctx->executable_filename);
-#elif __APPLE__
+#elif defined(__APPLE__)
     return _pyi_resolve_executable_macos(pyi_ctx->executable_filename);
 #else
     return _pyi_resolve_executable_posix(pyi_ctx->argv[0], pyi_ctx->executable_filename, pyi_ctx->dynamic_loader_filename);
