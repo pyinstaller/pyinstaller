@@ -1377,6 +1377,35 @@ _pyi_resolve_executable_posix(const char *argv0, char *executable_filename, char
     return 0;
 }
 
+#if defined(__CYGWIN__)
+
+static int
+_pyi_resolve_executable_cygwin(const char *argv0, char *executable_filename, char *loader_filename)
+{
+    size_t len;
+
+    /* Resolve using POSIX helper */
+    if (_pyi_resolve_executable_posix(argv0, executable_filename, loader_filename) < 0) {
+        return -1;
+    }
+
+    /* Depending on invocation, the executable might be resolved with or
+     * without the .exe suffix. Several places expect the executable name
+     * to be without suffix, so remove it as necessary. */
+    len = strlen(executable_filename);
+    if (len >= 5) {
+        char *suffix_ptr = executable_filename + len - 4;
+        if (strcasecmp(suffix_ptr, ".exe") == 0) {
+            PYI_DEBUG("LOADER: removing .exe suffix from executable name\n");
+            *suffix_ptr = 0;
+        }
+    }
+
+    return 0;
+}
+
+#endif /* defined(__CYGWIN__) */
+
 #endif
 
 
@@ -1388,6 +1417,8 @@ _pyi_main_resolve_executable(struct PYI_CONTEXT *pyi_ctx)
     return _pyi_resolve_executable_win32(pyi_ctx->executable_filename);
 #elif defined(__APPLE__)
     return _pyi_resolve_executable_macos(pyi_ctx->executable_filename);
+#elif defined(__CYGWIN__)
+    return _pyi_resolve_executable_cygwin(pyi_ctx->argv[0], pyi_ctx->executable_filename, pyi_ctx->dynamic_loader_filename);
 #else
     return _pyi_resolve_executable_posix(pyi_ctx->argv[0], pyi_ctx->executable_filename, pyi_ctx->dynamic_loader_filename);
 #endif
