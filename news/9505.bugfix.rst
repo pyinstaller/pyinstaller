@@ -1,0 +1,1 @@
+(NetBSD) Fix binary dependency analysis.
