@@ -20,11 +20,12 @@
     #include <tlhelp32.h> /* CreateToolhelp32Snapshot(), Process32FirstW(), Process32NextW() */
 #else
     #include <sys/stat.h> /* struct stat */
-    #include <unistd.h> /* readlink() */
+    #include <unistd.h> /* getppid(), geteuid() */
 #endif
 
 #include <stdio.h>  /* snprintf() */
 #include <string.h>  /* strcmp() */
+#include <stdlib.h>  /* realpath() */
 
 #if defined(__APPLE__)
     #include <libproc.h> /* proc_pidpath() */
@@ -167,11 +168,10 @@ _pyi_security_verify_parent_proces_posix(const struct PYI_CONTEXT *pyi_ctx)
     /* Try to look up the executable of the parent process - it should
      * be the same as that of the current process. */
     pid_t ppid;
-    ssize_t name_len = -1;
     char proc_path[PYI_PATH_MAX];
     char parent_executable[PYI_PATH_MAX];
 
-#if defined(__linux__) || defined(__CYGWIN__)
+#if defined(__linux__) || defined(__CYGWIN__) || defined(__NetBSD__)
     const char *proc_path_fmt = "/proc/%d/exe";
 #elif defined(__FreeBSD__)
     const char *proc_path_fmt = "/proc/%d/file";
@@ -197,22 +197,36 @@ _pyi_security_verify_parent_proces_posix(const struct PYI_CONTEXT *pyi_ctx)
     /* Get parent PID */
     ppid = getppid();
 
-    /* Try to look up the /proc entry. The entry points at "true" file
-     * location, i.e., fully canonicalized and with all symbolic links
-     * resolved. */
+    /* Try to look up the /proc entry. On some platforms, the entry points
+     * at "true" file location, i.e., canonical and with all symbolic links
+     * resolved; on others (e.g., NetBSD), the entry is neither canonical
+     * nor fully resolved. So to be safe, always pass the symlink to realpath()
+     * for full resolution. This matches the behavior of _pyi_resolve_executable_posix()
+     * in pyi_main.c */
     if (snprintf(proc_path, PYI_PATH_MAX, proc_path_fmt, ppid) >= PYI_PATH_MAX) {
         PYI_ERROR("Security validation failure: could not format /proc entry path!\n");
         return -1;
     }
 
-    name_len = readlink(proc_path, parent_executable, PYI_PATH_MAX - 1);
-    if (name_len == -1) {
+    if (realpath(proc_path, parent_executable) == NULL) {
         PYI_ERROR("Security validation failure: could not determine the executable path for parent process!\n");
         return -1;
     }
 
-    /* Output is not yet NULL-terminated, so we need to do it using returned byte count. */
-    parent_executable[name_len] = 0;
+    /* Exclude the .exe suffix from the resolved executable path, in order to
+     * match the behavior of _pyi_resolve_executable_cygwin() in pyi_main.c */
+#if defined(__CYGWIN__)
+    if (1) {
+        size_t len = strlen(parent_executable);
+        if (len >= 5) {
+            char *suffix_ptr = parent_executable + len - 4;
+            if (strcasecmp(suffix_ptr, ".exe") == 0) {
+                PYI_DEBUG("SECURITY: removing .exe suffix from parent executable name\n");
+                *suffix_ptr = 0;
+            }
+        }
+    }
+#endif
 
     PYI_DEBUG("SECURITY: parent process executable: %s\n", parent_executable);
 
