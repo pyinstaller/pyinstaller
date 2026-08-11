@@ -339,6 +339,93 @@ result in endless process spawn loop).
    suppressed via the public :envvar:`PYINSTALLER_SUPPRESS_SPLASH_SCREEN`
    environment variable.
 
+.. _bootloader security validation onefile:
+
+Security Validation in ``onefile`` Mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting with PyInstaller v6.22.1, additional security validation has been
+implemented in the child process codepath of a frozen application built
+in ``onefile`` mode - i.e., the main application process and worker
+sub-processes spawned by the main application process via ``sys.executable``.
+The process attempts to look up the path to the executable of its parent
+process, and verifies that it matches its own executable, in order to
+ensure that the run-time environment it is supposed to inherit was indeed
+set up by a parent process of a ``onefile`` application.
+
+This validation aims to prevent the ``onefile`` executable from being
+tricked, via a crafted set of :ref:`environment variables <bootloader environment variables>`,
+into running a child process codepath with an arbitrary top-level application directory.
+Depending on the content of the spoofed top-level application directory,
+this may result in execution with altered behavior, or even local privilege
+escalation (e.g., POSIX executable with ``setuid`` bit set).
+
+Windows
+-------
+
+On Windows, the parent process ID is obtained by walking the current
+process snapshot (``CreateToolhelp32Snapshot``, ``Process32First``,
+``Process32Next``), and the path to corresponding executable is retrieved
+using ``QueryFullProcessImageName``.
+
+macOS
+-----
+
+On macOS, the parent process ID is obtained via standard POSIX
+``getppid()`` system call, and the path to corresponding executable is
+retrieved using ``proc_pidpath()``.
+
+
+POSIX platforms
+---------------
+
+On other POSIX platforms, the parent process ID is obtained via
+standard POSIX ``getppid()`` system call, followed by the look-up of
+the platform-specific entry on the ``procfs`` filesystem
+(i.e., inside the ``/proc/<ppid>`` directory).
+
+If the executable has ``setuid`` bit set, additional validation is
+performed on the inherited (temporary) top-level application directory.
+The owner ID of the said directory must match the owner ID of the
+executable, and its permissions must be ``0700`` (i.e., permissions
+that the bootloader uses when creating a temporary application directory).
+
+Some of otherwise supported POSIX platforms do not implement ``procfs``
+at all (for example, OpenBSD), or do not provide the information about the
+executable path (for example, AIX). On such platforms, setting ``setuid``
+bit on ``onefile`` executables is not supported anymore - the implemented
+security validation will automatically fail. Running regular ``onefile``
+executables is still supported, but due to lack of validation, it may be
+subject to environment manipulation.
+
+On POSIX platforms where look-up via ``procfs`` is nominally supported
+(i.e., Linux, Cygwin, FreeBSD, NetBSD, and SunOS), it is strictly enforced.
+If the corresponding entry under ``/proc/<ppid>`` cannot be accessed for
+whatever reason (e.g., additional security constraints), the validation
+will fail and prevent the ``onefile`` application from running. This
+currently applies regardless of whether the executable has ``setuid``
+bit set or not.
+
+
+.. _bootloader security validation onedir:
+
+
+Security Validation in ``onedir`` Mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting with PyInstaller v6.22.1, an additional security requirement has
+been imposed on POSIX onedir executables that have ``setuid`` bit set.
+Such executables now validate the owner and permissions on their contents
+directory (typically the ``_internal`` directory); the owner ID must match
+the effective user ID under which the process is running, and the
+permissions on the directory need to be ``0700``.
+
+The above restriction aims to prevent unprivileged users from modifying
+contents of an application that runs in privileged mode. However, it
+also prevents an application from starting in privileged mode and later
+dropping the privileges (for example, via the ``os.setuid()`` call), as
+this would prevent further access to the content directory.
+
 
 .. _pyi_splash Module:
 

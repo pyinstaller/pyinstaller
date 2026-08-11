@@ -1,0 +1,2 @@
+Document the new security validation in bootloader and its implications
+for users.

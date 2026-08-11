@@ -561,3 +561,23 @@ environment variable (if using ``pip install`` in combination with
 ``PYINSTALLER_COMPILE_BOOTLOADER`` environment variable).
 
 For details, see :ref:`building the bootloader`.
+
+
+Security Validation Failure Errors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting with PyInstaller v6.22.1, the bootloader implements additional
+validation of its run-time environment. This validation aims to prevent
+execution with a spoofed set of :ref:`internal environment variables <bootloader environment variables>`
+that could trick the executable into using arbitrary application directory;
+this could lead to arbitrary code execution and, if executable is running
+in privileged mode (e.g., POSIX executable with ``setsuid`` bit set), to
+local privilege escalation.
+
+The error messages pertaining the new security validation in bootloader
+follow the ``Security validation failure: <details>`` format; if you
+encounter such a error message, consult either
+:ref:`bootloader security validation onefile`
+or
+:ref:`bootloader security validation onedir`
+for possible causes.

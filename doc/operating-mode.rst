@@ -155,8 +155,8 @@ to execute your script.
 Everything follows normally from there, provided
 that all the necessary support files were included.
 
-(This is an overview.
-For more detail, see :ref:`The Bootstrap Process in Detail` below.)
+This is an overview. For more details, see :ref:`The Bootstrap Process in Detail`.
+For details on restrictions due to built-in security validation, see :ref:`bootloader security validation onedir`.
 
 
 .. _Bundling to One File:
@@ -249,12 +249,11 @@ stored in the executable, and the bootloader will create the
     escalate privileges by modifying them.
 
 .. Note::
-    Applications that use `os.setuid()` may encounter permissions errors.
-    The temporary folder where the bundled app runs may not being readable
-    after `setuid` is called. If your script needs to
-    call `setuid`, it may be better to use one-folder mode
-    so as to have more control over the permissions on its files.
+    Applications that use ``os.setuid()`` may encounter permissions errors.
+    The temporary folder where the bundled app runs will likely not be accessible
+    after ``os.setuid()`` is called.
 
+For details on restrictions due to built-in security validation, see :ref:`bootloader security validation onefile`.
 
 Using a Console Window
 ~~~~~~~~~~~~~~~~~~~~~~~
