@@ -1,0 +1,1 @@
+Fix invalid spec file generation when :option:`--hide-console` option is given (regression introduced in v6.22.0).

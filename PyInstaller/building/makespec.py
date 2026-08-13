@@ -720,7 +720,7 @@ def main(
     if contents_directory:
         exe_options += "\n    contents_directory=%r," % (contents_directory or "_internal")
     if hide_console:
-        exe_options += "\n    hide_console='%s'," % hide_console
+        exe_options += "\n    hide_console=%r," % hide_console
 
     if _kwargs["shorthand_manifest"]:
         manifest = _kwargs["shorthand_manifest"]

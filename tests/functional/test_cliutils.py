@@ -55,6 +55,7 @@ def test_makespec_path_sep_normalisation(tmp_path, monkeypatch):
         r"--additional-hooks-dir=foo'\bar",
         r"--runtime-hook=foo'\bar",
         r"--upx-exclude=foo'\bar",
+        "--hide-console=hide-late",
     ]
     monkeypatch.setattr('sys.argv', args)
     monkeypatch.setattr('PyInstaller.building.makespec.DEFAULT_SPECPATH', str(tmp_path))
