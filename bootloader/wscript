@@ -65,9 +65,6 @@ SYSTEM_TO_BUILDOS = {
     # Android is also folded back into 'linux', to avoid a message about "cross-compiling for Linux".
     'Android': 'linux',
     'FreeBSD': 'freebsd',
-    # Without these, BUILD_OS falls back to platform.system() ('OpenBSD' /
-    # 'NetBSD'), which never equals waf's DEST_OS ('openbsd' / 'netbsd'), so a
-    # native build is misreported as a cross-compilation.
     'OpenBSD': 'openbsd',
     'NetBSD': 'netbsd',
     'Windows': 'win32',
