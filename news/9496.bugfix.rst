@@ -1,3 +1,3 @@
-(NetBSD) Add the ``is_netbsd`` platform flag, treat NetBSD as a Unix platform,
-and search ``/usr/local/lib`` for shared libraries, as is already done for
-FreeBSD and OpenBSD.
+(NetBSD) Fix/improve NetBSD support: add the ``is_netbsd`` platform
+flag, treat NetBSD as a Unix platform, and search ``/usr/local/lib`` for
+shared libraries, as is already done for FreeBSD and OpenBSD.

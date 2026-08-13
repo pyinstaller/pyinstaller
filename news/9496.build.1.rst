@@ -1,0 +1,2 @@
+(OpenBSD) Fix misreport of cross-compilation when compiling bootloader
+on an OpenBSD system.
