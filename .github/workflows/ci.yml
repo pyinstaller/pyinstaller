@@ -604,3 +604,87 @@ jobs:
             export FORCE_COLOR=1
             python -m pytest -n 4 --maxfail 3 --durations 10 tests/unit tests/functional
           '
+
+  test-misc-platforms:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: ['freebsd', 'openbsd', 'netbsd']
+      fail-fast: false
+    steps:
+      - name: Checkout PyInstaller code
+        uses: actions/checkout@v6
+
+      # The platform-specific VM setup; uses corresponding action from vmactions
+      # (and defines custom "vmsh" shell for use in subsequent steps) and
+      # platform-specific package manager to set up python environment.
+      - name: Setup VM (FreeBSD)
+        if: matrix.platform == 'freebsd'
+        uses: vmactions/freebsd-vm@v1
+        with:
+          custom-shell-name: vmsh
+          copyback: false  # Avoid copying files back to host between steps using vmsh
+          prepare: |
+            pkg update
+            pkg upgrade -y
+            pkg install -y \
+              python py312-pip py312-sqlite3 py312-tkinter \
+              py312-psutil py312-pytest py312-pytest-xdist \
+              py312-numpy py312-pillow
+
+      - name: Setup VM (OpenBSD)
+        if: matrix.platform == 'openbsd'
+        uses: vmactions/openbsd-vm@v1
+        with:
+          custom-shell-name: vmsh
+          copyback: false
+          prepare: |
+            pkg_add \
+              py3-pip python-tkinter \
+              py3-psutil py3-test py3-test-xdist \
+              py3-numpy py3-pillow
+
+      # NOTE: for now, install and python 3.12; with 3.13 and 3.14, we seem to be getting
+      # a segfault at frozen program exit.
+      - name: Setup VM (NetBSD)
+        if: matrix.platform == 'netbsd'
+        uses: vmactions/netbsd-vm@v1
+        with:
+          custom-shell-name: vmsh
+          copyback: false
+          prepare: |
+            export PATH="/usr/pkg/sbin:/usr/pkg/bin:$PATH"
+            export PKG_PATH="https://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD/x86_64/11.0_2026Q2/All/"
+            pkg_add pkgin
+            pkgin -y install \
+              python312 py312-pip py312-Tk \
+              py312-psutil py312-test py312-test-xdist \
+              py312-numpy py312-Pillow
+            ln -s /usr/pkg/bin/python3.12 /usr/pkg/bin/python3
+
+      # The steps below should be common to all platforms
+      - name: Install PyInstaller
+        shell: vmsh {0}
+        run: |
+            cd bootloader
+            python3 waf all
+            cd ..
+            python3 -m pip install --break-system-packages .
+            pyinstaller --version
+
+      - name: Install test requirements
+        shell: vmsh {0}
+        run: |
+            python3 -m pip install --break-system-packages -r tests/requirements-base.txt
+
+      - name: Run tests
+        shell: vmsh {0}
+        run: |
+            export FORCE_COLOR=1
+            export PYINSTALLER_STRICT_UNPACK_MODE=1
+            export PYINSTALLER_STRICT_COLLECT_MODE=1
+            export PYINSTALLER_STRICT_BUNDLE_CODESIGN_ERROR=1
+            export PYINSTALLER_VERIFY_BUNDLE_SIGNATURE=1
+            export PYTHONWARNDEFAULTENCODING=true
+            export PYINSTALLER_ZLIB_COMPRESSION_LEVEL=1
+            python3 -m pytest -n 4 --maxfail 3 --durations 10 tests/unit tests/functional
