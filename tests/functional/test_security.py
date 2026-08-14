@@ -18,7 +18,6 @@ import sys
 import pytest
 
 from PyInstaller import compat
-from PyInstaller.utils.tests import skipif
 
 # PYI_PROCESS_LEVEL enum values from bootloader/src/pyi_main.h
 PYI_PROCESS_LEVEL_UNKNOWN = -2
@@ -98,7 +97,6 @@ def _ensure_long_path(path):
 
 # Check whether application's top level directory can be hijacked via manipulation of _PYI_ environment variables.
 # See: https://github.com/pyinstaller/pyinstaller/security/advisories/GHSA-9fxf-4qw3-ghmr
-@skipif(compat.is_aix or compat.is_openbsd or compat.is_hpux, reason="Mitigation is not available on this platform.")
 @pytest.mark.parametrize(
     'parent_level',
     [
@@ -248,6 +246,10 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
         assert p.returncode == 0
     else:
         # Onefile mode
+        MSG_PROCESS_LEVEL = "Security validation failure: unexpected process level!"
+        MSG_HOME_DIRECTORY = "Security validation failure: unexpected name of application's home directory!"
+        MSG_PARENT_EXECUTABLE = "Security validation failure: parent process has different executable!"
+
         if parent_level == PYI_PROCESS_LEVEL_UNKNOWN:
             # This is same as _PYI_PARENT_PROCESS_LEVEL not being set at all; the process should run as parent process
             # of onefile application and set up new environment. Thus, the test application should run normally.
@@ -258,9 +260,18 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
             # should similarly exit with message about unexpected level, since splash screen is not enabled on the
             # build; if it were enabled, the validation of directory name would fail instead.
             assert p.returncode not in {0, 42}
-            assert "Security validation failure: unexpected process level!" in p.stderr or \
-                "Security validation failure: unexpected name of application's home directory!" in p.stderr
+            assert (MSG_PROCESS_LEVEL in p.stderr) or (MSG_HOME_DIRECTORY in p.stderr)
         else:  # PYI_PROCESS_LEVEL_PARENT, PYI_PROCESS_LEVEL_MAIN
             # The process is supposed to be either These should fail the parent process verification in the bootloader.
+            #
+            # On platforms where procfs-based look-up of parent executable is not supported (AIX, OpenBSD; but also
+            # FreeBSD without /proc mounted), we cannot validate the parent process. In these cases, we expect the
+            # validation of home directory name to fail (since executable in this test does not have setuid bit set,
+            # which would fail due to strict parent process validation requirement).
+            no_procfs = (
+                compat.is_aix or compat.is_openbsd or compat.is_hpux
+                or (compat.is_freebsd and not os.path.isdir('/proc/curproc'))
+            )
+
             assert p.returncode not in {0, 42}
-            assert "Security validation failure: parent process has different executable!" in p.stderr
+            assert (MSG_PARENT_EXECUTABLE in p.stderr) or (no_procfs and MSG_HOME_DIRECTORY in p.stderr)

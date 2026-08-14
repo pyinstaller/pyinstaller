@@ -399,12 +399,18 @@ executables is still supported, but due to lack of validation, it may be
 subject to environment manipulation.
 
 On POSIX platforms where look-up via ``procfs`` is nominally supported
-(i.e., Linux, Cygwin, FreeBSD, NetBSD, and SunOS), it is strictly enforced.
+(i.e., Linux, Cygwin, NetBSD, and SunOS), it is strictly enforced.
 If the corresponding entry under ``/proc/<ppid>`` cannot be accessed for
 whatever reason (e.g., additional security constraints), the validation
 will fail and prevent the ``onefile`` application from running. This
 currently applies regardless of whether the executable has ``setuid``
 bit set or not.
+
+On FreeBSD systems, the ``procfs`` fileystem is not mounted by default;
+therefore, the parent-process validation is skipped if ``/proc`` entry
+is inaccessible, but only if ``setuid`` bit is not set on the executable.
+If ``setuid`` bit is set, the executable will fail to run unless parent
+process can be validated (i.e., ``procfs`` filesystem is mounted).
 
 
 .. _bootloader security validation onedir:
