@@ -168,6 +168,7 @@ def test_decorator():
 
 
 @requires("psutil")
+@pytest.mark.xfail(compat.is_netbsd, reason="more file descriptors used than expected.")
 def test_pipe_leakage():
     """
     There is a finite number of open pipes/file handles/file descriptors allowed per process. Ensure that all
