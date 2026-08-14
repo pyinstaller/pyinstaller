@@ -28,6 +28,74 @@ PYI_PROCESS_LEVEL_MAIN = 1
 PYI_PROCESS_LEVEL_SUBPROCESS = 2
 
 
+def _ensure_long_path(path):
+    if not compat.is_win and not compat.is_cygwin:
+        return path
+
+    # Bind GetLongPathNameW from kernel32.dll
+    import ctypes
+    import ctypes.wintypes
+
+    kernel32 = ctypes.cdll.LoadLibrary("kernel32.dll")
+
+    kernel32.GetLongPathNameW.restype = ctypes.wintypes.DWORD
+    kernel32.GetLongPathNameW.argtypes = [
+        ctypes.wintypes.LPCWSTR,  # LPCWSTR lpszShortPath
+        ctypes.wintypes.LPWSTR,  # LPWSTR lpszLongPath
+        ctypes.wintypes.DWORD,  # DWORD cchBuffer
+    ]
+
+    # Bind cygwin_conv_path from cygwin1.dll
+    if compat.is_cygwin:
+        cygwin = ctypes.cdll.LoadLibrary("cygwin1.dll")
+
+        cygwin.cygwin_create_path.restype = ctypes.c_size_t
+        cygwin.cygwin_create_path.argtypes = [
+            ctypes.c_int32,  # cygwin_conv_path_t what
+            ctypes.c_void_p,  # const void * from
+            ctypes.c_void_p,  # void * to
+            ctypes.c_size_t,  # size_t size
+        ]
+
+        CCP_POSIX_TO_WIN_W = 1
+        CCP_WIN_W_TO_POSIX = 3
+
+    path_len = 4096
+
+    # Convert cygwin path to Windows path (long or short)
+    if compat.is_cygwin:
+        winpath_w = ctypes.create_unicode_buffer(path_len)
+        ret = cygwin.cygwin_conv_path(
+            CCP_POSIX_TO_WIN_W,
+            ctypes.c_char_p(path.encode('utf-8')),
+            winpath_w,
+            path_len,
+        )
+        assert ret == 0, "Failed to convert POSIX path to Windows path!"
+    else:
+        winpath_w = ctypes.c_wchar_p(path)
+
+    # Convert Windows path to long Windows path
+    winpath_long_w = ctypes.create_unicode_buffer(path_len)
+    ret = kernel32.GetLongPathNameW(winpath_w, winpath_long_w, path_len)
+
+    # Convert long windows path to cygwin path
+    if compat.is_cygwin:
+        long_path = ctypes.create_string_buffer(path_len)
+        ret = cygwin.cygwin_conv_path(
+            CCP_WIN_W_TO_POSIX,
+            winpath_long_w,
+            long_path,
+            path_len,
+        )
+        assert ret == 0, "Failed to convert POSIX path to Windows path!"
+        long_path = long_path.value.decode('utf-8')
+    else:
+        long_path = winpath_long_w.value
+
+    return long_path
+
+
 # Check whether application's top level directory can be hijacked via manipulation of _PYI_ environment variables.
 # See: https://github.com/pyinstaller/pyinstaller/security/advisories/GHSA-9fxf-4qw3-ghmr
 @skipif(compat.is_aix or compat.is_openbsd or compat.is_hpux, reason="Mitigation is not available on this platform.")
@@ -130,6 +198,13 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
         # In an msys2 Windows environment, replace POSIX-style separators with Windows-style ones, which are used
         # within the bootloader...
         archive_path = archive_path.replace('/', '\\')
+    # On Windows and Cygwin, ensure that we have long path instead of 8.3 short path. Bootloader determines archive
+    # path from executable path, and that is resolved to long path.
+    archive_path = _ensure_long_path(archive_path)
+    if compat.is_cygwin and archive_path.lower().endswith('.exe'):
+        archive_path = archive_path[:-4]  # Under Cygwin, bootloader resolves executable/archive without .exe suffix
+    print(f"Setting _PYI_ARCHIVE_FILE to: {archive_path!r}", file=sys.stdout)
+    print(f"Setting _PYI_ARCHIVE_FILE to: {archive_path!r}", file=sys.stderr)
     fake_env['_PYI_ARCHIVE_FILE'] = archive_path
     # Try to trick process into running a specific codepath by manipulating its parent level.
     fake_env['_PYI_PARENT_PROCESS_LEVEL'] = str(parent_level)
