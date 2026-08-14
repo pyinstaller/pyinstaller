@@ -112,12 +112,14 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
     executables = pyi_builder._find_executables('app_real')
     assert len(executables) == 1
     executable = executables[0]
-    print(f"Test application's executable: {executable}")
+    print(f"Test application's executable: {executable}", file=sys.stdout)
+    print(f"Test application's executable: {executable}", file=sys.stderr)
 
     executables = pyi_builder._find_executables('app_fake')
     assert len(executables) == 1
     fake_app_dir = pathlib.Path(executables[0]).parent / '_internal'
-    print(f"Fake application's directory: {str(fake_app_dir)!r}")
+    print(f"Fake application's directory: {str(fake_app_dir)!r}", file=sys.stdout)
+    print(f"Fake application's directory: {str(fake_app_dir)!r}", file=sys.stderr)
     assert fake_app_dir.is_dir()
 
     # The cloak & dagger part...
@@ -138,17 +140,18 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
     print(f"Running executable: {executable}", file=sys.stderr)
     p = subprocess.run([executable, SECRET_REAL], env=fake_env, capture_output=True, encoding='utf-8')
 
-    print(f"Return code: {p.returncode}")
+    print(f"Return code: {p.returncode}", file=sys.stdout)
+    print(f"Return code: {p.returncode}", file=sys.stderr)
 
     if p.stdout:
-        print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------")
+        print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
     else:
-        print("Captured stdout: N/A")
+        print("Captured stdout: N/A", file=sys.stderr)
 
     if p.stderr:
-        print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------")
+        print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
     else:
-        print("Captured stderr: N/A")
+        print("Captured stderr: N/A", file=sys.stderr)
 
     # PYI_PROCESS_LEVEL_SUBPROCESS should be an invalid *parent* process level, regardless of mode.
     if parent_level == PYI_PROCESS_LEVEL_SUBPROCESS:
