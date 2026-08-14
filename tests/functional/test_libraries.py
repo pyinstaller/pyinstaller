@@ -13,7 +13,7 @@ import pytest
 
 from PyInstaller.compat import is_win, is_linux
 from PyInstaller.utils.tests import importorskip, skipif, requires
-from PyInstaller.utils.hooks import can_import_module
+from PyInstaller.utils.hooks import can_import_module, tcl_tk
 
 
 @importorskip('gevent')
@@ -96,31 +96,9 @@ def test_tkinter_tcl_library_dir(pyi_builder):
 # button, and register a timer to shut down the application. Doing so verifies that all Tcl/Tk files (e.g., .tcl
 # scripts from library directories) are properly collected.
 #
-# The prerequisite for this test is that tkinter can be used unfrozen, so try instantiating a window in a subprocess
-# to verify that this is the case. This check should cover the following scenarios:
-#  - tkinter missing
-#  - import of tkinter crashes python interpreter
-#  - tkinter.Tk() fails due to DISPLAY not being set on linux
-#  - tkinter.Tk() fails due to faulty build (e.g., due to Tcl/Tk version mix-up, as seen with python <= 3.10 builds on
-#    macos-12 GHA runners; https://github.com/actions/setup-python/issues/649#issuecomment-1745056485)
-def _tkinter_fully_usable():
-    from PyInstaller import isolated
-
-    @isolated.decorate
-    def _create_tkinter_window():
-        import tkinter
-        tkinter.Tk()
-
-    try:
-        _create_tkinter_window()
-    except Exception:
-        return False
-
-    return True
-
-
+# The prerequisite for this test is that tkinter can be used unfrozen, so check that this is indeed the case.
 def test_tkinter_functional(pyi_builder):
-    if not _tkinter_fully_usable():
+    if not tcl_tk.tcltk_info.tkinter_fully_usable:
         pytest.skip("tkinter is not fully usable.")
 
     pyi_builder.test_source(

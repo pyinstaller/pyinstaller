@@ -78,6 +78,29 @@ def _get_tcl_tk_info():
     }
 
 
+def _check_tkinter_fully_usable():
+    """
+    Check that tkinter is fully usable by instantiating a window in a subprocess.
+    This check should cover the following scenarios:
+     - tkinter missing
+     - import of tkinter crashes python interpreter
+     - tkinter.Tk() fails due to DISPLAY not being set on linux
+     - tkinter.Tk() fails due to faulty build (e.g., due to Tcl/Tk version mix-up, as seen with python <= 3.10 builds on
+       macos-12 GHA runners; https://github.com/actions/setup-python/issues/649#issuecomment-1745056485)
+    """
+    @isolated.decorate
+    def _create_tkinter_window():
+        import tkinter
+        tkinter.Tk()
+
+    try:
+        _create_tkinter_window()
+    except Exception:
+        return False
+
+    return True
+
+
 class TclTkInfo:
     # Root directory names of Tcl and Tk library/data directories in the frozen application. These directories are
     # originally fully versioned (e.g., tcl8.6 and tk8.6); we want to remap them to unversioned variants, so that our
@@ -98,6 +121,12 @@ class TclTkInfo:
 
     # Delay initialization of Tcl/Tk information until until the corresponding attributes are first requested.
     def __getattr__(self, name):
+        # tkinter_fully_usable is initialized and cached independently of other properties.
+        if name == 'tkinter_fully_usable':
+            if 'tkinter_fully_usable' not in self.__dict__:
+                self.tkinter_fully_usable = _check_tkinter_fully_usable()
+            return getattr(self, name)
+
         if 'available' in self.__dict__:
             # Initialization was already done, but requested attribute is not available.
             raise AttributeError(name)
