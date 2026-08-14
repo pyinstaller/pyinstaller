@@ -401,6 +401,23 @@ def _get_imports_ldd(filename, search_paths):
         #    libpython3.11.so.1.0 => /usr/pkg/lib/libpython3.11.so.1.0
         ldd_extra_args = ['-f', '\tlib%o.so.%m => %p\n']
         LDD_PATTERN = re.compile(r"\s*(.*?)\s+=>\s+(.*?)$")
+    elif compat.is_openbsd:
+        # $ ldd /usr/local/bin/python3.13
+        # /usr/local/bin/python3.13:
+        #   Start            End              Type  Open Ref GrpRef Name
+        #   000001b19dcf5000 000001b19dcf9000 exe   2    0   0      /usr/local/bin/python3.13
+        #   000001b48652e000 000001b486bb6000 rlib  0    1   0      /usr/local/lib/libpython3.13.so.0.0
+        #   000001b3b8ced000 000001b3b8d25000 rlib  0    2   0      /usr/local/lib/libintl.so.8.2
+        #   ...
+        #
+        # Note that `ldd` on OpenBSD explicitly disallows unresolved libraries, and exits with signal 9 if any are
+        # encountered.
+        #
+        # The pattern implicitly ignores the first two lines (input path and the header).
+        LDD_PATTERN = re.compile(
+            r"^\s+(?P<start>\S+)\s+(?P<end>\S+)\s+(?P<type>\S+)\s+(?P<open>\d+)\s+(?P<ref>\d+)\s+(?P<grp_ref>\d+)"
+            r"\s+(?P<name>.*)$"
+        )
     else:
         LDD_PATTERN = re.compile(r"\s*(.*?)\s+=>\s+(.*?)\s+\(.*\)")
 
@@ -455,6 +472,19 @@ def _get_imports_ldd(filename, search_paths):
                     #   'sharedlib.so'
                     lib = m.group('libshared')
                     name = os.path.basename(lib)
+            elif compat.is_openbsd:
+                # Ignore 'exe', 'dlib', and 'ld.so' types.
+                if m['type'] != 'rlib':
+                    continue
+
+                # Ignore the entry with ref=0, which appears to be the scanned binary itself; should be already
+                # discarded by type check above (due to being 'exe' or 'dlib'), but just in case...
+                ref = int(m['ref'])
+                if ref == 0:
+                    continue
+
+                lib = m['name']
+                name = os.path.basename(lib)
             elif compat.is_hpux:
                 name, lib = m.group(1), m.group(2)
             else:
