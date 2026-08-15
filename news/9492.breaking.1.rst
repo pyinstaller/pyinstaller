@@ -1,9 +1,11 @@
 (POSIX) When running as a ``onefile`` child process (on POSIX platforms
 other than OpenBSD and AIX), the bootloader now attempts to verify
 the parent process executable via ``procfs`` lookup. This check is
-currently enabled for all ``onefile`` executables, regardless of
-whether the ``setuid`` bit is set on the executable or not. If this
-happens to break a use case with a *non-privileged* ``onefile`` executable
-(for example, due to hardened environment disallowing access to relevant
-``procfs`` entries), let us know, and we might reconsider making the
-check mandatory only for executables with ``setuid`` bit set.
+mandatory for ``onefile`` executables with ``setuid`` bit set; if the
+relevant ``procfs`` entry is inaccessible (for example, due to ``procfs``
+not being mounted, as is the case on FreeBSD by default, or due to access
+being blocked by local security policy), the process will exit with
+security validation error message. For regular ``onefile`` executables
+(without ``setuid`` bit set), the parent-process check is enforced when the
+relevant ``procfs`` entry is accessible, and skipped when it happens to be
+inaccessible.

@@ -399,18 +399,21 @@ executables is still supported, but due to lack of validation, it may be
 subject to environment manipulation.
 
 On POSIX platforms where look-up via ``procfs`` is nominally supported
-(i.e., Linux, Cygwin, NetBSD, and SunOS), it is strictly enforced.
-If the corresponding entry under ``/proc/<ppid>`` cannot be accessed for
-whatever reason (e.g., additional security constraints), the validation
-will fail and prevent the ``onefile`` application from running. This
-currently applies regardless of whether the executable has ``setuid``
-bit set or not.
+(i.e., Linux, Cygwin, FreeBSD, NetBSD, and SunOS), the behavior depends
+on whether the executable has ``setuid`` bit set and whether the
+corresponding entry under ``/proc/<ppid>`` is accessible or not.
 
-On FreeBSD systems, the ``procfs`` fileystem is not mounted by default;
-therefore, the parent-process validation is skipped if ``/proc`` entry
-is inaccessible, but only if ``setuid`` bit is not set on the executable.
-If ``setuid`` bit is set, the executable will fail to run unless parent
-process can be validated (i.e., ``procfs`` filesystem is mounted).
+For executables with ``setuid`` bit set, the parent-process validation
+is mandatory. If the corresponding entry under ``/proc/<ppid>`` is
+inaccessible for whatever reason (for example, due to ``procfs`` not
+being mounted, as is the case on FreeBSD by default, or due to access
+being blocked by local security policy), security validation will
+automatically fail and the process will exit with security validation
+error message.
+
+For regular executables (without ``setuid`` bit set), the parent-process
+check is enforced when the relevant ``procfs`` entry is accessible, and
+skipped when it happens to be inaccessible.
 
 
 .. _bootloader security validation onedir:

@@ -209,16 +209,18 @@ _pyi_security_verify_parent_proces_posix(const struct PYI_CONTEXT *pyi_ctx)
     }
 
     if (realpath(proc_path, parent_executable) == NULL) {
-        /* On FreeBSD, the /proc filesystem is not available by default (i.e., needs
-         * to be explicitly mounted). So allow this to fail for non-setuid executables. */
-#if defined(__FreeBSD__)
-        if (!pyi_ctx->has_setuid) {
-            PYI_DEBUG("SECURITY: could not access %s - assuming missing procfs (allowed for non-setuid executable on FreeBSD)!\n");
+        /* The access to /proc entry might be blocked due to security policy,
+         * or by proc filesystem not being mounted (as is the case on FreeBSD
+         * by default). Allow this to be the case for a non-setuid executable
+         * (and skip the parent-process verification), but fail in the case of
+         * a setuid executable. */
+        if (pyi_ctx->has_setuid) {
+            PYI_ERROR("Security validation failure: could not determine the executable path for parent process!\n");
+            return -1;
+        } else {
+            PYI_DEBUG("SECURITY: could not access %s - skipping check for non-setuid executable!\n", proc_path);
             return 0;
         }
-#endif
-        PYI_ERROR("Security validation failure: could not determine the executable path for parent process!\n");
-        return -1;
     }
 
     /* Exclude the .exe suffix from the resolved executable path, in order to

@@ -262,16 +262,14 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
             assert p.returncode not in {0, 42}
             assert (MSG_PROCESS_LEVEL in p.stderr) or (MSG_HOME_DIRECTORY in p.stderr)
         else:  # PYI_PROCESS_LEVEL_PARENT, PYI_PROCESS_LEVEL_MAIN
-            # The process is supposed to be either These should fail the parent process verification in the bootloader.
+            # The process is supposed to be either main application process, or worker sub-process spawned via
+            # `sys.executable`. These should fail the parent process verification in the bootloader.
             #
-            # On platforms where procfs-based look-up of parent executable is not supported (AIX, OpenBSD; but also
-            # FreeBSD without /proc mounted), we cannot validate the parent process. In these cases, we expect the
-            # validation of home directory name to fail (since executable in this test does not have setuid bit set,
-            # which would fail due to strict parent process validation requirement).
-            no_procfs = (
-                compat.is_aix or compat.is_openbsd or compat.is_hpux
-                or (compat.is_freebsd and not os.path.isdir('/proc/curproc'))
-            )
-
+            # On platforms where procfs-based look-up of parent executable is not supported (AIX, OpenBSD) or the
+            # relevant entry under /proc/<ppid> is inaccessible (e.g., FreeBSD without /proc mounted, or any other
+            # supported POSIX platform where local security policy blocks access to /proc/<ppid> directory for other
+            # processes), we cannot validate the parent process. In these cases, we expect the validation of home
+            # directory name to fail (since executable in this test does not have setuid bit set, which would fail
+            # due to strict parent process validation requirement).
             assert p.returncode not in {0, 42}
-            assert (MSG_PARENT_EXECUTABLE in p.stderr) or (no_procfs and MSG_HOME_DIRECTORY in p.stderr)
+            assert (MSG_PARENT_EXECUTABLE in p.stderr) or (MSG_HOME_DIRECTORY in p.stderr)
