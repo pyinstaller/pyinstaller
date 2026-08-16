@@ -15,7 +15,7 @@
 babel==2.18.0
 Django==6.1; python_version >= "3.12"
 future==1.0.0
-gevent==26.7.0; python_version >= "3.9"
+gevent==26.8.0; python_version >= "3.9"
 ipython==9.16.1; python_version >= "3.12"
 keyring==25.7.0; python_version >= "3.9"
 matplotlib==3.11.1; python_version >= "3.11"
