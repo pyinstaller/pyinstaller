@@ -1,0 +1,2 @@
+(Windows) Fix spurious security validation error when a ``onefile``
+executable is launched from a symlinked directory or a junction.

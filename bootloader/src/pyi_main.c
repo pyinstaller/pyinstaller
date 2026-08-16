@@ -1245,44 +1245,29 @@ int pyi_main_onefile_parent_cleanup(struct PYI_CONTEXT *pyi_ctx)
 static int
 _pyi_resolve_executable_win32(char *executable_filename)
 {
-    wchar_t modulename_w[PYI_PATH_MAX];
+    HANDLE process_handle;
+    wchar_t executable_filename_w[PYI_PATH_MAX];
+    DWORD executable_filename_length;
 
-    /* GetModuleFileNameW returns an absolute, fully qualified path */
-    if (!GetModuleFileNameW(NULL, modulename_w, PYI_PATH_MAX)) {
-        PYI_WINERROR_W(L"GetModuleFileNameW", L"Failed to obtain executable path.\n");
+    process_handle = GetCurrentProcess(); /* Get pseudo-handle for current process */
+
+    /* Use QueryFullProcessImageNameW(), which fully resolves the executable
+     * (i.e, resolves the symbolic links / junctions). The same function
+     * is used to obtain parent process executable path in
+     * `_pyi_security_verify_parent_proces_win32()` in pyi_security.c */
+    executable_filename_length = PYI_PATH_MAX;
+    if (!QueryFullProcessImageNameW(process_handle, 0, executable_filename_w, &executable_filename_length)) {
+        PYI_WINERROR_W(L"QueryFullProcessImageNameW", L"Failed to obtain executable path.\n");
+        CloseHandle(process_handle);
         return -1;
     }
 
-    /* If path is a symbolic link, resolve it */
-    if (pyi_win32_is_symlink(modulename_w)) {
-        wchar_t executable_filename_w[PYI_PATH_MAX];
-        int offset = 0;
+    CloseHandle(process_handle);
 
-        PYI_DEBUG_W(L"LOADER: executable file %ls is a symbolic link - resolving...\n", modulename_w);
-
-        /* Resolve */
-        if (pyi_win32_realpath(modulename_w, executable_filename_w) < 0) {
-            PYI_ERROR_W(L"Failed to resolve full path to executable %ls.\n", modulename_w);
-            return -1;
-        }
-
-        /* Remove the extended path indicator, to avoid potential issues due
-         * to its appearance in `sys.executable`, `sys._MEIPASS`, etc. */
-        if (wcsncmp(L"\\\\?\\", executable_filename_w, 4) == 0) {
-            offset = 4;
-        }
-
-        /* Convert to UTF-8 */
-        if (!pyi_win32_wcs_to_utf8(executable_filename_w + offset, executable_filename, PYI_PATH_MAX)) {
-            PYI_ERROR_W(L"Failed to convert executable path to UTF-8.\n");
-            return -1;
-        }
-    } else {
-        /* Convert to UTF-8 */
-        if (!pyi_win32_wcs_to_utf8(modulename_w, executable_filename, PYI_PATH_MAX)) {
-            PYI_ERROR_W(L"Failed to convert executable path to UTF-8.\n");
-            return -1;
-        }
+    /* Convert to UTF-8 */
+    if (!pyi_win32_wcs_to_utf8(executable_filename_w, executable_filename, PYI_PATH_MAX)) {
+        PYI_ERROR_W(L"Failed to convert executable path to UTF-8.\n");
+        return -1;
     }
 
     return 0;
