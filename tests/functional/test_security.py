@@ -273,3 +273,57 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
             # due to strict parent process validation requirement).
             assert p.returncode not in {0, 42}
             assert (MSG_PARENT_EXECUTABLE in p.stderr) or (MSG_HOME_DIRECTORY in p.stderr)
+
+
+# Test that parent-process security validation works correctly in case of symlinked executables (i.e., the executable
+# itself being symlinked, or one of its parent directories being symlinked). See #9508.
+def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path):
+    # Ensure that symbolic links can be created
+    try:
+        test_dir = tmp_path / 'sanity-check' / 'test-dir'
+        test_dir.mkdir(parents=True)
+        test_file = tmp_path / 'sanity-check' / 'test-file.txt'
+        test_file.write_text('Test', encoding='utf-8')
+
+        test_dir_symlink = tmp_path / 'sanity-check' / 'test-dir-symlink'
+        test_file_symlink = tmp_path / 'sanity-check' / 'test-file-symlink.txt'
+
+        os.symlink(test_file, test_file_symlink)
+        os.symlink(test_dir, test_dir_symlink, target_is_directory=True)
+    except OSError:
+        if compat.is_win:
+            raise
+            pytest.skip("OS does not support creation of symbolic links.")
+        else:
+            raise
+
+    # Basic test application
+    pyi_builder.test_source("""
+        print("Hello world")
+    """)
+
+    print("\nFinished build and sanity-check tests - preparing the actual test...", file=sys.stdout)
+    print("\nFinished build and sanity-check tests - preparing the actual test...", file=sys.stderr)
+
+    executables = pyi_builder._find_executables('test_source')
+    assert len(executables) == 1
+    executable = executables[0]
+    print(f"Test application's executable: {executable}", file=sys.stdout)
+    print(f"Test application's executable: {executable}", file=sys.stderr)
+
+    # Symlinked executable
+    symlinked_exe = tmp_path / ('symlinked_executable.exe' if compat.is_win else 'symlinked_executable')
+    os.symlink(executable, symlinked_exe)
+
+    print(f"Running symlinked executable: {symlinked_exe}", file=sys.stdout)
+    print(f"Running symlinked executable: {symlinked_exe}", file=sys.stderr)
+    subprocess.run([symlinked_exe], check=True)
+
+    # Symlinked dist directory
+    symlinked_dist = tmp_path / 'symlinked-dist'
+    os.symlink(tmp_path / 'dist', symlinked_dist)
+    symlinked_dist_exe = symlinked_dist / pathlib.Path(executable).relative_to(tmp_path / 'dist')
+
+    print(f"Running executable in symlinked dist directory: {symlinked_dist_exe}", file=sys.stdout)
+    print(f"Running executable in symlinked dist directory: {symlinked_dist_exe}", file=sys.stderr)
+    subprocess.run([symlinked_dist_exe], check=True)
