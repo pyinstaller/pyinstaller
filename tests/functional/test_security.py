@@ -272,7 +272,8 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
             # directory name to fail (since executable in this test does not have setuid bit set, which would fail
             # due to strict parent process validation requirement).
             assert p.returncode not in {0, 42}
-            assert (MSG_PARENT_EXECUTABLE in p.stderr) or (MSG_HOME_DIRECTORY in p.stderr)
+            assert (MSG_PARENT_EXECUTABLE in p.stderr) or \
+                ((not compat.is_win and not compat.is_darwin) and MSG_HOME_DIRECTORY in p.stderr)
 
 
 # Test that parent-process security validation works correctly in case of symlinked executables (i.e., the executable
