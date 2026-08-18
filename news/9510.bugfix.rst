@@ -1,0 +1,2 @@
+(Windows) Revise earlier fix for :issue:`9508` to avoid breaking
+executables located on ImDisk RAMDISK volumes.

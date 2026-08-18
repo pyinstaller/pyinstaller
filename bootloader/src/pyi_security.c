@@ -59,8 +59,8 @@ _pyi_security_verify_parent_proces_win32(const struct PYI_CONTEXT *pyi_ctx)
 
     HANDLE process_handle;
     wchar_t parent_executable_w[PYI_PATH_MAX];
-    char parent_executable[PYI_PATH_MAX];
-    DWORD parent_executable_length;
+    wchar_t current_executable_w[PYI_PATH_MAX];
+    DWORD buffer_length;
 
     /* Current process ID, for look-up in the process snapshot */
     pid = GetCurrentProcessId();
@@ -103,13 +103,13 @@ _pyi_security_verify_parent_proces_win32(const struct PYI_CONTEXT *pyi_ctx)
      * via symbolic link. */
     process_handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, ppid);
     if (process_handle == INVALID_HANDLE_VALUE) {
-        PYI_ERROR_W(L"Security validation failure: failed to obtain information about parent proces!\n");
+        PYI_ERROR_W(L"Security validation failure: failed to obtain information about parent process!\n");
         return -1;
     }
 
-    parent_executable_length = PYI_PATH_MAX;
-    if (!QueryFullProcessImageNameW(process_handle, 0, parent_executable_w, &parent_executable_length)) {
-        PYI_ERROR_W(L"Security validation failure: failed to obtain executable path for parent proces!\n");
+    buffer_length = PYI_PATH_MAX;
+    if (!QueryFullProcessImageNameW(process_handle, PROCESS_NAME_NATIVE, parent_executable_w, &buffer_length)) {
+        PYI_ERROR_W(L"Security validation failure: failed to obtain executable path for parent process!\n");
         CloseHandle(process_handle);
         return -1;
     }
@@ -118,14 +118,26 @@ _pyi_security_verify_parent_proces_win32(const struct PYI_CONTEXT *pyi_ctx)
 
     PYI_DEBUG_W(L"SECURITY: parent process executable: %ls\n", parent_executable_w);
 
-    /* Convert to UTF-8 for comparison */
-    if (!pyi_win32_wcs_to_utf8(parent_executable_w, parent_executable, PYI_PATH_MAX)) {
-        PYI_ERROR_W(L"Security validation failure: failed to convert parent process executable path to UTF-8!\n");
+    /* Look up the current-process executable. We cannot use pyi_ctx->executable_filename,
+     * which is resolved using GetModuleFileNameW() for compatibility reasons (see #9510),
+     * whereas we need to resolve the executable using QueryFullProcessImageNameW() here
+     * to ensure same behavior (i.e., full resolution of file symbolic links, directory
+     * symbolic links, and junctions) as above with parent-process executable (see #9508). */
+    process_handle = GetCurrentProcess();
+
+    buffer_length = PYI_PATH_MAX;
+    if (!QueryFullProcessImageNameW(process_handle, PROCESS_NAME_NATIVE, current_executable_w, &buffer_length)) {
+        PYI_ERROR_W(L"Security validation failure: failed to obtain executable path for current process!\n");
+        CloseHandle(process_handle);
         return -1;
     }
 
+    CloseHandle(process_handle);
+
+    PYI_DEBUG_W(L"SECURITY: current process executable: %ls\n", current_executable_w);
+
     /* Ensure that same executable is used */
-    if (strcmp(parent_executable, pyi_ctx->executable_filename) != 0) {
+    if (wcscmp(parent_executable_w, current_executable_w) != 0) {
         PYI_ERROR_W(L"Security validation failure: parent process has different executable!\n");
         return -1;
     }
