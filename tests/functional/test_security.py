@@ -327,3 +327,64 @@ def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path):
     print(f"Running executable in symlinked dist directory: {symlinked_dist_exe}", file=sys.stdout)
     print(f"Running executable in symlinked dist directory: {symlinked_dist_exe}", file=sys.stderr)
     subprocess.run([symlinked_dist_exe], check=True)
+
+
+# Test that parent-process security validation works correctly in case of intermixed processes, i.e., the application
+# process spawning another program, which then spawns another instance of application (subprocess). See #9512 and #9513.
+def test_security_validation_with_intermixed_subprocesses(pyi_builder, tmp_path):
+    # TODO
+    if pyi_builder._mode == 'onefile':
+        pytest.xfail("security validation needs to be reworked to allow for intermixed processes")
+
+    # Wrapper script
+    wrapper_script = '\n'.join([
+        "import sys",
+        "import subprocess",
+        "print('Wrapper script: launching executable...', file=sys.stderr)",
+        "subprocess.run(sys.argv[1:3], check=True)",
+        "print('Wrapper script: done!', file=sys.stderr)",
+    ])
+    script_file = tmp_path / "wrapper_script.py"
+    script_file.write_text(wrapper_script, encoding='utf-8')
+
+    # Test program
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+        import subprocess
+
+        if len(sys.argv) == 3:
+            output_dir = sys.argv[1]
+            python_executable = sys.argv[2]
+            mode = 'main'
+        elif len(sys.argv) == 2:
+            output_dir = sys.argv[1]
+            mode = 'nested'
+        else:
+            raise ValueError("Invalid number of arguments")
+
+        # Write path to top-level application directory to a file
+        print(f"Application top-level directory: {sys._MEIPASS!r}", file=sys.stderr)
+        output_file = os.path.join(output_dir, mode + '.txt')
+        with open(output_file, 'w', encoding='utf-8') as fp:
+            print(sys._MEIPASS, file=fp)
+
+        # In main mode, spawn python process to run the wrapper script (which will run the executable again)
+        if mode == 'main':
+            print("Running wrapper script...", file=sys.stderr)
+            script_file = os.path.join(output_dir, 'wrapper_script.py')
+            subprocess.run([python_executable, script_file, sys.executable, output_dir], check=True)
+        """,
+        app_args=[str(tmp_path), str(compat.python_executable)]
+    )
+
+    output_file_main = tmp_path / 'main.txt'
+    application_dir_main = output_file_main.read_text(encoding='utf-8').strip()
+    print(f"Top-level application directory (main): {application_dir_main!r}", file=sys.stderr)
+
+    output_file_nested = tmp_path / 'nested.txt'
+    application_dir_nested = output_file_nested.read_text(encoding='utf-8').strip()
+    print(f"Top-level application directory (nested): {application_dir_nested!r}", file=sys.stderr)
+
+    assert application_dir_main == application_dir_nested
