@@ -12,6 +12,8 @@
 import copy
 import os
 import pathlib
+import shutil
+import stat
 import subprocess
 import sys
 
@@ -25,6 +27,17 @@ PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART = -1
 PYI_PROCESS_LEVEL_PARENT = 0
 PYI_PROCESS_LEVEL_MAIN = 1
 PYI_PROCESS_LEVEL_SUBPROCESS = 2
+
+# ** Scenarios **
+# Arbitrary directory passed as the application's top-level directory (i.e., does not have a _MEI prefix).
+SCENARIO_ARBITRARY_DIR = 0
+# Directory with _MEI prefix passed, but with PID part not corresponding to any process in the process ancestor tree.
+SCENARIO_MEI_DIR_MISMATCHED_PID = 1
+# Directory with _MEI prefix passed, and with PID part set to the PID of the current (pytest) process.
+SCENARIO_MEI_DIR_MATCHED_PID = 2
+# Additional test for non-Windows: same as above, but with setuid bit set on the executable (the owner still being the
+# user, as setting up setuid-root is difficult for the test...)
+SCENARIO_SETUID_EXECUTABLE = 3
 
 
 def _ensure_long_path(path):
@@ -114,8 +127,61 @@ def _ensure_long_path(path):
         'SUBPROCESS',
     ],
 )
-def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
-    mode = pyi_builder._mode  # Original mode
+@pytest.mark.parametrize(
+    'scenario', [
+        SCENARIO_ARBITRARY_DIR,
+        SCENARIO_MEI_DIR_MISMATCHED_PID,
+        SCENARIO_MEI_DIR_MATCHED_PID,
+        *([] if compat.is_win else [SCENARIO_SETUID_EXECUTABLE]),
+    ],
+    ids=[
+        'ArbitraryDir',
+        'MeiDirMismatchedPid',
+        'MeiDirMatchedPid',
+        *([] if compat.is_win else ['SetuidExecutable']),
+    ]
+)
+@pytest.mark.parametrize('splash_enabled', [False, True], ids=['nosplash', 'splash'])
+def test_application_home_directory_hijack(
+    pyi_builder,
+    tmp_path,
+    script_dir,
+    monkeypatch,
+    splash_enabled,
+    parent_level,
+    scenario,
+):
+    build_mode = pyi_builder._mode  # The original build mode (i.e., of the real test application)
+
+    # Splash-screen enabled variant requires tkinter to build; but since we do not require splash screen to actually
+    # work, we do not need to check if tkinter is fully-functional, only available.
+    splash_args = []
+    if splash_enabled:
+        if compat.is_darwin:
+            pytest.skip('splash screen is not supported on macOS')
+        else:
+            from PyInstaller.utils.hooks.tcl_tk import tcltk_info
+            if not tcltk_info.available:
+                pytest.skip('tkinter is not available')
+
+        splash_image = script_dir.parent / 'data' / 'splash' / 'image.png'
+        splash_args = ['--splash', str(splash_image)]
+
+        # For this test, we need splash screen enabled in the build, but we are not interested in having it shown at
+        # run-time. Therefore, explicitly suppress - primarily to avoid spurious errors on our Cygwin CI, where splash
+        # screen tends to be flaky, but also to avoid unnecessarily running it on other platforms.
+        monkeypatch.setenv("PYINSTALLER_SUPPRESS_SPLASH_SCREEN", "1")
+
+    # Flag indicating that mitigation is unavailable; hijack is possible for unprivileged onefile executables, while
+    # setuid-enabled onefile executables should raise an error.
+    mitigation_unavailable = (
+        # OpenBSD does not have /proc filesystem available at all.
+        compat.is_openbsd or
+        # AIX has /proc filesystem available, but does not provide executable information.
+        compat.is_aix or
+        # On FreeBSD, /proc filesystem is not mounted by default
+        (compat.is_freebsd and not os.path.isdir('/proc/curproc'))
+    )
 
     # Create files with secrets
     SECRET_REAL = "REAL"
@@ -155,7 +221,7 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
     # Build the test application
     pyi_builder.test_source(
         test_script,
-        pyi_args=['--add-data', f'{str(real_secret_file)}:.'],
+        pyi_args=['--add-data', f'{str(real_secret_file)}:.', *splash_args],
         app_name='app_real',
         app_args=[SECRET_REAL],
     )
@@ -165,28 +231,64 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
 
     pyi_builder.test_source(
         test_script,
-        pyi_args=['--add-data', f'{str(fake_secret_file)}:.'],
+        pyi_args=['--add-data', f'{str(fake_secret_file)}:.', *splash_args],
         app_name='app_fake',
         app_args=[SECRET_FAKE],
     )
 
     # The actual test - try to pass the fake application's contents
     # directory as top-level directory for the real test application.
-    print("\nFinished build and sanity-check tests - preparing the actual test...", file=sys.stdout)
     print("\nFinished build and sanity-check tests - preparing the actual test...", file=sys.stderr)
 
     executables = pyi_builder._find_executables('app_real')
     assert len(executables) == 1
     executable = executables[0]
-    print(f"Test application's executable: {executable}", file=sys.stdout)
-    print(f"Test application's executable: {executable}", file=sys.stderr)
 
     executables = pyi_builder._find_executables('app_fake')
     assert len(executables) == 1
     fake_app_dir = pathlib.Path(executables[0]).parent / '_internal'
-    print(f"Fake application's directory: {str(fake_app_dir)!r}", file=sys.stdout)
-    print(f"Fake application's directory: {str(fake_app_dir)!r}", file=sys.stderr)
     assert fake_app_dir.is_dir()
+
+    # Scenario-specific adjustments to executable and/or application directory
+    if scenario == SCENARIO_ARBITRARY_DIR:
+        pass  # Pass the fake_app_dir and executable as-is
+    elif scenario == SCENARIO_MEI_DIR_MISMATCHED_PID:
+        # Copy the fake_app_dir into _MEI-formatted directory with PID part set to 0. The "random" part is also
+        # set to 0, to pass the length check.
+        mei_dir = tmp_path / f'_MEI{0:08x}000000'
+        shutil.copytree(fake_app_dir, mei_dir, symlinks=True)
+        fake_app_dir = mei_dir
+    elif scenario == SCENARIO_MEI_DIR_MATCHED_PID:
+        # Same as above, but with the process ID of the current (pytest) process. While technically a valid ancestor
+        # process, it should still fail the executable check.
+        mei_dir = tmp_path / f'_MEI{os.getpid():08x}000000'
+        shutil.copytree(fake_app_dir, mei_dir, symlinks=True)
+        fake_app_dir = mei_dir
+    elif scenario == SCENARIO_SETUID_EXECUTABLE:
+        assert not compat.is_win, 'Test scenario not supported on Windows'
+
+        # Make a copy of executable with setuid bit set. The copy is kept in the same place as the original
+        # executable, to ensure it has adjacent contents directory in onedir mode.
+        setuid_executable = pathlib.Path(executable).with_name('setuid_executable')
+        shutil.copy2(executable, setuid_executable)
+
+        st_mode = os.lstat(setuid_executable).st_mode
+        os.chmod(setuid_executable, st_mode | stat.S_ISUID)
+
+        executable = setuid_executable
+
+        # Also format the _MEI directory with process ID of the current (pytest) process, and ensure 0700 permissions
+        # on the directory. This combination simulates an attempt at accessing a temporary directory of another onefile
+        # PyInstaller-frozen application.
+        mei_dir = tmp_path / f'_MEI{os.getpid():08x}000000'
+        shutil.copytree(fake_app_dir, mei_dir, symlinks=True)
+        os.chmod(mei_dir, stat.S_IRWXU)
+        fake_app_dir = mei_dir
+    else:
+        raise ValueError(f"Unsupported scenario: {scenario!r}")
+
+    print(f"Test application's executable: {executable}", file=sys.stderr)
+    print(f"Fake application's directory: {str(fake_app_dir)!r}", file=sys.stderr)
 
     # The cloak & dagger part...
     fake_env = copy.deepcopy(os.environ)
@@ -201,7 +303,6 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
     archive_path = _ensure_long_path(archive_path)
     if compat.is_cygwin and archive_path.lower().endswith('.exe'):
         archive_path = archive_path[:-4]  # Under Cygwin, bootloader resolves executable/archive without .exe suffix
-    print(f"Setting _PYI_ARCHIVE_FILE to: {archive_path!r}", file=sys.stdout)
     print(f"Setting _PYI_ARCHIVE_FILE to: {archive_path!r}", file=sys.stderr)
     fake_env['_PYI_ARCHIVE_FILE'] = archive_path
     # Try to trick process into running a specific codepath by manipulating its parent level.
@@ -209,11 +310,9 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
     # Try to hijack the top-level application directory
     fake_env['_PYI_APPLICATION_HOME_DIR'] = str(fake_app_dir)
 
-    print(f"Running executable: {executable}", file=sys.stdout)
     print(f"Running executable: {executable}", file=sys.stderr)
     p = subprocess.run([executable, SECRET_REAL], env=fake_env, capture_output=True, encoding='utf-8')
 
-    print(f"Return code: {p.returncode}", file=sys.stdout)
     print(f"Return code: {p.returncode}", file=sys.stderr)
 
     if p.stdout:
@@ -232,48 +331,101 @@ def test_application_home_directory_hijack(pyi_builder, tmp_path, parent_level):
         assert f"Invalid parent process level: {parent_level}" in p.stderr
         return
 
-    # PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART should be invalid on Windows, macOS, and Cygwin, regardless of mode.
-    non_posix = compat.is_win or compat.is_darwin or compat.is_cygwin
-    if non_posix and parent_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART:
-        assert p.returncode not in {0, 42}
-        assert f"Invalid parent process level: {parent_level}" in p.stderr
-        return
+    # PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART should be invalid on Windows, macOS, and Cygwin, regardless of build mode
+    # and regardless of whether splash screen is enabled in the build or not. On other platforms, it is valid for onedir
+    # mode, and for onefile mode with splash screen enabled.
+    if parent_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART:
+        if compat.is_win or compat.is_darwin or compat.is_cygwin:
+            assert p.returncode not in {0, 42}
+            assert f"Invalid parent process level: {parent_level}" in p.stderr
+            return
+        elif build_mode == 'onefile' and not splash_enabled:
+            assert p.returncode not in {0, 42}
+            assert "Security validation failure: unexpected process level!" in p.stderr
+            return
 
-    if mode == 'onedir':
-        # In onedir build, the _PYI_APPLICATION_HOME_DIR environment variable should not be used at all - so the test
+    # Onedir mode
+    if build_mode == 'onedir':
+        # In a onedir build, the _PYI_APPLICATION_HOME_DIR environment variable should not be used at all - so the test
         # application should run normally, even if it is tricked into believing to be a sub-process of a onedir main
         # application process...
-        assert p.returncode == 0
-    else:
-        # Onefile mode
-        MSG_PROCESS_LEVEL = "Security validation failure: unexpected process level!"
-        MSG_HOME_DIRECTORY = "Security validation failure: unexpected name of application's home directory!"
-        MSG_PARENT_EXECUTABLE = "Security validation failure: parent process has different executable!"
-
-        if parent_level == PYI_PROCESS_LEVEL_UNKNOWN:
-            # This is same as _PYI_PARENT_PROCESS_LEVEL not being set at all; the process should run as parent process
-            # of onefile application and set up new environment. Thus, the test application should run normally.
+        #
+        # In the setuid-executable scenario, we expect the executable to fail validation, because the _internal
+        # directory has default permissions (typically 755), which are not as strict as required (0700).
+        if scenario == SCENARIO_SETUID_EXECUTABLE:
+            assert p.returncode not in {0, 42}
+            assert "Security validation failure: application's home directory has invalid permissions " in p.stderr
+        else:
             assert p.returncode == 0
-        elif parent_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART:
-            # This level is valid only in POSIX onefile builds with splash screen enabled. On non-POSIX systems, it
-            # should exit with message about unrecognized level (handled by an earlier check). On POSIX systems, it
-            # should similarly exit with message about unexpected level, since splash screen is not enabled on the
-            # build; if it were enabled, the validation of directory name would fail instead.
+        return
+
+    # Onefile mode
+    MSG_HOME_DIRECTORY = "Security validation failure: unexpected name of application's home directory!"
+    MSG_PARENT_EXECUTABLE = "Security validation failure: parent process has different executable!"
+
+    # If we are running setuid-executable scenario and no mitigation is available, the executable should exit with an
+    # error.
+    if scenario == SCENARIO_SETUID_EXECUTABLE and mitigation_unavailable:
+        assert p.returncode not in {0, 42}
+        # AIX, OpenBSD
+        MSG_ALWAYS_UNSUPPORTED = \
+            "Security validation failure: setuid-enabled executables are not supported on this platform!"
+        # FreeBSD without /proc mounted
+        MSG_CONDITIONALLY_UNSUPPORTED = \
+            "Security validation failure: could not determine the executable path for parent process!"
+        if parent_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART:
+            # TODO: we should raise early setuid-executable-not-supported error...
+            assert MSG_HOME_DIRECTORY in p.stderr
+        else:
+            assert (MSG_ALWAYS_UNSUPPORTED in p.stderr) or (MSG_CONDITIONALLY_UNSUPPORTED in p.stderr)
+        return
+
+    if parent_level == PYI_PROCESS_LEVEL_UNKNOWN:
+        # This is same as _PYI_PARENT_PROCESS_LEVEL not being set at all; the process should run as parent process
+        # of onefile application and set up new environment. Thus, the test application should run normally.
+        # (Except in the setuid-executable scenario with mitigation being unavailable, which should already be
+        # handled by earlier check.)
+        assert p.returncode == 0
+    elif parent_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART:
+        # This level is valid only in POSIX onefile builds with splash screen enabled. Since the process retains
+        # its process ID across restart, it can always detect mismatch in the home directory name.
+        assert p.returncode not in {0, 42}
+        assert MSG_HOME_DIRECTORY in p.stderr
+    else:  # PYI_PROCESS_LEVEL_PARENT, PYI_PROCESS_LEVEL_MAIN
+        # The process is supposed to be either main application process, or worker sub-process spawned via
+        # `sys.executable`. These should fail the parent process verification in the bootloader.
+        #
+        # On platforms where procfs-based look-up of parent executable is not supported (AIX, OpenBSD) or the
+        # relevant entry under /proc/<ppid> is inaccessible (e.g., FreeBSD without /proc mounted, or any other
+        # supported POSIX platform where local security policy blocks access to /proc/<ppid> directory for other
+        # processes), we cannot validate the parent process. In these cases, we expect the validation of
+        # arbitrary home directory name to fail, the faked home directory with _MEI prefix to slip through,
+        # and executable with setuid bit set to block the execution.
+        if scenario == SCENARIO_ARBITRARY_DIR:
             assert p.returncode not in {0, 42}
-            assert (MSG_PROCESS_LEVEL in p.stderr) or (MSG_HOME_DIRECTORY in p.stderr)
-        else:  # PYI_PROCESS_LEVEL_PARENT, PYI_PROCESS_LEVEL_MAIN
-            # The process is supposed to be either main application process, or worker sub-process spawned via
-            # `sys.executable`. These should fail the parent process verification in the bootloader.
-            #
-            # On platforms where procfs-based look-up of parent executable is not supported (AIX, OpenBSD) or the
-            # relevant entry under /proc/<ppid> is inaccessible (e.g., FreeBSD without /proc mounted, or any other
-            # supported POSIX platform where local security policy blocks access to /proc/<ppid> directory for other
-            # processes), we cannot validate the parent process. In these cases, we expect the validation of home
-            # directory name to fail (since executable in this test does not have setuid bit set, which would fail
-            # due to strict parent process validation requirement).
+            if mitigation_unavailable:
+                assert MSG_HOME_DIRECTORY in p.stderr
+            else:
+                assert MSG_PARENT_EXECUTABLE in p.stderr
+        elif scenario == SCENARIO_MEI_DIR_MISMATCHED_PID:
+            if mitigation_unavailable:
+                assert p.returncode == 42
+            else:
+                assert p.returncode not in {0, 42}
+                assert MSG_PARENT_EXECUTABLE in p.stderr
+        elif scenario == SCENARIO_MEI_DIR_MATCHED_PID:
+            if mitigation_unavailable:
+                assert p.returncode == 42
+            else:
+                assert p.returncode not in {0, 42}
+                assert MSG_PARENT_EXECUTABLE in p.stderr
+        elif scenario == SCENARIO_SETUID_EXECUTABLE:
             assert p.returncode not in {0, 42}
-            assert (MSG_PARENT_EXECUTABLE in p.stderr) or \
-                ((not compat.is_win and not compat.is_darwin) and MSG_HOME_DIRECTORY in p.stderr)
+            # Platforms without mitigation are explicitly handled earlier; so here, we expect security validation
+            # failure.
+            assert MSG_PARENT_EXECUTABLE in p.stderr
+        else:
+            raise ValueError(f"Unsupported scenario: {scenario!r}")
 
 
 # Test that parent-process security validation works correctly in case of symlinked executables (i.e., the executable
@@ -302,20 +454,17 @@ def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path):
         print("Hello world")
     """)
 
-    print("\nFinished build and sanity-check tests - preparing the actual test...", file=sys.stdout)
     print("\nFinished build and sanity-check tests - preparing the actual test...", file=sys.stderr)
 
     executables = pyi_builder._find_executables('test_source')
     assert len(executables) == 1
     executable = executables[0]
-    print(f"Test application's executable: {executable}", file=sys.stdout)
     print(f"Test application's executable: {executable}", file=sys.stderr)
 
     # Symlinked executable
     symlinked_exe = tmp_path / ('symlinked_executable.exe' if compat.is_win else 'symlinked_executable')
     os.symlink(executable, symlinked_exe)
 
-    print(f"Running symlinked executable: {symlinked_exe}", file=sys.stdout)
     print(f"Running symlinked executable: {symlinked_exe}", file=sys.stderr)
     subprocess.run([symlinked_exe], check=True)
 
@@ -324,7 +473,6 @@ def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path):
     os.symlink(tmp_path / 'dist', symlinked_dist)
     symlinked_dist_exe = symlinked_dist / pathlib.Path(executable).relative_to(tmp_path / 'dist')
 
-    print(f"Running executable in symlinked dist directory: {symlinked_dist_exe}", file=sys.stdout)
     print(f"Running executable in symlinked dist directory: {symlinked_dist_exe}", file=sys.stderr)
     subprocess.run([symlinked_dist_exe], check=True)
 
