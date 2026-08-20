@@ -127,7 +127,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
     PYI_DEBUG("LOADER: executable file: %s\n", pyi_ctx->executable_filename);
 
     /* Check if executable set setuid bit set (POSIX platforms only). */
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32)
     if (1) {
         struct stat executable_stat;
 

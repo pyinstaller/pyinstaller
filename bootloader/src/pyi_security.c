@@ -302,7 +302,7 @@ pyi_security_verify_parent_proces(const struct PYI_CONTEXT *pyi_ctx)
  * it should ensure that setuid-enabled onedir executable has an
  * accompanying contents directory that cannot be modified by a
  * non-privileged user. */
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32)
 
 static int
 pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *pyi_ctx)
@@ -420,7 +420,7 @@ pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx, unsi
 
     /* POSIX: additional owner/permissions validation when setuid bit is
      * set on the executable */
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32)
     if (pyi_security_verify_application_home_dir_permissions(pyi_ctx) < 0) {
         return -1;
     }
