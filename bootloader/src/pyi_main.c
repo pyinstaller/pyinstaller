@@ -515,7 +515,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                 /* This is supposed to be a onefile child process; therefore,
                  * its parent should be a valid onefile process, and should
                  * be using the same executable... */
-                if (pyi_security_verify_parent_proces(pyi_ctx) < 0) {
+                if (pyi_security_verify_parent_process(pyi_ctx) < 0) {
                     return -1;
                 }
                 /* Verify the name of the application's home directory.

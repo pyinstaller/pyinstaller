@@ -48,7 +48,7 @@
 #if defined(_WIN32)
 
 static int
-_pyi_security_verify_parent_proces_win32(const struct PYI_CONTEXT *pyi_ctx)
+_pyi_security_verify_parent_process_win32(const struct PYI_CONTEXT *pyi_ctx)
 {
     DWORD pid;
     DWORD ppid;
@@ -148,7 +148,7 @@ _pyi_security_verify_parent_proces_win32(const struct PYI_CONTEXT *pyi_ctx)
 #elif defined(__APPLE__)
 
 static int
-_pyi_security_verify_parent_proces_macos(const struct PYI_CONTEXT *pyi_ctx)
+_pyi_security_verify_parent_process_macos(const struct PYI_CONTEXT *pyi_ctx)
 {
     /* Try to look up the executable of the parent process - it should
      * be the same as that of the current process. */
@@ -175,7 +175,7 @@ _pyi_security_verify_parent_proces_macos(const struct PYI_CONTEXT *pyi_ctx)
 #else
 
 static int
-_pyi_security_verify_parent_proces_posix(const struct PYI_CONTEXT *pyi_ctx)
+_pyi_security_verify_parent_process_posix(const struct PYI_CONTEXT *pyi_ctx)
 {
     /* Try to look up the executable of the parent process - it should
      * be the same as that of the current process. */
@@ -265,17 +265,17 @@ _pyi_security_verify_parent_proces_posix(const struct PYI_CONTEXT *pyi_ctx)
 
 
 int
-pyi_security_verify_parent_proces(const struct PYI_CONTEXT *pyi_ctx)
+pyi_security_verify_parent_process(const struct PYI_CONTEXT *pyi_ctx)
 {
     PYI_DEBUG("SECURITY: verifying parent process...\n");
 
     /* Use OS-specific implementation */
 #if defined(_WIN32)
-    return _pyi_security_verify_parent_proces_win32(pyi_ctx);
+    return _pyi_security_verify_parent_process_win32(pyi_ctx);
 #elif defined(__APPLE__)
-    return _pyi_security_verify_parent_proces_macos(pyi_ctx);
+    return _pyi_security_verify_parent_process_macos(pyi_ctx);
 #else
-    return _pyi_security_verify_parent_proces_posix(pyi_ctx);
+    return _pyi_security_verify_parent_process_posix(pyi_ctx);
 #endif
 }
 
