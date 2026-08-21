@@ -37,6 +37,46 @@
 #include "pyi_utils.h"
 
 
+
+/**********************************************************************\
+ *      Early check for availability of parent-process validation     *
+\**********************************************************************/
+/* Check whether parent-process validation is available on this platform
+ * (strictly required for setuid-enabled onefile executables), so we can
+ * raise an early error on known unsupported platforms. */
+int
+pyi_security_check_onefile_setuid_allowed()
+{
+#if defined(_WIN32)
+    /* See _pyi_security_verify_parent_process_win32() */
+    return 0;
+#elif defined(__APPLE__)
+    /* See _pyi_security_verify_parent_process_macos() */
+    return 0;
+#elif defined(__linux__) || defined(__CYGWIN__) || defined(__NetBSD__)
+    /* See _pyi_security_verify_parent_process_posix() */
+    return 0;
+#elif defined(__FreeBSD__)
+    /* See _pyi_security_verify_parent_process_posix(); supported only if
+     * /proc is available. */
+    struct stat curproc_dir_stat;
+    if (stat("/proc/curproc", &curproc_dir_stat) < 0) {
+        PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this system (missing /proc)!\n");
+        return -1;
+    }
+    return 0;
+#elif defined(__sun)
+    /* See _pyi_security_verify_parent_process_posix() */
+    return 0;
+#else
+    /* See _pyi_security_verify_parent_process_posix; other POSIX platforms
+     * are unsupported due to lack of required information in /proc */
+    PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this platform!\n");
+    return -1;
+#endif
+}
+
+
 /**********************************************************************\
  *                   Verification of parent process                   *
 \**********************************************************************/
@@ -262,7 +302,6 @@ _pyi_security_verify_parent_process_posix(const struct PYI_CONTEXT *pyi_ctx)
 }
 
 #endif
-
 
 int
 pyi_security_verify_parent_process(const struct PYI_CONTEXT *pyi_ctx)

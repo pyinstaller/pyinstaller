@@ -364,20 +364,21 @@ def test_application_home_directory_hijack(
     MSG_PARENT_EXECUTABLE = "Security validation failure: parent process has different executable!"
 
     # If we are running setuid-executable scenario and no mitigation is available, the executable should exit with an
-    # error.
+    # early error.
     if scenario == SCENARIO_SETUID_EXECUTABLE and mitigation_unavailable:
         assert p.returncode not in {0, 42}
-        # AIX, OpenBSD
-        MSG_ALWAYS_UNSUPPORTED = \
-            "Security validation failure: setuid-enabled executables are not supported on this platform!"
-        # FreeBSD without /proc mounted
-        MSG_CONDITIONALLY_UNSUPPORTED = \
-            "Security validation failure: could not determine the executable path for parent process!"
-        if parent_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART:
-            # TODO: we should raise early setuid-executable-not-supported error...
-            assert MSG_HOME_DIRECTORY in p.stderr
+        if compat.is_freebsd:
+            # FreeBSD without /proc mounted
+            MSG_UNSUPPORTED_SYSTEM = (
+                "Security validation failure: setuid-enabled executables are not supported on this system "
+                "(missing /proc)!"
+            )
+            assert MSG_UNSUPPORTED_SYSTEM in p.stderr
         else:
-            assert (MSG_ALWAYS_UNSUPPORTED in p.stderr) or (MSG_CONDITIONALLY_UNSUPPORTED in p.stderr)
+            # AIX, OpenBSD
+            MSG_UNSUPPORTED_PLATFORM = \
+                "Security validation failure: setuid-enabled executables are not supported on this platform!"
+            assert MSG_UNSUPPORTED_PLATFORM in p.stderr
         return
 
     if parent_level == PYI_PROCESS_LEVEL_UNKNOWN:

@@ -413,6 +413,18 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
         bool create_temp_dir;
         bool is_parent = true;
 
+        /* If setuid bit is set on the executable, check that parent-process
+         * security validation is available on this platform/system. This
+         * ensures that on known unsupported platforms (such as AIX and
+         * OpenBSD), we exit with an early error in the parent onefile
+         * process, instead of trying to set up a child process that is
+         * doomed to fail... */
+        if (pyi_ctx->has_setuid) {
+            if (pyi_security_check_onefile_setuid_allowed() < 0) {
+                return -1;
+            }
+        }
+
         if (pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART) {
             /* POSIX build with splash screen enabled; before restart. */
             PYI_DEBUG("LOADER: this is parent process of onefile application (before restart).\n");

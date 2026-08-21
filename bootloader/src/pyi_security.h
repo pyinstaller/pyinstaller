@@ -21,6 +21,7 @@
 
 struct PYI_CONTEXT;
 
+int pyi_security_check_onefile_setuid_allowed();
 int pyi_security_verify_parent_process(const struct PYI_CONTEXT *pyi_ctx);
 int pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx, unsigned int prefix_pid);
 
