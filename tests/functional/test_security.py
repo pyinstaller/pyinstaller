@@ -293,7 +293,6 @@ def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path):
         os.symlink(test_dir, test_dir_symlink, target_is_directory=True)
     except OSError:
         if compat.is_win:
-            raise
             pytest.skip("OS does not support creation of symbolic links.")
         else:
             raise
