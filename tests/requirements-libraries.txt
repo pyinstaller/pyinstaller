@@ -60,7 +60,7 @@ PyQt6-DataVisualization-Qt6==6.11.2; python_version >= "3.10"
 PyQt6-Graphs==6.11.0; python_version >= "3.10"
 PyQt6-Graphs-Qt6==6.11.2; python_version >= "3.10"
 PyQt6-NetworkAuth==6.11.0; python_version >= "3.10"
-PyQt6-NetworkAuth-Qt6==6.11.1; python_version >= "3.10"
+PyQt6-NetworkAuth-Qt6==6.11.2; python_version >= "3.10"
 PyQt6-QScintilla==2.14.1; python_version >= "3.9"  # Does not have a corresponding -Qt6 package
 PyQt6-WebEngine==6.11.0; python_version >= "3.10"
 PyQt6-WebEngine-Qt6==6.11.1; python_version >= "3.10"
