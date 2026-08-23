@@ -322,30 +322,81 @@ pyi_security_verify_parent_process(const struct PYI_CONTEXT *pyi_ctx)
 /**********************************************************************\
  *            Verification of application's home directory            *
 \**********************************************************************/
-/* Verify the application's top-level / home directory.
+/* Verify the name of application's top-level / home directory in
+ * onefile mode. Check that the directory's name matches the format used
+ * by PyInstaller's bootloader, and extract the process ID (PID) of the
+ * originating onefile parent process (i.e., the process that set up the
+ * directory).
  *
- * In onefile mode, check that the directory's name matches the format
- * used by PyInstaller's bootloader.
- *
- * On POSIX platforms, perform additional check for executables with
- * setuid bit set; in that case, we require:
- *  - the owner ID of the top-level application directory to match the
- *    effective user ID
- *  - permissions on the top-level application directory to be set to
- *    0700
- *
- * This should be ensure that the onefile child processes are inheriting
- * temporary application directory that was set up by the onefile parent
- * process (instead of being passed an arbitrary directory as top-level
- * application directory via spoofed environment variables). Similarly,
- * it should ensure that setuid-enabled onedir executable has an
- * accompanying contents directory that cannot be modified by a
- * non-privileged user. */
-#if !defined(_WIN32)
+ * The name check should largely prevent spoofed environment variables
+ * from being used to pass an arbitrary directory as the top-level
+ * application to a onefile child process. However, this could still
+ * happen with directories that do conform to PyInstaller's naming scheme;
+ * to prevent this, the extracted PID of the originating onefile process
+ * needs to be further verified (i.e., that is a parent or an ancestor
+ * process of the current process, and that the said process uses same
+ * executable as the current process). */
+int
+pyi_security_verify_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx, unsigned int *onefile_parent_pid)
+{
+    char basename[PYI_PATH_MAX];
+    size_t name_len;
 
-static int
+    if (!pyi_path_basename(basename, pyi_ctx->application_home_dir)) {
+        PYI_ERROR("Security validation failure: failed to obtain name of application's home directory!\n");
+        return -1;
+    }
+
+    PYI_DEBUG("SECURITY: verifying the name of application's home directory (%s)...\n", basename);
+
+    /* Verify the length of the name:
+     *  - Windows: _MEI + process ID number (%08x format) + suffix
+     *    added by _wtempnam(); so we check that the name is at least
+     *    12 characters long...
+     *  - other platforms: _MEI + process ID number (%08x format) +
+     *    six random characters added by mkdtemp(); so we check that
+     *    the name is exactly 18 characters long... */
+    name_len = strlen(basename);
+
+#ifdef _WIN32
+    if (name_len < 12) {
+        PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
+        return -1;
+    }
+#else
+    if (name_len != 18) {
+        PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
+        return -1;
+    }
+#endif
+
+    /* Verify the prefix and extract PID part at the same time. Keep in
+     * sync with pyi_create_temporary_application_directory() implementations
+     * in pyi_utils_posix.c and pyi_utis_win32.c */
+    if (sscanf(basename, "_MEI%08x", onefile_parent_pid) != 1) {
+        PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+
+/* Verification of owner ID and permissions on top-level application
+ * directory for POSIX executables with setuid bit set:
+ *  - the owner ID of the top-level application directory must match the
+ *    effective user ID
+ *  - permissions on the top-level application directory must be set to
+ *    0700
+ * Applicable to both onefile and onedir builds. No-op on Windows, and
+ * no-op on other platforms when setuid bit is not set on the executable. */
+int
 pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *pyi_ctx)
 {
+#if defined(_WIN32)
+    (void)pyi_ctx;
+    return 0;
+#else
     uid_t euid;
     uid_t permissions;
     struct stat application_home_dir_stat;
@@ -393,77 +444,5 @@ pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *p
     }
 
     return 0;
-}
-
 #endif
-
-
-int
-pyi_security_verify_application_home_dir(const struct PYI_CONTEXT *pyi_ctx, unsigned int prefix_pid)
-{
-    /* In onefile mode, the application home directory name should have
-     * distrinct, PyInstaller-specific format: _MEIXXXXXX */
-    if (pyi_ctx->is_onefile) {
-        char basename[PYI_PATH_MAX];
-        size_t name_len;
-
-        char expected_prefix[32];
-        int expected_prefix_len;
-
-        if (!pyi_path_basename(basename, pyi_ctx->application_home_dir)) {
-            PYI_ERROR("Security validation failure: failed to obtain name of application's home directory!\n");
-            return -1;
-        }
-
-        PYI_DEBUG("SECURITY: verifying the name of application's home directory (%s)...\n", basename);
-
-        /* Verify the length of the name:
-         *  - Windows: _MEI + process ID number (%08x format) + suffix
-         *    added by _wtempnam(); so we check that the name is at least
-         *    12 characters long...
-         *  - other platforms: _MEI + process ID number (%08x format) +
-         *    six random characters added by mkdtemp(); so we check that
-         *    the name is exactly 18 characters long... */
-        name_len = strlen(basename);
-
-#ifdef _WIN32
-        if (name_len < 12) {
-            PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
-            return -1;
-        }
-#else
-        if (name_len != 18) {
-            PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
-            return -1;
-        }
-#endif
-
-        /* Verify the prefix */
-        if (prefix_pid > 0) {
-            expected_prefix_len = snprintf(expected_prefix, 32, "_MEI%08x", prefix_pid);
-        } else {
-            expected_prefix_len = snprintf(expected_prefix, 32, "_MEI");
-        }
-        if (expected_prefix_len < 0 || expected_prefix_len >= 32) {
-            PYI_ERROR("Security validation failure: failed to format expected name prefix!\n");
-            return -1;
-        }
-
-        PYI_DEBUG("SECURITY: expected prefix: %s\n", expected_prefix);
-
-        if (strncmp(basename, expected_prefix, expected_prefix_len) != 0) {
-            PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
-            return -1;
-        }
-    }
-
-    /* POSIX: additional owner/permissions validation when setuid bit is
-     * set on the executable */
-#if !defined(_WIN32)
-    if (pyi_security_verify_application_home_dir_permissions(pyi_ctx) < 0) {
-        return -1;
-    }
-#endif
-
-    return 0;
 }

@@ -411,7 +411,6 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
      * and based on that, determine the application's top-level directory. */
     if (pyi_ctx->is_onefile) {
         bool create_temp_dir;
-        bool is_parent = true;
 
         /* If setuid bit is set on the executable, check that parent-process
          * security validation is available on this platform/system. This
@@ -444,7 +443,6 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                 "main application process" : "spawned subprocess"
             );
             create_temp_dir = false; /* inherit */
-            is_parent = false; /* child process */
         }
 
         if (create_temp_dir) {
@@ -483,6 +481,8 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                 return -1;
             }
         } else {
+            unsigned int onefile_parent_pid;
+
             /* The ephemeral application top-level directory should already
              * exist, and the path to it should be available in the
              * _PYI_APPLICATION_HOME_DIR environment variable. */
@@ -505,22 +505,37 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
              * from tricking us into using an arbitrary _PYI_APPLICATION_HOME_DIR
              * via spoofed _PYI_ARCHIVE_FILE and _PYI_PARENT_PROCESS_LEVEL.
              * See: https://github.com/pyinstaller/pyinstaller/security/advisories/GHSA-9fxf-4qw3-ghmr */
-            if (is_parent) {
+
+            /* Verify the name of the inherited top-level application
+             * directory, and extract the process ID of the onefile parent
+             * process from it. */
+            if (pyi_security_verify_application_home_dir_name(pyi_ctx, &onefile_parent_pid) < 0) {
+                return -1;
+            }
+            PYI_DEBUG("SECURITY: process ID of the originating onefile parent process: %d\n", onefile_parent_pid);
+
+            /* Check permissions on the inherited top-level application
+             * directory (applicable only to setuid-enabled executables
+             * on POSIX systems, otherwise no-op). */
+            if (pyi_security_verify_application_home_dir_permissions(pyi_ctx) < 0) {
+                return -1;
+            }
+
+            /* Verify the parent process */
+            if (pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT && pyi_ctx->parent_process_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART) {
                 /* This codepath should be reached only in onefile POSIX
                  * builds with splash screen, where the parent process
                  * needs to set LD_LIBRARY_PATH and restart itself before
-                 * running splash screen. In this case, we cannot verify
-                 * the parent process, but we can verify the inherited
-                 * top-level application directory; specifically, its
-                 * name should start with _MEI and should include the
-                 * PID of *this* process. If setuid bit is set on the
-                 * executable, also check owner/permissions on the directory. */
+                 * running splash screen. So this process effectively
+                 * inherited the application directory from itself, and
+                 * therefore, the PIDs should be identical. */
 #if defined(_WIN32)
-                unsigned int prefix_pid = _getpid();
+                unsigned int current_pid = _getpid();
 #else
-                unsigned int prefix_pid = getpid();
+                unsigned int current_pid = getpid();
 #endif
-                if (pyi_security_verify_application_home_dir(pyi_ctx, prefix_pid) < 0) {
+                if (current_pid != onefile_parent_pid) {
+                    PYI_ERROR("Security validation failure: unexpected PID found in the name of application's home directory!\n");
                     return -1;
                 }
             } else {
@@ -528,17 +543,6 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                  * its parent should be a valid onefile process, and should
                  * be using the same executable... */
                 if (pyi_security_verify_parent_process(pyi_ctx) < 0) {
-                    return -1;
-                }
-                /* Verify the name of the application's home directory.
-                 * Its name should start with _MEI prefix; for now, skip
-                 * the PID part of the check (by passing 0), as that
-                 * would require us to find the parent onefile process
-                 * (which might be more than one level up the ancestry
-                 * tree for worker sub-processes). On POSIX, if setuid
-                 * bit is set on the executable, also check owner/permissions
-                 * on the directory. */
-                if (pyi_security_verify_application_home_dir(pyi_ctx, 0) < 0) {
                     return -1;
                 }
             }
@@ -576,7 +580,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
         /* On POSIX platforms, if setuid bit is set on the executable,
          * check owner/permissions on the top-level application's directory
          * to ensure its contents are accessible only to the effective user. */
-        if (pyi_security_verify_application_home_dir(pyi_ctx, 0) < 0) {
+        if (pyi_security_verify_application_home_dir_permissions(pyi_ctx) < 0) {
             return -1;
         }
     }

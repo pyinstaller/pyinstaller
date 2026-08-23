@@ -361,6 +361,7 @@ def test_application_home_directory_hijack(
 
     # Onefile mode
     MSG_HOME_DIRECTORY = "Security validation failure: unexpected name of application's home directory!"
+    MSG_PID = "Security validation failure: unexpected PID found in the name of application's home directory!"
     MSG_PARENT_EXECUTABLE = "Security validation failure: parent process has different executable!"
 
     # If we are running setuid-executable scenario and no mitigation is available, the executable should exit with an
@@ -391,23 +392,25 @@ def test_application_home_directory_hijack(
         # This level is valid only in POSIX onefile builds with splash screen enabled. Since the process retains
         # its process ID across restart, it can always detect mismatch in the home directory name.
         assert p.returncode not in {0, 42}
-        assert MSG_HOME_DIRECTORY in p.stderr
+        if scenario == SCENARIO_ARBITRARY_DIR:
+            assert MSG_HOME_DIRECTORY in p.stderr
+        else:
+            assert MSG_PID in p.stderr
     else:  # PYI_PROCESS_LEVEL_PARENT, PYI_PROCESS_LEVEL_MAIN
         # The process is supposed to be either main application process, or worker sub-process spawned via
-        # `sys.executable`. These should fail the parent process verification in the bootloader.
+        # `sys.executable`. The arbitrarily-named application directory should fail the name check. The
+        # _MEI-formatted application directory should pass the name check, but should fail the parent-process
+        # validation.
         #
         # On platforms where procfs-based look-up of parent executable is not supported (AIX, OpenBSD) or the
         # relevant entry under /proc/<ppid> is inaccessible (e.g., FreeBSD without /proc mounted, or any other
         # supported POSIX platform where local security policy blocks access to /proc/<ppid> directory for other
         # processes), we cannot validate the parent process. In these cases, we expect the validation of
         # arbitrary home directory name to fail, the faked home directory with _MEI prefix to slip through,
-        # and executable with setuid bit set to block the execution.
+        # and executable with setuid bit set to block the execution (already handled by preceding if-block).
         if scenario == SCENARIO_ARBITRARY_DIR:
             assert p.returncode not in {0, 42}
-            if mitigation_unavailable:
-                assert MSG_HOME_DIRECTORY in p.stderr
-            else:
-                assert MSG_PARENT_EXECUTABLE in p.stderr
+            assert MSG_HOME_DIRECTORY in p.stderr
         elif scenario == SCENARIO_MEI_DIR_MISMATCHED_PID:
             if mitigation_unavailable:
                 assert p.returncode == 42
