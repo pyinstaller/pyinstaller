@@ -21,6 +21,8 @@
 #else
     #include <sys/stat.h> /* struct stat */
     #include <unistd.h> /* getppid(), geteuid() */
+    #include <fcntl.h>
+    #include <errno.h>
 #endif
 
 #include <stdio.h>  /* snprintf() */
@@ -43,22 +45,21 @@
 \**********************************************************************/
 /* Check whether parent-process validation is available on this platform
  * (strictly required for setuid-enabled onefile executables), so we can
- * raise an early error on known unsupported platforms. */
+ * raise an early error on known unsupported platforms.
+ *
+ * For details about constraints see platform-specific implementations
+ * of validation helpers below. */
 int
 pyi_security_check_onefile_setuid_allowed()
 {
 #if defined(_WIN32)
-    /* See _pyi_security_verify_parent_process_win32() */
     return 0;
 #elif defined(__APPLE__)
-    /* See _pyi_security_verify_parent_process_macos() */
     return 0;
 #elif defined(__linux__) || defined(__CYGWIN__) || defined(__NetBSD__)
-    /* See _pyi_security_verify_parent_process_posix() */
     return 0;
 #elif defined(__FreeBSD__)
-    /* See _pyi_security_verify_parent_process_posix(); supported only if
-     * /proc is available. */
+    /* Supported only if /proc is available. */
     struct stat curproc_dir_stat;
     if (stat("/proc/curproc", &curproc_dir_stat) < 0) {
         PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this system (missing /proc)!\n");
@@ -66,11 +67,10 @@ pyi_security_check_onefile_setuid_allowed()
     }
     return 0;
 #elif defined(__sun)
-    /* See _pyi_security_verify_parent_process_posix() */
     return 0;
 #else
-    /* See _pyi_security_verify_parent_process_posix; other POSIX platforms
-     * are unsupported due to lack of required information in /proc */
+    /* Other POSIX platforms are unsupported due to lack of required
+     * information in /proc */
     PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this platform!\n");
     return -1;
 #endif
@@ -78,85 +78,487 @@ pyi_security_check_onefile_setuid_allowed()
 
 
 /**********************************************************************\
- *                   Verification of parent process                   *
+ *                 Verification of parent-process PID                 *
 \**********************************************************************/
-/* Verify that parent process uses same executable as current process.
- * This aims to ensure that the run-time environment was indeed inherited
- * from a parent process of a onefile application, rather than being
- * spoofed by malicious user. */
+/* Verify that the given process ID of originating onefile parent process
+ * (extracted from the _MEI directory name) matches the process ID of
+ * the parent process of this process, or one of its ancestor processes. */
 
+#define PYI_MAX_PROCESS_TREE_DEPTH 128
+
+struct PYI_PROCESS_LINEAGE_TRACKER
+{
+    /* Keep track of seen ancestor PIDs, in order to prevent endless
+     * loop caused by re-use of process IDs. */
+    size_t ancestor_count;
+    unsigned int ancestor_pids[PYI_MAX_PROCESS_TREE_DEPTH];
+
+    /* Lowest valid PID value (platform-specific) */
+    unsigned int lowest_valid_pid;
+
+    /* Process snapshot (Windows) */
+#if defined(_WIN32)
+    HANDLE process_snapshot;
+    PROCESSENTRY32W process_entry;
+#endif
+};
+
+/* Initialize the platform-specific parts of the auxiliary structure */
+static int
+pyi_process_lineage_tracker_init(struct PYI_PROCESS_LINEAGE_TRACKER *tracker)
+{
+#if defined(_WIN32)
+    /* Take the process snapshot */
+    tracker->process_snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (tracker->process_snapshot == INVALID_HANDLE_VALUE) {
+        PYI_ERROR_W(L"Security validation failure: could not obtain process snapshot!\n");
+        return -1;
+    }
+
+    /* Initialize the process entry structure */
+    tracker->process_entry.dwSize = sizeof(PROCESSENTRY32W);
+#endif
+
+    /* Initialize ancestor counter (= current depth of process tree) */
+    tracker->ancestor_count = 0;
+
+    /* Platform-specific lowest valid PID.
+     * On Windows, lowest PID is 4 (System).
+     * On POSIX systems, lowest PID is 1 (init). */
+#if defined(_WIN32)
+    tracker->lowest_valid_pid = 4;
+#else
+    tracker->lowest_valid_pid = 1;
+#endif
+
+    return 0;
+}
+
+/* Clean-up the platform-specific parts of the auxiliary structure */
+static void
+pyi_process_lineage_tracker_cleanup(struct PYI_PROCESS_LINEAGE_TRACKER *tracker)
+{
+#if defined(_WIN32)
+    CloseHandle(tracker->process_snapshot);
+#else
+    (void)tracker;
+#endif
+}
+
+/* Add the given process ID to the list of seen ancestor process IDs,
+ * and ensure that maximum allowed process-tree depth has not yet been
+ * reached. */
+static int
+pyi_process_lineage_tracker_add_ancestor(struct PYI_PROCESS_LINEAGE_TRACKER *tracker, const unsigned int ancestor_pid)
+{
+    if (tracker->ancestor_count + 1 >= PYI_MAX_PROCESS_TREE_DEPTH) {
+        PYI_ERROR("Security validation failure: maximum process tree depth exceeded!\n");
+        return -1;
+    }
+    tracker->ancestor_pids[tracker->ancestor_count++] = ancestor_pid;
+    return 0;
+}
+
+/* Check whether the given ancestor PID has already been encountered
+ * before (was registered by pyi_process_lineage_tracker_add_ancestor()). */
+static bool
+pyi_process_lineage_tracker_check_ancestor_seen(struct PYI_PROCESS_LINEAGE_TRACKER *tracker, const unsigned int ancestor_pid)
+{
+    size_t i;
+    for (i = 0; i < tracker->ancestor_count; i++) {
+        if (tracker->ancestor_pids[i] == ancestor_pid) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Find parent-process ID for the process identified by the given process
+ * ID. Uses platform-specific mechanism for looking up information about
+ * the given process. */
 #if defined(_WIN32)
 
 static int
-_pyi_security_verify_parent_process_win32(const struct PYI_CONTEXT *pyi_ctx)
+pyi_process_lineage_tracker_get_parent_pid(struct PYI_PROCESS_LINEAGE_TRACKER *tracker, const unsigned int target_pid, unsigned int *parent_pid)
 {
-    DWORD pid;
-    DWORD ppid;
+    /* Walk the process snapshot to find the entry for target_pid */
+    if (!Process32FirstW(tracker->process_snapshot, &tracker->process_entry)) {
+        PYI_ERROR_W(L"Security validation failure: could not walk the process snapshot!\n");
+        return -1;
+    }
 
-    HANDLE process_snapshot;
-    PROCESSENTRY32W process_entry;
-    BOOL entry_found;
+    do {
+        if (tracker->process_entry.th32ProcessID == target_pid) {
+            *parent_pid = tracker->process_entry.th32ParentProcessID;
+            PYI_DEBUG_W(L"SECURITY: parent of %u is %u (%ls)\n", target_pid, *parent_pid, tracker->process_entry.szExeFile);
+            return 0;
+        }
+    } while (Process32NextW(tracker->process_snapshot, &tracker->process_entry));
 
+    /* Not found; let caller handle that */
+    *parent_pid = 0;
+    return 0;
+}
+
+#elif defined(__APPLE__)
+
+static int
+pyi_process_lineage_tracker_get_parent_pid(struct PYI_PROCESS_LINEAGE_TRACKER *tracker, const unsigned int target_pid, unsigned int *parent_pid)
+{
+    struct proc_bsdshortinfo info;
+
+    if (proc_pidinfo(target_pid, PROC_PIDT_SHORTBSDINFO, 0, &info, sizeof(info)) != sizeof(info)) {
+        PYI_ERROR("Security validation failure: could not look up ancestor process info!\n");
+        return -1;
+    }
+    *parent_pid = info.pbsi_ppid;
+
+    return 0;
+}
+
+#else /* All other POSIX platforms */
+
+#if defined(__linux__) || defined(__CYGWIN__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__sun)
+
+/* Read contents of a /proc file into given buffer */
+static size_t
+_read_proc_file(const char *filename, unsigned char *buffer, size_t buflen)
+{
+    unsigned char *bufptr = buffer;
+    size_t to_read = buflen;
+    size_t ret;
+    int fd;
+
+    fd = open(filename, O_RDONLY | O_NOFOLLOW);
+    if (fd == -1) {
+        return -1;
+    }
+
+    while (to_read > 0) {
+        ret = read(fd, bufptr, to_read);
+        if (ret < 0) {
+            if (errno == EAGAIN || errno == EINTR) {
+                continue;
+            } else {
+                close(fd);
+                return -1;
+            }
+        } else if (ret == 0) {
+            break; /* end of file */
+        }
+
+        to_read -= ret;
+        bufptr += ret;
+    }
+
+    close(fd);
+
+    return (size_t)(bufptr - buffer);
+}
+
+#endif /* defined(__linux__) || defined(__CYGWIN__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__sun) */
+
+#if defined(__linux__) || defined(__CYGWIN__) || defined(__NetBSD__)
+
+static int
+pyi_process_lineage_tracker_get_parent_pid(struct PYI_PROCESS_LINEAGE_TRACKER *tracker, const unsigned int target_pid, unsigned int *parent_pid)
+{
+    /* As per "man proc_pid_stat", the /proc/pid/stat file contains
+     * space-delimited fields:
+     * pid (%d), (comm) (%s), state (%c), ppid (%d), ...
+     *
+     * Unfortunately, the process name (comm) can contain a whitespace or
+     * even a newline, which precludes direct parsing with sscanf(). Instead,
+     * we read the beginning of the file, scan for the closing brace, and
+     * then parse the state and ppid part using sscanf().
+     *
+     * We read first 48 bytes; pid is a 32-bit integer (max 10 characters), comm
+     * is max 15 characters plus enclosing braces, state is a single-character
+     * flag, and ppid is 32-bit integer. */
+    char proc_path[PYI_PATH_MAX];
+    char buffer[48];
+    size_t ret;
+    size_t pos;
+
+    (void)tracker;
+
+    if (snprintf(proc_path, 4096, "/proc/%u/stat", target_pid) >= PYI_PATH_MAX) {
+        PYI_ERROR("Security validation failure: could not format /proc/pid/stat path!\n");
+        return -1;
+    }
+
+    ret = _read_proc_file(proc_path, (unsigned char *)buffer, sizeof(buffer));
+    if (ret != sizeof(buffer)) {
+        PYI_ERROR("Security validation failure: could not read from /proc/pid/stat!\n");
+        return -1;
+    }
+    buffer[ret - 1] = 0;
+
+    /* Search for closing brace */
+    for (pos = ret; pos >= 0; pos--) {
+        if (buffer[pos] == ')') {
+            break;
+        }
+    }
+    if (pos < 0) {
+        PYI_ERROR("Security validation failure: could not parse /proc/pid/stat!\n");
+        return -1;
+    }
+
+    /* Extract ppid */
+    if (sscanf(buffer + pos, ") %*c %u ", parent_pid) != 1) {
+        PYI_ERROR("Security validation failure: could not parse /proc/pid/stat!\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+#elif defined(__FreeBSD__)
+
+static int
+pyi_process_lineage_tracker_get_parent_pid(struct PYI_PROCESS_LINEAGE_TRACKER *tracker, const unsigned int target_pid, unsigned int *parent_pid)
+{
+    /* /proc/pid/status seem to contain whitespace-delimited fields,
+     * with first three being: process name, pid, and ppid. Characters
+     * such as whitespace in process name are escaped using octal sequence
+     * (e.g., \040). It seems that up to 19 characters are included,
+     * but presumably all could be octal escape sequences; so the buffer
+     * needs to account for max. 76 characters in the process name alone. */
+    char proc_path[PYI_PATH_MAX];
+    char buffer[128];
+    size_t ret;
+
+    (void)tracker;
+
+    if (snprintf(proc_path, PYI_PATH_MAX, "/proc/%u/status", target_pid) >= PYI_PATH_MAX) {
+        PYI_ERROR("Security validation failure: could not format /proc/pid/status path!\n");
+        return -1;
+    }
+
+    /* Depending on process name, fewer than 128 bytes might be read, so
+     * do not enforce expected length. But expect at least one byte to
+     * have been read... */
+    ret = _read_proc_file(proc_path, (unsigned char *)buffer, sizeof(buffer));
+    if (ret <= 0) {
+        PYI_ERROR("Security validation failure: could not read from /proc/pid/status!\n");
+        return -1;
+    }
+    buffer[ret - 1] = 0;
+
+    /* Extract ppid */
+    if (sscanf(buffer, "%*s %*d %u ", parent_pid) != 1) {
+        PYI_ERROR("Security validation failure: could not parse /proc/pid/status!\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+#elif defined(__sun)
+
+static int
+pyi_process_lineage_tracker_get_parent_pid(struct PYI_PROCESS_LINEAGE_TRACKER *tracker, const unsigned int target_pid, unsigned int *parent_pid)
+{
+    /* Read first four 32-bit integer fields from /proc/pid/psinfo:
+     * pr_flag, pr_nlwp, pr_pid, pr_ppid. We could also use struct
+     * psinfo_t from /usr/include/sys/procfs.h */
+    char proc_path[PYI_PATH_MAX];
+    unsigned char buffer[16];
+    size_t ret;
+
+    if (snprintf(proc_path, PYI_PATH_MAX, "/proc/%u/psinfo", target_pid) >= PYI_PATH_MAX) {
+        PYI_ERROR("Security validation failure: could not format /proc/pid/psinfo path!\n");
+        return -1;
+    }
+
+    ret = _read_proc_file(proc_path, buffer, sizeof(buffer));
+    if (ret != sizeof(buffer)) {
+        PYI_ERROR("Security validation failure: could not read from /proc/pid/psinfo!\n");
+        return -1;
+    }
+    *parent_pid = *(unsigned int *)(buffer + 12); /* Presumably native endianness is used */
+
+    return 0;
+}
+
+#else
+
+static int
+pyi_process_lineage_tracker_get_parent_pid(struct PYI_PROCESS_LINEAGE_TRACKER *tracker, const unsigned int target_pid, unsigned int *parent_pid)
+{
+    (void)tracker;
+    (void)target_pid;
+    (void)parent_pid;
+    PYI_ERROR("Security validation failure: parent-process ID validation is not implemented on this platform!\n");
+    return -1;
+}
+
+#endif /* defined(__linux__) || defined(__CYGWIN__) || defined(__NetBSD__) */
+
+#endif /* defined(_WIN32) */
+
+
+/* Get process ID for the immediate parent process of the current process.
+ * On POSIX platforms, this wraps the getppid() system call. On Windows,
+ * we need to walk the process snapshot, same as for arbitrary target
+ * process. */
+static int
+pyi_process_lineage_tracker_get_immediate_parent_pid(struct PYI_PROCESS_LINEAGE_TRACKER *tracker, unsigned int *parent_pid)
+{
+#if defined(_WIN32)
+    return pyi_process_lineage_tracker_get_parent_pid(tracker, GetCurrentProcessId(), parent_pid);
+#else
+    (void)tracker;
+    *parent_pid = getppid();
+    return 0;
+#endif
+}
+
+
+int
+pyi_security_verify_onefile_parent_pid(const struct PYI_CONTEXT *pyi_ctx, const unsigned int onefile_parent_pid, const bool search_process_tree)
+{
+    struct PYI_PROCESS_LINEAGE_TRACKER tracker;
+    unsigned int current_pid;
+    unsigned int parent_pid;
+    int ret = -1;
+
+    PYI_DEBUG("SECURITY: verifying process ID of originating onefile parent process (%u)...\n", onefile_parent_pid);
+
+    /* Initialize the auxiliary tracker structure. */
+    if (pyi_process_lineage_tracker_init(&tracker) < 0) {
+        goto end;
+    }
+
+    /* Get process ID of immediate parent process. */
+    if (pyi_process_lineage_tracker_get_immediate_parent_pid(&tracker, &parent_pid) < 0) {
+        goto end;
+    }
+    PYI_DEBUG("SECURITY: parent process ID of current process: %u\n", parent_pid);
+
+    if (!search_process_tree) {
+        /* We strictly require the parent process to be the originating process. */
+        if (parent_pid == onefile_parent_pid) {
+            ret = 0; /* OK */
+            goto end;
+        } else {
+            PYI_ERROR("Security validation failure: invalid originating onefile parent process (different PID)!\n");
+            goto end;
+        }
+    }
+
+    /* We strictly require grandparent or one of further ancestor processes
+     * to be the originating process. So a match on immediate parent is
+     * considered a failure here. */
+    if (parent_pid == onefile_parent_pid) {
+        PYI_ERROR("Security validation failure: invalid originating onefile parent process (different PID)!\n");
+        goto end;
+    }
+
+    /* Walk the process tree */
+    if (pyi_process_lineage_tracker_add_ancestor(&tracker, parent_pid) < 0) {
+        goto end;
+    }
+    current_pid = parent_pid;
+
+    while (1) {
+        PYI_DEBUG("SECURITY: looking up parent of %u...\n", current_pid);
+
+        /* Look up parent PID of the given current PID. */
+        if (pyi_process_lineage_tracker_get_parent_pid(&tracker, current_pid, &parent_pid) < 0) {
+            goto end;
+        }
+
+        /* 0 is used to denote that parent of current-level PID could not
+         * be found */
+        if (parent_pid == 0) {
+            PYI_DEBUG("SECURITY: parent process of %u not found!\n", current_pid);
+            break;
+        }
+
+        /* Windows implementation of pyi_process_lineage_tracker_get_parent_pid()
+         * emits its own message (that also includes process name) */
+#if !defined(_WIN32)
+        PYI_DEBUG("SECURITY: parent of %u is %u\n", current_pid, parent_pid);
+#endif
+
+        /* Check if we reached the end of the process tree. */
+        if (parent_pid <= tracker.lowest_valid_pid || parent_pid == current_pid) {
+            PYI_DEBUG("SECURITY: reached root of process tree!\n");
+            break;
+        }
+
+        /* Check if we have a match. */
+        if (parent_pid == onefile_parent_pid) {
+            PYI_DEBUG("SECURITY: process %u is a valid ancestor process!\n", onefile_parent_pid);
+            ret = 0; /* OK */
+            goto end;
+        }
+
+        /* Ensure we are not looping, by checking obtained the parent PID
+         * against the list of already-seen ancestor PIDs. This might happen
+         * if an ancestor process died and had its PID reused. In the context
+         * of security validation here, this means that we reached the end of
+         * searchable process tree without finding the onefile parent process ID. */
+        if (pyi_process_lineage_tracker_check_ancestor_seen(&tracker, parent_pid) != 0) {
+            PYI_DEBUG("SECURITY: detected parent-process ID loop!\n");
+            break;
+        }
+
+        /* Add to the list of seen ancestor processes, and ensure we
+         * have not hit the maximum allowed depth of process tree. */
+        if (pyi_process_lineage_tracker_add_ancestor(&tracker, parent_pid) < 0) {
+            goto end;
+        }
+
+        current_pid = parent_pid;
+    }
+
+    /* We could not find the target PID in the ancestor tree */
+    PYI_ERROR("Security validation failure: invalid originating onefile parent process (PID not found)!\n");
+
+end:
+    pyi_process_lineage_tracker_cleanup(&tracker);
+    return ret;
+}
+
+
+/**********************************************************************\
+ *              Verification of parent-process executable             *
+\**********************************************************************/
+/* Verify that the originating onefile parent process uses the same
+ * executable as the current process. */
+#if defined(_WIN32)
+
+static int
+_pyi_security_verify_onefile_parent_executable_win32(const struct PYI_CONTEXT *pyi_ctx, const DWORD process_id)
+{
     HANDLE process_handle;
     wchar_t parent_executable_w[PYI_PATH_MAX];
     wchar_t current_executable_w[PYI_PATH_MAX];
     DWORD buffer_length;
 
-    /* Current process ID, for look-up in the process snapshot */
-    pid = GetCurrentProcessId();
-
-    /* Take the process snapshot */
-    process_snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (process_snapshot == INVALID_HANDLE_VALUE) {
-        PYI_ERROR_W(L"Security validation failure: could not obtain process snapshot!\n");
-        return -1;
-    }
-
-    /* Walk the process snapshot to find entry for our process, and get
-     * parent process ID from it. */
-    process_entry.dwSize = sizeof(PROCESSENTRY32);
-    if (!Process32FirstW(process_snapshot, &process_entry)) {
-        PYI_ERROR_W(L"Security validation failure: could not walk the process snapshot!\n");
-        CloseHandle(process_snapshot);
-        return -1;
-    }
-
-    entry_found = FALSE;
-    do {
-        if (process_entry.th32ProcessID == pid) {
-            ppid = process_entry.th32ParentProcessID;
-            entry_found = TRUE;
-            break;
-        }
-    } while(Process32NextW(process_snapshot, &process_entry));
-
-    CloseHandle(process_snapshot);
-
-    if (!entry_found) {
-        PYI_ERROR_W(L"Security validation failure: could not determine parent process ID!\n");
-        return -1;
-    }
-
-    /* Now try to query process for its executable name.
+    /* Query the target process for its executable name.
      * QueryFullProcessImageNameW() seems to return a fully-resolved
      * path to the executable, even when the parent process is launched
      * via symbolic link. */
-    process_handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, ppid);
+    process_handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, process_id);
     if (process_handle == INVALID_HANDLE_VALUE) {
-        PYI_ERROR_W(L"Security validation failure: failed to obtain information about parent process!\n");
+        PYI_ERROR_W(L"Security validation failure: failed to obtain information about originating onefile parent process!\n");
         return -1;
     }
 
     buffer_length = PYI_PATH_MAX;
     if (!QueryFullProcessImageNameW(process_handle, PROCESS_NAME_NATIVE, parent_executable_w, &buffer_length)) {
-        PYI_ERROR_W(L"Security validation failure: failed to obtain executable path for parent process!\n");
+        PYI_ERROR_W(L"Security validation failure: failed to obtain executable path for originating onefile parent process!\n");
         CloseHandle(process_handle);
         return -1;
     }
 
     CloseHandle(process_handle);
 
-    PYI_DEBUG_W(L"SECURITY: parent process executable: %ls\n", parent_executable_w);
+    PYI_DEBUG_W(L"SECURITY: originating onefile parent process executable: %ls\n", parent_executable_w);
 
     /* Look up the current-process executable. We cannot use pyi_ctx->executable_filename,
      * which is resolved using GetModuleFileNameW() for compatibility reasons (see #9510),
@@ -178,7 +580,7 @@ _pyi_security_verify_parent_process_win32(const struct PYI_CONTEXT *pyi_ctx)
 
     /* Ensure that same executable is used */
     if (wcscmp(parent_executable_w, current_executable_w) != 0) {
-        PYI_ERROR_W(L"Security validation failure: parent process has different executable!\n");
+        PYI_ERROR_W(L"Security validation failure: invalid originating onefile parent process (different executable)!\n");
         return -1;
     }
 
@@ -188,24 +590,20 @@ _pyi_security_verify_parent_process_win32(const struct PYI_CONTEXT *pyi_ctx)
 #elif defined(__APPLE__)
 
 static int
-_pyi_security_verify_parent_process_macos(const struct PYI_CONTEXT *pyi_ctx)
+_pyi_security_verify_onefile_parent_executable_macos(const struct PYI_CONTEXT *pyi_ctx, const pid_t process_id)
 {
-    /* Try to look up the executable of the parent process - it should
-     * be the same as that of the current process. */
-    pid_t ppid;
     char parent_executable[PYI_PATH_MAX];
 
-    /* Get parent PID and corresponding executable name. proc_pidpath()
-     * seems to return a fully-resolved path to the executable, even
-     * when the parent process was launched via symbolic link. */
-    ppid = getppid();
-    proc_pidpath(ppid, parent_executable, sizeof(parent_executable));
+    /* proc_pidpath() seems to return a fully-resolved path to the
+     * executable, even when the parent process is launched via symbolic
+     * link. */
+    proc_pidpath(process_id, parent_executable, sizeof(parent_executable));
 
-    PYI_DEBUG("SECURITY: parent process executable: %s\n", parent_executable);
+    PYI_DEBUG("SECURITY: originating onefile parent process executable: %s\n", parent_executable);
 
     /* Ensure that same executable is used */
     if (strcmp(parent_executable, pyi_ctx->executable_filename) != 0) {
-        PYI_ERROR("Security validation failure: parent process has different executable!\n");
+        PYI_ERROR("Security validation failure: invalid originating onefile parent process (different executable)!\n");
         return -1;
     }
 
@@ -215,11 +613,8 @@ _pyi_security_verify_parent_process_macos(const struct PYI_CONTEXT *pyi_ctx)
 #else
 
 static int
-_pyi_security_verify_parent_process_posix(const struct PYI_CONTEXT *pyi_ctx)
+_pyi_security_verify_onefile_parent_executable_posix(const struct PYI_CONTEXT *pyi_ctx, const pid_t process_id)
 {
-    /* Try to look up the executable of the parent process - it should
-     * be the same as that of the current process. */
-    pid_t ppid;
     char proc_path[PYI_PATH_MAX];
     char parent_executable[PYI_PATH_MAX];
 
@@ -234,8 +629,8 @@ _pyi_security_verify_parent_process_posix(const struct PYI_CONTEXT *pyi_ctx)
 #endif
 
     /* Handle unsupported POSIX platforms, where we have no way to look up
-     * the parent executable. Disallow setuid-enabled executables, otherwise
-     * skip the check. */
+     * the executable for a given process. Disallow setuid-enabled executables,
+     * otherwise skip the check. */
     if (!proc_path_fmt) {
         if (pyi_ctx->has_setuid) {
             PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this platform!\n");
@@ -246,16 +641,13 @@ _pyi_security_verify_parent_process_posix(const struct PYI_CONTEXT *pyi_ctx)
         }
     }
 
-    /* Get parent PID */
-    ppid = getppid();
-
     /* Try to look up the /proc entry. On some platforms, the entry points
      * at "true" file location, i.e., canonical and with all symbolic links
      * resolved; on others (e.g., NetBSD), the entry is neither canonical
      * nor fully resolved. So to be safe, always pass the symlink to realpath()
      * for full resolution. This matches the behavior of _pyi_resolve_executable_posix()
      * in pyi_main.c */
-    if (snprintf(proc_path, PYI_PATH_MAX, proc_path_fmt, ppid) >= PYI_PATH_MAX) {
+    if (snprintf(proc_path, PYI_PATH_MAX, proc_path_fmt, process_id) >= PYI_PATH_MAX) {
         PYI_ERROR("Security validation failure: could not format /proc entry path!\n");
         return -1;
     }
@@ -264,10 +656,10 @@ _pyi_security_verify_parent_process_posix(const struct PYI_CONTEXT *pyi_ctx)
         /* The access to /proc entry might be blocked due to security policy,
          * or by proc filesystem not being mounted (as is the case on FreeBSD
          * by default). Allow this to be the case for a non-setuid executable
-         * (and skip the parent-process verification), but fail in the case of
-         * a setuid executable. */
+         * (and skip the verification), but fail in the case of a setuid-enabled
+         * executable. */
         if (pyi_ctx->has_setuid) {
-            PYI_ERROR("Security validation failure: could not determine the executable path for parent process!\n");
+            PYI_ERROR("Security validation failure: could not determine the executable path for originating onefile parent process!\n");
             return -1;
         } else {
             PYI_DEBUG("SECURITY: could not access %s - skipping check for non-setuid executable!\n", proc_path);
@@ -283,18 +675,18 @@ _pyi_security_verify_parent_process_posix(const struct PYI_CONTEXT *pyi_ctx)
         if (len >= 5) {
             char *suffix_ptr = parent_executable + len - 4;
             if (strcasecmp(suffix_ptr, ".exe") == 0) {
-                PYI_DEBUG("SECURITY: removing .exe suffix from parent executable name\n");
+                PYI_DEBUG("SECURITY: removing .exe suffix from originating onefile parent executable\n");
                 *suffix_ptr = 0;
             }
         }
     }
 #endif
 
-    PYI_DEBUG("SECURITY: parent process executable: %s\n", parent_executable);
+    PYI_DEBUG("SECURITY: originating onefile parent process executable: %s\n", parent_executable);
 
     /* Ensure that same executable is used */
     if (strcmp(parent_executable, pyi_ctx->executable_filename) != 0) {
-        PYI_ERROR("Security validation failure: parent process has different executable!\n");
+        PYI_ERROR("Security validation failure: invalid originating onefile parent process (different executable)!\n");
         return -1;
     }
 
@@ -304,17 +696,17 @@ _pyi_security_verify_parent_process_posix(const struct PYI_CONTEXT *pyi_ctx)
 #endif
 
 int
-pyi_security_verify_parent_process(const struct PYI_CONTEXT *pyi_ctx)
+pyi_security_verify_onefile_parent_executable(const struct PYI_CONTEXT *pyi_ctx, const unsigned int onefile_parent_pid)
 {
-    PYI_DEBUG("SECURITY: verifying parent process...\n");
+    PYI_DEBUG("SECURITY: verifying executable of originating onefile parent process (%d)...\n", onefile_parent_pid);
 
-    /* Use OS-specific implementation */
+    /* Use corresponding platform-specific implementation */
 #if defined(_WIN32)
-    return _pyi_security_verify_parent_process_win32(pyi_ctx);
+    return _pyi_security_verify_onefile_parent_executable_win32(pyi_ctx, onefile_parent_pid);
 #elif defined(__APPLE__)
-    return _pyi_security_verify_parent_process_macos(pyi_ctx);
+    return _pyi_security_verify_onefile_parent_executable_macos(pyi_ctx, onefile_parent_pid);
 #else
-    return _pyi_security_verify_parent_process_posix(pyi_ctx);
+    return _pyi_security_verify_onefile_parent_executable_posix(pyi_ctx, onefile_parent_pid);
 #endif
 }
 

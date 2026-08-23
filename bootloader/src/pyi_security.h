@@ -26,6 +26,7 @@ int pyi_security_check_onefile_setuid_allowed();
 int pyi_security_verify_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx, unsigned int *onefile_parent_pid);
 int pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *pyi_ctx);
 
-int pyi_security_verify_parent_process(const struct PYI_CONTEXT *pyi_ctx);
+int pyi_security_verify_onefile_parent_pid(const struct PYI_CONTEXT *pyi_ctx, const unsigned int onefile_parent_pid, const bool search_process_tree);
+int pyi_security_verify_onefile_parent_executable(const struct PYI_CONTEXT *pyi_ctx, const unsigned int onefile_parent_pid);
 
 #endif /* PYI_SECURITY_H */

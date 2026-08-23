@@ -1,0 +1,2 @@
+Fix ``onefile`` parent-process validation to allow intermixed nested
+sub-processes.

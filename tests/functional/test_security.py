@@ -344,7 +344,7 @@ def test_application_home_directory_hijack(
             assert "Security validation failure: unexpected process level!" in p.stderr
             return
 
-    # Onedir mode
+    # *** Onedir mode ***
     if build_mode == 'onedir':
         # In a onedir build, the _PYI_APPLICATION_HOME_DIR environment variable should not be used at all - so the test
         # application should run normally, even if it is tricked into believing to be a sub-process of a onedir main
@@ -359,10 +359,17 @@ def test_application_home_directory_hijack(
             assert p.returncode == 0
         return
 
-    # Onefile mode
-    MSG_HOME_DIRECTORY = "Security validation failure: unexpected name of application's home directory!"
-    MSG_PID = "Security validation failure: unexpected PID found in the name of application's home directory!"
-    MSG_PARENT_EXECUTABLE = "Security validation failure: parent process has different executable!"
+    # *** Onefile mode ***
+    MSG_HOME_DIRECTORY_NAME = \
+        "Security validation failure: unexpected name of application's home directory!"
+    MSG_HOME_DIRECTORY_PID = \
+        "Security validation failure: unexpected PID found in the name of application's home directory!"
+    MSG_PARENT_DIFFERENT_EXECUTABLE = \
+        "Security validation failure: invalid originating onefile parent process (different executable)!"
+    MSG_PARENT_DIFFERENT_PID = \
+        "Security validation failure: invalid originating onefile parent process (different PID)!"
+    MSG_PARENT_PID_NOT_FOUND = \
+        "Security validation failure: invalid originating onefile parent process (PID not found)!"
 
     # If we are running setuid-executable scenario and no mitigation is available, the executable should exit with an
     # early error.
@@ -393,9 +400,9 @@ def test_application_home_directory_hijack(
         # its process ID across restart, it can always detect mismatch in the home directory name.
         assert p.returncode not in {0, 42}
         if scenario == SCENARIO_ARBITRARY_DIR:
-            assert MSG_HOME_DIRECTORY in p.stderr
+            assert MSG_HOME_DIRECTORY_NAME in p.stderr
         else:
-            assert MSG_PID in p.stderr
+            assert MSG_HOME_DIRECTORY_PID in p.stderr
     else:  # PYI_PROCESS_LEVEL_PARENT, PYI_PROCESS_LEVEL_MAIN
         # The process is supposed to be either main application process, or worker sub-process spawned via
         # `sys.executable`. The arbitrarily-named application directory should fail the name check. The
@@ -410,24 +417,54 @@ def test_application_home_directory_hijack(
         # and executable with setuid bit set to block the execution (already handled by preceding if-block).
         if scenario == SCENARIO_ARBITRARY_DIR:
             assert p.returncode not in {0, 42}
-            assert MSG_HOME_DIRECTORY in p.stderr
+            assert MSG_HOME_DIRECTORY_NAME in p.stderr
         elif scenario == SCENARIO_MEI_DIR_MISMATCHED_PID:
             if mitigation_unavailable:
                 assert p.returncode == 42
             else:
+                # The PID part of _MEI directory in this scenario is set to 0.
+                #
+                # When running as main application process level (i.e., the spoofed parent process level is
+                # PYI_PROCESS_LEVEL_PARENT), the declared PID=0 differs from that of immediate parent, and fails
+                # the validation.
+                #
+                # When running as spawned worker sub-process (i.e., the spoofed parent process level is
+                # PYI_PROCESS_LEVEL_MAIN), the declared PID=0 cannot be found among ancestor processes, and fails
+                # the validation.
                 assert p.returncode not in {0, 42}
-                assert MSG_PARENT_EXECUTABLE in p.stderr
+                if parent_level == PYI_PROCESS_LEVEL_PARENT:
+                    assert MSG_PARENT_DIFFERENT_PID in p.stderr
+                else:
+                    assert MSG_PARENT_PID_NOT_FOUND in p.stderr
         elif scenario == SCENARIO_MEI_DIR_MATCHED_PID:
             if mitigation_unavailable:
                 assert p.returncode == 42
             else:
+                # The PID part of _MEI directory in this scenario is set to the PID of current (= pytest) process.
+                #
+                # When running as main application process level (i.e., the spoofed parent process level is
+                # PYI_PROCESS_LEVEL_PARENT), the declared PID matches that of immediate parent, and passes
+                # validation; therefore, it fails in subsequent executable validation.
+                #
+                # When running as spawned worker sub-process (i.e., the spoofed parent process level is
+                # PYI_PROCESS_LEVEL_MAIN), the declared PID matches that of immediate parent; this fails the
+                # validation, because in this case we expect the originating onefile parent process to be at least
+                # a grand-parent or a further ancestor.
                 assert p.returncode not in {0, 42}
-                assert MSG_PARENT_EXECUTABLE in p.stderr
+                if parent_level == PYI_PROCESS_LEVEL_PARENT:
+                    assert MSG_PARENT_DIFFERENT_EXECUTABLE in p.stderr
+                else:
+                    assert MSG_PARENT_DIFFERENT_PID in p.stderr
         elif scenario == SCENARIO_SETUID_EXECUTABLE:
             assert p.returncode not in {0, 42}
             # Platforms without mitigation are explicitly handled earlier; so here, we expect security validation
-            # failure.
-            assert MSG_PARENT_EXECUTABLE in p.stderr
+            # failure. Since the spoofed setup is the same as in SCENARIO_MEI_DIR_MATCHED_PID, the expected result
+            # is also the same.
+            assert p.returncode not in {0, 42}
+            if parent_level == PYI_PROCESS_LEVEL_PARENT:
+                assert MSG_PARENT_DIFFERENT_EXECUTABLE in p.stderr
+            else:
+                assert MSG_PARENT_DIFFERENT_PID in p.stderr
         else:
             raise ValueError(f"Unsupported scenario: {scenario!r}")
 
@@ -484,10 +521,6 @@ def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path):
 # Test that parent-process security validation works correctly in case of intermixed processes, i.e., the application
 # process spawning another program, which then spawns another instance of application (subprocess). See #9512 and #9513.
 def test_security_validation_with_intermixed_subprocesses(pyi_builder, tmp_path):
-    # TODO
-    if pyi_builder._mode == 'onefile':
-        pytest.xfail("security validation needs to be reworked to allow for intermixed processes")
-
     # Wrapper script
     wrapper_script = '\n'.join([
         "import sys",

@@ -521,7 +521,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                 return -1;
             }
 
-            /* Verify the parent process */
+            /* Verify the originating onefile parent process */
             if (pyi_ctx->process_level == PYI_PROCESS_LEVEL_PARENT && pyi_ctx->parent_process_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART) {
                 /* This codepath should be reached only in onefile POSIX
                  * builds with splash screen, where the parent process
@@ -539,10 +539,21 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                     return -1;
                 }
             } else {
-                /* This is supposed to be a onefile child process; therefore,
-                 * its parent should be a valid onefile process, and should
-                 * be using the same executable... */
-                if (pyi_security_verify_parent_process(pyi_ctx) < 0) {
+                /* This is supposed to be a onefile child process, so
+                 * there should be an originating onefile parent process
+                 * that uses the same executable, and its PID is supposed
+                 * to be embedded in the inherited application top-level
+                 * directory name. So first, ensure that we can find process
+                 * with this ID in our ancestor tree - either as direct
+                 * parent (if this is main application process), or grandparent
+                 * or further ancestor (if this is spawned worker sub-proces)... */
+                const bool search_process_tree = pyi_ctx->process_level != PYI_PROCESS_LEVEL_MAIN; /* = PYI_PROCESS_LEVEL_SUBPROCESS */
+                if (pyi_security_verify_onefile_parent_pid(pyi_ctx, onefile_parent_pid, search_process_tree)) {
+                    return -1;
+                }
+                /* ... and check that the originating onefile parent process
+                 * is using the same executable as this process. */
+                if (pyi_security_verify_onefile_parent_executable(pyi_ctx, onefile_parent_pid) < 0) {
                     return -1;
                 }
             }
