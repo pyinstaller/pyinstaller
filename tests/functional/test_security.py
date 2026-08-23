@@ -419,42 +419,48 @@ def test_application_home_directory_hijack(
             assert p.returncode not in {0, 42}
             assert MSG_HOME_DIRECTORY_NAME in p.stderr
         elif scenario == SCENARIO_MEI_DIR_MISMATCHED_PID:
-            if mitigation_unavailable:
-                assert p.returncode == 42
-            else:
-                # The PID part of _MEI directory in this scenario is set to 0.
-                #
-                # When running as main application process level (i.e., the spoofed parent process level is
-                # PYI_PROCESS_LEVEL_PARENT), the declared PID=0 differs from that of immediate parent, and fails
-                # the validation.
-                #
-                # When running as spawned worker sub-process (i.e., the spoofed parent process level is
-                # PYI_PROCESS_LEVEL_MAIN), the declared PID=0 cannot be found among ancestor processes, and fails
-                # the validation.
+            # The PID part of _MEI directory in this scenario is set to 0.
+            #
+            # When running as main application process level (i.e., the spoofed parent process level is
+            # PYI_PROCESS_LEVEL_PARENT), the declared PID=0 differs from that of immediate parent, and fails
+            # the validation. This is true even on POSIX platforms where /proc filesystem is unavailable.
+            #
+            # When running as spawned worker sub-process (i.e., the spoofed parent process level is
+            # PYI_PROCESS_LEVEL_MAIN), the declared PID=0 cannot be found among ancestor processes, and fails
+            # the validation. On POSIX platforms the process tree traversal requires /proc filesystem, so this
+            # scenario is expected to slip through if `mitigation_unavailable` is set.
+            if parent_level == PYI_PROCESS_LEVEL_PARENT:
                 assert p.returncode not in {0, 42}
-                if parent_level == PYI_PROCESS_LEVEL_PARENT:
-                    assert MSG_PARENT_DIFFERENT_PID in p.stderr
+                assert MSG_PARENT_DIFFERENT_PID in p.stderr
+            else:
+                if mitigation_unavailable:
+                    assert p.returncode == 42
                 else:
+                    assert p.returncode not in {0, 42}
                     assert MSG_PARENT_PID_NOT_FOUND in p.stderr
         elif scenario == SCENARIO_MEI_DIR_MATCHED_PID:
-            if mitigation_unavailable:
-                assert p.returncode == 42
-            else:
-                # The PID part of _MEI directory in this scenario is set to the PID of current (= pytest) process.
-                #
-                # When running as main application process level (i.e., the spoofed parent process level is
-                # PYI_PROCESS_LEVEL_PARENT), the declared PID matches that of immediate parent, and passes
-                # validation; therefore, it fails in subsequent executable validation.
-                #
-                # When running as spawned worker sub-process (i.e., the spoofed parent process level is
-                # PYI_PROCESS_LEVEL_MAIN), the declared PID matches that of immediate parent; this fails the
-                # validation, because in this case we expect the originating onefile parent process to be at least
-                # a grand-parent or a further ancestor.
-                assert p.returncode not in {0, 42}
-                if parent_level == PYI_PROCESS_LEVEL_PARENT:
-                    assert MSG_PARENT_DIFFERENT_EXECUTABLE in p.stderr
+            # The PID part of _MEI directory in this scenario is set to the PID of current (= pytest) process.
+            #
+            # When running as main application process level (i.e., the spoofed parent process level is
+            # PYI_PROCESS_LEVEL_PARENT), the declared PID matches that of immediate parent, and passes
+            # validation; therefore, it fails in subsequent executable validation. On POSIX platforms the
+            # executable validation requires /proc filesystem, so this scenario is expected to split through
+            # if `mitigation_unavailable` is set.
+            #
+            # When running as spawned worker sub-process (i.e., the spoofed parent process level is
+            # PYI_PROCESS_LEVEL_MAIN), the declared PID matches that of immediate parent; this fails the
+            # validation, because in this case we expect the originating onefile parent process to be at least
+            # a grand-parent or a further ancestor. This is true even on POSIX platforms where /proc filesystem
+            # is unavailable.
+            if parent_level == PYI_PROCESS_LEVEL_PARENT:
+                if mitigation_unavailable:
+                    assert p.returncode == 42
                 else:
-                    assert MSG_PARENT_DIFFERENT_PID in p.stderr
+                    assert p.returncode not in {0, 42}
+                    assert MSG_PARENT_DIFFERENT_EXECUTABLE in p.stderr
+            else:
+                assert p.returncode not in {0, 42}
+                assert MSG_PARENT_DIFFERENT_PID in p.stderr
         elif scenario == SCENARIO_SETUID_EXECUTABLE:
             assert p.returncode not in {0, 42}
             # Platforms without mitigation are explicitly handled earlier; so here, we expect security validation
