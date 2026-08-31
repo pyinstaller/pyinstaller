@@ -11,7 +11,7 @@
 
 import pytest
 
-from PyInstaller.compat import is_win, is_linux
+from PyInstaller import compat
 from PyInstaller.utils.tests import importorskip, skipif, requires
 from PyInstaller.utils.hooks import can_import_module, tcl_tk
 
@@ -194,7 +194,7 @@ def test_idlelib(pyi_builder):
 
 @importorskip('keyring')
 @skipif(
-    is_linux,
+    compat.is_linux,
     reason="SecretStorage backend on linux requires active D-BUS session and initialized keyring, and may "
     "need to unlock the keyring via UI prompt."
 )
@@ -225,6 +225,10 @@ def test_pytz(pyi_builder):
 
 
 @importorskip('requests')
+@skipif(
+    compat.is_cygwin,
+    reason="ssl server is broken on cygwin until https://github.com/python/cpython/pull/150419 is released/back-ported."
+)
 def test_requests(pyi_builder, data_dir):
     # NOTE: including the `data_dir` fixture copies files needed by this test!
     # We collect the data into frozen application.
@@ -366,7 +370,7 @@ def test_pyexcelerate(pyi_builder):
 
 
 @importorskip('usb')
-@pytest.mark.skipif(is_linux, reason='libusb_exit segfaults on some linuxes')
+@pytest.mark.skipif(compat.is_linux, reason='libusb_exit segfaults on some linuxes')
 def test_usb(pyi_builder):
     # See if the usb package is supported on this platform.
     try:
@@ -437,7 +441,7 @@ def test_pandas_plotting_matplotlib(pyi_builder):
 
 
 @importorskip('win32ctypes')
-@pytest.mark.skipif(not is_win, reason='pywin32-ctypes is supported only on Windows')
+@pytest.mark.skipif(not compat.is_win, reason='pywin32-ctypes is supported only on Windows')
 @pytest.mark.parametrize('submodule', ['win32api', 'win32cred', 'pywintypes'])
 def test_pywin32ctypes(pyi_builder, submodule):
     pyi_builder.test_source(f"""
