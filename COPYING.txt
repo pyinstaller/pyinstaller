@@ -47,6 +47,18 @@ Run-time Hooks are in the directory
 ./PyInstaller/hooks/rthooks
 
 
+Additional Run-time Modules
+----------------------------------
+
+In addition to run-time hooks, PyInstaller may embed additional run-time
+modules in the final executable. At the time of writing, these include
+the splash-screen module (``pyi_splash``) and modules from utility package
+for run-time hooks (``_pyi_rth_utils``). All these files are licensed under
+the Apache License, Version 2.0, and are located in the following directory:
+
+./PyInstaller/fake-modules
+
+
 The PyInstaller.isolated submodule
 ----------------------------------
 
