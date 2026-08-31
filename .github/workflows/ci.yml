@@ -609,7 +609,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: ['freebsd', 'openbsd', 'netbsd']
+        platform: ['freebsd', 'openbsd', 'netbsd', 'openindiana']
       fail-fast: false
     steps:
       - name: Checkout PyInstaller code
@@ -661,6 +661,24 @@ jobs:
               py312-psutil py312-test py312-test-xdist \
               py312-numpy py312-Pillow
             ln -s /usr/pkg/bin/python3.12 /usr/pkg/bin/python3
+
+      - name: Setup VM (OpenIndiana)
+        if: matrix.platform == 'openindiana'
+        uses: vmactions/openindiana-vm@v1
+        with:
+          custom-shell-name: vmsh
+          copyback: false
+          prepare: |
+            pkg refresh
+            pkg install \
+              pkg:/developer/gcc-14 \
+              pkg:/library/python/pip \
+              pkg:/library/python/tkinter-39 \
+              pkg:/library/python/psutil \
+              pkg:/library/python/pytest \
+              pkg:/library/python/pytest-xdist \
+              pkg:/library/python/numpy \
+              pkg:/library/python/pillow
 
       # The steps below should be common to all platforms
       - name: Install PyInstaller
