@@ -390,7 +390,7 @@ pyi_process_lineage_tracker_get_parent_pid(struct PYI_PROCESS_LINEAGE_TRACKER *t
     (void)tracker;
     (void)target_pid;
     (void)parent_pid;
-    PYI_ERROR("Security validation failure: parent-process ID validation is not implemented on this platform!\n");
+    PYI_ERROR("Security validation failure: parent-process ID validation is not supported on this platform!\n");
     return -1;
 }
 
@@ -628,17 +628,11 @@ _pyi_security_verify_onefile_parent_executable_posix(const struct PYI_CONTEXT *p
     const char *proc_path_fmt = NULL;
 #endif
 
-    /* Handle unsupported POSIX platforms, where we have no way to look up
-     * the executable for a given process. Disallow setuid-enabled executables,
-     * otherwise skip the check. */
+    /* Raise an error on unsupported POSIX platforms, where we have no
+     * way to look up the executable for a given process. */
     if (!proc_path_fmt) {
-        if (pyi_ctx->has_setuid) {
-            PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this platform!\n");
-            return -1;
-        } else {
-            PYI_DEBUG("SECURITY: unsupported platform - skipping check for non-setuid executable!\n");
-            return 0;
-        }
+        PYI_ERROR("Security validation failure: parent-process executable validation is not supported on this platform!\n");
+        return -1;
     }
 
     /* Try to look up the /proc entry. On some platforms, the entry points
@@ -655,16 +649,9 @@ _pyi_security_verify_onefile_parent_executable_posix(const struct PYI_CONTEXT *p
     if (realpath(proc_path, parent_executable) == NULL) {
         /* The access to /proc entry might be blocked due to security policy,
          * or by proc filesystem not being mounted (as is the case on FreeBSD
-         * by default). Allow this to be the case for a non-setuid executable
-         * (and skip the verification), but fail in the case of a setuid-enabled
-         * executable. */
-        if (pyi_ctx->has_setuid) {
-            PYI_ERROR("Security validation failure: could not determine the executable path for originating onefile parent process!\n");
-            return -1;
-        } else {
-            PYI_DEBUG("SECURITY: could not access %s - skipping check for non-setuid executable!\n", proc_path);
-            return 0;
-        }
+         * by default).  */
+        PYI_ERROR("Security validation failure: could not access /proc entry to determine the executable path for originating onefile parent process!\n");
+        return -1;
     }
 
     /* Exclude the .exe suffix from the resolved executable path, in order to
