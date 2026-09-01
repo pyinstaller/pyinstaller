@@ -1,0 +1,5 @@
+Limit ``onefile`` parent-process validation only to executables that are
+running with elevated privileges while inheriting environment variables
+set by unprivileged user. On POSIX systems, this corresponds to executables
+with ``setuid`` bit set, while on Windows, it corresponds to UAC-elevated
+processes (running with ``TokenElevationTypeFull`` token).

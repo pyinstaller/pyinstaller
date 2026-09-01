@@ -448,7 +448,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
          * we exit with an early error in the parent onefile process,
          * instead of trying to set up a child process that is doomed
          * to fail... */
-        if (pyi_ctx->has_elevated_privileges) {
+        if (pyi_ctx->has_elevated_privileges || pyi_ctx->enable_onefile_parent_verification) {
             if (pyi_security_onefile_parent_verification_available() != true) {
                 return -1;
             }
@@ -558,7 +558,11 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                  * needs to set LD_LIBRARY_PATH and restart itself before
                  * running splash screen. So this process effectively
                  * inherited the application directory from itself, and
-                 * therefore, the PIDs should be identical. */
+                 * therefore, the PIDs should be identical.
+                 *
+                 * This check should be basic enough that we can enforce
+                 * it regardless of whether the executable is running in
+                 * privileged mode or not. */
 #if defined(_WIN32)
                 unsigned int current_pid = _getpid();
 #else
@@ -573,18 +577,33 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                  * there should be an originating onefile parent process
                  * that uses the same executable, and its PID is supposed
                  * to be embedded in the inherited application top-level
-                 * directory name. So first, ensure that we can find process
-                 * with this ID in our ancestor tree - either as direct
-                 * parent (if this is main application process), or grandparent
-                 * or further ancestor (if this is spawned worker sub-proces)... */
-                const bool search_process_tree = pyi_ctx->process_level != PYI_PROCESS_LEVEL_MAIN; /* = PYI_PROCESS_LEVEL_SUBPROCESS */
-                if (pyi_security_verify_onefile_parent_pid(pyi_ctx, onefile_parent_pid, search_process_tree) != true) {
-                    return -1;
-                }
-                /* ... and check that the originating onefile parent process
-                 * is using the same executable as this process. */
-                if (pyi_security_verify_onefile_parent_executable(pyi_ctx, onefile_parent_pid) != true) {
-                    return -1;
+                 * directory name.
+                 *
+                 * So first, ensure that we can find process with this ID
+                 * in our ancestor tree - either as direct parent (if this
+                 * is main application process), or grandparent or further
+                 * ancestor (if this is spawned worker sub-process)...
+                 *
+                 * ... and then check that the originating onefile parent
+                 * process is using the same executable as this process.
+                 *
+                 * In unprivileged mode, this check might fail due to
+                 * insufficient permissions (or lack of support on the
+                 * target platform). Therefore, we enforce it only when
+                 * the executable is running in privileged mode, or if
+                 * explicitly opted-in (which is mostly available to
+                 * allow testing with non-privileged executables). */
+                if (pyi_ctx->has_elevated_privileges || pyi_ctx->enable_onefile_parent_verification) {
+                    const bool search_process_tree = pyi_ctx->process_level != PYI_PROCESS_LEVEL_MAIN; /* = PYI_PROCESS_LEVEL_SUBPROCESS */
+                    PYI_DEBUG("SECURITY: verifying onefile parent process due to %s...\n", pyi_ctx->has_elevated_privileges ? "executable running in privileged mode" : "explicit opt-in");
+                    if (pyi_security_verify_onefile_parent_pid(pyi_ctx, onefile_parent_pid, search_process_tree) != true) {
+                        return -1;
+                    }
+                    if (pyi_security_verify_onefile_parent_executable(pyi_ctx, onefile_parent_pid) != true) {
+                        return -1;
+                    }
+                } else {
+                    PYI_DEBUG("SECURITY: onefile parent-process verification is disabled\n");
                 }
             }
         }
@@ -958,6 +977,14 @@ _pyi_main_read_runtime_options(struct PYI_CONTEXT *pyi_ctx)
             continue;
         }
 #endif
+
+        /* pyi-enable-onefile-parent-verification
+         *
+         * Explicitly enable (onefile parent-process validation */
+        if (strncmp(toc_entry->name, "pyi-enable-onefile-parent-verification", 38) == 0) {
+            pyi_ctx->enable_onefile_parent_verification = 1;
+            continue;
+        }
     }
 }
 

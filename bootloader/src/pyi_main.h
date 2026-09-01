@@ -155,6 +155,11 @@ struct PYI_CONTEXT
      * to a process running with TokenElevationTypeFull. */
     unsigned char has_elevated_privileges;
 
+    /* Flag indicating whether onefile parent-process verification
+     * is explicitly enabled, even for non-privileged executables.
+     * Mostly intended for testing purposes. */
+    unsigned char enable_onefile_parent_verification;
+
     /* Splash screen context structure. */
     struct SPLASH_CONTEXT *splash;
 
