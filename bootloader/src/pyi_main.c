@@ -419,7 +419,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
          * process, instead of trying to set up a child process that is
          * doomed to fail... */
         if (pyi_ctx->has_setuid) {
-            if (pyi_security_check_onefile_setuid_allowed() < 0) {
+            if (pyi_security_onefile_parent_verification_available() != true) {
                 return -1;
             }
         }
@@ -509,7 +509,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
             /* Verify the name of the inherited top-level application
              * directory, and extract the process ID of the onefile parent
              * process from it. */
-            if (pyi_security_verify_application_home_dir_name(pyi_ctx, &onefile_parent_pid) < 0) {
+            if (pyi_security_verify_application_home_dir_name(pyi_ctx, &onefile_parent_pid) != true) {
                 return -1;
             }
             PYI_DEBUG("SECURITY: process ID of the originating onefile parent process: %d\n", onefile_parent_pid);
@@ -517,7 +517,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
             /* Check permissions on the inherited top-level application
              * directory (applicable only to setuid-enabled executables
              * on POSIX systems, otherwise no-op). */
-            if (pyi_security_verify_application_home_dir_permissions(pyi_ctx) < 0) {
+            if (pyi_security_verify_application_home_dir_permissions(pyi_ctx) != true) {
                 return -1;
             }
 
@@ -548,12 +548,12 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
                  * parent (if this is main application process), or grandparent
                  * or further ancestor (if this is spawned worker sub-proces)... */
                 const bool search_process_tree = pyi_ctx->process_level != PYI_PROCESS_LEVEL_MAIN; /* = PYI_PROCESS_LEVEL_SUBPROCESS */
-                if (pyi_security_verify_onefile_parent_pid(pyi_ctx, onefile_parent_pid, search_process_tree)) {
+                if (pyi_security_verify_onefile_parent_pid(pyi_ctx, onefile_parent_pid, search_process_tree) != true) {
                     return -1;
                 }
                 /* ... and check that the originating onefile parent process
                  * is using the same executable as this process. */
-                if (pyi_security_verify_onefile_parent_executable(pyi_ctx, onefile_parent_pid) < 0) {
+                if (pyi_security_verify_onefile_parent_executable(pyi_ctx, onefile_parent_pid) != true) {
                     return -1;
                 }
             }
@@ -591,7 +591,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
         /* On POSIX platforms, if setuid bit is set on the executable,
          * check owner/permissions on the top-level application's directory
          * to ensure its contents are accessible only to the effective user. */
-        if (pyi_security_verify_application_home_dir_permissions(pyi_ctx) < 0) {
+        if (pyi_security_verify_application_home_dir_permissions(pyi_ctx) != true) {
             return -1;
         }
     }

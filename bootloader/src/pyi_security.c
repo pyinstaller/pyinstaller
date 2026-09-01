@@ -49,30 +49,30 @@
  *
  * For details about constraints see platform-specific implementations
  * of validation helpers below. */
-int
-pyi_security_check_onefile_setuid_allowed()
+bool
+pyi_security_onefile_parent_verification_available()
 {
 #if defined(_WIN32)
-    return 0;
+    return true;
 #elif defined(__APPLE__)
-    return 0;
+    return true;
 #elif defined(__linux__) || defined(__CYGWIN__) || defined(__NetBSD__)
-    return 0;
+    return true;
 #elif defined(__FreeBSD__)
     /* Supported only if /proc is available. */
     struct stat curproc_dir_stat;
     if (stat("/proc/curproc", &curproc_dir_stat) < 0) {
         PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this system (missing /proc)!\n");
-        return -1;
+        return false;
     }
-    return 0;
+    return true;
 #elif defined(__sun)
-    return 0;
+    return true;
 #else
     /* Other POSIX platforms are unsupported due to lack of required
      * information in /proc */
     PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this platform!\n");
-    return -1;
+    return false;
 #endif
 }
 
@@ -153,10 +153,10 @@ pyi_process_lineage_tracker_add_ancestor(struct PYI_PROCESS_LINEAGE_TRACKER *tra
 {
     if (tracker->ancestor_count + 1 >= PYI_MAX_PROCESS_TREE_DEPTH) {
         PYI_ERROR("Security validation failure: maximum process tree depth exceeded!\n");
-        return -1;
+        return false;
     }
     tracker->ancestor_pids[tracker->ancestor_count++] = ancestor_pid;
-    return 0;
+    return true;
 }
 
 /* Check whether the given ancestor PID has already been encountered
@@ -416,13 +416,13 @@ pyi_process_lineage_tracker_get_immediate_parent_pid(struct PYI_PROCESS_LINEAGE_
 }
 
 
-int
+bool
 pyi_security_verify_onefile_parent_pid(const struct PYI_CONTEXT *pyi_ctx, const unsigned int onefile_parent_pid, const bool search_process_tree)
 {
     struct PYI_PROCESS_LINEAGE_TRACKER tracker;
     unsigned int current_pid;
     unsigned int parent_pid;
-    int ret = -1;
+    bool succeeded = false;
 
     PYI_DEBUG("SECURITY: verifying process ID of originating onefile parent process (%u)...\n", onefile_parent_pid);
 
@@ -440,7 +440,7 @@ pyi_security_verify_onefile_parent_pid(const struct PYI_CONTEXT *pyi_ctx, const 
     if (!search_process_tree) {
         /* We strictly require the parent process to be the originating process. */
         if (parent_pid == onefile_parent_pid) {
-            ret = 0; /* OK */
+            succeeded = true; /* OK */
             goto end;
         } else {
             PYI_ERROR("Security validation failure: invalid originating onefile parent process (different PID)!\n");
@@ -492,7 +492,7 @@ pyi_security_verify_onefile_parent_pid(const struct PYI_CONTEXT *pyi_ctx, const 
         /* Check if we have a match. */
         if (parent_pid == onefile_parent_pid) {
             PYI_DEBUG("SECURITY: process %u is a valid ancestor process!\n", onefile_parent_pid);
-            ret = 0; /* OK */
+            succeeded = true; /* OK */
             goto end;
         }
 
@@ -501,7 +501,7 @@ pyi_security_verify_onefile_parent_pid(const struct PYI_CONTEXT *pyi_ctx, const 
          * if an ancestor process died and had its PID reused. In the context
          * of security validation here, this means that we reached the end of
          * searchable process tree without finding the onefile parent process ID. */
-        if (pyi_process_lineage_tracker_check_ancestor_seen(&tracker, parent_pid) != 0) {
+        if (pyi_process_lineage_tracker_check_ancestor_seen(&tracker, parent_pid) != false) {
             PYI_DEBUG("SECURITY: detected parent-process ID loop!\n");
             break;
         }
@@ -520,7 +520,7 @@ pyi_security_verify_onefile_parent_pid(const struct PYI_CONTEXT *pyi_ctx, const 
 
 end:
     pyi_process_lineage_tracker_cleanup(&tracker);
-    return ret;
+    return succeeded;
 }
 
 
@@ -531,7 +531,7 @@ end:
  * executable as the current process. */
 #if defined(_WIN32)
 
-static int
+static bool
 _pyi_security_verify_onefile_parent_executable_win32(const struct PYI_CONTEXT *pyi_ctx, const DWORD process_id)
 {
     HANDLE process_handle;
@@ -546,14 +546,14 @@ _pyi_security_verify_onefile_parent_executable_win32(const struct PYI_CONTEXT *p
     process_handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, process_id);
     if (process_handle == INVALID_HANDLE_VALUE) {
         PYI_ERROR_W(L"Security validation failure: failed to obtain information about originating onefile parent process!\n");
-        return -1;
+        return false;
     }
 
     buffer_length = PYI_PATH_MAX;
     if (!QueryFullProcessImageNameW(process_handle, PROCESS_NAME_NATIVE, parent_executable_w, &buffer_length)) {
         PYI_ERROR_W(L"Security validation failure: failed to obtain executable path for originating onefile parent process!\n");
         CloseHandle(process_handle);
-        return -1;
+        return false;
     }
 
     CloseHandle(process_handle);
@@ -571,7 +571,7 @@ _pyi_security_verify_onefile_parent_executable_win32(const struct PYI_CONTEXT *p
     if (!QueryFullProcessImageNameW(process_handle, PROCESS_NAME_NATIVE, current_executable_w, &buffer_length)) {
         PYI_ERROR_W(L"Security validation failure: failed to obtain executable path for current process!\n");
         CloseHandle(process_handle);
-        return -1;
+        return false;
     }
 
     CloseHandle(process_handle);
@@ -581,10 +581,10 @@ _pyi_security_verify_onefile_parent_executable_win32(const struct PYI_CONTEXT *p
     /* Ensure that same executable is used */
     if (wcscmp(parent_executable_w, current_executable_w) != 0) {
         PYI_ERROR_W(L"Security validation failure: invalid originating onefile parent process (different executable)!\n");
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
 #elif defined(__APPLE__)
@@ -604,10 +604,10 @@ _pyi_security_verify_onefile_parent_executable_macos(const struct PYI_CONTEXT *p
     /* Ensure that same executable is used */
     if (strcmp(parent_executable, pyi_ctx->executable_filename) != 0) {
         PYI_ERROR("Security validation failure: invalid originating onefile parent process (different executable)!\n");
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
 #else
@@ -632,7 +632,7 @@ _pyi_security_verify_onefile_parent_executable_posix(const struct PYI_CONTEXT *p
      * way to look up the executable for a given process. */
     if (!proc_path_fmt) {
         PYI_ERROR("Security validation failure: parent-process executable validation is not supported on this platform!\n");
-        return -1;
+        return false;
     }
 
     /* Try to look up the /proc entry. On some platforms, the entry points
@@ -643,7 +643,7 @@ _pyi_security_verify_onefile_parent_executable_posix(const struct PYI_CONTEXT *p
      * in pyi_main.c */
     if (snprintf(proc_path, PYI_PATH_MAX, proc_path_fmt, process_id) >= PYI_PATH_MAX) {
         PYI_ERROR("Security validation failure: could not format /proc entry path!\n");
-        return -1;
+        return false;
     }
 
     if (realpath(proc_path, parent_executable) == NULL) {
@@ -651,7 +651,7 @@ _pyi_security_verify_onefile_parent_executable_posix(const struct PYI_CONTEXT *p
          * or by proc filesystem not being mounted (as is the case on FreeBSD
          * by default).  */
         PYI_ERROR("Security validation failure: could not access /proc entry to determine the executable path for originating onefile parent process!\n");
-        return -1;
+        return false;
     }
 
     /* Exclude the .exe suffix from the resolved executable path, in order to
@@ -674,15 +674,15 @@ _pyi_security_verify_onefile_parent_executable_posix(const struct PYI_CONTEXT *p
     /* Ensure that same executable is used */
     if (strcmp(parent_executable, pyi_ctx->executable_filename) != 0) {
         PYI_ERROR("Security validation failure: invalid originating onefile parent process (different executable)!\n");
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
 #endif
 
-int
+bool
 pyi_security_verify_onefile_parent_executable(const struct PYI_CONTEXT *pyi_ctx, const unsigned int onefile_parent_pid)
 {
     PYI_DEBUG("SECURITY: verifying executable of originating onefile parent process (%d)...\n", onefile_parent_pid);
@@ -715,7 +715,7 @@ pyi_security_verify_onefile_parent_executable(const struct PYI_CONTEXT *pyi_ctx,
  * needs to be further verified (i.e., that is a parent or an ancestor
  * process of the current process, and that the said process uses same
  * executable as the current process). */
-int
+bool
 pyi_security_verify_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx, unsigned int *onefile_parent_pid)
 {
     char basename[PYI_PATH_MAX];
@@ -723,7 +723,7 @@ pyi_security_verify_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx,
 
     if (!pyi_path_basename(basename, pyi_ctx->application_home_dir)) {
         PYI_ERROR("Security validation failure: failed to obtain name of application's home directory!\n");
-        return -1;
+        return false;
     }
 
     PYI_DEBUG("SECURITY: verifying the name of application's home directory (%s)...\n", basename);
@@ -740,12 +740,12 @@ pyi_security_verify_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx,
 #ifdef _WIN32
     if (name_len < 12) {
         PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
-        return -1;
+        return false;
     }
 #else
     if (name_len != 18) {
         PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
-        return -1;
+        return false;
     }
 #endif
 
@@ -754,10 +754,10 @@ pyi_security_verify_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx,
      * in pyi_utils_posix.c and pyi_utis_win32.c */
     if (sscanf(basename, "_MEI%08x", onefile_parent_pid) != 1) {
         PYI_ERROR("Security validation failure: unexpected name of application's home directory!\n");
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
 
@@ -769,12 +769,12 @@ pyi_security_verify_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx,
  *    0700
  * Applicable to both onefile and onedir builds. No-op on Windows, and
  * no-op on other platforms when setuid bit is not set on the executable. */
-int
+bool
 pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *pyi_ctx)
 {
 #if defined(_WIN32)
     (void)pyi_ctx;
-    return 0;
+    return true;
 #else
     uid_t euid;
     uid_t permissions;
@@ -783,14 +783,14 @@ pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *p
     /* Applicable only to executables with setuid bit set. */
     if (!pyi_ctx->has_setuid) {
         PYI_DEBUG("SECURITY: setuid bit is not set - skipping verification of owner/permissions of application's home directory.\n");
-        return 0;
+        return true;
     }
 
     PYI_DEBUG("SECURITY: setuid bit is set - verifying owner/permissions of application's home directory...\n");
 
     if (stat(pyi_ctx->application_home_dir, &application_home_dir_stat) < 0) {
         PYI_ERROR("Security validation failure: could not stat() the application's home directory!\n");
-        return -1;
+        return false;
     }
 
     /* Ensure that owner ID of application's temporary directory matches
@@ -808,7 +808,7 @@ pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *p
             "Security validation failure: owner ID of application's home directory (%d) does not match the effective user ID (%d)!\n",
             application_home_dir_stat.st_uid, euid
         );
-        return -1;
+        return false;
     }
 
     /* Ensure that the application's home directory has permissions used
@@ -819,9 +819,9 @@ pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *p
     permissions = application_home_dir_stat.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
     if (permissions != S_IRWXU) {
         PYI_ERROR("Security validation failure: application's home directory has invalid permissions (0%o)!\n", permissions);
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 #endif
 }
