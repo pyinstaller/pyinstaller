@@ -781,7 +781,7 @@ pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *p
     struct stat application_home_dir_stat;
 
     /* Applicable only to executables with setuid bit set. */
-    if (!pyi_ctx->has_setuid) {
+    if (!pyi_ctx->has_elevated_privileges) {
         PYI_DEBUG("SECURITY: setuid bit is not set - skipping verification of owner/permissions of application's home directory.\n");
         return true;
     }

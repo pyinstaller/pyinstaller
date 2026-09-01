@@ -126,22 +126,51 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
     }
     PYI_DEBUG("LOADER: executable file: %s\n", pyi_ctx->executable_filename);
 
-    /* Check if executable set setuid bit set (POSIX platforms only). */
-#if !defined(_WIN32)
+    /* Check if executable is running with elevated privileges while
+     * inheriting environment variables set by unprivileged user. On
+     * POSIX platforms, this happens with executables that have setuid
+     * bit set. On Windows, it happens with UAC-elevated executables.
+     * In both cases, the OS sanitizes some of environment variables
+     * (e.g., PATH, or LD_LIBRARY_PATH or equivalent), but not the ones
+     * that are used by PyInstaller. Thus, we might need to perform
+     * additional security checks before inheriting the environment. */
     if (1) {
+#if defined(_WIN32)
+        HANDLE token;
+        TOKEN_ELEVATION_TYPE elevation_type;
+        DWORD ret_size;
+
+        if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token) == 0) {
+            PYI_WINERROR_W(L"OpenProcessToken", L"Security validation failure: could not obtain token information for current process!\n");
+            return -1;
+        }
+
+        if (GetTokenInformation(token, TokenElevationType, &elevation_type, sizeof(elevation_type), &ret_size) == 0) {
+            PYI_WINERROR_W(L"GetTokenInformation", L"Security validation failure: could not obtain token information for current process!\n");
+            CloseHandle(token);
+            return -1;
+        }
+
+        CloseHandle(token);
+
+        if (elevation_type == TokenElevationTypeFull) {
+            PYI_DEBUG_W(L"SECURITY: executable is running with TokenElevationTypeFull.\n");
+            pyi_ctx->has_elevated_privileges = 1;
+        }
+#else
         struct stat executable_stat;
 
         if (stat(pyi_ctx->executable_filename, &executable_stat) < 0) {
             PYI_ERROR("Security validation failure: could not stat() the executable!\n");
             return -1;
         }
-        pyi_ctx->has_setuid = (executable_stat.st_mode & S_ISUID) == S_ISUID;
 
-        if (pyi_ctx->has_setuid) {
+        if (executable_stat.st_mode & S_ISUID) {
             PYI_DEBUG("SECURITY: executable has setuid bit set.\n");
+            pyi_ctx->has_elevated_privileges = 1;
         }
-    }
 #endif
+    }
 
     /* Resolve main PKG archive - embedded or side-loaded. */
     if (_pyi_main_resolve_pkg_archive(pyi_ctx) < 0) {
@@ -412,13 +441,14 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
     if (pyi_ctx->is_onefile) {
         bool create_temp_dir;
 
-        /* If setuid bit is set on the executable, check that parent-process
-         * security validation is available on this platform/system. This
-         * ensures that on known unsupported platforms (such as AIX and
-         * OpenBSD), we exit with an early error in the parent onefile
-         * process, instead of trying to set up a child process that is
-         * doomed to fail... */
-        if (pyi_ctx->has_setuid) {
+        /* If process is running with elevated privileges (e.g., setuid
+         * bit on POSIX platforms), check that parent-process security
+         * validation is available on this platform/system. This ensures
+         * that on known unsupported platforms (such as AIX and OpenBSD),
+         * we exit with an early error in the parent onefile process,
+         * instead of trying to set up a child process that is doomed
+         * to fail... */
+        if (pyi_ctx->has_elevated_privileges) {
             if (pyi_security_onefile_parent_verification_available() != true) {
                 return -1;
             }
