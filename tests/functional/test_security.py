@@ -35,9 +35,6 @@ SCENARIO_ARBITRARY_DIR = 0
 SCENARIO_MEI_DIR_MISMATCHED_PID = 1
 # Directory with _MEI prefix passed, and with PID part set to the PID of the current (pytest) process.
 SCENARIO_MEI_DIR_MATCHED_PID = 2
-# Additional test for non-Windows: same as above, but with setuid bit set on the executable (the owner still being the
-# user, as setting up setuid-root is difficult for the test...)
-SCENARIO_SETUID_EXECUTABLE = 3
 
 
 def _ensure_long_path(path):
@@ -108,6 +105,17 @@ def _ensure_long_path(path):
     return long_path
 
 
+def _enable_onefile_parent_verification(monkeypatch):
+    import PyInstaller.building.build_main
+    EXE = PyInstaller.building.build_main.EXE
+
+    def MyEXE(*args, **kwargs):
+        extra_options = [('pyi-enable-onefile-parent-verification', None, 'OPTION')]
+        return EXE(*args, extra_options, **kwargs)
+
+    monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
+
+
 # Check whether application's top level directory can be hijacked via manipulation of _PYI_ environment variables.
 # See: https://github.com/pyinstaller/pyinstaller/security/advisories/GHSA-9fxf-4qw3-ghmr
 @pytest.mark.parametrize(
@@ -132,13 +140,11 @@ def _ensure_long_path(path):
         SCENARIO_ARBITRARY_DIR,
         SCENARIO_MEI_DIR_MISMATCHED_PID,
         SCENARIO_MEI_DIR_MATCHED_PID,
-        *([] if compat.is_win else [SCENARIO_SETUID_EXECUTABLE]),
     ],
     ids=[
         'ArbitraryDir',
         'MeiDirMismatchedPid',
         'MeiDirMatchedPid',
-        *([] if compat.is_win else ['SetuidExecutable']),
     ]
 )
 @pytest.mark.parametrize('splash_enabled', [False, True], ids=['nosplash', 'splash'])
@@ -151,6 +157,9 @@ def test_application_home_directory_hijack(
     parent_level,
     scenario,
 ):
+    # Enable onefile parent-process verification on the build
+    _enable_onefile_parent_verification(monkeypatch)
+
     build_mode = pyi_builder._mode  # The original build mode (i.e., of the real test application)
 
     # Splash-screen enabled variant requires tkinter to build; but since we do not require splash screen to actually
@@ -172,8 +181,8 @@ def test_application_home_directory_hijack(
         # screen tends to be flaky, but also to avoid unnecessarily running it on other platforms.
         monkeypatch.setenv("PYINSTALLER_SUPPRESS_SPLASH_SCREEN", "1")
 
-    # Flag indicating that mitigation is unavailable; hijack is possible for unprivileged onefile executables, while
-    # setuid-enabled onefile executables should raise an error.
+    # Flag indicating that mitigation is unavailable; with verification (automatically or explicitly) turned on, the
+    # program should raise an early error.
     mitigation_unavailable = (
         # OpenBSD does not have /proc filesystem available at all.
         compat.is_openbsd or
@@ -264,26 +273,6 @@ def test_application_home_directory_hijack(
         mei_dir = tmp_path / f'_MEI{os.getpid():08x}000000'
         shutil.copytree(fake_app_dir, mei_dir, symlinks=True)
         fake_app_dir = mei_dir
-    elif scenario == SCENARIO_SETUID_EXECUTABLE:
-        assert not compat.is_win, 'Test scenario not supported on Windows'
-
-        # Make a copy of executable with setuid bit set. The copy is kept in the same place as the original
-        # executable, to ensure it has adjacent contents directory in onedir mode.
-        setuid_executable = pathlib.Path(executable).with_name('setuid_executable')
-        shutil.copy2(executable, setuid_executable)
-
-        st_mode = os.lstat(setuid_executable).st_mode
-        os.chmod(setuid_executable, st_mode | stat.S_ISUID)
-
-        executable = setuid_executable
-
-        # Also format the _MEI directory with process ID of the current (pytest) process, and ensure 0700 permissions
-        # on the directory. This combination simulates an attempt at accessing a temporary directory of another onefile
-        # PyInstaller-frozen application.
-        mei_dir = tmp_path / f'_MEI{os.getpid():08x}000000'
-        shutil.copytree(fake_app_dir, mei_dir, symlinks=True)
-        os.chmod(mei_dir, stat.S_IRWXU)
-        fake_app_dir = mei_dir
     else:
         raise ValueError(f"Unsupported scenario: {scenario!r}")
 
@@ -349,44 +338,36 @@ def test_application_home_directory_hijack(
         # In a onedir build, the _PYI_APPLICATION_HOME_DIR environment variable should not be used at all - so the test
         # application should run normally, even if it is tricked into believing to be a sub-process of a onedir main
         # application process...
-        #
-        # In the setuid-executable scenario, we expect the executable to fail validation, because the _internal
-        # directory has default permissions (typically 755), which are not as strict as required (0700).
-        if scenario == SCENARIO_SETUID_EXECUTABLE:
-            assert p.returncode not in {0, 42}
-            assert "Security validation failure: application's home directory has invalid permissions " in p.stderr
-        else:
-            assert p.returncode == 0
+        assert p.returncode == 0
         return
 
     # *** Onefile mode ***
-    MSG_HOME_DIRECTORY_NAME = \
+    ERR_HOME_DIRECTORY_NAME = \
         "Security validation failure: unexpected name of application's home directory!"
-    MSG_HOME_DIRECTORY_PID = \
+    ERR_HOME_DIRECTORY_PID = \
         "Security validation failure: unexpected PID found in the name of application's home directory!"
-    MSG_PARENT_DIFFERENT_EXECUTABLE = \
+    ERR_PARENT_DIFFERENT_EXECUTABLE = \
         "Security validation failure: invalid originating onefile parent process (different executable)!"
-    MSG_PARENT_DIFFERENT_PID = \
+    ERR_PARENT_DIFFERENT_PID = \
         "Security validation failure: invalid originating onefile parent process (different PID)!"
-    MSG_PARENT_PID_NOT_FOUND = \
+    ERR_PARENT_PID_NOT_FOUND = \
         "Security validation failure: invalid originating onefile parent process (PID not found)!"
 
-    # If we are running setuid-executable scenario and no mitigation is available, the executable should exit with an
-    # early error.
-    if scenario == SCENARIO_SETUID_EXECUTABLE and mitigation_unavailable:
+    # On unsupported platforms, the program should raise an early error.
+    if mitigation_unavailable:
         assert p.returncode not in {0, 42}
         if compat.is_freebsd:
             # FreeBSD without /proc mounted
-            MSG_UNSUPPORTED_SYSTEM = (
+            ERR_UNSUPPORTED_SYSTEM = (
                 "Security validation failure: setuid-enabled executables are not supported on this system "
                 "(missing /proc)!"
             )
-            assert MSG_UNSUPPORTED_SYSTEM in p.stderr
+            assert ERR_UNSUPPORTED_SYSTEM in p.stderr
         else:
             # AIX, OpenBSD
-            MSG_UNSUPPORTED_PLATFORM = \
+            ERR_UNSUPPORTED_PLATFORM = \
                 "Security validation failure: setuid-enabled executables are not supported on this platform!"
-            assert MSG_UNSUPPORTED_PLATFORM in p.stderr
+            assert ERR_UNSUPPORTED_PLATFORM in p.stderr
         return
 
     if parent_level == PYI_PROCESS_LEVEL_UNKNOWN:
@@ -400,9 +381,9 @@ def test_application_home_directory_hijack(
         # its process ID across restart, it can always detect mismatch in the home directory name.
         assert p.returncode not in {0, 42}
         if scenario == SCENARIO_ARBITRARY_DIR:
-            assert MSG_HOME_DIRECTORY_NAME in p.stderr
+            assert ERR_HOME_DIRECTORY_NAME in p.stderr
         else:
-            assert MSG_HOME_DIRECTORY_PID in p.stderr
+            assert ERR_HOME_DIRECTORY_PID in p.stderr
     else:  # PYI_PROCESS_LEVEL_PARENT, PYI_PROCESS_LEVEL_MAIN
         # The process is supposed to be either main application process, or worker sub-process spawned via
         # `sys.executable`. The arbitrarily-named application directory should fail the name check. The
@@ -417,67 +398,140 @@ def test_application_home_directory_hijack(
         # and executable with setuid bit set to block the execution (already handled by preceding if-block).
         if scenario == SCENARIO_ARBITRARY_DIR:
             assert p.returncode not in {0, 42}
-            assert MSG_HOME_DIRECTORY_NAME in p.stderr
+            assert ERR_HOME_DIRECTORY_NAME in p.stderr
         elif scenario == SCENARIO_MEI_DIR_MISMATCHED_PID:
             # The PID part of _MEI directory in this scenario is set to 0.
             #
             # When running as main application process level (i.e., the spoofed parent process level is
             # PYI_PROCESS_LEVEL_PARENT), the declared PID=0 differs from that of immediate parent, and fails
-            # the validation. This is true even on POSIX platforms where /proc filesystem is unavailable.
+            # the validation.
             #
             # When running as spawned worker sub-process (i.e., the spoofed parent process level is
             # PYI_PROCESS_LEVEL_MAIN), the declared PID=0 cannot be found among ancestor processes, and fails
-            # the validation. On POSIX platforms the process tree traversal requires /proc filesystem, so this
-            # scenario is expected to slip through if `mitigation_unavailable` is set.
+            # the validation.
+            assert p.returncode not in {0, 42}
             if parent_level == PYI_PROCESS_LEVEL_PARENT:
-                assert p.returncode not in {0, 42}
-                assert MSG_PARENT_DIFFERENT_PID in p.stderr
+                assert ERR_PARENT_DIFFERENT_PID in p.stderr
             else:
-                if mitigation_unavailable:
-                    assert p.returncode == 42
-                else:
-                    assert p.returncode not in {0, 42}
-                    assert MSG_PARENT_PID_NOT_FOUND in p.stderr
+                assert ERR_PARENT_PID_NOT_FOUND in p.stderr
         elif scenario == SCENARIO_MEI_DIR_MATCHED_PID:
             # The PID part of _MEI directory in this scenario is set to the PID of current (= pytest) process.
             #
             # When running as main application process level (i.e., the spoofed parent process level is
             # PYI_PROCESS_LEVEL_PARENT), the declared PID matches that of immediate parent, and passes
-            # validation; therefore, it fails in subsequent executable validation. On POSIX platforms the
-            # executable validation requires /proc filesystem, so this scenario is expected to split through
-            # if `mitigation_unavailable` is set.
+            # validation; therefore, it fails in subsequent executable validation.
             #
             # When running as spawned worker sub-process (i.e., the spoofed parent process level is
             # PYI_PROCESS_LEVEL_MAIN), the declared PID matches that of immediate parent; this fails the
             # validation, because in this case we expect the originating onefile parent process to be at least
-            # a grand-parent or a further ancestor. This is true even on POSIX platforms where /proc filesystem
-            # is unavailable.
-            if parent_level == PYI_PROCESS_LEVEL_PARENT:
-                if mitigation_unavailable:
-                    assert p.returncode == 42
-                else:
-                    assert p.returncode not in {0, 42}
-                    assert MSG_PARENT_DIFFERENT_EXECUTABLE in p.stderr
-            else:
-                assert p.returncode not in {0, 42}
-                assert MSG_PARENT_DIFFERENT_PID in p.stderr
-        elif scenario == SCENARIO_SETUID_EXECUTABLE:
-            assert p.returncode not in {0, 42}
-            # Platforms without mitigation are explicitly handled earlier; so here, we expect security validation
-            # failure. Since the spoofed setup is the same as in SCENARIO_MEI_DIR_MATCHED_PID, the expected result
-            # is also the same.
+            # a grand-parent or a further ancestor.
             assert p.returncode not in {0, 42}
             if parent_level == PYI_PROCESS_LEVEL_PARENT:
-                assert MSG_PARENT_DIFFERENT_EXECUTABLE in p.stderr
+                assert ERR_PARENT_DIFFERENT_EXECUTABLE in p.stderr
             else:
-                assert MSG_PARENT_DIFFERENT_PID in p.stderr
+                assert ERR_PARENT_DIFFERENT_PID in p.stderr
         else:
             raise ValueError(f"Unsupported scenario: {scenario!r}")
 
 
+# Test that in onefile mode, parent-process security validation is automatically enabled for executable that has setuid
+# bit set. Test that in onedir mode, the permissions on application's contents directory are verified.
+@pytest.mark.skipif(compat.is_win, reason="applicable only to POSIX platforms.")
+def test_security_validation_with_setuid_executable(pyi_builder, tmp_path, monkeypatch):
+    # Do NOT enable onefile parent-process verification on the build!
+
+    # Basic test application
+    pyi_builder.test_source("""
+        import sys
+        print("Hello world", file=sys.stderr)
+    """)
+
+    print("\nFinished build and sanity-check tests - preparing the actual test...", file=sys.stderr)
+
+    executables = pyi_builder._find_executables('test_source')
+    assert len(executables) == 1
+    executable = executables[0]
+
+    # Set setuid bit on the executable. The file is owned by current user, so this is not a "real" setuid-root scenario.
+    # But since the bootloader checks the setuid bit, it should suffice for the purposes of the test.
+    st_mode = os.lstat(executable).st_mode
+    os.chmod(executable, st_mode | stat.S_ISUID)
+
+    print(f"Running executable with setuid bit set: {executable}", file=sys.stderr)
+    p = subprocess.run([executable], capture_output=True, encoding='utf-8')
+
+    print(f"Return code: {p.returncode}", file=sys.stderr)
+
+    if p.stdout:
+        print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
+    else:
+        print("Captured stdout: N/A", file=sys.stderr)
+
+    if p.stderr:
+        print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
+    else:
+        print("Captured stderr: N/A", file=sys.stderr)
+
+    # Check the output
+    if pyi_builder._mode == 'onefile':
+        # Onefile mode: check that program succeeded
+        assert p.returncode == 0
+
+        # Ensure that setuid bit was detected
+        assert "SECURITY: executable has setuid bit set" in p.stderr
+
+        # Ensure that owner/permissions on application's home directory were validated
+        assert \
+            "SECURITY: setuid bit is set - verifying owner/permissions of application's home directory..." in p.stderr
+
+        # Ensure that onefile-parent process validation was auto-enabled, and performed.
+        assert "SECURITY: verifying onefile parent process due to executable running in privileged mode..." in p.stderr
+        assert "SECURITY: verifying process ID of originating onefile parent process" in p.stderr
+        assert "SECURITY: verifying executable of originating onefile parent process" in p.stderr
+    else:
+        # Onedir mode: check that program failed due to incorrect permissions on application's contents directory. The
+        # actual permissions may vary between platforms (for example, 0755 on linux, 0775 on Cygwin), so skip that part
+        # of the message.
+        assert p.returncode != 0
+
+        assert "SECURITY: executable has setuid bit set" in p.stderr
+
+        assert \
+            "SECURITY: setuid bit is set - verifying owner/permissions of application's home directory..." in p.stderr
+        assert "Security validation failure: application's home directory has invalid permissions (" in p.stderr
+
+        # Adjust permissions on contents directory, and try again.
+        contents_dir = pathlib.Path(executable).with_name('_internal')
+        os.chmod(contents_dir, stat.S_IRWXU)  # 0700
+
+        print("Running executable after adjusting permissions on contents directory", file=sys.stderr)
+        p = subprocess.run([executable], capture_output=True, encoding='utf-8')
+
+        print(f"Return code: {p.returncode}", file=sys.stderr)
+
+        if p.stdout:
+            print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
+        else:
+            print("Captured stdout: N/A", file=sys.stderr)
+
+        if p.stderr:
+            print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
+        else:
+            print("Captured stderr: N/A", file=sys.stderr)
+
+        # The program should succeed now
+        assert p.returncode == 0
+        assert "SECURITY: executable has setuid bit set" in p.stderr
+        assert \
+            "SECURITY: setuid bit is set - verifying owner/permissions of application's home directory..." in p.stderr
+
+
 # Test that parent-process security validation works correctly in case of symlinked executables (i.e., the executable
 # itself being symlinked, or one of its parent directories being symlinked). See #9508.
-def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path):
+def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path, monkeypatch):
+    # Enable onefile parent-process verification on the build
+    _enable_onefile_parent_verification(monkeypatch)
+
     # Ensure that symbolic links can be created
     try:
         test_dir = tmp_path / 'sanity-check' / 'test-dir'
@@ -498,7 +552,8 @@ def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path):
 
     # Basic test application
     pyi_builder.test_source("""
-        print("Hello world")
+        import sys
+        print("Hello world", file=sys.stderr)
     """)
 
     print("\nFinished build and sanity-check tests - preparing the actual test...", file=sys.stderr)
@@ -513,7 +568,25 @@ def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path):
     os.symlink(executable, symlinked_exe)
 
     print(f"Running symlinked executable: {symlinked_exe}", file=sys.stderr)
-    subprocess.run([symlinked_exe], check=True)
+    p = subprocess.run([symlinked_exe], check=True, capture_output=True, encoding='utf-8')
+
+    print(f"Return code: {p.returncode}", file=sys.stderr)
+
+    if p.stdout:
+        print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
+    else:
+        print("Captured stdout: N/A", file=sys.stderr)
+
+    if p.stderr:
+        print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
+    else:
+        print("Captured stderr: N/A", file=sys.stderr)
+
+    # Ensure that onefile-parent process validation was enabled, and performed.
+    if pyi_builder._mode == 'onefile':
+        assert "SECURITY: verifying onefile parent process due to explicit opt-in..." in p.stderr
+        assert "SECURITY: verifying process ID of originating onefile parent process" in p.stderr
+        assert "SECURITY: verifying executable of originating onefile parent process" in p.stderr
 
     # Symlinked dist directory
     symlinked_dist = tmp_path / 'symlinked-dist'
@@ -521,12 +594,69 @@ def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path):
     symlinked_dist_exe = symlinked_dist / pathlib.Path(executable).relative_to(tmp_path / 'dist')
 
     print(f"Running executable in symlinked dist directory: {symlinked_dist_exe}", file=sys.stderr)
-    subprocess.run([symlinked_dist_exe], check=True)
+    p = subprocess.run([symlinked_dist_exe], check=True, capture_output=True, encoding='utf-8')
+
+    print(f"Return code: {p.returncode}", file=sys.stderr)
+
+    if p.stdout:
+        print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
+    else:
+        print("Captured stdout: N/A", file=sys.stderr)
+
+    if p.stderr:
+        print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
+    else:
+        print("Captured stderr: N/A", file=sys.stderr)
+
+    # Ensure that onefile-parent process validation was enabled, and performed.
+    if pyi_builder._mode == 'onefile':
+        assert "SECURITY: verifying onefile parent process due to explicit opt-in..." in p.stderr
+        assert "SECURITY: verifying process ID of originating onefile parent process" in p.stderr
+        assert "SECURITY: verifying executable of originating onefile parent process" in p.stderr
+
+
+# Test that parent-process security validation works correctly with nested subprocsses.
+def test_security_validation_with_subprocesses(pyi_builder, tmp_path, monkeypatch, capfd):
+    # Enable onefile parent-process verification on the build
+    _enable_onefile_parent_verification(monkeypatch)
+
+    # Test program
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+        import subprocess
+
+        if len(sys.argv) == 2:
+            print("Running as main process...", file=sys.stderr)
+            print("Starting subprocess...", file=sys.stderr)
+            subprocess.run([sys.executable], check=True)
+        else:
+            print("Running as subprocess", file=sys.stderr)
+
+        print("Done!")
+        """,
+        app_args=['main']
+    )
+
+    # Ensure that onefile-parent process validation was enabled, and performed.
+    #
+    # NOTE: we need to use capfd instead of capsys to capture output from the test program subprocess(es).
+    # Unfortunately this means that in the case of a test program failure, we do not get any captured output from it...
+    if pyi_builder._mode == 'onefile':
+        _, err = capfd.readouterr()
+
+        assert "SECURITY: verifying onefile parent process due to explicit opt-in..." in err
+        assert "SECURITY: verifying process ID of originating onefile parent process" in err
+        assert "SECURITY: verifying executable of originating onefile parent process" in err
 
 
 # Test that parent-process security validation works correctly in case of intermixed processes, i.e., the application
 # process spawning another program, which then spawns another instance of application (subprocess). See #9512 and #9513.
-def test_security_validation_with_intermixed_subprocesses(pyi_builder, tmp_path):
+def test_security_validation_with_intermixed_subprocesses(pyi_builder, tmp_path, capfd, monkeypatch):
+    # Enable onefile parent-process verification on the build
+    _enable_onefile_parent_verification(monkeypatch)
+
     # Wrapper script
     wrapper_script = '\n'.join([
         "import sys",
@@ -570,6 +700,15 @@ def test_security_validation_with_intermixed_subprocesses(pyi_builder, tmp_path)
         app_args=[str(tmp_path), str(compat.python_executable)]
     )
 
+    # Ensure that onefile-parent process validation was enabled, and performed.
+    if pyi_builder._mode == 'onefile':
+        _, err = capfd.readouterr()
+
+        assert "SECURITY: verifying onefile parent process due to explicit opt-in..." in err
+        assert "SECURITY: verifying process ID of originating onefile parent process" in err
+        assert "SECURITY: verifying executable of originating onefile parent process" in err
+
+    # Check that both processes used the same top-level application directory
     output_file_main = tmp_path / 'main.txt'
     application_dir_main = output_file_main.read_text(encoding='utf-8').strip()
     print(f"Top-level application directory (main): {application_dir_main!r}", file=sys.stderr)
