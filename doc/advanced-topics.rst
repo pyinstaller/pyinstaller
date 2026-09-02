@@ -348,10 +348,13 @@ Starting with PyInstaller v6.22.1, additional security validation has been
 implemented in the child process codepath of a frozen application built
 in ``onefile`` mode - i.e., the main application process and worker
 sub-processes spawned by the main application process via ``sys.executable``.
-The process attempts to look up the path to the executable of its parent
-process, and verifies that it matches its own executable, in order to
-ensure that the run-time environment it is supposed to inherit was indeed
-set up by a parent process of a ``onefile`` application.
+The process attempts to look up the originating onefile parent process
+based on the process ID encoded in the name of inherited top-level
+application directory. If this process is determined to be a valid
+ancestor process (i.e., can be found by traversing the ancestor process
+tree of the current process), the next step involves look-up of its
+executable, and ensuring that it matches the executable of the current
+process.
 
 This validation aims to prevent the ``onefile`` executable from being
 tricked, via a crafted set of :ref:`environment variables <bootloader environment variables>`,
@@ -360,27 +363,37 @@ Depending on the content of the spoofed top-level application directory,
 this may result in execution with altered behavior, or even local privilege
 escalation (e.g., POSIX executable with ``setuid`` bit set).
 
+Starting with PyInstaller v6.22.3, the onefile parent-process validation
+has been limited only to processes that are running with elevated privileges
+while inheriting environment variables set by unprivileged user. On
+POSIX systems, this corresponds to executables with ``setuid`` bit set,
+while on Windows, it corresponds to UAC-elevated processes (running with
+``TokenElevationTypeFull`` token).
+
 Windows
 -------
 
-On Windows, the parent process ID is obtained by walking the current
-process snapshot (``CreateToolhelp32Snapshot``, ``Process32First``,
-``Process32Next``), and the path to corresponding executable is retrieved
-using ``QueryFullProcessImageName``.
+On Windows, the parent process look-up is performed by walking the current
+process snapshot (``CreateToolhelp32Snapshot``, ``Process32FirstW``,
+``Process32NextW``) and looking for entry with specified process ID. The
+path to corresponding executable is retrieved using ``QueryFullProcessImageNameW``.
 
 macOS
 -----
 
 On macOS, the parent process ID is obtained via standard POSIX
-``getppid()`` system call, and the path to corresponding executable is
-retrieved using ``proc_pidpath()``.
+``getppid()`` system call, while further ancestor process look-up is
+performed using ``proc_pidinfo`` with ``PROC_PIDT_SHORTBSDINFO``
+argument. The path to corresponding executable is retrieved using
+``proc_pidpath()``.
 
 
 POSIX platforms
 ---------------
 
 On other POSIX platforms, the parent process ID is obtained via
-standard POSIX ``getppid()`` system call, followed by the look-up of
+standard POSIX ``getppid()`` system call. Retrieval of further ancestor
+processes and look-up of their executable requires look-up of
 the platform-specific entry on the ``procfs`` filesystem
 (i.e., inside the ``/proc/<ppid>`` directory).
 
@@ -394,26 +407,7 @@ Some of otherwise supported POSIX platforms do not implement ``procfs``
 at all (for example, OpenBSD), or do not provide the information about the
 executable path (for example, AIX). On such platforms, setting ``setuid``
 bit on ``onefile`` executables is not supported anymore - the implemented
-security validation will automatically fail. Running regular ``onefile``
-executables is still supported, but due to lack of validation, it may be
-subject to environment manipulation.
-
-On POSIX platforms where look-up via ``procfs`` is nominally supported
-(i.e., Linux, Cygwin, FreeBSD, NetBSD, and SunOS), the behavior depends
-on whether the executable has ``setuid`` bit set and whether the
-corresponding entry under ``/proc/<ppid>`` is accessible or not.
-
-For executables with ``setuid`` bit set, the parent-process validation
-is mandatory. If the corresponding entry under ``/proc/<ppid>`` is
-inaccessible for whatever reason (for example, due to ``procfs`` not
-being mounted, as is the case on FreeBSD by default, or due to access
-being blocked by local security policy), security validation will
-automatically fail and the process will exit with security validation
-error message.
-
-For regular executables (without ``setuid`` bit set), the parent-process
-check is enforced when the relevant ``procfs`` entry is accessible, and
-skipped when it happens to be inaccessible.
+security validation will automatically fail.
 
 
 .. _bootloader security validation onedir:
