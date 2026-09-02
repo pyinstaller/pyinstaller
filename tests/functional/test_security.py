@@ -116,6 +116,19 @@ def _enable_onefile_parent_verification(monkeypatch):
     monkeypatch.setattr('PyInstaller.building.build_main.EXE', MyEXE)
 
 
+# Flag indicating that onefile parent-process verification is unavailable on the platform/system. With verification
+# turned on (either due to privileged mode, or due to explicit opt-in), the program should raise an early error, which
+# limits the scope of testing we can do.
+verification_unavailable = (
+    # OpenBSD does not have /proc filesystem available at all.
+    compat.is_openbsd or
+    # AIX has /proc filesystem available, but does not provide executable information.
+    compat.is_aix or
+    # On FreeBSD, /proc filesystem is not mounted by default
+    (compat.is_freebsd and not os.path.isdir('/proc/curproc'))
+)
+
+
 # Check whether application's top level directory can be hijacked via manipulation of _PYI_ environment variables.
 # See: https://github.com/pyinstaller/pyinstaller/security/advisories/GHSA-9fxf-4qw3-ghmr
 @pytest.mark.parametrize(
@@ -181,17 +194,6 @@ def test_application_home_directory_hijack(
         # screen tends to be flaky, but also to avoid unnecessarily running it on other platforms.
         monkeypatch.setenv("PYINSTALLER_SUPPRESS_SPLASH_SCREEN", "1")
 
-    # Flag indicating that mitigation is unavailable; with verification (automatically or explicitly) turned on, the
-    # program should raise an early error.
-    mitigation_unavailable = (
-        # OpenBSD does not have /proc filesystem available at all.
-        compat.is_openbsd or
-        # AIX has /proc filesystem available, but does not provide executable information.
-        compat.is_aix or
-        # On FreeBSD, /proc filesystem is not mounted by default
-        (compat.is_freebsd and not os.path.isdir('/proc/curproc'))
-    )
-
     # Create files with secrets
     SECRET_REAL = "REAL"
     SECRET_FAKE = "FAKE"
@@ -228,11 +230,15 @@ def test_application_home_directory_hijack(
     """
 
     # Build the test application
+    # If onefile parent-process verification is unavailable, we expect the program to fail here. The return code on
+    # POSIX platforms (where verification might be unavailable) should be 255 (= (unsigned char)-1).
+    expected_retcode = 255 if (build_mode == 'onefile' and verification_unavailable) else 0
     pyi_builder.test_source(
         test_script,
         pyi_args=['--add-data', f'{str(real_secret_file)}:.', *splash_args],
         app_name='app_real',
         app_args=[SECRET_REAL],
+        retcode=expected_retcode,
     )
 
     # Build the fake application - in onedir mode
@@ -354,7 +360,7 @@ def test_application_home_directory_hijack(
         "Security validation failure: invalid originating onefile parent process (PID not found)!"
 
     # On unsupported platforms, the program should raise an early error.
-    if mitigation_unavailable:
+    if verification_unavailable:
         assert p.returncode not in {0, 42}
         if compat.is_freebsd:
             # FreeBSD without /proc mounted
@@ -472,32 +478,44 @@ def test_security_validation_with_setuid_executable(pyi_builder, tmp_path, monke
     else:
         print("Captured stderr: N/A", file=sys.stderr)
 
-    # Check the output
+    # Ensure that setuid bit was detected
+    assert "SECURITY: executable has setuid bit set" in p.stderr
+
+    MSG_VERIFICATION = "SECURITY: setuid bit is set - verifying owner/permissions of application's home directory..."
+
     if pyi_builder._mode == 'onefile':
-        # Onefile mode: check that program succeeded
-        assert p.returncode == 0
+        # Onefile mode
+        if verification_unavailable:
+            # If onefile parent-process verification is unavailable, the setuid-enabled executable should raise an early
+            # error.
+            assert p.returncode != 0
 
-        # Ensure that setuid bit was detected
-        assert "SECURITY: executable has setuid bit set" in p.stderr
+            if compat.is_freebsd:
+                ERR_MSG = (
+                    "Security validation failure: setuid-enabled executables are not supported on this system "
+                    "(missing /proc)!"
+                )
+            else:
+                ERR_MSG = "Security validation failure: setuid-enabled executables are not supported on this platform!"
+            assert ERR_MSG in p.stderr
+        else:
+            assert p.returncode == 0
 
-        # Ensure that owner/permissions on application's home directory were validated
-        assert \
-            "SECURITY: setuid bit is set - verifying owner/permissions of application's home directory..." in p.stderr
+            # Ensure that owner/permissions on application's home directory were validated
+            assert MSG_VERIFICATION in p.stderr
 
-        # Ensure that onefile-parent process validation was auto-enabled, and performed.
-        assert "SECURITY: verifying onefile parent process due to executable running in privileged mode..." in p.stderr
-        assert "SECURITY: verifying process ID of originating onefile parent process" in p.stderr
-        assert "SECURITY: verifying executable of originating onefile parent process" in p.stderr
+            # Ensure that onefile-parent process validation was auto-enabled, and performed.
+            assert "SECURITY: verifying onefile parent process due to executable running in privileged mode..." \
+                in p.stderr
+            assert "SECURITY: verifying process ID of originating onefile parent process" in p.stderr
+            assert "SECURITY: verifying executable of originating onefile parent process" in p.stderr
     else:
         # Onedir mode: check that program failed due to incorrect permissions on application's contents directory. The
         # actual permissions may vary between platforms (for example, 0755 on linux, 0775 on Cygwin), so skip that part
         # of the message.
         assert p.returncode != 0
 
-        assert "SECURITY: executable has setuid bit set" in p.stderr
-
-        assert \
-            "SECURITY: setuid bit is set - verifying owner/permissions of application's home directory..." in p.stderr
+        assert MSG_VERIFICATION in p.stderr
         assert "Security validation failure: application's home directory has invalid permissions (" in p.stderr
 
         # Adjust permissions on contents directory, and try again.
@@ -522,13 +540,16 @@ def test_security_validation_with_setuid_executable(pyi_builder, tmp_path, monke
         # The program should succeed now
         assert p.returncode == 0
         assert "SECURITY: executable has setuid bit set" in p.stderr
-        assert \
-            "SECURITY: setuid bit is set - verifying owner/permissions of application's home directory..." in p.stderr
+        assert MSG_VERIFICATION in p.stderr
 
 
 # Test that parent-process security validation works correctly in case of symlinked executables (i.e., the executable
 # itself being symlinked, or one of its parent directories being symlinked). See #9508.
 def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path, monkeypatch):
+    # Skip if onefile parent-process verification is unavailable
+    if pyi_builder._mode == 'onefile' and verification_unavailable:
+        pytest.skip(reason='onefile parent-process verification is unavailable on this platform/system.')
+
     # Enable onefile parent-process verification on the build
     _enable_onefile_parent_verification(monkeypatch)
 
@@ -617,6 +638,10 @@ def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path, mo
 
 # Test that parent-process security validation works correctly with nested subprocsses.
 def test_security_validation_with_subprocesses(pyi_builder, tmp_path, monkeypatch, capfd):
+    # Skip if onefile parent-process verification is unavailable
+    if pyi_builder._mode == 'onefile' and verification_unavailable:
+        pytest.skip(reason='onefile parent-process verification is unavailable on this platform/system.')
+
     # Enable onefile parent-process verification on the build
     _enable_onefile_parent_verification(monkeypatch)
 
@@ -654,6 +679,10 @@ def test_security_validation_with_subprocesses(pyi_builder, tmp_path, monkeypatc
 # Test that parent-process security validation works correctly in case of intermixed processes, i.e., the application
 # process spawning another program, which then spawns another instance of application (subprocess). See #9512 and #9513.
 def test_security_validation_with_intermixed_subprocesses(pyi_builder, tmp_path, capfd, monkeypatch):
+    # Skip if onefile parent-process verification is unavailable
+    if pyi_builder._mode == 'onefile' and verification_unavailable:
+        pytest.skip(reason='onefile parent-process verification is unavailable on this platform/system.')
+
     # Enable onefile parent-process verification on the build
     _enable_onefile_parent_verification(monkeypatch)
 
