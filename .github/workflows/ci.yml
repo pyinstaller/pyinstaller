@@ -631,6 +631,7 @@ jobs:
               python py312-pip py312-sqlite3 py312-tkinter \
               py312-psutil py312-pytest py312-pytest-xdist \
               py312-numpy py312-pillow
+            mount -t procfs proc /proc
 
       - name: Setup VM (OpenBSD)
         if: matrix.platform == 'openbsd'
