@@ -1,0 +1,3 @@
+Compare the icon file suffix case-insensitively, so an icon named with an
+upper-case suffix such as ``MyApp.ICO`` is recognised as already being in the
+right format instead of being rejected or silently re-encoded.
