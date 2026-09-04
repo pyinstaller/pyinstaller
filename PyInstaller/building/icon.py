@@ -35,6 +35,7 @@ def normalize_icon_type(icon_path: str, allowed_types: Tuple[str], convert_type:
 
     _, extension = os.path.splitext(icon_path)
     extension = extension[1:]  # get rid of the "." in ".whatever"
+    extension = extension.lower()  # allowed_types and hex_signatures are keyed on lowercase
 
     # if the file is already in the right format, pass it back unchanged
     if extension in allowed_types:

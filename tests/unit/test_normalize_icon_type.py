@@ -36,6 +36,14 @@ def test_normalize_icon(monkeypatch, tmp_path):
     if ret != icon:
         pytest.fail("icon validation changed path even though the format was correct already", False)
 
+    # Native image with an upper-case suffix - also passed through unchanged.
+    # Suffixes are compared against the lower-case allowed_types, so without
+    # normalising the case a valid .ICO is treated as the wrong format.
+
+    icon = str(Path(__file__, "../../functional/data/set_icon/pyi_icon.ico").resolve())
+    upper = shutil.copy(icon, str(tmp_path / "upper_case_suffix.ICO"))
+    assert normalize_icon_type(upper, ("ico",), "ico", workpath) == upper
+
     # Alternative image - after calling monkeypatch.setitem(sys.modules, "PIL", None): Raise the install pillow error
 
     monkeypatch.setitem(sys.modules, "PIL", None)
