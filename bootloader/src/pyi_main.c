@@ -36,6 +36,7 @@
 
 #if defined(__linux__)
     #include <sys/prctl.h> /* prctl() */
+    #include <sys/xattr.h> /* getxattr() */
 #endif
 
 #if defined(__APPLE__) && defined(WINDOWED)
@@ -161,6 +162,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
 #else
         struct stat executable_stat;
 
+        /* Check for setuid/setgid bit */
         if (stat(pyi_ctx->executable_filename, &executable_stat) < 0) {
             PYI_ERROR("Security validation failure: could not stat() the executable!\n");
             return -1;
@@ -175,7 +177,22 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
             PYI_DEBUG("SECURITY: executable has setgid bit set.\n");
             pyi_ctx->has_elevated_privileges |= PYI_ELEVATED_PRIVILEGES_SETGID;
         }
-#endif
+
+        /* Check for file capabilities (linux only) */
+#if defined(__linux__)
+        if (1) {
+            ssize_t ret = getxattr(pyi_ctx->executable_filename, "security.capability", NULL, 0);
+            if (ret > 0) {
+                PYI_DEBUG("SECURITY: executable has file capabilities set (security.capability xattr found).\n");
+                pyi_ctx->has_elevated_privileges |= PYI_ELEVATED_PRIVILEGES_FILE_CAPABILITIES;
+            } else if (ret < 0 && !(errno == E2BIG || errno == ENODATA || errno == ENOTSUP)) {
+                PYI_PERROR("getxattr", "Security validation failure: could not query extended attributes on the executable file!\n");
+                return -1;
+            }
+        }
+#endif /* defined(linux) */
+
+#endif /* defined(WIN32 */
     }
 
     /* Resolve main PKG archive - embedded or side-loaded. */

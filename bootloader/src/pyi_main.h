@@ -92,6 +92,8 @@ enum PYI_ELEVATED_PRIVILEGES
     PYI_ELEVATED_PRIVILEGES_SETUID = 2,
     /* Elevation via setgid (POSIX platforms) */
     PYI_ELEVATED_PRIVILEGES_SETGID = 4,
+    /* Elevation via file capabilities (linux) */
+    PYI_ELEVATED_PRIVILEGES_FILE_CAPABILITIES = 8,
 };
 
 
