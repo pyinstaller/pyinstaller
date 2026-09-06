@@ -81,6 +81,19 @@ enum PYI_PROCESS_LEVEL
     PYI_PROCESS_LEVEL_SUBPROCESS = 2
 };
 
+/* Elevated privileges mode */
+enum PYI_ELEVATED_PRIVILEGES
+{
+    /* Regular mode without elevated privileges */
+    PYI_ELEVATED_PRIVILEGES_NONE = 0,
+    /* Elevation via UAC on Windows (i.e., running with TokenElevationTypeFull) */
+    PYI_ELEVATED_PRIVILEGES_UAC = 1,
+    /* Elevation via setuid (POSIX platforms) */
+    PYI_ELEVATED_PRIVILEGES_SETUID = 2,
+    /* Elevation via setgid (POSIX platforms) */
+    PYI_ELEVATED_PRIVILEGES_SETGID = 4,
+};
+
 
 struct PYI_CONTEXT
 {

@@ -129,7 +129,8 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
     /* Check if executable is running with elevated privileges while
      * inheriting environment variables set by unprivileged user. On
      * POSIX platforms, this happens with executables that have setuid
-     * bit set. On Windows, it happens with UAC-elevated executables.
+     * or setgid bit set.
+     * On Windows, it happens with UAC-elevated executables.
      * In both cases, the OS sanitizes some of environment variables
      * (e.g., PATH, or LD_LIBRARY_PATH or equivalent), but not the ones
      * that are used by PyInstaller. Thus, we might need to perform
@@ -155,7 +156,7 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
 
         if (elevation_type == TokenElevationTypeFull) {
             PYI_DEBUG_W(L"SECURITY: executable is running with TokenElevationTypeFull.\n");
-            pyi_ctx->has_elevated_privileges = 1;
+            pyi_ctx->has_elevated_privileges |= PYI_ELEVATED_PRIVILEGES_UAC;
         }
 #else
         struct stat executable_stat;
@@ -167,7 +168,12 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
 
         if (executable_stat.st_mode & S_ISUID) {
             PYI_DEBUG("SECURITY: executable has setuid bit set.\n");
-            pyi_ctx->has_elevated_privileges = 1;
+            pyi_ctx->has_elevated_privileges |= PYI_ELEVATED_PRIVILEGES_SETUID;
+        }
+
+        if (executable_stat.st_mode & S_ISGID) {
+            PYI_DEBUG("SECURITY: executable has setgid bit set.\n");
+            pyi_ctx->has_elevated_privileges |= PYI_ELEVATED_PRIVILEGES_SETGID;
         }
 #endif
     }
