@@ -365,22 +365,23 @@ def test_application_home_directory_hijack(
         if compat.is_freebsd:
             # FreeBSD without /proc mounted
             ERR_UNSUPPORTED_SYSTEM = (
-                "Security validation failure: setuid-enabled executables are not supported on this system "
-                "(missing /proc)!"
+                "Security validation failure: onefile parent-process validation, which is required for onefile "
+                "executables running with elevated privileges, is not supported on this system (missing /proc)!"
             )
             assert ERR_UNSUPPORTED_SYSTEM in p.stderr
         else:
             # AIX, OpenBSD
-            ERR_UNSUPPORTED_PLATFORM = \
-                "Security validation failure: setuid-enabled executables are not supported on this platform!"
+            ERR_UNSUPPORTED_PLATFORM = (
+                "Security validation failure: onefile parent-process validation, which is required for onefile "
+                "executables running with elevated privileges, is not supported on this platform!"
+            )
             assert ERR_UNSUPPORTED_PLATFORM in p.stderr
         return
 
     if parent_level == PYI_PROCESS_LEVEL_UNKNOWN:
         # This is same as _PYI_PARENT_PROCESS_LEVEL not being set at all; the process should run as parent process
         # of onefile application and set up new environment. Thus, the test application should run normally.
-        # (Except in the setuid-executable scenario with mitigation being unavailable, which should already be
-        # handled by earlier check.)
+        # (Except when early error is raised due to lack of onefile parent-process support, which is handled above).
         assert p.returncode == 0
     elif parent_level == PYI_PROCESS_LEVEL_PARENT_NEEDS_RESTART:
         # This level is valid only in POSIX onefile builds with splash screen enabled. Since the process retains
@@ -395,13 +396,6 @@ def test_application_home_directory_hijack(
         # `sys.executable`. The arbitrarily-named application directory should fail the name check. The
         # _MEI-formatted application directory should pass the name check, but should fail the parent-process
         # validation.
-        #
-        # On platforms where procfs-based look-up of parent executable is not supported (AIX, OpenBSD) or the
-        # relevant entry under /proc/<ppid> is inaccessible (e.g., FreeBSD without /proc mounted, or any other
-        # supported POSIX platform where local security policy blocks access to /proc/<ppid> directory for other
-        # processes), we cannot validate the parent process. In these cases, we expect the validation of
-        # arbitrary home directory name to fail, the faked home directory with _MEI prefix to slip through,
-        # and executable with setuid bit set to block the execution (already handled by preceding if-block).
         if scenario == SCENARIO_ARBITRARY_DIR:
             assert p.returncode not in {0, 42}
             assert ERR_HOME_DIRECTORY_NAME in p.stderr
@@ -491,12 +485,17 @@ def test_security_validation_with_setuid_executable(pyi_builder, tmp_path, monke
             assert p.returncode != 0
 
             if compat.is_freebsd:
+                # FreeBSD without /proc mounted
                 ERR_MSG = (
-                    "Security validation failure: setuid-enabled executables are not supported on this system "
-                    "(missing /proc)!"
+                    "Security validation failure: onefile parent-process validation, which is required for onefile "
+                    "executables running with elevated privileges, is not supported on this system (missing /proc)!"
                 )
             else:
-                ERR_MSG = "Security validation failure: setuid-enabled executables are not supported on this platform!"
+                # AIX, OpenBSD
+                ERR_MSG = (
+                    "Security validation failure: onefile parent-process validation, which is required for onefile "
+                    "executables running with elevated privileges, is not supported on this platform!"
+                )
             assert ERR_MSG in p.stderr
         else:
             assert p.returncode == 0
