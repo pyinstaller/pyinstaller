@@ -62,7 +62,10 @@ pyi_security_onefile_parent_verification_available()
     /* Supported only if /proc is available. */
     struct stat curproc_dir_stat;
     if (stat("/proc/curproc", &curproc_dir_stat) < 0) {
-        PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this system (missing /proc)!\n");
+        PYI_ERROR(
+            "Security validation failure: onefile parent-process validation, which is required for onefile "
+            "executables running with elevated privileges, is not supported on this system (missing /proc)!\n"
+        );
         return false;
     }
     return true;
@@ -71,7 +74,10 @@ pyi_security_onefile_parent_verification_available()
 #else
     /* Other POSIX platforms are unsupported due to lack of required
      * information in /proc */
-    PYI_ERROR("Security validation failure: setuid-enabled executables are not supported on this platform!\n");
+    PYI_ERROR(
+        "Security validation failure: onefile parent-process validation, which is required for onefile "
+        "executables running with elevated privileges, is not supported on this platform!\n"
+    );
     return false;
 #endif
 }
