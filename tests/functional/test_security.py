@@ -435,9 +435,10 @@ def test_application_home_directory_hijack(
 
 
 # Test that in onefile mode, parent-process security validation is automatically enabled for executable that has setuid
-# bit set. Test that in onedir mode, the permissions on application's contents directory are verified.
+# or setgid bit set. Test that in onedir mode, the permissions on application's contents directory are verified.
 @pytest.mark.skipif(compat.is_win, reason="applicable only to POSIX platforms.")
-def test_security_validation_with_setuid_executable(pyi_builder, tmp_path, monkeypatch):
+@pytest.mark.parametrize('bit_type', ['setuid', 'setgid'])
+def test_security_validation_with_setxid_executable(pyi_builder, tmp_path, monkeypatch, bit_type):
     # Do NOT enable onefile parent-process verification on the build!
 
     # Basic test application
@@ -452,12 +453,16 @@ def test_security_validation_with_setuid_executable(pyi_builder, tmp_path, monke
     assert len(executables) == 1
     executable = executables[0]
 
-    # Set setuid bit on the executable. The file is owned by current user, so this is not a "real" setuid-root scenario.
-    # But since the bootloader checks the setuid bit, it should suffice for the purposes of the test.
+    # Set setuid/setgid bit on the executable. The file is owned by current user (and their group), so this is not a
+    # "real" setuid/setgid-root scenario. But since the bootloader checks the presence of setuid/setgid bit, it should
+    # suffice for the purposes of the test.
     st_mode = os.lstat(executable).st_mode
-    os.chmod(executable, st_mode | stat.S_ISUID)
+    if bit_type == 'setuid':
+        os.chmod(executable, st_mode | stat.S_ISUID)
+    else:
+        os.chmod(executable, st_mode | stat.S_ISGID)
 
-    print(f"Running executable with setuid bit set: {executable}", file=sys.stderr)
+    print(f"Running executable with {bit_type} bit set: {executable}", file=sys.stderr)
     p = subprocess.run([executable], capture_output=True, encoding='utf-8')
 
     print(f"Return code: {p.returncode}", file=sys.stderr)
@@ -472,16 +477,23 @@ def test_security_validation_with_setuid_executable(pyi_builder, tmp_path, monke
     else:
         print("Captured stderr: N/A", file=sys.stderr)
 
-    # Ensure that setuid bit was detected
-    assert "SECURITY: executable has setuid bit set" in p.stderr
+    # Ensure that setuid/setgid bit was detected
+    if bit_type == 'setuid':
+        MSG_BIT_DETECTED = "SECURITY: executable has setuid bit set"
+        MSG_VERIFICATION = \
+            "SECURITY: setuid bit is set - verifying owner/permissions of application's home directory..."
+    else:
+        MSG_BIT_DETECTED = "SECURITY: executable has setgid bit set"
+        MSG_VERIFICATION = \
+            "SECURITY: setgid bit is set - verifying owner/permissions of application's home directory..."
 
-    MSG_VERIFICATION = "SECURITY: setuid bit is set - verifying owner/permissions of application's home directory..."
+    assert MSG_BIT_DETECTED in p.stderr
 
     if pyi_builder._mode == 'onefile':
         # Onefile mode
         if verification_unavailable:
-            # If onefile parent-process verification is unavailable, the setuid-enabled executable should raise an early
-            # error.
+            # If onefile parent-process verification is unavailable, the setuid/setgid-enabled executable should raise
+            # an early error.
             assert p.returncode != 0
 
             if compat.is_freebsd:
@@ -518,8 +530,12 @@ def test_security_validation_with_setuid_executable(pyi_builder, tmp_path, monke
         assert "Security validation failure: application's home directory has invalid permissions (" in p.stderr
 
         # Adjust permissions on contents directory, and try again.
+        # With setuid, we strictly require 0700. With setgid, we require that other bit is 0, so 0770 should work.
         contents_dir = pathlib.Path(executable).with_name('_internal')
-        os.chmod(contents_dir, stat.S_IRWXU)  # 0700
+        if bit_type == 'setuid':
+            os.chmod(contents_dir, stat.S_IRWXU)  # 0700
+        else:
+            os.chmod(contents_dir, stat.S_IRWXU | stat.S_IRWXG)  # 0770
 
         print("Running executable after adjusting permissions on contents directory", file=sys.stderr)
         p = subprocess.run([executable], capture_output=True, encoding='utf-8')
@@ -538,7 +554,7 @@ def test_security_validation_with_setuid_executable(pyi_builder, tmp_path, monke
 
         # The program should succeed now
         assert p.returncode == 0
-        assert "SECURITY: executable has setuid bit set" in p.stderr
+        assert MSG_BIT_DETECTED in p.stderr
         assert MSG_VERIFICATION in p.stderr
 
 
