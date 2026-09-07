@@ -722,7 +722,7 @@ pyi_security_verify_onefile_parent_executable(const struct PYI_CONTEXT *pyi_ctx,
  * process of the current process, and that the said process uses same
  * executable as the current process). */
 bool
-pyi_security_verify_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx, unsigned int *onefile_parent_pid)
+pyi_security_verify_onefile_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx, unsigned int *onefile_parent_pid)
 {
     char basename[PYI_PATH_MAX];
     size_t name_len;
@@ -767,46 +767,30 @@ pyi_security_verify_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx,
 }
 
 
-/* Verification of owner ID and permissions on top-level application
- * directory for POSIX executables with setuid/setgid bit set. No-op on
- * Windows, and no-op on other platforms when setuid/setgid bit is not
- * set on the executable.
- *
- * With setuid bit set, the following must be true:
+/* Verification of owner ID and permissions on the inherited (temporary)
+ * top-level application directory in onefile mode. Applicable only to
+ * POSIX executables running in privileged mode, no-op in other cases:
  *  - the owner ID of the top-level application directory must match the
  *    effective user ID
  *  - permissions on the top-level application directory must be set to
  *    0700
- * In onefile mode, this matches the owner/permissions with which the
- * bootloader creates the temproary directory. In onedir mode, this
- * should prevent unprivileged users from modifying contents of application
- * that runs in privileged mode.
- *
- * With setgid bit set, the requirements depend on onefile/onedir mode.
- * In onefile mode, the same conditions as with setuid mode must be
- * true (i.e., owner must be effective user ID, permissions must be 0700;
- * as created by bootloader). In onedir mode, the only requirement is that
- * "other" bit must be 0; i.e., other users must not have access to the
- * contents directory.
- *
- * If both setuid and setgid bit are set, setuid bit and its requirements
- * take precedence. */
+ * This matches the this matches the owner/permissions with which the
+ * bootloader creates the temproary directory. */
 bool
-pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *pyi_ctx)
+pyi_security_verify_onefile_application_home_dir_permissions(const struct PYI_CONTEXT *pyi_ctx)
 {
 #if defined(_WIN32)
     (void)pyi_ctx;
-    return true;
 #else
-    uid_t euid;
-    uid_t permissions;
-    struct stat application_home_dir_stat;
+    if (pyi_ctx->has_elevated_privileges) {
+        uid_t euid;
+        uid_t permissions;
+        struct stat application_home_dir_stat;
 
-    if (pyi_ctx->has_elevated_privileges & PYI_ELEVATED_PRIVILEGES_SETUID) {
-        PYI_DEBUG("SECURITY: setuid bit is set - verifying owner/permissions of application's home directory...\n");
+        PYI_DEBUG("SECURITY: running in privileged mode - verifying owner/permissions of application's home directory...\n");
 
         if (stat(pyi_ctx->application_home_dir, &application_home_dir_stat) < 0) {
-            PYI_ERROR("Security validation failure: could not stat() the application's home directory!\n");
+            PYI_PERROR("stat", "Security validation failure: could not stat() the application's home directory!\n");
             return false;
         }
 
@@ -830,63 +814,103 @@ pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *p
 
         /* Ensure that the application's home directory has permissions used
          * by bootloader when creating ephemeral application directory
-         * (i.e., S_IRWXU = 0700). In case of onedir application, it ensures
-         * that the contents directory cannot be modified by unprivileged
-         * user. */
+         * (i.e., S_IRWXU = 0700). */
         permissions = application_home_dir_stat.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
         if (permissions != S_IRWXU) {
             PYI_ERROR("Security validation failure: application's home directory has invalid permissions (0%o)!\n", permissions);
             return false;
         }
+    }
+#endif
 
-        return true;
-    } else if (pyi_ctx->has_elevated_privileges & PYI_ELEVATED_PRIVILEGES_SETGID) {
-        uid_t euid;
+    return true;
+}
+
+/* Verification of owner ID and permissions on the onedir application's
+ * top-level (contents) directory. Applicable only to POSIX executables
+ * with setuid or setgid bit set, no-op in other cases.
+ *
+ * When setuid bit set, the following must be true:
+ *  - the owner ID of the top-level application directory must match the
+ *    owner ID of the executable
+ *  - only owner is allowed to have write permissions on the directory.
+ *
+ * With setgid bit set, the following must be true:
+ *  - the group ID of the top-level application directory must match the
+ *    group ID of the executable
+ *  - only owner and group are allowed to have write permissions on the
+ *    directory.
+ *
+ * NOTE: we match owner/group ID of the top-level application directory
+ * against the corresponding ID of the executable instead of the effective
+ * owner/group ID of the process; this attempts to accommodate the cases
+ * when user code drops the privileges and then spawns a worker sub-process
+ * (which has read access to contents).
+ *
+ * NOTE: for complete security validation, we would need to recursively
+ * enforce these checks on all contents in the top-level application
+ * directory. But for the time being, only top-level directory is checked
+ * in an attempt to catch gross errors in deployment of setuid/setgid-enabled
+ * onedir applications. */
+bool
+pyi_security_verify_onedir_application_home_dir_permissions(const struct PYI_CONTEXT *pyi_ctx)
+{
+#if defined(_WIN32)
+    (void)pyi_ctx;
+#else
+    if (pyi_ctx->has_elevated_privileges & (PYI_ELEVATED_PRIVILEGES_SETUID | PYI_ELEVATED_PRIVILEGES_SETGID)) {
+        const bool is_setuid = pyi_ctx->has_elevated_privileges & PYI_ELEVATED_PRIVILEGES_SETUID;
         uid_t permissions;
+        struct stat executable_stat;
         struct stat application_home_dir_stat;
 
-        PYI_DEBUG("SECURITY: setgid bit is set - verifying owner/permissions of application's home directory...\n");
+        PYI_DEBUG("SECURITY: %s bit is set - verifying owner/permissions of application's home directory...\n", is_setuid ? "setuid" : "setgid");
 
         if (stat(pyi_ctx->application_home_dir, &application_home_dir_stat) < 0) {
-            PYI_ERROR("Security validation failure: could not stat() the application's home directory!\n");
+            PYI_PERROR("stat", "Security validation failure: could not stat() the application's home directory!\n");
             return false;
         }
 
-        if (pyi_ctx->is_onefile) {
-            /* In onefile mode, check that owner and permissions match what
-             * the bootloader uses (see the setuid mode above). */
-            euid = geteuid();
-            if (application_home_dir_stat.st_uid != euid) {
+        if (stat(pyi_ctx->executable_filename, &executable_stat) < 0) {
+            PYI_PERROR("stat", "Security validation failure: could not stat() the executable file\n");
+            return false;
+        }
+
+        permissions = application_home_dir_stat.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+
+        if (is_setuid) {
+            /* Check that owner ID matches */
+            if (application_home_dir_stat.st_uid != executable_stat.st_uid) {
                 PYI_ERROR(
-                    "Security validation failure: owner ID of application's home directory (%d) does not match the effective user ID (%d)!\n",
-                    application_home_dir_stat.st_uid, euid
+                    "Security validation failure: owner ID of application's home directory (%d) does not match owner ID of the executable (%d)!\n",
+                    application_home_dir_stat.st_uid, executable_stat.st_uid
                 );
                 return false;
             }
 
-            permissions = application_home_dir_stat.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
-            if (permissions != S_IRWXU) {
+            /* Only owner may have write permissions */
+            if ((permissions & (S_IWGRP | S_IWOTH)) != 0) {
                 PYI_ERROR("Security validation failure: application's home directory has invalid permissions (0%o)!\n", permissions);
                 return false;
             }
         } else {
-            /* In onedir mode, check that other users do not have access
-             * to contents directory. */
-            permissions = application_home_dir_stat.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
-            if ((permissions & S_IRWXO) != 0) {
+            /* Check that group ID matches */
+            if (application_home_dir_stat.st_gid != executable_stat.st_gid) {
+                PYI_ERROR(
+                    "Security validation failure: group ID of application's home directory (%d) does not match group ID of the executable (%d)!\n",
+                    application_home_dir_stat.st_gid, executable_stat.st_gid
+                );
+                return false;
+            }
+
+            /* Only owner and group may have write permissions */
+            if ((permissions & S_IWOTH) != 0) {
                 PYI_ERROR("Security validation failure: application's home directory has invalid permissions (0%o)!\n", permissions);
                 return false;
             }
         }
-
-        return true;
-    } else {
-        PYI_DEBUG("SECURITY: setuid/setgid bit is not set - skipping verification of owner/permissions of application's home directory.\n");
-        return true;
     }
-
-    /* Should not be reached */
-    PYI_ERROR("Security validation failure: uhandled codepath!\n");
-    return false;
 #endif
+
+    return true;
 }

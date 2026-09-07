@@ -23,8 +23,10 @@ struct PYI_CONTEXT;
 
 bool pyi_security_onefile_parent_verification_available();
 
-bool pyi_security_verify_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx, unsigned int *onefile_parent_pid);
-bool pyi_security_verify_application_home_dir_permissions(const struct PYI_CONTEXT *pyi_ctx);
+bool pyi_security_verify_onefile_application_home_dir_name(const struct PYI_CONTEXT *pyi_ctx, unsigned int *onefile_parent_pid);
+bool pyi_security_verify_onefile_application_home_dir_permissions(const struct PYI_CONTEXT *pyi_ctx);
+
+bool pyi_security_verify_onedir_application_home_dir_permissions(const struct PYI_CONTEXT *pyi_ctx);
 
 bool pyi_security_verify_onefile_parent_pid(const struct PYI_CONTEXT *pyi_ctx, const unsigned int onefile_parent_pid, const bool search_process_tree);
 bool pyi_security_verify_onefile_parent_executable(const struct PYI_CONTEXT *pyi_ctx, const unsigned int onefile_parent_pid);

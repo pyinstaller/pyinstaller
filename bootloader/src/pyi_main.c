@@ -562,15 +562,14 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
             /* Verify the name of the inherited top-level application
              * directory, and extract the process ID of the onefile parent
              * process from it. */
-            if (pyi_security_verify_application_home_dir_name(pyi_ctx, &onefile_parent_pid) != true) {
+            if (pyi_security_verify_onefile_application_home_dir_name(pyi_ctx, &onefile_parent_pid) != true) {
                 return -1;
             }
             PYI_DEBUG("SECURITY: process ID of the originating onefile parent process: %d\n", onefile_parent_pid);
 
-            /* Check permissions on the inherited top-level application
-             * directory (applicable only to setuid-enabled executables
-             * on POSIX systems, otherwise no-op). */
-            if (pyi_security_verify_application_home_dir_permissions(pyi_ctx) != true) {
+            /* Check owner and permissions on the inherited top-level application
+             * directory, if necessary (otherwise this call is no-op). */
+            if (pyi_security_verify_onefile_application_home_dir_permissions(pyi_ctx) != true) {
                 return -1;
             }
 
@@ -660,10 +659,10 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
             }
         }
 
-        /* On POSIX platforms, if setuid bit is set on the executable,
-         * check owner/permissions on the top-level application's directory
-         * to ensure its contents are accessible only to the effective user. */
-        if (pyi_security_verify_application_home_dir_permissions(pyi_ctx) != true) {
+        /* Check owner and permissions on the application's top-level
+         * (contents) directory, if necessary (otherwise this call
+         * is no-op). */
+        if (pyi_security_verify_onedir_application_home_dir_permissions(pyi_ctx) != true) {
             return -1;
         }
     }
