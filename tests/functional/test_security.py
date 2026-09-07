@@ -462,6 +462,12 @@ def test_security_validation_with_setxid_executable(pyi_builder, tmp_path, monke
     else:
         os.chmod(executable, st_mode | stat.S_ISGID)
 
+    # If running in onedir mode, ensure that permissions on contents directory are 0755. This should already be the
+    # case on most POSIX platforms, but on Cygwin, they seem to be 0775 by default...
+    if pyi_builder._mode == 'onedir':
+        contents_dir = pathlib.Path(executable).with_name('_internal')
+        os.chmod(contents_dir, 0o755)
+
     print(f"Running executable with {bit_type} bit set: {executable}", file=sys.stderr)
     p = subprocess.run([executable], capture_output=True, encoding='utf-8')
 
@@ -513,6 +519,8 @@ def test_security_validation_with_setxid_executable(pyi_builder, tmp_path, monke
             assert p.returncode == 0
 
             # Ensure that owner/permissions on application's home directory were validated
+            MSG_VERIFICATION = \
+                "SECURITY: running in privileged mode - verifying owner/permissions of application's home directory..."
             assert MSG_VERIFICATION in p.stderr
 
             # Ensure that onefile-parent process validation was auto-enabled, and performed.
@@ -521,23 +529,18 @@ def test_security_validation_with_setxid_executable(pyi_builder, tmp_path, monke
             assert "SECURITY: verifying process ID of originating onefile parent process" in p.stderr
             assert "SECURITY: verifying executable of originating onefile parent process" in p.stderr
     else:
-        # Onedir mode: check that program failed due to incorrect permissions on application's contents directory. The
-        # actual permissions may vary between platforms (for example, 0755 on linux, 0775 on Cygwin), so skip that part
-        # of the message.
-        assert p.returncode != 0
+        # Onedir mode: we earlier ensure that permissions on contents directory are 0755, so this run should succeed
+        # regardless of whether setuid or setgid bit is set.
+        assert p.returncode == 0
 
         assert MSG_VERIFICATION in p.stderr
-        assert "Security validation failure: application's home directory has invalid permissions (" in p.stderr
 
-        # Adjust permissions on contents directory, and try again.
-        # With setuid, we strictly require 0700. With setgid, we require that other bit is 0, so 0770 should work.
+        # Both setuid and setgid modes should fail when other users (non-owner, non-group) have write permissions.
         contents_dir = pathlib.Path(executable).with_name('_internal')
-        if bit_type == 'setuid':
-            os.chmod(contents_dir, stat.S_IRWXU)  # 0700
-        else:
-            os.chmod(contents_dir, stat.S_IRWXU | stat.S_IRWXG)  # 0770
+        permissions = 0o757
+        os.chmod(contents_dir, permissions)
 
-        print("Running executable after adjusting permissions on contents directory", file=sys.stderr)
+        print(f"Running executable with permissions on contents directory set to {permissions:o}", file=sys.stderr)
         p = subprocess.run([executable], capture_output=True, encoding='utf-8')
 
         print(f"Return code: {p.returncode}", file=sys.stderr)
@@ -552,10 +555,40 @@ def test_security_validation_with_setxid_executable(pyi_builder, tmp_path, monke
         else:
             print("Captured stderr: N/A", file=sys.stderr)
 
-        # The program should succeed now
-        assert p.returncode == 0
+        ERR_MSG = "Security validation failure: application's home directory has invalid permissions ("
+
+        assert p.returncode != 0
         assert MSG_BIT_DETECTED in p.stderr
         assert MSG_VERIFICATION in p.stderr
+        assert ERR_MSG in p.stderr
+
+        # Setuid mode should also fail when group users have write permissions. Setgid mode should pass.
+        contents_dir = pathlib.Path(executable).with_name('_internal')
+        permissions = 0o770
+        os.chmod(contents_dir, permissions)
+
+        print(f"Running executable with permissions on contents directory set to {permissions:o}", file=sys.stderr)
+        p = subprocess.run([executable], capture_output=True, encoding='utf-8')
+
+        if p.stdout:
+            print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
+        else:
+            print("Captured stdout: N/A", file=sys.stderr)
+
+        if p.stderr:
+            print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
+        else:
+            print("Captured stderr: N/A", file=sys.stderr)
+
+        if bit_type == 'setuid':
+            assert p.returncode != 0
+            assert MSG_BIT_DETECTED in p.stderr
+            assert MSG_VERIFICATION in p.stderr
+            assert ERR_MSG in p.stderr
+        else:
+            assert p.returncode == 0
+            assert MSG_BIT_DETECTED in p.stderr
+            assert MSG_VERIFICATION in p.stderr
 
 
 # Test that parent-process security validation works correctly in case of symlinked executables (i.e., the executable
