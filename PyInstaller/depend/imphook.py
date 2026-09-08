@@ -14,13 +14,16 @@ Code related to processing of import hooks.
 
 import glob
 import os.path
+import re
 import sys
 import weakref
-import re
+from pathlib import Path
+from traceback import format_exception_only
 
-from PyInstaller import log as logging
+from PyInstaller import log as logging, isolated
 from PyInstaller.building.utils import format_binaries_and_datas
-from PyInstaller.compat import importlib_load_source
+from PyInstaller.compat import importlib_load_source, importlib_metadata
+from PyInstaller.depend.analysis import HOOK_PRIORITY_CONTRIBUTED_HOOKS, HOOK_PRIORITY_UPSTREAM_HOOKS
 from PyInstaller.depend.imphookapi import PostGraphAPI
 from PyInstaller.exceptions import ImportErrorWhenRunningHook
 
@@ -37,25 +40,21 @@ class ModuleHookCache(dict):
 
     Attributes
     ----------
-    module_graph : ModuleGraph
-        Current module graph.
     _hook_module_name_prefix : str
         String prefixing the names of all in-memory modules lazily loaded from cached hook scripts. See also the
         `hook_module_name_prefix` parameter passed to the `ModuleHook.__init__()` method.
     """
 
+    # 0-based identifier unique to the next `ModuleHookCache` to be instantiated.
+    #
+    # This identifier is incremented on each instantiation of a new `ModuleHookCache` to isolate in-memory modules of
+    # lazily loaded hook scripts in that cache to the same cache-specific namespace, preventing edge-case collisions
+    # with existing in-memory modules in other caches.
     _cache_id_next = 0
-    """
-    0-based identifier unique to the next `ModuleHookCache` to be instantiated.
 
-    This identifier is incremented on each instantiation of a new `ModuleHookCache` to isolate in-memory modules of
-    lazily loaded hook scripts in that cache to the same cache-specific namespace, preventing edge-case collisions
-    with existing in-memory modules in other caches.
-
-    """
-    def __init__(self, module_graph, hook_dirs):
+    def __init__(self):
         """
-        Cache all hook scripts in the passed directories.
+        Cache all hook scripts in the directories provided by entrypoints.
 
         **Order of caching is significant** with respect to hooks for the same module, as the values of this
         dictionary are lists. Hooks for the same module will be run in the order in which they are cached. Previously
@@ -64,42 +63,63 @@ class ModuleHookCache(dict):
         By default, official hooks are cached _before_ user-defined hooks. For modules with both official and
         user-defined hooks, this implies that the former take priority over and hence will be loaded _before_ the
         latter.
-
-        Parameters
-        ----------
-        module_graph : ModuleGraph
-            Current module graph.
-        hook_dirs : list
-            List of the absolute or relative paths of all directories containing **hook scripts** (i.e.,
-            Python scripts with filenames matching `hook-{module_name}.py`, where `{module_name}` is the module
-            hooked by that script) to be cached.
         """
-        super().__init__()
-
-        # To avoid circular references and hence increased memory consumption, a weak rather than strong reference is
-        # stored to the passed graph. Since this graph is guaranteed to live longer than this cache,
-        # this is guaranteed to be safe.
-        self.module_graph = weakref.proxy(module_graph)
+        super(ModuleHookCache, self).__init__()
 
         # String unique to this cache prefixing the names of all in-memory modules lazily loaded from cached hook
         # scripts, privatized for safety.
-        self._hook_module_name_prefix = '__PyInstaller_hooks_{}_'.format(ModuleHookCache._cache_id_next)
+        self._hook_module_name_prefix = f'__PyInstaller_hooks_{ModuleHookCache._cache_id_next}_'
         ModuleHookCache._cache_id_next += 1
 
-        # Cache all hook scripts in the passed directories.
-        self._cache_hook_dirs(hook_dirs)
+        # Discover & cache hook directories
+        self._discover_hook_directories()
 
-    def _cache_hook_dirs(self, hook_dirs):
+    def _discover_hook_directories(self):
         """
-        Cache all hook scripts in the passed directories.
-
-        Parameters
-        ----------
-        hook_dirs : list
-            List of the absolute or relative paths of all directories containing hook scripts to be cached.
+        Discover hook directories via pyinstaller40 entry points. Perform the discovery in an isolated subprocess
+        to avoid importing the package(s) in the main process.
         """
 
-        for hook_dir, default_priority in hook_dirs:
+        # The “selectable” entry points (via group and name keyword args) were introduced in importlib_metadata 4.6 and
+        # Python 3.10. The compat module ensures we are using a compatible version.
+        entry_points = importlib_metadata.entry_points(group='pyinstaller40', name='hook-dirs')
+
+        # Ensure that pyinstaller_hooks_contrib comes last so that hooks from packages providing their own take priority.
+        # In pyinstaller-hooks-contrib >= 2024.8, the entry-point module is `_pyinstaller_hooks_contrib`; in earlier
+        # versions, it was `_pyinstaller_hooks_contrib.hooks`.
+        entry_points = sorted(entry_points, key=lambda x: x.module.startswith("_pyinstaller_hooks_contrib"))
+
+        for entry_point in entry_points:
+            # Query hook directory location(s) from entry point
+            try:
+                hook_directory_entries = entry_point.load()()
+            except Exception as e:
+                msg = "".join(format_exception_only(type(e), e)).strip()
+                logger.warning("discover_hook_directories: Failed to process hook entry point '%s': %s", entry_point,
+                               msg)
+                continue
+
+            # Determine location-based priority: upstream hooks vs. hooks from contributed hooks package.
+            location_priority = (
+                HOOK_PRIORITY_CONTRIBUTED_HOOKS
+                if entry_point.module.startswith("_pyinstaller_hooks_contrib") else HOOK_PRIORITY_UPSTREAM_HOOKS
+            )
+
+            for hook_dir in hook_directory_entries:
+                hook_dir = Path(hook_dir).absolute()
+                if not hook_dir.is_dir():
+                    raise FileNotFoundError(f"Hook directory \"{hook_dir}\" is not a directory")
+
+                for hook_filename in hook_dir.glob("hook-*.py"):
+                    module_name = hook_filename.name[5:-3]
+
+                    module_hook = ModuleHook(
+                    )
+
+
+        logger.debug("discover_hook_directories: Hook directories: %s", hook_directories)
+
+        for hook_dir, default_priority in hook_directories:
             # Canonicalize this directory's path and validate its existence.
             hook_dir = os.path.abspath(hook_dir)
             if not os.path.isdir(hook_dir):
@@ -278,6 +298,8 @@ class ModuleHook:
     def __init__(self, module_graph, module_name, hook_filename, hook_module_name_prefix, default_priority):
         """
         Initialize this metadata.
+
+        :param module_graph: ModuleGraph
 
         Parameters
         ----------

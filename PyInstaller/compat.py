@@ -28,38 +28,13 @@ import types
 
 from PyInstaller._shared_with_waf import _pyi_machine
 from PyInstaller.exceptions import ExecCommandFailed
+from packaging.version import parse as parse_version
 
 # hatch_build.py sets this environment variable to avoid errors due to unmet run-time dependencies. The
 # PyInstaller.compat module is imported by hatch_build.py to build wheels, and some dependencies that are otherwise
 # required at run-time (importlib-metadata on python < 3.10, pywin32-ctypes on Windows) might not be present while
 # building wheels, nor are they required during that phase.
 _setup_py_mode = os.environ.get('_PYINSTALLER_SETUP', '0') != '0'
-
-# PyInstaller requires importlib.metadata from python >= 3.10 stdlib, or equivalent importlib-metadata >= 4.6.
-if _setup_py_mode:
-    importlib_metadata = None
-else:
-    if sys.version_info >= (3, 10):
-        import importlib.metadata as importlib_metadata
-    else:
-        try:
-            import importlib_metadata
-        except ImportError as e:
-            from PyInstaller.exceptions import ImportlibMetadataError
-            raise ImportlibMetadataError() from e
-
-        import packaging.version  # For importlib_metadata version check
-
-        # Validate the version
-        if packaging.version.parse(importlib_metadata.version("importlib-metadata")) < packaging.version.parse("4.6"):
-            from PyInstaller.exceptions import ImportlibMetadataError
-            raise ImportlibMetadataError()
-
-# Strict collect mode, which raises error when trying to collect duplicate files into PKG/CArchive or COLLECT.
-strict_collect_mode = os.environ.get("PYINSTALLER_STRICT_COLLECT_MODE", "0") != "0"
-
-# Copied from https://docs.python.org/3/library/platform.html#cross-platform.
-is_64bits: bool = sys.maxsize > 2**32
 
 # Distinguish specific code for various Python versions. Variables 'is_pyXY' mean that Python X.Y and up is supported.
 # Keep even unsupported versions here to keep 3rd-party hooks working.
@@ -74,6 +49,29 @@ is_py312 = sys.version_info >= (3, 12)
 is_py313 = sys.version_info >= (3, 13)
 is_py314 = sys.version_info >= (3, 14)
 is_py315 = sys.version_info >= (3, 15)
+
+# PyInstaller requires importlib.metadata from python >= 3.10 stdlib, or equivalent importlib-metadata >= 4.6.
+if not _setup_py_mode:
+    if not is_py310:
+        try:
+            vendored = importlib.import_module("importlib_metadata")
+            if parse_version(vendored.version("importlib-metadata")) < parse_version("4.6"):
+                raise ImportError("importlib-metadata must be version 4.6 or higher")
+
+            sys.modules["importlib.metadata"] = vendored
+        except ImportError as exc:
+            raise SystemExit(
+                "ERROR: PyInstaller requires importlib.metadata from python >= 3.10 stdlib or "
+                "importlib_metadata from importlib-metadata >= 4.6"
+            ) from exc
+        
+    import importlib.metadata as importlib_metadata
+
+# Strict collect mode, which raises error when trying to collect duplicate files into PKG/CArchive or COLLECT.
+strict_collect_mode = os.environ.get("PYINSTALLER_STRICT_COLLECT_MODE", "0") != "0"
+
+# Copied from https://docs.python.org/3/library/platform.html#cross-platform.
+is_64bits: bool = sys.maxsize > 2**32
 
 is_win = sys.platform.startswith('win')
 is_win_10 = is_win and (platform.win32_ver()[0] == '10')

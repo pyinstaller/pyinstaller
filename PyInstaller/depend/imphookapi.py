@@ -18,7 +18,7 @@ modules will be frozen into the executable.
 """
 
 from PyInstaller.building.utils import format_binaries_and_datas
-from PyInstaller.lib.modulegraph.modulegraph import (RuntimeModule, RuntimePackage)
+from PyInstaller.depend.modulegraph import ModuleType, Node
 
 
 class PreSafeImportModuleAPI:
@@ -112,7 +112,7 @@ class PreSafeImportModuleAPI:
                 api.add_runtime_module(api.module_name)
         """
 
-        self._module_graph.add_module(RuntimeModule(module_name))
+        self._module_graph.add_module(Node(ident=module_name, module_type=ModuleType.RUNTIME_MODULE))
 
     def add_runtime_package(self, package_name):
         """
@@ -140,7 +140,7 @@ class PreSafeImportModuleAPI:
                 api.add_runtime_package(api.module_name)
         """
 
-        self._module_graph.add_module(RuntimePackage(package_name))
+        self._module_graph.add_module(Node(ident=package_name, module_type=ModuleType.RUNTIME_PACKAGE))
 
     def add_alias_module(self, real_module_name, alias_module_name):
         """
