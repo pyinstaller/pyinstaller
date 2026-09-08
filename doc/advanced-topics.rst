@@ -365,10 +365,12 @@ escalation (e.g., POSIX executable with ``setuid`` bit set).
 
 Starting with PyInstaller v6.22.3, the onefile parent-process validation
 has been limited only to processes that are running with elevated privileges
-while inheriting environment variables set by unprivileged user. On
-POSIX systems, this corresponds to executables with ``setuid`` bit set,
-while on Windows, it corresponds to UAC-elevated processes (running with
-``TokenElevationTypeFull`` token).
+while inheriting environment variables set by unprivileged user. On Windows,
+this corresponds to UAC-elevated processes (running with
+``TokenElevationTypeFull`` token), while on POSIX systems, it corresponds
+to executables with either ``setuid`` or ``setgid`` bit set. On Linux,
+the validation is also enabled for executables that have applied file
+capabilities (i.e., have the ``security.capability`` extended attribute).
 
 Windows
 -------
@@ -397,17 +399,40 @@ processes and look-up of their executable requires look-up of
 the platform-specific entry on the ``procfs`` filesystem
 (i.e., inside the ``/proc/<ppid>`` directory).
 
-If the executable has ``setuid`` bit set, additional validation is
-performed on the inherited (temporary) top-level application directory.
-The owner ID of the said directory must match the owner ID of the
-executable, and its permissions must be ``0700`` (i.e., permissions
-that the bootloader uses when creating a temporary application directory).
+Additionally, the onefile child processes performs validation of owner
+ID and permissions on the inherited (temporary) top-level application
+directory. The owner ID of the said directory is required to match the
+effective user ID of the current process, and the permissions on the
+directory need to be  ``0700`` (i.e., must match permissions that the
+bootloader uses when creating a temporary application directory).
 
 Some of otherwise supported POSIX platforms do not implement ``procfs``
 at all (for example, OpenBSD), or do not provide the information about the
 executable path (for example, AIX). On such platforms, setting ``setuid``
-bit on ``onefile`` executables is not supported anymore - the implemented
-security validation will automatically fail.
+or ``setgid`` bit on ``onefile`` executables is not supported anymore -
+the implemented security validation will automatically fail with an
+early error. On FreeBSD, the ``/proc`` filesystem is not mounted by
+default; it needs to be explicitly mounted to enable support for running
+``onefile`` executables with ``setuid`` or ``setgid`` bit set.
+
+.. Note::
+    On contemporary Linux distributions, onefile executables with ``setgid``
+    bit set may end up being unable to look up the executable of the
+    originating onefile parent process due to restricted access to
+    ``/proc/<ppid>/exe``. In order for onefile parent-process validation
+    to pass, the executable also needs to be granted ``CAP_SYS_PTRACE``
+    capability, for example by setting corresponding file capability::
+
+        sudo setcap cap_sys_ptrace=+ep /path/to/executable
+
+.. Note::
+    In general, PyInstaller offers only limited support for POSIX
+    executables that are running with elevated privileges; be it either
+    via ``setuid`` or ``setgid`` bit, or file capabilities (on Linux).
+    In all these cases the underlying operating system facilities tend
+    to reset the ``LD_LIBRARY_PATH`` environment variable (or equivalent),
+    which is used by PyInstaller's bootloader to set the library search
+    path for bundled shared libraries.
 
 
 .. _bootloader security validation onedir:
@@ -417,17 +442,24 @@ Security Validation in ``onedir`` Mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Starting with PyInstaller v6.22.1, an additional security requirement has
-been imposed on POSIX onedir executables that have ``setuid`` bit set.
-Such executables now validate the owner and permissions on their contents
-directory (typically the ``_internal`` directory); the owner ID must match
-the effective user ID under which the process is running, and the
-permissions on the directory need to be ``0700``.
+been imposed on POSIX onedir executables that have ``setuid`` or ``setgid``
+bit set. Such executables now validate the owner and permissions on their
+contents directory (typically the ``_internal`` directory).
 
-The above restriction aims to prevent unprivileged users from modifying
-contents of an application that runs in privileged mode. However, it
-also prevents an application from starting in privileged mode and later
-dropping the privileges (for example, via the ``os.setuid()`` call), as
-this would prevent further access to the content directory.
+In the case of executable with ``setuid`` bit, the owner ID of the contents
+directory must match the owner ID of the executable itself, and only the
+owner is allowed to have write permissions on the directory (i.e., neither
+``S_IWGRP`` nor ``S_IWOTH`` bit is allowed to be set).
+
+In the case executable with ``setgid`` bit, the group ID of the contents
+directory must match the group ID of the executable itself, and only
+the owner and the group are allowed to have write permissions on the
+directory (i.e., ``S_IWOTH`` bit is not allowed to be set).
+
+Note that this is not an in-depth check, as permissions on individual
+files and sud-directories inside the contents directory are not verified.
+It is up to administrator to properly secure access to the contents of
+a ``onedir`` application that is intended to be ran with elevated privileges.
 
 
 .. _pyi_splash Module:
