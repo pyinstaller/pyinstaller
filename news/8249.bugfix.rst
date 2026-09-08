@@ -1,0 +1,3 @@
+Fix ``--clean`` handling of cache and work directory paths containing square
+brackets, so that the specified directories are cleaned without matching
+similarly named neighboring directories.

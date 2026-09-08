@@ -1162,7 +1162,7 @@ def build(spec, distpath, workpath, clean_build):
         for pth in (CONF['cachedir'], workpath):
             if os.path.exists(pth):
                 # Remove all files in 'pth'.
-                for f in glob.glob(pth + '/*'):
+                for f in glob.glob(glob.escape(pth) + '/*'):
                     # Remove dirs recursively.
                     if os.path.isdir(f):
                         shutil.rmtree(f)
