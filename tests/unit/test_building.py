@@ -31,6 +31,8 @@ def test_clean_build_literal_paths(tmp_path, monkeypatch, cache_name, work_name,
         (directory / 'old-dir').mkdir()
         (directory / 'old-dir' / 'nested-file').touch()
         (directory / '.hidden-file').touch()
+        (directory / '.hidden-dir').mkdir()
+        (directory / '.hidden-dir' / 'nested-file').touch()
 
     # These paths would match the unescaped bracket expressions.
     neighbors = (tmp_path / 'cache0', tmp_path / 'work0' / spec.stem)
@@ -45,7 +47,24 @@ def test_clean_build_literal_paths(tmp_path, monkeypatch, cache_name, work_name,
         assert directory.is_dir()
         assert (directory / 'old-file').exists() is not clean_build
         assert (directory / 'old-dir').exists() is not clean_build
-        # Preserve the existing glob behavior for hidden files.
+        # Preserve the existing behavior for hidden files and directories.
         assert (directory / '.hidden-file').is_file()
+        assert (directory / '.hidden-dir' / 'nested-file').is_file()
     for directory in neighbors:
         assert (directory / 'keep-file').is_file()
+
+
+@pytest.mark.parametrize('clean_build', [False, True])
+def test_clean_build_missing_paths(tmp_path, monkeypatch, clean_build):
+    spec = tmp_path / 'empty.spec'
+    spec.write_text('', encoding='utf-8')
+    cache_dir = tmp_path / 'cache'
+    work_root = tmp_path / 'work'
+    dist_dir = tmp_path / 'dist'
+
+    monkeypatch.setattr(config, 'CONF', {'cachedir': str(cache_dir)})
+    build_main.build(str(spec), str(dist_dir), str(work_root), clean_build)
+
+    assert not cache_dir.exists()
+    assert (work_root / spec.stem).is_dir()
+    assert dist_dir.is_dir()

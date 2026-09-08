@@ -14,7 +14,6 @@ Build packages using spec files.
 NOTE: All global variables, classes and imported modules create API for .spec files.
 """
 
-import glob
 import os
 import pathlib
 import pprint
@@ -1160,14 +1159,16 @@ def build(spec, distpath, workpath, clean_build):
     if clean_build:
         logger.info('Removing temporary files and cleaning cache in %s', CONF['cachedir'])
         for pth in (CONF['cachedir'], workpath):
-            if os.path.exists(pth):
-                # Remove all files in 'pth'.
-                for f in glob.glob(glob.escape(pth) + '/*'):
+            if os.path.isdir(pth):
+                # Remove non-hidden files in 'pth', treating the directory path literally.
+                for f in pathlib.Path(pth).iterdir():
+                    if f.name.startswith('.'):
+                        continue
                     # Remove dirs recursively.
-                    if os.path.isdir(f):
+                    if f.is_dir():
                         shutil.rmtree(f)
                     else:
-                        os.remove(f)
+                        f.unlink()
 
     # Create DISTPATH and workpath if they does not exist.
     for pth in (CONF['distpath'], CONF['workpath']):
