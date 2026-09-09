@@ -39,6 +39,12 @@ def test_ipython(pyi_builder, capfd):
         import os
         import sys
 
+        # When SOURCE_DATE_EPOCH is set, IPython disables dynamic banner. Some versions (e.g., Debian-packaged
+        # python3-ipython-9.11.0-2) also seem to disable custom header, which this test is explicitly looking for.
+        if "SOURCE_DATE_EPOCH" in os.environ:
+            print("Unsetting SOURCE_DATE_EPOCH environment variable...", file=sys.stderr)
+            del os.environ["SOURCE_DATE_EPOCH"]
+
         # Redirect sys.stdin to devnull to force IPython console to automatically exit
         with open(os.devnull, 'r') as sys.stdin:
             import IPython
