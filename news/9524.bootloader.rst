@@ -1,4 +1,0 @@
-(POSIX) Enable ``onefile`` parent-process validation for POSIX executables
-that have ``setgid`` bit set, and for Linux executables that have file
-capabilities set (i.e., have a ``security.capability`` extended file
-attribute).

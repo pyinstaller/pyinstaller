@@ -15,6 +15,45 @@ Changelog for PyInstaller
 
 .. towncrier release notes start
 
+6.22.3 (2026-09-12)
+-------------------
+
+Bugfix
+~~~~~~
+
+* (Windows) Revise earlier fix for :issue:`9508` to avoid breaking
+  executables located on ImDisk RAMDISK volumes. (:issue:`9510`)
+* Compare the icon file suffix case-insensitively, so an icon named with an
+  upper-case suffix such as ``MyApp.ICO`` is recognised as already being in the
+  right format instead of being rejected or silently re-encoded.
+  (:issue:`9521`)
+* Fix ``onefile`` parent-process validation to allow intermixed nested
+  sub-processes. (:issue:`9513`)
+
+
+Bootloader
+~~~~~~~~~~
+
+* (POSIX) Enable ``onefile`` parent-process validation for POSIX executables
+  that have ``setgid`` bit set, and for Linux executables that have file
+  capabilities set (i.e., have a ``security.capability`` extended file
+  attribute). (:issue:`9524`)
+* (POSIX) Revise the validation of owner and permissions of ``onedir``
+  application's contents directory when the executable has either ``setuid``
+  or ``setgid`` bit set. If ``setuid`` bit is set, the owner ID of the
+  application's contents directory must match the owner ID of the executable
+  itself, and only owner is allowed to have write permissions on the directory.
+  If ``setgid`` bit is set, the group ID of the application's contents
+  directory must match the group ID of the executable itself, and only
+  owner and the group are allowed to have write permissions on the directory.
+  (:issue:`9524`)
+* Limit ``onefile`` parent-process validation only to executables that are
+  running with elevated privileges while inheriting environment variables
+  set by unprivileged user. On POSIX systems, this corresponds to executables
+  with ``setuid`` bit set, while on Windows, it corresponds to UAC-elevated
+  processes (running with ``TokenElevationTypeFull`` token). (:issue:`9520`)
+
+
 6.22.2 (2026-08-17)
 -------------------
 

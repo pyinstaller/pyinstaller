@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "PYI-MAKESPEC" "1" "2026-02-14" "6.19.0" "PyInstaller"
+.TH "PYI-MAKESPEC" "1" "2026-09-12" "6.22.3" "PyInstaller"
 .SH NAME
 pyi-makespec \- Create a spec file for your PyInstaller project
 .\" disable justification (adjust text to left margin only)
@@ -87,7 +87,7 @@ Create a one\-file bundled executable.
 .BI \-\-specpath \ DIR
 Folder to store the generated spec file (default: current directory)
 .TP
-.BI \-n \ NAME\fR,\fB \ \-\-name \ NAME
+.BI \-n\fP,\fB  \-\-name \ NAME
 Name to assign to the bundled app and spec file (default: first script\(aqs
 basename)
 .TP
@@ -122,12 +122,12 @@ times.
 .UNINDENT
 .INDENT 0.0
 .TP
-.BI \-p \ DIR\fR,\fB \ \-\-paths \ DIR
+.BI \-p\fP,\fB  \-\-paths \ DIR
 A path to search for imports (like using PYTHONPATH). Multiple paths are
 allowed, separated by \fB\(aq:\(aq\fP, or use this option multiple times.
 Equivalent to supplying the \fBpathex\fP argument in the spec file.
 .TP
-.BI \-\-hidden\-import \ MODULENAME\fR,\fB \ \-\-hiddenimport \ MODULENAME
+.BI \-\-hidden\-import\fP,\fB  \-\-hiddenimport \ MODULENAME
 Name an import not visible in the code of the script(s). This option can be
 used multiple times.
 .TP
@@ -135,7 +135,7 @@ used multiple times.
 Collect all submodules from the specified package or module. This option
 can be used multiple times.
 .TP
-.BI \-\-collect\-data \ MODULENAME\fR,\fB \ \-\-collect\-datas \ MODULENAME
+.BI \-\-collect\-data\fP,\fB  \-\-collect\-datas \ MODULENAME
 Collect all data from the specified package or module. This option can be
 used multiple times.
 .TP
@@ -175,9 +175,17 @@ times.
 application. The splash screen can display progress updates while
 unpacking.
 .UNINDENT
+.sp
+\-\-splash\-center {default,virtual,primary,active}
+.INDENT 0.0
+.INDENT 3.5
+Splash screen centering mode. See the splash screen documentation for
+details.
+.UNINDENT
+.UNINDENT
 .SS How To Generate
 .sp
-\-d {all,imports,bootloader,noarchive}, \-\-debug {all,imports,bootloader,noarchive}
+\-d, \-\-debug {all,imports,bootloader,noarchive}
 .INDENT 0.0
 .INDENT 3.5
 R|Provide assistance with debugging a frozen application. This argument may
@@ -235,7 +243,7 @@ option is automatically set if the first script is a \(aq.pyw\(aq file. This
 option is ignored on *NIX systems.
 .UNINDENT
 .sp
-\-\-hide\-console {minimize\-late,hide\-early,minimize\-early,hide\-late}
+\-\-hide\-console {hide\-early,minimize\-early,hide\-late,minimize\-late}
 .INDENT 0.0
 .INDENT 3.5
 Windows only: in console\-enabled executable, have bootloader automatically
@@ -245,7 +253,7 @@ hide or minimize the console window if the program owns the console window
 .UNINDENT
 .INDENT 0.0
 .TP
-.BI \-i \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or \(dqNONE\(dq>\fR,\fB \ \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or \(dqNONE\(dq>
+.BI \-i\fP,\fB  \-\-icon \ <FILE.ico or FILE.exe,ID or FILE.icns or Image or \(dqNONE\(dq>
 FILE.ico: apply the icon to a Windows executable. FILE.exe,ID: extract the
 icon with ID from an exe. FILE.icns: apply the icon to the .app bundle on
 macOS. If an image file is entered that isn\(aqt in the platform format (ico
@@ -271,7 +279,7 @@ Add manifest FILE or XML to the exe.
 .BI \-m \ <FILE or XML>
 Deprecated shorthand for \-\-manifest.
 .TP
-.BI \-r \ RESOURCE\fR,\fB \ \-\-resource \ RESOURCE
+.BI \-r\fP,\fB  \-\-resource \ RESOURCE
 Add or update a resource to a Windows executable. The RESOURCE is one to
 four items, FILE[,TYPE[,NAME[,LANGUAGE]]]. FILE can be a data file or an
 exe/dll. For data files, at least TYPE and NAME must be specified. LANGUAGE
@@ -303,7 +311,7 @@ code signing purposes. The usual form is a hierarchical name in reverse DNS
 notation. For example: com.mycompany.department.appname (default: first
 script\(aqs basename)
 .TP
-.BI \-\-target\-architecture \ ARCH\fR,\fB \ \-\-target\-arch \ ARCH
+.BI \-\-target\-architecture\fP,\fB  \-\-target\-arch \ ARCH
 Target architecture (macOS only; valid values: x86_64, arm64, universal2).
 Enables switching between universal2 and single\-arch version of frozen
 application (provided python installation supports the target

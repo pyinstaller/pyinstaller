@@ -1,8 +1,0 @@
-(POSIX) Revise the validation of owner and permissions of ``onedir``
-application's contents directory when the executable has either ``setuid``
-or ``setgid`` bit set. If ``setuid`` bit is set, the owner ID of the
-application's contents directory must match the owner ID of the executable
-itself, and only owner is allowed to have write permissions on the directory.
-If ``setgid`` bit is set, the group ID of the application's contents
-directory must match the group ID of the executable itself, and only
-owner and the group are allowed to have write permissions on the directory.
