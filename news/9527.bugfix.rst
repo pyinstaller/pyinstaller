@@ -1,0 +1,2 @@
+(Windows) Treat ``.SPEC`` as a spec file so an existing spec is built
+instead of being passed through makespec.

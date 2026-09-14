@@ -194,7 +194,7 @@ def run(pyi_args: list | None = None, pyi_config: dict | None = None):
         logger.info('Python environment: %s', sys.prefix)
 
         # Skip creating .spec when .spec file is supplied.
-        if args.filenames[0].endswith('.spec'):
+        if args.filenames[0].lower().endswith('.spec'):
             parser._forbid_options(
                 args, group="makespec", errmsg="makespec options not valid when a .spec file is given"
             )

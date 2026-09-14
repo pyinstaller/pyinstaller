@@ -644,7 +644,8 @@ def test_renamed_exe(pyi_builder):
 
 
 def test_spec_with_utf8(pyi_builder_spec):
-    pyi_builder_spec.test_spec('spec-with-utf8.spec')
+    # .SPEC (not .spec): run() must fold the suffix so this existing spec is built.
+    pyi_builder_spec.test_spec('spec-with-utf8.SPEC')
 
 
 @pytest.mark.darwin
