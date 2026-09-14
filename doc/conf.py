@@ -45,9 +45,9 @@ if on_rtd:
 for (contents, path) in [
     (parser_to_rst(generate_parser()),
      "_pyinstaller-options.tmp"),
-    (parser_to_rst(generate_parser(), cross_references=False),
+    (parser_to_rst(generate_parser(), section_references=False),
      "man/_pyinstaller-options.tmp"),
-    (parser_to_rst(makespec.generate_parser(), cross_references=False),
+    (parser_to_rst(makespec.generate_parser(), section_references=False),
      "man/_pyi-makespec-options.tmp"),
 ]:
     # Avoid rewriting if no changes made. Otherwise sphinx mistakenly thinks
@@ -55,6 +55,9 @@ for (contents, path) in [
     path = Path(path)
     if not path.exists() or path.read_text() != contents:
         path.write_text(contents)
+
+# Emphasise placeholders in option directives (sphinx >= 5.1).
+option_emphasise_placeholders = True
 
 # -- General configuration ------------------------------------------------
 
