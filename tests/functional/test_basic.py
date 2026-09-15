@@ -644,7 +644,8 @@ def test_renamed_exe(pyi_builder):
 
 
 def test_spec_with_utf8(pyi_builder_spec):
-    # .SPEC (not .spec): run() must fold the suffix so this existing spec is built.
+    # This test also doubles as a check that PyInstaller.__main__.run() performs case-folding when detecting .spec
+    # files; hence we have a spec with upper-cased .SPEC suffix.
     pyi_builder_spec.test_spec('spec-with-utf8.SPEC')
 
 

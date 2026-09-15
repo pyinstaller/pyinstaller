@@ -1,2 +1,2 @@
-(Windows) Treat ``.SPEC`` as a spec file so an existing spec is built
-instead of being passed through makespec.
+Fix detection of spec files when their filename contains an upper-cased or
+a mixed-cased suffix (for example, ``.SPEC``).
