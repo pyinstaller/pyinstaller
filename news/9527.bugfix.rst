@@ -1,0 +1,2 @@
+Fix detection of spec files when their filename contains an upper-cased or
+a mixed-cased suffix (for example, ``.SPEC``).
