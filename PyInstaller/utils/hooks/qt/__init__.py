@@ -766,13 +766,41 @@ class QtLibraryInfo:
             dll_names = []  # Nothing to search for
             logger.warning("%s: QtNetwork: unsupported OpenSSL version: %X", self, openssl_version)
 
+        # Search locations for OpenSSL DLLs, in order of preference:
+        #  1. Qt's own library directory: with conda and msys2 package-based Qt installations, the matching OpenSSL
+        #     DLLs are shipped next to the Qt shared libraries.
+        #  2. Locations of OpenSSL shared libraries provided by the build python itself: python.org Windows installers
+        #     ship them in `{sys.base_prefix}/DLLs` (for use by the `_ssl` extension module), while conda-based
+        #     environments have them located next to the python executable. Because these libraries are collected for
+        #     python's `_ssl` extension anyway, they are a pinned and known-compatible source, and are preferable to
+        #     whatever copy happens to be found via `PATH` search (see issues #8956 and #9528).
+        pinned_search_paths = [
+            self.qt_lib_dir,
+            os.path.join(compat.base_prefix, 'DLLs'),
+            compat.base_prefix,
+        ]
+
         binaries = []
         found_in_package = False
         for dll in dll_names:
-            # Attempt to resolve the DLL path
-            dll_file_path = bindepend.resolve_library_path(dll, search_paths=[self.qt_lib_dir])
+            # Attempt to resolve the DLL in the pinned search locations first...
+            dll_file_path = bindepend._resolve_library_path_in_search_paths(dll, search_paths=pinned_search_paths)
             if dll_file_path is None:
-                continue
+                # ... and fall back to the default Windows search paths (i.e., `PATH`). The copy found this way comes
+                # from an arbitrary location on the build machine (for example, `C:\Windows\System32` or an unrelated
+                # application directory), and may be ABI-incompatible with the OpenSSL version expected by Qt's TLS
+                # backend; the frozen application then crashes natively when SSL is used, with no traceback. Make this
+                # choice loudly visible at build time. (See issue #9528.)
+                dll_file_path = bindepend.resolve_library_path(dll)
+                if dll_file_path is None:
+                    continue
+                logger.warning(
+                    "%s: QtNetwork: bundling OpenSSL library %r found via PATH search at %r. This copy comes from an "
+                    "arbitrary directory on the build machine's PATH and may be ABI-incompatible with the OpenSSL "
+                    "version expected by Qt's TLS backend, in which case the frozen application crashes natively when "
+                    "SSL is used. Consider sanitizing PATH prior to the build so that a compatible OpenSSL library is "
+                    "picked up.", self, dll, dll_file_path
+                )
             dll_file_path = pathlib.Path(dll_file_path).resolve()
             if package_parent_path in dll_file_path.parents:
                 # The DLL is located within python package; preserve the layout

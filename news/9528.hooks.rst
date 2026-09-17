@@ -1,0 +1,4 @@
+Qt hooks: on Windows, prefer OpenSSL libraries from pinned locations (Qt's own library directory, or the locations
+provided by the build python) over copies found via ``PATH`` search, and emit a build-time warning when a QtNetwork
+OpenSSL library is collected from ``PATH``, because such a copy may be ABI-incompatible with the OpenSSL version
+expected by Qt's TLS backend and cause the frozen application to crash at run-time.
