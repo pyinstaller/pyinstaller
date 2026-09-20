@@ -1,0 +1,7 @@
+(Windows) Fix ``--add-data``/``--add-binary`` rejecting a correctly-formed
+``SOURCE:DEST`` value with a misleading ``Wrong syntax`` error whenever
+``DEST`` itself began with a drive letter (for example
+``--add-data=C:\data\file.txt;C:\dest``). The separator search only ignored a
+drive letter at the start of the value, so ``DEST``'s colon was counted as a
+second separator. Such a ``DEST`` is still rejected, but now by the existing
+``DEST_DIR must be a relative path!`` check, which says what is actually wrong.

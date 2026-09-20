@@ -61,8 +61,12 @@ class SourceDestAction(argparse.Action):
 
     def __call__(self, parser, namespace, value, option_string=None):
         try:
-            # Find the only separator that isn't a Windows drive.
-            separator, = (m for m in re.finditer(rf"(^\w:[/\\])|[:{os.pathsep}]", value) if not m[1])
+            # Find the only separator that isn't a Windows drive. A drive letter can show up either at the very
+            # start of the value (as part of SOURCE), or immediately after the actual SOURCE/DEST separator (as
+            # part of an absolute-path DEST) - so we need to recognize and exclude it in both places, not just at
+            # the start of the string.
+            drive_or_separator = rf"(?:^|(?<=[:{os.pathsep}]))\w:[/\\]|[:{os.pathsep}]"
+            separator, = (m for m in re.finditer(drive_or_separator, value) if len(m.group()) == 1)
         except ValueError:
             # Split into SRC and DEST failed, wrong syntax
             raise argparse.ArgumentError(self, f'Wrong syntax, should be {self.option_strings[0]}=SOURCE:DEST')

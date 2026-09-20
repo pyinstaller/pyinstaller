@@ -41,6 +41,14 @@ def test_add_data(capsys):
     else:
         assert parser.parse_args(["--add-data", "foo;bar:."]).datas == [("foo;bar", ".")]
 
+    if os.name == "nt":
+        # A DEST that itself looks like an absolute Windows path (i.e., has its own drive-letter colon) must not
+        # confuse the SOURCE/DEST separator search. The extraneous drive-letter colon in DEST used to be
+        # mis-detected as a second candidate separator, causing a "Wrong syntax" error instead of parsing the
+        # SOURCE/DEST pair (the actual DEST-must-be-relative problem is caught later on, during Analysis).
+        assert parser.parse_args([r"--add-data=C:\foo\bar;C:\baz\qux"]).datas == [(r"C:/foo/bar", r"C:/baz/qux")]
+        assert parser.parse_args([r"--add-data=C:\foo\bar:C:\baz\qux"]).datas == [(r"C:/foo/bar", r"C:/baz/qux")]
+
     with pytest.raises(SystemExit):
         parser.parse_args(["--add-data", "foo:"])
     assert '--add-data: You have to specify both SOURCE and DEST' in capsys.readouterr().err
