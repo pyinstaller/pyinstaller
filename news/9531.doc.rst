@@ -1,0 +1,4 @@
+(Windows) Document that the ``<requestedExecutionLevel>`` of a manifest supplied
+via :option:`--manifest` is always set from :option:`--uac-admin` and
+:option:`--uac-uiaccess`, and that a dependency on
+``Microsoft.Windows.Common-Controls`` version 6.0.0.0 is ensured.
