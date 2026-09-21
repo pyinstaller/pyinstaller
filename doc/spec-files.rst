@@ -428,25 +428,28 @@ Further examples to illustrate the syntax::
     ]
 
 
-.. _windows application manifest:
+The Windows Application Manifest
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Application Manifest on Windows
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-On Windows, PyInstaller embeds an application manifest in the executable.
+On Windows, PyInstaller embeds an `application manifest
+<https://learn.microsoft.com/en-us/windows/win32/sbscs/application-manifests>`_
+in the executable.
 A custom manifest can be supplied with the :option:`--manifest` option,
 which becomes the ``manifest=`` argument to ``EXE``.
 Its value is either the path to a manifest file
 or a string containing the manifest XML.
 If no manifest is supplied,
 PyInstaller uses a built-in default manifest
-(which, among other things, enables ``longPathAware``).
+(which, among other things, enables `longPathAware
+<https://learn.microsoft.com/en-us/windows/win32/sbscs/application-manifests#longPathAware>`_).
 
 The supplied or default manifest is used as a base, and two parts of it
 are always modified:
 
 * The ``level`` and ``uiAccess`` attributes of the
-  ``<requestedExecutionLevel>`` element are set from the
+  `<requestedExecutionLevel>
+  <https://learn.microsoft.com/en-us/windows/win32/sbscs/application-manifests#trustinfo>`_
+  element are set from the
   ``uac_admin`` and ``uac_uiaccess`` arguments to ``EXE``
   (the :option:`--uac-admin` and :option:`--uac-uiaccess` options).
   ``level`` becomes ``requireAdministrator`` if ``uac_admin=True``,
@@ -457,8 +460,9 @@ are always modified:
   use :option:`--uac-admin` (``uac_admin=True``)
   instead of editing the manifest.
 
-* The manifest is made to declare a dependency on
-  ``Microsoft.Windows.Common-Controls`` version 6.0.0.0.
+* The manifest is made to declare a `dependency
+  <https://learn.microsoft.com/en-us/windows/win32/sbscs/application-manifests#dependency>`_
+  on ``Microsoft.Windows.Common-Controls`` version 6.0.0.0.
   The entry is added if it is missing.
 
 The rest of the manifest is kept as-is.
