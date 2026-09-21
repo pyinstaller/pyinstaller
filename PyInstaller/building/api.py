@@ -360,6 +360,17 @@ class PKG(Target):
         logger.info("Building PKG (CArchive) %s completed successfully.", os.path.basename(self.name))
 
 
+def _ensure_windows_exe_suffix(name):
+    """Append ``.exe`` unless *name* already ends with that suffix (any case).
+
+    Old ``.spec`` files sometimes bake the suffix into ``name=``. Windows paths
+    are case-insensitive, so ``app.EXE`` must not become ``app.EXE.exe``.
+    """
+    if not name.lower().endswith('.exe'):
+        name += '.exe'
+    return name
+
+
 class EXE(Target):
     """
     Creates the final executable of the frozen app. This bundles all necessary files together.
@@ -525,11 +536,9 @@ class EXE(Target):
             # onefile mode - create executable in DISTPATH.
             self.name = os.path.join(CONF['distpath'], os.path.basename(self.name))
 
-        # Old .spec format included on Windows in 'name' .exe suffix.
+        # Old .spec format included on Windows in 'name' .exe suffix (any case).
         if is_win or is_cygwin:
-            # Append .exe suffix if it is not already there.
-            if not self.name.endswith('.exe'):
-                self.name += '.exe'
+            self.name = _ensure_windows_exe_suffix(self.name)
             base_name = os.path.splitext(os.path.basename(self.name))[0]
         else:
             base_name = os.path.basename(self.name)

@@ -1,0 +1,2 @@
+(Windows) Do not append a second ``.exe`` when ``EXE(name=...)`` already ends
+with an upper- or mixed-case ``.EXE`` suffix from an old ``.spec`` file.
