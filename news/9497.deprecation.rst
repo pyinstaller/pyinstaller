@@ -1,0 +1,3 @@
+UPX compression will become opt-in rather that implicitly enabled if installed
+in v7.0.0. Supply :option:`--upx` to keep UPX compression. The :option:`--noupx`
+will be kept for backwards compatibility but eventually become a no-op.
