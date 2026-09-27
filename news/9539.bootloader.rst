@@ -1,0 +1,3 @@
+(POSIX) Replace the use of ``strtok()`` with ``strtok_r()`` to avoid
+deprecation warnings (treated as errors) on some contemporary compiler
+toolchains (e.g., up-to-date Termux Linux).
