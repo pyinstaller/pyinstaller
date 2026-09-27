@@ -1475,19 +1475,20 @@ static bool
 _pyi_find_progam_in_search_path(const char *name, char *result_path)
 {
     char *search_paths = pyi_getenv("PATH"); /* returns a copy */
+    char *search_paths_saveptr = NULL; /* saveptr for strtok_r() */
     char *search_path;
 
     if (search_paths == NULL) {
         return false;
     }
 
-    search_path = strtok(search_paths, PYI_PATHSEPSTR);
+    search_path = strtok_r(search_paths, PYI_PATHSEPSTR, &search_paths_saveptr);
     while (search_path != NULL) {
         if ((pyi_path_join(result_path, search_path, name) != NULL) && pyi_path_exists(result_path)) {
             free(search_paths);
             return true;
         }
-        search_path = strtok(NULL, PYI_PATHSEPSTR);
+        search_path = strtok_r(NULL, PYI_PATHSEPSTR, &search_paths_saveptr);
     }
 
     free(search_paths);
