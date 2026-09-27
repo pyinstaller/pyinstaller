@@ -512,7 +512,10 @@ def __add_options(parser):
     g.add_argument(
         "--manifest",
         metavar="<FILE or XML>",
-        help="Add manifest FILE or XML to the exe.",
+        help="Add manifest FILE or XML to the exe. The level and uiAccess attributes of its requestedExecutionLevel "
+        "element are always set from ``--uac-admin`` and ``--uac-uiaccess`` (by default, asInvoker and false), and a "
+        "dependency on Microsoft.Windows.Common-Controls version 6.0.0.0 is ensured. The rest of the manifest is kept "
+        "unchanged.",
     )
     g.add_argument(
         "-m",
