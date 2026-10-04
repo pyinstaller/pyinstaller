@@ -1,0 +1,3 @@
+Propagate ``errno`` and ``winerror`` attributes from the original
+exception to the ``PyInstallerImportError`` raised by the ``ctypes``
+hook when loading a dynamic library fails.
