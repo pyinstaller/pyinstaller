@@ -69,7 +69,7 @@ pytz==2026.5
 requests==2.34.2; python_version >= "3.10"
 scipy==1.18.1; python_version >= "3.12"
 # simplejson is used for text_c_extension
-simplejson==4.1.2
+simplejson==4.2.0
 sphinx==9.1.0; python_version >= "3.12"
 sqlalchemy==2.1.1; python_version >= "3.11"
 zope.interface==8.6; python_version >= "3.10"
