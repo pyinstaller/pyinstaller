@@ -34,7 +34,7 @@ PySide6-Essentials==6.11.2; python_version >= "3.10"
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
 # all platforms, while 5.15.11 are available only for macOS (and some of them only for arm64).
-PyQt5-sip==12.19.0; python_version >= "3.10"
+PyQt5-sip==12.20.0; python_version >= "3.10"
 PyQt5==5.15.11
 PyQt3D==5.15.7
 PyQtChart==5.15.7
@@ -48,7 +48,7 @@ PyQtWebEngine==5.15.7
 # but in contrast to Qt5 and PyQt5 bindings, the versions here must usually be kept in sync with the
 # version of corresponding PyQt bindings packages. That is because Qt6 is under active development, and
 # thus the ABI is still changing.
-PyQt6-sip==13.12.0; python_version >= "3.10"
+PyQt6-sip==13.13.0; python_version >= "3.10"
 PyQt6==6.11.0; python_version >= "3.10"
 PyQt6-Qt6==6.11.2; python_version >= "3.10"
 PyQt6-3D==6.11.0; python_version >= "3.10"
@@ -65,13 +65,13 @@ PyQt6-QScintilla==2.14.1; python_version >= "3.9"  # Does not have a correspondi
 PyQt6-WebEngine==6.11.0; python_version >= "3.10"
 PyQt6-WebEngine-Qt6==6.11.2; python_version >= "3.10"
 python-dateutil==2.9.0.post0
-pytz==2026.4
+pytz==2026.5
 requests==2.34.2; python_version >= "3.10"
 scipy==1.18.1; python_version >= "3.12"
 # simplejson is used for text_c_extension
-simplejson==4.1.2
+simplejson==4.2.0; python_version >= "3.9"
 sphinx==9.1.0; python_version >= "3.12"
-sqlalchemy==2.1.1; python_version >= "3.11"
+sqlalchemy==2.1.3; python_version >= "3.11"
 zope.interface==8.6; python_version >= "3.10"
 Pillow==12.3.0; python_version >= "3.10"
 setuptools==84.0.0; python_version >= "3.10"
@@ -207,3 +207,5 @@ setuptools==75.3.2; python_version == "3.8"  # pyup: ignore
 zope.interface==7.2; python_version == "3.8"  # pyup: ignore
 
 pygments==2.19.2; python_version == "3.8"  # pyup: ignore
+
+simplejson==4.1.2; python_version == "3.8"  # pyup: ignore
