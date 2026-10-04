@@ -60,6 +60,37 @@ def test_ctypes_cdll_unknown_dll(pyi_builder, capfd):
     assert "Failed to load dynlib/dll" in err
 
 
+# Check that our ctypes hook propagates the errno/winerror attributes from the original exception to the
+# PyInstallerImportError it raises (issue #4147). For this, we need a load error whose original exception
+# actually carries these attributes; a file that is not a valid shared library/image is one such case on
+# Windows (OSError with errno=8, winerror=193).
+def test_ctypes_cdll_invalid_dll_error_attributes(pyi_builder):
+    pyi_builder.test_source(
+        """
+        import ctypes
+        import os
+        import sys
+
+        # Create an invalid shared library file in the top-level application directory.
+        libpath = os.path.join(sys._MEIPASS, 'invalid-dll-2017.dll')
+        with open(libpath, 'wb') as fp:
+            fp.write(b'this is not a valid shared library')
+
+        try:
+            ctypes.CDLL(libpath)
+        except OSError as e:
+            base_error = e.__cause__
+            assert isinstance(base_error, OSError), f"Missing chained exception: {base_error!r}"
+            assert e.errno == base_error.errno, f"errno not propagated: {e.errno!r} != {base_error.errno!r}"
+            assert getattr(e, 'winerror', None) == getattr(base_error, 'winerror', None), "winerror not propagated"
+            if sys.platform == 'win32':
+                assert base_error.winerror is not None, "Original error carries no winerror to propagate"
+        else:
+            raise AssertionError("OSError not raised")
+        """
+    )
+
+
 # Make sure we are able to load CDLL(None) -> pip does this for some reason
 @skipif(is_win, reason="ctypes.CDLL(None) is not valid on Windows")
 def test_ctypes_cdll_none(pyi_builder):

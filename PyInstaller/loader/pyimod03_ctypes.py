@@ -39,11 +39,16 @@ def install():
         return name
 
     class PyInstallerImportError(OSError):
-        def __init__(self, name):
+        def __init__(self, name, base_error=None):
             self.msg = (
                 "Failed to load dynlib/dll %r. Most likely this dynlib/dll was not found when the application "
                 "was frozen." % name
             )
+            # Propagate the error attributes of the original exception (issue #4147). The 'winerror' attribute
+            # exists only on Windows, so fall back to None on other OSes.
+            if isinstance(base_error, OSError):
+                self.errno = base_error.errno
+                self.winerror = getattr(base_error, 'winerror', None)
             self.args = (self.msg,)
 
     class PyInstallerCDLL(ctypes.CDLL):
@@ -52,7 +57,7 @@ def install():
             try:
                 super().__init__(name, *args, **kwargs)
             except Exception as base_error:
-                raise PyInstallerImportError(name) from base_error
+                raise PyInstallerImportError(name, base_error) from base_error
 
     ctypes.CDLL = PyInstallerCDLL
     ctypes.cdll = ctypes.LibraryLoader(PyInstallerCDLL)
@@ -63,7 +68,7 @@ def install():
             try:
                 super().__init__(name, *args, **kwargs)
             except Exception as base_error:
-                raise PyInstallerImportError(name) from base_error
+                raise PyInstallerImportError(name, base_error) from base_error
 
     ctypes.PyDLL = PyInstallerPyDLL
     ctypes.pydll = ctypes.LibraryLoader(PyInstallerPyDLL)
@@ -76,7 +81,7 @@ def install():
                 try:
                     super().__init__(name, *args, **kwargs)
                 except Exception as base_error:
-                    raise PyInstallerImportError(name) from base_error
+                    raise PyInstallerImportError(name, base_error) from base_error
 
         ctypes.WinDLL = PyInstallerWinDLL
         ctypes.windll = ctypes.LibraryLoader(PyInstallerWinDLL)
@@ -87,7 +92,7 @@ def install():
                 try:
                     super().__init__(name, *args, **kwargs)
                 except Exception as base_error:
-                    raise PyInstallerImportError(name) from base_error
+                    raise PyInstallerImportError(name, base_error) from base_error
 
         ctypes.OleDLL = PyInstallerOleDLL
         ctypes.oledll = ctypes.LibraryLoader(PyInstallerOleDLL)
