@@ -276,6 +276,24 @@ void pyi_dylib_python_cleanup(struct DYLIB_PYTHON **dylib_ref)
         return;
     }
 
+    /* Python 3.13 introduced mimalloc memory allocator [1], which
+     * registers an atexit() handler [2]. On NetBSD 11, an atexit()
+     * handler registered in a shared library is not executed upon the
+     * library unload (e.g., via dlclose()), but rather on program exit.
+     * So unloading a library that registers an atexit() handler results
+     * in segmentation fault in libc's __cxa_finalize when the program
+     * exits, because the handler is no longer reachable...
+     *
+     * [1] https://github.com/python/cpython/pull/109914
+     * [2] https://github.com/python/cpython/blob/05f2f0ac92afa560315eb66fd6576683c7f69e2d/Objects/mimalloc/init.c#L530
+     */
+#if defined(__NetBSD__)
+    if (dylib->version >= 313) {
+        PYI_DEBUG("DYLIB: skipping unload of Python shared library to prevent crash on exit...\n");
+        dylib->handle = NULL;
+    }
+#endif
+
     /* Unload the shared library */
     if (dylib->handle != NULL) {
         PYI_DEBUG("DYLIB: unloading Python shared library...\n");
