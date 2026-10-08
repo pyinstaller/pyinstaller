@@ -1,0 +1,2 @@
+(NetBSD) Do not unload python shared library when using python >= 3.13,
+in order to prevent segmentation fault on program exit.
