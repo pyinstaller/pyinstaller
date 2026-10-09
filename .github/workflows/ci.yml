@@ -170,12 +170,8 @@ jobs:
         run: |
           python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-base.txt
 
-      # Give python 3.13t same treatment as development version and avoid trying to install packges
-      # from requirements-libraries.txt. This is necessary because not all packages provide free-threaded
-      # builds of their wheels yet, and we have no way of filtering them in the requirements file.
-      # This should be remedied in python 3.14 with the new `sys_abi_feature` environment marker (PEP 780).
       - name: Install test dependencies (tools and libraries)
-        if: ${{ !endsWith(matrix.python-version, '-dev') && matrix.python-version != '3.13t' }}
+        if: ${{ !endsWith(matrix.python-version, '-dev') }}
         run: |
           python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
 
