@@ -32,18 +32,18 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15-dev']
-        os: ['windows-latest', 'ubuntu-24.04', 'macos-15-intel', 'macos-14']
-        # Split macOS workflows between macos-15-intel (x86_64) and macos-14 (arm64)
+        os: ['windows-latest', 'ubuntu-24.04', 'macos-15-intel', 'macos-15']
+        # Split macOS workflows between macos-15-intel (x86_64) and macos-15 (arm64)
         # runners to cover both architectures without running all combinations.
         exclude:
           - python-version: '3.8'
-            os: 'macos-14'
+            os: 'macos-15'
           - python-version: '3.10'
-            os: 'macos-14'
+            os: 'macos-15'
           - python-version: '3.12'
-            os: 'macos-14'
+            os: 'macos-15'
           - python-version: '3.14'
-            os: 'macos-14'
+            os: 'macos-15'
           - python-version: '3.9'
             os: 'macos-15-intel'
           - python-version: '3.11'
@@ -346,7 +346,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.13t', '3.14t', '3.15t-dev']
-        os: ['windows-latest', 'ubuntu-24.04', 'macos-15-intel', 'macos-14']
+        os: ['windows-latest', 'ubuntu-24.04', 'macos-15-intel', 'macos-15']
       fail-fast: false
     steps:
       - name: Checkout PyInstaller code
