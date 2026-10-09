@@ -645,8 +645,6 @@ jobs:
               py3-psutil py3-test py3-test-xdist \
               py3-numpy py3-pillow
 
-      # NOTE: for now, install and python 3.12; with 3.13 and 3.14, we seem to be getting
-      # a segfault at frozen program exit.
       - name: Setup VM (NetBSD)
         if: matrix.platform == 'netbsd'
         uses: vmactions/netbsd-vm@v1
@@ -655,13 +653,13 @@ jobs:
           copyback: false
           prepare: |
             export PATH="/usr/pkg/sbin:/usr/pkg/bin:$PATH"
-            export PKG_PATH="https://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD/x86_64/11.0_2026Q2/All/"
+            export PKG_PATH="https://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD/x86_64/11.0_2026Q3/All/"
             pkg_add pkgin
             pkgin -y install \
-              python312 py312-pip py312-Tk \
-              py312-psutil py312-test py312-test-xdist \
-              py312-numpy py312-Pillow
-            ln -s /usr/pkg/bin/python3.12 /usr/pkg/bin/python3
+              python314 py314-pip py314-Tk \
+              py314-psutil py314-test py314-test-xdist \
+              py314-numpy py314-Pillow
+            ln -s /usr/pkg/bin/python3.14 /usr/pkg/bin/python3
 
       - name: Setup VM (OpenIndiana)
         if: matrix.platform == 'openindiana'
