@@ -972,7 +972,13 @@ def test_contents_directory(pyi_builder):
     bundle = pathlib.Path(exe).parent
     assert (bundle / "foo").is_dir()
 
-    pyi_builder.test_source("", pyi_args=["--contents-directory", "é³þ³źć🚀", "--noconfirm"])
+    # In Cygwin python, the python's path-decoding helpers seem to encode the emoji using surrogates, even though
+    # the environment's locale (i.e., `nl_langinfo(CODESET)`) implies that given path should be treated as UTF-8.
+    # This happens with both Cygwin python 3.9 and 3.12, but in latter surrogates appear to be disallowed in
+    # `sys.path`, and thus our bootstrap code fails to load `_struct` extension. As a work-around, force the
+    # UTF-8 mode on the test executable...
+    extra_pyi_args = ["--python-option", "X utf8"] if compat.is_cygwin else []
+    pyi_builder.test_source("", pyi_args=["--contents-directory", "é³þ³źć🚀", "--noconfirm", *extra_pyi_args])
     assert not (bundle / "foo").exists()
     assert (bundle / "é³þ³źć🚀").is_dir()
 
