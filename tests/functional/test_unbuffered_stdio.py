@@ -12,8 +12,10 @@
 Test for unbuffered stdio (stdout/stderr) mode.
 """
 
-import os
 import asyncio
+import os
+import subprocess
+import sys
 
 import pytest
 
@@ -44,12 +46,21 @@ def test_unbuffered_stdio(tmp_path, output_stream, stream_mode, pyi_builder_spec
 
         def pipe_data_received(self, fd, data):
             if fd == self.out_fd:
+                print(f"Received data on monitored pipe (fd={fd}): {data!r}", file=sys.stderr)
                 # Treat any data batch that does not end with the * as irregularity
                 if not data.endswith(b'*'):
                     return
                 self.count += data.count(b'*')
 
+        def pipe_connection_lost(self, fd, exc):
+            print(f"Pipe connection lost! fd={fd}, exc={exc}", file=sys.stderr)
+
+        def process_exited(self):
+            print("Process exited!", file=sys.stderr)
+            self.loop.stop()  # end loop.run_forever(), just in case connection_lost() does not get called....
+
         def connection_lost(self, exc):
+            print(f"Connection lost! exc={exc}", file=sys.stderr)
             self.loop.stop()  # end loop.run_forever()
 
     # Create event loop
@@ -62,19 +73,22 @@ def test_unbuffered_stdio(tmp_path, output_stream, stream_mode, pyi_builder_spec
     counter_proto = SubprocessDotCounter(loop, output=output_stream)
 
     # Run
+    print(f"Starting subprocess with captured {output_stream}...", file=sys.stderr)
     try:
         proc = loop.subprocess_exec(
             lambda: counter_proto,
             executable,
             "--num-stars", str(EXPECTED_STARS),
             "--output-stream", output_stream,
-            "--stream-mode", stream_mode
+            "--stream-mode", stream_mode,
+            stdin=subprocess.DEVNULL,  # required under Cygwin python 3.12 to avoid resource leak...
         )  # yapf: disable
         transport, _ = loop.run_until_complete(proc)
         loop.run_forever()
+        print("Exited asyncio loop!", file=sys.stderr)
     finally:
-        loop.close()
         transport.close()
+        loop.close()
 
     # Check the number of received stars
     assert counter_proto.count == EXPECTED_STARS
