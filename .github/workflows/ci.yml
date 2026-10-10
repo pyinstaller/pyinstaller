@@ -31,7 +31,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15-dev']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
         os: ['windows-latest', 'ubuntu-24.04', 'macos-15-intel', 'macos-15']
         # Split macOS workflows between macos-15-intel (x86_64) and macos-15 (arm64)
         # runners to cover both architectures without running all combinations.
@@ -50,7 +50,7 @@ jobs:
             os: 'macos-15-intel'
           - python-version: '3.13'
             os: 'macos-15-intel'
-          - python-version: '3.15-dev'
+          - python-version: '3.15'
             os: 'macos-15-intel'
       fail-fast: false
     steps:
@@ -345,7 +345,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.13t', '3.14t', '3.15t-dev']
+        python-version: ['3.13t', '3.14t', '3.15t']
         os: ['windows-latest', 'ubuntu-24.04', 'macos-15-intel', 'macos-15']
       fail-fast: false
     steps:
