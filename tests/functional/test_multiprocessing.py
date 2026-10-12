@@ -15,12 +15,12 @@ import subprocess
 
 import pytest
 
-from PyInstaller.compat import is_win, is_cygwin
+from PyInstaller import compat
 
-if is_win:
+if compat.is_win:
     # On Windows, only spawn method is supported.
     START_METHODS = ['spawn']
-elif is_cygwin:
+elif compat.is_cygwin:
     # Under Cygwin, forkserver does not seem to work even in unfrozen python.
     START_METHODS = ['spawn', 'fork']
 else:
@@ -64,6 +64,14 @@ def test_multiprocessing_semaphore(pyi_builder, start_method, capfd):
 # the same time. See #7410.
 @pytest.mark.parametrize("start_method", START_METHODS)
 def test_multiprocessing_process_start_in_threads(pyi_builder, start_method):
+    # As per [1] and [2], mixing threading with os.fork() on POSIX platforms is not safe, and may lead to deadlocks,
+    # especially on macOS and platforms using libc other than glibc. On our CI, we can observe more or less consistent
+    # deadlock in test program (resulting in the test timeout) when running on OpenBSD.
+    #
+    # [1] https://docs.python.org/3.12/library/multiprocessing.html#contexts-and-start-methods
+    # [2] https://docs.python.org/3.12/library/os.html#os.fork
+    if start_method == "fork" and compat.is_openbsd:
+        pytest.skip("Mixing threading with os.fork() on POSIX platforms is not safe and may lead to deadlocks.")
     pyi_builder.test_script("pyi_multiprocessing_process_start_in_threads.py", app_args=[start_method])
 
 
@@ -132,7 +140,7 @@ def test_subprocess_environment_inheritance(pyi_builder_spec, tmp_path):
     # "Manually" detertmine the executable paths, as `pyi_builder_spec._find_executables` cannot cope with custom names
     # that are used in the .spec file.
     dist_dir = tmp_path / 'dist'
-    exe_suffix = ".exe" if is_win else ""
+    exe_suffix = ".exe" if compat.is_win else ""
 
     onedir_program_1 = dist_dir / "onedir_program_1" / f"onedir_program_1{exe_suffix}"
     onedir_program_2 = dist_dir / "onedir_program_2" / f"onedir_program_2{exe_suffix}"
