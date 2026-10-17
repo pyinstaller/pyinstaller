@@ -9,16 +9,25 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+# The single test harness for both `tests/unit` and `tests/functional`. All fixtures and pytest hooks live here; the
+# per-directory conftest.py files were merged into this one.
+
 import contextlib
 import copy
 import glob
 import logging
 import os
+import pathlib
 import re
 import shutil
 import subprocess
 import sys
 import time
+
+# Make the checked-out PyInstaller importable even when it is not installed (the repository root is the parent of
+# this directory).
+_ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+sys.path.append(_ROOT_DIR)
 
 # Set a handler for the root-logger to inhibit 'basicConfig()' (called in PyInstaller.log) is setting up a stream
 # handler writing to stderr. This avoids log messages to be written (and captured) twice: once on stderr and
@@ -36,7 +45,7 @@ import pytest  # noqa: E402
 
 from PyInstaller import __main__ as pyi_main  # noqa: E402
 from PyInstaller import configure  # noqa: E402
-from PyInstaller.compat import is_cygwin, is_darwin, is_win  # noqa: E402
+from PyInstaller.compat import is_cygwin, is_darwin, is_win, exec_python_rc  # noqa: E402
 from PyInstaller.depend.analysis import initialize_modgraph  # noqa: E402
 from PyInstaller.archive.readers import pkg_archive_contents  # noqa: E402
 from PyInstaller.utils.tests import gen_sourcefile  # noqa: E402
@@ -49,16 +58,13 @@ SUPPORTED_OSES = {"darwin", "linux", "win32"}
 # Have pyi_builder fixure clean-up the temporary directories of successful tests. Controlled by environment variable.
 _PYI_BUILDER_CLEANUP = os.environ.get("PYI_BUILDER_CLEANUP", "1") == "1"
 
-# Fixtures
-# --------
-
 
 def pytest_runtest_setup(item):
     """
     Markers to skip tests based on the current platform.
     https://pytest.org/en/stable/example/markers.html#marking-platform-specific-tests-with-pytest
 
-    Available markers: see pytest.ini markers
+    Available markers (declared in the pytest configuration in pytest.ini):
         - @pytest.mark.darwin (macOS)
         - @pytest.mark.linux (GNU/Linux)
         - @pytest.mark.win32 (Windows)
@@ -112,6 +118,14 @@ def _get_spec_dir(request):
 
 
 @pytest.fixture
+def modules_dir(request):
+    """
+    Return the directory with the testing modules used by some tests (`tests/functional/modules`).
+    """
+    return _get_modules_dir(request)
+
+
+@pytest.fixture
 def spec_dir(request):
     """
     Return the directory where the test spec-files reside.
@@ -125,6 +139,25 @@ def script_dir(request):
     Return the directory where the test scripts reside.
     """
     return _get_script_dir(request)
+
+
+@pytest.fixture
+def exec_python_script():
+    """
+    Run a python script in a subprocess with `pathex` prepended to PYTHONPATH, and return the script's return code.
+    """
+
+    def _exec_python_script(script_filename, pathex):
+        # Prepare the environment - default to 'os.environ'...
+        env = os.environ.copy()
+        # ... and prepend PYTHONPATH with pathex
+        if 'PYTHONPATH' in env:
+            pathex = os.pathsep.join([str(pathex), env['PYTHONPATH']])
+        env['PYTHONPATH'] = str(pathex)
+        # Run the test script
+        return exec_python_rc(str(script_filename), env=env)
+
+    return _exec_python_script
 
 
 # A fixture that copies test's data directory into test's temporary directory. The data directory is assumed to be
@@ -150,6 +183,78 @@ def data_dir(
     shutil.copytree(source_data_dir, tmp_data_dir)
     # Return the temporary data directory, so that the copied data can now be used.
     return tmp_data_dir
+
+
+# A fixture that compiles a test shared library from `functional/data/ctypes_dylib/ctypes_dylib.c` into a
+# session-scoped temporary directory, and returns path to the compiled shared library.
+@pytest.fixture(scope="session")
+def compiled_dylib(tmp_path_factory):
+    # Copy the source to temporary directory.
+    orig_source_dir = pathlib.Path(__file__).parent / 'functional' / 'data' / 'ctypes_dylib'
+    tmp_source_dir = tmp_path_factory.mktemp('compiled_ctypes_dylib')
+    shutil.copy2(orig_source_dir / 'ctypes_dylib.c', tmp_source_dir)
+
+    # Compile shared library using `distuils.ccompiler` module. The code is loosely based on implementation of the
+    # `distutils.command.build_ext` command module.
+    def _compile_dylib(source_dir):
+        # Until python 3.12, `distutils` was part of standard library. For newer python versions, `setuptools` provides
+        # its vendored copy. If neither are available, skip the test.
+        try:
+            import distutils.ccompiler
+            import distutils.sysconfig
+        except ImportError:
+            pytest.skip('distutils.ccompiler is not available')
+
+        # Set up compiler
+        compiler = distutils.ccompiler.new_compiler()
+        distutils.sysconfig.customize_compiler(compiler)
+        if hasattr(compiler, 'initialize'):  # Applicable to MSVCCompiler on Windows.
+            compiler.initialize()
+
+        if is_win:
+            # With MinGW compiler, the `customize_compiler()` call ends up changing `compiler.shared_lib_extension` into
+            # ".pyd". Use ".dll" instead.
+            suffix = '.dll'
+        elif is_darwin:
+            # On macOS, `compiler.shared_lib_extension` is ".so", but ".dylib" is more appropriate.
+            suffix = '.dylib'
+        else:
+            suffix = compiler.shared_lib_extension
+
+        # Change the current working directory to the directory that contains source files. Ideally, we could pass the
+        # absolute path to sources to `compiler.compile()` and set its `output_dir` argument to the directory where
+        # object files should be generated. However, in this case, the object files are put under output directory
+        # *while retaining their original path component*. If `output_dir` is not specified, then the original absolute
+        # source file paths seem to be turned into relative ones (e.g, on Linux, the leading / is stripped away).
+        #
+        # NOTE: with python >= 3.11 we could use contextlib.chdir().
+        old_cwd = pathlib.Path.cwd()
+        os.chdir(source_dir)
+        try:
+            # Compile source .c file into object
+            sources = [
+                'ctypes_dylib.c',
+            ]
+            objects = compiler.compile(sources)
+
+            # Link into shared library
+            output_filename = f'ctypes_dylib{suffix}'
+            compiler.link_shared_object(
+                objects,
+                output_filename,
+                target_lang='c',
+                export_symbols=['add_twelve'],
+            )
+        finally:
+            os.chdir(old_cwd)  # Restore old working directory.
+
+        # Return path to compiled shared library
+        return source_dir / output_filename
+
+    try:
+        return _compile_dylib(tmp_source_dir)
+    except Exception as e:
+        pytest.skip(f"Could not compile test shared library: {e}")
 
 
 class AppBuilder:
