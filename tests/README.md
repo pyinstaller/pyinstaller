@@ -1,129 +1,113 @@
 Tests for PyInstaller
 =====================
 
-This directory contains tests for PyInstaller:
+This directory contains PyInstaller's test suite:
 
-- `functional` directory contains tests where executables are created from
-  Python scripts.
-- `unit` directory contains simple unit tests.
-- `old_suite` directory contains old structure of tests (TODO migrate all tests
-  to a new structure).
+- `unit` directory contains small, fast tests for individual PyInstaller modules.
+- `functional` directory contains end-to-end tests that build and run real executables.
+
+The `unit/test_modulegraph` directory contains the vendored test-suite of the `modulegraph`
+project. Changes there should generally be made upstream.
 
 Prerequisites
 -------------
 
-In order to run the tests, you will need the following Python packages/libraries
-installed:
+Install PyInstaller in development mode, then pick a set of test requirements:
 
-- pytest
-- psutil
-- execnet
+```
+pip install -e .
 
-The easiest way to install these (and some useful pytest add-ons) is running
+# Base test tools only (fast; functional tests that need 3rd-party libraries skip):
+pip install -r tests/requirements-base.txt
+
+# For the full test suite, also install the library requirements:
+pip install -r tests/requirements-libraries.txt
 ```
-pip install -U -r tests/requirements-tools.txt
-```
+
+The requirements files are layered:
+
+- `requirements-base.txt` — the test framework (`pytest`, `pytest-xdist`, ...) and the few
+  packages needed by basic tests. Also used for pre-release Python versions, where wheels
+  for heavier packages may not be available yet.
+- `requirements-tools.txt` — base requirements plus packages needed by some basic tests.
+- `requirements-libraries.txt` — the full set of third-party libraries exercised by the
+  functional tests. Most entries are exactly pinned and updated by the pyup bot; a few
+  packages that only some test environments can use are deliberately left unpinned with a
+  lower bound.
 
 Running the Tests
 -----------------
 
-To run the tests, navigate to the root directory of the PyInstaller project and
-run the following command:
+To run the tests, navigate to the root directory of the PyInstaller project and run the
+following command:
 
-    py.test
+    pytest
 
 Or, to speed up test runs by sending tests to multiple CPUs: (requires pytest-xdist)
 
-    py.test -n NUM
+    pytest -n auto
 
-Or, to run only the unit or functional tests, run one the following command:
+To run only the unit or functional tests:
 
-    py.test tests/unit
-    py.test tests/functional
-    py.test tests/functional -k "not tests/functional/test_libraries.py"
+    pytest tests/unit
+    pytest tests/functional
 
-Or, to run only the unit and functional tests, but not the huge library
-test-suite:
+To run the unit and functional tests, but not the huge library test-suite, either ignore
+that file by path:
 
-    py.test tests/unit tests/functional -k "not tests/functional/test_libraries.py"
+    pytest tests/unit tests/functional --ignore=tests/functional/test_libraries.py
 
+or deselect it by name:
 
-Or, to run only a particular test suite within a file, run the following
-command:
+    pytest tests/unit tests/functional -k "not test_libraries"
 
-    py.test tests/functional/test_basic.py -k test_pyz_as_external_file
+Note that `-k` matches test, class and module *names* (the module keyword is the file's
+basename, `test_libraries`), not file paths — so `-k "not tests/functional/test_libraries.py"`
+matches nothing and therefore excludes nothing.
+
+To run only a particular test suite within a file:
+
+    pytest tests/functional/test_basic.py -k test_pyz_as_external_file
 
 Run all tests matching `test_ctypes_CDLL` resp. `ctypes_CDLL`:
 
-    py.test -k test_ctypes_CDLL
-    py.test -k ctypes_CDLL
+    pytest -k test_ctypes_CDLL
+    pytest -k ctypes_CDLL
 
-Run both the onefile and ondir tests for
-`test_ctypes_CDLL_find_library__nss_files`:
+Finally, to only run a particular test, run:
 
-    py.test -k test_ctypes_CDLL_find_library__nss_files
+    pytest -k "test_ctypes_CDLL_find_library__nss_files and onedir"
 
-Finally, to only run a particular test, run one of the following commands:
+The functional tests are automatically parametrized over the `onedir` and `onefile`
+application modes; the last command above selects just one of the two.
 
-    py.test -k test_ctypes_CDLL_find_library__nss_files[onedir]
-    py.test -k test_ctypes_CDLL_find_library__nss_files[onefile]
+Test data layout (functional tests)
+-----------------------------------
 
-## Continuous Integration (CI)
+The `functional` tests share a common set of fixtures (see `PyInstaller/utils/conftest.py`):
 
-Continuous integration (CI) automatically exercises all tests for all platforms
-officially supported by PyInstaller.
+- `scripts/` — runnable scripts referenced by name, e.g.
+  `pyi_builder.test_script('pyi_codecs.py')`. Tests built from inline source use
+  `pyi_builder.test_source(...)` instead; the generated script file is named after the test.
+- `modules/` — importable helper packages, put on the build's module search path by the
+  builder itself.
+- `data/<test function name>/` — data files, copied to the build directory by the `data_dir`
+  fixture, which copies the directory matching the name of the test function.
+- `specs/` — .spec files referenced by `pyi_builder_spec.test_spec()`.
+- `logs/` — reference `.toc` archives. If a `<exe name>.toc` file exists for the executable
+  that a test produced, the contents of the frozen application are compared against it.
 
-### Python Packages
+Continuous Integration (CI)
+---------------------------
 
-Regardless of platform or CI service, all Python packages to be tested should
-be listed in `test/requirements-library.txt`. Python packages required for
-exercising tests (e.g., `pytest`) should instead be listed in
-`test/requirements-tools.txt`.
+Continuous integration (see `.github/workflows/ci.yml`) exercises all tests for all
+platforms officially supported by PyInstaller: Windows, macOS, and GNU/Linux (including
+musl-based distributions, Cygwin, and AppImage packaging).
 
-Both files are usual pip [requirements
-files](https://pip.pypa.io/en/stable/reference/pip_install/#requirements-file-format)
-following the respective syntax (e.g.,
-[`{package_name}>={minimum_version}`](https://pip.pypa.io/en/stable/reference/pip_install/#requirement-specifiers).
-These packages will be installed with `pip` into remote testing environments
-managed by third-party CI services.
+Jobs that install `requirements-libraries.txt` run the extensive suite; the remaining jobs
+run the base suite only, where library-dependent tests skip automatically. All test
+requirements must therefore be declared in the requirements files listed above so that CI
+environments stay self-describing.
 
-Packages only available for specific version or platforms should get an appropriate
-[environment
-marker](https://www.python.org/dev/peps/pep-0426/#environment-markers) like
-so:
-```
-SomeProject ==5.4 ; python_version != '3.6'
-SomeProject       ; sys_platform == 'win32'
-```
-
-### GNU/Linux
-
-The top-level `.travis.yml` file configures the Travis-CI service to remotely
-test PyInstaller in an Ubuntu 12.04 (LTS) container, the most recent GNU/Linux
-distribution supported by Travis-CI.
-
-Non-Python dependencies installable through `apt-get` on Ubuntu 12.04 should be
-listed as `- `-prefixed items in the `addons:` → `apt:` → `packages:` subsection
-of `.travis.yml`. Since Ubuntu 12.04 provides _no_ Python 3 packages prefixed by
-`python3-`, only Python 2.7 packages prefixed by `python-` are installable by
-`apt-get`. Since installing only Python 2.7 packages would be useless, Python
-packages should _always_ be installed by `pip` rather than `apt-get`. See
-**"Python Packages"** above.
-
-### OS X
-
-The top-level `.travis.yml` file of a
-[separate repository](https://github.com/pyinstaller/pyinstaller-osx-tests)
-configures the Travis-CI service to remotely test PyInstaller in an OS X 10.9.5
-virtual machine, the most recent OS X version supported by Travis-CI.
-
-### Windows
-
-The top-level `appveyor.yml` file configures the Appveyor service to remotely
-test PyInstaller in a Windows virtual machine.
-
-Non-Python dependencies installable through either Chocolatey (`cinst`),
-PowerShell (`ps`), or WebPI (`WebpiCmd`) should be listed as `- `-prefixed items
-in the `install:` section of `appveyor.yml`. See the
-[official documentation](http://www.appveyor.com/docs/build-configuration#installing-additional-software)
-for voluminous details.
+Platform-specific tests are marked with the `darwin`, `linux`, or `win32` pytest markers and
+only run on the corresponding platform.
