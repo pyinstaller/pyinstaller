@@ -84,7 +84,7 @@ application modes; the last command above selects just one of the two.
 Test data layout (functional tests)
 -----------------------------------
 
-The `functional` tests share a common set of fixtures (see `PyInstaller/utils/conftest.py`):
+The `functional` tests share a common set of fixtures (see `tests/conftest.py`):
 
 - `scripts/` — runnable scripts referenced by name, e.g.
   `pyi_builder.test_script('pyi_codecs.py')`. Tests built from inline source use
