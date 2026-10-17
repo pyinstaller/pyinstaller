@@ -14,10 +14,10 @@ import os
 import pytest
 
 from PyInstaller import isolated
-from PyInstaller.compat import is_win, is_darwin, is_linux
-from PyInstaller.utils.hooks import check_requirement, can_import_module
+from PyInstaller.compat import is_darwin, is_linux
+from PyInstaller.utils.hooks import can_import_module
 from PyInstaller.utils.hooks.qt import get_qt_library_info
-from PyInstaller.utils.tests import importorskip, requires, skipif, onedir_only
+from PyInstaller.utils.tests import importorskip, requires, onedir_only
 
 # Several tests in this module have a @pytest.mark.flaky() with `condition` argument, which allows us to perform re-runs
 # only under special conditions (for example, specific version of Qt bindings, specific OS, etc.). However, having a
@@ -113,17 +113,6 @@ def test_Qt_QtWidgets(pyi_builder, QtPyLib):
 
 @QtPyLibs
 def test_Qt_QtQml(pyi_builder, QtPyLib):
-    # Qt6 6.6.3 split Qt Quick Controls 2 styles into separate shared libraries, and both PySide6 6.6.3 and PyQt6 6.6.3
-    # PyPI wheels failed to account for that. Skip this test if running with affected version.
-    if QtPyLib == 'PyQt6':
-        # With PyQt6, the shared libraries are missing on Windows and Linux, but not on macOS.
-        if not is_darwin and check_requirement('PyQt6-Qt6 == 6.6.3'):
-            pytest.skip('PyQt6-Qt6 6.6.3 is missing shared libraries required by Qt Quick Controls 2.')
-    if QtPyLib == 'PySide6':
-        # With PySide6, all OSes seem to be affected.
-        if check_requirement('PySide6-Essentials == 6.6.3'):
-            pytest.skip('PySide6-Essentials 6.6.3 is missing shared libraries required by Qt Quick Controls 2.')
-
     pyi_builder.test_source(
         f"""
         import sys
@@ -365,19 +354,7 @@ def test_Qt_Ui_file(pyi_builder, data_dir, QtPyLib):
 #
 # NOTE: the ``PyQt5.Qt`` consolidating module is specific to PyQt5. It is not present in either PySide2 nor PySide6,
 # and its consolidating behavior has been removed in PyQt6.
-#
-# The Qt Bluetooth API (which any import to ``PyQt5.Qt`` implicitly imports) is not compatible with Windows Server
-# 2012 R2, the OS Appveyor runs. Specifically, running on Server 2012 causes the test to display an error in
-# `a dialog box <https://github.com/mindfulness-at-the-computer/mindfulness-at-the-computer/issues/234>`_.
-# The alternative of using a newer Appveyor OS `fails <https://github.com/pyinstaller/pyinstaller/pull/3563>`_.
-# Therefore, skip this test on Appveyor by testing for one of its `environment variables
-# <https://www.appveyor.com/docs/environment-variables/>`_.
-@skipif(os.environ.get('APPVEYOR') == 'True', reason='The Appveyor OS is incompatible with PyQt.Qt.')
 @requires('PyQt5')
-@pytest.mark.skipif(
-    check_requirement('PyQt5 == 5.11.3') and is_darwin,
-    reason='This version of the macOS wheel does not include QWebEngine.'
-)
 def test_PyQt5_Qt(pyi_builder):
     pyi_builder.test_source('from PyQt5.Qt import QLibraryInfo', **USE_WINDOWED_KWARG)
 
@@ -643,8 +620,7 @@ def test_Qt_QtWebEngineQuick_PySide2(pyi_builder):
 @requires('PyQt6 >= 6.2.2')
 @requires('PyQt6-WebEngine')  # NOTE: base Qt6 must be 6.2.2 or newer, QtWebEngine can be older
 @pytest.mark.flaky(
-    # Attempt to mitigate issues with QtWebEngine 6.10.1
-    condition=force_flaky_rerun or check_requirement('PyQt6-WebEngine-Qt6 == 6.10.1'),
+    condition=force_flaky_rerun,
     reruns=1,
 )
 def test_Qt_QtWebEngineWidgets_PyQt6(pyi_builder):
@@ -653,18 +629,9 @@ def test_Qt_QtWebEngineWidgets_PyQt6(pyi_builder):
 
 @requires('PyQt6 >= 6.2.2')
 @requires('PyQt6-WebEngine')  # NOTE: base Qt6 must be 6.2.2 or newer, QtWebEngine can be older
-@pytest.mark.skipif(
-    check_requirement('PyQt6-Qt6 == 6.6.0'),
-    reason='PyQt6 6.6.0 PyPI wheels are missing Qt6WebChannelQuick shared library.'
-)
-@pytest.mark.skipif(
-    check_requirement('PyQt6-Qt6 == 6.6.3') and is_win,
-    reason='PyQt6 6.6.3 PyPI wheels for Windows are missing Qt6WebChannelQuick shared library.'
-)
 @pytest.mark.flaky(
     # The generated .app bundle seems to sporadically freeze during shutdown on GHA macos-14 runners.
-    # Attempt to mitigate issues with QtWebEngine 6.10.1
-    condition=force_flaky_rerun or is_darwin or check_requirement('PyQt6-WebEngine-Qt6 == 6.10.1'),
+    condition=force_flaky_rerun or is_darwin,
     reruns=1,
 )
 def test_Qt_QtWebEngineQuick_PyQt6(pyi_builder):
@@ -672,13 +639,8 @@ def test_Qt_QtWebEngineQuick_PyQt6(pyi_builder):
 
 
 @requires('PySide6 >= 6.2.2')
-@pytest.mark.skipif(
-    check_requirement('PySide6 == 6.5.0') and is_win,
-    reason='PySide6 6.5.0 PyPI wheels for Windows are missing opengl32sw.dll.'
-)
 @pytest.mark.flaky(
-    # Attempt to mitigate issues with QtWebEngine 6.10.1
-    condition=force_flaky_rerun or check_requirement('PySide6 == 6.10.1'),
+    condition=force_flaky_rerun,
     reruns=1,
 )
 def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
@@ -686,14 +648,9 @@ def test_Qt_QtWebEngineWidgets_PySide6(pyi_builder):
 
 
 @requires('PySide6 >= 6.2.2')
-@pytest.mark.skipif(
-    check_requirement('PySide6 == 6.5.0') and is_win,
-    reason='PySide6 6.5.0 PyPI wheels for Windows are missing opengl32sw.dll.'
-)
 @pytest.mark.flaky(
     # The generated .app bundle seems to sporadically freeze during shutdown on GHA macos-14 runners.
-    # Attempt to mitigate issues with QtWebEngine 6.10.1
-    condition=force_flaky_rerun or is_darwin or check_requirement('PySide6 == 6.10.1'),
+    condition=force_flaky_rerun or is_darwin,
     reruns=1,
 )
 def test_Qt_QtWebEngineQuick_PySide6(pyi_builder):
@@ -703,11 +660,6 @@ def test_Qt_QtWebEngineQuick_PySide6(pyi_builder):
 # QtMultimedia test that triggers error when the module's plugins are missing (#7352).
 @QtPyLibs
 def test_Qt_QtMultimedia_player_init(pyi_builder, QtPyLib):
-    # QtMultimedia in PyQt6-Qt6 6.7.1 does not seem to be compatible with PyQt6 6.7.0 (the PyQt6-Qt6 6.7.1 update was
-    # pushed on Jun 2 2024 without PyQt6 itself being updated).
-    if QtPyLib == 'PyQt6':
-        if check_requirement('PyQt6-Qt6 == 6.7.1') and check_requirement('PyQt6 == 6.7.0'):
-            pytest.skip('QtMultimedia is broken under PyQt6 6.7.0 and PyQt6-Qt6 6.7.1.')
 
     pyi_builder.test_source(
         f"""

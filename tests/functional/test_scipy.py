@@ -12,18 +12,12 @@
 Functional tests for SciPy.
 """
 
-import sys
-
 import pytest
 
-from PyInstaller.utils.tests import importable, importorskip, xfail, onedir_only
+from PyInstaller.utils.tests import importable, importorskip, onedir_only
 
 pytestmark = [
     importorskip('scipy'),
-    xfail(
-        sys.version_info[:3] == (3, 12, 0),
-        reason='SciPy is broken with PyInstaller and python 3.12.0 (#7992).',
-    ),
 ]
 
 

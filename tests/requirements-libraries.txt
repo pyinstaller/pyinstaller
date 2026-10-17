@@ -14,7 +14,6 @@
 # These packages work with no (known) issues.
 babel==2.18.0
 Django==6.1.3; python_version >= "3.12"
-future==1.0.0
 gevent==26.9.0; python_version >= "3.10"
 ipython==9.18.1; python_version >= "3.12"
 keyring==25.7.0; python_version >= "3.9"
@@ -70,15 +69,16 @@ PyQt6-WebEngine==6.140.1; python_version >= "3.10"
 PyQt6-WebEngine-Qt6==6.140.0; python_version >= "3.10"
 pytz==2026.6
 requests==2.34.2; python_version >= "3.10"
+# The packages below are not pyup-managed: they use lower-bound pins so that pip resolves a
+# version compatible with every tested Python version.
+scapy>=2.4.5  # Exercises hook-scapy.layers.all via tests/functional/test_libraries.py
+six>=1.16.0  # Exercises modulegraph's alias-module support via tests/functional/test_six.py
 scipy==1.18.1; python_version >= "3.12"
-# simplejson is used for text_c_extension
-simplejson==4.3.0; python_version >= "3.9"
 sphinx==9.2.0; python_version >= "3.13"
 sqlalchemy==2.1.9; python_version >= "3.11"
 zope.interface==8.7; python_version >= "3.11"
 Pillow==13.0.0; python_version >= "3.11"
 setuptools==84.2.1; python_version >= "3.10"
-
 
 # Python versions not supported / supported for older package versions
 # --------------------------------------------------------------------
@@ -222,4 +222,3 @@ zope.interface==7.2; python_version == "3.8"  # pyup: ignore
 
 pygments==2.19.2; python_version == "3.8"  # pyup: ignore
 
-simplejson==4.1.2; python_version == "3.8"  # pyup: ignore
