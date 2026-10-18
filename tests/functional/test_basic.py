@@ -418,7 +418,7 @@ def test_python_makefile(pyi_builder, distutils):
     )
 
 
-def test_set_icon(pyi_builder, data_dir):
+def test_set_icon(pyi_builder, data_dir, monkeypatch):
     if compat.is_win:
         args = ['--icon', str(data_dir / 'pyi_icon.ico')]
     elif compat.is_darwin:
@@ -426,7 +426,9 @@ def test_set_icon(pyi_builder, data_dir):
         args = ['--windowed', '--icon', str(data_dir / 'pyi_icon.icns')]
     else:
         pytest.skip('option --icon works only on Windows and macOS')
-    os.chdir(os.path.expanduser("~"))
+    # Build from an unrelated working directory to verify that icon paths are resolved relative to the spec file
+    # location, not the cwd (see #6759). monkeypatch.chdir() restores the original cwd afterwards.
+    monkeypatch.chdir(os.path.expanduser("~"))
     pyi_builder.test_source("print('Hello Python!')", pyi_args=args)
 
 
