@@ -146,7 +146,7 @@ def test_subprocess_environment_inheritance(pyi_builder_spec, tmp_path):
     assert onedir_program_1.is_file()
     assert onedir_program_2.is_file()
     assert onefile_program_1.is_file()
-    assert onefile_program_1.is_file()
+    assert onefile_program_2.is_file()
 
     # Test all relevant combinations; the programs in pairs are functionally identical, so we need to test only one
     # combination (for example, onedir_program_2 exists only so that onedir_program_1 can use it as a child, but the
