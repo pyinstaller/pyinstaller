@@ -38,7 +38,8 @@ from PyInstaller.building.utils import (
 )
 from PyInstaller.compat import is_win, is_conda, is_darwin, is_linux
 from PyInstaller.depend import bindepend
-from PyInstaller.depend.analysis import initialize_modgraph, HOOK_PRIORITY_USER_HOOKS
+from PyInstaller.depend.imphook import HOOK_PRIORITY_USER_HOOKS
+from PyInstaller.depend.modulegraph import initialize_modgraph
 from PyInstaller.depend.utils import scan_code_for_ctypes
 from PyInstaller import isolated
 from PyInstaller.utils.misc import absnormpath, get_path_to_toplevel_modules, mtime
