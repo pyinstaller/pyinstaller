@@ -26,9 +26,10 @@ submodules' docstrings for the full walk-through:
 * :mod:`.implies`-- the curated implicit-dependency mapping
 """
 
-from PyInstaller.depend.modulegraph.graph import ModuleGraph
+from PyInstaller.depend.modulegraph.graph import ModuleGraph, initialize_modgraph
 from PyInstaller.depend.modulegraph.implies import get_implies
 from PyInstaller.depend.modulegraph.nodes import (
+    ALL_MODULE_TYPES,
     BAD_MODULE_TYPES,
     BINARY_MODULE_TYPES,
     MODULE_TYPES_TO_TOC_DICT,
@@ -43,11 +44,13 @@ from PyInstaller.depend.modulegraph.nodes import (
 
 __all__ = [
     'ModuleGraph',
+    'initialize_modgraph',
     'Node',
     'ModuleType',
     'Alias',
     'QueueItem',
     'get_implies',
+    'ALL_MODULE_TYPES',
     'BAD_MODULE_TYPES',
     'BINARY_MODULE_TYPES',
     'MODULE_TYPES_TO_TOC_DICT',

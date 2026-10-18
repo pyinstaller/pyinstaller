@@ -84,6 +84,54 @@ IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
 """
 
 
+@isolated.decorate
+def discover_hook_directories():
+    """
+    Discover hook directories via pyinstaller40 entry points. Perform the discovery in an isolated subprocess
+    to avoid importing the package(s) in the main process.
+
+    :return: list of discovered hook directories.
+    """
+
+    from traceback import format_exception_only
+    from PyInstaller.log import logger
+    from PyInstaller.compat import importlib_metadata
+    from PyInstaller.depend.imphook import HOOK_PRIORITY_CONTRIBUTED_HOOKS, HOOK_PRIORITY_UPSTREAM_HOOKS
+
+    # The “selectable” entry points (via group and name keyword args) were introduced in importlib_metadata 4.6 and
+    # Python 3.10. The compat module ensures we are using a compatible version.
+    entry_points = importlib_metadata.entry_points(group='pyinstaller40', name='hook-dirs')
+
+    # Ensure that pyinstaller_hooks_contrib comes last so that hooks from packages providing their own take priority.
+    # In pyinstaller-hooks-contrib >= 2024.8, the entry-point module is `_pyinstaller_hooks_contrib`; in earlier
+    # versions, it was `_pyinstaller_hooks_contrib.hooks`.
+    entry_points = sorted(entry_points, key=lambda x: x.module.startswith("_pyinstaller_hooks_contrib"))
+
+    hook_directories = []
+    for entry_point in entry_points:
+        # Query hook directory location(s) from entry point
+        try:
+            hook_directory_entries = entry_point.load()()
+        except Exception as e:
+            msg = "".join(format_exception_only(type(e), e)).strip()
+            logger.warning("discover_hook_directories: Failed to process hook entry point '%s': %s", entry_point, msg)
+            continue
+
+        # Determine location-based priority: upstream hooks vs. hooks from contributed hooks package.
+        location_priority = (
+            HOOK_PRIORITY_CONTRIBUTED_HOOKS
+            if entry_point.module.startswith("_pyinstaller_hooks_contrib") else HOOK_PRIORITY_UPSTREAM_HOOKS
+        )
+
+        # Append entries
+        hook_directories.extend([(hook_directory_entry, location_priority)
+                                 for hook_directory_entry in hook_directory_entries])
+
+    logger.debug("discover_hook_directories: Hook directories: %s", hook_directories)
+
+    return hook_directories
+
+
 def find_binary_dependencies(binaries, import_packages, symlink_suppression_patterns):
     """
     Find dynamic dependencies (linked shared libraries) for the provided list of binaries.
@@ -811,8 +859,8 @@ class Analysis(Target):
             code_cache = None
 
         # Construct a set for look-up of modules that should end up in base_library.zip. The list of corresponding
-        # modulegraph nodes is stored in `PyiModuleGraph._base_modules` (see `PyiModuleGraph._analyze_base_modules`).
-        base_modules = set(node.identifier for node in self.graph._base_modules)
+        # modulegraph nodes is stored in `ModuleGraph._base_modules` (see `ModuleGraph._analyze_base_modules`).
+        base_modules = set(node.ident for node in self.graph._base_modules)
         base_modules_toc = []
 
         pycs_dir = os.path.join(CONF['workpath'], 'localpycs')

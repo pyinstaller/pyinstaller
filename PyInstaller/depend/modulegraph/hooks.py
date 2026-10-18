@@ -285,7 +285,7 @@ class ModuleGraphHooks:
           readable message instead of a raw traceback.
         """
         try:
-            node = super().add_script(pathname)
+            node = self._add_script_base(pathname)
         except SyntaxError:
             print("\nSyntax error in", pathname, file=sys.stderr)
             formatted_lines = traceback.format_exc().splitlines(True)
@@ -299,6 +299,14 @@ class ModuleGraphHooks:
             # the graph, so everything is reachable from the root.
             for base_node in self._base_modules:
                 self.add_edge(self._top_script_node, base_node)
+        elif node is not None:
+            # Subsequent scripts must stay connected to the graph: the old
+            # graph added them with ``caller=self._top_script_node``, which
+            # drew an edge from the top-level script to each additional
+            # script. Replicate that so the graph remains a single tree
+            # rooted at the entry point (iter_graph(start=top_script) must
+            # reach every script).
+            self.add_edge(self._top_script_node, node)
         return node
 
     # ------------------------------------------------------------------
@@ -583,7 +591,13 @@ class ModuleGraphHooks:
             name = node.ident + ".__init__"
         else:
             name = node.ident
-        path = str(node.path) if node.path is not None else ''
+        if node.module_type == ModuleType.NAMESPACE:
+            # PEP-420 namespace packages have no single source file; mark
+            # them with '-' so downstream TOC consumers (e.g. PYZ.assemble)
+            # know not to look for a code object.
+            path = '-'
+        else:
+            path = str(node.path) if node.path is not None else ''
         return name, path, MODULE_TYPES_TO_TOC_DICT[node.module_type]
 
     def nodes_to_toc(self, nodes):

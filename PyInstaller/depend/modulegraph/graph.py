@@ -56,12 +56,15 @@ from __future__ import annotations
 import dis
 import os
 import sys
+import zipimport
 from collections import deque
 from copy import deepcopy
 from importlib import machinery as importlib_machinery
 from importlib import util as importlib_util
 from importlib.machinery import BuiltinImporter, FrozenImporter, ModuleSpec, PathFinder
 from pathlib import Path
+from types import CodeType
+from urllib.request import pathname2url
 
 from PyInstaller import HOMEPATH
 from PyInstaller import compat
@@ -73,13 +76,48 @@ from PyInstaller.depend.modulegraph.nodes import Alias, ModuleType, Node, QueueI
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from types import CodeType
-    from typing import Dict, Iterator, List, Optional, Set, Tuple, Union
+    from typing import Dict, Iterator, List, Optional, Set, Tuple, Union, TextIO
 
     from PyInstaller.depend.imphook import ModuleHookCache
 
 
 logger = logging.getLogger(__name__)
+
+
+# HTML templates for the ModuleGraph cross-reference report (create_xref()).
+header = """\
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>%(TITLE)s</title>
+    <style>
+      .node { padding: 0.5em 0 0.5em; border-top: thin grey dotted; }
+      .moduletype { font: smaller italic }
+      .node a { text-decoration: none; color: #006699; }
+      .node a:visited { text-decoration: none; color: #2f0099; }
+    </style>
+  </head>
+  <body>
+    <h1>%(TITLE)s</h1>"""
+entry = """
+<div class="node">
+  <a name="%(NAME)s"></a>
+  %(CONTENT)s
+</div>"""
+contpl = """<tt>%(NAME)s</tt> <span class="moduletype">%(TYPE)s</span>"""
+contpl_linked = """\
+<a target="code" href="%(URL)s" type="text/plain"><tt>%(NAME)s</tt></a>
+<span class="moduletype">%(TYPE)s</span>"""
+imports = """\
+  <div class="import">
+%(HEAD)s:
+  %(LINKS)s
+  </div>
+"""
+footer = """
+  </body>
+</html>"""
 
 
 class ModuleGraph(ModuleGraphHooks):
@@ -161,6 +199,10 @@ class ModuleGraph(ModuleGraphHooks):
         # from. Scripts added later are attached below it so the graph stays
         # a single connected tree.
         self._top_script_node: Optional[Node] = None
+        # Base modules that every program depends on (populated by
+        # _analyze_base_modules when pyi_homepath is given; empty for
+        # standalone graphs that only track explicit imports).
+        self._base_modules: List[Node] = []
         # Hook caches; see ModuleGraphHooks._setup_hooks() for details.
         self._hooks: Optional["ModuleHookCache"] = None
         self._hooks_pre_safe_import_module: Optional["ModuleHookCache"] = None
@@ -187,7 +229,7 @@ class ModuleGraph(ModuleGraphHooks):
     # Adding roots and modules
     # ------------------------------------------------------------------
 
-    def add_script(self, path: Union[str, Path]) -> Optional[Node]:
+    def _add_script_base(self, path: Union[str, Path]) -> Optional[Node]:
         """
         Add a script (the program's entry point) to the graph.
 
@@ -195,6 +237,13 @@ class ModuleGraph(ModuleGraphHooks):
         not importable. Its file is compiled and scanned for imports like any
         other pure-Python node; the node type is
         :attr:`ModuleType.SCRIPT`.
+
+        NOTE: this is the low-level engine implementation. The public
+        ``add_script`` is provided by the ``ModuleGraphHooks`` mixin, which
+        wraps this method to add PyInstaller-specific behavior (top-level
+        script bookkeeping, friendly syntax-error reporting). Defining
+        ``add_script`` here as well would shadow the mixin's version due to
+        Python's MRO and silently drop that behavior.
 
         :param path: Path to the script file. Relative paths are resolved
             against the current working directory.
@@ -301,20 +350,37 @@ class ModuleGraph(ModuleGraphHooks):
         """
         Make ``alias_module_name`` behave like ``real_module_name``.
 
-        The real module is added to the graph (analyzed) if it is not there
-        yet, and an :attr:`ModuleType.ALIAS` node is created for the alias
-        name with an edge pointing at the real module.
+        The alias is registered in the implies registry; the next time a
+        queue item for the alias name is processed, an :attr:`ModuleType.ALIAS`
+        node is created for it and the real module is analyzed in its place.
+        This mirrors the old modulegraph ``lazynodes`` behavior, where the
+        mapping was recorded lazily and consulted by ``findNode()``.
+
+        Nothing is resolved eagerly here: resolving (``add_module()``) would
+        run the work queue, which may process queue items for *other* alias
+        names whose implies entries have not been registered yet -- hooks
+        typically register a whole set of aliases in a loop -- turning them
+        into real nodes instead of aliases (e.g. the real ``wheel`` package
+        shadowing ``setuptools._vendor.wheel``).
 
         :param real_module_name: Fully-qualified name of the existing module.
         :param alias_module_name: Fully-qualified name of the alias to create.
         """
-        if self.find_node(alias_module_name) is not None:
+        # If the alias name already exists in the graph, it is an error unless
+        # it is an alias node pointing at the very same real module (i.e. the
+        # alias is being re-registered idempotently, e.g. by hooks that run
+        # more than once).
+        existing = self.find_node(alias_module_name)
+        if existing is not None and not (
+            existing.module_type == ModuleType.ALIAS and existing.target == real_module_name
+        ):
             raise ValueError(f"Module {alias_module_name!r} already exists in the graph!")
 
-        real_node = self.add_module(real_module_name)
-        self._add_node(alias_module_name, ModuleType.ALIAS, target=real_module_name)
-        if real_node is not None:
-            self.add_edge(alias_module_name, real_module_name)
+        # (Re-)register the implies entry: the node-side machinery creates
+        # the ALIAS node (and analyzes the real module) when the alias name
+        # is next processed. Re-registering is harmless, and needed after a
+        # re-registration because the entry is popped once consumed.
+        self._implies[alias_module_name] = Alias(real_module_name)
 
     def append_package_path(self, package_name: str, directory: Union[str, Path]) -> None:
         """
@@ -608,7 +674,12 @@ class ModuleGraph(ModuleGraphHooks):
 
         # -- 1: explicit search dirs (from the hook above, or a caller). --
         if search_dirs is not None:
-            return PathFinder.find_spec(fullname, search_dirs)
+            try:
+                return PathFinder.find_spec(fullname, search_dirs)
+            except ModuleNotFoundError:
+                # See _make_namespace_spec(): namespace submodules whose
+                # parent is not imported cannot be resolved by PathFinder.
+                return self._make_namespace_spec(fullname, search_dirs)
 
         # -- 5 (early): merge legacy namespace package locations. --
         # Applied to whatever spec we end up with below.
@@ -630,6 +701,105 @@ class ModuleGraph(ModuleGraphHooks):
 
         return spec
 
+    def _make_namespace_spec(self, fullname: str, search_dirs: List[str]) -> Optional[ModuleSpec]:
+        """
+        Emulate a PEP 420 namespace-package lookup for a submodule whose
+        parent package is not imported.
+
+        ``PathFinder.find_spec()`` cannot build namespace specs for dotted
+        names: the ``_NamespacePath`` machinery it uses hard-requires the
+        parent module to be present in ``sys.modules``
+        (``_NamespacePath._get_parent_path()`` raises ``ModuleNotFoundError``
+        otherwise). This graph resolves modules *without* importing them, so
+        a directory without ``__init__.py`` nested inside an unimported
+        package is invisible to the standard machinery.
+
+        This method replicates what ``PathFinder`` would do: scan
+        *search_dirs* for a directory named after the module's tail, and
+        fabricate a loader-less spec with a **plain list** of the matching
+        directories as search locations (never a lazy ``_NamespacePath``,
+        which would raise again on later use).
+
+        :param fullname: Fully-qualified (dotted) module name.
+        :param search_dirs: Directories to scan for the module directory.
+        :return: The fabricated :class:`ModuleSpec`, or ``None`` if no
+            matching directory exists in *search_dirs*.
+        """
+        tail = fullname.rpartition('.')[2]
+        portions = []
+        for directory in search_dirs:
+            candidate = Path(directory) / tail
+            if candidate.is_dir():
+                portions.append(str(candidate))
+        if not portions:
+            return None
+        spec = importlib_machinery.ModuleSpec(fullname, None, is_package=True)
+        spec.submodule_search_locations = portions
+        return spec
+
+    def _resolve_submodule_chain(self, fullname: str) -> Optional[ModuleSpec]:
+        """
+        Resolve a dotted module name whose *direct parent* is unknown, by
+        walking up to the deepest ancestor present in the graph and then
+        resolving each remaining component inside the ancestor's search
+        locations.
+
+        Importing ``package.subpackage.sub`` requires only that ``package``
+        be locatable -- ``package.subpackage`` itself never needs to be
+        (and often is not) in the graph. The standard machinery handles
+        this by importing parents one by one; since this graph resolves
+        without importing, the chain is walked *through the graph* instead:
+
+        1. Find the longest dotted prefix of *fullname* whose node exists
+           and has ``submodule_search_locations`` (i.e. is a package).
+        2. For each remaining component, resolve it within the current
+           locations with ``PathFinder.find_spec()``; directories without
+           an ``__init__`` (namespace portions) fall back to
+           :meth:`_make_namespace_spec`.
+        3. Each resolved package component's search locations become the
+           search path for the next component.
+
+        :param fullname: Fully-qualified (dotted) module name.
+        :return: The final :class:`ModuleSpec`, or ``None`` if no ancestor
+            is in the graph or any component cannot be resolved.
+        """
+        parts = fullname.split(".")
+
+        # 1: longest known package ancestor.
+        anchor_len = 0
+        locations: Optional[List[str]] = None
+        for i in range(len(parts) - 1, 0, -1):
+            prefix = ".".join(parts[:i])
+            ancestor = self.find_node(prefix)
+            if ancestor is not None and ancestor.spec is not None:
+                ancestor_locations = ancestor.spec.submodule_search_locations
+                if ancestor_locations:
+                    anchor_len = i
+                    locations = list(ancestor_locations)
+                    break
+        if locations is None:
+            return None
+
+        # 2: resolve each remaining component within the current locations.
+        current = ".".join(parts[:anchor_len])
+        spec: Optional[ModuleSpec] = None
+        for part in parts[anchor_len:]:
+            current = f"{current}.{part}"
+            try:
+                spec = PathFinder.find_spec(current, locations)
+            except ModuleNotFoundError:
+                # See _make_namespace_spec(): parent not imported.
+                spec = self._make_namespace_spec(current, locations)
+            if spec is None:
+                return None
+            if spec.submodule_search_locations:
+                locations = list(spec.submodule_search_locations)
+            elif current != fullname:
+                # A non-package module in the middle of the chain: nothing
+                # can live below it.
+                return None
+        return spec
+
     def _find_spec_via_finders(self, fullname: str) -> Optional[ModuleSpec]:
         """
         The finder chain of :meth:`_find_spec`, without the hook and
@@ -643,8 +813,22 @@ class ModuleGraph(ModuleGraphHooks):
             if parent_node is not None and parent_node.spec is not None:
                 search_locations = parent_node.spec.submodule_search_locations
                 if search_locations:
-                    return PathFinder.find_spec(fullname, list(search_locations))
-            # Parent unknown: documented fallback (imports the parent).
+                    try:
+                        return PathFinder.find_spec(fullname, list(search_locations))
+                    except ModuleNotFoundError:
+                        # See _make_namespace_spec(): namespace submodules
+                        # whose parent is not imported cannot be resolved
+                        # by PathFinder.
+                        return self._make_namespace_spec(fullname, list(search_locations))
+            # Parent unknown: walk up to the deepest known ancestor and
+            # resolve the remaining chain component by component (e.g.
+            # ``package.subpackage.sub`` when only the namespace ``package``
+            # is in the graph: ``subpackage`` is found inside ``package``'s
+            # search locations, then ``sub`` inside ``subpackage``'s).
+            spec = self._resolve_submodule_chain(fullname)
+            if spec is not None:
+                return spec
+            # Last resort: documented fallback (imports the parent).
             try:
                 return importlib_util.find_spec(fullname)
             except (ImportError, SyntaxError, ValueError):
@@ -698,23 +882,60 @@ class ModuleGraph(ModuleGraphHooks):
         while objects:
             root, obj = objects.popleft()
 
-            # IMPORT_NAME is always preceded by two LOAD_CONSTs pushing the
-            # import level and the fromlist; a bounded deque keeps exactly
-            # the most recent two constants.
+            # -- The import operands ------------------------------------------
+            #
+            # Bytecode layout of an import statement: the IMPORT_NAME
+            # instruction is *always* immediately preceded by two
+            # instructions that push the operands of ``__import__()``:
+            #
+            #     <push> <level>       relative-import depth: 0 = absolute,
+            #     <push> <fromlist>    None for plain ``import x``, a tuple
+            #                          for ``from x import a, b``, ('*',)
+            #                          for ``from x import *``
+            #     IMPORT_NAME <name>
+            #
+            # This layout is guaranteed by the compiler (it is how the
+            # IMPORT_NAME opcode is defined), so instead of trying to
+            # recognise "constant loading" instructions by name we simply
+            # remember the operand values of the two most recent
+            # instructions -- of any kind -- and read them off whenever
+            # IMPORT_NAME shows up.
+            #
+            # Why not match ``LOAD_CONST`` by name? Because CPython 3.14
+            # split that opcode into several specialised ones
+            # (LOAD_SMALL_INT, LOAD_NONE, LOAD_TRUE, LOAD_FALSE,
+            # LOAD_CONST_MORTAL, LOAD_CONST_IMMORTAL, ...). Name matching
+            # would then silently miss the real operands and pick up
+            # unrelated constants instead -- e.g. a module docstring --
+            # producing garbage like ``level='docstring'``. The
+            # two-instructions-before-IMPORT_NAME layout, by contrast, has
+            # been stable across every CPython release so far.
             loads: "deque" = deque(maxlen=2)
             for inst in dis.get_instructions(obj):
-                if inst.opname == 'LOAD_CONST':
-                    loads.append(inst.argval)
-                elif inst.opname == 'IMPORT_NAME':
+                if inst.opname == 'IMPORT_NAME':
                     # In the case of a star import, fromlist will be ('*',).
+                    # Unpack *before* appending the current instruction, or
+                    # ``fromlist`` would read the module's own name off the
+                    # deque (the deque is meant to hold the two instructions
+                    # preceding IMPORT_NAME, not IMPORT_NAME itself).
                     level, fromlist = loads
-                    yield inst.argval, level, fromlist
+                    # Normalize ``None`` (plain ``import x``) to an empty tuple so downstream
+                    # code can always iterate ``fromlist`` without a None check.
+                    yield inst.argval, level, fromlist or ()
+                elif inst.opname in ('EXTENDED_ARG', 'NOP'):
+                    # Pseudo-instructions that modify the following instruction's operand or are pure
+                    # placeholders (Python 3.15 emits ``EXTENDED_ARG`` between the level/fromlist pushes and
+                    # IMPORT_NAME whenever the module-name operand is large; ``NOP`` shows up around
+                    # specialized code on newer CPython). Neither touches the value stack, so they must
+                    # not be counted as import operands.
+                    continue
                 elif root and inst.opname in ('STORE_NAME', 'STORE_GLOBAL'):
                     names.add(inst.argval)
                 elif root and inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
                     # discard: deleting an undefined name is legal at the
                     # bytecode level (e.g. ``del`` inside a try block).
                     names.discard(inst.argval)
+                loads.append(inst.argval)
 
             # Functions and classes are compiled to code objects stored as
             # constants of their enclosing code object; imports inside them
@@ -821,7 +1042,7 @@ class ModuleGraph(ModuleGraphHooks):
             self.add_edge(item.importing_module, item.name)
 
         # -- 8: scan --
-        if not scan_disabled and node.code is not None:
+        if node is not None and not scan_disabled and node.code is not None:
             self._process_node_imports(item, node)
 
         # Queue implied dependencies recorded for this module.
@@ -845,6 +1066,15 @@ class ModuleGraph(ModuleGraphHooks):
 
         :return: The created (and already inserted) node.
         """
+        existing = self.nodes.get(item.name)
+        if existing is not None:
+            # A node for this name may have been created while the
+            # pre-safe-import-module hook was running (e.g. by
+            # ``alias_module()``, which can route this very queue item
+            # through the alias machinery). Never clobber it with a
+            # real module node.
+            return existing
+
         if item.is_script:
             # Scripts carry their path; compile directly.
             code = compile(Path(item.path).read_bytes(), str(item.path), "exec")
@@ -864,21 +1094,42 @@ class ModuleGraph(ModuleGraphHooks):
         else:
             module_path = Path(origin).resolve()
 
-            if module_path.suffix in importlib_machinery.SOURCE_SUFFIXES:
+            if isinstance(spec.loader, zipimport.zipimporter):
+                # Entry inside a zip archive (egg/wheel): pathlib cannot open
+                # it, so the loader is the only way to the source. Note that
+                # zipimporter may point the spec's origin at either the .py
+                # or the .pyc entry, so classification must not rely on the
+                # file suffix.
+                try:
+                    code = spec.loader.get_code(item.name)
+                except SyntaxError:
+                    # The module cannot be parsed. Gracefully skip it rather
+                    # than crashing the whole graph-building process.
+                    return None
+                module_type = ModuleType.PACKAGE if module_path.stem == '__init__' else ModuleType.PURE
+            elif module_path.suffix in importlib_machinery.SOURCE_SUFFIXES:
                 # __init__.py marks a package root; its relative imports and
                 # from-import fallbacks resolve against the package itself.
                 if module_path.stem == '__init__':
                     module_type = ModuleType.PACKAGE
                 else:
                     module_type = ModuleType.PURE
-                code = compile(module_path.read_bytes(), str(module_path), "exec")
+                try:
+                    code = compile(module_path.read_bytes(), str(module_path), "exec")
+                except SyntaxError:
+                    # The module cannot be parsed. Gracefully skip it rather
+                    # than crashing the whole graph-building process.
+                    return None
             elif module_path.suffix in importlib_machinery.BYTECODE_SUFFIXES and isinstance(
                 spec.loader, importlib_machinery.SourcelessFileLoader
             ):
                 # Pre-compiled bytecode-only module; reading the code object
                 # from the loader saves a compile pass.
                 module_type = ModuleType.BYTECODE
-                code = spec.loader.get_code(item.name)
+                try:
+                    code = spec.loader.get_code(item.name)
+                except Exception:
+                    return None
             elif module_path.suffix in importlib_machinery.EXTENSION_SUFFIXES:
                 # Extension module: a graph leaf, nothing to analyze.
                 return self._add_node(item.name, ModuleType.EXTENSION, path=str(module_path), spec=spec)
@@ -991,12 +1242,23 @@ class ModuleGraph(ModuleGraphHooks):
             provided_names = package_node.provided_names
 
         for attr_name in item.fromlist:
-            if attr_name in ('', '*') or attr_name in provided_names:
+            if attr_name in ('', '*'):
                 continue
             try:
                 submodule_name = importlib_util.resolve_name(f".{attr_name}", package_node.ident)
             except ImportError:
                 continue
+            if attr_name in provided_names:
+                # The package's own code also binds this name as a global
+                # attribute (e.g. ``from collections import OrderedDict``).
+                # Python semantics resolve it to the attribute, so chasing it
+                # would fabricate MISSING nodes -- unless a real submodule of
+                # the same name exists on disk (``from . import logging`` in
+                # setuptools). Old modulegraph attempted the submodule import
+                # first and only fell back to treating the name as an
+                # ignorable attribute when it was unimportable; do the same.
+                if self._find_spec(submodule_name) is None:
+                    continue
             self._queue_import(submodule_name, package_node.ident)
 
     def _queue_import(
@@ -1047,6 +1309,103 @@ class ModuleGraph(ModuleGraphHooks):
         if node is None and required:
             raise ValueError(f"Node {name!r} does not exist in the graph!")
         return node
+
+    # ------------------------------------------------------------------
+    # Reports: HTML cross-reference and Graphviz DOT output
+    # ------------------------------------------------------------------
+
+    def create_xref(self, fh: TextIO) -> None:
+        """
+        Write an HTML cross-reference of the graph to *fh*.
+
+        Every node becomes one HTML entry, listing the modules it imports
+        ("imports") and the modules that import it ("imported by"), with
+        anchors linking each name to its own entry. Nodes are sorted by the
+        basename of their :attr:`~.nodes.Node.ident`; scripts are listed
+        first, followed by the modules.
+        """
+        scripts = []
+        mods = []
+        for mod in self.iter_graph():
+            name = os.path.basename(mod.ident)
+            if mod.module_type == ModuleType.SCRIPT:
+                scripts.append((name, mod))
+            else:
+                mods.append((name, mod))
+        scripts.sort()
+        mods.sort()
+        scriptnames = [sn for sn, m in scripts]
+        scripts.extend(mods)
+        mods = scripts
+
+        title = "modulegraph cross reference for " + ', '.join(scriptnames)
+        print(header % {"TITLE": title}, file=fh)
+
+        for name, mod in mods:
+            if mod.module_type == ModuleType.BUILTIN:
+                content = contpl % {"NAME": name, "TYPE": "<i>(builtin module)</i>"}
+            elif mod.module_type == ModuleType.EXTENSION:
+                content = contpl % {"NAME": name, "TYPE": "<tt>%s</tt>" % mod.path}
+            else:
+                url = pathname2url(mod.path or "")
+                content = contpl_linked % {"NAME": name, "URL": url, "TYPE": mod.module_type.value}
+
+            # `dependencies` are the modules this node imports ("outgoing"),
+            # `importing_modules` the modules that import it ("incoming").
+            oute = sorted(os.path.basename(n) for n in mod.dependencies)
+            ince = sorted(os.path.basename(n) for n in mod.importing_modules)
+            for head, names in (("imports", oute), ("imported by", ince)):
+                if not names:
+                    continue
+                # &#8226; = bullet-point; can't use html-entities since the
+                # test-suite uses xml.etree.ElementTree.XMLParser, which
+                # doesn't support them.
+                links = " &#8226; ".join(f'  <a href="#{n}">{n}</a>\n' for n in names)
+                content += imports % {"HEAD": head, "LINKS": links}
+
+            print(entry % {"NAME": name, "CONTENT": content}, file=fh)
+        print(footer, file=fh)
+
+    def itergraphreport(self, name: str = 'G') -> "Iterator[str]":
+        """
+        Generate a Graphviz DOT representation of the graph, one line at a
+        time.
+
+        The output is a ``digraph`` in left-to-right layout: one record-style
+        node per graph node (labelled with the node's type and name) and one
+        edge per import relationship.
+        """
+        yield 'digraph %s {\ncharset="UTF-8";\n' % (name,)
+        yield '\trankdir="LR";\n'
+        yield '\tconcentrate="true";\n'
+
+        def node_label(node: Node) -> str:
+            # ModuleType.SPECIAL's value is None (placeholder root); use the
+            # enum member name as a readable fallback.
+            type_name = node.module_type.value if node.module_type.value is not None else node.module_type.name
+            s = '<f0> ' + type_name
+            s += '| <f1> %s' % (node.ident,)
+            return {'label': s, 'shape': 'record'}
+
+        for node in self.iter_graph():
+            # describe node
+            yield '\t"%s" [%s];\n' % (
+                node.ident,
+                ','.join((f'{key}="{value}"' for key, value in node_label(node).items())),
+            )
+
+        # describe edges; importers -> imported
+        for node in self.iter_graph():
+            for dependency in node.dependencies:
+                yield '\t"%s" -> "%s";\n' % (node.ident, dependency)
+
+        yield '}\n'
+
+    def graphreport(self, fh: TextIO) -> None:
+        """
+        Write a Graphviz DOT representation of the graph to *fh*.
+        """
+        fh.writelines(self.itergraphreport())
 
     def __repr__(self):
         return f"<ModuleGraph: {len(self.nodes)} nodes>"

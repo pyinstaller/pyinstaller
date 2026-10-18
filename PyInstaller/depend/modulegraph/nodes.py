@@ -317,6 +317,12 @@ BAD_MODULE_TYPES = {
     ModuleType.RUNTIME_PACKAGE,
 }
 
+# Union of every node type the graph can ever produce: the valid, collectable
+# module types plus the bad/missing bookkeeping ones. Useful for "is this a
+# real node at all?" checks, e.g. when iterating debug TOCs that include
+# every node in the graph.
+ALL_MODULE_TYPES = VALID_MODULE_TYPES | BAD_MODULE_TYPES
+
 # Mapping from each node type to the TOC typecode used in PyInstaller's
 # internal (and marshalled) tables of contents. The typecodes -- 'PYSOURCE',
 # 'PYMODULE', 'EXTENSION', ... -- are part of PyInstaller's serialized build
