@@ -1,0 +1,3 @@
+(Windows) Fix detection of ``arm64`` compiler/platform when compiling
+bootloader with ``clang`` compiler (e.g., in a ``msys2/clangarm64``
+environment).
