@@ -93,6 +93,7 @@ static char *_wchar_to_utf8(const wchar_t *string_w)
     return buffer;
 }
 
+#if !defined(_WIN32)
 
 static char *
 _locale_encoding_to_utf8(
@@ -133,6 +134,8 @@ _locale_encoding_to_utf8(
      * free() it. */
     return string_utf8;
 }
+
+#endif /* !defined(_WIN32) */
 
 
 /*
