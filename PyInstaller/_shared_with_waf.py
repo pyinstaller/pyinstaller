@@ -41,7 +41,7 @@ def _pyi_machine(machine, system):
     # See the corresponding tests in tests/unit/test_compat.py for examples.
 
     if system == "Windows":
-        if machine.lower().startswith("arm"):
+        if machine.lower().startswith(("arm", "aarch")):
             return "arm"
         else:
             return "intel"
