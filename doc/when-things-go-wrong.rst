@@ -79,10 +79,13 @@ Build-Time Dependency Graph
 
 On each run PyInstaller writes a cross-referencing file about dependencies
 into the build folder:
-:file:`build/{name}/xref-{name}.html` in the
+:file:`build/{name}/xref-{script}.html` in the
 ``work-path=`` directory is an HTML file that lists the full
 contents of the import graph, showing which modules are imported
 by which ones.
+Here ``{name}`` is the name of the spec file and ``{script}`` is the name of
+the (first) script passed to the ``Analysis``,
+so a spec file with several ``Analysis`` instances gets one file per script.
 You can open it in any web browser.
 Find a module name, then keep clicking the "imported by" links
 until you find the top-level import that causes that module to be included.
@@ -90,7 +93,7 @@ until you find the top-level import that causes that module to be included.
 If you specify :option:`--log-level=DEBUG <--log-level>` to the ``pyinstaller`` command,
 PyInstaller additionally generates a GraphViz_ input file representing the
 dependency graph.
-The file is :file:`build/{name}/graph-{name}.dot` in the
+The file is :file:`build/{name}/graph-{script}.dot` in the
 ``work-path=`` directory.
 You can process it with any GraphViz_ command, e.g. :program:`dot`,
 to produce

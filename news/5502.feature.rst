@@ -1,0 +1,5 @@
+Name the import graph cross-reference file (``xref-*.html``) and the
+GraphViz dependency graph file (``graph-*.dot``) in the build directory
+after the analyzed script instead of after the spec file, so that spec files
+with multiple ``Analysis`` instances (e.g., multipackage bundles using
+``MERGE``) no longer overwrite these files.

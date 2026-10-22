@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+import logging
 import pathlib
 import importlib.machinery
 
@@ -29,8 +30,6 @@ def test_issue_2492(monkeypatch, tmp_path):
             'workpath': str(tmp_path),
             'spec': str(tmp_path),
             'warnfile': str(tmp_path / 'warn.txt'),
-            'dot-file': str(tmp_path / 'imports.dot'),
-            'xref-file': str(tmp_path / 'imports.xref'),
             'hiddenimports': [],
             'specnm': 'issue_2492_script',
             'code_cache': dict(),
@@ -84,8 +83,6 @@ def test_issue_5131(monkeypatch, tmp_path):
             'workpath': str(tmp_path),
             'spec': str(tmp_path),
             'warnfile': str(tmp_path / 'warn.txt'),
-            'dot-file': str(tmp_path / 'imports.dot'),
-            'xref-file': str(tmp_path / 'imports.xref'),
             'hiddenimports': [],
             'specnm': 'issue_5131_script',
             'code_cache': dict(),
@@ -147,3 +144,43 @@ def test_5797(pyi_builder):
             assert exception_name == 'PyInstallerImportError', f"Unexpected exception type: {exception_name}"
         """
     )
+
+
+def test_issue_5502(monkeypatch, tmp_path, caplog):
+    """
+    With multiple Analysis instances in one spec file (e.g., multipackage bundles using MERGE), each Analysis should
+    write its own xref and dot file, named after its script, instead of all of them overwriting the same
+    `xref-<specname>.html` and `graph-<specname>.dot`.
+    """
+    workpath = tmp_path / 'build'
+    workpath.mkdir()
+
+    # Set up fake CONF for Analysis
+    monkeypatch.setattr(
+        'PyInstaller.config.CONF', {
+            'workpath': str(workpath),
+            'spec': str(tmp_path),
+            'warnfile': str(workpath / 'warn.txt'),
+            'hiddenimports': [],
+            'specnm': 'issue_5502',
+            'code_cache': dict(),
+        }
+    )
+    # Speedup: avoid analyzing base_library.zip
+    monkeypatch.setattr(analysis, 'PY3_BASE_MODULES', [])
+    # The dot file is written only with DEBUG log level.
+    caplog.set_level(logging.DEBUG, logger='PyInstaller.building.build_main')
+
+    excludes = ['encodings', 'pydoc', 'xml', 'distutils']
+    for name, module in (('script_a', 'json'), ('script_b', 'csv')):
+        (tmp_path / f'{name}.py').write_text(f"import {module}", encoding='utf-8')
+        Analysis([str(tmp_path / f'{name}.py')], excludes=excludes)
+
+    for name, module in (('script_a', 'json'), ('script_b', 'csv')):
+        xref_file = workpath / f'xref-{name}.html'
+        dot_file = workpath / f'graph-{name}.dot'
+        assert xref_file.is_file()
+        assert dot_file.is_file()
+        assert module in xref_file.read_text(encoding='utf-8')
+    assert not (workpath / 'xref-issue_5502.html').exists()
+    assert not (workpath / 'graph-issue_5502.dot').exists()

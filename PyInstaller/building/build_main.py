@@ -1092,18 +1092,24 @@ class Analysis(Target):
     def _write_graph_debug(self):
         """
         Write a xref (in html) and with `--log-level DEBUG` a dot-drawing of the graph.
+
+        The files are named after the (first) script of this Analysis rather than after the spec file, so that spec
+        files with multiple Analysis instances (e.g., multipackage bundles using MERGE) do not overwrite them.
         """
         from PyInstaller.config import CONF
-        with open(CONF['xref-file'], 'w', encoding='utf-8') as fh:
+        script_name = os.path.splitext(os.path.basename(self.inputs[0]))[0]
+        xref_file = os.path.join(CONF['workpath'], f'xref-{script_name}.html')
+        dot_file = os.path.join(CONF['workpath'], f'graph-{script_name}.dot')
+        with open(xref_file, 'w', encoding='utf-8') as fh:
             self.graph.create_xref(fh)
-            logger.info("Graph cross-reference written to %s", CONF['xref-file'])
+            logger.info("Graph cross-reference written to %s", xref_file)
         if logger.getEffectiveLevel() > logging.DEBUG:
             return
         # The `DOT language's <https://www.graphviz.org/doc/info/lang.html>`_ default character encoding (see the end
         # of the linked page) is UTF-8.
-        with open(CONF['dot-file'], 'w', encoding='utf-8') as fh:
+        with open(dot_file, 'w', encoding='utf-8') as fh:
             self.graph.graphreport(fh)
-            logger.info("Graph drawing written to %s", CONF['dot-file'])
+            logger.info("Graph drawing written to %s", dot_file)
 
     def exclude_system_libraries(self, list_of_exceptions=None):
         """
@@ -1151,8 +1157,6 @@ def build(spec, distpath, workpath, clean_build):
     CONF['workpath'] = workpath
 
     CONF['warnfile'] = os.path.join(workpath, 'warn-%s.txt' % CONF['specnm'])
-    CONF['dot-file'] = os.path.join(workpath, 'graph-%s.dot' % CONF['specnm'])
-    CONF['xref-file'] = os.path.join(workpath, 'xref-%s.html' % CONF['specnm'])
 
     CONF['code_cache'] = dict()
 
