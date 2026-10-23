@@ -34,8 +34,9 @@ def hook(hook_api):
     # Collect schemas
     datas += collect_glib_share_files('glib-2.0', 'schemas')
 
-    # On Windows, glib needs a spawn helper for g_spawn* API
+    # On Windows, glib needs a spawn helper for g_spawn* API and gdbus.exe to run a dbus service
     if is_win:
+        binaries.append((os.path.join(module_info.get_libdir(), 'gdbus.exe'), '.'))
         pattern = os.path.join(module_info.get_libdir(), 'gspawn-*-helper*.exe')
         for f in glob.glob(pattern):
             binaries.append((f, '.'))
