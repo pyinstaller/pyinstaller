@@ -62,6 +62,12 @@ classifiers = [
     "Topic :: Utilities",
 ]
 
+[dependency-groups]
+dev = [
+    "flake8",
+    "yapf==0.43.0",
+]
+
 [project.scripts]
 pyinstaller = "PyInstaller.__main__:_console_script_run"
 pyi-archive_viewer = "PyInstaller.utils.cliutils.archive_viewer:run"
