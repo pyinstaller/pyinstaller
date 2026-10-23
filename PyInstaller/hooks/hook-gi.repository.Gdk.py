@@ -11,6 +11,7 @@
 
 from PyInstaller.utils.hooks.gi import GiModuleInfo
 from PyInstaller.utils.hooks import get_hook_config
+from PyInstaller import compat
 
 
 def hook(hook_api):
@@ -29,6 +30,13 @@ def hook(hook_api):
         return
 
     binaries, datas, hiddenimports = module_info.collect_typelib_data()
+
+    # Collect platform-specific module, otherwise it may be opportunistically loaded from the run-time system.
+    if compat.is_win:
+        hiddenimports += ['gi.repository.GdkWin32']
+    elif compat.is_unix:
+        hiddenimports += ['gi.repository.GdkX11', 'gi.repository.GdkWayland']
+
     hiddenimports += ['gi._gi_cairo', 'gi.repository.cairo']
 
     hook_api.add_datas(datas)
