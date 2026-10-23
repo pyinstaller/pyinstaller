@@ -414,6 +414,12 @@ def _disable_qtwebengine_sandbox(qt_flavor):
         # Incompatible glibc and Qt5 version
         return True
 
+    # QtWebEngine from Qt5 seems to fail to load on GitHub Actions Windows runner.
+    # First known affected image: windows-2025-vs2026, 20261021.278.1; Microsoft Windows Server 2025 10.0.26100
+    # Last known working image: windows-2025-vs2026, 20261007.264.1; Microsoft Windows Server 2025 10.0.26100
+    if is_win and qt_flavor in {'PyQt5', 'PySide2'}:
+        return os.environ.get('CI', 'false') == 'true'
+
     return False
 
 
