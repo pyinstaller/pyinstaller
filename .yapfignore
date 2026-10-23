@@ -22,4 +22,5 @@ build
 # These are redundant but speed up file collection.
 doc/_build
 .git
+.venv
 dist
