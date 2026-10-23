@@ -496,6 +496,8 @@ jobs:
         uses: cygwin/cygwin-install-action@master
         with:
           platform: x86_64
+          # NOTE: python312-pip seems to depend on python312-sphinx, and in order for our test_sphinx to pass,
+          # we also need to install python312-alabaster and several python312-sphinxcontrib-* packages.
           packages: >-
             gcc-core
             zlib
@@ -508,6 +510,12 @@ jobs:
             python312-setuptools
             python312-packaging
             python312-pytest
+            python312-alabaster
+            python312-sphinxcontrib-applehelp
+            python312-sphinxcontrib-devhelp
+            python312-sphinxcontrib-htmlhelp
+            python312-sphinxcontrib-serializinghtml
+            python312-sphinxcontrib-qthelp
 
       - name: Disable CRLF line endings in git checkout
         run: git config --global core.autocrlf input
