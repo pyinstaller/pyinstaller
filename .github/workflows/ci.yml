@@ -432,9 +432,6 @@ jobs:
             mingw-w64-${{matrix.env}}-python-pip
             mingw-w64-${{matrix.env}}-python-setuptools
             mingw-w64-${{matrix.env}}-python-packaging
-            mingw-w64-${{matrix.env}}-python-pytest
-            mingw-w64-${{matrix.env}}-python-pytest-xdist
-            mingw-w64-${{matrix.env}}-python-pytest-timeout
 
       # Some msys2 python packages are not available for i686 anymore:
       #  - numpy
@@ -452,6 +449,9 @@ jobs:
         if: matrix.env != 'i686'
         run: >
           pacman -S --noconfirm
+          mingw-w64-${{matrix.env}}-python-pytest
+          mingw-w64-${{matrix.env}}-python-pytest-xdist
+          mingw-w64-${{matrix.env}}-python-pytest-timeout
           mingw-w64-${{matrix.env}}-python-numpy
           mingw-w64-${{matrix.env}}-python-pefile
           mingw-w64-${{matrix.env}}-python-psutil
@@ -459,6 +459,12 @@ jobs:
           mingw-w64-${{matrix.env}}-python-pywin32-ctypes
           mingw-w64-${{matrix.env}}-python-pywin32
           mingw-w64-${{matrix.env}}-python-gobject
+
+      # pytest, pytest-xdist, and pytest-timeout are not available for 32-bit anymore. Try to install them via pip.
+      - name: Install pytest via pip (32-bit only)
+        if: matrix.env == 'i686'
+        run: >
+          python -m pip install --upgrade pytest pytest-xdist pytest-timeout
 
       - name: Checkout PyInstaller code
         uses: actions/checkout@v6
