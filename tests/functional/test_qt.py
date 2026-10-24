@@ -453,6 +453,12 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
                 <body>
                     <p>This is a test web page with internationalised characters.</p>
                     <p>HЯ⾀ÄÉÖÜ</p>
+                    <script>
+                        function _embedded_test_function(x)
+                        {{
+                            return 2 * x;
+                        }}
+                    </script>
                 </body>
             </html>
         '''
@@ -460,43 +466,34 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
         print("Instantiating QApplication...", file=sys.stderr)
         app = QApplication(sys.argv)
 
-        class JSResultTester:
-
-            CODE = "1+1"
-            EXPECTED = 2
-
-            def __init__(self):
-                self.result = None
-
-            def setup(self, view):
-                # Need to explicitly pass 0 as world id due to
-                # https://bugreports.qt.io/browse/PYSIDE-643
-                view.page().runJavaScript(self.CODE, 0, self.store)
-
-                view.page().loadFinished.connect(
-                    # Display the web page for one second after it loads.
-                    lambda ok: QTimer.singleShot(1000, self.verify_and_quit))
-
-            def store(self, res):
-                self.result = res
-
-            def verify_and_quit(self):
-                # Make sure the renderer process is alive.
-                print("Checking the result of renderer process...", file=sys.stderr)
-                if self.result != self.EXPECTED:
-                    raise ValueError(
-                        f"JS result is {{self.result!r}} but expected {{self.EXPECTED!r}}. "
-                        "Is the QtWebEngine renderer process running properly?")
-                print("Exiting application's main loop...", file=sys.stderr)
-                app.quit()
-
         print("Instantiating QWebEngineView and loading test web page...", file=sys.stderr)
         view = QWebEngineView()
+
+        def check_result(result):
+            print(f"Result from runJavaScript(): {{result}}", file=sys.stderr)
+            if result == 42:
+                print("Exiting with status 0...", file=sys.stderr)
+                app.quit()
+            else:
+                print("Unexpected result! Exiting with status 2!", file=sys.stderr)
+                app.exit(2)
+
+        def on_load_finished(ok):
+            if ok:
+                # Display the web page for one second after it loads, then execute the JS script test.
+                print(f"Web page successfully loaded. Executing JS script test in a second...", file=sys.stderr)
+                QTimer.singleShot(
+                    1000,
+                    # Need to explicitly pass 0 as world id due to https://bugreports.qt.io/browse/PYSIDE-643
+                    lambda: view.page().runJavaScript("_embedded_test_function(21)", 0, check_result),
+                )
+            else:
+                print("Failed to load web page - exiting with status 1!", file=sys.stderr)
+                app.exit(1)
+
+        view.page().loadFinished.connect(on_load_finished)
         view.setHtml(WEB_PAGE_HTML)
         view.show()
-
-        js_result_tester = JSResultTester()
-        js_result_tester.setup(view)
 
         print("Entering application's main loop...", file=sys.stderr)
         if is_qt6:
@@ -506,7 +503,7 @@ def _test_Qt_QtWebEngineWidgets(pyi_builder, qt_flavor):
             res = app.exec_()
         print("Exited application's main loop!", file=sys.stderr)
 
-        print("Calling sys.exit()...", file=sys.stderr)
+        print(f"Calling sys.exit({{res}})...", file=sys.stderr)
         sys.exit(res)
         """, **USE_WINDOWED_KWARG
     )
