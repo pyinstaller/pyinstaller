@@ -1,0 +1,2 @@
+Update ``gi.repository.GLib`` hook to collect the ``gdbus.exe``
+helper executable, which is provided and used by GLib/Gio on Windows.
