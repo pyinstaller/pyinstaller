@@ -70,7 +70,7 @@ def test_multiprocessing_process_start_in_threads(pyi_builder, start_method):
     #
     # [1] https://docs.python.org/3.12/library/multiprocessing.html#contexts-and-start-methods
     # [2] https://docs.python.org/3.12/library/os.html#os.fork
-    if start_method == "fork" and compat.is_openbsd:
+    if start_method in {"fork", "forkserver"} and compat.is_openbsd:
         pytest.skip("Mixing threading with os.fork() on POSIX platforms is not safe and may lead to deadlocks.")
     pyi_builder.test_script("pyi_multiprocessing_process_start_in_threads.py", app_args=[start_method])
 
