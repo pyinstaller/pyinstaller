@@ -1,0 +1,3 @@
+Update ``gi.repository.Gdk`` hook to collect corresponding platform-specific
+typelibs (``GdkWin32`` or ``GdkX11`` and ``GdkWayland``), and add hooks
+for these modules.
