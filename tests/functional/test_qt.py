@@ -414,11 +414,21 @@ def _disable_qtwebengine_sandbox(qt_flavor):
         # Incompatible glibc and Qt5 version
         return True
 
-    # QtWebEngine from Qt5 seems to fail to load on GitHub Actions Windows runner.
+    # QtWebEngine from Qt5 (latest available PyQt5 and PySide2) and older Qt6 (PySide6 v6.6.3.1, the latest version
+    # for python 3.8) seems to fail on contemporary GitHub Actions Windows runners unless sandbox is disabled.
     # First known affected image: windows-2025-vs2026, 20261021.278.1; Microsoft Windows Server 2025 10.0.26100
     # Last known working image: windows-2025-vs2026, 20261007.264.1; Microsoft Windows Server 2025 10.0.26100
-    if is_win and qt_flavor in {'PyQt5', 'PySide2'}:
-        return os.environ.get('CI', 'false') == 'true'
+    if is_win and os.environ.get('CI', 'false') == 'true':
+        # The latest available version of Qt5 is affected
+        if qt_flavor in {'PyQt5', 'PySide2'}:
+            return True
+
+        # Qt 6.6 in PySide6 v6.6.3.1 and Qt 6.7 in PyQt6 v6.7.1 (the last available versions for python 3.8) also
+        # seems to be affected. Qt 6.10 in PySide6 and PyQt6 6.10.2 (the last available version for python 3.9) are
+        # not affected anymore.
+        qt_info = get_qt_library_info(qt_flavor)
+        if not qt_info.version or qt_info.version < [6, 10]:
+            return True
 
     return False
 
