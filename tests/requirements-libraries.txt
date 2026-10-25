@@ -20,7 +20,7 @@ ipython==9.17.1; python_version >= "3.12"
 keyring==25.7.0; python_version >= "3.9"
 matplotlib==3.11.2; python_version >= "3.11"
 numpy==2.5.4; python_version >= "3.12"
-pandas==3.0.6; python_version >= "3.11"  # pyup: != 3.0.4  # yanked
+pandas==3.1.0; python_version >= "3.11"  # pyup: != 3.0.4  # yanked
 pygments==2.21.0; python_version >= "3.9"
 PyGObject==3.58.1; sys_platform == "linux" and python_version >= "3.10"
 # Official PySide2 wheels do not support python 3.11 or newer. Nor are they available for arm64 on macOS.
@@ -64,17 +64,17 @@ PyQt6-NetworkAuth-Qt6==6.11.2; python_version >= "3.10"
 PyQt6-QScintilla==2.14.1; python_version >= "3.9"  # Does not have a corresponding -Qt6 package
 PyQt6-WebEngine==6.11.0; python_version >= "3.10"
 PyQt6-WebEngine-Qt6==6.11.2; python_version >= "3.10"
-python-dateutil==2.9.0.post0
+python-dateutil==3.0.0
 pytz==2026.5
 requests==2.34.2; python_version >= "3.10"
 scipy==1.18.1; python_version >= "3.12"
 # simplejson is used for text_c_extension
 simplejson==4.2.0; python_version >= "3.9"
-sphinx==9.1.0; python_version >= "3.12"
-sqlalchemy==2.1.5; python_version >= "3.11"
+sphinx==9.2.0; python_version >= "3.13"
+sqlalchemy==2.1.6; python_version >= "3.11"
 zope.interface==8.7; python_version >= "3.11"
 Pillow==13.0.0; python_version >= "3.11"
-setuptools==84.0.0; python_version >= "3.10"
+setuptools==84.2.1; python_version >= "3.10"
 
 
 # Python versions not supported / supported for older package versions
@@ -85,6 +85,11 @@ setuptools==84.0.0; python_version >= "3.10"
 # version(s) of python and pin the package to the last version that
 # supports the given python version. Make sure entries end with
 # `# pyup: ignore` to prevent them from being updated.
+
+# Python 3.12
+# -----------
+sphinx==9.1.1; python_version == "3.12"  # pyup: ignore
+
 
 # Python 3.11
 # -----------
