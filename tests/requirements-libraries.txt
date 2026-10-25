@@ -70,7 +70,7 @@ requests==2.34.2; python_version >= "3.10"
 scipy==1.18.1; python_version >= "3.12"
 # simplejson is used for text_c_extension
 simplejson==4.2.0; python_version >= "3.9"
-sphinx==9.2.0; python_version >= "3.12"
+sphinx==9.2.0; python_version >= "3.13"
 sqlalchemy==2.1.6; python_version >= "3.11"
 zope.interface==8.7; python_version >= "3.11"
 Pillow==13.0.0; python_version >= "3.11"
@@ -85,6 +85,11 @@ setuptools==84.2.1; python_version >= "3.10"
 # version(s) of python and pin the package to the last version that
 # supports the given python version. Make sure entries end with
 # `# pyup: ignore` to prevent them from being updated.
+
+# Python 3.12
+# -----------
+sphinx==9.1.1; python_version == "3.12"  # pyup: ignore
+
 
 # Python 3.11
 # -----------
