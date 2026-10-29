@@ -1,0 +1,6 @@
+(Windows) Fix collection of ``python3t.dll`` from standard
+(non-free-threaded) python 3.15 installations that place this DLL into
+``abi3t-compat`` subdirectory (e.g., python.org legacy installer and
+GitHub Actions python). Fixes problems with extensions that are built
+with the new ``abi3.abi3t`` ABI (PEP 803) that was introduced in
+python 3.15.
