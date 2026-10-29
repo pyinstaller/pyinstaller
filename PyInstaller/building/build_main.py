@@ -161,6 +161,25 @@ def find_binary_dependencies(binaries, import_packages, symlink_suppression_patt
         # Always search `sys.base_prefix`, and search it first. This ensures that we resolve the correct version of
         # `python3X.dll` and `python3.dll` (a PEP-0384 stable ABI stub that forwards symbols to the fully versioned
         # `python3X.dll`), regardless of other python installations that might be present in the PATH.
+        #
+        # Python 3.15 introduced `abi3.abi3t` ABI (PEP 803), where extensions on Windows are always linked against
+        # a `python3t.dll`. In free-threaded python builds, the `python3t.dll` is located in `sys.base_prefix`, and
+        # forwards functions to the `python3Xt.dll` (same as in earlier versions). In standard (non-free-threaded)
+        # python builds, however, we now have both a `python3.dll` (for `abi3`) and a `python3t.dll` (for `abi3.abi3t`),
+        # and both of them forward functions to the `python3X.dll`. In cases where free-threaded python is installed
+        # separately from the non-freee-threaded one (e.g., the new Python Install Manager from python.org, and the
+        # astral-sh/python-build-standalone builds), both `python3.dll` and `python3t.dll` are located in
+        # `sys.base_prefix`. On the other hand, the legacy python.org installer for python 3.15 installs both python
+        # variants in the same directory; the `python3t.dll` that is placed in `sys.base_prefix` belongs to the
+        # free-threaded build (if installed), and the one that belongs to the standard build for `abi3.abi3` is placed
+        # into the `abi3t-compat` sub-directory. Therefore, when we are using the non-free-threaded build of python 3.15
+        # (or later), we need to search this subdirectory (provided it exists), and we need to search it before the
+        # `sys.base_prefix`, to ensure that correct copy of the `python3t.dll` is picked up.
+        if compat.is_py315 and not compat.is_nogil:
+            compat_abi_path = os.path.join(compat.base_prefix, 'abi3t-compat')
+            if os.path.isdir(compat_abi_path):
+                extra_libdirs.append(compat_abi_path)
+
         extra_libdirs.append(compat.base_prefix)
 
         # When using python built from source, `sys.base_prefix` does not point to the directory that contains python
