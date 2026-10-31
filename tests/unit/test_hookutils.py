@@ -243,10 +243,11 @@ class TestCollectSubmodules(object):
         # Test treating errors as errors.
         with pytest.raises(RuntimeError) as ex_info:
             hookutils.collect_submodules(TEST_MOD, on_error="raise")
-            # The traceback should include the cause of the error...
-            assert ex_info.match('(?s).* assert 0, "I cannot be imported!"')
-            # ... and the name of the offending submodule in an easy to spot format.
-            assert ex_info.match("Unable to load submodule 'hookutils_package.raises_error_on_import_[12]'")
+
+        # The traceback should include the cause of the error...
+        assert ex_info.match('(?s).* assert 0, "I cannot be imported!"')
+        # ... and the name of the offending subpackage in an easy to spot format.
+        assert ex_info.match("Unable to load subpackage 'hookutils_package.raises_error_on_import_[12]'")
 
 
 def test_is_module_or_submodule():
