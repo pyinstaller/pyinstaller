@@ -152,6 +152,10 @@ command-line option.
     fail the validation check of the ``codesign`` utility, and therefore
     cannot be code-signed (which is a requirement on the Apple M1 platform).
 
+.. note::
+  UPX will become opt-in via the :option:`--upx` option rather than opt-out via
+  :option:`--noupx` in PyInstaller v7.0.0.
+
 
 Excluding problematic files from UPX processing
 -----------------------------------------------
