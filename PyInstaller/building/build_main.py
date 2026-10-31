@@ -38,7 +38,8 @@ from PyInstaller.building.utils import (
 )
 from PyInstaller.compat import is_win, is_conda, is_darwin, is_linux
 from PyInstaller.depend import bindepend
-from PyInstaller.depend.analysis import initialize_modgraph, HOOK_PRIORITY_USER_HOOKS
+from PyInstaller.depend.imphook import HOOK_PRIORITY_USER_HOOKS
+from PyInstaller.depend.modulegraph import initialize_modgraph
 from PyInstaller.depend.utils import scan_code_for_ctypes
 from PyInstaller import isolated
 from PyInstaller.utils.misc import absnormpath, get_path_to_toplevel_modules, mtime
@@ -95,7 +96,7 @@ def discover_hook_directories():
     from traceback import format_exception_only
     from PyInstaller.log import logger
     from PyInstaller.compat import importlib_metadata
-    from PyInstaller.depend.analysis import HOOK_PRIORITY_CONTRIBUTED_HOOKS, HOOK_PRIORITY_UPSTREAM_HOOKS
+    from PyInstaller.depend.imphook import HOOK_PRIORITY_CONTRIBUTED_HOOKS, HOOK_PRIORITY_UPSTREAM_HOOKS
 
     # The “selectable” entry points (via group and name keyword args) were introduced in importlib_metadata 4.6 and
     # Python 3.10. The compat module ensures we are using a compatible version.
@@ -858,8 +859,8 @@ class Analysis(Target):
             code_cache = None
 
         # Construct a set for look-up of modules that should end up in base_library.zip. The list of corresponding
-        # modulegraph nodes is stored in `PyiModuleGraph._base_modules` (see `PyiModuleGraph._analyze_base_modules`).
-        base_modules = set(node.identifier for node in self.graph._base_modules)
+        # modulegraph nodes is stored in `ModuleGraph._base_modules` (see `ModuleGraph._analyze_base_modules`).
+        base_modules = set(node.ident for node in self.graph._base_modules)
         base_modules_toc = []
 
         pycs_dir = os.path.join(CONF['workpath'], 'localpycs')

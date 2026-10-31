@@ -23,7 +23,7 @@ import packaging.requirements
 
 from PyInstaller import HOMEPATH, compat
 from PyInstaller import log as logging
-from PyInstaller.depend.imphookapi import PostGraphAPI
+from PyInstaller.depend.imphook import PostGraphAPI
 from PyInstaller import isolated
 from PyInstaller.compat import importlib_metadata
 
