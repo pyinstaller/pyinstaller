@@ -13,7 +13,7 @@ Tools for searching bytecode for key statements that indicate the need for addit
 and package metadata.
 
 By *bytecode* I mean the ``code`` object given by ``compile()``, accessible from the ``__code__`` attribute of any
-non-builtin function or, in PyInstallerLand, the ``PyiModuleGraph.node("some.module").code`` attribute. The best
+non-builtin function or, in PyInstallerLand, the ``ModuleGraph.node("some.module").code`` attribute. The best
 guide for bytecode format I have found is the disassembler reference: https://docs.python.org/3/library/dis.html
 
 This parser implementation aims to combine the flexibility and speed of regex with the clarity of the output of
