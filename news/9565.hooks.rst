@@ -1,1 +1,1 @@
-Add hooks for GtkLayerShell and Gtk4LayerShell.
+Add hooks for ``gi.repository.GtkLayerShell`` and ``gi.repository.Gtk4LayerShell``.
