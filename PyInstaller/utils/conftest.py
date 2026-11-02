@@ -37,7 +37,7 @@ import pytest  # noqa: E402
 from PyInstaller import __main__ as pyi_main  # noqa: E402
 from PyInstaller import configure  # noqa: E402
 from PyInstaller.compat import is_cygwin, is_darwin, is_win  # noqa: E402
-from PyInstaller.depend.analysis import initialize_modgraph  # noqa: E402
+from PyInstaller.depend.modulegraph import initialize_modgraph  # noqa: E402
 from PyInstaller.archive.readers import pkg_archive_contents  # noqa: E402
 from PyInstaller.utils.tests import gen_sourcefile  # noqa: E402
 from PyInstaller.utils.win32 import winutils  # noqa: E402

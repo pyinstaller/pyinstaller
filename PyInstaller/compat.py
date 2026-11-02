@@ -35,32 +35,6 @@ from PyInstaller.exceptions import ExecCommandFailed
 # building wheels, nor are they required during that phase.
 _setup_py_mode = os.environ.get('_PYINSTALLER_SETUP', '0') != '0'
 
-# PyInstaller requires importlib.metadata from python >= 3.10 stdlib, or equivalent importlib-metadata >= 4.6.
-if _setup_py_mode:
-    importlib_metadata = None
-else:
-    if sys.version_info >= (3, 10):
-        import importlib.metadata as importlib_metadata
-    else:
-        try:
-            import importlib_metadata
-        except ImportError as e:
-            from PyInstaller.exceptions import ImportlibMetadataError
-            raise ImportlibMetadataError() from e
-
-        import packaging.version  # For importlib_metadata version check
-
-        # Validate the version
-        if packaging.version.parse(importlib_metadata.version("importlib-metadata")) < packaging.version.parse("4.6"):
-            from PyInstaller.exceptions import ImportlibMetadataError
-            raise ImportlibMetadataError()
-
-# Strict collect mode, which raises error when trying to collect duplicate files into PKG/CArchive or COLLECT.
-strict_collect_mode = os.environ.get("PYINSTALLER_STRICT_COLLECT_MODE", "0") != "0"
-
-# Copied from https://docs.python.org/3/library/platform.html#cross-platform.
-is_64bits: bool = sys.maxsize > 2**32
-
 # Distinguish specific code for various Python versions. Variables 'is_pyXY' mean that Python X.Y and up is supported.
 # Keep even unsupported versions here to keep 3rd-party hooks working.
 is_py35 = sys.version_info >= (3, 5)
@@ -74,6 +48,34 @@ is_py312 = sys.version_info >= (3, 12)
 is_py313 = sys.version_info >= (3, 13)
 is_py314 = sys.version_info >= (3, 14)
 is_py315 = sys.version_info >= (3, 15)
+
+# PyInstaller requires importlib.metadata from python >= 3.10 stdlib, or equivalent importlib-metadata >= 4.6.
+if not _setup_py_mode:
+    if not is_py310:
+        try:
+            vendored = importlib.import_module("importlib_metadata")
+            # NOTE: 'packaging' is imported locally here, as it is only needed for the version check of the
+            # vendored 'importlib_metadata' package on Python < 3.10. We avoid a hard top-level import so that
+            # environments (e.g. 'hatch_build.py' building wheels) without 'packaging' installed do not fail
+            # just by importing 'PyInstaller.compat'.
+            from packaging.version import parse as parse_version
+            if parse_version(vendored.version("importlib-metadata")) < parse_version("4.6"):
+                raise ImportError("importlib-metadata must be version 4.6 or higher")
+
+            sys.modules["importlib.metadata"] = vendored
+        except ImportError as exc:
+            raise SystemExit(
+                "ERROR: PyInstaller requires importlib.metadata from python >= 3.10 stdlib or "
+                "importlib_metadata from importlib-metadata >= 4.6"
+            ) from exc
+        
+    import importlib.metadata as importlib_metadata
+
+# Strict collect mode, which raises error when trying to collect duplicate files into PKG/CArchive or COLLECT.
+strict_collect_mode = os.environ.get("PYINSTALLER_STRICT_COLLECT_MODE", "0") != "0"
+
+# Copied from https://docs.python.org/3/library/platform.html#cross-platform.
+is_64bits: bool = sys.maxsize > 2**32
 
 is_win = sys.platform.startswith('win')
 is_win_10 = is_win and (platform.win32_ver()[0] == '10')
@@ -615,82 +617,47 @@ if not is_py315:
     PY3_BASE_MODULES.add('sre_constants')
     PY3_BASE_MODULES.add('sre_parse')
 
-# Object types of Pure Python modules in modulegraph dependency graph.
-# Pure Python modules have code object (attribute co_code).
-PURE_PYTHON_MODULE_TYPES = {
-    'SourceModule',
-    'CompiledModule',
-    'Package',
-    'NamespacePackage',
-    # Deprecated.
-    # TODO Could these module types be removed?
-    'FlatPackage',
-    'ArchiveModule',
-}
-# Object types of special Python modules (built-in, run-time, namespace package) in modulegraph dependency graph that do
-# not have code object.
-SPECIAL_MODULE_TYPES = {
-    # Omit AliasNode from here (and consequently from VALID_MODULE_TYPES), in order to prevent PyiModuleGraph from
-    # running standard hooks for aliased modules.
-    #'AliasNode',
-    'BuiltinModule',
-    'RuntimeModule',
-    'RuntimePackage',
+# --- Node-type classification sets and TOC typecode mapping (deprecated aliases) ---
+#
+# These constants used to be defined here as plain sets of legacy node-class
+# name strings ("SourceModule", "Package", ...). With the module-graph rewrite
+# they now live, in their canonical and heavily documented form, in
+# ``PyInstaller.depend.modulegraph.nodes``: the :class:`ModuleType` enum and
+# the classification sets derived from it (``PURE_PYTHON_MODULE_TYPES``, ...).
+#
+# We cannot import that package from here at module level: this module is
+# imported by ``PyInstaller/__init__.py`` before that package -- and before
+# names such as ``PyInstaller.HOMEPATH`` -- are ready, so doing so would be
+# a circular import. Instead, the aliases are resolved lazily, on first
+# attribute access (PEP 562 ``__getattr__``), which keeps any external code
+# doing ``from PyInstaller.compat import VALID_MODULE_TYPES`` working while
+# making ``PyInstaller.depend.modulegraph.nodes`` the single source of truth.
+#
+# New code must import from ``PyInstaller.depend.modulegraph`` directly.
 
-    # PyInstaller handles scripts differently and not as standard Python modules.
-    'Script',
-}
-# Object types of Binary Python modules (extensions, etc) in modulegraph dependency graph.
-BINARY_MODULE_TYPES = {
-    'Extension',
-    'ExtensionPackage',
-}
-# Object types of valid Python modules in modulegraph dependency graph.
-VALID_MODULE_TYPES = PURE_PYTHON_MODULE_TYPES | SPECIAL_MODULE_TYPES | BINARY_MODULE_TYPES
-# Object types of bad/missing/invalid Python modules in modulegraph dependency graph.
-# TODO: should be 'Invalid' module types also in the 'MISSING' set?
-BAD_MODULE_TYPES = {
-    'BadModule',
-    'ExcludedModule',
-    'InvalidSourceModule',
-    'InvalidCompiledModule',
-    'MissingModule',
+_DEPRECATED_MODULE_TYPE_ALIASES = frozenset({
+    'ALL_MODULE_TYPES',
+    'BAD_MODULE_TYPES',
+    'BINARY_MODULE_TYPES',
+    'MODULE_TYPES_TO_TOC_DICT',
+    'PURE_PYTHON_MODULE_TYPES',
+    'SPECIAL_MODULE_TYPES',
+    'VALID_MODULE_TYPES',
+})
 
-    # Runtime modules and packages are technically valid rather than bad, but exist only in-memory rather than on-disk
-    # (typically due to pre_safe_import_module() hooks), and hence cannot be physically frozen. For simplicity, these
-    # nodes are categorized as bad rather than valid.
-    'RuntimeModule',
-    'RuntimePackage',
-}
-ALL_MODULE_TYPES = VALID_MODULE_TYPES | BAD_MODULE_TYPES
-# TODO: review this mapping to TOC, remove useless entries.
-# Dictionary to map ModuleGraph node types to TOC typecodes.
-MODULE_TYPES_TO_TOC_DICT = {
-    # Pure modules.
-    'AliasNode': 'PYMODULE',
-    'Script': 'PYSOURCE',
-    'SourceModule': 'PYMODULE',
-    'CompiledModule': 'PYMODULE',
-    'Package': 'PYMODULE',
-    'FlatPackage': 'PYMODULE',
-    'ArchiveModule': 'PYMODULE',
-    # Binary modules.
-    'Extension': 'EXTENSION',
-    'ExtensionPackage': 'EXTENSION',
-    # Special valid modules.
-    'BuiltinModule': 'BUILTIN',
-    'NamespacePackage': 'PYMODULE',
-    # Bad modules.
-    'BadModule': 'bad',
-    'ExcludedModule': 'excluded',
-    'InvalidSourceModule': 'invalid',
-    'InvalidCompiledModule': 'invalid',
-    'MissingModule': 'missing',
-    'RuntimeModule': 'runtime',
-    'RuntimePackage': 'runtime',
-    # Other.
-    'does not occur': 'BINARY',
-}
+
+def __getattr__(name):
+    """
+    Resolve the deprecated module-type aliases (see above) on first access.
+
+    This is the standard (PEP 562) way for a module to support "virtual"
+    attributes. It is called only when a name is not found among the module's
+    regular attributes, so it costs nothing at import time.
+    """
+    if name in _DEPRECATED_MODULE_TYPE_ALIASES:
+        from PyInstaller.depend.modulegraph import nodes as _nodes
+        return getattr(_nodes, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def check_requirements():
