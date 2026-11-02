@@ -620,14 +620,6 @@ class TestModuleGraph (unittest.TestCase):
         finally:
             pass
 
-    @expectedFailure
-    def test_create_xref(self):
-        self.fail("create_xref")
-
-    @expectedFailure
-    def test_itergraphreport(self):
-        self.fail("itergraphreport")
-
     def test_report(self):
         graph = modulegraph.ModuleGraph()
 
