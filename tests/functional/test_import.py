@@ -162,7 +162,7 @@ def test_import_submodule_from_aliased_pkg(pyi_builder, script_dir):
         sys.modules['alias_name'] = pyi_testmod_submodule_from_aliased_pkg
 
         from alias_name import submodule
-        """, ['--additional-hooks-dir', f"{script_dir / 'pyi_hooks'}"]
+        """, pyi_args=['--additional-hooks-dir', f"{script_dir / 'pyi_hooks'}"]
     )
 
 
@@ -184,14 +184,14 @@ def test_source_utf8_emoji(pyi_builder):
 
         # Retrieve source code
         source = inspect.getsource(module_with_utf8_emoji)
-        """, ['--add-data', add_data_arg]
+        """, pyi_args=['--add-data', add_data_arg]
     )
 
 
 def test_hiddenimport(pyi_builder):
     # The script simply does nothing, not even print out a line. The check is done by comparing with
     # logs/test_hiddenimport.toc
-    pyi_builder.test_source('pass', ['--hidden-import=a_hidden_import'])
+    pyi_builder.test_source('pass', pyi_args=['--hidden-import=a_hidden_import'])
 
 
 def test_error_during_import(pyi_builder):
@@ -270,11 +270,12 @@ def test_import_pyi_splash(pyi_builder):
 
 #--- unzipped .egg support ----
 
+_EGG_PATH = _MODULES_DIR / 'pyi_test_egg' / 'pyi_egg_unzipped.egg'
+_EGG_HOOKS_DIR = _MODULES_DIR / 'pyi_test_egg' / 'hooks'
+
 
 @importorskip('pkg_resources')
 def test_egg_unzipped(pyi_builder):
-    pathex = _MODULES_DIR / 'pyi_test_egg' / 'pyi_egg_unzipped.egg'
-    hooks_dir = _MODULES_DIR / 'pyi_test_egg' / 'hooks'
     pyi_builder.test_source(
         """
         # This code is part of the package for testing eggs in `PyInstaller`.
@@ -295,14 +296,12 @@ def test_egg_unzipped(pyi_builder):
 
         print('Okay.')
         """,
-        pyi_args=['--paths', str(pathex), '--additional-hooks-dir', str(hooks_dir)],
+        pyi_args=['--paths', str(_EGG_PATH), '--additional-hooks-dir', str(_EGG_HOOKS_DIR)],
     )  # yapf: disable
 
 
 @importorskip('pkg_resources')
 def test_egg_unzipped_metadata_pkg_resources(pyi_builder):
-    pathex = _MODULES_DIR / 'pyi_test_egg' / 'pyi_egg_unzipped.egg'
-    hooks_dir = _MODULES_DIR / 'pyi_test_egg' / 'hooks'
     pyi_builder.test_source(
         """
         import pkg_resources
@@ -317,13 +316,11 @@ def test_egg_unzipped_metadata_pkg_resources(pyi_builder):
         # Project name is taken from egg name
         assert dist.project_name == 'pyi-egg-unzipped', f"Unexpected project name {dist.project_name!r}"
         """,
-        pyi_args=['--paths', str(pathex), '--additional-hooks-dir', str(hooks_dir)],
+        pyi_args=['--paths', str(_EGG_PATH), '--additional-hooks-dir', str(_EGG_HOOKS_DIR)],
     )  # yapf: disable
 
 
 def test_egg_unzipped_metadata_importlib_metadata(pyi_builder):
-    pathex = _MODULES_DIR / 'pyi_test_egg' / 'pyi_egg_unzipped.egg'
-    hooks_dir = _MODULES_DIR / 'pyi_test_egg' / 'hooks'
     pyi_builder.test_source(
         """
         try:
@@ -349,25 +346,30 @@ def test_egg_unzipped_metadata_importlib_metadata(pyi_builder):
         assert dist.name == 'unzipped-egg', f"Unexpected name {dist.name!r}"
         assert dist.version == '0.1', f"Unexpected version {dist.version!r}"
         """,
-        pyi_args=['--paths', str(pathex), '--additional-hooks-dir', str(hooks_dir)],
+        pyi_args=['--paths', str(_EGG_PATH), '--additional-hooks-dir', str(_EGG_HOOKS_DIR)],
     )  # yapf: disable
 
 
 #--- namespaces ---
 
+# Common --paths arguments for the namespace-package tests below.
+_NSPKG1_EGGS = os.pathsep.join(str(path) for path in (_MODULES_DIR / 'nspkg1-pkg').glob('*.egg'))
+_NSPKG2_PATH = str(_MODULES_DIR / 'nspkg2-pkg')
+_NSPKG3_EGGS = os.pathsep.join(str(path) for path in (_MODULES_DIR / 'nspkg3-pkg').glob('*.egg'))
+_NSPKG3_EMPTY_EGGS = os.pathsep.join(str(path) for path in (_MODULES_DIR / 'nspkg3-pkg').glob('*_empty.egg'))
+_NSPKG_PEP420_PATHS = os.pathsep.join(str(path) for path in (_MODULES_DIR / 'nspkg-pep420').glob('path*'))
+
 
 @importorskip('pkg_resources')
 def test_nspkg1(pyi_builder):
     # Test inclusion of namespace packages implemented using pkg_resources.declare_namespace
-    extra_paths = (_MODULES_DIR / 'nspkg1-pkg').glob('*.egg')
-    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg1.aaa
         import nspkg1.bbb.zzz
         import nspkg1.ccc
         """,
-        pyi_args=['--paths', paths_arg],
+        pyi_args=['--paths', _NSPKG1_EGGS],
     )
 
 
@@ -375,48 +377,40 @@ def test_nspkg1(pyi_builder):
 def test_nspkg1_empty(pyi_builder):
     # Test inclusion of a namespace-only packages in an zipped egg. This package only defines the namespace, nothing is
     # contained there.
-    extra_paths = (_MODULES_DIR / 'nspkg1-pkg').glob('*.egg')
-    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg1
         print (nspkg1)
         """,
-        pyi_args=['--paths', paths_arg],
+        pyi_args=['--paths', _NSPKG1_EGGS],
     )
 
 
 @importorskip('pkg_resources')
 def test_nspkg1_bbb_zzz(pyi_builder):
     # Test inclusion of a namespace packages in an zipped egg
-    extra_paths = (_MODULES_DIR / 'nspkg1-pkg').glob('*.egg')
-    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg1.bbb.zzz
         """,
-        pyi_args=['--paths', paths_arg],
+        pyi_args=['--paths', _NSPKG1_EGGS],
     )
 
 
 def test_nspkg2(pyi_builder):
     # Test inclusion of namespace packages implemented as nspkg.pth-files
-    extra_paths = [_MODULES_DIR / 'nspkg2-pkg']
-    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg2.aaa
         import nspkg2.bbb.zzz
         import nspkg2.ccc
         """,
-        pyi_args=['--paths', paths_arg],
+        pyi_args=['--paths', _NSPKG2_PATH],
     )
 
 
 @xfail(reason="modulegraph implements `pkgutil.extend_path` wrong")
 def test_nspkg3(pyi_builder):
-    extra_paths = (_MODULES_DIR / 'nspkg3-pkg').glob('*.egg')
-    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg3.aaa
@@ -436,52 +430,44 @@ def test_nspkg3(pyi_builder):
             raise SystemExit('nspkg3.a found but should not')
         import nspkg3.ccc
         """,
-        pyi_args=['--paths', paths_arg],
+        pyi_args=['--paths', _NSPKG3_EGGS],
     )
 
 
 def test_nspkg3_empty(pyi_builder):
     # Test inclusion of a namespace-only package in a zipped egg using pkgutil.extend_path. This package only defines
     # namespace, nothing is contained there.
-    extra_paths = (_MODULES_DIR / 'nspkg3-pkg').glob('*_empty.egg')
-    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg3
         print (nspkg3)
         """,
-        pyi_args=['--paths', paths_arg],
+        pyi_args=['--paths', _NSPKG3_EMPTY_EGGS],
     )
 
 
 def test_nspkg3_aaa(pyi_builder):
     # Test inclusion of a namespace package in an directory using pkgutil.extend_path
-    extra_paths = (_MODULES_DIR / 'nspkg3-pkg').glob('*.egg')
-    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg3.aaa
         """,
-        pyi_args=['--paths', paths_arg],
+        pyi_args=['--paths', _NSPKG3_EGGS],
     )
 
 
 def test_nspkg3_bbb_zzz(pyi_builder):
     # Test inclusion of a namespace package in an zipped egg using pkgutil.extend_path
-    extra_paths = (_MODULES_DIR / 'nspkg3-pkg').glob('*.egg')
-    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import nspkg3.bbb.zzz
         """,
-        pyi_args=['--paths', paths_arg],
+        pyi_args=['--paths', _NSPKG3_EGGS],
     )
 
 
 def test_nspkg_pep420(pyi_builder):
     # Test inclusion of PEP 420 namespace packages.
-    extra_paths = (_MODULES_DIR / 'nspkg-pep420').glob('path*')
-    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import package.sub1
@@ -489,7 +475,7 @@ def test_nspkg_pep420(pyi_builder):
         import package.subpackage.sub
         import package.nspkg.mod
         """,
-        pyi_args=['--paths', paths_arg],
+        pyi_args=['--paths', _NSPKG_PEP420_PATHS],
     )
 
 
@@ -499,8 +485,6 @@ def test_nspkg_attributes(pyi_builder):
     # pkg_resources.declare_namespace) have proper attributes:
     #  * __path__ attribute should contain at least one path
     #  * __file__ attribute should point to an __init__ file within __path__
-    extra_paths = (_MODULES_DIR / 'nspkg1-pkg').glob('*.egg')
-    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import os
@@ -519,7 +503,7 @@ def test_nspkg_attributes(pyi_builder):
 
         validate_nspkg(nspkg1)
         """,
-        pyi_args=['--paths', paths_arg],
+        pyi_args=['--paths', _NSPKG1_EGGS],
     )
 
 
@@ -527,8 +511,6 @@ def test_nspkg_attributes_pep420(pyi_builder):
     # Test that PEP-420 namespace packages have proper attributes:
     #  * __path__ should contain at least one path
     #  * __file__ should be None
-    extra_paths = (_MODULES_DIR / 'nspkg-pep420').glob('path*')
-    paths_arg = os.pathsep.join([str(path) for path in extra_paths])
     pyi_builder.test_source(
         """
         import package
@@ -544,7 +526,7 @@ def test_nspkg_attributes_pep420(pyi_builder):
         validate_nspkg_pep420(package)
         validate_nspkg_pep420(package.nspkg)
         """,
-        pyi_args=['--paths', paths_arg],
+        pyi_args=['--paths', _NSPKG_PEP420_PATHS],
     )
 
 

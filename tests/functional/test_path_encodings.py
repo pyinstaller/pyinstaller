@@ -26,50 +26,44 @@ def test_ascii_path(pyi_builder):
     pyi_builder.test_script('pyi_path_encoding.py')
 
 
-@pytest.mark.linux
-def test_linux_non_unicode_path(pyi_builder, monkeypatch):
-    # If we set the locale to 'C', mbstowcs should be completely useless. This test verifies that _Py_char2wchar will
-    # decode the "undecodable" bytes and will decode even filenames that weren't encoded with the locale encoding.
-    unicode_filename = 'ěščřžýáíé日本語'
-
-    pyi_builder._dist_dir = pyi_builder._dist_dir / unicode_filename
-
-    tmp = pyi_builder._tmp_path / f"{unicode_filename}_TMP"
-    tmp.mkdir()
-
-    monkeypatch.setenv('LC_ALL', 'C')
-    monkeypatch.setenv('TMPDIR', str(tmp))
-    monkeypatch.setenv('TMP', str(tmp))
-
-    pyi_builder.test_script('pyi_path_encoding.py')
+_UNICODE_FILENAME = 'ěščřžýáíé日本語'
 
 
-@pytest.mark.darwin
-@pytest.mark.linux
-def test_osx_linux_unicode_path(pyi_builder, monkeypatch):
-    # Mac and Linux should handle 'unicode' type filenames without problem.
-    unicode_filename = 'ěščřžýáíé日本語'
-
-    pyi_builder._dist_dir = pyi_builder._dist_dir / unicode_filename
-
-    tmp = pyi_builder._tmp_path / f"{unicode_filename}_TMP"
-    tmp.mkdir()
-
-    monkeypatch.setenv('TMPDIR', str(tmp))
-    monkeypatch.setenv('TMP', str(tmp))
-
-    pyi_builder.test_script('pyi_path_encoding.py')
-
-
-@pytest.mark.win32
-def test_win_codepage_path(pyi_builder, monkeypatch):
+def _codepage_filename():
     # Create some bytes and decode with the current codepage to get a filename that is guaranteed to encode with the
     # current codepage. Assumes a one-byte codepage, i.e., not cp937 (shift-JIS) which is multibyte.
-    cp_filename = bytes(bytearray(range(0x80, 0x86))).decode('mbcs')
+    return bytes(bytearray(range(0x80, 0x86))).decode('mbcs')
 
-    pyi_builder._dist_dir = pyi_builder._dist_dir / cp_filename
 
-    tmp = pyi_builder._tmp_path / f"{cp_filename}_TMP"
+# Build into a subdirectory named after a non-ASCII filename, and use a (non-ASCII) temporary directory, to verify
+# that paths with the given encodings are handled correctly throughout the build and at run-time. Each parameter set
+# is (subdir_kind, extra_env), where `subdir_kind` selects the non-ASCII filename and `extra_env` are additional
+# environment variables set for the test.
+@pytest.mark.parametrize(
+    "subdir_kind, extra_env",
+    [
+        # If we set the locale to 'C', mbstowcs should be completely useless. This test verifies that _Py_char2wchar
+        # will decode the "undecodable" bytes and will decode even filenames that weren't encoded with the locale
+        # encoding.
+        pytest.param('unicode', {'LC_ALL': 'C'}, marks=pytest.mark.linux, id='linux-non-unicode-path'),
+        # Mac and Linux should handle 'unicode' type filenames without problem.
+        pytest.param('unicode', {}, marks=[pytest.mark.darwin, pytest.mark.linux], id='osx-linux-unicode-path'),
+        pytest.param('codepage', {}, marks=pytest.mark.win32, id='win-codepage-path'),
+        # Both eastern European and Japanese characters - no codepage should encode this; codepage encoding would
+        # replace some of these chars with "???". To test what happens with a non-ANSI tempdir, we will also need to
+        # pass the TMP environ as wide chars.
+        pytest.param('unicode', {}, marks=pytest.mark.win32, id='win-non-codepage-path'),
+    ],
+)
+def test_path_encoding_non_ascii_dist_dir(pyi_builder, monkeypatch, subdir_kind, extra_env):
+    subdir_name = _codepage_filename() if subdir_kind == 'codepage' else _UNICODE_FILENAME
+
+    for key, value in extra_env.items():
+        monkeypatch.setenv(key, value)
+
+    pyi_builder._dist_dir = pyi_builder._dist_dir / subdir_name
+
+    tmp = pyi_builder._tmp_path / f"{subdir_name}_TMP"
     tmp.mkdir()
 
     monkeypatch.setenv('TMPDIR', str(tmp))
@@ -80,9 +74,7 @@ def test_win_codepage_path(pyi_builder, monkeypatch):
 
 @pytest.mark.win32
 def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
-    # Create some bytes and decode with the current codepage to get a filename that is guaranteed to encode with the
-    # current codepage. Assumes a one-byte codepage, i.e., not cp937 (shift-JIS) which is multibyte.
-    cp_filename = bytes(bytearray(range(0x80, 0x86))).decode('mbcs')
+    cp_filename = _codepage_filename()
 
     pyi_builder._dist_dir = pyi_builder._dist_dir / cp_filename
 
@@ -93,24 +85,6 @@ def test_win_codepage_path_disabled_shortfilename(pyi_builder, monkeypatch):
         pytest.xfail("Administrator privileges required to strip ShortFileName.")
 
     tmp = pyi_builder._tmp_path / f"{cp_filename}_TMP"
-    tmp.mkdir()
-
-    monkeypatch.setenv('TMPDIR', str(tmp))
-    monkeypatch.setenv('TMP', str(tmp))
-
-    pyi_builder.test_script('pyi_path_encoding.py')
-
-
-@pytest.mark.win32
-def test_win_non_codepage_path(pyi_builder, monkeypatch):
-    # Both eastern European and Japanese characters - no codepage should encode this.
-    non_cp_filename = 'ěščřžýáíé日本語'
-
-    # Codepage encoding would replace some of these chars with "???".
-    pyi_builder._dist_dir = pyi_builder._dist_dir / non_cp_filename
-
-    # To test what happens with a non-ANSI tempdir, we will also need to pass the TMP environ as wide chars.
-    tmp = pyi_builder._tmp_path / f"{non_cp_filename}_TMP"
     tmp.mkdir()
 
     monkeypatch.setenv('TMPDIR', str(tmp))
