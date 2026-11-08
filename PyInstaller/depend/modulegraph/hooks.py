@@ -396,10 +396,17 @@ class ModuleGraphHooks:
         """
         excluded_imports = set()
         while module_name:
-            # Gather excluded imports from hook belonging to the module.
-            module_hook = self._hooks.get(module_name, None)
-            if module_hook:
-                excluded_imports.update(module_hook.excludedimports)
+            # Consult the hook only when the module actually exists in the graph as a real, collectable module.
+            # Aliased names (whose ModuleType.ALIAS nodes stand in for a module that does not exist on disk under
+            # that name) and other non-collectable nodes must not trigger the execution of their hook script, as the
+            # hook may legitimately fail when the module it is written for is not installed -- for example,
+            # ``copy_metadata()`` in the hook for the ``importlib_metadata`` backport when building on Python >= 3.10.
+            node = self.find_node(module_name)
+            if node is not None and node.module_type in VALID_MODULE_TYPES:
+                # Gather excluded imports from hook belonging to the module.
+                module_hook = self._hooks.get(module_name, None)
+                if module_hook:
+                    excluded_imports.update(module_hook.excludedimports)
             # Change module name to the module's parent name
             module_name = module_name.rpartition('.')[0]
         return excluded_imports
@@ -695,9 +702,12 @@ class ModuleGraphHooks:
             else:
                 logger.info("Analyzing hidden import %r", modnm)
                 # import_hook() raises ImportError if the module cannot be
-                # resolved (including the case where it is excluded).
+                # resolved (including the case where it is excluded). The top-level script is passed as the caller so
+                # that the parent packages of a dotted name are attributed to (and hence stay reachable from) the
+                # graph root -- TOC generation collects only nodes reachable from the top-level script, and
+                # unattributed parents would silently drop out of the bundle.
                 try:
-                    nodes = self.import_hook(modnm)
+                    nodes = self.import_hook(modnm, caller=self._top_script_node)
                     assert len(nodes) == 1
                     node = nodes[0]
                 except ImportError:

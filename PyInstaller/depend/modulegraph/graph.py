@@ -190,6 +190,11 @@ class ModuleGraph(ModuleGraphHooks):
         # Implied dependencies (see ``implies`` parameter documentation).
         self._implies: Dict[str, Union[List[str], Alias, None]] = dict(implies) if implies else {}
 
+        # Search-directory extensions registered by append_package_path() for packages whose graph node does not
+        # exist yet (pre_safe_import_module() hooks run while the package's own queue item is being processed,
+        # i.e., before its node is created). Applied when the node is created; see _apply_pending_package_paths().
+        self._pending_package_paths: Dict[str, List[Union[str, Path]]] = {}
+
         # Debug verbosity for self.msg() calls issued by the engine itself.
         self.debug = debug
 
@@ -306,7 +311,12 @@ class ModuleGraph(ModuleGraphHooks):
         """
         node = self.find_node(module)
         if node is None:
-            self._queue.append(QueueItem(name=module, importing_module=_ident_of(caller)))
+            # Route through _queue_import() rather than queuing the module directly, so that the parent packages of
+            # a dotted name are queued (and hence collected) as well. Importing `package.sub.mod` also imports
+            # `package` and `package.sub`, and the frozen application needs their nodes -- for example, a
+            # `--hiddenimport myotherpackage._vendored.mypackage.mod` must also collect the vendored `mypackage`
+            # package itself, or the vendored-copy redirection machinery cannot find it at run time.
+            self._queue_import(module, _ident_of(caller))
             self._run()
             node = self.nodes.get(module)
             if node is None or node.module_type == ModuleType.MISSING:
@@ -332,6 +342,7 @@ class ModuleGraph(ModuleGraphHooks):
         """
         node = Node(ident=module_name, module_type=ModuleType.RUNTIME_MODULE)
         self.nodes[module_name] = node
+        self._apply_pending_package_paths(module_name)
         return node
 
     def add_runtime_package(self, package_name: str) -> Optional[Node]:
@@ -344,6 +355,7 @@ class ModuleGraph(ModuleGraphHooks):
         """
         node = Node(ident=package_name, module_type=ModuleType.RUNTIME_PACKAGE)
         self.nodes[package_name] = node
+        self._apply_pending_package_paths(package_name)
         return node
 
     def alias_module(self, real_module_name: str, alias_module_name: str):
@@ -397,7 +409,22 @@ class ModuleGraph(ModuleGraphHooks):
         """
         package_node = self.find_node(package_name)
         if package_node is None:
+            # The node does not exist yet: pre_safe_import_module() hooks run while the package's own queue item is
+            # being processed, i.e., before its node is created (see _process_queue_item()). Defer the extension
+            # until the node is created instead of silently dropping it.
+            self._pending_package_paths.setdefault(package_name, []).append(directory)
             return
+
+        self._append_package_path_to_node(package_name, directory)
+
+    def _append_package_path_to_node(self, package_name: str, directory: Union[str, Path]) -> None:
+        """
+        Extend an *existing* package node's search locations with the given directory.
+
+        See :meth:`append_package_path` for the front-end that handles both the existing-node and pending cases.
+        """
+        package_node = self.find_node(package_name)
+        assert package_node is not None
 
         # Only packages (regular or namespace) have search locations to
         # extend; appending to anything else would be meaningless.
@@ -417,6 +444,15 @@ class ModuleGraph(ModuleGraphHooks):
         directory = str(Path(directory).resolve())
         if directory not in package_node.spec.submodule_search_locations:
             package_node.spec.submodule_search_locations.append(directory)
+
+    def _apply_pending_package_paths(self, ident: str) -> None:
+        """
+        Apply search-directory extensions registered by append_package_path() before this node existed.
+
+        Called from every node-creation site.
+        """
+        for directory in self._pending_package_paths.pop(ident, []):
+            self._append_package_path_to_node(ident, directory)
 
     def add_exclude(self, module: str) -> None:
         """
@@ -1009,11 +1045,14 @@ class ModuleGraph(ModuleGraphHooks):
             if isinstance(implied, Alias):
                 # The name is an alias for another module (e.g. os.path ->
                 # ntpath): create the alias node and analyze the real module
-                # instead of the (non-resolvable) alias name.
+                # instead of the (non-resolvable) alias name. The original
+                # item's from-list is carried over, so that
+                # ``from alias_name import submodule`` queues the submodule
+                # of the aliased-to package rather than silently dropping it.
                 self._add_node(item.name, ModuleType.ALIAS, target=str(implied))
                 if item.importing_module:
                     self.add_edge(item.importing_module, item.name)
-                self._queue_import(str(implied), item.name)
+                self._queue_import(str(implied), item.name, fromlist=item.fromlist)
                 return
             if implied is None:
                 # The module exists but its imports are untrackable (e.g.
@@ -1080,6 +1119,7 @@ class ModuleGraph(ModuleGraphHooks):
             code = compile(Path(item.path).read_bytes(), str(item.path), "exec")
             node = Node(ident=item.name, module_type=ModuleType.SCRIPT, path=str(item.path), code=code)
             self.nodes[item.name] = node
+            self._apply_pending_package_paths(item.name)
             return node
 
         origin = spec.origin
@@ -1144,6 +1184,7 @@ class ModuleGraph(ModuleGraphHooks):
                 code=code,
             )
             self.nodes[item.name] = node
+            self._apply_pending_package_paths(item.name)
 
         return node
 
@@ -1166,6 +1207,7 @@ class ModuleGraph(ModuleGraphHooks):
         """
         node = Node(ident=ident, module_type=module_type, path=path, spec=spec, target=target, code=code)
         self.nodes[ident] = node
+        self._apply_pending_package_paths(ident)
         return node
 
     # ------------------------------------------------------------------
