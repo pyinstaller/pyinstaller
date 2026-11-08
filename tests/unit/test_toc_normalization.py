@@ -51,7 +51,6 @@ def test_normalize_toc_duplicate_binary_case_sensitive():
     # A BINARY entry that is a duplicate only on case-insensitive OSes.
     toc = copy.copy(_BASE_TOC)
     toc.insert(2, ('libSoMeThInG.so', '/opt/something/lib/libSoMeThInG.so', 'BINARY'))
-    expected_toc = _BASE_TOC
 
     if compat.is_win:
         expected_toc = _BASE_TOC
@@ -76,7 +75,6 @@ def test_normalize_toc_duplicate_data_case_sensitive():
     # A DATA entry that is a duplicate on case-insensitive OSes.
     toc = copy.copy(_BASE_TOC)
     toc.insert(-1, ('readme', '/home/user/tmp-other/readme', 'DATA'))
-    expected_toc = _BASE_TOC
 
     if compat.is_win:
         expected_toc = _BASE_TOC

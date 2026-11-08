@@ -507,7 +507,6 @@ def test_nspkg_attributes(pyi_builder):
         import nspkg1
 
         def validate_nspkg(pkg):
-            from sys import version_info
             # Validate __path__
             path = getattr(pkg, '__path__', None)
             assert path is not None and len(path) >= 1, "invalid __path__"
@@ -536,7 +535,6 @@ def test_nspkg_attributes_pep420(pyi_builder):
         import package.nspkg
 
         def validate_nspkg_pep420(pkg):
-            from sys import version_info
             # Validate __path__
             path = getattr(pkg, '__path__', None)
             assert path is not None and len(path) >= 1, "invalid __path__"

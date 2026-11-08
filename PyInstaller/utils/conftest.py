@@ -575,7 +575,9 @@ def pyi_bincache(tmp_path_factory):
 def pyi_builder(tmp_path, monkeypatch, request, pyi_modgraph, pyi_bincache):
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'])
-    # PyInstaller or a test case might manipulate 'sys.path'. Reset it for every test.
+    # PyInstaller or a test case might manipulate 'sys.path'. Reset it for every test. This is important because
+    # PyInstaller's Analysis extends sys.path with the build's pathex entries and never cleans them up, so without
+    # the reset they (including paths to already-removed temporary directories) leak into subsequent tests.
     monkeypatch.syspath_prepend(None)
     # Set current working directory to
     monkeypatch.chdir(tmp_path)
@@ -596,10 +598,10 @@ def pyi_builder(tmp_path, monkeypatch, request, pyi_modgraph, pyi_bincache):
 def pyi_builder_spec(tmp_path, request, monkeypatch, pyi_modgraph, pyi_bincache):
     # Save/restore environment variable PATH.
     monkeypatch.setenv('PATH', os.environ['PATH'])
+    # PyInstaller or a test case might manipulate 'sys.path'. Reset it for every test (see pyi_builder above).
+    monkeypatch.syspath_prepend(None)
     # Set current working directory to
     monkeypatch.chdir(tmp_path)
-    # PyInstaller or a test case might manipulate 'sys.path'. Reset it for every test.
-    monkeypatch.syspath_prepend(None)
     # Clean up configuration and force PyInstaller to do a clean configuration for another app/test. The value is same
     # as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
