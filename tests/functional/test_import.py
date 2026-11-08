@@ -530,6 +530,39 @@ def test_nspkg_attributes_pep420(pyi_builder):
     )
 
 
+# Test that a program importing `__main__` module does not pull in `PyInstaller` (or in the case of the test, the
+# `pytest`). The problem is that the `__main__` has different meaning during analysis vs. during program's run;
+# during analysis, it resolves to the entry-point module that is running the analysis, whereas during program run, it
+# refers to the program's entry-point. Currently, this seems to be a problem only on Windows, where modulegraph manages
+# to resolve `__main__` into `.../PyInstaller.exe/__main__.py` (or `.../pytest.exe/__main__.py`). On Linux and macOS,
+# modulegraph does not seem to be able to resolve `__main__`.
+@pytest.mark.parametrize(
+    "source",
+    [
+        # Plain import.
+        """
+        import __main__
+        print(__main__)
+        """,
+        # Import __main__ in the same way as `pkg_resources` and its vendored variants
+        # (e.g., `pip._vendor.pkg_resources`) do.
+        """
+        try:
+            from __main__ import __requires__
+        except ImportError:
+            pass
+        """,
+    ],
+    ids=['plain', 'pkg_resources'],
+)
+def test_import_main_should_not_collect_pyinstaller(pyi_builder, source):
+    hooks_dir = _MODULES_DIR / 'pyi_import_main' / 'hooks'
+    pyi_builder.test_source(
+        source,
+        pyi_args=['--additional-hooks-dir', str(hooks_dir)]
+    )
+
+
 #--- hooks related stuff ---
 
 

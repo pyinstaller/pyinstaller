@@ -88,56 +88,58 @@ def xmldiff():
     return SimpleNamespace(etree=lxml.etree, main=xmldiff.main, actions=xmldiff.actions)
 
 
-# Pieces shared by the custom-manifest templates below. Each piece is a list of byte lines, joined with newlines so
-# the templates stay readable without giant string literals.
-_XML_HEADER = [b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
-               b'<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">']
-_TRUST_INFO_XML = [b'  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">',
-                   b'    <security>',
-                   b'      <requestedPrivileges>',
-                   b'        <requestedExecutionLevel level="asInvoker" uiAccess="false"></requestedExecutionLevel>',
-                   b'      </requestedPrivileges>',
-                   b'    </security>',
-                   b'  </trustInfo>']
-_COMPATIBILITY_XML = [b'  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">',
-                      b'    <application>',
-                      b'      <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"></supportedOS>',
-                      b'      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"></supportedOS>',
-                      b'      <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}"></supportedOS>',
-                      b'      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"></supportedOS>',
-                      b'      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"></supportedOS>',
-                      b'    </application>',
-                      b'  </compatibility>']
-_WINDOWS_SETTINGS_XML = [b'  <application xmlns="urn:schemas-microsoft-com:asm.v3">',
-                         b'    <windowsSettings>',
-                         b'      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>',  # noqa: E501
-                         b'      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, unaware</dpiAwareness>',  # noqa: E501
-                         b'    </windowsSettings>',
-                         b'  </application>']
-_DEPENDENCY_MS_COMMON_CONTROLS_V6_XML = [b'  <dependency>',
-                                         b'    <dependentAssembly>',
-                                         b'      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*"></assemblyIdentity>',  # noqa: E501
-                                         b'    </dependentAssembly>',
-                                         b'  </dependency>']
-_DEPENDENCY_MS_COMMON_CONTROLS_V5_XML = [b'  <dependency>',
-                                         b'    <dependentAssembly>',
-                                         b'      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="5.0.0.0"></assemblyIdentity>',  # noqa: E501
-                                         b'    </dependentAssembly>',
-                                         b'  </dependency>']
-_DEPENDENCY_CUSTOM_LIBRARY_XML = [b'  <dependency>',
-                                  b'    <dependentAssembly>',
-                                  b'      <assemblyIdentity type="win32" name="MyAwesomeLibrary" version="1.0.0.0"></assemblyIdentity>',  # noqa: E501
-                                  b'    </dependentAssembly>',
-                                  b'  </dependency>']
+# XML fragments shared by the custom-manifest templates below, as multi-line byte strings. Long lines inside the
+# literals cannot carry a per-line noqa, so the fragments with over-long lines silence E501 on their closing quotes.
+_XML_HEADER = (b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+               b'<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">')
+_TRUST_INFO_XML = b"""
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false"></requestedExecutionLevel>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>"""
+_COMPATIBILITY_XML = b"""
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"></supportedOS>
+      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"></supportedOS>
+      <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}"></supportedOS>
+      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"></supportedOS>
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"></supportedOS>
+    </application>
+  </compatibility>"""
+_WINDOWS_SETTINGS_XML = b"""
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, unaware</dpiAwareness>
+    </windowsSettings>
+  </application>"""  # noqa: E501
+_DEPENDENCY_MS_COMMON_CONTROLS_V6_XML = b"""
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*"></assemblyIdentity>
+    </dependentAssembly>
+  </dependency>"""  # noqa: E501
+_DEPENDENCY_MS_COMMON_CONTROLS_V5_XML = b"""
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="5.0.0.0"></assemblyIdentity>
+    </dependentAssembly>
+  </dependency>"""
+_DEPENDENCY_CUSTOM_LIBRARY_XML = b"""
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="MyAwesomeLibrary" version="1.0.0.0"></assemblyIdentity>
+    </dependentAssembly>
+  </dependency>"""
 
 
 def _custom_manifest_xml(*sections):
     """Assemble a custom manifest template from the shared pieces."""
-    lines = list(_XML_HEADER)
-    for section in sections:
-        lines += list(section)
-    lines.append(b'</assembly>')
-    return b'\x0a'.join(lines) + b'\x0a'
+    return _XML_HEADER + b"".join(sections) + b"\n</assembly>\n"
 
 
 #- Tests with default manifest template
