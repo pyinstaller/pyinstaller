@@ -30,6 +30,8 @@ PySide2==5.15.2.1; python_version < "3.11" and (sys_platform != "darwin" or plat
 PySide6==6.12.0; python_version >= "3.10"
 PySide6-Addons==6.12.0; python_version >= "3.10"
 PySide6-Essentials==6.12.0; python_version >= "3.10"
+PySide6-Pdf==6.12.0.140; python_version >= "3.10"
+PySide6-WebEngine==6.12.0.140; python_version >= "3.10"
 # PyQt5 and add-on packages
 # We do not pin *-Qt5 packages (which contain Qt shared libraries), as Qt5 is not actively developed
 # anymore, and thus 5.15.x has a stable ABI. Plus, it seems that *-Qt5 5.15.2 wheels are available for
@@ -53,6 +55,8 @@ PyQt6==6.12.0; python_version >= "3.10"
 PyQt6-Qt6==6.12.0; python_version >= "3.10"
 PyQt6-3D==6.12.0; python_version >= "3.10"
 PyQt6-3D-Qt6==6.12.0; python_version >= "3.10"
+PyQt6-CanvasPainter-Qt6==6.12.0; python_version >= "3.10"
+PyQt6-CanvasPainter-Qt6==6.12.0; python_version >= "3.10"
 PyQt6-Charts==6.12.0; python_version >= "3.10"
 PyQt6-Charts-Qt6==6.12.0; python_version >= "3.10"
 PyQt6-DataVisualization==6.12.0; python_version >= "3.10"
