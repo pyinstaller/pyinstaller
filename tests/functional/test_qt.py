@@ -14,7 +14,7 @@ import os
 import pytest
 
 from PyInstaller import isolated
-from PyInstaller.compat import is_darwin, is_linux
+from PyInstaller.compat import is_darwin, is_linux, is_win
 from PyInstaller.utils.hooks import can_import_module
 from PyInstaller.utils.hooks.qt import get_qt_library_info
 from PyInstaller.utils.tests import importorskip, requires, onedir_only

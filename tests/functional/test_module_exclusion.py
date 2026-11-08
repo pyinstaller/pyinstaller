@@ -112,3 +112,51 @@ def test_subpackage_exclusion_numpy_f2py(pyi_builder):
     pyi_builder.test_source("""
         import numpy.f2py
         """)
+
+
+# Test that a relative import attempt of a missing optional sub-module in a package does not trigger collection of an
+# unrelated but eponymous top-level module. Simulates the scenario from #8010, where the following block in
+# `openpyxl.reader.excel`:
+#
+# ```
+# try:
+#    from ..tests import KEEP_VBA
+# except ImportError:
+#    KEEP_VBA = False
+# ```
+#
+# (https://foss.heptapod.net/openpyxl/openpyxl/-/blob/branch/3.1/openpyxl/reader/excel.py#L16)
+#
+# triggers collection of top-level `tests` package that is provided by the `LaoNLP` distribution. And importing
+# the said `tests` package during analysis triggers LaoNLP's unit tests...
+def test_missing_relative_import_collects_unrelated_top_level_module(pyi_builder):
+    extra_path = _MODULES_DIR / "pyi_missing_relative_import"
+    hooks_dir = extra_path / 'hooks'
+
+    pyi_builder.test_source(
+        """
+        import mypackage
+        """,
+        pyi_args=['--additional-hooks-dir', str(hooks_dir), '--paths', str(extra_path)]
+    )  # yapf: disable
+
+
+# Test that various forms of relative imports are properly caught by the module exclusion.
+@pytest.mark.parametrize('exclude', [False, True], ids=["baseline", "exclude"])
+def test_excluded_relative_imports(pyi_builder, exclude):
+    extra_path = _MODULES_DIR / "pyi_excluded_relative_imports"
+    hooks_dir = extra_path / 'hooks'
+
+    pyi_args = ['--paths', str(extra_path)]
+    if exclude:
+        pyi_args += ['--additional-hooks-dir', str(hooks_dir)]
+
+    pyi_builder.test_source(
+        f"""
+        import os
+        os.environ['_FORBIDDEN_MODULES_ENABLED'] = '{str(int(not exclude))}'  # '0' or '1'
+
+        import mypackage
+        """,
+        pyi_args=pyi_args,
+    )
