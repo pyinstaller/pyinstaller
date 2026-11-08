@@ -20,6 +20,7 @@ import sys
 import pytest
 
 from PyInstaller import compat
+from PyInstaller.utils.tests import create_symlink
 
 # PYI_PROCESS_LEVEL enum values from bootloader/src/pyi_main.h
 PYI_PROCESS_LEVEL_UNKNOWN = -2
@@ -127,6 +128,33 @@ verification_unavailable = (
     # On FreeBSD, /proc filesystem is not mounted by default
     (compat.is_freebsd and not os.path.isdir('/proc/curproc'))
 )
+
+
+def _print_captured_output(p):
+    """Dump captured subprocess stdout/stderr to the test log (stderr)."""
+    for stream_name, captured in (('stdout', p.stdout), ('stderr', p.stderr)):
+        if captured:
+            print(f"Captured {stream_name}:\n----------------\n{captured}\n----------------", file=sys.stderr)
+        else:
+            print(f"Captured {stream_name}: N/A", file=sys.stderr)
+
+
+def _assert_parent_verification_performed(stderr):
+    """Ensure that onefile-parent process validation was enabled, and performed."""
+    assert "SECURITY: verifying onefile parent process due to explicit opt-in..." in stderr
+    assert "SECURITY: verifying process ID of originating onefile parent process" in stderr
+    assert "SECURITY: verifying executable of originating onefile parent process" in stderr
+
+
+@pytest.fixture
+def onefile_parent_verification(request, monkeypatch):
+    """Skip if onefile parent-process verification is unavailable (onefile mode), and enable it on the build."""
+    pyi_builder = request.getfixturevalue('pyi_builder')
+    if pyi_builder._mode == 'onefile' and verification_unavailable:
+        pytest.skip(reason='onefile parent-process verification is unavailable on this platform/system.')
+
+    # Enable onefile parent-process verification on the build
+    _enable_onefile_parent_verification(monkeypatch)
 
 
 # Check whether application's top level directory can be hijacked via manipulation of _PYI_ environment variables.
@@ -310,15 +338,7 @@ def test_application_home_directory_hijack(
 
     print(f"Return code: {p.returncode}", file=sys.stderr)
 
-    if p.stdout:
-        print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
-    else:
-        print("Captured stdout: N/A", file=sys.stderr)
-
-    if p.stderr:
-        print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
-    else:
-        print("Captured stderr: N/A", file=sys.stderr)
+    _print_captured_output(p)
 
     # PYI_PROCESS_LEVEL_SUBPROCESS should be an invalid *parent* process level, regardless of mode.
     if parent_level == PYI_PROCESS_LEVEL_SUBPROCESS:
@@ -473,15 +493,7 @@ def test_security_validation_with_setxid_executable(pyi_builder, tmp_path, monke
 
     print(f"Return code: {p.returncode}", file=sys.stderr)
 
-    if p.stdout:
-        print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
-    else:
-        print("Captured stdout: N/A", file=sys.stderr)
-
-    if p.stderr:
-        print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
-    else:
-        print("Captured stderr: N/A", file=sys.stderr)
+    _print_captured_output(p)
 
     # Ensure that setuid/setgid bit was detected
     if bit_type == 'setuid':
@@ -545,15 +557,7 @@ def test_security_validation_with_setxid_executable(pyi_builder, tmp_path, monke
 
         print(f"Return code: {p.returncode}", file=sys.stderr)
 
-        if p.stdout:
-            print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
-        else:
-            print("Captured stdout: N/A", file=sys.stderr)
-
-        if p.stderr:
-            print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
-        else:
-            print("Captured stderr: N/A", file=sys.stderr)
+        _print_captured_output(p)
 
         ERR_MSG = "Security validation failure: application's home directory has invalid permissions ("
 
@@ -570,15 +574,7 @@ def test_security_validation_with_setxid_executable(pyi_builder, tmp_path, monke
         print(f"Running executable with permissions on contents directory set to {permissions:o}", file=sys.stderr)
         p = subprocess.run([executable], capture_output=True, encoding='utf-8')
 
-        if p.stdout:
-            print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
-        else:
-            print("Captured stdout: N/A", file=sys.stderr)
-
-        if p.stderr:
-            print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
-        else:
-            print("Captured stderr: N/A", file=sys.stderr)
+        _print_captured_output(p)
 
         if bit_type == 'setuid':
             assert p.returncode != 0
@@ -593,31 +589,19 @@ def test_security_validation_with_setxid_executable(pyi_builder, tmp_path, monke
 
 # Test that parent-process security validation works correctly in case of symlinked executables (i.e., the executable
 # itself being symlinked, or one of its parent directories being symlinked). See #9508.
-def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path, monkeypatch):
-    # Skip if onefile parent-process verification is unavailable
-    if pyi_builder._mode == 'onefile' and verification_unavailable:
-        pytest.skip(reason='onefile parent-process verification is unavailable on this platform/system.')
+def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path, monkeypatch, onefile_parent_verification):
+    # Ensure that symbolic links can be created (create_symlink() skips the test if they cannot be created on
+    # Windows).
+    test_dir = tmp_path / 'sanity-check' / 'test-dir'
+    test_dir.mkdir(parents=True)
+    test_file = tmp_path / 'sanity-check' / 'test-file.txt'
+    test_file.write_text('Test', encoding='utf-8')
 
-    # Enable onefile parent-process verification on the build
-    _enable_onefile_parent_verification(monkeypatch)
+    test_dir_symlink = tmp_path / 'sanity-check' / 'test-dir-symlink'
+    test_file_symlink = tmp_path / 'sanity-check' / 'test-file-symlink.txt'
 
-    # Ensure that symbolic links can be created
-    try:
-        test_dir = tmp_path / 'sanity-check' / 'test-dir'
-        test_dir.mkdir(parents=True)
-        test_file = tmp_path / 'sanity-check' / 'test-file.txt'
-        test_file.write_text('Test', encoding='utf-8')
-
-        test_dir_symlink = tmp_path / 'sanity-check' / 'test-dir-symlink'
-        test_file_symlink = tmp_path / 'sanity-check' / 'test-file-symlink.txt'
-
-        os.symlink(test_file, test_file_symlink)
-        os.symlink(test_dir, test_dir_symlink, target_is_directory=True)
-    except OSError:
-        if compat.is_win:
-            pytest.skip("OS does not support creation of symbolic links.")
-        else:
-            raise
+    create_symlink(test_file, test_file_symlink)
+    create_symlink(test_dir, test_dir_symlink, target_is_directory=True)
 
     # Basic test application
     pyi_builder.test_source("""
@@ -641,21 +625,11 @@ def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path, mo
 
     print(f"Return code: {p.returncode}", file=sys.stderr)
 
-    if p.stdout:
-        print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
-    else:
-        print("Captured stdout: N/A", file=sys.stderr)
-
-    if p.stderr:
-        print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
-    else:
-        print("Captured stderr: N/A", file=sys.stderr)
+    _print_captured_output(p)
 
     # Ensure that onefile-parent process validation was enabled, and performed.
     if pyi_builder._mode == 'onefile':
-        assert "SECURITY: verifying onefile parent process due to explicit opt-in..." in p.stderr
-        assert "SECURITY: verifying process ID of originating onefile parent process" in p.stderr
-        assert "SECURITY: verifying executable of originating onefile parent process" in p.stderr
+        _assert_parent_verification_performed(p.stderr)
 
     # Symlinked dist directory
     symlinked_dist = tmp_path / 'symlinked-dist'
@@ -667,32 +641,15 @@ def test_security_validation_with_symlinked_executable(pyi_builder, tmp_path, mo
 
     print(f"Return code: {p.returncode}", file=sys.stderr)
 
-    if p.stdout:
-        print(f"Captured stdout:\n----------------\n{p.stdout}\n----------------", file=sys.stderr)
-    else:
-        print("Captured stdout: N/A", file=sys.stderr)
-
-    if p.stderr:
-        print(f"Captured stderr:\n----------------\n{p.stderr}\n----------------", file=sys.stderr)
-    else:
-        print("Captured stderr: N/A", file=sys.stderr)
+    _print_captured_output(p)
 
     # Ensure that onefile-parent process validation was enabled, and performed.
     if pyi_builder._mode == 'onefile':
-        assert "SECURITY: verifying onefile parent process due to explicit opt-in..." in p.stderr
-        assert "SECURITY: verifying process ID of originating onefile parent process" in p.stderr
-        assert "SECURITY: verifying executable of originating onefile parent process" in p.stderr
+        _assert_parent_verification_performed(p.stderr)
 
 
 # Test that parent-process security validation works correctly with nested subprocsses.
-def test_security_validation_with_subprocesses(pyi_builder, tmp_path, monkeypatch, capfd):
-    # Skip if onefile parent-process verification is unavailable
-    if pyi_builder._mode == 'onefile' and verification_unavailable:
-        pytest.skip(reason='onefile parent-process verification is unavailable on this platform/system.')
-
-    # Enable onefile parent-process verification on the build
-    _enable_onefile_parent_verification(monkeypatch)
-
+def test_security_validation_with_subprocesses(pyi_builder, tmp_path, monkeypatch, capfd, onefile_parent_verification):
     # Test program
     pyi_builder.test_source(
         """
@@ -719,21 +676,14 @@ def test_security_validation_with_subprocesses(pyi_builder, tmp_path, monkeypatc
     if pyi_builder._mode == 'onefile':
         _, err = capfd.readouterr()
 
-        assert "SECURITY: verifying onefile parent process due to explicit opt-in..." in err
-        assert "SECURITY: verifying process ID of originating onefile parent process" in err
-        assert "SECURITY: verifying executable of originating onefile parent process" in err
+        _assert_parent_verification_performed(err)
 
 
 # Test that parent-process security validation works correctly in case of intermixed processes, i.e., the application
 # process spawning another program, which then spawns another instance of application (subprocess). See #9512 and #9513.
-def test_security_validation_with_intermixed_subprocesses(pyi_builder, tmp_path, capfd, monkeypatch):
-    # Skip if onefile parent-process verification is unavailable
-    if pyi_builder._mode == 'onefile' and verification_unavailable:
-        pytest.skip(reason='onefile parent-process verification is unavailable on this platform/system.')
-
-    # Enable onefile parent-process verification on the build
-    _enable_onefile_parent_verification(monkeypatch)
-
+def test_security_validation_with_intermixed_subprocesses(
+    pyi_builder, tmp_path, capfd, monkeypatch, onefile_parent_verification
+):
     # Wrapper script
     wrapper_script = '\n'.join([
         "import sys",
@@ -781,9 +731,7 @@ def test_security_validation_with_intermixed_subprocesses(pyi_builder, tmp_path,
     if pyi_builder._mode == 'onefile':
         _, err = capfd.readouterr()
 
-        assert "SECURITY: verifying onefile parent process due to explicit opt-in..." in err
-        assert "SECURITY: verifying process ID of originating onefile parent process" in err
-        assert "SECURITY: verifying executable of originating onefile parent process" in err
+        _assert_parent_verification_performed(err)
 
     # Check that both processes used the same top-level application directory
     output_file_main = tmp_path / 'main.txt'

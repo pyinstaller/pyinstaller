@@ -19,119 +19,15 @@ from PyInstaller import HOMEPATH, PLATFORM
 from PyInstaller.utils.misc import load_py_data_struct, save_py_data_struct
 
 
-@pytest.mark.win32
-def test_versioninfo(tmp_path):
-    from PyInstaller.utils.win32.versioninfo import VSVersionInfo, \
-        FixedFileInfo, StringFileInfo, StringTable, StringStruct, \
-        VarFileInfo, VarStruct
+def _make_vsinfo(description='versioninfo test', *extra_string_structs):
+    """
+    Build a VSVersionInfo structure shared by the versioninfo tests: a fixed file/product version block, a string
+    table with the given `FileDescription` (plus any `extra_string_structs`), and the standard translation record.
+    """
+    from PyInstaller.utils.win32.versioninfo import \
+        VSVersionInfo, FixedFileInfo, StringFileInfo, StringTable, StringStruct, VarFileInfo, VarStruct
 
-    vsinfo = VSVersionInfo(
-        ffi=FixedFileInfo(
-            filevers=(1, 2, 3, 4),
-            prodvers=(5, 6, 7, 8),
-            mask=0x3f,
-            flags=0x1,
-            OS=0x40004,
-            fileType=0x42,
-            subtype=0x42,
-            date=(0, 0)
-        ),
-        kids=[
-            StringFileInfo([StringTable('040904b0', [StringStruct('FileDescription', 'versioninfo test')])]),
-            VarFileInfo([VarStruct('Translation', [1033, 1200])])
-        ]
-    )
-
-    file = str(tmp_path / 'versioninfo')
-    save_py_data_struct(file, vsinfo)
-
-    assert vsinfo == load_py_data_struct(file)
-
-
-@pytest.mark.win32
-def test_versioninfo_str(tmp_path):
-    from PyInstaller.utils.win32.versioninfo import VSVersionInfo, \
-        FixedFileInfo, StringFileInfo, StringTable, StringStruct, \
-        VarFileInfo, VarStruct
-
-    vsinfo = VSVersionInfo(
-        ffi=FixedFileInfo(
-            filevers=(1, 2, 3, 4),
-            prodvers=(5, 6, 7, 8),
-            mask=0x3f,
-            flags=0x1,
-            OS=0x40004,
-            fileType=0x42,
-            subtype=0x42,
-            date=(0, 0)
-        ),
-        kids=[
-            StringFileInfo([StringTable('040904b0', [StringStruct('FileDescription', 'versioninfo test')])]),
-            VarFileInfo([VarStruct('Translation', [1033, 1200])])
-        ]
-    )
-
-    # "Serialize" to string. This is what grab_version.py utility does to write VsVersionInfo to output text file.
-    vs_info_str = str(vsinfo)
-
-    # "Deserialize" via eval. This is what `versioninfo.load_version_info_from_text_file` does to read `VsVersionInfo`
-    # from text file.
-    vsinfo2 = eval(vs_info_str)
-
-    assert vsinfo == vsinfo2
-
-
-# Test that we properly serialize and deserialize VersionInfo that contains strings with quotes, such as the
-# `FileDescription`  of `winrshost.exe` being `Host Process for WinRM's Remote Shell plugin`. See #7630.
-@pytest.mark.win32
-def test_versioninfo_str_quotes(tmp_path):
-    from PyInstaller.utils.win32.versioninfo import VSVersionInfo, \
-        FixedFileInfo, StringFileInfo, StringTable, StringStruct, \
-        VarFileInfo, VarStruct
-
-    FILE_DESCRIPTION = """versioninfo with quotes (' and ") test"""
-
-    vsinfo = VSVersionInfo(
-        ffi=FixedFileInfo(
-            filevers=(1, 2, 3, 4),
-            prodvers=(5, 6, 7, 8),
-            mask=0x3f,
-            flags=0x1,
-            OS=0x40004,
-            fileType=0x42,
-            subtype=0x42,
-            date=(0, 0)
-        ),
-        kids=[
-            StringFileInfo([StringTable('040904b0', [StringStruct('FileDescription', FILE_DESCRIPTION)])]),
-            VarFileInfo([VarStruct('Translation', [1033, 1200])])
-        ]
-    )
-
-    # "Serialize" to string. This is what grab_version.py utility does to write VsVersionInfo to output text file.
-    vs_info_str = str(vsinfo)
-
-    # "Deserialize" via eval. This is what `versioninfo.load_version_info_from_text_file` does to read `VsVersionInfo`
-    # from text file.
-    vsinfo2 = eval(vs_info_str)
-
-    assert vsinfo == vsinfo2
-
-
-@pytest.mark.win32
-def test_versioninfo_written_to_exe(tmp_path):
-    from PyInstaller.utils.win32 import versioninfo
-    from PyInstaller.utils.win32.versioninfo import VSVersionInfo, \
-        FixedFileInfo, StringFileInfo, StringTable, StringStruct, \
-        VarFileInfo, VarStruct
-
-    # Test/expected values
-    FILE_DESCRIPTION = 'versioninfo test'
-    PRODUCT_NAME = 'Test Product'
-    PRODUCT_VERSION = '2021.09.18.00'
-
-    # Create a version info structure...
-    vsinfo = VSVersionInfo(
+    return VSVersionInfo(
         ffi=FixedFileInfo(
             filevers=(1, 2, 3, 4),
             prodvers=(5, 6, 7, 8),
@@ -146,14 +42,79 @@ def test_versioninfo_written_to_exe(tmp_path):
             StringFileInfo([
                 StringTable(
                     '040904b0', [
-                        StringStruct('FileDescription', FILE_DESCRIPTION),
-                        StringStruct('ProductName', PRODUCT_NAME),
-                        StringStruct('ProductVersion', PRODUCT_VERSION)
+                        StringStruct('FileDescription', description),
+                        *extra_string_structs,
                     ]
                 )
             ]),
             VarFileInfo([VarStruct('Translation', [1033, 1200])])
         ]
+    )
+
+
+@pytest.mark.win32
+def test_versioninfo(tmp_path):
+    vsinfo = _make_vsinfo()
+
+    file = str(tmp_path / 'versioninfo')
+    save_py_data_struct(file, vsinfo)
+
+    assert vsinfo == load_py_data_struct(file)
+
+
+@pytest.mark.win32
+def test_versioninfo_str(tmp_path):
+    from PyInstaller.utils.win32 import versioninfo
+
+    vsinfo = _make_vsinfo()
+
+    # "Serialize" to string. This is what grab_version.py utility does to write VsVersionInfo to output text file.
+    vs_info_str = str(vsinfo)
+
+    # "Deserialize" via eval. This is what `versioninfo.load_version_info_from_text_file` does to read `VsVersionInfo`
+    # from text file; it relies on the caller having the versioninfo names in scope, so evaluate in the module's
+    # namespace.
+    vsinfo2 = eval(vs_info_str, vars(versioninfo))
+
+    assert vsinfo == vsinfo2
+
+
+# Test that we properly serialize and deserialize VersionInfo that contains strings with quotes, such as the
+# `FileDescription`  of `winrshost.exe` being `Host Process for WinRM's Remote Shell plugin`. See #7630.
+@pytest.mark.win32
+def test_versioninfo_str_quotes(tmp_path):
+    from PyInstaller.utils.win32 import versioninfo
+
+    FILE_DESCRIPTION = """versioninfo with quotes (' and ") test"""
+
+    vsinfo = _make_vsinfo(description=FILE_DESCRIPTION)
+
+    # "Serialize" to string. This is what grab_version.py utility does to write VsVersionInfo to output text file.
+    vs_info_str = str(vsinfo)
+
+    # "Deserialize" via eval. This is what `versioninfo.load_version_info_from_text_file` does to read `VsVersionInfo`
+    # from text file; it relies on the caller having the versioninfo names in scope, so evaluate in the module's
+    # namespace.
+    vsinfo2 = eval(vs_info_str, vars(versioninfo))
+
+    assert vsinfo == vsinfo2
+
+
+@pytest.mark.win32
+def test_versioninfo_written_to_exe(tmp_path):
+    from PyInstaller.utils.win32 import versioninfo
+    from PyInstaller.utils.win32.versioninfo import StringStruct
+
+    # Test/expected values
+    FILE_DESCRIPTION = 'versioninfo test'
+    PRODUCT_NAME = 'Test Product'
+    PRODUCT_VERSION = '2021.09.18.00'
+
+    # Create a version info structure...
+    vsinfo = _make_vsinfo(
+        FILE_DESCRIPTION,
+        StringStruct('ProductName', PRODUCT_NAME),
+        StringStruct('ProductVersion', PRODUCT_VERSION),
     )
 
     # Locate bootloader executable

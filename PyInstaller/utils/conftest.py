@@ -557,8 +557,8 @@ class AppBuilder:
 # that are same for every executable.
 @pytest.fixture(scope='session')
 def pyi_modgraph():
-    # Explicitly set the log level since the plugin `pytest-catchlog` (un-) sets the root logger's level to NOTSET for
-    # the setup phase, which will lead to TRACE messages been written out.
+    # Explicitly set the log level: pytest's logging plugin (pytest-catchlog, merged into pytest core long ago) sets
+    # the root logger's level to NOTSET for the setup phase, which will lead to TRACE messages been written out.
     import PyInstaller.log as logging
     logging.logger.setLevel(logging.DEBUG)
     initialize_modgraph()
@@ -570,45 +570,35 @@ def pyi_bincache(tmp_path_factory):
     return tmp_path_factory.mktemp("pyi-bincache-")
 
 
-# Run by default test as onedir and onefile.
-@pytest.fixture(params=['onedir', 'onefile'])
-def pyi_builder(tmp_path, monkeypatch, request, pyi_modgraph, pyi_bincache):
-    # Save/restore environment variable PATH.
+@pytest.fixture
+def pyi_builder_base(tmp_path, monkeypatch, request):
+    # Shared setup/teardown for the builder fixtures: save/restore the environment PATH, restore sys.path
+    # (PyInstaller's Analysis extends sys.path with the build's pathex entries and never cleans them up, so without
+    # the reset they - including paths to already-removed temporary directories - leak into subsequent tests in the
+    # same process), chdir into the test's temporary directory, reset the global build configuration, and clean up
+    # the temporary directory of a successful test.
     monkeypatch.setenv('PATH', os.environ['PATH'])
-    # PyInstaller or a test case might manipulate 'sys.path'. Reset it for every test. This is important because
-    # PyInstaller's Analysis extends sys.path with the build's pathex entries and never cleans them up, so without
-    # the reset they (including paths to already-removed temporary directories) leak into subsequent tests.
     monkeypatch.syspath_prepend(None)
-    # Set current working directory to
     monkeypatch.chdir(tmp_path)
     # Clean up configuration and force PyInstaller to do a clean configuration for another app/test. The value is same
     # as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    yield AppBuilder(tmp_path, pyi_bincache, request, request.param)
+    yield tmp_path
 
     # Clean up the temporary directory of a successful test
     if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
         if tmp_path.exists():
             shutil.rmtree(tmp_path, ignore_errors=True)
+
+
+# Run by default test as onedir and onefile.
+@pytest.fixture(params=['onedir', 'onefile'])
+def pyi_builder(pyi_builder_base, request, pyi_modgraph, pyi_bincache):
+    yield AppBuilder(pyi_builder_base, pyi_bincache, request, request.param)
 
 
 # Fixture for .spec based tests. With .spec it does not make sense to differentiate onefile/onedir mode.
 @pytest.fixture
-def pyi_builder_spec(tmp_path, request, monkeypatch, pyi_modgraph, pyi_bincache):
-    # Save/restore environment variable PATH.
-    monkeypatch.setenv('PATH', os.environ['PATH'])
-    # PyInstaller or a test case might manipulate 'sys.path'. Reset it for every test (see pyi_builder above).
-    monkeypatch.syspath_prepend(None)
-    # Set current working directory to
-    monkeypatch.chdir(tmp_path)
-    # Clean up configuration and force PyInstaller to do a clean configuration for another app/test. The value is same
-    # as the original value.
-    monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
-
-    yield AppBuilder(tmp_path, pyi_bincache, request, None)
-
-    # Clean up the temporary directory of a successful test
-    if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
-        if tmp_path.exists():
-            shutil.rmtree(tmp_path, ignore_errors=True)
+def pyi_builder_spec(pyi_builder_base, request, pyi_modgraph, pyi_bincache):
+    yield AppBuilder(pyi_builder_base, pyi_bincache, request, None)
