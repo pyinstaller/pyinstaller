@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
-import pathlib
 import importlib.machinery
 
 from PyInstaller import compat
@@ -17,7 +16,6 @@ from PyInstaller.depend import analysis, bindepend
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.api import PYZ
 
-_MODULES_DIR = pathlib.Path(__file__).parent / "modules"
 
 
 def test_issue_2492(monkeypatch, tmp_path):
@@ -108,8 +106,8 @@ def test_issue_5131(monkeypatch, tmp_path):
     PYZ(a.pure)
 
 
-def test_issue_4141(pyi_builder):
-    extra_path = _MODULES_DIR / 'pyi_issue_4141'
+def test_issue_4141(pyi_builder, modules_dir):
+    extra_path = modules_dir / 'pyi_issue_4141'
     pyi_builder.test_script(
         'pyi_issue_4141.py', app_name="main", run_from_path=True, pyi_args=['--path', str(extra_path)]
     )
