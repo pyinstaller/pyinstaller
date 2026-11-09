@@ -54,15 +54,11 @@ To run the test-suite, please proceed as follows.
 
 
 To learn how we run the test-suite in the continuous integration tests please
-have a look at |.travis.yml|_ (for GNU/Linux and macOS) and |appveyor.yml|_
-(for Windows).
+have a look at |ci.yml|_, the GitHub Actions workflow used on all platforms.
 
 
-.. |.travis.yml| replace:: ``.travis.yml``
-.. _.travis.yml: https://github.com/pyinstaller/pyinstaller/blob/develop/.travis.yml
-
-.. |appveyor.yml| replace:: ``appveyor.yml``
-.. _appveyor.yml: https://github.com/pyinstaller/pyinstaller/blob/develop/appveyor.yml
+.. |ci.yml| replace:: ``.github/workflows/ci.yml``
+.. _ci.yml: https://github.com/pyinstaller/pyinstaller/blob/develop/.github/workflows/ci.yml
 
 .. include:: ../_common_definitions.txt
 

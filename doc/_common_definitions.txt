@@ -54,7 +54,7 @@
 .. _`Package resources`: https://pythonhosted.org/setuptools/pkg_resources.html#requirements-parsing
 .. _`Supported Packages`: https://github.com/pyinstaller/pyinstaller/wiki/Supported-Packages
 .. _TDM-GCC: http://tdm-gcc.tdragon.net/
-.. _TkInter: http://wiki.python.org/moin/TkInter
+.. _TkInter: https://docs.python.org/3/library/tkinter.html
 .. _`Tcl/Tk`: http://www.tcl.tk/
 .. _`towncrier`: https://pypi.org/project/towncrier/
 .. _UPX: https://upx.github.io/
@@ -63,7 +63,7 @@
 .. _`Visual Studio Express`: http://www.microsoft.com/express/
 .. _`Version Information Structures`: http://msdn.microsoft.com/en-us/library/ff468916(v=vs.85).aspx
 .. _virtualBox: https://www.virtualbox.org
-.. _VMWare: http://www.vmware.com/solutions/desktop/
+.. _VMWare: https://www.vmware.com/products/desktop-hypervisor.html
 .. _Wine: http://www.winehq.org/
 .. _WxPython: http://www.wxpython.org/
 .. _Xcode: http://developer.apple.com/xcode
