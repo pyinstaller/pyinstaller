@@ -48,3 +48,32 @@ def test_add_data(capsys):
     options = parser.parse_args(["--add-data=a:b", "--add-data=c:d", "--add-binary=e:f"])
     assert options.datas == [("a", "b"), ("c", "d")]
     assert options.binaries == [("e", "f")]
+
+
+def test_main_does_not_leak_python_options(tmp_path):
+    """
+    Repeated in-process ``makespec.main()`` calls must not accumulate 'O'/'v'
+    options through the shared mutable default of ``python_options``.
+    """
+    for _ in range(2):
+        makespec.main(
+            ["script.py"],
+            name="leaktest",
+            specpath=str(tmp_path),
+            optimize=2,
+            shorthand_manifest=None,
+        )
+
+    # The signature default must not carry over any option from previous calls.
+    python_options_default = makespec.main.__defaults__[makespec.main.__code__.co_varnames.index(
+        "python_options") - makespec.main.__code__.co_argcount + len(makespec.main.__defaults__)]
+    assert python_options_default in (None, [])
+    assert "O" not in (python_options_default or [])
+
+
+def test_main_api_call_without_shorthand_manifest(tmp_path):
+    """
+    ``makespec.main()`` called programmatically (without the CLI-only
+    ``shorthand_manifest`` keyword) must not raise KeyError.
+    """
+    makespec.main(["script.py"], name="apicall", specpath=str(tmp_path))

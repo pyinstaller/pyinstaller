@@ -638,7 +638,7 @@ def main(
     onefile=False,
     console=True,
     debug=[],
-    python_options=[],
+    python_options=None,
     strip=False,
     noupx=False,
     upx_exclude=None,
@@ -677,6 +677,11 @@ def main(
     splash_center=None,
     **_kwargs
 ):
+    # Do not mutate a shared default list: ``python_options`` is extended in
+    # place further down, which would leak options into later calls.
+    if python_options is None:
+        python_options = []
+
     # Default values for onefile and console when not explicitly specified on command-line (indicated by None)
     if onefile is None:
         onefile = False
@@ -725,7 +730,7 @@ def main(
     if hide_console:
         exe_options += "\n    hide_console=%r," % hide_console
 
-    if _kwargs["shorthand_manifest"]:
+    if _kwargs.get("shorthand_manifest"):
         manifest = _kwargs["shorthand_manifest"]
         logger.log(
             logging.DEPRECATION, "PyInstaller v7 will remove the -m shorthand flag. Please use --manifest=%s instead",
