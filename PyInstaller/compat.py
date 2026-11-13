@@ -58,6 +58,9 @@ else:
 # Strict collect mode, which raises error when trying to collect duplicate files into PKG/CArchive or COLLECT.
 strict_collect_mode = os.environ.get("PYINSTALLER_STRICT_COLLECT_MODE", "0") != "0"
 
+# Attempt to use fast bytecode scan (with the slower default implementation as fallback).
+fast_bytecode_scan = os.environ.get("PYINSTALLER_FAST_BYTECODE_SCAN", "0") != "0"
+
 # Copied from https://docs.python.org/3/library/platform.html#cross-platform.
 is_64bits: bool = sys.maxsize > 2**32
 
