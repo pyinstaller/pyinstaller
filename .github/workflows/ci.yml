@@ -14,6 +14,8 @@ env:
   # Enable strict collect mode to catch file duplication problems in PKG/Carchive (onefile builds) or COLLECT
   # (onedir builds) at build time.
   PYINSTALLER_STRICT_COLLECT_MODE: 1
+  # Enable fast bytecode scan so it is tested in CI:
+  PYINSTALLER_FAST_BYTECODE_SCAN: 1
   # Enable strict handling of codesign errors for macOS bundles.
   PYINSTALLER_STRICT_BUNDLE_CODESIGN_ERROR: 1
   # Enable strict verification of macOS bundles w.r.t. the code-signing requirements.
@@ -703,6 +705,7 @@ jobs:
             export FORCE_COLOR=1
             export PYINSTALLER_STRICT_UNPACK_MODE=1
             export PYINSTALLER_STRICT_COLLECT_MODE=1
+            export PYINSTALLER_FAST_BYTECODE_SCAN=1
             export PYINSTALLER_STRICT_BUNDLE_CODESIGN_ERROR=1
             export PYINSTALLER_VERIFY_BUNDLE_SIGNATURE=1
             export PYTHONWARNDEFAULTENCODING=true
