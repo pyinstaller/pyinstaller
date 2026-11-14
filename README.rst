@@ -133,7 +133,6 @@ or simply use it directly from the source (pyinstaller.py).
 Support
 -------
 
-See http://www.pyinstaller.org/support.html for how to find help as well as
 for commercial support.
 
 
