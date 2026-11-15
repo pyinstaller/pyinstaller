@@ -35,6 +35,8 @@
 #include "pyi_utils.h"
 
 
+#if !defined(_WIN32)
+
 static char *_wchar_to_utf8(const wchar_t *string_w)
 {
     char *buffer;
@@ -92,8 +94,6 @@ static char *_wchar_to_utf8(const wchar_t *string_w)
 
     return buffer;
 }
-
-#if !defined(_WIN32)
 
 static char *
 _locale_encoding_to_utf8(
