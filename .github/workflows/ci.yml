@@ -409,13 +409,14 @@ jobs:
           "
 
   test-msys2:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
-          - { sys: mingw64, env: x86_64 }
-          - { sys: mingw32, env: i686 }
-          - { sys: ucrt64,  env: ucrt-x86_64 }
+          - { os: windows-latest, sys: mingw64, env: x86_64 }
+          - { os: windows-latest, sys: ucrt64,  env: ucrt-x86_64 }
+          - { os: windows-latest, sys: clang64, env: clang-x86_64 }
+          - { os: windows-11-arm, sys: clangarm64, env: clang-aarch64 }
       fail-fast: false
     defaults:
       run:
@@ -427,44 +428,21 @@ jobs:
           update: true
           msystem: ${{matrix.sys}}
           install: >-
-            mingw-w64-${{matrix.env}}-gcc
+            mingw-w64-${{matrix.env}}-clang
             mingw-w64-${{matrix.env}}-python
             mingw-w64-${{matrix.env}}-python-pip
             mingw-w64-${{matrix.env}}-python-setuptools
             mingw-w64-${{matrix.env}}-python-packaging
-
-      # Some msys2 python packages are not available for i686 anymore:
-      #  - numpy
-      #  - pefile
-      #  - psutil (removed with update to psutil 6.1.1; see https://github.com/msys2/MINGW-packages/commit/7f1c75b33a5aebb89899f99f5fa656c623eeb9ed)
-      #  - pillow (see https://github.com/msys2/MINGW-packages/commit/a7d88c34aa36adce78ba71633711412a24d8792c)
-      #  - pywin32-ctypes (see https://github.com/msys2/MINGW-packages/commit/a8bba24b7d3abf45c8d5b3c67af5058c754f6f11)
-      #  - pywin32 (see https://github.com/msys2/MINGW-packages/commit/a8bba24b7d3abf45c8d5b3c67af5058c754f6f11)
-      #  - pygobject (see https://github.com/msys2/MINGW-packages/commit/a8bba24b7d3abf45c8d5b3c67af5058c754f6f11)
-      # If running in 64-bit environment, install the said packages here.
-      # Otherwise, we will run tests without these packages (note that
-      # if not installed here, `pefile` and `pywin32-ctypes` will end
-      # up installed via `pip` as part of PyInstaller's dependencies).
-      - name: Install extra msys2 packages (64-bit only)
-        if: matrix.env != 'i686'
-        run: >
-          pacman -S --noconfirm
-          mingw-w64-${{matrix.env}}-python-pytest
-          mingw-w64-${{matrix.env}}-python-pytest-xdist
-          mingw-w64-${{matrix.env}}-python-pytest-timeout
-          mingw-w64-${{matrix.env}}-python-numpy
-          mingw-w64-${{matrix.env}}-python-pefile
-          mingw-w64-${{matrix.env}}-python-psutil
-          mingw-w64-${{matrix.env}}-python-pillow
-          mingw-w64-${{matrix.env}}-python-pywin32-ctypes
-          mingw-w64-${{matrix.env}}-python-pywin32
-          mingw-w64-${{matrix.env}}-python-gobject
-
-      # pytest, pytest-xdist, and pytest-timeout are not available for 32-bit anymore. Try to install them via pip.
-      - name: Install pytest via pip (32-bit only)
-        if: matrix.env == 'i686'
-        run: >
-          python -m pip install --upgrade pytest pytest-xdist pytest-timeout
+            mingw-w64-${{matrix.env}}-python-pefile
+            mingw-w64-${{matrix.env}}-python-pywin32-ctypes
+            mingw-w64-${{matrix.env}}-python-pytest
+            mingw-w64-${{matrix.env}}-python-pytest-xdist
+            mingw-w64-${{matrix.env}}-python-pytest-timeout
+            mingw-w64-${{matrix.env}}-python-psutil
+            mingw-w64-${{matrix.env}}-python-numpy
+            mingw-w64-${{matrix.env}}-python-pillow
+            mingw-w64-${{matrix.env}}-python-pywin32
+            mingw-w64-${{matrix.env}}-python-gobject
 
       - name: Checkout PyInstaller code
         uses: actions/checkout@v6
@@ -478,7 +456,7 @@ jobs:
         run: |
           # Compile bootloader
           cd bootloader
-          python waf --gcc --tests all
+          python waf --clang --tests all
           cd ..
 
           # Install PyInstaller.
