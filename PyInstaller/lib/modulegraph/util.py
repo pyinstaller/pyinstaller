@@ -44,14 +44,14 @@ def _get_instructions_fast(code_object):
 _HAS_ARG_RESOLVER = hasattr(dis, "ArgResolver")
 if _HAS_ARG_RESOLVER:
     # The jump label map is only needed for the `argval` of jumps, and is expensive to compute.
-    _NEEDS_LABELS_MAP = frozenset(dis.hasjump) | frozenset(dis.hasexc)
+    _NEEDS_LABELS_MAP = set(dis.hasjump) | set(dis.hasexc)
 else:
     # Python <= 3.12 no longer changes, so the `argval` of frequently read opcodes can safely be computed directly:
     #     https://github.com/python/cpython/blob/v3.12.0/Lib/dis.py#L470-L487
-    _NAME_OPS = frozenset(
+    _NAME_OPS = {
         dis.opmap[name] for name in ("IMPORT_NAME", "STORE_NAME", "STORE_GLOBAL", "DELETE_NAME", "DELETE_GLOBAL")
-    )
-    _CONST_OPS = frozenset({dis.opmap["LOAD_CONST"]})
+    }
+    _CONST_OPS = {dis.opmap["LOAD_CONST"]}
 
 
 class _Code:
