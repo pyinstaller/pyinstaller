@@ -26,7 +26,9 @@ def iterate_instructions(code_object):
     Yields `ModuleGraphInstruction`. After each code-block (`co_code`), `None` is
     yielded to mark the end of the block and to interrupt the steam.
     """
-    yield from _get_instructions_fast(code_object)
+    # The arg extension the EXTENDED_ARG opcode represents is automatically handled by get_instructions() but the
+    # instruction is left in. Get rid of it to make subsequent parsing easier/safer.
+    yield from (i for i in _get_instructions_fast(code_object) if i.opname != "EXTENDED_ARG")
 
     yield None
 
@@ -40,7 +42,6 @@ def iterate_instructions(code_object):
 def _get_instructions_fast(code_object: CodeType) -> Iterator[SlimInstruction]:
     code = _Code(code_object)
     opname = dis.opname  # Slightly faster than inlining the lookup.
-    EXTENDED_ARG = dis.EXTENDED_ARG  # Slightly faster than inlining the lookup.
     # `_unpack_opargs` is what `dis.get_instructions` uses to walk the bytecode:
     #     https://github.com/python/cpython/blob/v3.14.7/Lib/dis.py#L675
     #     https://github.com/python/cpython/blob/v3.14.7/Lib/dis.py#L771
@@ -53,8 +54,6 @@ def _get_instructions_fast(code_object: CodeType) -> Iterator[SlimInstruction]:
         dis._unpack_opargs,
     )
     for offset, *_, op, arg in _unpack_opargs(code_object.co_code):
-        if op == EXTENDED_ARG:
-            continue  # Like the original, skip these. Their effect is already included in `arg`.
         yield SlimInstruction(opname[op], code, op, arg, offset)
 
 
