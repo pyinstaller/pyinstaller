@@ -4,26 +4,15 @@ import dis
 import inspect
 import logging
 from types import CodeType
-from typing import Any, Callable, Iterator, Protocol, cast
+from typing import Callable, Iterator, cast
 
 logger = logging.getLogger(__name__)
-
-
-class ModuleGraphInstruction(Protocol):
-    """What modulegraph reads from an instruction."""
-    @property
-    def opname(self) -> str:
-        ...
-
-    @property
-    def argval(self) -> Any:
-        ...
 
 
 def iterate_instructions(code_object):
     """Delivers the byte-code instructions as a continuous stream.
 
-    Yields `ModuleGraphInstruction`. After each code-block (`co_code`), `None` is
+    Yields `SlimInstruction`. After each code-block (`co_code`), `None` is
     yielded to mark the end of the block and to interrupt the steam.
     """
     # The arg extension the EXTENDED_ARG opcode represents is automatically handled by get_instructions() but the
