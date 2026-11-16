@@ -568,7 +568,7 @@ def test_fast_bytecode_scan():
     ]
 
     def _find_problem_with_fast_bytecode_scan():
-        codes: list[CodeType] = []
+        codes = []
         for (min_version, snippet) in TEST_CODE_SNIPPETS_WITH_MIN_VERSIONS:
             if (sys.version_info >= min_version):
                 codes.append(compile(snippet, "<self_test_code>", "exec", dont_inherit=True))

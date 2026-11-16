@@ -3,8 +3,6 @@ from __future__ import annotations
 import dis
 import inspect
 import logging
-from types import CodeType
-from typing import Callable, Iterator, cast
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +26,7 @@ def iterate_instructions(code_object):
             yield from iterate_instructions(constant)
 
 
-def _get_instructions_fast(code_object: CodeType) -> Iterator[SlimInstruction]:
+def _get_instructions_fast(code_object):
     code = _Code(code_object)
     opname = dis.opname  # Slightly faster than inlining the lookup.
     # `_unpack_opargs` is what `dis.get_instructions` uses to walk the bytecode:
@@ -37,12 +35,7 @@ def _get_instructions_fast(code_object: CodeType) -> Iterator[SlimInstruction]:
     # It yields `(offset, op, arg)` on Python <= 3.12 and `(offset, start_offset, op, arg)` on Python >= 3.13:
     #     https://github.com/python/cpython/blob/v3.12.16/Lib/dis.py#L645
     #     https://github.com/python/cpython/blob/v3.13.0/Lib/dis.py#L887-L890
-    _unpack_opargs = cast(
-        # Type expressed as a string for Python 3.8 and 3.9 compatibility:
-        "Callable[[bytes], Iterator[tuple[int, int, int | None]] | Iterator[tuple[int, int, int, int | None]]]",
-        dis._unpack_opargs,
-    )
-    for offset, *_, op, arg in _unpack_opargs(code_object.co_code):
+    for offset, *_, op, arg in dis._unpack_opargs(code_object.co_code):
         yield SlimInstruction(opname[op], code, op, arg, offset)
 
 
@@ -106,7 +99,7 @@ class SlimInstruction:
 
     __slots__ = ("_arg", "_code", "_offset", "_op", "opname")
 
-    def __init__(self, opname: str, code: _Code, op: int, arg: int | None, offset: int):
+    def __init__(self, opname, code, op, arg, offset):
         self.opname = opname
         self._code = code
         self._op = op
