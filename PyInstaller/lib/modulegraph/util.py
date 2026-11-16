@@ -70,10 +70,10 @@ class _Code:
         if _HAS_ARG_RESOLVER:
             if op in _NEEDS_LABELS_MAP:
                 if self._arg_resolver_with_labels is None:
-                    self._arg_resolver_with_labels = self._make_arg_resolver(dis._make_labels_map(co.co_code))
+                    self._arg_resolver_with_labels = _make_arg_resolver(co, dis._make_labels_map(co.co_code))
                 return self._arg_resolver_with_labels.get_argval_argrepr(op, arg, offset)[0]
             if self._arg_resolver is None:
-                self._arg_resolver = self._make_arg_resolver(None)
+                self._arg_resolver = _make_arg_resolver(co, None)
             return self._arg_resolver.get_argval_argrepr(op, arg, offset)[0]
         if op in _NAME_OPS:
             return co.co_names[arg]
@@ -83,16 +83,16 @@ class _Code:
             self._argvals = {i.offset: i.argval for i in dis.get_instructions(co)}
         return self._argvals[offset]
 
-    def _make_arg_resolver(self, maybe_labels_map):
-        # The same way `dis.get_instructions` does it.
-        #     https://github.com/python/cpython/blob/v3.14.7/Lib/dis.py#L671-L674
-        co = self.code
-        return dis.ArgResolver(
-            co_consts=co.co_consts,
-            names=co.co_names,
-            varname_from_oparg=co._varname_from_oparg,
-            labels_map=maybe_labels_map,
-        )
+
+def _make_arg_resolver(co, maybe_labels_map):
+    # The same way `dis.get_instructions` does it.
+    #     https://github.com/python/cpython/blob/v3.14.7/Lib/dis.py#L671-L674
+    return dis.ArgResolver(
+        co_consts=co.co_consts,
+        names=co.co_names,
+        varname_from_oparg=co._varname_from_oparg,
+        labels_map=maybe_labels_map,
+    )
 
 
 class SlimInstruction:
