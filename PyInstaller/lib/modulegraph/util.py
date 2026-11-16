@@ -83,14 +83,15 @@ class _Code:
             self._argvals = {i.offset: i.argval for i in dis.get_instructions(co)}
         return self._argvals[offset]
 
-    def _make_arg_resolver(self, labels_map):
+    def _make_arg_resolver(self, maybe_labels_map):
         # The same way `dis.get_instructions` does it.
+        #     https://github.com/python/cpython/blob/v3.14.7/Lib/dis.py#L671-L674
         co = self.code
         return dis.ArgResolver(
             co_consts=co.co_consts,
             names=co.co_names,
             varname_from_oparg=co._varname_from_oparg,
-            labels_map=labels_map,
+            labels_map=maybe_labels_map,
         )
 
 
