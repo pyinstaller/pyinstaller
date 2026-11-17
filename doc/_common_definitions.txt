@@ -63,7 +63,7 @@
 .. _`Visual Studio Express`: http://www.microsoft.com/express/
 .. _`Version Information Structures`: http://msdn.microsoft.com/en-us/library/ff468916(v=vs.85).aspx
 .. _virtualBox: https://www.virtualbox.org
-.. _VMWare: https://www.vmware.com/products/desktop-hypervisor.html
+.. _VMWare: https://www.vmware.com/products/desktop-hypervisor/workstation-and-fusion
 .. _Wine: http://www.winehq.org/
 .. _WxPython: http://www.wxpython.org/
 .. _Xcode: http://developer.apple.com/xcode
