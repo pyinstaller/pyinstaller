@@ -90,8 +90,10 @@ def xmldiff():
 
 # XML fragments shared by the custom-manifest templates below, as multi-line byte strings. Long lines inside the
 # literals cannot carry a per-line noqa, so the fragments with over-long lines silence E501 on their closing quotes.
-_XML_HEADER = (b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
-               b'<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">')
+_XML_HEADER = (
+    b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+    b'<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">'
+)
 _TRUST_INFO_XML = b"""
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>

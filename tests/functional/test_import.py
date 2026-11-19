@@ -162,7 +162,8 @@ def test_import_submodule_from_aliased_pkg(pyi_builder, script_dir):
         sys.modules['alias_name'] = pyi_testmod_submodule_from_aliased_pkg
 
         from alias_name import submodule
-        """, pyi_args=['--additional-hooks-dir', f"{script_dir / 'pyi_hooks'}"]
+        """,
+        pyi_args=['--additional-hooks-dir', f"{script_dir / 'pyi_hooks'}"]
     )
 
 
@@ -184,7 +185,8 @@ def test_source_utf8_emoji(pyi_builder):
 
         # Retrieve source code
         source = inspect.getsource(module_with_utf8_emoji)
-        """, pyi_args=['--add-data', add_data_arg]
+        """,
+        pyi_args=['--add-data', add_data_arg]
     )
 
 
@@ -557,10 +559,7 @@ def test_nspkg_attributes_pep420(pyi_builder):
 )
 def test_import_main_should_not_collect_pyinstaller(pyi_builder, source):
     hooks_dir = _MODULES_DIR / 'pyi_import_main' / 'hooks'
-    pyi_builder.test_source(
-        source,
-        pyi_args=['--additional-hooks-dir', str(hooks_dir)]
-    )
+    pyi_builder.test_source(source, pyi_args=['--additional-hooks-dir', str(hooks_dir)])
 
 
 #--- hooks related stuff ---

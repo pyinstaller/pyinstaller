@@ -93,58 +93,67 @@ def _create_data(tmp_path, orig_filename, link_filename):
     [
         # Collect both symbolic link and file
         (
-            ('orig_file.txt',), ('linked_file.txt',),
+            ('orig_file.txt',),
+            ('linked_file.txt',),
             [('orig_file.txt', 'data'), ('linked_file.txt', 'data')],
             ['samedir'],
         ),
         # Same as above, except that we collect the whole data directory instead of individual files
         (
-            ('orig_file.txt',), ('linked_file.txt',),
+            ('orig_file.txt',),
+            ('linked_file.txt',),
             [(None, 'data')],
             ['samedir'],
         ),
         # Collect only symbolic link
         (
-            ('orig_file.txt',), ('linked_file.txt',),
+            ('orig_file.txt',),
+            ('linked_file.txt',),
             [('linked_file.txt', 'data')],
             ['samedir', '--link-only'],
         ),
         # Collect symbolic link and original file, but place the latter somewhere else (this should effectively be the
         # same as 'link-only' scenario)
         (
-            ('orig_file.txt',), ('linked_file.txt',),
+            ('orig_file.txt',),
+            ('linked_file.txt',),
             [('orig_file.txt', 'data2'), ('linked_file.txt', 'data')],
             ['samedir', '--link-only'],
         ),
         # Collect symbolic link and original file; collect original multiple times, in original and alternative
         # locations
         (
-            ('orig_file.txt',), ('linked_file.txt',),
+            ('orig_file.txt',),
+            ('linked_file.txt',),
             [('orig_file.txt', 'data3'), ('orig_file.txt', 'data'), ('orig_file.txt', 'data2'),
              ('linked_file.txt', 'data')],
             ['samedir'],
         ),
         # Symbolic link pointing to a subdirectory; collect whole data directory
         (
-            (os.path.join('subdir', 'orig_file.txt'),), ('linked_file.txt',),
+            (os.path.join('subdir', 'orig_file.txt'),),
+            ('linked_file.txt',),
             [(None, 'data')],
             ['subdir'],
         ),
         # Symbolic link pointing to a subdirectory; collect only symbolic link
         (
-            (os.path.join('subdir', 'orig_file.txt'),), ('linked_file.txt',),
+            (os.path.join('subdir', 'orig_file.txt'),),
+            ('linked_file.txt',),
             [('linked_file.txt', 'data')],
             ['subdir', '--link-only'],
         ),
         # Symbolic link pointing to a parent directory; collect whole data directory
         (
-            ('orig_file.txt',), (os.path.join('subdir', 'linked_file.txt'),),
+            ('orig_file.txt',),
+            (os.path.join('subdir', 'linked_file.txt'),),
             [(None, 'data')],
             ['parentdir'],
         ),
         # Symbolic link pointing to a parent directory; collect only symbolic link
         (
-            ('orig_file.txt',), (os.path.join('subdir', 'linked_file.txt'),),
+            ('orig_file.txt',),
+            (os.path.join('subdir', 'linked_file.txt'),),
             [(os.path.join('subdir', 'linked_file.txt'), os.path.join('data', 'subdir'))],
             ['parentdir', '--link-only'],
         ),
@@ -256,31 +265,37 @@ def _chained_links_verification_source(regular_file, links):
     [
         # Collect everything
         (
-            ['file_a', 'file_b', 'file_c'], 'file_a',
+            ['file_a', 'file_b', 'file_c'],
+            'file_a',
             [('file_b', 'file_a'), ('file_c', 'file_b')],
         ),
         (
-            ['file_a', 'file_b'], 'file_a',
+            ['file_a', 'file_b'],
+            'file_a',
             [('file_b', 'file_a')],
         ),
         (
-            ['file_b', 'file_c'], 'file_b',
+            ['file_b', 'file_c'],
+            'file_b',
             [('file_c', 'file_b')],
         ),
         # Special case: PyInstaller needs to relink file_c to file_a due to missing link (file_b).
         (
-            ['file_a', 'file_c'], 'file_a',
+            ['file_a', 'file_c'],
+            'file_a',
             [('file_c', 'file_a')],
         ),
         # Special case: PyInstaller needs to relink file_d to file_a due to missing links (file_b, file_c).
         (
-            ['file_a', 'file_d'], 'file_a',
+            ['file_a', 'file_d'],
+            'file_a',
             [('file_d', 'file_a')],
         ),
         # Similar to the BC test case (file_b needs to be collected as a copy), but with a missing intermediate link
         # (file_c).
         (
-            ['file_b', 'file_d'], 'file_b',
+            ['file_b', 'file_d'],
+            'file_b',
             [('file_d', 'file_b')],
         ),
     ],
