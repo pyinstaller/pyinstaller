@@ -578,7 +578,7 @@ def test_fast_bytecode_scan():
 
     for (min_version, snippet) in TEST_CODE_SNIPPETS_WITH_MIN_VERSIONS:
         if (sys.version_info >= min_version):
-            code = compile(snippet, "<self_test_code>", "exec", dont_inherit=True)
+            code = compile(snippet, "<test_code_snippet>", "exec", dont_inherit=True)
             expected = [
                 None if i is None else (i.opname, i.argval) for i in _iterate_instructions_old(code)
             ]
