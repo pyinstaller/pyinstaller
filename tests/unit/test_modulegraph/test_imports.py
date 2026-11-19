@@ -6,7 +6,10 @@ import sys
 import textwrap
 import subprocess
 import os
+import dis
+import inspect
 from PyInstaller.lib.modulegraph import modulegraph
+from PyInstaller.lib.modulegraph.util import iterate_instructions
 
 class TestNativeImport (unittest.TestCase):
     # The tests check that Python's import statement
@@ -505,6 +508,84 @@ def test_extended_args_import():
     graph = modulegraph.ModuleGraph()
     graph._scan_bytecode(node, code, True)
     assert node._deferred_imports[0][1][0] == "os"
+
+
+def test_fast_bytecode_scan():
+    # Main code for the test. It should exercise as many kinds of instructions as possible.
+    TEST_CODE_MAIN = textwrap.dedent("""\
+    import os, os.path as p, xml.etree.ElementTree
+    from . import a
+    from .. import b as c
+    from collections import *
+    from collections.abc import (Mapping, Sequence)
+    x = None; y = True; z = False; e = ''; m = -1; n = 255; o = 256; q = 2 ** 100; f = 1.5; t = (1, 'a'); s = frozenset({1})
+    b = b'x'; cplx = 1j; ell = ...
+    del x
+    global gg
+    gg = 1
+    def func(arg, *args, kw=0, **kwargs):
+        global G
+        import json
+        from json import dumps
+        G = 1
+        del G
+        try:
+            import missing
+        except ImportError:
+            pass
+        for i in range(3):
+            if i: break
+        while arg: arg -= 1
+        with open(arg) as fh: pass
+        l = [v for v in args if v]
+        g = (v for v in args)
+        def inner(): nonlocal l; return l
+        return f"{arg!r:>{kw}}" + str(lambda: 0)
+    class K:
+        import sys
+        attr = 1
+        def method(self): return super().method()
+    async def coro():
+        async with ctx() as v: await v
+        async for v in it(): yield v
+    """) + "\n".join(f"name{i} = {i}.5" for i in range(300))  # More than 256 names and constants, for EXTENDED_ARG.
+
+    TEST_CODE_MATCH = textwrap.dedent("""\
+    match x:
+        case [1, *rest]: pass
+        case {"k": v}: pass
+        case K(attr=1): pass
+        case _: pass
+    """)
+
+    TEST_CODE_LAZY_IMPORTS = "lazy import lazily_imported\nlazy from a import b\n"
+
+    TEST_CODE_SNIPPETS_WITH_MIN_VERSIONS = [
+        ((3, 8), TEST_CODE_MAIN),
+        ((3, 10), TEST_CODE_MATCH),
+        ((3, 15), TEST_CODE_LAZY_IMPORTS),
+    ]
+
+    def _iterate_instructions_old(code_object):
+        """Old implementation used before the faster but hackier bytecode scan was implemented."""
+        yield from (i for i in dis.get_instructions(code_object) if i.opname != "EXTENDED_ARG")
+
+        yield None
+
+        for constant in code_object.co_consts:
+            if inspect.iscode(constant):
+                yield from _iterate_instructions_old(constant)
+
+    for (min_version, snippet) in TEST_CODE_SNIPPETS_WITH_MIN_VERSIONS:
+        if (sys.version_info >= min_version):
+            code = compile(snippet, "<test_code_snippet>", "exec", dont_inherit=True)
+            expected = [
+                None if i is None else (i.opname, i.argval) for i in _iterate_instructions_old(code)
+            ]
+            actual = [
+                None if i is None else (i.opname, i.argval) for i in iterate_instructions(code)
+            ]
+            assert actual == expected
 
 
 if __name__ == "__main__":
