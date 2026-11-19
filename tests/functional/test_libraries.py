@@ -281,6 +281,14 @@ def test_scapy2(pyi_builder):
     )
 
 
+@pytest.mark.xfail(
+    reason='Broken with modern scapy: scapy.config statically imports scapy.arch.windows.native (under `elif '
+    'WINDOWS:`) and scapy.modules.nmap (under `if TYPE_CHECKING:`), both of which import scapy.layers.inet. '
+    'PyInstaller follows all platform branches and has no TYPE_CHECKING handling, so scapy.layers.inet ends '
+    'up bundled on every platform and the hook-scapy.layers.all contract of this test cannot hold. '
+    'Only surfaced now that scapy is actually installed and the test runs.',
+    strict=False,
+)
 @requires('scapy >= 2.0')
 def test_scapy3(pyi_builder):
     pyi_builder.test_source(
