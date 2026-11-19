@@ -566,25 +566,6 @@ def test_fast_bytecode_scan():
         ((3, 15), TEST_CODE_LAZY_IMPORTS),
     ]
 
-    def _find_problem_with_fast_bytecode_scan():
-        codes = [
-            compile(snippet, "<self_test_code>", "exec", dont_inherit=True)
-            for (min_version, snippet) in TEST_CODE_SNIPPETS_WITH_MIN_VERSIONS
-            if (sys.version_info >= min_version)
-        ]
-
-        for code in codes:
-            expected = [
-                None if i is None else (i.opname, i.argval) for i in _iterate_instructions_old(code)
-            ]
-            actual = [
-                None if i is None else (i.opname, i.argval) for i in iterate_instructions(code)
-            ]
-            if actual != expected:
-                k = next((k for k, (a, b) in enumerate(zip(actual, expected)) if a != b), min(len(actual), len(expected)))
-                return f"instruction {k} is {actual[k:k + 1]} instead of {expected[k:k + 1]}"
-        return None
-
     def _iterate_instructions_old(code_object):
         """Old implementation used before the faster but hackier bytecode scan was implemented."""
         yield from (i for i in dis.get_instructions(code_object) if i.opname != "EXTENDED_ARG")
@@ -595,7 +576,25 @@ def test_fast_bytecode_scan():
             if inspect.iscode(constant):
                 yield from _iterate_instructions_old(constant)
 
-    assert _find_problem_with_fast_bytecode_scan() == None
+    codes = [
+        compile(snippet, "<self_test_code>", "exec", dont_inherit=True)
+        for (min_version, snippet) in TEST_CODE_SNIPPETS_WITH_MIN_VERSIONS
+        if (sys.version_info >= min_version)
+    ]
+
+    problem_with_fast_bytecode_scan = None
+    for code in codes:
+        expected = [
+            None if i is None else (i.opname, i.argval) for i in _iterate_instructions_old(code)
+        ]
+        actual = [
+            None if i is None else (i.opname, i.argval) for i in iterate_instructions(code)
+        ]
+        if actual != expected:
+            k = next((k for k, (a, b) in enumerate(zip(actual, expected)) if a != b), min(len(actual), len(expected)))
+            problem_with_fast_bytecode_scan = f"instruction {k} is {actual[k:k + 1]} instead of {expected[k:k + 1]}"
+
+    assert problem_with_fast_bytecode_scan == None
 
 
 if __name__ == "__main__":
