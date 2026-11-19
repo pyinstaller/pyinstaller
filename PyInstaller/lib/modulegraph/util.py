@@ -1,10 +1,5 @@
-from __future__ import annotations
-
 import dis
 import inspect
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 def iterate_instructions(code_object):

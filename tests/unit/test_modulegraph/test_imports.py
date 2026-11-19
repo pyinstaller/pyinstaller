@@ -6,7 +6,6 @@ import sys
 import textwrap
 import subprocess
 import os
-from types import CodeType
 import dis
 import inspect
 from PyInstaller.lib.modulegraph import modulegraph
