@@ -576,20 +576,16 @@ def test_fast_bytecode_scan():
             if inspect.iscode(constant):
                 yield from _iterate_instructions_old(constant)
 
-    codes = [
-        compile(snippet, "<self_test_code>", "exec", dont_inherit=True)
-        for (min_version, snippet) in TEST_CODE_SNIPPETS_WITH_MIN_VERSIONS
-        if (sys.version_info >= min_version)
-    ]
-
-    for code in codes:
-        expected = [
-            None if i is None else (i.opname, i.argval) for i in _iterate_instructions_old(code)
-        ]
-        actual = [
-            None if i is None else (i.opname, i.argval) for i in iterate_instructions(code)
-        ]
-        assert actual == expected
+    for (min_version, snippet) in TEST_CODE_SNIPPETS_WITH_MIN_VERSIONS:
+        if (sys.version_info >= min_version):
+            code = compile(snippet, "<self_test_code>", "exec", dont_inherit=True)
+            expected = [
+                None if i is None else (i.opname, i.argval) for i in _iterate_instructions_old(code)
+            ]
+            actual = [
+                None if i is None else (i.opname, i.argval) for i in iterate_instructions(code)
+            ]
+            assert actual == expected
 
 
 if __name__ == "__main__":
