@@ -8,7 +8,6 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
-
 """
 The PyInstaller test harness: fixtures, hooks and helpers for building and running frozen test applications.
 
@@ -145,7 +144,6 @@ def exec_python_script():
     """
     Run a python script in a subprocess with `pathex` prepended to PYTHONPATH, and return the script's return code.
     """
-
     def _exec_python_script(script_filename, pathex):
         # Prepare the environment - default to 'os.environ'...
         env = os.environ.copy()

@@ -40,12 +40,10 @@ def _make_vsinfo(description='versioninfo test', *extra_string_structs):
         ),
         kids=[
             StringFileInfo([
-                StringTable(
-                    '040904b0', [
-                        StringStruct('FileDescription', description),
-                        *extra_string_structs,
-                    ]
-                )
+                StringTable('040904b0', [
+                    StringStruct('FileDescription', description),
+                    *extra_string_structs,
+                ])
             ]),
             VarFileInfo([VarStruct('Translation', [1033, 1200])])
         ]

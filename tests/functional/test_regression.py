@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+
 def test_issue_4141(pyi_builder, modules_dir):
     extra_path = modules_dir / 'pyi_issue_4141'
     pyi_builder.test_script(
