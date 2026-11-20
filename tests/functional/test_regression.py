@@ -13,7 +13,7 @@ import pathlib
 import importlib.machinery
 
 from PyInstaller import compat
-from PyInstaller.depend import analysis, bindepend
+from PyInstaller.depend import bindepend
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.api import PYZ
 
@@ -37,7 +37,7 @@ def test_issue_2492(monkeypatch, tmp_path):
         }
     )
     # Speedup: avoid analyzing base_library.zip
-    monkeypatch.setattr(analysis, 'PY3_BASE_MODULES', [])
+    monkeypatch.setattr('PyInstaller.depend.modulegraph.hooks.PY3_BASE_MODULES', [])
 
     script = tmp_path / 'script.py'
     script.write_text("import _struct", encoding='utf-8')
@@ -93,7 +93,7 @@ def test_issue_5131(monkeypatch, tmp_path):
     )
 
     # Speedup: avoid analyzing base_library.zip
-    monkeypatch.setattr(analysis, 'PY3_BASE_MODULES', [])
+    monkeypatch.setattr('PyInstaller.depend.modulegraph.hooks.PY3_BASE_MODULES', [])
 
     pkg = tmp_path / 'mypkg'
     pkg.mkdir()
