@@ -1,0 +1,2 @@
+Update ``gi.repository.Gdk`` hook to collect the ``GdkMacos`` typelib on
+macOS, and add a hook for ``gi.repository.GdkMacos``.

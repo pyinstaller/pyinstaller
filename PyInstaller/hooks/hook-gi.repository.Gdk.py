@@ -36,6 +36,8 @@ def hook(hook_api):
         hiddenimports += ['gi.repository.GdkWin32']
     elif compat.is_unix:
         hiddenimports += ['gi.repository.GdkX11', 'gi.repository.GdkWayland']
+    elif compat.is_darwin:
+        hiddenimports += ['gi.repository.GdkMacos']
 
     hiddenimports += ['gi._gi_cairo', 'gi.repository.cairo']
 
