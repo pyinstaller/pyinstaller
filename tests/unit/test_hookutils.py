@@ -108,6 +108,13 @@ TEST_MOD = 'hookutils_package'
 TEST_MOD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hookutils_files')
 
 
+def _add_to_analysis_path(monkeypatch, path):
+    """Make the given directory visible to both the in-process analysis (sys.path) and the subprocess-isolated
+    code (CONF['pathex'])."""
+    monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': [path]})
+    monkeypatch.syspath_prepend(path)
+
+
 @pytest.fixture
 def mod_list(monkeypatch):
     monkeypatch.syspath_prepend(TEST_MOD_PATH)
@@ -192,8 +199,7 @@ class TestCollectSubmodules(object):
 
         # Add the egg to Python's path.
         pth = str(dist_path / egg_name)
-        monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': [pth]})
-        monkeypatch.syspath_prepend(pth)
+        _add_to_analysis_path(monkeypatch, pth)
 
         # Verify its contents.
         ml = hookutils.collect_submodules(TEST_MOD)
@@ -201,21 +207,19 @@ class TestCollectSubmodules(object):
 
     # Messages printed to stdout by modules during collect_submodules() should not affect the collected modules list.
     def test_collect_submod_stdout_interference(self, monkeypatch):
-        TEST_MOD = 'foo'
-        TEST_MOD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hookutils_files2')
+        mod = 'foo'
+        mod_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hookutils_files2')
 
-        monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': [TEST_MOD_PATH]})
-        monkeypatch.syspath_prepend(TEST_MOD_PATH)
+        _add_to_analysis_path(monkeypatch, mod_path)
 
-        ml = hookutils.collect_submodules(TEST_MOD)
+        ml = hookutils.collect_submodules(mod)
         ml = sorted(ml)
 
         assert ml == ['foo', 'foo.bar']
 
     # Test each possible value for the **on_error** parameter to collect_submodules().
     def test_error_propagation(self, capfd, monkeypatch):
-        monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': [TEST_MOD_PATH]})
-        monkeypatch.syspath_prepend(TEST_MOD_PATH)
+        _add_to_analysis_path(monkeypatch, TEST_MOD_PATH)
 
         # Test the default of warning only for the 1st error.
         hookutils.collect_submodules(TEST_MOD)
@@ -363,8 +367,7 @@ def data_lists(monkeypatch, request):
 
     # Add path with 'hookutils_files' module to ``sys.path`` (so analysis in the main process can find it),
     # and to ``pathex`` (so subprocess-isolated code can find it).
-    monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': [TEST_MOD_PATH]})
-    monkeypatch.syspath_prepend(TEST_MOD_PATH)
+    _add_to_analysis_path(monkeypatch, TEST_MOD_PATH)
     # Use the hookutils_test_files package for testing.
     args, kwargs, subfiles = request.param
     data = hookutils.collect_data_files(*args, **kwargs)

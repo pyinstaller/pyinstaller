@@ -8,6 +8,13 @@
 #
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
+"""
+The PyInstaller test harness: fixtures, hooks and helpers for building and running frozen test applications.
+
+This module lives inside the PyInstaller package because it is the supported hook-testing surface consumed by
+pyinstaller-hooks-contrib (and, in principle, any third-party package testing its PyInstaller hooks via the
+`hook_testing` extra). PyInstaller's own test suite wraps it in `tests/conftest.py`.
+"""
 
 import contextlib
 import copy
@@ -36,7 +43,7 @@ import pytest  # noqa: E402
 
 from PyInstaller import __main__ as pyi_main  # noqa: E402
 from PyInstaller import configure  # noqa: E402
-from PyInstaller.compat import is_cygwin, is_darwin, is_win  # noqa: E402
+from PyInstaller.compat import is_cygwin, is_darwin, is_win, exec_python_rc  # noqa: E402
 from PyInstaller.depend.analysis import initialize_modgraph  # noqa: E402
 from PyInstaller.archive.readers import pkg_archive_contents  # noqa: E402
 from PyInstaller.utils.tests import gen_sourcefile  # noqa: E402
@@ -49,16 +56,13 @@ SUPPORTED_OSES = {"darwin", "linux", "win32"}
 # Have pyi_builder fixure clean-up the temporary directories of successful tests. Controlled by environment variable.
 _PYI_BUILDER_CLEANUP = os.environ.get("PYI_BUILDER_CLEANUP", "1") == "1"
 
-# Fixtures
-# --------
-
 
 def pytest_runtest_setup(item):
     """
     Markers to skip tests based on the current platform.
     https://pytest.org/en/stable/example/markers.html#marking-platform-specific-tests-with-pytest
 
-    Available markers: see pytest.ini markers
+    Available markers (declared in the pytest configuration in pytest.ini):
         - @pytest.mark.darwin (macOS)
         - @pytest.mark.linux (GNU/Linux)
         - @pytest.mark.win32 (Windows)
@@ -112,6 +116,14 @@ def _get_spec_dir(request):
 
 
 @pytest.fixture
+def modules_dir(request):
+    """
+    Return the directory with the testing modules used by some tests (`tests/functional/modules`).
+    """
+    return _get_modules_dir(request)
+
+
+@pytest.fixture
 def spec_dir(request):
     """
     Return the directory where the test spec-files reside.
@@ -125,6 +137,24 @@ def script_dir(request):
     Return the directory where the test scripts reside.
     """
     return _get_script_dir(request)
+
+
+@pytest.fixture
+def exec_python_script():
+    """
+    Run a python script in a subprocess with `pathex` prepended to PYTHONPATH, and return the script's return code.
+    """
+    def _exec_python_script(script_filename, pathex):
+        # Prepare the environment - default to 'os.environ'...
+        env = os.environ.copy()
+        # ... and prepend PYTHONPATH with pathex
+        if 'PYTHONPATH' in env:
+            pathex = os.pathsep.join([str(pathex), env['PYTHONPATH']])
+        env['PYTHONPATH'] = str(pathex)
+        # Run the test script
+        return exec_python_rc(str(script_filename), env=env)
+
+    return _exec_python_script
 
 
 # A fixture that copies test's data directory into test's temporary directory. The data directory is assumed to be
@@ -481,15 +511,18 @@ class AppBuilder:
             # if self._mode is None then just the spec file was supplied.
 
         pyi_args = [self.script, *default_args, *args]
-        # TODO: fix return code in running PyInstaller programmatically.
         PYI_CONFIG = configure.get_config()
         # Override CACHEDIR for PyInstaller; relocate cache into `self._bincache_path`.
         PYI_CONFIG['cachedir'] = str(self._bincache_path)
 
-        pyi_main.run(pyi_args, PYI_CONFIG)
-        retcode = 0
+        # A failed build propagates as SystemExit (with the error message) from pyi_main.run(); translate it into the
+        # boolean that _test_script()'s "Building of ... failed" pytest.fail() reports.
+        try:
+            pyi_main.run(pyi_args, PYI_CONFIG)
+        except SystemExit:
+            return False
 
-        return retcode == 0
+        return True
 
     def _examine_executable(self, exe, toc_log):
         """
@@ -522,8 +555,8 @@ class AppBuilder:
 # that are same for every executable.
 @pytest.fixture(scope='session')
 def pyi_modgraph():
-    # Explicitly set the log level since the plugin `pytest-catchlog` (un-) sets the root logger's level to NOTSET for
-    # the setup phase, which will lead to TRACE messages been written out.
+    # Explicitly set the log level: pytest's logging plugin (pytest-catchlog, merged into pytest core long ago) sets
+    # the root logger's level to NOTSET for the setup phase, which will lead to TRACE messages been written out.
     import PyInstaller.log as logging
     logging.logger.setLevel(logging.DEBUG)
     initialize_modgraph()
@@ -535,43 +568,35 @@ def pyi_bincache(tmp_path_factory):
     return tmp_path_factory.mktemp("pyi-bincache-")
 
 
-# Run by default test as onedir and onefile.
-@pytest.fixture(params=['onedir', 'onefile'])
-def pyi_builder(tmp_path, monkeypatch, request, pyi_modgraph, pyi_bincache):
-    # Save/restore environment variable PATH.
+@pytest.fixture
+def pyi_builder_base(tmp_path, monkeypatch, request):
+    # Shared setup/teardown for the builder fixtures: save/restore the environment PATH, restore sys.path
+    # (PyInstaller's Analysis extends sys.path with the build's pathex entries and never cleans them up, so without
+    # the reset they - including paths to already-removed temporary directories - leak into subsequent tests in the
+    # same process), chdir into the test's temporary directory, reset the global build configuration, and clean up
+    # the temporary directory of a successful test.
     monkeypatch.setenv('PATH', os.environ['PATH'])
-    # PyInstaller or a test case might manipulate 'sys.path'. Reset it for every test.
     monkeypatch.syspath_prepend(None)
-    # Set current working directory to
     monkeypatch.chdir(tmp_path)
     # Clean up configuration and force PyInstaller to do a clean configuration for another app/test. The value is same
     # as the original value.
     monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
 
-    yield AppBuilder(tmp_path, pyi_bincache, request, request.param)
+    yield tmp_path
 
     # Clean up the temporary directory of a successful test
     if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
         if tmp_path.exists():
             shutil.rmtree(tmp_path, ignore_errors=True)
+
+
+# Run by default test as onedir and onefile.
+@pytest.fixture(params=['onedir', 'onefile'])
+def pyi_builder(pyi_builder_base, request, pyi_modgraph, pyi_bincache):
+    yield AppBuilder(pyi_builder_base, pyi_bincache, request, request.param)
 
 
 # Fixture for .spec based tests. With .spec it does not make sense to differentiate onefile/onedir mode.
 @pytest.fixture
-def pyi_builder_spec(tmp_path, request, monkeypatch, pyi_modgraph, pyi_bincache):
-    # Save/restore environment variable PATH.
-    monkeypatch.setenv('PATH', os.environ['PATH'])
-    # Set current working directory to
-    monkeypatch.chdir(tmp_path)
-    # PyInstaller or a test case might manipulate 'sys.path'. Reset it for every test.
-    monkeypatch.syspath_prepend(None)
-    # Clean up configuration and force PyInstaller to do a clean configuration for another app/test. The value is same
-    # as the original value.
-    monkeypatch.setattr('PyInstaller.config.CONF', {'pathex': []})
-
-    yield AppBuilder(tmp_path, pyi_bincache, request, None)
-
-    # Clean up the temporary directory of a successful test
-    if _PYI_BUILDER_CLEANUP and request.node.rep_setup.passed and request.node.rep_call.passed:
-        if tmp_path.exists():
-            shutil.rmtree(tmp_path, ignore_errors=True)
+def pyi_builder_spec(pyi_builder_base, request, pyi_modgraph, pyi_bincache):
+    yield AppBuilder(pyi_builder_base, pyi_bincache, request, None)

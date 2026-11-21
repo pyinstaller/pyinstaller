@@ -9,29 +9,35 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+# Wraps the in-package PyInstaller test harness (PyInstaller.utils.conftest) for PyInstaller's own test suite. The
+# machinery itself lives in the package because it is also the supported hook-testing surface consumed by
+# pyinstaller-hooks-contrib (see the `hook_testing` extra in pyproject.toml).
+
 import os
 import pathlib
 import shutil
+import sys
 
 import pytest
 
-from PyInstaller.compat import is_win, is_darwin
+from PyInstaller.compat import is_darwin, is_win
 
-# Bring all common fixtures into this file.
-from PyInstaller.utils.conftest import *  # noqa: F401, F403
+# Make the checked-out PyInstaller importable even when it is not installed (the repository root is the parent of
+# this directory).
+_ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+sys.path.append(_ROOT_DIR)
+
+# Bring the harness fixtures and hooks into this file.
+from PyInstaller.utils.conftest import *  # noqa: F401, F403, E402
 
 
-# A fixture that compiles a test shared library from `data/load_dll_using_ctypes/ctypes_dylib.c` in a sub-directory
-# of the tmp_dir, and returns path to the compiled shared library.
-#
-# NOTE: for this fixture to be session-scoped, we need to define it here (as opposed to `PyInstaller.utils.confest`).
-# This is because its data directory needs to be resolved based on this module's location. (And even if we were to use
-# test-scoped fixture and infer location from `request.path`, the fixture would be valid only for test files from this
-# directory).
+# A fixture that compiles a test shared library from `functional/data/ctypes_dylib/ctypes_dylib.c` into a
+# session-scoped temporary directory, and returns path to the compiled shared library. It lives on this side of the
+# harness because its data directory is specific to PyInstaller's own test suite.
 @pytest.fixture(scope="session")
 def compiled_dylib(tmp_path_factory):
     # Copy the source to temporary directory.
-    orig_source_dir = pathlib.Path(__file__).parent / 'data' / 'ctypes_dylib'
+    orig_source_dir = pathlib.Path(__file__).parent / 'functional' / 'data' / 'ctypes_dylib'
     tmp_source_dir = tmp_path_factory.mktemp('compiled_ctypes_dylib')
     shutil.copy2(orig_source_dir / 'ctypes_dylib.c', tmp_source_dir)
 

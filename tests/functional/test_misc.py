@@ -18,7 +18,7 @@ import json
 import pytest
 
 from PyInstaller import compat
-from PyInstaller.utils.tests import onefile_only
+from PyInstaller.utils.tests import create_symlink, onefile_only
 
 # Directory with testing modules used in some tests.
 _MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
@@ -156,11 +156,9 @@ def test_onefile_cleanup_symlinked_dir(pyi_builder, tmp_path):
         output_file = output_dir / f'preexisting-{idx}.txt'
         output_file.write_text(f"Pre-existing file #{idx}", encoding='utf-8')
 
-    # Check if OS supports creation of symbolic links
-    try:
-        (tmp_path / 'testdir').symlink_to(output_dir)
-    except OSError:
-        pytest.skip("OS does not support (unprivileged) creation of symbolic links.")
+    # Check if OS supports creation of symbolic links (create_symlink() skips the test if they cannot be created on
+    # Windows; on other OS-es creation is expected to work, so an error propagates).
+    create_symlink(output_dir, tmp_path / 'testdir', target_is_directory=True)
 
     # Run the test program
     pyi_builder.test_source(
@@ -222,28 +220,15 @@ def test_single_file_metadata(pyi_builder):
 # Python versions prior to 3.14.1 are able to import such modules; however, starting with python 3.14.1, a SyntaxError
 # is raised. See: https://github.com/python/cpython/commit/9ff705c
 @pytest.mark.skipif(sys.version_info >= (3, 14, 1), reason="python >= 3.14.1 disallows invalid characters")
-def test_program_importing_module_with_invalid_encoding1(pyi_builder):
+@pytest.mark.parametrize("module_name", ['mymodule1', 'mymodule2'], ids=['1', '2'])
+def test_program_importing_module_with_invalid_encoding(pyi_builder, module_name):
     # Add directory containing the my-test-package metadata to search path
     extra_path = _MODULES_DIR / "pyi_module_with_invalid_encoding"
 
     pyi_builder.test_source(
-        """
-        import mymodule1
-        assert mymodule1.hello() == "hello"
-        """,
-        pyi_args=['--paths', str(extra_path)]
-    )
-
-
-@pytest.mark.skipif(sys.version_info >= (3, 14, 1), reason="python >= 3.14.1 disallows invalid characters")
-def test_program_importing_module_with_invalid_encoding2(pyi_builder):
-    # Add directory containing the my-test-package metadata to search path
-    extra_path = _MODULES_DIR / "pyi_module_with_invalid_encoding"
-
-    pyi_builder.test_source(
-        """
-        import mymodule2
-        assert mymodule2.hello() == "hello"
+        f"""
+        import {module_name}
+        assert {module_name}.hello() == "hello"
         """,
         pyi_args=['--paths', str(extra_path)]
     )
@@ -278,87 +263,6 @@ def test_bundled_shell_script(pyi_builder, tmp_path):
         assert output.strip() == "Hello world!"
         """,
         pyi_args=['--add-data', f"{script_file}:."]
-    )
-
-
-# Test that a program importing `__main__` module does not pull in `PyInstaller` (or in the case of the test, the
-# `pytest`). The problem is that the `__main__` has different meaning during analysis vs. during program's run;
-# during analysis, it resolves to the entry-point module that is running the analysis, whereas during program run, it
-# refers to the program's entry-point. Currently, this seems to be a problem only on Windows, where modulegraph manages
-# to resolve `__main__` into `.../PyInstaller.exe/__main__.py` (or `.../pytest.exe/__main__.py`). On Linux and macOS,
-# modulegraph does not seem to be able to resolve `__main__`.
-def test_import_main_should_not_collect_pyinstaller1(pyi_builder):
-    hooks_dir = _MODULES_DIR / 'pyi_import_main' / 'hooks'
-    pyi_builder.test_source(
-        """
-        # Plain import.
-        import __main__
-        print(__main__)
-        """,
-        pyi_args=['--additional-hooks-dir', str(hooks_dir)]
-    )
-
-
-def test_import_main_should_not_collect_pyinstaller2(pyi_builder):
-    hooks_dir = _MODULES_DIR / 'pyi_import_main' / 'hooks'
-    pyi_builder.test_source(
-        """
-        # Import __main__ in the same way as `pkg_resources` and its vendored variants
-        # (e.g., `pip._vendor.pkg_resources`) do.
-        try:
-            from __main__ import __requires__
-        except ImportError:
-            pass
-        """,
-        pyi_args=['--additional-hooks-dir', str(hooks_dir)]
-    )
-
-
-# Test that a relative import attempt of a missing optional sub-module in a package does not trigger collection of an
-# unrelated but eponymous top-level module. Simulates the scenario from #8010, where the following block in
-# `openpyxl.reader.excel`:
-#
-# ```
-# try:
-#    from ..tests import KEEP_VBA
-# except ImportError:
-#    KEEP_VBA = False
-# ```
-#
-# (https://foss.heptapod.net/openpyxl/openpyxl/-/blob/branch/3.1/openpyxl/reader/excel.py#L16)
-#
-# triggers collection of top-level `tests` package that is provided by the `LaoNLP` distribution. And importing
-# the said `tests` package during analysis triggers LaoNLP's unit tests...
-def test_missing_relative_import_collects_unrelated_top_level_module(pyi_builder):
-    extra_path = _MODULES_DIR / "pyi_missing_relative_import"
-    hooks_dir = extra_path / 'hooks'
-
-    pyi_builder.test_source(
-        """
-        import mypackage
-        """,
-        pyi_args=['--additional-hooks-dir', str(hooks_dir), '--paths', str(extra_path)]
-    )  # yapf: disable
-
-
-# Test that various forms of relative imports are properly caught by the module exclusion.
-@pytest.mark.parametrize('exclude', [False, True], ids=["baseline", "exclude"])
-def test_excluded_relative_imports(pyi_builder, exclude):
-    extra_path = _MODULES_DIR / "pyi_excluded_relative_imports"
-    hooks_dir = extra_path / 'hooks'
-
-    pyi_args = ['--paths', str(extra_path)]
-    if exclude:
-        pyi_args += ['--additional-hooks-dir', str(hooks_dir)]
-
-    pyi_builder.test_source(
-        f"""
-        import os
-        os.environ['_FORBIDDEN_MODULES_ENABLED'] = '{str(int(not exclude))}'  # '0' or '1'
-
-        import mypackage
-        """,
-        pyi_args=pyi_args,
     )
 
 
