@@ -22,7 +22,7 @@ def test_six_moves(pyi_builder):
 
 # Run the same test a second time to trigger errors like
 #   Target module "six.moves.urllib" already imported as "AliasNode(…)"
-# caused by PyiModuleGraph being cached in a insufficient way.
+# caused by ModuleGraph being cached in a insufficient way.
 @requires('six >= 1.0')
 def test_six_moves_2nd_run(pyi_builder):
     return test_six_moves(pyi_builder)

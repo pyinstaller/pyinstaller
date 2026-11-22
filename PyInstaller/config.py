@@ -43,7 +43,7 @@ upx_available
 upx_dir
 workpath
 
-tests_modgraph  - cached PyiModuleGraph object to speed up tests
+tests_modgraph  - cached ModuleGraph object to speed up tests
 
 code_cache - dictionary associating `Analysis.pure` list instances with code cache dictionaries. Used by PYZ writer.
 """

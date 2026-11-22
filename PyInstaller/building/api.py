@@ -28,12 +28,12 @@ from PyInstaller import log as logging
 from PyInstaller.archive.writers import CArchiveWriter, ZlibArchiveWriter
 from PyInstaller.building.datastruct import Target, _check_guts_eq, normalize_pyz_toc, normalize_toc
 from PyInstaller.building.utils import (
-    _check_guts_toc, _make_clean_directory, _rmtree, process_collected_binary, get_code_object, compile_pymodule
+    _check_guts_toc, _make_clean_directory, _rmtree, process_collected_binary, get_code_object, compile_pymodule,
+    destination_name_for_extension
 )
 from PyInstaller.building.splash import Splash  # argument type validation in EXE
 from PyInstaller.compat import is_cygwin, is_darwin, is_linux, is_win, strict_collect_mode, is_nogil, is_aix
 from PyInstaller.depend import bindepend
-from PyInstaller.depend.analysis import get_bootstrap_modules
 import PyInstaller.utils.misc as miscutils
 
 logger = logging.getLogger(__name__)
@@ -43,6 +43,52 @@ if is_win:
 
 if is_darwin:
     import PyInstaller.utils.osx as osxutils
+
+
+def get_bootstrap_modules():
+    """
+    Get TOC with the bootstrapping modules and their dependencies.
+
+    The "bootstrap" modules are the handful of PyInstaller-owned files inside
+    ``PyInstaller/loader`` (pyimod01_archive, pyimod02_importers, ...) plus
+    the C extensions (``_struct``, ``zlib``) and the ``struct`` module that
+    the frozen program needs *before* the regular import system is up.
+    They are compiled and packed into the executable's CArchive separately
+    from the user program (see ``PYZ.__init__`` and ``EXE.__init__``).
+
+    Returns
+    -------
+    list of (dest_name, src_path, typecode) TOC entries.
+    """
+    # Import 'struct' modules to get real paths to module file names.
+    mod_struct = __import__('struct')
+    # Basic modules necessary for the bootstrap process.
+    loader_mods = list()
+    loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+    # On some platforms (Windows, Debian/Ubuntu) '_struct' and zlib modules are built-in modules (linked statically)
+    # and thus does not have attribute __file__. 'struct' module is required for reading Python bytecode from
+    # executable. 'zlib' module is required to decompress this bytecode.
+    for mod_name in ['_struct', 'zlib']:
+        mod = __import__(mod_name)  # C extension.
+        if hasattr(mod, '__file__'):
+            mod_file = os.path.abspath(mod.__file__)
+            # Resolve full destination name for extension, diverting it into python3.x/lib-dynload directory if
+            # necessary (to match behavior for extension collection introduced in #5604).
+            mod_dest = destination_name_for_extension(mod_name, mod_file, 'EXTENSION')
+            loader_mods.append((mod_dest, mod_file, 'EXTENSION'))
+    loader_mods.append(('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'))
+    # Loader/bootstrap modules.
+    # NOTE: These modules should be kept simple without any complicated dependencies.
+    loader_mods += [
+        ('pyimod01_archive', os.path.join(loaderpath, 'pyimod01_archive.py'), 'PYMODULE'),
+        ('pyimod02_importers', os.path.join(loaderpath, 'pyimod02_importers.py'), 'PYMODULE'),
+        ('pyimod03_ctypes', os.path.join(loaderpath, 'pyimod03_ctypes.py'), 'PYMODULE'),
+    ]
+    if is_win:
+        loader_mods.append(('pyimod04_pywin32', os.path.join(loaderpath, 'pyimod04_pywin32.py'), 'PYMODULE'))
+    # The bootstrap script
+    loader_mods.append(('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'))
+    return loader_mods
 
 
 class PYZ(Target):
