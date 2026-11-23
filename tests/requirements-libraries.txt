@@ -69,10 +69,8 @@ PyQt6-WebEngine==6.140.1; python_version >= "3.10"
 PyQt6-WebEngine-Qt6==6.140.0; python_version >= "3.10"
 pytz==2026.6
 requests==2.34.2; python_version >= "3.10"
-# The packages below are not pyup-managed: they use lower-bound pins so that pip resolves a
-# version compatible with every tested Python version.
-scapy>=2.4.5  # Exercises hook-scapy.layers.all via tests/functional/test_libraries.py
-six>=1.16.0  # Exercises modulegraph's alias-module support via tests/functional/test_six.py
+scapy==2.8.0  # Exercises hook-scapy.layers.all via tests/functional/test_libraries.py
+six==1.17.0  # Exercises modulegraph's alias-module support via tests/functional/test_six.py
 scipy==1.18.1; python_version >= "3.12"
 sphinx==9.2.0; python_version >= "3.13"
 sqlalchemy==2.1.9; python_version >= "3.11"
