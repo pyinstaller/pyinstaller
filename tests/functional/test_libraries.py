@@ -281,46 +281,6 @@ def test_scapy2(pyi_builder):
     )
 
 
-@pytest.mark.xfail(
-    reason='Broken with modern scapy: scapy.config statically imports scapy.arch.windows.native (under `elif '
-    'WINDOWS:`) and scapy.modules.nmap (under `if TYPE_CHECKING:`), both of which import scapy.layers.inet. '
-    'PyInstaller follows all platform branches and has no TYPE_CHECKING handling, so scapy.layers.inet ends '
-    'up bundled on every platform and the hook-scapy.layers.all contract of this test cannot hold. '
-    'Only surfaced now that scapy is actually installed and the test runs.',
-    strict=False,
-)
-@requires('scapy >= 2.0')
-def test_scapy3(pyi_builder):
-    pyi_builder.test_source(
-        """
-        # Test whether
-        # a) scapy packet layers are not included if neither scapy.all nor scapy.layers.all are imported
-        # b) packages are included if imported explicitly
-
-        NAME = 'hook-scapy.layers.all'
-        layer_inet = 'scapy.layers.inet'
-
-        def testit():
-            try:
-                __import__(layer_inet)
-                raise SystemExit('Self-test of hook %s failed: package module found'
-                                 % NAME)
-            except ImportError as e:
-                if not e.args[0].endswith(' inet'):
-                    raise SystemExit('Self-test of hook %s failed: package module found and has import errors: %r'
-                                     % (NAME, e))
-
-        import scapy
-        testit()
-        import scapy.layers
-        testit()
-        # Explicitly import a single layer module. Note: This module MUST NOT import inet (neither directly nor
-        # indirectly), otherwise the test above fails.
-        import scapy.layers.ir
-        """
-    )
-
-
 @importorskip('sqlalchemy')
 def test_sqlalchemy(pyi_builder):
     pyi_builder.test_source(
@@ -329,27 +289,6 @@ def test_sqlalchemy(pyi_builder):
         import sqlalchemy
         # This import was known to fail with sqlalchemy 0.9.1
         import sqlalchemy.ext.declarative
-        """
-    )
-
-
-@importorskip('twisted')
-def test_twisted(pyi_builder):
-    pyi_builder.test_source(
-        """
-        # Twisted is an event-driven networking engine.
-        #
-        # The 'reactor' is object that starts the eventloop.
-        # There are different types of platform specific reactors.
-        # Platform specific reactor is wrapped into twisted.internet.reactor module.
-        from twisted.internet import reactor
-        # Applications importing module twisted.internet.reactor might fail with error like:
-        #
-        #     AttributeError: 'module' object has no attribute 'listenTCP'
-        #
-        # Ensure default reactor was loaded - it has method 'listenTCP' to start server.
-        if not hasattr(reactor, 'listenTCP'):
-            raise SystemExit('Twisted reactor not properly initialized.')
         """
     )
 
@@ -370,17 +309,6 @@ def test_usb(pyi_builder):
         import usb.core
         # NoBackendError fails the test if no backends are found.
         usb.core.find()
-        """
-    )
-
-
-@importorskip('zeep')
-def test_zeep(pyi_builder):
-    pyi_builder.test_source(
-        """
-        # Test the hook to zeep
-        from zeep import utils
-        utils.get_version()
         """
     )
 

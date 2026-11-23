@@ -47,7 +47,7 @@ def _codepage_filename():
         # encoding.
         pytest.param('unicode', {'LC_ALL': 'C'}, marks=pytest.mark.linux, id='linux-non-unicode-path'),
         # Mac and Linux should handle 'unicode' type filenames without problem.
-        pytest.param('unicode', {}, marks=[pytest.mark.darwin, pytest.mark.linux], id='osx-linux-unicode-path'),
+        pytest.param('unicode', {}, marks=[pytest.mark.darwin, pytest.mark.linux], id='macos-linux-unicode-path'),
         pytest.param('codepage', {}, marks=pytest.mark.win32, id='win-codepage-path'),
         # Both eastern European and Japanese characters - no codepage should encode this; codepage encoding would
         # replace some of these chars with "???". To test what happens with a non-ANSI tempdir, we will also need to

@@ -83,8 +83,8 @@ def _create_data(tmp_path, orig_filename, link_filename):
 # to the original file (same directory, subdirectory, parent directory) crossed with what gets collected (both the
 # original file and the symbolic link, only the symbolic link, or the whole data directory). Each parameter set is
 # (orig_file, link_file, add_data, app_args), where:
-#  * `orig_file` and `link_file` are the (os-separated) paths of the original file and the symbolic link, relative to
-#    the data directory,
+#  * `orig_file` and `link_file` are the paths of the original file and the symbolic link, relative to
+#    the data directory (as native OS separator-delimited strings),
 #  * `add_data` is a list of (source, destination) pairs for the --add-data arguments, with a `None` source meaning
 #    "collect the whole data directory",
 #  * `app_args` are the arguments passed to the test script, which selects its operating mode.

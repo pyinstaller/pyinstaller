@@ -822,9 +822,8 @@ def test_contents_directory(pyi_builder):
     assert not (bundle / "foo").exists()
     assert (bundle / "é³þ³źć🚀").is_dir()
 
-    # The invalid ".." value makes the build fail; the harness translates the SystemExit raised by pyi_main.run()
-    # into a plain test failure, so expect the harness's failure rather than the SystemExit itself.
-    with pytest.raises(pytest.fail.Exception, match='Building of .* failed'):
+    # The invalid ".." value makes the build raise SystemExit, which propagates uncaught out of the builder fixture.
+    with pytest.raises(SystemExit, match='Invalid value "\\.\\." passed'):
         pyi_builder.test_source("", pyi_args=["--contents-directory", "..", "--noconfirm"])
 
 
@@ -861,10 +860,12 @@ def test_spec_options(pyi_builder_spec, spec_dir, capsys):
     # by the harness into a plain test failure, so expect the harness's failure; the script's own output is still
     # captured and can be checked.
     capsys.readouterr()
-    with pytest.raises(pytest.fail.Exception, match='Building of .* failed'):
+    with pytest.raises(SystemExit) as exc_info:
         pyi_builder_spec.test_spec(spec_dir / "pyi_spec_options.spec", pyi_args=["--", "--help"])
+    assert exc_info.value.code == 0
     assert "help blah blah blah" in capsys.readouterr().out
 
-    with pytest.raises(pytest.fail.Exception, match='Building of .* failed'):
+    with pytest.raises(SystemExit) as exc_info:
         pyi_builder_spec.test_spec(spec_dir / "pyi_spec_options.spec", pyi_args=["--", "--onefile"])
+    assert exc_info.value.code == 2
     assert "pyi_spec_options.spec: error: unrecognized arguments: --onefile" in capsys.readouterr().err

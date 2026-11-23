@@ -221,9 +221,9 @@ def test_single_file_metadata(pyi_builder):
 # is raised. See: https://github.com/python/cpython/commit/9ff705c
 @pytest.mark.skipif(sys.version_info >= (3, 14, 1), reason="python >= 3.14.1 disallows invalid characters")
 @pytest.mark.parametrize("module_name", ['mymodule1', 'mymodule2'], ids=['1', '2'])
-def test_program_importing_module_with_invalid_encoding(pyi_builder, module_name):
+def test_program_importing_module_with_invalid_encoding(pyi_builder, modules_dir, module_name):
     # Add directory containing the my-test-package metadata to search path
-    extra_path = _MODULES_DIR / "pyi_module_with_invalid_encoding"
+    extra_path = modules_dir / "pyi_module_with_invalid_encoding"
 
     pyi_builder.test_source(
         f"""

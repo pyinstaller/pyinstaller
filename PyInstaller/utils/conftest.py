@@ -263,8 +263,7 @@ class AppBuilder:
 
         start_time = time.time()
         self._display_message('TEST-SCRIPT', 'Starting build...')
-        if not self._test_building(args=pyi_args):
-            pytest.fail(f'Building of {script} failed.')
+        self._test_building(args=pyi_args)
 
         elapsed = time.time() - start_time
         self._display_message('TEST-SCRIPT', f'Build finished in {elapsed:.1f} seconds, now running executable...')
@@ -515,14 +514,8 @@ class AppBuilder:
         # Override CACHEDIR for PyInstaller; relocate cache into `self._bincache_path`.
         PYI_CONFIG['cachedir'] = str(self._bincache_path)
 
-        # A failed build propagates as SystemExit (with the error message) from pyi_main.run(); translate it into the
-        # boolean that _test_script()'s "Building of ... failed" pytest.fail() reports.
-        try:
-            pyi_main.run(pyi_args, PYI_CONFIG)
-        except SystemExit:
-            return False
-
-        return True
+        # A build failure propagates as SystemExit (with the error message) out of this method.
+        pyi_main.run(pyi_args, PYI_CONFIG)
 
     def _examine_executable(self, exe, toc_log):
         """

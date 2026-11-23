@@ -111,8 +111,8 @@ def test_pep302_loader_cextension(pyi_builder):
 
 # NOTE: The tests above exercise the PEP-302 "Optional Extensions to the Importer Protocol" methods through the
 # legacy `pkgutil.get_loader()` API, which still works on Python <= 3.13 (removed in 3.14) and is still depended on
-# by some packages on Pythons that PyInstaller supports. Keep them until support for Python <= 3.11 is dropped
-# (Python 3.11 EOL: October 2027) - at that point the oldest supported Python (3.12+) no longer provides the PEP-302
+# by some packages on Pythons that PyInstaller supports. Keep them until support for Python <= 3.11 is dropped —
+# at that point the oldest supported Python (3.12+) no longer provides the PEP-302
 # machinery and both the tests below and their legacy counterparts above can be removed together.
 
 

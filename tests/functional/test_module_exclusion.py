@@ -129,8 +129,8 @@ def test_subpackage_exclusion_numpy_f2py(pyi_builder):
 #
 # triggers collection of top-level `tests` package that is provided by the `LaoNLP` distribution. And importing
 # the said `tests` package during analysis triggers LaoNLP's unit tests...
-def test_missing_relative_import_collects_unrelated_top_level_module(pyi_builder):
-    extra_path = _MODULES_DIR / "pyi_missing_relative_import"
+def test_missing_relative_import_collects_unrelated_top_level_module(pyi_builder, modules_dir):
+    extra_path = modules_dir / "pyi_missing_relative_import"
     hooks_dir = extra_path / 'hooks'
 
     pyi_builder.test_source(

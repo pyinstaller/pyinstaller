@@ -272,8 +272,8 @@ def test_import_pyi_splash(pyi_builder):
 
 #--- unzipped .egg support ----
 
-_EGG_PATH = _MODULES_DIR / 'pyi_test_egg' / 'pyi_egg_unzipped.egg'
-_EGG_HOOKS_DIR = _MODULES_DIR / 'pyi_test_egg' / 'hooks'
+_EGG_PATH = str(_MODULES_DIR / 'pyi_test_egg' / 'pyi_egg_unzipped.egg')
+_EGG_HOOKS_DIR = str(_MODULES_DIR / 'pyi_test_egg' / 'hooks')
 
 
 @importorskip('pkg_resources')
@@ -298,7 +298,7 @@ def test_egg_unzipped(pyi_builder):
 
         print('Okay.')
         """,
-        pyi_args=['--paths', str(_EGG_PATH), '--additional-hooks-dir', str(_EGG_HOOKS_DIR)],
+        pyi_args=['--paths', _EGG_PATH, '--additional-hooks-dir', _EGG_HOOKS_DIR],
     )  # yapf: disable
 
 
@@ -318,7 +318,7 @@ def test_egg_unzipped_metadata_pkg_resources(pyi_builder):
         # Project name is taken from egg name
         assert dist.project_name == 'pyi-egg-unzipped', f"Unexpected project name {dist.project_name!r}"
         """,
-        pyi_args=['--paths', str(_EGG_PATH), '--additional-hooks-dir', str(_EGG_HOOKS_DIR)],
+        pyi_args=['--paths', _EGG_PATH, '--additional-hooks-dir', _EGG_HOOKS_DIR],
     )  # yapf: disable
 
 
@@ -348,7 +348,7 @@ def test_egg_unzipped_metadata_importlib_metadata(pyi_builder):
         assert dist.name == 'unzipped-egg', f"Unexpected name {dist.name!r}"
         assert dist.version == '0.1', f"Unexpected version {dist.version!r}"
         """,
-        pyi_args=['--paths', str(_EGG_PATH), '--additional-hooks-dir', str(_EGG_HOOKS_DIR)],
+        pyi_args=['--paths', _EGG_PATH, '--additional-hooks-dir', _EGG_HOOKS_DIR],
     )  # yapf: disable
 
 
