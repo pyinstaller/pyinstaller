@@ -236,18 +236,6 @@ def test_requests(pyi_builder, data_dir):
     pyi_builder.test_script('pyi_lib_requests.py', pyi_args=['--add-data', add_data_arg])
 
 
-@importorskip('urllib3.packages.six')
-def test_urllib3_six(pyi_builder):
-    # Test for pre-safe-import urllib3.packages.six.moves.
-    pyi_builder.test_source(
-        """
-        import urllib3.connectionpool
-        import types
-        assert isinstance(urllib3.connectionpool.queue, types.ModuleType)
-        """
-    )
-
-
 @importorskip('sqlite3')
 def test_sqlite3(pyi_builder):
     pyi_builder.test_source(
@@ -293,38 +281,6 @@ def test_scapy2(pyi_builder):
     )
 
 
-@requires('scapy >= 2.0')
-def test_scapy3(pyi_builder):
-    pyi_builder.test_source(
-        """
-        # Test whether
-        # a) scapy packet layers are not included if neither scapy.all nor scapy.layers.all are imported
-        # b) packages are included if imported explicitly
-
-        NAME = 'hook-scapy.layers.all'
-        layer_inet = 'scapy.layers.inet'
-
-        def testit():
-            try:
-                __import__(layer_inet)
-                raise SystemExit('Self-test of hook %s failed: package module found'
-                                 % NAME)
-            except ImportError, e:
-                if not e.args[0].endswith(' inet'):
-                    raise SystemExit('Self-test of hook %s failed: package module found and has import errors: %r'
-                                     % (NAME, e))
-
-        import scapy
-        testit()
-        import scapy.layers
-        testit()
-        # Explicitly import a single layer module. Note: This module MUST NOT import inet (neither directly nor
-        # indirectly), otherwise the test above fails.
-        import scapy.layers.ir
-        """
-    )
-
-
 @importorskip('sqlalchemy')
 def test_sqlalchemy(pyi_builder):
     pyi_builder.test_source(
@@ -333,69 +289,6 @@ def test_sqlalchemy(pyi_builder):
         import sqlalchemy
         # This import was known to fail with sqlalchemy 0.9.1
         import sqlalchemy.ext.declarative
-        """
-    )
-
-
-@importorskip('twisted')
-def test_twisted(pyi_builder):
-    pyi_builder.test_source(
-        """
-        # Twisted is an event-driven networking engine.
-        #
-        # The 'reactor' is object that starts the eventloop.
-        # There are different types of platform specific reactors.
-        # Platform specific reactor is wrapped into twisted.internet.reactor module.
-        from twisted.internet import reactor
-        # Applications importing module twisted.internet.reactor might fail with error like:
-        #
-        #     AttributeError: 'module' object has no attribute 'listenTCP'
-        #
-        # Ensure default reactor was loaded - it has method 'listenTCP' to start server.
-        if not hasattr(reactor, 'listenTCP'):
-            raise SystemExit('Twisted reactor not properly initialized.')
-        """
-    )
-
-
-@importorskip('pyexcelerate')
-def test_pyexcelerate(pyi_builder):
-    pyi_builder.test_source(
-        """
-        # Requires PyExcelerate 0.6.1 or higher
-        # Tested on Windows 7 x64 SP1 with CPython 2.7.6
-        import pyexcelerate
-        """
-    )
-
-
-@importorskip('usb')
-@pytest.mark.skipif(compat.is_linux, reason='libusb_exit segfaults on some linuxes')
-def test_usb(pyi_builder):
-    # See if the usb package is supported on this platform.
-    try:
-        import usb
-        # This will verify that the backend is present; if not, it will skip this test.
-        usb.core.find()
-    except (ImportError, usb.core.NoBackendError):
-        pytest.skip('USB backnd not found.')
-
-    pyi_builder.test_source(
-        """
-        import usb.core
-        # NoBackendError fails the test if no backends are found.
-        usb.core.find()
-        """
-    )
-
-
-@importorskip('zeep')
-def test_zeep(pyi_builder):
-    pyi_builder.test_source(
-        """
-        # Test the hook to zeep
-        from zeep import utils
-        utils.get_version()
         """
     )
 

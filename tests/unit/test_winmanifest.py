@@ -14,7 +14,6 @@ import shutil
 import pytest
 
 from PyInstaller import HOMEPATH, PLATFORM
-from PyInstaller.utils.tests import importorskip
 
 from PyInstaller.utils.win32 import winmanifest
 
@@ -71,48 +70,111 @@ _MS_COMMON_CONTROLS_ATTRIBUTES = {
     "language": "*",
 }
 
+
+@pytest.fixture
+def xmlctx():
+    """
+    lxml.etree / xmldiff.main / xmldiff.actions for tests that parse and compare manifests; skips the test if either
+    package is unavailable.
+    """
+    pytest.importorskip('lxml')
+    pytest.importorskip('xmldiff')
+
+    import lxml.etree
+    import xmldiff.actions
+    import xmldiff.main
+
+    from types import SimpleNamespace
+    return SimpleNamespace(etree=lxml.etree, main=xmldiff.main, actions=xmldiff.actions)
+
+
+# XML fragments shared by the custom-manifest templates below, as multi-line byte strings. Long lines inside the
+# literals cannot carry a per-line noqa, so the fragments with over-long lines silence E501 on their closing quotes.
+_XML_HEADER = (
+    b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+    b'<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">'
+)
+_TRUST_INFO_XML = b"""
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false"></requestedExecutionLevel>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>"""
+_COMPATIBILITY_XML = b"""
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"></supportedOS>
+      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"></supportedOS>
+      <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}"></supportedOS>
+      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"></supportedOS>
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"></supportedOS>
+    </application>
+  </compatibility>"""
+_WINDOWS_SETTINGS_XML = b"""
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, unaware</dpiAwareness>
+    </windowsSettings>
+  </application>"""  # noqa: E501
+_DEPENDENCY_MS_COMMON_CONTROLS_V6_XML = b"""
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*"></assemblyIdentity>
+    </dependentAssembly>
+  </dependency>"""  # noqa: E501
+_DEPENDENCY_MS_COMMON_CONTROLS_V5_XML = b"""
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="5.0.0.0"></assemblyIdentity>
+    </dependentAssembly>
+  </dependency>"""
+_DEPENDENCY_CUSTOM_LIBRARY_XML = b"""
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="MyAwesomeLibrary" version="1.0.0.0"></assemblyIdentity>
+    </dependentAssembly>
+  </dependency>"""
+
+
+def _custom_manifest_xml(*sections):
+    """Assemble a custom manifest template from the shared pieces."""
+    return _XML_HEADER + b"".join(sections) + b"\n</assembly>\n"
+
+
 #- Tests with default manifest template
 
 
 # Generate default application manifest, which should be the same as the default XML template.
-@importorskip('lxml')
-@importorskip('xmldiff')
-def test_manifest_default_manifest():
-    import lxml
-    import xmldiff.main
-
+def test_manifest_default_manifest(xmlctx):
     app_manifest = winmanifest.create_application_manifest()
 
-    tree_base = lxml.etree.fromstring(winmanifest._DEFAULT_MANIFEST_XML)
-    tree = lxml.etree.fromstring(app_manifest)
+    tree_base = xmlctx.etree.fromstring(winmanifest._DEFAULT_MANIFEST_XML)
+    tree = xmlctx.etree.fromstring(app_manifest)
 
-    diff = xmldiff.main.diff_trees(tree_base, tree)
+    diff = xmlctx.main.diff_trees(tree_base, tree)
 
     # There should be no difference, as unmodified copy of template is returned.
     assert not diff
 
 
 # Generate application manifest with uac_admin=True.
-@importorskip('lxml')
-@importorskip('xmldiff')
-def test_manifest_default_manifest_uac_admin():
-    import lxml
-    import xmldiff.main
-    import xmldiff.actions
-
+def test_manifest_default_manifest_uac_admin(xmlctx):
     app_manifest = winmanifest.create_application_manifest(uac_admin=True)
 
-    tree_base = lxml.etree.fromstring(winmanifest._DEFAULT_MANIFEST_XML)
-    tree = lxml.etree.fromstring(app_manifest)
+    tree_base = xmlctx.etree.fromstring(winmanifest._DEFAULT_MANIFEST_XML)
+    tree = xmlctx.etree.fromstring(app_manifest)
 
-    diff = xmldiff.main.diff_trees(tree_base, tree)
+    diff = xmlctx.main.diff_trees(tree_base, tree)
 
     # We expect exactly one change. The `level` attribute of `requestedExecutionLevel` element should be changed to
     # `requireAdministrator`.
     assert len(diff) == 1
 
     action = diff[0]
-    assert isinstance(action, xmldiff.actions.UpdateAttrib)
+    assert isinstance(action, xmlctx.actions.UpdateAttrib)
     assert action.name == 'level'
     assert action.value == 'requireAdministrator'
 
@@ -121,26 +183,20 @@ def test_manifest_default_manifest_uac_admin():
 
 
 # Generate application manifest with uac_uiaccess=True.
-@importorskip('lxml')
-@importorskip('xmldiff')
-def test_manifest_default_manifest_uac_uiaccess():
-    import lxml
-    import xmldiff.main
-    import xmldiff.actions
-
+def test_manifest_default_manifest_uac_uiaccess(xmlctx):
     app_manifest = winmanifest.create_application_manifest(uac_uiaccess=True)
 
-    tree_base = lxml.etree.fromstring(winmanifest._DEFAULT_MANIFEST_XML)
-    tree = lxml.etree.fromstring(app_manifest)
+    tree_base = xmlctx.etree.fromstring(winmanifest._DEFAULT_MANIFEST_XML)
+    tree = xmlctx.etree.fromstring(app_manifest)
 
-    diff = xmldiff.main.diff_trees(tree_base, tree)
+    diff = xmlctx.main.diff_trees(tree_base, tree)
 
     # We expect exactly one change. The `uiAccess` attribute of `requestedExecutionLevel` element should be changed to
     # `true`.
     assert len(diff) == 1
 
     action = diff[0]
-    assert isinstance(action, xmldiff.actions.UpdateAttrib)
+    assert isinstance(action, xmlctx.actions.UpdateAttrib)
     assert action.name == 'uiAccess'
     assert action.value == 'true'
 
@@ -149,19 +205,13 @@ def test_manifest_default_manifest_uac_uiaccess():
 
 
 # Generate application manifest with both uac_admin=True and uac_uiaccess=True.
-@importorskip('lxml')
-@importorskip('xmldiff')
-def test_manifest_default_manifest_uac_admin_and_uiaccess():
-    import lxml
-    import xmldiff.main
-    import xmldiff.actions
-
+def test_manifest_default_manifest_uac_admin_and_uiaccess(xmlctx):
     app_manifest = winmanifest.create_application_manifest(uac_admin=True, uac_uiaccess=True)
 
-    tree_base = lxml.etree.fromstring(winmanifest._DEFAULT_MANIFEST_XML)
-    tree = lxml.etree.fromstring(app_manifest)
+    tree_base = xmlctx.etree.fromstring(winmanifest._DEFAULT_MANIFEST_XML)
+    tree = xmlctx.etree.fromstring(app_manifest)
 
-    diff = xmldiff.main.diff_trees(tree_base, tree)
+    diff = xmlctx.main.diff_trees(tree_base, tree)
 
     # We expect exactly two changes. The `level` attribute of `requestedExecutionLevel` element should be changed to
     # `requireAdministrator` and the `uiAccess` attribute of `requestedExecutionLevel` element should be changed to
@@ -170,7 +220,7 @@ def test_manifest_default_manifest_uac_admin_and_uiaccess():
 
     # First change action
     action = diff[0]
-    assert isinstance(action, xmldiff.actions.UpdateAttrib)
+    assert isinstance(action, xmlctx.actions.UpdateAttrib)
     assert action.name == 'level'
     assert action.value == 'requireAdministrator'
 
@@ -179,7 +229,7 @@ def test_manifest_default_manifest_uac_admin_and_uiaccess():
 
     # Second change action
     action = diff[1]
-    assert isinstance(action, xmldiff.actions.UpdateAttrib)
+    assert isinstance(action, xmlctx.actions.UpdateAttrib)
     assert action.name == 'uiAccess'
     assert action.value == 'true'
 
@@ -194,144 +244,94 @@ def test_manifest_default_manifest_uac_admin_and_uiaccess():
 # uac_admin and uac_uiaccess settings (even if left at default).
 # The manifest also contains a `dpiAwareness` setting, which should be preserved (the old PyInstaller < 6.0 manifest
 # handling code had no notion of this element, so it ended up striping it away).
-@importorskip('lxml')
-@importorskip('xmldiff')
-def test_manifest_custom_manifest_no_trust_info():
-    import lxml
-    import xmldiff.main
-    import xmldiff.actions
-
-    _MANIFEST_XML = \
-b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
-    <application>
-      <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"></supportedOS>
-      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"></supportedOS>
-      <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}"></supportedOS>
-      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"></supportedOS>
-      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"></supportedOS>
-    </application>
-  </compatibility>
-  <application xmlns="urn:schemas-microsoft-com:asm.v3">
-    <windowsSettings>
-      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
-      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, unaware</dpiAwareness>
-    </windowsSettings>
-  </application>
-  <dependency>
-    <dependentAssembly>
-      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*"></assemblyIdentity>
-    </dependentAssembly>
-  </dependency>
-</assembly>
-"""  # noqa: E128,E501
+def test_manifest_custom_manifest_no_trust_info(xmlctx):
+    # Template that has no <trustInfo> element, which we need to add to store the uac_admin and uac_uiaccess
+    # settings (even if left at default). The manifest also contains a `dpiAwareness` setting, which should be
+    # preserved (the old PyInstaller < 6.0 manifest handling code had no notion of this element, so it ended up
+    # striping it away).
+    _MANIFEST_XML = _custom_manifest_xml(
+        _COMPATIBILITY_XML,
+        _WINDOWS_SETTINGS_XML,
+        _DEPENDENCY_MS_COMMON_CONTROLS_V6_XML,
+    )
 
     app_manifest = winmanifest.create_application_manifest(_MANIFEST_XML)
 
-    tree_base = lxml.etree.fromstring(_MANIFEST_XML)
-    tree = lxml.etree.fromstring(app_manifest)
+    tree_base = xmlctx.etree.fromstring(_MANIFEST_XML)
+    tree = xmlctx.etree.fromstring(app_manifest)
 
-    diff = xmldiff.main.diff_trees(tree_base, tree)
+    diff = xmlctx.main.diff_trees(tree_base, tree)
     diff = _filter_whitespace_changes(diff)
 
     # After filtering newline/whitespace changes, modification still involves several steps.
     assert len(diff) == 6
 
     action = diff[0]
-    assert isinstance(action, xmldiff.actions.InsertNode)
+    assert isinstance(action, xmlctx.actions.InsertNode)
     assert tree.xpath(action.target)[0].tag == _REQUEST_EXECUTION_LEVEL_TAGS[0]
     assert action.tag == _REQUEST_EXECUTION_LEVEL_TAGS[1]
 
     action = diff[1]
-    assert isinstance(action, xmldiff.actions.InsertNode)
+    assert isinstance(action, xmlctx.actions.InsertNode)
     assert action.tag == _REQUEST_EXECUTION_LEVEL_TAGS[2]
 
     action = diff[2]
-    assert isinstance(action, xmldiff.actions.InsertNode)
+    assert isinstance(action, xmlctx.actions.InsertNode)
     assert action.tag == _REQUEST_EXECUTION_LEVEL_TAGS[3]
 
     action = diff[3]
-    print(action)
-    assert isinstance(action, xmldiff.actions.InsertNode)
+    assert isinstance(action, xmlctx.actions.InsertNode)
     assert action.tag == _REQUEST_EXECUTION_LEVEL_TAGS[4]
 
     action = diff[4]
-    assert isinstance(action, xmldiff.actions.InsertAttrib)
+    assert isinstance(action, xmlctx.actions.InsertAttrib)
     assert action.name == 'level'
     assert action.value == 'asInvoker'
 
     action = diff[5]
-    assert isinstance(action, xmldiff.actions.InsertAttrib)
+    assert isinstance(action, xmlctx.actions.InsertAttrib)
     assert action.name == 'uiAccess'
     assert action.value == 'false'
 
 
 # Generate application manifest from template that has no dependent assembly for MS Common Controls, which we need to
 # add.
-@importorskip('lxml')
-@importorskip('xmldiff')
-def test_manifest_custom_manifest_no_ms_common_controls():
-    import lxml
-    import xmldiff.main
-    import xmldiff.actions
-
-    _MANIFEST_XML = \
-b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
-    <security>
-      <requestedPrivileges>
-        <requestedExecutionLevel level="asInvoker" uiAccess="false"></requestedExecutionLevel>
-      </requestedPrivileges>
-    </security>
-  </trustInfo>
-  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
-    <application>
-      <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"></supportedOS>
-      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"></supportedOS>
-      <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}"></supportedOS>
-      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"></supportedOS>
-      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"></supportedOS>
-    </application>
-  </compatibility>
-  <application xmlns="urn:schemas-microsoft-com:asm.v3">
-    <windowsSettings>
-      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
-      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, unaware</dpiAwareness>
-    </windowsSettings>
-  </application>
-</assembly>
-"""  # noqa: E128,E501
+def test_manifest_custom_manifest_no_ms_common_controls(xmlctx):
+    # Template that has no dependent assembly for MS Common Controls, which we need to add.
+    _MANIFEST_XML = _custom_manifest_xml(
+        _TRUST_INFO_XML,
+        _COMPATIBILITY_XML,
+        _WINDOWS_SETTINGS_XML,
+    )
 
     app_manifest = winmanifest.create_application_manifest(_MANIFEST_XML)
 
-    tree_base = lxml.etree.fromstring(_MANIFEST_XML)
-    tree = lxml.etree.fromstring(app_manifest)
+    tree_base = xmlctx.etree.fromstring(_MANIFEST_XML)
+    tree = xmlctx.etree.fromstring(app_manifest)
 
-    diff = xmldiff.main.diff_trees(tree_base, tree)
+    diff = xmlctx.main.diff_trees(tree_base, tree)
     diff = _filter_whitespace_changes(diff)
 
     # After filtering newline/whitespace changes, modification still involves several steps.
     assert len(diff) == 9
 
     action = diff[0]
-    assert isinstance(action, xmldiff.actions.InsertNode)
+    assert isinstance(action, xmlctx.actions.InsertNode)
     assert tree.xpath(action.target)[0].tag == _DEPENDENT_ASSEMBLY_IDENTITY_TAGS[0]
     assert action.tag == _DEPENDENT_ASSEMBLY_IDENTITY_TAGS[1]
 
     action = diff[1]
-    assert isinstance(action, xmldiff.actions.InsertNode)
+    assert isinstance(action, xmlctx.actions.InsertNode)
     assert action.tag == _DEPENDENT_ASSEMBLY_IDENTITY_TAGS[2]
 
     action = diff[2]
-    assert isinstance(action, xmldiff.actions.InsertNode)
+    assert isinstance(action, xmlctx.actions.InsertNode)
     assert action.tag == _DEPENDENT_ASSEMBLY_IDENTITY_TAGS[3]
 
     # We do not care about insertion order, just that all attributes are added
     added_attributes = {}
     for action in diff[3:]:
-        assert isinstance(action, xmldiff.actions.InsertAttrib)
+        assert isinstance(action, xmlctx.actions.InsertAttrib)
         added_attributes[action.name] = action.value
 
     assert added_attributes == _MS_COMMON_CONTROLS_ATTRIBUTES
@@ -339,52 +339,21 @@ b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 
 # Generate application manifest from template that has dependent assembly for MS Common Controls, but its attributes
 # differ from our defaults.
-@importorskip('lxml')
-@importorskip('xmldiff')
-def test_manifest_custom_manifest_different_ms_common_controls():
-    import lxml
-    import xmldiff.main
-    import xmldiff.actions
-
-    _MANIFEST_XML = \
-b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
-    <security>
-      <requestedPrivileges>
-        <requestedExecutionLevel level="asInvoker" uiAccess="false"></requestedExecutionLevel>
-      </requestedPrivileges>
-    </security>
-  </trustInfo>
-  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
-    <application>
-      <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"></supportedOS>
-      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"></supportedOS>
-      <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}"></supportedOS>
-      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"></supportedOS>
-      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"></supportedOS>
-    </application>
-  </compatibility>
-  <application xmlns="urn:schemas-microsoft-com:asm.v3">
-    <windowsSettings>
-      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
-      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, unaware</dpiAwareness>
-    </windowsSettings>
-  </application>
-  <dependency>
-    <dependentAssembly>
-      <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="5.0.0.0"></assemblyIdentity>
-    </dependentAssembly>
-  </dependency>
-</assembly>
-"""  # noqa: E128,E501
+def test_manifest_custom_manifest_different_ms_common_controls(xmlctx):
+    # Template that has dependent assembly for MS Common Controls, but its attributes differ from our defaults.
+    _MANIFEST_XML = _custom_manifest_xml(
+        _TRUST_INFO_XML,
+        _COMPATIBILITY_XML,
+        _WINDOWS_SETTINGS_XML,
+        _DEPENDENCY_MS_COMMON_CONTROLS_V5_XML,
+    )
 
     app_manifest = winmanifest.create_application_manifest(_MANIFEST_XML)
 
-    tree_base = lxml.etree.fromstring(_MANIFEST_XML)
-    tree = lxml.etree.fromstring(app_manifest)
+    tree_base = xmlctx.etree.fromstring(_MANIFEST_XML)
+    tree = xmlctx.etree.fromstring(app_manifest)
 
-    diff = xmldiff.main.diff_trees(tree_base, tree)
+    diff = xmlctx.main.diff_trees(tree_base, tree)
     diff = _filter_whitespace_changes(diff)
 
     # After filtering newline/whitespace changes, modification still involves several steps:
@@ -394,9 +363,9 @@ b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     updated_attributes = {}
     added_attributes = {}
     for action in diff:
-        if isinstance(action, xmldiff.actions.UpdateAttrib):
+        if isinstance(action, xmlctx.actions.UpdateAttrib):
             updated_attributes[action.name] = action.value
-        elif isinstance(action, xmldiff.actions.InsertAttrib):
+        elif isinstance(action, xmlctx.actions.InsertAttrib):
             added_attributes[action.name] = action.value
         else:
             raise ValueError(f"Unexpected modification: {action}")
@@ -414,74 +383,45 @@ b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 # Generate application manifest from template that has dependent assembly for a custom library, but not for MS Common
 # Controls. This is essentially the same as `test_manifest_custom_manifest_no_ms_common_controls`, but we should not
 # touch the existing dependent assembly.
-@importorskip('lxml')
-@importorskip('xmldiff')
-def test_manifest_custom_manifest_no_ms_common_controls_with_custom_dependency():
-    import lxml
-    import xmldiff.main
-    import xmldiff.actions
-
-    _MANIFEST_XML = \
-b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
-    <security>
-      <requestedPrivileges>
-        <requestedExecutionLevel level="asInvoker" uiAccess="false"></requestedExecutionLevel>
-      </requestedPrivileges>
-    </security>
-  </trustInfo>
-  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
-    <application>
-      <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"></supportedOS>
-      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"></supportedOS>
-      <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}"></supportedOS>
-      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"></supportedOS>
-      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"></supportedOS>
-    </application>
-  </compatibility>
-  <application xmlns="urn:schemas-microsoft-com:asm.v3">
-    <windowsSettings>
-      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
-      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, unaware</dpiAwareness>
-    </windowsSettings>
-  </application>
-  <dependency>
-    <dependentAssembly>
-      <assemblyIdentity type="win32" name="MyAwesomeLibrary" version="1.0.0.0"></assemblyIdentity>
-    </dependentAssembly>
-  </dependency>
-</assembly>
-"""  # noqa: E128,E501
+def test_manifest_custom_manifest_no_ms_common_controls_with_custom_dependency(xmlctx):
+    # Template that has dependent assembly for a custom library, but not for MS Common Controls. This is
+    # essentially the same as `test_manifest_custom_manifest_no_ms_common_controls`, but we should not touch the
+    # existing dependent assembly.
+    _MANIFEST_XML = _custom_manifest_xml(
+        _TRUST_INFO_XML,
+        _COMPATIBILITY_XML,
+        _WINDOWS_SETTINGS_XML,
+        _DEPENDENCY_CUSTOM_LIBRARY_XML,
+    )
 
     app_manifest = winmanifest.create_application_manifest(_MANIFEST_XML)
 
-    tree_base = lxml.etree.fromstring(_MANIFEST_XML)
-    tree = lxml.etree.fromstring(app_manifest)
+    tree_base = xmlctx.etree.fromstring(_MANIFEST_XML)
+    tree = xmlctx.etree.fromstring(app_manifest)
 
-    diff = xmldiff.main.diff_trees(tree_base, tree)
+    diff = xmlctx.main.diff_trees(tree_base, tree)
     diff = _filter_whitespace_changes(diff)
 
     # After filtering newline/whitespace changes, modification still involves several steps.
     assert len(diff) == 9
 
     action = diff[0]
-    assert isinstance(action, xmldiff.actions.InsertNode)
+    assert isinstance(action, xmlctx.actions.InsertNode)
     assert tree.xpath(action.target)[0].tag == _DEPENDENT_ASSEMBLY_IDENTITY_TAGS[0]
     assert action.tag == _DEPENDENT_ASSEMBLY_IDENTITY_TAGS[1]
 
     action = diff[1]
-    assert isinstance(action, xmldiff.actions.InsertNode)
+    assert isinstance(action, xmlctx.actions.InsertNode)
     assert action.tag == _DEPENDENT_ASSEMBLY_IDENTITY_TAGS[2]
 
     action = diff[2]
-    assert isinstance(action, xmldiff.actions.InsertNode)
+    assert isinstance(action, xmlctx.actions.InsertNode)
     assert action.tag == _DEPENDENT_ASSEMBLY_IDENTITY_TAGS[3]
 
     # We do not care about insertion order, just that all attributes are added
     added_attributes = {}
     for action in diff[3:]:
-        assert isinstance(action, xmldiff.actions.InsertAttrib)
+        assert isinstance(action, xmlctx.actions.InsertAttrib)
         added_attributes[action.name] = action.value
 
     assert added_attributes == _MS_COMMON_CONTROLS_ATTRIBUTES
@@ -515,13 +455,15 @@ def test_manifest_write_to_exe(tmp_path):
 
 # Similar to test_manifest_write_to_exe, but using custom manifest with non-ASCII characters.
 @pytest.mark.win32
-@importorskip('lxml')
-@importorskip('xmldiff')
-def test_manifest_write_to_exe_non_ascii_characters(tmp_path):
-    import lxml
-    import xmldiff.main
-    import xmldiff.actions
+def test_manifest_write_to_exe_non_ascii_characters(tmp_path, xmlctx):
+    # Locate bootloader executable
+    bootloader_file = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, 'run.exe')
 
+    # Create a local copy
+    test_file = str(tmp_path / 'test_file.exe')
+    shutil.copyfile(bootloader_file, test_file)
+
+    # Custom manifest with non-ASCII characters.
     _MANIFEST_XML = \
 """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
@@ -550,13 +492,6 @@ def test_manifest_write_to_exe_non_ascii_characters(tmp_path):
 </assembly>
 """.encode("utf-8")  # noqa: E128,E501
 
-    # Locate bootloader executable
-    bootloader_file = os.path.join(HOMEPATH, 'PyInstaller', 'bootloader', PLATFORM, 'run.exe')
-
-    # Create a local copy
-    test_file = str(tmp_path / 'test_file.exe')
-    shutil.copyfile(bootloader_file, test_file)
-
     # Create manifest
     app_manifest = winmanifest.create_application_manifest(_MANIFEST_XML, uac_admin=False, uac_uiaccess=False)
 
@@ -571,10 +506,10 @@ def test_manifest_write_to_exe_non_ascii_characters(tmp_path):
 
     # The retrieved manifest should have equivalent DOM to the original XML.
     # The raw string might differ from the original template due to closing tags.
-    tree_base = lxml.etree.fromstring(_MANIFEST_XML)
-    tree = lxml.etree.fromstring(read_manifest)
+    tree_base = xmlctx.etree.fromstring(_MANIFEST_XML)
+    tree = xmlctx.etree.fromstring(read_manifest)
 
-    diff = xmldiff.main.diff_trees(tree_base, tree)
+    diff = xmlctx.main.diff_trees(tree_base, tree)
     diff = _filter_whitespace_changes(diff)
 
     assert not diff

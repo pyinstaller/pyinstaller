@@ -13,11 +13,13 @@ Decorators for skipping PyInstaller tests when specific requirements are not met
 """
 
 import inspect
+import os
 import sys
 import textwrap
 
 import pytest
 
+from PyInstaller.compat import is_win
 from PyInstaller.utils.hooks import check_requirement
 
 # Wrap some pytest decorators to be consistent in tests.
@@ -110,3 +112,23 @@ def gen_sourcefile(tmp_path, source, test_id=None):
     source = textwrap.dedent(source)
     scriptfile.write_text(source, encoding='utf-8')
     return scriptfile
+
+
+def create_symlink(src, dst, *args, **kwargs):
+    """
+    Wrapper for :func:`os.symlink` that skips the test if the symbolic link cannot be created on Windows, where doing
+    so usually requires elevated or developer-mode privileges. On other OS-es an error propagates, as symbolic link
+    creation is expected to work there.
+    """
+    # On Windows, symlinks need to use Windows-style backslashes, even if we are under msys2/mingw python that uses
+    # POSIX-style separators. `src` might be a Path-like object, so explicitly convert it to string.
+    if is_win and os.sep == '/':
+        src = str(src).replace(os.sep, '\\')
+
+    try:
+        os.symlink(src, dst, *args, **kwargs)
+    except OSError:
+        if is_win:
+            pytest.skip("OS does not support creation of symbolic links.")
+        else:
+            raise

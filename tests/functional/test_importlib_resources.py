@@ -20,13 +20,10 @@
 # For details on the structure of the test and the contents of the test package, see the top comment in the test script
 # itself.
 
-import os
-import pathlib
-
 import pytest
 
 from PyInstaller.utils.tests import skipif
-from PyInstaller.compat import is_darwin, is_py39, is_py310, exec_python_rc
+from PyInstaller.compat import is_darwin, is_py39, is_py310
 from PyInstaller.utils.hooks import check_requirement
 
 pytestmark = [
@@ -36,35 +33,21 @@ pytestmark = [
     )
 ]
 
-# Directory with testing modules used in some tests.
-_MODULES_DIR = pathlib.Path(__file__).parent / 'modules'
 
-
-def __exec_python_script(script_filename, pathex):
-    # Prepare the environment - default to 'os.environ'...
-    env = os.environ.copy()
-    # ... and prepend PYTHONPATH with pathex
-    if 'PYTHONPATH' in env:
-        pathex = os.pathsep.join([pathex, env['PYTHONPATH']])
-    env['PYTHONPATH'] = pathex
-    # Run the test script
-    return exec_python_rc(script_filename, env=env)
-
-
-def test_importlib_resources_source(script_dir):
+def test_importlib_resources_source(script_dir, modules_dir, exec_python_script):
     # Run the test script unfrozen - to validate it is working and to verify the behavior of importlib.resources
     # (or importlib_resources back-port).
-    pathex = _MODULES_DIR / 'pyi_pkg_resources_provider' / 'package'
+    pathex = modules_dir / 'pyi_pkg_resources_provider' / 'package'
     test_script = script_dir / 'pyi_importlib_resources.py'
-    ret = __exec_python_script(str(test_script), pathex=str(pathex))
+    ret = exec_python_script(test_script, pathex=pathex)
     assert ret == 0, "Test script failed!"
 
 
-def test_importlib_resources_frozen(pyi_builder, script_dir):
+def test_importlib_resources_frozen(pyi_builder, script_dir, modules_dir):
     # Run the test script as a frozen program
-    pathex = _MODULES_DIR / 'pyi_pkg_resources_provider' / 'package'
+    pathex = modules_dir / 'pyi_pkg_resources_provider' / 'package'
     test_script = 'pyi_importlib_resources.py'
-    hooks_dir = _MODULES_DIR / 'pyi_pkg_resources_provider' / 'hooks'
+    hooks_dir = modules_dir / 'pyi_pkg_resources_provider' / 'hooks'
     pyi_args = [
         '--paths', str(pathex),
         '--hidden-import', 'pyi_pkgres_testpkg',
@@ -96,9 +79,9 @@ def test_importlib_resources_frozen(pyi_builder, script_dir):
     not is_py310 and not check_requirement('importlib_resources >= 5.0'),
     reason="Requires python <= 3.10 or importlib_resources >= 5.0."
 )
-def test_importlib_resources_namespace_package_data_files(pyi_builder, as_package):
-    pathex = _MODULES_DIR / 'pyi_namespace_package_with_data' / 'package'
-    hooks_dir = _MODULES_DIR / 'pyi_namespace_package_with_data' / 'hooks'
+def test_importlib_resources_namespace_package_data_files(pyi_builder, as_package, modules_dir):
+    pathex = modules_dir / 'pyi_namespace_package_with_data' / 'package'
+    hooks_dir = modules_dir / 'pyi_namespace_package_with_data' / 'hooks'
     if as_package:
         hidden_imports = ['--hidden-import', 'pyi_test_nspkg', '--hidden-import', 'pyi_test_nspkg.data']
     else:

@@ -16,6 +16,7 @@ import subprocess
 import pytest
 
 from PyInstaller.compat import is_win
+from PyInstaller.utils.tests import create_symlink
 
 
 # Test that bootloader is able to fully resolve a symlinked executable, on all OSes.
@@ -47,7 +48,7 @@ def test_bootloader_symlinked_executable(pyi_builder, tmp_path):
     rel_link = os.path.relpath(executable, subdir)  # Compute relative link
     print(f"Relative symbolic link: {symlink1} -> {rel_link}", file=sys.stderr)
 
-    _create_symlink(rel_link, symlink1)
+    create_symlink(rel_link, symlink1)
 
     subprocess.check_call([symlink1])
 
@@ -56,25 +57,9 @@ def test_bootloader_symlinked_executable(pyi_builder, tmp_path):
     symlink2 = tmp_path / f'absolute-symlink{exe_suffix}'
     print(f"Absolute symbolic link: {symlink2} -> {symlink1}", file=sys.stderr)
 
-    _create_symlink(symlink1, symlink2)
+    create_symlink(symlink1, symlink2)
 
     subprocess.check_call([symlink2])
-
-
-# Wrapper for os.symlink that skips the test if symlink cannot be created on Windows.
-def _create_symlink(src, dst, *args, **kwargs):
-    # On Windows, symlinks need to use Windows-style backslashes, even if we are under msys2/mingw python that uses
-    # POSIX-style separators. `src` might be a Path-like object, so explicitly convert it to string.
-    if is_win and os.sep == '/':
-        src = str(src).replace(os.sep, '\\')
-
-    try:
-        os.symlink(src, dst, **kwargs)
-    except OSError:
-        if is_win:
-            pytest.skip("OS does not support creation of symbolic links.")
-        else:
-            raise
 
 
 def _create_data(tmp_path, orig_filename, link_filename):
@@ -91,183 +76,116 @@ def _create_data(tmp_path, orig_filename, link_filename):
     abs_linked_filename.parent.mkdir(parents=True, exist_ok=True)
     rel_orig_filename = os.path.relpath(abs_orig_filename, abs_linked_filename.parent)
 
-    _create_symlink(rel_orig_filename, abs_linked_filename)
+    create_symlink(rel_orig_filename, abs_linked_filename)
 
 
-# Collect both symbolic link and file
-def test_symlinks__samedir__symlink_and_file(tmp_path, script_dir, pyi_builder):
+# Test collection of symlinked data files: the matrix below covers the three locations of the symbolic link relative
+# to the original file (same directory, subdirectory, parent directory) crossed with what gets collected (both the
+# original file and the symbolic link, only the symbolic link, or the whole data directory). Each parameter set is
+# (orig_file, link_file, add_data, app_args), where:
+#  * `orig_file` and `link_file` are the paths of the original file and the symbolic link, relative to
+#    the data directory (as native OS separator-delimited strings),
+#  * `add_data` is a list of (source, destination) pairs for the --add-data arguments, with a `None` source meaning
+#    "collect the whole data directory",
+#  * `app_args` are the arguments passed to the test script, which selects its operating mode.
+@pytest.mark.parametrize(
+    "orig_file, link_file, add_data, app_args",
+    [
+        # Collect both symbolic link and file
+        (
+            ('orig_file.txt',),
+            ('linked_file.txt',),
+            [('orig_file.txt', 'data'), ('linked_file.txt', 'data')],
+            ['samedir'],
+        ),
+        # Same as above, except that we collect the whole data directory instead of individual files
+        (
+            ('orig_file.txt',),
+            ('linked_file.txt',),
+            [(None, 'data')],
+            ['samedir'],
+        ),
+        # Collect only symbolic link
+        (
+            ('orig_file.txt',),
+            ('linked_file.txt',),
+            [('linked_file.txt', 'data')],
+            ['samedir', '--link-only'],
+        ),
+        # Collect symbolic link and original file, but place the latter somewhere else (this should effectively be the
+        # same as 'link-only' scenario)
+        (
+            ('orig_file.txt',),
+            ('linked_file.txt',),
+            [('orig_file.txt', 'data2'), ('linked_file.txt', 'data')],
+            ['samedir', '--link-only'],
+        ),
+        # Collect symbolic link and original file; collect original multiple times, in original and alternative
+        # locations
+        (
+            ('orig_file.txt',),
+            ('linked_file.txt',),
+            [('orig_file.txt', 'data3'), ('orig_file.txt', 'data'), ('orig_file.txt', 'data2'),
+             ('linked_file.txt', 'data')],
+            ['samedir'],
+        ),
+        # Symbolic link pointing to a subdirectory; collect whole data directory
+        (
+            (os.path.join('subdir', 'orig_file.txt'),),
+            ('linked_file.txt',),
+            [(None, 'data')],
+            ['subdir'],
+        ),
+        # Symbolic link pointing to a subdirectory; collect only symbolic link
+        (
+            (os.path.join('subdir', 'orig_file.txt'),),
+            ('linked_file.txt',),
+            [('linked_file.txt', 'data')],
+            ['subdir', '--link-only'],
+        ),
+        # Symbolic link pointing to a parent directory; collect whole data directory
+        (
+            ('orig_file.txt',),
+            (os.path.join('subdir', 'linked_file.txt'),),
+            [(None, 'data')],
+            ['parentdir'],
+        ),
+        # Symbolic link pointing to a parent directory; collect only symbolic link
+        (
+            ('orig_file.txt',),
+            (os.path.join('subdir', 'linked_file.txt'),),
+            [(os.path.join('subdir', 'linked_file.txt'), os.path.join('data', 'subdir'))],
+            ['parentdir', '--link-only'],
+        ),
+    ],
+    ids=[
+        'samedir-symlink_and_file',
+        'samedir-wholedir',
+        'samedir-symlink_only',
+        'samedir-orig_elsewhere',
+        'samedir-orig_multiple',
+        'subdir-wholedir',
+        'subdir-symlink_only',
+        'parentdir-wholedir',
+        'parentdir-symlink_only',
+    ],
+)
+def test_symlinks__collect(tmp_path, script_dir, pyi_builder, orig_file, link_file, add_data, app_args):
     # Create test data
-    _create_data(tmp_path, 'orig_file.txt', 'linked_file.txt')
+    _create_data(tmp_path, *orig_file, *link_file)
 
-    # Collect both original file and symbolic link
+    # Generate --add-data arguments; a `None` source means the whole data directory
     data_dir = tmp_path / 'data'
-    add_data_args = [
-        '--add-data', f"{data_dir/'orig_file.txt'}:data",
-        '--add-data', f"{data_dir/'linked_file.txt'}:data",
-    ]  # yapf: disable
+    add_data_args = []
+    for src, dest in add_data:
+        src_path = data_dir if src is None else data_dir / src
+        add_data_args += ['--add-data', f"{src_path}:{dest}"]
 
-    # Run test script in 'samedir' mode
+    # Run test script
     pyi_builder.test_script(
         script_dir / 'pyi_symlinks_test.py',
         pyi_args=add_data_args,
-        app_args=['samedir'],
-    )
-
-
-# Same as test_symlinks__samedir__symlink_and_file, except that we collect whole data directory instead of
-# individual files.
-def test_symlinks__samedir__wholedir(tmp_path, script_dir, pyi_builder):
-    # Create test data
-    _create_data(tmp_path, 'orig_file.txt', 'linked_file.txt')
-
-    # Collect whole data directory
-    data_dir = tmp_path / 'data'
-    add_data_args = [
-        '--add-data', f"{data_dir}:data",
-    ]  # yapf: disable
-
-    # Run test script in 'samedir' mode
-    pyi_builder.test_script(
-        script_dir / 'pyi_symlinks_test.py',
-        pyi_args=add_data_args,
-        app_args=['samedir'],
-    )
-
-
-# Collect only symbolic link
-def test_symlinks__samedir__symlink_only(tmp_path, script_dir, pyi_builder):
-    # Create test data
-    _create_data(tmp_path, 'orig_file.txt', 'linked_file.txt')
-
-    # Collect only symbolic link
-    data_dir = tmp_path / 'data'
-    add_data_args = [
-        '--add-data', f"{data_dir / 'linked_file.txt'}:data",
-    ]  # yapf: disable
-
-    # Run test script in 'samedir/link-only' mode
-    pyi_builder.test_script(
-        script_dir / 'pyi_symlinks_test.py',
-        pyi_args=add_data_args,
-        app_args=['samedir', '--link-only'],
-    )
-
-
-# Collect symbolic link and original file, but place the latter somewhere else
-def test_symlinks__samedir__orig_elsewhere(tmp_path, script_dir, pyi_builder):
-    # Create test data
-    _create_data(tmp_path, 'orig_file.txt', 'linked_file.txt')
-
-    # Collect only symbolic link
-    data_dir = tmp_path / 'data'
-    add_data_args = [
-        '--add-data', f"{data_dir / 'orig_file.txt'}:data2",
-        '--add-data', f"{data_dir / 'linked_file.txt'}:data",
-    ]  # yapf: disable
-
-    # Run test script in 'samedir/link-only' mode (this should effectively be the same as 'link-only' scenario)
-    pyi_builder.test_script(
-        script_dir / 'pyi_symlinks_test.py',
-        pyi_args=add_data_args,
-        app_args=['samedir', '--link-only'],
-    )
-
-
-# Collect symbolic link and original file; collect original multiple times, in original and alternative locations.
-def test_symlinks__samedir__orig_multiple(tmp_path, script_dir, pyi_builder):
-    # Create test data
-    _create_data(tmp_path, 'orig_file.txt', 'linked_file.txt')
-
-    # Collect only symbolic link
-    data_dir = tmp_path / 'data'
-    add_data_args = [
-        '--add-data', f"{data_dir / 'orig_file.txt'}:data3",
-        '--add-data', f"{data_dir / 'orig_file.txt'}:data",
-        '--add-data', f"{data_dir / 'orig_file.txt'}:data2",
-        '--add-data', f"{data_dir / 'linked_file.txt'}:data",
-    ]  # yapf: disable
-
-    # Run test script in 'samedir' mode
-    pyi_builder.test_script(
-        script_dir / 'pyi_symlinks_test.py',
-        pyi_args=add_data_args,
-        app_args=['samedir'],
-    )
-
-
-# Test symbolic link pointing to a subdirectory
-def test_symlinks__subdir__wholedir(tmp_path, script_dir, pyi_builder):
-    # Create test data
-    _create_data(tmp_path, os.path.join('subdir', 'orig_file.txt'), 'linked_file.txt')
-
-    # Collect whole data directory
-    data_dir = tmp_path / 'data'
-    add_data_args = [
-        '--add-data', f"{data_dir}:data",
-    ]  # yapf: disable
-
-    # Run test script in 'subdir' mode
-    pyi_builder.test_script(
-        script_dir / 'pyi_symlinks_test.py',
-        pyi_args=add_data_args,
-        app_args=['subdir'],
-    )
-
-
-# Test symbolic link pointing to a subdirectory - symlink only
-def test_symlinks__subdir__symlink_only(tmp_path, script_dir, pyi_builder):
-    # Create test data
-    _create_data(tmp_path, os.path.join('subdir', 'orig_file.txt'), 'linked_file.txt')
-
-    # Collect only symbolic link
-    data_dir = tmp_path / 'data'
-    add_data_args = [
-        '--add-data', f"{data_dir / 'linked_file.txt'}:data",
-    ]  # yapf: disable
-
-    # Run test script in 'subdir/link-only' mode
-    pyi_builder.test_script(
-        script_dir / 'pyi_symlinks_test.py',
-        pyi_args=add_data_args,
-        app_args=['subdir', '--link-only'],
-    )
-
-
-# Test symbolic link pointing to a parent directory
-def test_symlinks__parentdir__wholedir(tmp_path, script_dir, pyi_builder):
-    # Create test data
-    _create_data(tmp_path, 'orig_file.txt', os.path.join('subdir', 'linked_file.txt'))
-
-    # Collect whole data directory
-    data_dir = tmp_path / 'data'
-    add_data_args = [
-        '--add-data', f"{data_dir}:data",
-    ]  # yapf: disable
-
-    # Run test script in 'parentdir' mode
-    pyi_builder.test_script(
-        script_dir / 'pyi_symlinks_test.py',
-        pyi_args=add_data_args,
-        app_args=['parentdir'],
-    )
-
-
-# Test symbolic link pointing to a parent directory - symlink only
-def test_symlinks__parentdir__symlink_only(tmp_path, script_dir, pyi_builder):
-    # Create test data
-    _create_data(tmp_path, 'orig_file.txt', os.path.join('subdir', 'linked_file.txt'))
-
-    # Collect only symbolic link
-    data_dir = tmp_path / 'data'
-    add_data_args = [
-        '--add-data', f"{data_dir / 'subdir' / 'linked_file.txt'}:{os.path.join('data', 'subdir')}",
-    ]  # yapf: disable
-
-    # Run test script in 'parentdir/link-only' mode
-    pyi_builder.test_script(
-        script_dir / 'pyi_symlinks_test.py',
-        pyi_args=add_data_args,
-        app_args=['parentdir', '--link-only'],
+        app_args=app_args,
     )
 
 
@@ -294,13 +212,13 @@ def _prepare_chained_links_example(tmp_path):
     (data_path / "file_a").write_text("secret", encoding='utf-8')
 
     # Create symbolic link: file_b -> file_a
-    _create_symlink("file_a", data_path / "file_b")
+    create_symlink("file_a", data_path / "file_b")
 
     # Create symbolic link: file_c -> file_b
-    _create_symlink("file_b", data_path / "file_c")
+    create_symlink("file_b", data_path / "file_c")
 
     # Create symbolic link: file_d -> file_c
-    _create_symlink("file_c", data_path / "file_d")
+    create_symlink("file_c", data_path / "file_d")
 
     return data_path
 
@@ -312,150 +230,82 @@ def _collect_data(src_dir, filenames, dest_dir='.'):
         yield f"{src_dir / filename}:{dest_dir}"
 
 
-def test_symlinks__chained_links_abc(tmp_path, pyi_builder):
+def _chained_links_verification_source(regular_file, links):
+    """
+    Generate the frozen-app source that verifies the layout of collected chained symbolic links: `regular_file` must
+    be collected as a regular file, and each (link, target) pair from `links` must be collected as a symbolic link
+    pointing to `target`.
+    """
+    lines = [
+        "import sys",
+        "import os",
+        "",
+        f"# {regular_file} should be a regular file",
+        f'{regular_file} = os.path.join(sys._MEIPASS, "{regular_file}")',
+        f'assert os.path.isfile({regular_file}), "{regular_file} does not exist!"',
+        f'assert not os.path.islink({regular_file}), "{regular_file} is a symbolic link, but should not be!"',
+    ]
+    for link, target in links:
+        lines += [
+            "",
+            f"# {link} should be a symlink pointing to {target}",
+            f'{link} = os.path.join(sys._MEIPASS, "{link}")',
+            f'assert os.path.isfile({link}), "{link} does not exist!"',
+            f'assert os.path.islink({link}), "{link} is not a symbolic link!"',
+            f'assert os.readlink({link}) == "{target}", "{link} does not point to {target}!"',
+        ]
+    return "\n".join(f"        {line}" if line else line for line in lines) + "\n        "
+
+
+# Each parameter set is (collected_files, regular_file, links): the files from `collected_files` are passed to
+# --add-data, `regular_file` is expected to be collected as a regular file, and each (link, target) pair from `links`
+# is expected to be collected as a symbolic link pointing to `target`.
+@pytest.mark.parametrize(
+    "collected_files, regular_file, links",
+    [
+        # Collect everything
+        (
+            ['file_a', 'file_b', 'file_c'],
+            'file_a',
+            [('file_b', 'file_a'), ('file_c', 'file_b')],
+        ),
+        (
+            ['file_a', 'file_b'],
+            'file_a',
+            [('file_b', 'file_a')],
+        ),
+        (
+            ['file_b', 'file_c'],
+            'file_b',
+            [('file_c', 'file_b')],
+        ),
+        # Special case: PyInstaller needs to relink file_c to file_a due to missing link (file_b).
+        (
+            ['file_a', 'file_c'],
+            'file_a',
+            [('file_c', 'file_a')],
+        ),
+        # Special case: PyInstaller needs to relink file_d to file_a due to missing links (file_b, file_c).
+        (
+            ['file_a', 'file_d'],
+            'file_a',
+            [('file_d', 'file_a')],
+        ),
+        # Similar to the BC test case (file_b needs to be collected as a copy), but with a missing intermediate link
+        # (file_c).
+        (
+            ['file_b', 'file_d'],
+            'file_b',
+            [('file_d', 'file_b')],
+        ),
+    ],
+    ids=['abc', 'ab', 'bc', 'ac', 'ad', 'bd'],
+)
+def test_symlinks__chained_links(tmp_path, pyi_builder, collected_files, regular_file, links):
     data_path = _prepare_chained_links_example(tmp_path)
-    collected_files = ['file_a', 'file_b', 'file_c']
     pyi_builder.test_source(
-        """
-        import sys
-        import os
-
-        # file_a should be a regular file
-        file_a = os.path.join(sys._MEIPASS, "file_a")
-        assert os.path.isfile(file_a), "file_a does not exist!"
-        assert not os.path.islink(file_a), "file_a is a symbolic link, but should not be!"
-
-        # file_b should be a symlink pointing to file_a
-        file_b = os.path.join(sys._MEIPASS, "file_b")
-        assert os.path.isfile(file_b), "file_b does not exist!"
-        assert os.path.islink(file_b), "file_b is not a symbolic link!"
-        assert os.readlink(file_b) == "file_a", "file_b does not point to file_a!"
-
-        # file_c should be a symlink pointing to file_b
-        file_c = os.path.join(sys._MEIPASS, "file_c")
-        assert os.path.isfile(file_c), "file_c does not exist!"
-        assert os.path.islink(file_c), "file_c is not a symbolic link!"
-        assert os.readlink(file_c) == "file_b", "file_c does not point to file_b!"
-        """,
-        pyi_args=list(_collect_data(data_path, collected_files))
-    )
-
-
-def test_symlinks__chained_links_ab(tmp_path, pyi_builder):
-    data_path = _prepare_chained_links_example(tmp_path)
-    collected_files = ['file_a', 'file_b']
-    pyi_builder.test_source(
-        """
-        import sys
-        import os
-
-        # file_a should be a regular file
-        file_a = os.path.join(sys._MEIPASS, "file_a")
-        assert os.path.isfile(file_a), "file_a does not exist!"
-        assert not os.path.islink(file_a), "file_a is a symbolic link, but should not be!"
-
-        # file_b should be a symlink pointing to file_a
-        file_b = os.path.join(sys._MEIPASS, "file_b")
-        assert os.path.isfile(file_b), "file_b does not exist!"
-        assert os.path.islink(file_b), "file_b is not a symbolic link!"
-        assert os.readlink(file_b) == "file_a", "file_b does not point to file_a!"
-        """,
-        pyi_args=list(_collect_data(data_path, collected_files))
-    )
-
-
-def test_symlinks__chained_links_bc(tmp_path, pyi_builder):
-    data_path = _prepare_chained_links_example(tmp_path)
-    collected_files = ['file_b', 'file_c']
-    pyi_builder.test_source(
-        """
-        import sys
-        import os
-
-        # file_b should be a regular file
-        file_b = os.path.join(sys._MEIPASS, "file_b")
-        assert os.path.isfile(file_b), "file_b does not exist!"
-        assert not os.path.islink(file_b), "file_b is a symbolic link, but should not be!"
-
-        # file_c should be a symlink pointing to file_b
-        file_c = os.path.join(sys._MEIPASS, "file_c")
-        assert os.path.isfile(file_c), "file_c does not exist!"
-        assert os.path.islink(file_c), "file_c is not a symbolic link!"
-        assert os.readlink(file_c) == "file_b", "file_c does not point to file_b!"
-        """,
-        pyi_args=list(_collect_data(data_path, collected_files))
-    )
-
-
-# This is a special case, because PyInstaller needs to relink file_c to file_a due to missing link (file_b).
-def test_symlinks__chained_links_ac(tmp_path, pyi_builder):
-    data_path = _prepare_chained_links_example(tmp_path)
-    collected_files = ['file_a', 'file_c']
-    pyi_builder.test_source(
-        """
-        import sys
-        import os
-
-        # file_a should be a regular file
-        file_a = os.path.join(sys._MEIPASS, "file_a")
-        assert os.path.isfile(file_a), "file_a does not exist!"
-        assert not os.path.islink(file_a), "file_a is a symbolic link, but should not be!"
-
-        # file_c should be a symlink pointing to file_a
-        file_c = os.path.join(sys._MEIPASS, "file_c")
-        assert os.path.isfile(file_c), "file_c does not exist!"
-        assert os.path.islink(file_c), "file_c is not a symbolic link!"
-        assert os.readlink(file_c) == "file_a", "file_c does not point to file_a!"
-        """,
-        pyi_args=list(_collect_data(data_path, collected_files))
-    )
-
-
-# This is a special case, because PyInstaller needs to relink file_d to file_a due to missing links (file_b, file_c).
-def test_symlinks__chained_links_ad(tmp_path, pyi_builder):
-    data_path = _prepare_chained_links_example(tmp_path)
-    collected_files = ['file_a', 'file_d']
-    pyi_builder.test_source(
-        """
-        import sys
-        import os
-
-        # file_a should be a regular file
-        file_a = os.path.join(sys._MEIPASS, "file_a")
-        assert os.path.isfile(file_a), "file_a does not exist!"
-        assert not os.path.islink(file_a), "file_a is a symbolic link, but should not be!"
-
-        # file_d should be a symlink pointing to file_a
-        file_d = os.path.join(sys._MEIPASS, "file_d")
-        assert os.path.isfile(file_d), "file_d does not exist!"
-        assert os.path.islink(file_d), "file_d is not a symbolic link!"
-        assert os.readlink(file_d) == "file_a", "file_d does not point to file_a!"
-        """,
-        pyi_args=list(_collect_data(data_path, collected_files))
-    )
-
-
-# Similar to the BC test case (file_b needs to be collected as a copy), but with a missing intermediate link (file_c).
-def test_symlinks__chained_links_bd(tmp_path, pyi_builder):
-    data_path = _prepare_chained_links_example(tmp_path)
-    collected_files = ['file_b', 'file_d']
-    pyi_builder.test_source(
-        """
-        import sys
-        import os
-
-        # file_b should be a regular file
-        file_b = os.path.join(sys._MEIPASS, "file_b")
-        assert os.path.isfile(file_b), "file_b does not exist!"
-        assert not os.path.islink(file_b), "file_b is a symbolic link, but should not be!"
-
-        # file_d should be a symlink pointing to file_b
-        file_d = os.path.join(sys._MEIPASS, "file_d")
-        assert os.path.isfile(file_d), "file_d does not exist!"
-        assert os.path.islink(file_d), "file_d is not a symbolic link!"
-        assert os.readlink(file_d) == "file_b", "file_d does not point to file_b!"
-        """,
-        pyi_args=list(_collect_data(data_path, collected_files))
+        _chained_links_verification_source(regular_file, links),
+        pyi_args=list(_collect_data(data_path, collected_files)),
     )
 
 
@@ -493,19 +343,19 @@ def _prepare_parent_directory_link_example(tmp_path):
     (original_dir / "file_a").write_text("secret", encoding='utf-8')
 
     # Create symbolic link: file_b -> file_a
-    _create_symlink("file_a", original_dir / "file_b")
+    create_symlink("file_a", original_dir / "file_b")
 
     # Create symbolic link: file_c -> file_b
-    _create_symlink("file_b", original_dir / "file_c")
+    create_symlink("file_b", original_dir / "file_c")
 
     # Create symbolic link: file_d -> file_c
-    _create_symlink("file_c", original_dir / "file_d")
+    create_symlink("file_c", original_dir / "file_d")
 
     # Create a symbolic link at the directory level
     linked_dir = data_path / "linked"
     linked_dir.mkdir(parents=True)
 
-    _create_symlink(
+    create_symlink(
         os.path.join('..', 'original', 'mydata', 'v1.0.0'),
         linked_dir / 'mydata-v1.0.0',
         target_is_directory=True,
@@ -527,20 +377,6 @@ def _prepare_parent_directory_link_example(tmp_path):
 def test_symlinks__collect_chained_links_from_linked_directories(tmp_path, pyi_builder, collected_files):
     data_path = _prepare_parent_directory_link_example(tmp_path)
     pyi_builder.test_source(
-        """
-        import sys
-        import os
-
-        # file_a should be a regular file
-        file_a = os.path.join(sys._MEIPASS, "file_a")
-        assert os.path.isfile(file_a), "file_a does not exist!"
-        assert not os.path.islink(file_a), "file_a is a symbolic link, but should not be!"
-
-        # file_d should be a symlink pointing to file_a
-        file_d = os.path.join(sys._MEIPASS, "file_d")
-        assert os.path.isfile(file_d), "file_d does not exist!"
-        assert os.path.islink(file_d), "file_d is not a symbolic link!"
-        assert os.readlink(file_d) == "file_a", "file_d does not point to file_a!"
-        """,
-        pyi_args=list(_collect_data(data_path, collected_files))
+        _chained_links_verification_source('file_a', [('file_d', 'file_a')]),
+        pyi_args=list(_collect_data(data_path, collected_files)),
     )
