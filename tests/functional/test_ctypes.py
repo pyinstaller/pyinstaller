@@ -47,17 +47,49 @@ def test_ctypes_load_and_use_dll(pyi_builder, compiled_dylib):
     )
 
 
-# Test for error message raised by our ctypes hook when the specified shared library cannot be loaded.
-def test_ctypes_cdll_unknown_dll(pyi_builder, capfd):
-    with pytest.raises(pytest.fail.Exception, match="Running exe .* failed"):
-        pyi_builder.test_source(
-            """
-            import ctypes
-            ctypes.cdll.LoadLibrary('non-existing-2017')
-            """
-        )
-    out, err = capfd.readouterr()
-    assert "Failed to load dynlib/dll" in err
+def test_ctypes_cdll_unknown_dll(pyi_builder):
+    libname = 'non-existing-2017'
+    with pytest.raises(OSError) as exc_info:
+        ctypes.cdll.LoadLibrary(libname)
+    error_type = type(exc_info.value).__name__
+
+    pyi_builder.test_source(
+        f"""
+        import ctypes
+
+        try:
+            ctypes.cdll.LoadLibrary({libname!r})
+        except OSError as error:
+            assert type(error).__name__ == {error_type!r}, error
+        else:
+            raise AssertionError("Loading a missing library should fail")
+        """
+    )
+
+
+@pytest.mark.win32
+def test_ctypes_preserves_winerror(pyi_builder, tmp_path):
+    # An existing file that is not a DLL produces a Windows error code.
+    libpath = tmp_path / 'invalid.dll'
+    libpath.write_bytes(b'not a DLL')
+    with pytest.raises(OSError) as exc_info:
+        ctypes.WinDLL(str(libpath))
+    error = exc_info.value
+
+    pyi_builder.test_source(
+        f"""
+        import ctypes
+
+        for loader in (ctypes.CDLL, ctypes.PyDLL, ctypes.WinDLL, ctypes.OleDLL):
+            try:
+                loader({str(libpath)!r})
+            except OSError as error:
+                assert error.errno == {error.errno!r}, error
+                assert error.winerror == {error.winerror!r}, error
+            else:
+                raise AssertionError("Loading an invalid DLL should fail")
+        """
+    )
 
 
 # Make sure we are able to load CDLL(None) -> pip does this for some reason

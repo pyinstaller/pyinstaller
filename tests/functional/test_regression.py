@@ -141,9 +141,9 @@ def test_5797(pyi_builder):
         # Use a ctypes.CDLL, which in turn calls _frozen_name() from PyInstaller's ctypes bootstrap hooks.
         try:
             ctypes.CDLL('nonexistent')
-        except Exception as e:
-            # We expect PyInstallerImportError to be raised
-            exception_name = type(e).__name__
-            assert exception_name == 'PyInstallerImportError', f"Unexpected exception type: {exception_name}"
+        except OSError:
+            pass
+        else:
+            raise AssertionError("Loading a missing library should fail")
         """
     )
