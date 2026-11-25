@@ -1,0 +1,2 @@
+Remove the ``PyInstallerImportError`` wrapper from frozen ``ctypes`` loaders.
+Loading failures now propagate their original exception type and any available ``errno`` and ``winerror`` values.
