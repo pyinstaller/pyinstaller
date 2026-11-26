@@ -3,10 +3,16 @@ Test for import machinery
 """
 import unittest
 import sys
+import sysconfig
 import textwrap
 import subprocess
 import os
+import dis
+import inspect
+import warnings
+from pathlib import Path
 from PyInstaller.lib.modulegraph import modulegraph
+from PyInstaller.lib.modulegraph.util import iterate_instructions
 
 class TestNativeImport (unittest.TestCase):
     # The tests check that Python's import statement
@@ -505,6 +511,46 @@ def test_extended_args_import():
     graph = modulegraph.ModuleGraph()
     graph._scan_bytecode(node, code, True)
     assert node._deferred_imports[0][1][0] == "os"
+
+def test_fast_bytecode_scan():
+    def _iterate_instructions_old(code_object):
+        """Old implementation used before the faster but hackier bytecode scan was implemented."""
+        yield from (i for i in dis.get_instructions(code_object) if i.opname != "EXTENDED_ARG")
+
+        yield None
+
+        for constant in code_object.co_consts:
+            if inspect.iscode(constant):
+                yield from _iterate_instructions_old(constant)
+
+    stdlib_dir = Path(sysconfig.get_path("stdlib"))
+
+    def should_skip(module_path):
+        path_parts = module_path.relative_to(stdlib_dir).parts
+
+        # `site-packages` is inside the standard-library directory unless in a venv.
+        is_site_package = path_parts[0] == "site-packages"
+
+        # Test suite is large, not shipped by all distributions, and contains files with deliberate syntax errors.
+        is_test_module = any(part in ("test", "tests") for part in path_parts)
+
+        return is_site_package or is_test_module
+
+    stdlib_modules = [path for path in sorted(stdlib_dir.rglob("*.py")) if not should_skip(path)]
+    assert len(stdlib_modules) > 100  # Otherwise, we probably haven't actually found the standard-library modules.
+
+    for path in stdlib_modules:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            code = compile(path.read_bytes(), str(path), "exec", dont_inherit=True)
+
+        expected = [
+            None if i is None else (i.opname, i.argval) for i in _iterate_instructions_old(code)
+        ]
+        actual = [
+            None if i is None else (i.opname, i.argval) for i in iterate_instructions(code)
+        ]
+        assert actual == expected, path
 
 
 if __name__ == "__main__":
