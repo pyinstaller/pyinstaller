@@ -1,0 +1,2 @@
+Fix ``PYTHONIOENCODING`` not being set for python sub-processes that are
+spawned without an explicit environment.

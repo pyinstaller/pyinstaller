@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: (GPL-2.0-or-later WITH Bootloader-exception)
 #-----------------------------------------------------------------------------
 
+import os
+
 import pytest
 
 from PyInstaller import compat
@@ -64,3 +66,24 @@ def test_windows_machine():
 def test_other_os_machine():
     assert _pyi_machine("foo", "Darwin") is None
     assert _pyi_machine("foo", "FreeBSD") is None
+
+
+def test_exec_python_forces_utf8_io_encoding(monkeypatch):
+    # `exec_python()` always decodes the captured output as utf-8, so it must also force the child process to write its
+    # output as utf-8 - including when the child would otherwise inherit a different `PYTHONIOENCODING` from us.
+    monkeypatch.setenv("PYTHONIOENCODING", "latin-1")
+
+    prog = "print('\\u00f8')"
+
+    # Environment passed explicitly.
+    assert compat.exec_python('-c', prog, env=dict(os.environ)).strip() == '\u00f8'
+
+    # Environment not passed, so that it is constructed from `os.environ`.
+    assert compat.exec_python('-c', prog).strip() == '\u00f8'
+
+
+def test_exec_python_does_not_modify_passed_environment():
+    # Forcing `PYTHONIOENCODING` must not be done by modifying the caller's mapping in place.
+    env = dict(os.environ)
+    compat.exec_python('-c', 'pass', env=env)
+    assert env == os.environ

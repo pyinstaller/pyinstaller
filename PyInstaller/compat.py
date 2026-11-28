@@ -495,11 +495,16 @@ def __wrap_python(args, kwargs):
     env = kwargs.get('env')
     if env is None:
         env = dict(**os.environ)
+    else:
+        # Do not modify the caller's mapping.
+        env = dict(env)
 
     # Ensure python 3 subprocess writes 'str' as utf-8
     env['PYTHONIOENCODING'] = 'UTF-8'
     # ... and ensure we read output as utf-8
     kwargs['encoding'] = 'UTF-8'
+    # Pass the modified environment on to the sub-process.
+    kwargs['env'] = env
 
     return cmdargs, kwargs
 
