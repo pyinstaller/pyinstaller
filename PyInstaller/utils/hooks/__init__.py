@@ -619,6 +619,7 @@ def collect_submodules(
         # one we have for packages (i.e., we include the package in the list of returned names)
         if can_import_module(package):
             return [package]
+        logger.warning("collect_submodules - unable to load package %r. Submodules will not be collected", package)
         return []
 
     # Determine the filesystem path(s) to the specified package.
