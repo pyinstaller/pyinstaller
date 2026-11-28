@@ -17,6 +17,7 @@ import os
 import re
 import sys
 import pathlib
+from textwrap import indent
 
 from PyInstaller import DEFAULT_SPECPATH
 from PyInstaller import log as logging
@@ -769,6 +770,17 @@ def main(
         recursive_copy_metadata
     )
 
+    scripts = [portable_filepath(path) for path in scripts]
+    pathex = [portable_filepath(path) for path in pathex or []]
+    if preamble.content:
+        preamble.content = (
+            'from PyInstaller.building.build_main import _spec_collect_paths\n\n'
+            f'scripts = {scripts!r}\n'
+            f'pathex = {pathex!r}\n'
+            'with _spec_collect_paths(scripts, pathex, SPECPATH):\n' + indent(preamble.content, '    ')
+        )
+        scripts, pathex = 'scripts', 'pathex'
+
     if splash:
         splash_options = ""
         if splash_center:
@@ -816,8 +828,8 @@ def main(
     python_options_array = [(opt, None, 'OPTION') for opt in python_options]
 
     d = {
-        'scripts': [portable_filepath(i) for i in scripts],
-        'pathex': [portable_filepath(i) for i in pathex or []],
+        'scripts': scripts,
+        'pathex': pathex,
         'binaries': preamble.binaries,
         'datas': preamble.datas,
         'hiddenimports': preamble.hiddenimports,

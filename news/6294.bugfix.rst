@@ -1,0 +1,1 @@
+Let collection options such as ``--collect-submodules`` find packages on ``--paths`` and next to the entry-point script.

@@ -22,6 +22,7 @@ import shutil
 import enum
 import re
 import sys
+from contextlib import contextmanager
 
 from PyInstaller import DEFAULT_DISTPATH, DEFAULT_WORKPATH, HOMEPATH, compat
 from PyInstaller import log as logging
@@ -389,6 +390,28 @@ def _get_module_collection_mode(mode_dict, name, noarchive=False):
     return mode_flags
 
 
+def _module_search_paths(spec_pathex, scripts):
+    pathex = []
+    for script in scripts:
+        logger.debug('script: %s' % script)
+        script_toplevel_dir = get_path_to_toplevel_modules(script)
+        if script_toplevel_dir:
+            pathex.append(script_toplevel_dir)
+    pathex.extend(spec_pathex or [])
+    return list(dict.fromkeys(absnormpath(path) for path in pathex))
+
+
+@contextmanager
+def _spec_collect_paths(scripts, pathex, specpath):
+    script_paths = [os.path.join(specpath, script) for script in scripts]
+    original_path = sys.path
+    sys.path = original_path + _module_search_paths(pathex, script_paths)
+    try:
+        yield
+    finally:
+        sys.path = original_path
+
+
 class Analysis(Target):
     """
     Class that performs analysis of the user's main Python scripts.
@@ -520,7 +543,7 @@ class Analysis(Target):
                 "an error in PyInstaller 7.0.", pprint.pformat(site_packages_pathex)
             )
 
-        self.pathex = self._extend_pathex(pathex, self.inputs)
+        self.pathex = _module_search_paths(pathex, self.inputs)
         # Set global config variable 'pathex' to make it available for PyInstaller.utils.hooks and import hooks. Path
         # extensions for module search.
         CONF['pathex'] = self.pathex
@@ -629,32 +652,6 @@ class Analysis(Target):
 
         ('_modules_outside_pyz', _check_guts_toc_mtime),
     )
-
-    def _extend_pathex(self, spec_pathex, scripts):
-        """
-        Normalize additional paths where PyInstaller will look for modules and add paths with scripts to the list of
-        paths.
-
-        :param spec_pathex: Additional paths defined defined in .spec file.
-        :param scripts: Scripts to create executable from.
-        :return: list of updated paths
-        """
-        # Based on main supplied script - add top-level modules directory to PYTHONPATH.
-        # Sometimes the main app script is not top-level module but submodule like 'mymodule.mainscript.py'.
-        # In that case PyInstaller will not be able find modules in the directory containing 'mymodule'.
-        # Add this directory to PYTHONPATH so PyInstaller could find it.
-        pathex = []
-        # Add scripts paths first.
-        for script in scripts:
-            logger.debug('script: %s' % script)
-            script_toplevel_dir = get_path_to_toplevel_modules(script)
-            if script_toplevel_dir:
-                pathex.append(script_toplevel_dir)
-        # Append paths from .spec.
-        if spec_pathex is not None:
-            pathex.extend(spec_pathex)
-        # Normalize paths in pathex and make them absolute.
-        return list(dict.fromkeys(absnormpath(p) for p in pathex))
 
     def _check_guts(self, data, last_build):
         if Target._check_guts(self, data, last_build):

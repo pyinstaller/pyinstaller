@@ -356,6 +356,26 @@ def test_egg_unzipped_metadata_importlib_metadata(pyi_builder):
 #--- namespaces ---
 
 
+@pytest.mark.parametrize('use_extra_path', [False, True])
+def test_collect_submodules_search_paths(pyi_builder, tmp_path, use_extra_path):
+    package_root = tmp_path / 'extra' if use_extra_path else tmp_path
+    package = package_root / 'spec_test_package'
+    package.mkdir(parents=True)
+    (package / '__init__.py').touch()
+    (package / 'plugin.py').write_text('VALUE = 42', encoding='utf-8')
+    script = tmp_path / 'app.py'
+    script.write_text(
+        'from importlib import import_module\n'
+        'assert import_module("spec_test_package.plugin").VALUE == 42\n',
+        encoding='utf-8',
+    )
+    pyi_args = ['--collect-submodules', 'spec_test_package']
+    if use_extra_path:
+        pyi_args += ['--paths', str(package_root)]
+
+    pyi_builder.test_script(script, pyi_args=pyi_args)
+
+
 @importorskip('pkg_resources')
 def test_nspkg1(pyi_builder):
     # Test inclusion of namespace packages implemented using pkg_resources.declare_namespace
