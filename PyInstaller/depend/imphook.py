@@ -106,7 +106,7 @@ class ModuleHookCache(dict):
                 raise FileNotFoundError('Hook directory "{}" not found.'.format(hook_dir))
 
             # For each hook script in this directory...
-            hook_filenames = glob.glob(os.path.join(hook_dir, 'hook-*.py'))
+            hook_filenames = glob.glob(os.path.join(glob.escape(hook_dir), 'hook-*.py'))
             for hook_filename in hook_filenames:
                 # Fully-qualified name of this hook's corresponding module, constructed by removing the "hook-" prefix
                 # and ".py" suffix.

@@ -17,9 +17,22 @@ import pytest
 
 from PyInstaller import HOMEPATH
 from PyInstaller.depend import analysis
+from PyInstaller.depend.imphook import ModuleHookCache
 from PyInstaller.lib.modulegraph import modulegraph
 import PyInstaller.log as logging
 from PyInstaller.utils.tests import gen_sourcefile
+
+
+def test_hook_discovery_with_bracket_in_directory(tmp_path):
+    hook_dir = tmp_path / 'hooks[1]'
+    hook_dir.mkdir()
+    hook_file = hook_dir / 'hook-example.py'
+    hook_file.touch()
+    graph = modulegraph.ModuleGraph()
+
+    hooks = ModuleHookCache(graph, [(str(hook_dir), 0)])
+
+    assert hooks['example'].hook_filename == str(hook_file)
 
 
 def test_get_co_using_ctypes(tmp_path):

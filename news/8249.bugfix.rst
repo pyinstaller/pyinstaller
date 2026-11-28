@@ -1,0 +1,1 @@
+Treat hook directories and paths cleaned by ``--clean`` literally when their names contain glob metacharacters.

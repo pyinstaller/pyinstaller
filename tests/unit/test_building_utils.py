@@ -15,8 +15,29 @@ import pathlib
 
 import pytest
 
-from PyInstaller.building import utils
+from PyInstaller import config
+from PyInstaller.building import build_main, utils
 from PyInstaller.compat import is_termux
+
+
+def test_clean_build_with_bracket_in_directory(tmp_path, monkeypatch):
+    spec = tmp_path / 'app.spec'
+    spec.touch()
+    workpath = tmp_path / 'build[1]'
+    cachedir = tmp_path / 'cache[1]'
+    leftovers = [workpath / 'app' / 'stale', cachedir / 'stale']
+    for leftover in leftovers:
+        leftover.parent.mkdir(parents=True)
+        leftover.touch()
+    unrelated = tmp_path / 'build1' / 'app' / 'keep'
+    unrelated.parent.mkdir(parents=True)
+    unrelated.touch()
+    monkeypatch.setattr(config, 'CONF', {'cachedir': str(cachedir)})
+
+    build_main.build(str(spec), str(tmp_path / 'dist'), str(workpath), clean_build=True)
+
+    assert all(not leftover.exists() for leftover in leftovers)
+    assert unrelated.is_file()
 
 
 def test_format_binaries_and_datas_not_found_raises_error(tmp_path):
