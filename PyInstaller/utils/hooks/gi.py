@@ -215,18 +215,18 @@ def gir_library_path_fix(path):
         gir_name = os.path.splitext(typelib_name)[0] + '.gir'
 
         gir_file = os.path.join(gir_path, gir_name)
-
-        if not os.path.exists(gir_path):
-            logger.error(
-                "Unable to find gir directory: %s.\nTry installing your platform's gobject-introspection package.",
-                gir_path
-            )
-            return None
-        if not os.path.exists(gir_file):
-            logger.error(
-                "Unable to find gir file: %s.\nTry installing your platform's gobject-introspection package.", gir_file
-            )
-            return None
+        if not os.path.isfile(gir_file):
+            for data_dir in get_glib_system_data_dirs() or ():
+                candidate = os.path.join(data_dir, 'gir-1.0', gir_name)
+                if os.path.isfile(candidate):
+                    gir_file = candidate
+                    break
+            else:
+                logger.error(
+                    "Unable to find gir file: %s.\nTry installing your platform's gobject-introspection package.",
+                    gir_file
+                )
+                return None
 
         with open(gir_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()

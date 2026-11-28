@@ -1,0 +1,3 @@
+(macOS) Look for GObject introspection GIR files under the GLib system data directories
+when they are not in the standard location.
+Set ``XDG_DATA_DIRS`` to include the parent of a nonstandard ``gir-1.0`` directory.
